@@ -35,6 +35,7 @@ set(vw_core_headers
   include/vw/core/feature_group.h
   include/vw/core/gd_predict.h
   include/vw/core/gen_cs_example.h
+  include/vw/core/generated_interactions_reduction_features.h
   include/vw/core/generic_range.h
   include/vw/core/global_data.h
   include/vw/core/guard.h
@@ -80,7 +81,10 @@ set(vw_core_headers
   include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h
   include/vw/core/reductions/autolink.h
-  include/vw/core/reductions/automl.h
+  include/vw/core/reductions/automl/automl.h
+  include/vw/core/reductions/automl/automl_impl.h
+  include/vw/core/reductions/automl/automl_iomodel.h
+  include/vw/core/reductions/automl/automl_util.h
   include/vw/core/reductions/baseline_challenger_cb.h
   include/vw/core/reductions/baseline.h
   include/vw/core/reductions/bfgs.h
@@ -90,6 +94,7 @@ set(vw_core_headers
   include/vw/core/reductions/cats_pdf.h
   include/vw/core/reductions/cats_tree.h
   include/vw/core/reductions/cats.h
+  include/vw/core/reductions/cb/cb_actions_mask.h
   include/vw/core/reductions/cb/cb_adf.h
   include/vw/core/reductions/cb/cb_algs.h
   include/vw/core/reductions/cb/cb_dro.h
@@ -167,7 +172,7 @@ set(vw_core_headers
   include/vw/core/reductions/svrg.h
   include/vw/core/reductions/topk.h
   include/vw/core/scope_exit.h
-  include/vw/core/scored_config.h
+  include/vw/core/estimator_config.h
   include/vw/core/shared_data.h
   include/vw/core/simple_label_parser.h
   include/vw/core/simple_label.h
@@ -235,6 +240,7 @@ set(vw_core_sources
   src/reductions/active.cc
   src/reductions/audit_regressor.cc
   src/reductions/autolink.cc
+  src/reductions/automl_impl.cc
   src/reductions/automl.cc
   src/reductions/baseline_challenger_cb.cc
   src/reductions/baseline.cc
@@ -245,6 +251,7 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/cb_actions_mask.cc
   src/reductions/cb/cb_adf.cc
   src/reductions/cb/cb_algs.cc
   src/reductions/cb/cb_dro.cc
@@ -320,7 +327,7 @@ set(vw_core_sources
   src/reductions/stagewise_poly.cc
   src/reductions/svrg.cc
   src/reductions/topk.cc
-  src/scored_config.cc
+  src/estimator_config.cc
   src/shared_data.cc
   src/simple_label_parser.cc
   src/simple_label.cc
@@ -405,5 +412,5 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "core"
-    SOURCES tests/cache_test.cc tests/parse_args_test.cc
+    SOURCES tests/cache_test.cc tests/parse_args_test.cc tests/save_load_test.cc
 )

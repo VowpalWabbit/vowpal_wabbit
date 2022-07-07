@@ -5,11 +5,12 @@
 
 #include "vw/core/array_parameters.h"
 #include "vw/core/distributionally_robust.h"
+#include "vw/core/estimator_config.h"
 #include "vw/core/reductions_fwd.h"
-#include "vw/core/scored_config.h"
 #include "vw/io/logger.h"
 
 #include <algorithm>
+#include <numeric>
 
 namespace VW
 {
@@ -19,54 +20,37 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
 
 namespace epsilon_decay
 {
-struct epsilon_decay_score : scored_config
+struct epsilon_decay_estimator : estimator_config
 {
-  epsilon_decay_score() = default;
-  epsilon_decay_score(double alpha, double tau, uint64_t model_idx)
-      : VW::scored_config(alpha, tau), _model_idx(model_idx)
-  {
-  }
+  epsilon_decay_estimator() = default;
+  epsilon_decay_estimator(double alpha, double tau) : VW::estimator_config(alpha, tau) {}
   float decayed_epsilon(uint64_t update_count);
-  float get_upper_bound() const { return this->current_ips(); }
-  float get_lower_bound() const { return _lower_bound; }
-  uint64_t get_model_idx() const { return _model_idx; }
-  void update_bounds(float w, float r);
-
-  float _lower_bound = 0.f;
-  uint64_t _model_idx;
 };
 
 struct epsilon_decay_data
 {
-  epsilon_decay_data(uint64_t num_configs, uint64_t min_scope, double epsilon_decay_alpha, double epsilon_decay_tau,
-      parameters& weights, VW::io::logger logger, bool log_champ_changes)
-      : _min_scope(min_scope)
-      , _epsilon_decay_alpha(epsilon_decay_alpha)
-      , _epsilon_decay_tau(epsilon_decay_tau)
-      , _weights(weights)
-      , _logger(std::move(logger))
-      , _log_champ_changes(log_champ_changes)
-  {
-    uint64_t model_idx = 0;
-    for (uint64_t i = 0; i < num_configs; ++i)
-    {
-      std::vector<epsilon_decay_score> score_vec;
-      for (uint64_t j = 0; j < i + 1; ++j)
-      {
-        epsilon_decay_score s(epsilon_decay_alpha, epsilon_decay_tau, model_idx);
-        score_vec.push_back(s);
-        ++model_idx;
-      }
-      _scored_configs.push_back(score_vec);
-    }
-  }
-  std::vector<std::vector<epsilon_decay_score>> _scored_configs;
+  epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
+      double epsilon_decay_estimator_decay, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
+      bool constant_epsilon, uint32_t& wpp, bool lb_trick);
+  void update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void promote_model(int64_t model_ind, int64_t swap_dist);
+  void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
+  void clear_weights_and_estimators(int64_t swap_dist, int64_t model_count);
+  void shift_model(int64_t model_ind, int64_t swap_dist, int64_t model_count);
+  void check_estimator_bounds();
+  void check_horizon_bounds();
+
+  std::vector<std::vector<epsilon_decay_estimator>> _estimator_configs;
+  std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;
-  double _epsilon_decay_alpha;  // Confidence interval
-  double _epsilon_decay_tau;    // Count decay time constant
-  parameters& _weights;
+  double _epsilon_decay_significance_level;  // Confidence interval
+  double _epsilon_decay_estimator_decay;     // Count decay time constant
+  dense_parameters& _weights;
   VW::io::logger _logger;
   bool _log_champ_changes;
+  bool _constant_epsilon;
+  uint32_t& _wpp;
+  bool _lb_trick;
 };
 
 }  // namespace epsilon_decay
@@ -74,9 +58,10 @@ struct epsilon_decay_data
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_score&);
+size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_estimator&);
 size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_data&);
-size_t write_model_field(io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_score&, const std::string&, bool);
+size_t write_model_field(
+    io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_estimator&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_data&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

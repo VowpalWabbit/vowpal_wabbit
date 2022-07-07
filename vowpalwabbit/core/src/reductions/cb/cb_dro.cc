@@ -66,7 +66,7 @@ struct cb_dro_data
 
         chisq.update(chosen_action == labelled_action ? w : 0, r);
 
-        float qlb = static_cast<float>(w > 0 ? chisq.effn() * chisq.qlb(w, r) / w : 1);
+        float qlb = static_cast<float>(w > 0 ? chisq.effn() * chisq.qlb(w, r, 1) / w : 1);
 
         // avoid pathological cases
         qlb = std::max(qlb, 0.01f);
@@ -112,7 +112,10 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
   option_group_definition new_options("[Reduction] CB Distributionally Robust Optimization");
   new_options.add(make_option("cb_dro", cb_dro_option).keep().necessary().help("Use DRO for cb learning"))
       .add(make_option("cb_dro_alpha", alpha).default_value(0.05f).keep().help("Confidence level for cb dro"))
-      .add(make_option("cb_dro_tau", tau).default_value(0.999f).keep().help("Time constant for count decay for cb dro"))
+      .add(make_option("cb_dro_tau", tau)
+               .default_value(BASELINE_DEFAULT_TAU)
+               .keep()
+               .help("Time constant for count decay for cb dro"))
       .add(make_option("cb_dro_wmax", wmax)
                .default_value(std::numeric_limits<float>::infinity())
                .keep()
@@ -162,8 +165,10 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
     pred_type = VW::prediction_type_t::action_scores;
   }
 
-  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()), learn_ptr,
-      pred_ptr, stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
+  auto* base = stack_builder.setup_base_learner();
+  auto* l = make_reduction_learner(std::move(data), as_multiline(base), learn_ptr, pred_ptr,
+      stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(pred_type)

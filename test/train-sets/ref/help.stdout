@@ -154,7 +154,8 @@ Output Model Options:
                                             can only be used for prediction (type: bool)
     --save_resume                           This flag is now deprecated and models can continue learning
                                             by default (type: bool)
-    --preserve_performance_counters         Reset performance counters when warmstarting (type: bool)
+    --preserve_performance_counters         Prevent the default behavior of resetting counters when loading
+                                            a model. Has no effect when writing a model. (type: bool)
     --save_per_pass                         Save the model after every pass over data (type: bool)
     --output_feature_regularizer_binary arg Per feature regularization output file (type: str)
     --output_feature_regularizer_text arg   Per feature regularization output file, in text (type: str)
@@ -228,17 +229,24 @@ Weight Options:
     --cm_type arg                           Set type of config manager (type: str, default: interaction,
                                             choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
-                                            choices {least_exclusion, none}, keep, experimental)
+                                            choices {favor_popular_namespaces, none}, keep, experimental)
     --priority_challengers arg              Set number of priority challengers to use (type: int, default:
                                             -1, keep, experimental)
-    --keep_configs                          Keep all configs after champ change (type: bool, keep, experimental)
     --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
+    --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
+                                            choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
-                                            choices {one_diff, rand}, keep, experimental)
-    --automl_alpha arg                      Set confidence interval for champion change (type: float, default:
+                                            choices {champdupe, one_diff, rand}, keep, experimental)
+    --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
+                                            bool, default: false, experimental)
+    --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
+                                            false, experimental)
+    --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --automl_tau arg                        Time constant for count decay (type: float, default: 0.999, keep,
+    --automl_estimator_decay arg            Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
+    --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
+                                            (bonferroni correction) (type: bool, keep, experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
                                             separately in regression (type: bool, keep, necessary)
@@ -509,7 +517,7 @@ Weight Options:
 [Reduction] Cost Sensitive One Against All Options:
     --csoaa arg                             One-against-all multiclass with <k> costs (type: uint, keep,
                                             necessary)
-    --indexing arg                          Choose between 0 or 1-indexing (type: int, choices {0, 1}, keep)
+    --indexing arg                          Choose between 0 or 1-indexing (type: uint, choices {0, 1}, keep)
 [Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
     --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
                                             features (type: str, keep, necessary)
@@ -533,11 +541,16 @@ Weight Options:
                                             experimental)
     --min_scope arg                         Minimum example count of model before removing (type: uint, default:
                                             100, keep, experimental)
-    --epsilon_decay_alpha arg               Set confidence interval for champion change (type: float, default:
+    --epsilon_decay_significance_level arg  Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --epsilon_decay_tau arg                 Time constant for count decay (type: float, default: 0.999, keep,
+    --epsilon_decay_estimator_decay arg     Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
     --log_champ_changes                     Log champ changes (type: bool, keep, experimental)
+    --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
+    --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
+                                            false, experimental)
+    --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
+                                            (bonferroni correction) (type: bool, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -567,9 +580,12 @@ Weight Options:
                                             action dependent features (type: bool, keep, necessary)
     --large_action_space                    Large action space exploration (type: bool, keep, necessary,
                                             experimental)
+    --full_predictions                      Full representation of the prediction's action probabilities
+                                            (type: bool, experimental)
     --max_actions arg                       Max number of actions to explore (type: uint, default: 50, keep,
                                             experimental)
-    --gamma arg                             Gamma hyperparameter (type: float, keep)
+    --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:
+                                            2, keep, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=
@@ -741,7 +757,7 @@ Weight Options:
                                             uint)
     --probabilities                         Predict probabilities of all classes (type: bool)
     --scores                                Output raw scores per class (type: bool)
-    --indexing arg                          Choose between 0 or 1-indexing (type: int, choices {0, 1}, keep)
+    --indexing arg                          Choose between 0 or 1-indexing (type: uint, choices {0, 1}, keep)
 [Reduction] Print Psuedolearner Options:
     --print                                 Print examples (type: bool, keep, necessary)
 [Reduction] Probabilistic Label Tree Options:

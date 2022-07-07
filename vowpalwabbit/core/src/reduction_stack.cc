@@ -13,7 +13,7 @@
 #include "vw/core/reductions/active_cover.h"
 #include "vw/core/reductions/audit_regressor.h"
 #include "vw/core/reductions/autolink.h"
-#include "vw/core/reductions/automl.h"
+#include "vw/core/reductions/automl/automl.h"
 #include "vw/core/reductions/baseline.h"
 #include "vw/core/reductions/baseline_challenger_cb.h"
 #include "vw/core/reductions/bfgs.h"
@@ -23,6 +23,7 @@
 #include "vw/core/reductions/cats.h"
 #include "vw/core/reductions/cats_pdf.h"
 #include "vw/core/reductions/cats_tree.h"
+#include "vw/core/reductions/cb/cb_actions_mask.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/reductions/cb/cb_dro.h"
@@ -103,7 +104,8 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::reductions::cb_explore_adf_regcb_setup, "cb_explore_adf_regcb"},
       {VW::reductions::shared_feature_merger_setup, "shared_feature_merger"},
       {VW::reductions::generate_interactions_setup, "generate_interactions"},
-      {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"}};
+      {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"},
+      {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}};
 
   auto name_extractor = VW::config::options_name_extractor();
   VW::workspace dummy_all(VW::io::create_null_logger());
@@ -203,6 +205,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);
   reductions.push_back(VW::reductions::epsilon_decay_setup);
+  reductions.push_back(VW::reductions::cb_actions_mask_setup);
   reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
   reductions.push_back(VW::reductions::slates_setup);

@@ -77,22 +77,33 @@ std::vector<T> indices_to_values_ignore_last_index(const std::vector<size_t>& in
 template <typename T>
 inline bool must_be_left_sorted(const std::vector<T>& oi)
 {
-  if (oi.size() <= 1) return true;  // one letter in std::string - no need to sort
+  if (oi.size() <= 1)
+  {
+    return true;  // one letter in std::string - no need to sort
+  }
 
   bool diff_ns_found = false;
   bool pair_found = false;
 
   for (auto i = std::begin(oi); i != std::end(oi) - 1; ++i)
+  {
     if (*i == *(i + 1))  // pair found
     {
-      if (diff_ns_found) return true;  // case 'abb'
+      if (diff_ns_found)
+      {
+        return true;  // case 'abb'
+      }
       pair_found = true;
     }
     else
     {
-      if (pair_found) return true;  // case 'aab'
+      if (pair_found)
+      {
+        return true;  // case 'aab'
+      }
       diff_ns_found = true;
     }
+  }
 
   return false;  // 'aaa' or 'abc'
 }
@@ -152,8 +163,11 @@ void sort_and_filter_duplicate_interactions(
       res.push_back(i.first);
       ++sorted_cnt;
     }
-    else  // else - move unsorted data to result
+    else
+    {
+      // else - move unsorted data to result
       res.push_back(vec[i.second]);
+    }
   }
 
   vec = res;
@@ -364,6 +378,7 @@ private:
 public:
   std::vector<std::vector<VW::namespace_index>> generated_interactions;
   std::vector<std::vector<extent_term>> generated_extent_interactions;
+  bool store_in_reduction_features = false;
 
   template <generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
   void update_interactions_if_new_namespace_seen(const std::vector<std::vector<VW::namespace_index>>& interactions,

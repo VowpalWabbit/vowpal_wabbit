@@ -25,12 +25,12 @@ struct test_base
   static void invoke_learn(
       test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, VW::multi_ex& examples)
   {
-      data.test_learn_func(examples);
+    data.test_learn_func(examples);
   }
   static void invoke_predict(
       test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, VW::multi_ex& examples)
   {
-      data.test_predict_func(examples);
+    data.test_predict_func(examples);
   }
 };
 
@@ -69,14 +69,14 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
     BOOST_CHECK_CLOSE(examples[4]->l.conditional_contextual_bandit.outcome->cost, 0.8f, FLOAT_TOL);
     check_collections_with_float_tolerance(examples[4]->l.conditional_contextual_bandit.outcome->probabilities,
         std::vector<ACTION_SCORE::action_score>{{0, 0.8f}});
-    check_collections_exact(examples[4]->l.conditional_contextual_bandit.explicit_included_actions,
-        std::vector<uint32_t>{0});
+    check_collections_exact(
+        examples[4]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{0});
     BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
     BOOST_CHECK_CLOSE(examples[5]->l.conditional_contextual_bandit.outcome->cost, 0.8f, FLOAT_TOL);
     check_collections_with_float_tolerance(examples[5]->l.conditional_contextual_bandit.outcome->probabilities,
         std::vector<ACTION_SCORE::action_score>{{2, 0.6f}});
     check_collections_exact(
-        examples[5]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{1,2});
+        examples[5]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{1, 2});
 
     // Prepare and return the prediction
     VW::v_array<ACTION_SCORE::action_score> slot_zero;

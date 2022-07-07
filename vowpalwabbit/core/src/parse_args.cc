@@ -683,6 +683,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
       .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
+
   options.add_and_parse(feature_options);
 
   // feature manipulation
@@ -1196,10 +1197,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
         << loss_function);
   }
 
-  if (loss_function_accepts_quantile_tau)
-  {
-    all.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
-  }
+  if (loss_function_accepts_quantile_tau) { all.loss = get_loss_function(all, loss_function, quantile_loss_parameter); }
   else if (loss_function_accepts_expectile_q)
   {
     if (expectile_loss_parameter <= 0.0f || expectile_loss_parameter > 0.5f)
@@ -1345,7 +1343,8 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("save_resume", save_resume)
                .help("This flag is now deprecated and models can continue learning by default"))
       .add(make_option("preserve_performance_counters", all.preserve_performance_counters)
-               .help("Reset performance counters when warmstarting"))
+               .help("Prevent the default behavior of resetting counters when loading a model. Has no effect when "
+                     "writing a model."))
       .add(make_option("save_per_pass", all.save_per_pass).help("Save the model after every pass over data"))
       .add(make_option("output_feature_regularizer_binary", all.per_feature_regularizer_output)
                .help("Per feature regularization output file"))

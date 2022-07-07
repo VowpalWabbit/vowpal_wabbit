@@ -166,7 +166,7 @@ inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
 inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 {
-  if (ec.passthrough) ec.passthrough->push_back(x, (FNV_prime * magic) ^ i);
+  if (ec.passthrough) { ec.passthrough->push_back(x, (FNV_prime * magic) ^ i); }
 }
 
 #define add_passthrough_feature(ec, i, x) \
