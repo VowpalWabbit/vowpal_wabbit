@@ -418,6 +418,7 @@ int select_learner(search_private& priv, int policy, size_t learner_id, bool is_
       if (!is_local) { learner_id += 1 + static_cast<size_t>(is_training ^ (priv.all->sd->example_number % 2 == 1)); }
     }
     int p = static_cast<int>(policy * priv.num_learners + learner_id);
+    assert(p < priv.num_learners);
     return p;
   }
 }
