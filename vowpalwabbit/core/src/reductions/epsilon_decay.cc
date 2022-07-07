@@ -78,7 +78,17 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
         if (a_s.action == labelled_action)
         {
           const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          for (int64_t j = 0; j <= i; ++j) { _estimator_configs[i][j].update(w, r); }
+          for (int64_t j = 0; j <= i; ++j)
+          {
+            if (_lb_trick && i == model_count - 1)
+            {
+              _estimator_configs[i][j].update(w, 1 - r);
+            }
+            else
+            {
+              _estimator_configs[i][j].update(w, r);
+            }
+          }
           break;
         }
       }
@@ -158,6 +168,16 @@ void epsilon_decay_data::check_estimator_bounds()
             _estimator_configs[final_model_idx][final_model_idx].update_count, _estimator_configs[i][i].update_count);
       }
       shift_model(i, final_model_idx - i, model_count);
+      if (_lb_trick)
+      {
+        for (int64_t i = 0; i < model_count; ++i)
+        {
+          for (int64_t j = 0; j <= i; ++j)
+          {
+            _estimator_configs[i][j].reset_stats();
+          }
+        }
+      }
       break;
     }
   }
