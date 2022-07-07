@@ -414,6 +414,7 @@ void cb_explore_adf_large_action_space::compute_spanner()
   // Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
   // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
 
+  // The size of U is K x d, where K is the total number of all actions.
   assert(static_cast<uint64_t>(U.cols()) == _d);
   Eigen::MatrixXf X = Eigen::MatrixXf::Identity(_d, _d);
 
@@ -426,8 +427,10 @@ void cb_explore_adf_large_action_space::compute_spanner()
   }
 
   // Transform the basis into C-approximate spanner.
+  // According to the paper, the total number of iterations needed is O(d*log_c(d)).
+  const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
   float X_volume = std::abs(X.determinant());
-  for (int iter = 0; iter < static_cast<int>(_d * std::log(_d) / std::log(_c)); ++iter)
+  for (int iter = 0; iter < max_iterations; ++iter)
   {
     bool found_larger_volume = false;
 
@@ -465,6 +468,7 @@ void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& 
     calculate_shrink_factor(preds);
     randomized_SVD(examples);
 
+    // The U matrix is empty before learning anything.
     if (U.rows() == 0)
     {
       // Set uniform random probability for empty U.
@@ -478,10 +482,13 @@ void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& 
   }
   else
   {
+    // When the number of actions is no larger than d, all actions are selected.
     _spanner_bitvec.clear();
     _spanner_bitvec.resize(preds.size(), true);
   }
 
+  // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
+  // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later.
   size_t index = 0;
   for (auto it = preds.begin(); it != preds.end(); it++)
   {
