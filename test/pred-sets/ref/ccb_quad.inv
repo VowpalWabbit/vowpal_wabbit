@@ -1,5 +1,5 @@
-Version 9.1.0
-Id
+Version 99.1.0
+Id 
 Min label:-1
 Max label:0
 bits:18
@@ -30,6 +30,9 @@ sd::oec.weighted_labeled_examples 8
 current_pass 1
 l1_state 0
 l2_state 1
+gd_ppw_state.size() = 1
+gd_ppw_state[0]normalized_sum_norm_x = 305.4242420196533
+gd_ppw_state[0]total_weight = 15.271212100982666
 Action^fff*User^a:431:-0.0420591 3.99279 1
 Action^fff*_ccb_slot_index^index1:1661:-0.0545174 4.26212 1
 Slot^h*User^c:2034:-0.0509719 1.3541 1
