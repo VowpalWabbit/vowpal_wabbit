@@ -462,15 +462,12 @@ extern "C"
 
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE handle, char* data) { delete[] data; }
 
-  VW_DLL_PUBLIC void VW_CALLING_CONV VW_Get_Cats_Action_Pdf_Value(VW_HANDLE handle, VW_EXAMPLE example, float action_and_pdf_value[2]) {
-    auto* vw = static_cast<VW::workspace*>(handle);
-    auto* ex = static_cast<VW::example*>(example);
-    vw->predict(*ex);
-    auto& prediction = ex->pred.pdf_value;
-    float action = ex->pred.pdf_value.action;
-    float pdf = ex->pred.pdf_value.pdf_value;
-    action_and_pdf_value[0] = action;
-    action_and_pdf_value[1] = pdf;
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_GetCatsActionPdfValuePrediction(
+      VW_EXAMPLE example, float action_and_pdf_value[2])
+  {
+    const auto* ex = static_cast<VW::example*>(example);
+    const auto& prediction = ex->pred.pdf_value;
+    action_and_pdf_value[0] = prediction.action;
+    action_and_pdf_value[1] = prediction.pdf_value;
   }
-
 }
