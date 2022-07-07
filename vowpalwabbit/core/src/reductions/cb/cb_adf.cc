@@ -91,7 +91,6 @@ VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
   return ret;
 }
 
-
 void cb_adf::learn_IPS(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_ips(examples, _cs_labels, logger, _clip_p);
