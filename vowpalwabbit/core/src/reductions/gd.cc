@@ -161,7 +161,6 @@ void end_pass(gd& g)
 
 void resize_ppw_state(gd& g, size_t factor)
 {
-  std::cerr << "resize_ppw_state: factor=" << factor << std::endl;
   assert(g.per_model_states.size() >= 1);
 
   if (factor == 1) { return; }

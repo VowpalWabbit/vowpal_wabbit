@@ -710,11 +710,7 @@ struct reduction_learner_builder
   {
     this->_learner->weights = params_per_weight;
     this->_learner->increment = this->_learner->learn_fd.base->increment * this->_learner->weights;
-    if (params_per_weight > 1)
-    {
-      std::cerr << this->_learner->name << std::endl;
-      this->_learner->learn_fd.base->resize_ppw_state(params_per_weight);
-    }
+    if (params_per_weight > 1) { this->_learner->learn_fd.base->resize_ppw_state(params_per_weight); }
     return *this;
   }
 
