@@ -62,7 +62,7 @@ Feature Options:
                                             Empty N or S are treated as default namespace. Use ':' as a wildcard
                                             in S. (type: list[str], keep)
     -b, --bit_precision arg                 Number of bits in the feature table (type: uint)
-    --noconstant                            Don't add a constant feature (type: bool)
+    --noconstant                            Don't add a constant feature (type: bool, keep)
     -C, --constant arg                      Set initial value of constant (type: float, default: 0)
     --ngram args...                         Generate N grams. To generate N grams for a single namespace
                                             'foo', arg should be fN (type: list[str])
