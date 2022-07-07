@@ -485,6 +485,11 @@ void interaction_config_manager::update_champ()
     estimators[1].first = aml_estimator(std::move(estimators[0].second), estimators[1].first.config_index,
         estimators[1].first.eligible_to_inactivate, estimators[1].first.live_interactions);
     estimators[1].second = estimators[0].first;
+    if (lb_trick)
+    {
+      estimators[1].first.reset_stats();
+      estimators[1].second.reset_stats();
+    }
     config_oracle();
   }
 }
