@@ -482,7 +482,7 @@ void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& 
   }
   else
   {
-    // When the number of actions is no larger than d, all actions are selected.
+    // When the number of actions is not larger than d, all actions are selected.
     _spanner_bitvec.clear();
     _spanner_bitvec.resize(preds.size(), true);
   }
