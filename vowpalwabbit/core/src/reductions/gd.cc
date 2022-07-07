@@ -168,7 +168,7 @@ void resize_ppw_state(gd& g, size_t factor)
   auto initial_size = g.per_model_states.size();
   for (size_t i = 0; i < factor - 1; i++)
   {
-    for (size_t y = 0; y < initial_size; y++) { g.per_model_states.emplace_back(g.per_model_states[y]); }
+    for (size_t y = 0; y < initial_size; y++) { g.per_model_states.emplace_back(g.per_model_states.at(y)); }
   }
 }
 
@@ -622,7 +622,7 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
 float sensitivity(gd& g, base_learner& /* base */, VW::example& ec)
 {
   if (g.current_model_state == nullptr)
-  { g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]); }
+  { g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride())); }
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
   g.current_model_state = nullptr;
@@ -676,7 +676,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 void update(gd& g, base_learner&, VW::example& ec)
 {
   if (g.current_model_state == nullptr)
-  { g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]); }
+  { g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride())); }
   // invariant: not a test label, importance weight > 0
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
@@ -720,7 +720,8 @@ void learn(gd& g, base_learner& base, VW::example& ec)
   assert(ec.weight > 0.);
   g.predict(g, base, ec);
   // this state should only matter on learn and not predict
-  g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
+  assert(g.current_model_state == nullptr);
+  g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride()));
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
   assert(g.current_model_state == nullptr);  // update clears this pointer
   g.current_model_state = nullptr;
@@ -1388,8 +1389,8 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
   {
-    g->per_model_states[0].normalized_sum_norm_x = all.initial_t;
-    g->per_model_states[0].total_weight = all.initial_t;
+    g->per_model_states.at(0).normalized_sum_norm_x = all.initial_t;
+    g->per_model_states.at(0).total_weight = all.initial_t;
   }
 
   bool feature_mask_off = true;
