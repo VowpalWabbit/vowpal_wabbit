@@ -86,7 +86,8 @@ extern "C"
   VW_DLL_PUBLIC float VW_CALLING_CONV VW_GetTopicPrediction(VW_EXAMPLE e, size_t i);
   VW_DLL_PUBLIC float VW_CALLING_CONV VW_GetActionScore(VW_EXAMPLE e, size_t i);
   VW_DLL_PUBLIC size_t VW_CALLING_CONV VW_GetActionScoreLength(VW_EXAMPLE e);
-  VW_DLL_PUBLIC void VW_CALLING_CONV VW_GetCatsActionPdfValuePrediction(VW_EXAMPLE example, float action_and_pdf_value[2]);
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_GetCatsActionPdfValuePrediction(
+      VW_EXAMPLE example, float action_and_pdf_value[2]);
   VW_DLL_PUBLIC size_t VW_CALLING_CONV VW_GetTagLength(VW_EXAMPLE e);
   VW_DLL_PUBLIC const char* VW_CALLING_CONV VW_GetTag(VW_EXAMPLE e);
   VW_DLL_PUBLIC size_t VW_CALLING_CONV VW_GetFeatureNumber(VW_EXAMPLE e);
