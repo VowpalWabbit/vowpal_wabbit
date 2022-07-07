@@ -50,6 +50,8 @@ size_t write_model_field(
 size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_manager& cm)
 {
   cm.estimators.clear();
+  cm.configs.clear();
+  cm.per_live_model_state_uint64.clear();
   size_t bytes = 0;
   bytes += read_model_field(io, cm.total_learn_count);
   bytes += read_model_field(io, cm.current_champ);
