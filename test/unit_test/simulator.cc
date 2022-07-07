@@ -202,10 +202,11 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
   return ctr;
 }
 
-std::vector<float> cb_sim::run_simulation(VW::workspace* vw, size_t num_iterations, bool do_learn, size_t shift)
+std::vector<float> cb_sim::run_simulation(
+    VW::workspace* vw, size_t num_iterations, bool do_learn, size_t shift, const std::vector<uint64_t>& swap_after)
 {
   callback_map callbacks;
-  return cb_sim::run_simulation_hook(vw, num_iterations, callbacks, do_learn, shift);
+  return cb_sim::run_simulation_hook(vw, num_iterations, callbacks, do_learn, shift, false, 0, swap_after);
 }
 
 std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations, int seed)
@@ -217,24 +218,24 @@ std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations
   return ctr;
 }
 
-std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed)
+std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed,
+    const std::vector<uint64_t>& swap_after, const size_t split)
 {
-  const size_t split = 1500;
   BOOST_CHECK_GT(num_iterations, split);
   size_t before_save = num_iterations - split;
 
   auto first_vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
   // first chunk
-  auto ctr = sim.run_simulation(first_vw, before_save);
+  auto ctr = sim.run_simulation(first_vw, before_save, true, 1, swap_after);
   // save
   std::string model_file = "test_save_load.vw";
   VW::save_predictor(*first_vw, model_file);
   VW::finish(*first_vw);
   // reload in another instance
-  auto other_vw = VW::initialize("--quiet -i " + model_file);
+  auto other_vw = VW::initialize(vw_arg + " --quiet -i " + model_file);
   // continue
-  ctr = sim.run_simulation(other_vw, split, true, before_save + 1);
+  ctr = sim.run_simulation(other_vw, split, true, before_save + 1, swap_after);
   VW::finish(*other_vw);
   return ctr;
 }
