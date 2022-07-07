@@ -488,7 +488,7 @@ void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& 
   }
 
   // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
-  // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later.
+  // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later if the --full_predictions flag is supplied.
   size_t index = 0;
   for (auto it = preds.begin(); it != preds.end(); it++)
   {
