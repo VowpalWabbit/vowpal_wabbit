@@ -1133,7 +1133,11 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
 
   if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_GD_PPW_STATE)
   {
-    if (read) { VW::model_utils::read_model_field(model_file, pms); }
+    if (read)
+    {
+      pms.clear();
+      VW::model_utils::read_model_field(model_file, pms);
+    }
     else
     {
       VW::model_utils::write_model_field(model_file, pms, "gd_ppw_state", text);
