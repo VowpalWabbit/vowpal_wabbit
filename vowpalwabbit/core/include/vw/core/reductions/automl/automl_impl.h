@@ -232,10 +232,7 @@ struct automl
     auto champ_action = ec[0]->pred.a_s[0].action;
     for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
     {
-      if (cm->lb_trick)
-      {
-        cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, 1 - r);
-      }
+      if (cm->lb_trick) { cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, 1 - r); }
       else
       {
         cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r);
