@@ -460,7 +460,7 @@ extern "C"
     return data;
   }
 
-  VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE /* handle */, char* data) { delete[] data; }
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE /*handle*/, char* data) { delete[] data; }
 
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_GetCatsActionPdfValuePrediction(
       VW_EXAMPLE example, float action_and_pdf_value[2])
