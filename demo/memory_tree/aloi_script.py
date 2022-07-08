@@ -42,7 +42,7 @@ saved_model = "{}.vw".format(train_data)
 
 print("## Training...")
 start = time.time()
-command_train = f"../../build/vowpalwabbit/vw -d {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --max_number_of_labels {num_of_classes} --dream_at_update {dream_at_update} --dream_repeats {dream_repeats} {'--oas' if use_oas else ''} {'--online' if online else ''} --leaf_example_multiplier {leaf_example_multiplier} --alpha {alpha} -l {lr} -b {bits} -c --passes {passes} --loss_function {loss} --holdout_off -f {saved_model}"
+command_train = f"../../build/vowpalwabbit/cli/vw -d {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --max_number_of_labels {num_of_classes} --dream_at_update {dream_at_update} --dream_repeats {dream_repeats} {'--oas' if use_oas else ''} {'--online' if online else ''} --leaf_example_multiplier {leaf_example_multiplier} --alpha {alpha} -l {lr} -b {bits} -c --passes {passes} --loss_function {loss} --holdout_off -f {saved_model}"
 print(command_train)
 os.system(command_train)
 train_time = time.time() - start
@@ -50,7 +50,7 @@ train_time = time.time() - start
 # test:
 print("## Testing...")
 start = time.time()
-os.system("../../build/vowpalwabbit/vw {} -i {}".format(test_data, saved_model))
+os.system("../../build/vowpalwabbit/cli/vw {} -i {}".format(test_data, saved_model))
 
 test_time = time.time() - start
 
