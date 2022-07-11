@@ -168,8 +168,8 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_metrics)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--extra_metrics ut_metrics.json --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --global_lease 10", test_hooks,
-      num_iterations);
+      "--extra_metrics ut_metrics.json --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --global_lease 10",
+      test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
@@ -375,8 +375,8 @@ BOOST_AUTO_TEST_CASE(automl_q_col_consistency)
   const size_t seed = 88;
   const size_t num_iterations = 1000;
 
-  auto ctr_q_col =
-      simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q :: --global_lease 10", num_iterations, seed);
+  auto ctr_q_col = simulator::_test_helper(
+      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q :: --global_lease 10", num_iterations, seed);
   auto ctr_aml = simulator::_test_helper(
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 1 --global_lease 10", num_iterations, seed);
 
