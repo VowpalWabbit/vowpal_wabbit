@@ -643,7 +643,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                      "wildcard in S.")
                .keep())
       .add(make_option("bit_precision", new_bits).short_name("b").help("Number of bits in the feature table"))
-      .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
+      .add(make_option("noconstant", noconstant).keep().help("Don't add a constant feature"))
       .add(make_option("constant", all.initial_constant)
                .default_value(0.f)
                .short_name("C")

@@ -44,7 +44,7 @@ saved_model = "{}.vw".format(train_data)
 
 print("## Training...")
 start = time.time()
-command_line = f"../../build/vowpalwabbit/vw -d {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --max_number_of_labels {num_of_classes} --dream_at_update {dream_at_update} \
+command_line = f"../../build/vowpalwabbit/cli/vw -d {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --max_number_of_labels {num_of_classes} --dream_at_update {dream_at_update} \
                    --dream_repeats {dream_repeats} {'--oas' if use_oas else ''} {'--online' if online else ''} \
                 --leaf_example_multiplier {leaf_example_multiplier} --alpha {alpha} -l {lr} -b {bits} -c --passes {passes} --loss_function {loss} --holdout_off -f {saved_model}"
 os.system(command_line)
