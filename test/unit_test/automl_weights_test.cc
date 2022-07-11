@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
       "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 -b 18 "
-      "--oracle_type one_diff --global_lease 10";
+      "--oracle_type one_diff --global_lease 10 ";
   int seed = 10;
   size_t num_iterations = 2000;
 
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
       "--random_seed 5 -b 18 ";
   std::string vw_automl_arg =
       "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces "
-      "--oracle_type one_diff --global_lease 10";
+      "--oracle_type one_diff --global_lease 10 ";
   int seed = 10;
   size_t num_iterations = 2000;
   // this has to match with --automl 4 above
