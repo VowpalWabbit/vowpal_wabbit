@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--global_lease 500 --oracle_type one_diff --noconstant --global_lease 10",
+      "--global_lease 500 --oracle_type one_diff --noconstant ",
       test_hooks, num_iterations, seed, swap_after);
   BOOST_CHECK_GT(ctr.back(), 0.65f);
 }
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
-      "--random_seed 5 --oracle_type rand --global_lease 500 --noconstant --global_lease 10",
+      "--random_seed 5 --oracle_type rand --global_lease 500 --noconstant ",
       test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
