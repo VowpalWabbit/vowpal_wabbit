@@ -222,10 +222,10 @@ Weight Options:
 [Reduction] Autolink Options:
     --autolink arg                          Create link function with polynomial d (type: uint, keep, necessary)
 [Reduction] Automl Options:
-    --automl arg                            Set number of live configs (type: uint, default: 3, keep, necessary,
+    --automl arg                            Set number of live configs (type: uint, default: 4, keep, necessary,
                                             experimental)
     --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
-                                            10, keep, experimental)
+                                            4000, keep, experimental)
     --cm_type arg                           Set type of config manager (type: str, default: interaction,
                                             choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
