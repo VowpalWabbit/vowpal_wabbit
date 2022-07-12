@@ -54,10 +54,6 @@
 #include <tuple>
 #include <utility>
 
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_binary.h"
-#endif
-
 using std::endl;
 using namespace VW::config;
 
@@ -409,9 +405,6 @@ input_options parse_source(VW::workspace& all, options_i& options)
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("Data file will be interpreted as a flatbuffer file")
                .experimental());
-#ifdef BUILD_EXTERNAL_PARSER
-  VW::external::parser::set_parse_args(input_options, parsed_options);
-#endif
 
   options.add_and_parse(input_options);
 
