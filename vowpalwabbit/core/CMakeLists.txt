@@ -339,18 +339,6 @@ set(vw_core_sources
   src/vw_validate.cc
 )
 
-# Installation is disabled for external parser because it would break the contract of include dirs and this project cant enforce it.
-# TODO: Remove external parser as an internal concept so that external parser just uses vw as a lib.
-set(ENABLE_INSTALL_OPTION "ENABLE_INSTALL")
-if(BUILD_EXTERNAL_PARSER)
-  set(vw_all_sources ${vw_all_sources} ${external_parser_sources})
-  set(ENABLE_INSTALL_OPTION "")
-endif()
-
-if(BUILD_EXTERNAL_PARSER)
-  set(vw_core_sources ${vw_core_sources} ${external_parser_headers})
-endif()
-
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
@@ -364,15 +352,10 @@ vw_add_library(
         $<BUILD_INTERFACE:RapidJSON>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
-    ${ENABLE_INSTALL_OPTION}
+    ENABLE_INSTALL
 )
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
-if (BUILD_EXTERNAL_PARSER)
-  target_compile_definitions(vw_core PUBLIC BUILD_EXTERNAL_PARSER)
-  target_include_directories(vw_core PRIVATE ${EXTERNAL_PARSER_DIR})
-  target_link_libraries(vw_core PRIVATE ${EXTERNAL_PARSER_LIBS})
-endif()
 
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)

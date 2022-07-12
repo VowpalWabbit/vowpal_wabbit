@@ -4,17 +4,14 @@
 
 #include "vw/core/reductions/metrics.h"
 
+#include "vw/config/options.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/debug_log.h"
-#include "vw/core/learner.h"
-#include "vw/core/setup_base.h"
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_external.h"
-#endif
-#include "vw/config/options.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/parser.h"
 #include "vw/core/scope_exit.h"
+#include "vw/core/setup_base.h"
 #include "vw/io/logger.h"
 
 #include <rapidjson/filewritestream.h>
@@ -143,10 +140,6 @@ void VW::reductions::output_metrics(VW::workspace& all)
     VW::metric_sink list_metrics;
 
     all.l->persist_metrics(list_metrics);
-
-#ifdef BUILD_EXTERNAL_PARSER
-    if (all.external_parser) { all.external_parser->persist_metrics(list_metrics); }
-#endif
 
     for (auto& metric_hook : all.metric_output_hooks) { metric_hook(list_metrics); }
 
