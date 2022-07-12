@@ -42,7 +42,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_init)
 
 BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
 {
-  const size_t num_iterations = 10000;
+  const size_t num_iterations = 6000;
   const std::vector<uint64_t> swap_after = {5000};
   const size_t seed = 100;
   const size_t deterministic_champ_switch = 5781;
@@ -81,6 +81,34 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
       "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
+
+  BOOST_CHECK_GT(ctr.back(), 0.8f);
+}
+
+BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change_with_min)
+{
+  const size_t num_iterations = 6000;
+  const std::vector<uint64_t> swap_after = {5000};
+  const size_t seed = 100;
+  const size_t deterministic_champ_switch = 5782;
+  callback_map test_hooks;
+
+  test_hooks.emplace(deterministic_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
+    epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
+    BOOST_CHECK_EQUAL(epsilon_decay->_estimator_configs[2][2].update_count, 460);
+    BOOST_CHECK_EQUAL(epsilon_decay->_estimator_configs[3][3].update_count, 5781);
+    return true;
+  });
+
+  test_hooks.emplace(deterministic_champ_switch, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
+    epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
+    BOOST_CHECK_EQUAL(epsilon_decay->_estimator_configs[3][3].update_count, 461);
+    return true;
+  });
+
+  // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
+  auto ctr = simulator::_test_helper_hook(
+      "--epsilon_decay --model_count 4 --min_champ_examples 461 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }
