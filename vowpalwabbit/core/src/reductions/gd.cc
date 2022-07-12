@@ -159,7 +159,7 @@ void end_pass(gd& g)
   }
 }
 
-void resize_ppw_state(gd& g, size_t factor)
+void resize_ppw_state(gd& g, size_t factor, size_t /* max_ft_offset */)
 {
   assert(g.per_model_states.size() >= 1);
 

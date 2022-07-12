@@ -82,7 +82,7 @@ struct learn_data
   using fn = void (*)(void* data, base_learner& base, void* ex);
   using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, polyprediction* pred,
       bool finalize_predictions);
-  using resize_ppw_fn = void (*)(void* data, size_t factor);
+  using resize_ppw_fn = void (*)(void* data, size_t factor, size_t max_ft_offset);
 
   void* data = nullptr;
   base_learner* base = nullptr;
@@ -127,7 +127,7 @@ struct finish_example_data
 
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
-inline void noop_resize_ppw_state(void*, size_t) {}
+inline void noop_resize_ppw_state(void*, size_t, size_t) {}
 inline void noop(void*) {}
 inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
 inline float noop_sensitivity_base(void*, example&) { return 0.; }
@@ -157,6 +157,14 @@ inline void debug_decrement_depth(multi_ex& ec_seq)
   {
     for (auto& ec : ec_seq) { --ec->_debug_current_reduction_depth; }
   }
+}
+
+inline size_t get_offset(example& ex) { return ex.ft_offset; }
+
+inline size_t get_offset(multi_ex& ec_seq)
+{
+  if (ec_seq.size() == 0) { return 0; }
+  return ec_seq[0]->ft_offset;
 }
 
 inline void increment_offset(example& ex, const size_t increment, const size_t i)
@@ -261,6 +269,7 @@ private:
 public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
+  size_t MAX_FT_OFFSET = 1;
 
   // learn will return a prediction.  The framework should
   // not call predict before learn
@@ -284,6 +293,7 @@ public:
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
+    assert(details::get_offset(ec) < MAX_FT_OFFSET);
     debug_log_message(ec, "learn");
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
@@ -303,6 +313,7 @@ public:
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
+    assert(details::get_offset(ec) < MAX_FT_OFFSET);
     debug_log_message(ec, "predict");
     learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
@@ -315,6 +326,7 @@ public:
     if (learn_fd.multipredict_f == nullptr)
     {
       details::increment_offset(ec, increment, lo);
+      assert(details::get_offset(ec) < MAX_FT_OFFSET);
       debug_log_message(ec, "multipredict");
       for (size_t c = 0; c < count; c++)
       {
@@ -331,12 +343,14 @@ public:
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         details::increment_offset(ec, increment, 1);
+        assert(details::get_offset(ec) < MAX_FT_OFFSET);
       }
       details::decrement_offset(ec, increment, lo + count);
     }
     else
     {
       details::increment_offset(ec, increment, lo);
+      assert(details::get_offset(ec) < MAX_FT_OFFSET);
       debug_log_message(ec, "multipredict");
       learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
       details::decrement_offset(ec, increment, lo);
@@ -348,6 +362,7 @@ public:
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
+    assert(details::get_offset(ec) < MAX_FT_OFFSET);
     debug_log_message(ec, "update");
     learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
@@ -356,6 +371,7 @@ public:
   inline float sensitivity(example& ec, size_t i = 0)
   {
     details::increment_offset(ec, increment, i);
+    assert(details::get_offset(ec) < MAX_FT_OFFSET);
     debug_log_message(ec, "sensitivity");
     const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
     details::decrement_offset(ec, increment, i);
@@ -385,10 +401,11 @@ public:
     if (persist_metrics_fd.base) { persist_metrics_fd.base->persist_metrics(metrics); }
   }
 
-  void resize_ppw_state(size_t factor)
+  void resize_ppw_state(size_t factor, size_t max_ft_offset)
   {
-    learn_fd.resize_ppw_f(learn_fd.data, factor);
-    if (learn_fd.base) { learn_fd.base->resize_ppw_state(factor); }
+    MAX_FT_OFFSET = max_ft_offset;
+    learn_fd.resize_ppw_f(learn_fd.data, factor, max_ft_offset);
+    if (learn_fd.base) { learn_fd.base->resize_ppw_state(factor, max_ft_offset); }
   }
 
   inline void finish()
@@ -626,7 +643,7 @@ struct common_learner_builder
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t))
+  FluentBuilderT& set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t, size_t))
   {
     _learner->learn_fd.resize_ppw_f = (details::learn_data::resize_ppw_fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
@@ -710,7 +727,11 @@ struct reduction_learner_builder
   {
     this->_learner->weights = params_per_weight;
     this->_learner->increment = this->_learner->learn_fd.base->increment * this->_learner->weights;
-    if (params_per_weight > 1) { this->_learner->learn_fd.base->resize_ppw_state(params_per_weight); }
+    if (params_per_weight > 1)
+    {
+      this->_learner->learn_fd.base->resize_ppw_state(params_per_weight, this->_learner->increment);
+      this->_learner->MAX_FT_OFFSET = this->_learner->increment;
+    }
     return *this;
   }
 
@@ -781,6 +802,11 @@ struct reduction_no_data_learner_builder
   {
     this->_learner->weights = params_per_weight;
     this->_learner->increment = this->_learner->learn_fd.base->increment * this->_learner->weights;
+    if (params_per_weight > 1)
+    {
+      this->_learner->learn_fd.base->resize_ppw_state(params_per_weight, this->_learner->increment);
+      this->_learner->MAX_FT_OFFSET = this->_learner->increment;
+    }
     return *this;
   }
 
