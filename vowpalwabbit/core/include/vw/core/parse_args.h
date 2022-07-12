@@ -28,10 +28,6 @@ struct input_options
   bool compressed;
   bool chain_hash_json;
   bool flatbuffer = false;
-#ifdef BUILD_EXTERNAL_PARSER
-  // pointer because it is an incomplete type
-  std::unique_ptr<VW::external::parser_options> ext_opts;
-#endif
 };
 
 void parse_modules(VW::config::options_i& options, VW::workspace& all);

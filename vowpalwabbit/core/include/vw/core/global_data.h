@@ -62,18 +62,6 @@ struct dictionary_info
 class AllReduce;
 enum class AllReduceType;
 
-#ifdef BUILD_EXTERNAL_PARSER
-// forward declarations
-namespace VW
-{
-namespace external
-{
-class parser;
-struct parser_options;
-}  // namespace external
-}  // namespace VW
-#endif
-
 namespace VW
 {
 struct default_reduction_stack_setup;
@@ -166,9 +154,6 @@ public:
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 
-#ifdef BUILD_EXTERNAL_PARSER
-  std::unique_ptr<VW::external::parser> external_parser;
-#endif
   // This field is experimental and subject to change.
   // Used to implement the external binary parser.
   std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
