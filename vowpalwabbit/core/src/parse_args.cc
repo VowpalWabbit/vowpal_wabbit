@@ -604,14 +604,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   option_group_definition feature_options("Feature");
   feature_options
-#ifdef PRIVACY_ACTIVATION
-      .add(make_option("privacy_activation", all.privacy_activation)
-               .help("turns on aggregated weight exporting when the unique feature tags cross "
-                     "`privacy_activation_threshold`"))
-      .add(make_option("privacy_activation_threshold", all.privacy_activation_threshold)
-               .help("takes effect when `privacy_activation` is turned on and is the number of unique tag hashes a "
-                     "weight needs to see before it is exported"))
-#endif
       .add(make_option("hash", hash_function)
                .default_value("strings")
                .keep()

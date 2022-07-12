@@ -107,7 +107,6 @@ option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math depend
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
-option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
 option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)

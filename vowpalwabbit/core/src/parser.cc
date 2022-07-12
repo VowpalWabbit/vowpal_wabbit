@@ -714,11 +714,6 @@ void setup_example(VW::workspace& all, VW::example* ae)
   // If this example has a test only label then it is true regardless.
   ae->test_only |= all.example_parser->lbl_parser.test_label(ae->l);
 
-#ifdef PRIVACY_ACTIVATION
-  if (all.privacy_activation)
-  { ae->tag_hash = hashall(ae->tag.begin(), ae->tag.size(), all.hash_seed) % all.feature_bitset_size; }
-#endif
-
   if (all.example_parser->emptylines_separate_examples &&
       (example_is_newline(*ae) &&
           (all.example_parser->lbl_parser.label_type != label_type_t::ccb ||
@@ -877,9 +872,6 @@ void empty_example(VW::workspace& /*all*/, example& ec)
 
   ec.indices.clear();
   ec.tag.clear();
-#ifdef PRIVACY_ACTIVATION
-  ec.tag_hash = 0;
-#endif
   ec.sorted = false;
   ec.end_pass = false;
   ec.is_newline = false;
