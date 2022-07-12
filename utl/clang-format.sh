@@ -15,8 +15,15 @@ cd "$REPO_DIR"
 # For the docker commands, re-run this script inside docker container
 # The ubuntu:focal image should have clang-format version 10, which matches what runs in Github Actions
 if [[ "$1" == "docker" ]]; then
-    docker run -it --env-host -v "$REPO_DIR:/reinforcement_learning" ubuntu:focal /bin/bash -c \
-        "echo 'Installing clang-format in docker container...'; apt update -qq; apt install -qq -y clang-format; cd /reinforcement_learning; ./utl/clang-format.sh ${@:2}"
+    DOCKER_CMD="echo 'Installing clang-format in docker container...'; apt update -qq; apt install -qq -y clang-format; cd /reinforcement_learning; ./utl/clang-format.sh ${@:2}"
+    if command -v podman &> /dev/null; then
+        # podman supports --env-host for forwarding all host environment variables
+        podman run -it --env-host -v "$REPO_DIR:/reinforcement_learning" ubuntu:focal /bin/bash -c "$DOCKER_CMD"
+    elif command -v docker &> /dev/null; then
+        docker run -it -v "$REPO_DIR:/reinforcement_learning" ubuntu:focal /bin/bash -c "$DOCKER_CMD"
+    else
+        echo "You need to install Docker (or Podman) first to use this script in docker mode"
+    fi
     exit
 fi
 
@@ -41,7 +48,7 @@ for FILE in $(find . -type f -not -path './ext_libs/*' -not -path './cs/*' \( -n
 done
 
 if [[ -v ISSUE_FOUND ]]; then
-    echo -e "\nFormatting issues found:\n\tRun \"$0 fix\""
+    echo -e "\nFormatting issues found:\n\tRun \"$0 fix\" or \"$0 docker fix\""
     if [[ -v WARNING_AS_ERROR ]]; then
         echo -e "\nTreating as failure because WARNING_AS_ERROR was set"
         exit 1
