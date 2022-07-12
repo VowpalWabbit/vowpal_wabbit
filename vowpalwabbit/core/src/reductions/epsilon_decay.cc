@@ -30,7 +30,8 @@ float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::po
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
-    VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp, bool lb_trick, uint64_t min_champ_examples)
+    VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp, bool lb_trick,
+    uint64_t min_champ_examples)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -163,7 +164,8 @@ void epsilon_decay_data::check_estimator_bounds()
       if (_log_champ_changes)
       {
         _logger.out_info("Champion with update count: {} has changed to challenger {} with update count: {}",
-            _estimator_configs[final_model_idx][final_model_idx].update_count, i, _estimator_configs[i][i].update_count);
+            _estimator_configs[final_model_idx][final_model_idx].update_count, i,
+            _estimator_configs[i][i].update_count);
       }
       shift_model(i, final_model_idx - i, model_count);
       if (_lb_trick)
