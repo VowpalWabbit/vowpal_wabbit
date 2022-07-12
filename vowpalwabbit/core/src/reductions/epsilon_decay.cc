@@ -30,7 +30,8 @@ float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::po
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
-    VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp, bool lb_trick)
+    VW::io::logger logger, bool log_champ_changes, bool constant_epsilon, uint32_t& wpp, bool lb_trick,
+    uint64_t min_champ_examples)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -40,6 +41,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _constant_epsilon(constant_epsilon)
     , _wpp(wpp)
     , _lb_trick(lb_trick)
+    , _min_champ_examples(min_champ_examples)
 {
   _weight_indices.resize(model_count);
   _estimator_configs.reserve(model_count);
@@ -157,12 +159,13 @@ void epsilon_decay_data::check_estimator_bounds()
     bool better = _lb_trick
         ? _estimator_configs[i][i].lower_bound() > (1.f - _estimator_configs[final_model_idx][i].lower_bound())
         : _estimator_configs[i][i].lower_bound() > _estimator_configs[final_model_idx][i].upper_bound();
-    if (better)
+    if (better && _estimator_configs[i][i].update_count >= _min_champ_examples)
     {
       if (_log_champ_changes)
       {
-        _logger.out_info("Champion with update count: {} has changed to challenger with update count: {}",
-            _estimator_configs[final_model_idx][final_model_idx].update_count, _estimator_configs[i][i].update_count);
+        _logger.out_info("Champion with update count: {} has changed to challenger {} with update count: {}",
+            _estimator_configs[final_model_idx][final_model_idx].update_count, i,
+            _estimator_configs[i][i].update_count);
       }
       shift_model(i, final_model_idx - i, model_count);
       if (_lb_trick)
@@ -284,6 +287,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   bool _constant_epsilon = false;
   bool _lb_trick = false;
   bool _fixed_significance_level = false;
+  uint64_t _min_champ_examples;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -324,6 +328,11 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
       .add(make_option("fixed_significance_level", _fixed_significance_level)
                .keep()
                .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
+               .experimental())
+      .add(make_option("min_champ_examples", _min_champ_examples)
+               .default_value(0)
+               .keep()
+               .help("Minimum number of examples for any challenger to become champion")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -334,7 +343,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope,
       _epsilon_decay_significance_level, _epsilon_decay_estimator_decay, all.weights.dense_weights, all.logger,
-      _log_champ_changes, _constant_epsilon, all.wpp, _lb_trick);
+      _log_champ_changes, _constant_epsilon, all.wpp, _lb_trick, _min_champ_examples);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
