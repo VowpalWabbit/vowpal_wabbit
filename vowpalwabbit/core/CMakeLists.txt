@@ -333,7 +333,7 @@ set(vw_core_sources
   src/vw_validate.cc
 )
 
-if(BUILD_LARGE_ACTION_SPACE)
+if(VW_BUILD_LARGE_ACTION_SPACE)
   set(vw_core_headers
     ${vw_core_headers}
     include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
@@ -374,7 +374,7 @@ if(BUILD_PRIVACY_ACTIVATION)
   target_compile_definitions(vw_core PUBLIC PRIVACY_ACTIVATION)
 endif()
 
-if(BUILD_LARGE_ACTION_SPACE)
+if(VW_BUILD_LARGE_ACTION_SPACE)
   target_link_libraries(vw_core PUBLIC $<BUILD_INTERFACE:eigen>)
   target_compile_definitions(vw_core PUBLIC BUILD_LARGE_ACTION_SPACE)
 endif()

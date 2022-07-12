@@ -57,7 +57,7 @@ add_executable(vw-unit-test.out
   weights_test.cc
 )
 
-if(BUILD_LARGE_ACTION_SPACE)
+if(VW_BUILD_LARGE_ACTION_SPACE)
   target_sources(vw-unit-test.out PRIVATE cb_large_actions_test.cc)
 endif()
 

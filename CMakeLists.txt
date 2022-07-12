@@ -108,7 +108,7 @@ option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instea
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
-option(BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
+option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
