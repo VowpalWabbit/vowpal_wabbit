@@ -1,13 +1,13 @@
 Version 9.1.0
-Id
+Id 
 Min label:0
 Max label:2
 bits:18
 lda:0
 0 ngram:
 0 skip:
-options:
-Checksum: 955426453
+options: --noconstant
+Checksum: 2673762800
 :0
 :39524:0.253423
 feature_second_run_one:51985:0.187343
