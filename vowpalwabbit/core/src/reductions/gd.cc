@@ -720,7 +720,7 @@ void learn(gd& g, base_learner& base, VW::example& ec)
   assert(ec.weight > 0.);
   g.predict(g, base, ec);
   // this state should only matter on learn and not predict
-  assert(g.current_model_state == nullptr);
+  // assert(g.current_model_state == nullptr);
   g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride()));
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
   assert(g.current_model_state == nullptr);  // update clears this pointer
