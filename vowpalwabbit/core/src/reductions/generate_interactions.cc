@@ -219,7 +219,9 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
           options.was_supplied("ccb_explore_adf")))
   { return nullptr; }
 
+#ifdef BUILD_LARGE_ACTION_SPACE
   if (options.was_supplied("large_action_space")) { store_in_reduction_features = true; }
+#endif
 
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, VW::example&);
   using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&,
