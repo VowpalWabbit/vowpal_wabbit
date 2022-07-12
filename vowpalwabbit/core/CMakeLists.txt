@@ -370,10 +370,6 @@ if(BUILD_FLATBUFFERS)
   target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)
 endif()
 
-if(BUILD_PRIVACY_ACTIVATION)
-  target_compile_definitions(vw_core PUBLIC PRIVACY_ACTIVATION)
-endif()
-
 if(VW_BUILD_LARGE_ACTION_SPACE)
   target_link_libraries(vw_core PUBLIC $<BUILD_INTERFACE:eigen>)
   target_compile_definitions(vw_core PUBLIC BUILD_LARGE_ACTION_SPACE)

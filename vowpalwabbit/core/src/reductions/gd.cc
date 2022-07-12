@@ -662,26 +662,7 @@ void update(gd& g, base_learner&, VW::example& ec)
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
   {
-#ifdef PRIVACY_ACTIVATION
-    if (g.all->weights.sparse && g.all->privacy_activation)
-    {
-      g.all->weights.sparse_weights.set_tag(ec.tag_hash);
-      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-      g.all->weights.sparse_weights.unset_tag();
-    }
-    else if (!g.all->weights.sparse && g.all->privacy_activation)
-    {
-      g.all->weights.dense_weights.set_tag(ec.tag_hash);
-      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-      g.all->weights.dense_weights.unset_tag();
-    }
-    else
-    {
-      train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-    }
-#else
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-#endif
   }
 
   if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)
@@ -772,11 +753,7 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
     for (auto it = weights.begin(); it != weights.end(); ++it)
     {
       const auto weight_value = *it;
-#ifdef PRIVACY_ACTIVATION
-      if (*it != 0.f && (!all.privacy_activation || (weights.is_activated(it.index()) && all.privacy_activation)))
-#else
       if (*it != 0.f)
-#endif
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
@@ -825,11 +802,7 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
   {
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
-#ifdef PRIVACY_ACTIVATION
-      if (*v != 0. && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
-#else
       if (*v != 0.)
-#endif
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
@@ -908,11 +881,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
 
       if (all.print_invert)  // write readable model with feature names
       {
-#ifdef PRIVACY_ACTIVATION
-        if (*v != 0.f && (!all.privacy_activation || (weights.is_activated(v.index()) && all.privacy_activation)))
-#else
         if (*v != 0.f)
-#endif
         {
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
