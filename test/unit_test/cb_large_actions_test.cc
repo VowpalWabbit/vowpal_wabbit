@@ -16,6 +16,8 @@
 using internal_action_space =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space>;
 
+BOOST_AUTO_TEST_SUITE(test_suite_las)
+
 BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 {
   auto d = 2;
@@ -1217,3 +1219,5 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   }
   VW::finish(vw);
 }
+
+BOOST_AUTO_TEST_SUITE_END()
