@@ -22,6 +22,7 @@ vw_add_library(
     PUBLIC_DEPS vw_core $<BUILD_INTERFACE:fb_generate_headers>
     DESCRIPTION "Parser implementation that reads flatbuffer examples. Disabled by default. Enable with `BUILD_FLATBUFFERS`"
     EXCEPTION_DESCRIPTION "Yes"
+    ENABLE_INSTALL
 )
 target_include_directories(vw_fb_parser PUBLIC ${FLATBUFFERS_INCLUDE_DIR})
 
