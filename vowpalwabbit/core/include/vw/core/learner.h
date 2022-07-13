@@ -106,6 +106,14 @@ struct save_load_data
   fn save_load_f = nullptr;
 };
 
+struct schema_save_load_data
+{
+  using schema_fn = void (*)(void*, bool read);
+  void* data = nullptr;
+  base_learner* base = nullptr;
+  schema_fn schema_save_load_f = nullptr;
+};
+
 struct save_metric_data
 {
   using fn = void (*)(void*, metric_sink& metrics);
@@ -228,6 +236,7 @@ private:
   details::sensitivity_data sensitivity_fd;
   details::finish_example_data finish_example_fd;
   details::save_load_data save_load_fd;
+  details::schema_save_load_data schema_save_load_fd;
   details::func_data end_pass_fd;
   details::func_data end_examples_fd;
   details::save_metric_data persist_metrics_fd;
@@ -369,6 +378,22 @@ public:
       throw VW::save_load_model_exception(vwex.Filename(), vwex.LineNumber(), better_msg.str());
     }
     if (save_load_fd.base) save_load_fd.base->save_load(io, read, text);
+  }
+
+  // called anytime saving or loading needs to happen. Autorecursive.
+  inline void schema_save_load(const bool read)
+  {
+    try
+    {
+      schema_save_load_fd.schema_save_load_f(schema_save_load_fd.data, read);
+    }
+    catch (VW::vw_exception& vwex)
+    {
+      std::stringstream better_msg;
+      better_msg << "model " << std::string(read ? "load" : "save") << " failed. Error Details: " << vwex.what();
+      throw VW::save_load_model_exception(vwex.Filename(), vwex.LineNumber(), better_msg.str());
+    }
+    if (schema_save_load_fd.base) schema_save_load_fd.base->schema_save_load(read);
   }
 
   // called when metrics is enabled.  Autorecursive.
@@ -560,6 +585,14 @@ struct common_learner_builder
     _learner->save_load_fd.save_load_f = (details::save_load_data::fn)fn_ptr;
     _learner->save_load_fd.data = _learner->learn_fd.data;
     _learner->save_load_fd.base = _learner->learn_fd.base;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_schema_save_load(void (*fn_ptr)(DataT&, bool))
+  {
+    _learner->schema_save_load_fd.schema_save_load_f = (details::schema_save_load_data::schema_fn)fn_ptr;
+    _learner->schema_save_load_fd.data = _learner->learn_fd.data;
+    _learner->schema_save_load_fd.base = _learner->learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 

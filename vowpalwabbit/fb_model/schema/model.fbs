@@ -1,0 +1,12 @@
+include "gd.fbs";
+namespace VW.model.flatbuffer;
+
+union Reduction{
+    gd:GD.GD
+}
+
+table Model {
+    reductions:[Reduction];
+}
+
+root_type Model;

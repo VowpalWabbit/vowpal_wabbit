@@ -371,7 +371,7 @@ if (BUILD_EXTERNAL_PARSER)
 endif()
 
 if(BUILD_FLATBUFFERS)
-  target_link_libraries(vw_core PRIVATE vw_fb_parser)
+  target_link_libraries(vw_core PRIVATE vw_fb_parser vw_fb_model)
   target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)
 endif()
 

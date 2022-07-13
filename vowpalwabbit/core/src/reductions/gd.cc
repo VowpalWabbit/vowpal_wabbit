@@ -7,6 +7,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
+#include "vw/fb_model/generated/model_generated.h"
 
 #include <cfloat>
 
@@ -34,6 +35,7 @@
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd
 #include "vw/io/logger.h"
+#include <fstream>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -1146,6 +1148,115 @@ void save_load_online_state(
     save_load_online_state(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights);
   }
 }
+using namespace VW::model::flatbuffer;
+using namespace flatbuffers;
+using namespace VW::model::flatbuffer::GD;
+
+
+// TODO all IO things should live outside here
+void schema_save_load(gd& g, bool read)
+{
+  g.all->logger.out_info("save_load_using_flatbuffers ({})",read);
+  if(read)
+  {
+    // Open the flatbuffer model file
+    std::ifstream infile;
+    infile.open("vw.model.fb", std::ios::binary | std::ios::in);
+
+    // Check if the file opened without errors
+    if (!infile.good())
+      return;
+
+    // Read the entire model into memory and close the file
+    infile.seekg(0,std::ios::end);
+    std::ifstream::pos_type length = infile.tellg();
+    infile.seekg(0,std::ios::beg);
+    auto data = new char[length];
+    infile.read(data, length);
+    infile.close();
+
+    // Create VW Model from raw buffer
+    const Model* model = GetSizePrefixedModel(data);
+
+    // Verify flatbuffer
+    flatbuffers::Verifier verifier(reinterpret_cast<uint8_t*>(data),length);
+    if(!model->Verify(verifier))
+      return;
+
+    // VW Data structure to populate for GD
+    auto& sd = *g.all->sd;
+    const auto& resume = *(model->reductions()->GetAs<Resume_State>(0));
+
+    // Convert from flatbuffer to GD
+    sd.contraction = resume.contraction();
+    sd.gravity = resume.gravity();
+    g.all->current_pass = resume.current_pass();
+    sd.old_weighted_labeled_examples = resume.old_weighted_labeled_examples();
+    g.total_weight = resume.total_weight();
+    sd.total_features = resume.total_features();
+    sd.example_number = resume.example_number();
+    sd.weighted_unlabeled_examples = resume.weighted_unlabeled_examples();
+    sd.weighted_labels = resume.weighted_labels();
+    sd.weighted_labeled_examples = resume.weighted_labeled_examples();
+    sd.sum_loss_since_last_dump = resume.sum_loss_since_last_dump();
+    sd.sum_loss = resume.sum_loss();
+    sd.t = resume.t();
+    g.all->normalized_sum_norm_x = resume.normalized_sum_norm_x();
+    sd.max_label = resume.max_label();
+    sd.min_label = resume.min_label();
+    sd.dump_interval = resume.dump_interval();
+    g.all->initial_t = resume.inital_t();
+
+    // Clean up memory
+    delete [] data;
+  }
+  else
+  {
+    // Flatbuffer structure for serialized GD data
+    FlatBufferBuilder fbb;
+    Resume_StateBuilder resume(fbb);
+    const auto& sd = *g.all->sd;
+
+    // Convert from GD to flatbuffer
+    resume.add_contraction(sd.contraction);
+    resume.add_gravity(sd.gravity);
+    resume.add_current_pass(g.all->current_pass);
+    resume.add_old_weighted_labeled_examples(sd.old_weighted_labeled_examples);
+    resume.add_total_weight(g.total_weight);
+    resume.add_total_features(sd.total_features);
+    resume.add_example_number(sd.example_number);
+    resume.add_weighted_unlabeled_examples(sd.weighted_unlabeled_examples);
+    resume.add_weighted_labels(sd.weighted_labels);
+    resume.add_weighted_labeled_examples(sd.weighted_labeled_examples);
+    resume.add_sum_loss_since_last_dump(sd.sum_loss_since_last_dump);
+    resume.add_sum_loss(sd.sum_loss);
+    resume.add_t(sd.t);
+    resume.add_normalized_sum_norm_x(g.all->normalized_sum_norm_x);
+    resume.add_max_label(sd.max_label);
+    resume.add_min_label(sd.min_label);
+    resume.add_dump_interval(sd.dump_interval);
+    resume.add_inital_t(g.all->initial_t);
+    const auto resume_offset =  resume.Finish();
+
+    GDBuilder gd(fbb);
+    gd.add_online_state(resume_offset);
+    const auto gd_offset = gd.Finish().Union();
+
+    const std::vector<uint8_t> reduction_types = {Reduction_gd};
+    const std::vector<Offset<void>> reductions = {gd_offset};
+    auto model_offset = CreateModelDirect(fbb, &reduction_types, &reductions);
+    fbb.FinishSizePrefixed(model_offset);
+
+    // Get pointer to serialized data in memory
+    uint8_t* buffer = fbb.GetBufferPointer();
+    uoffset_t sz = fbb.GetSize();
+
+    // Write serialized data to file
+    std::ofstream out_file("vw.model.fb", std::ios::binary);
+    out_file.write((char *) buffer, sz);
+    out_file.close();
+  }
+}
 
 void save_load(gd& g, io_buf& model_file, bool read, bool text)
 {
@@ -1447,6 +1558,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
                                         .set_multipredict(bare->multipredict)
                                         .set_update(bare->update)
                                         .set_save_load(GD::save_load)
+                                        .set_schema_save_load(GD::schema_save_load)
                                         .set_end_pass(GD::end_pass)
                                         .build();
   return make_base(*l);

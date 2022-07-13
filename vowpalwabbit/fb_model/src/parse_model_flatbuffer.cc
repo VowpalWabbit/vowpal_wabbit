@@ -1,0 +1,1 @@
+#include "vw/fb_model/parse_model_flatbuffer.h"

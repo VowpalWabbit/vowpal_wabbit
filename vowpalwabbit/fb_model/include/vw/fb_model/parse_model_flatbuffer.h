@@ -1,0 +1,1 @@
+#include "vw/fb_model/generated/model_generated.h"

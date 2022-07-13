@@ -1384,6 +1384,7 @@ void load_input_model(VW::workspace& all, io_buf& io_temp)
   {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
+    all.l->schema_save_load(true);
     io_temp.close_file();
 
     parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
@@ -1394,6 +1395,7 @@ void load_input_model(VW::workspace& all, io_buf& io_temp)
 
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
+    all.l->schema_save_load(true);
     io_temp.close_file();
   }
 }

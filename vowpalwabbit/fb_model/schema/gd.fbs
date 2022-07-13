@@ -1,0 +1,29 @@
+namespace VW.model.flatbuffer.GD;
+
+table Resume_State
+{
+    inital_t:float;
+    normalized_sum_norm_x:double;
+    t:double;
+    sum_loss:double;
+    sum_loss_since_last_dump:double;
+    dump_interval:float;
+    min_label:float;
+    max_label:float;
+    weighted_labeled_examples:double;
+    weighted_labels:double;
+    weighted_unlabeled_examples:double;
+    example_number:uint64;
+    total_features:uint64;
+    total_weight:double;
+    old_weighted_labeled_examples:double;
+    current_pass:uint64;
+    gravity:double;
+    contraction:double;
+}
+
+table GD {
+    online_state:Resume_State;
+}
+
+root_type GD;

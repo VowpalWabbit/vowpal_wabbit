@@ -462,7 +462,11 @@ void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
   save_load_header(all, buf, false, as_text, unused, *all.options);
-  if (all.l != nullptr) { all.l->save_load(buf, false, as_text); }
+  if (all.l != nullptr)
+  {
+    all.l->save_load(buf, false, as_text);
+    all.l->schema_save_load(false);
+  }
 
   buf.flush();  // close_file() should do this for me ...
   buf.close_file();
@@ -547,6 +551,7 @@ void parse_mask_regressor_args(
 
     save_load_header(all, io_temp_mask, true, false, file_options, *all.options);
     all.l->save_load(io_temp_mask, true, false);
+    all.l->schema_save_load(true);
     io_temp_mask.close_file();
 
     // Deal with the over-written header from initial regressor
