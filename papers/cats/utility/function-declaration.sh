@@ -27,7 +27,7 @@ run_offline(){
 
   # 1) saving logged data from training the initial model
 
-  time -p timeout $timee build/vowpalwabbit/vw --cbify $nn --cbify_reg --min_value=$min --max_value=$max --bandwidth $hh \
+  time -p timeout $timee build/vowpalwabbit/cli/vw --cbify $nn --cbify_reg --min_value=$min --max_value=$max --bandwidth $hh \
   -d test/train-sets/regression/$datatrain --passes $pass -b $bb --coin --loss_option $ll -p results/$sdata\_$ll.acp
 
   python3 paper/${PAPER}/continous_action/acp_regression_data_join.py --p results/$sdata\_$ll.acp --d test/train-sets/regression/$datatrain > results/$sdata\_$ll.acpx
@@ -46,17 +46,17 @@ run_offline(){
   printf "\nCATS-offline" >> $filename1
   printf "\nn = $n" >> $filename1
   printf "\nh = $h" >> $filename1
-  printf "\ntime -p timeout $timee build/vowpalwabbit/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
+  printf "\ntime -p timeout $timee build/vowpalwabbit/cli/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
   -d results/$sdata\_$ll.acpx --passes $pass -b $bb --coin --loss_option $ll -f results/$sdata.m -p results/$sdata\_$ll\_$n\_$h.ap \n" >> $filename1
-  time -p timeout $timee build/vowpalwabbit/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
+  time -p timeout $timee build/vowpalwabbit/cli/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
   -d results/$sdata\_$ll.acpx --passes $pass -b $bb --coin --loss_option $ll -f results/$sdata.m -p results/$sdata\_$ll\_$n\_$h.ap
   python3 paper/${PAPER}/continous_action/srm.py --p results/$sdata\_$ll\_$n\_$h.ap --d results/$sdata\_$ll.acp -m $max -i $min -k $n --bandwidth $h >> $filename1
   printf "\nCATS-offline" >> $filename2
   printf "\nn = $n" >> $filename2
   printf "\nh = $h" >> $filename2
-  printf "\ntime -p timeout $timee build/vowpalwabbit/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
+  printf "\ntime -p timeout $timee build/vowpalwabbit/cli/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
   -d test/train-sets/regression/$datatest --passes $pass -b $bb --coin --loss_option $ll -i results/$sdata.m -p results/$sdata.ap -t \n" >> $filename2
-  time -p timeout $timee build/vowpalwabbit/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
+  time -p timeout $timee build/vowpalwabbit/cli/vw --cats $n --min_value=$min --max_value=$max --bandwidth $h \
   -d test/train-sets/regression/$datatest --passes $pass -b $bb --coin --loss_option $ll -i results/$sdata.m -p results/$sdata.ap -t
   python3 paper/${PAPER}/continous_action/ap_regression_data_join.py --p results/$sdata.ap --d test/train-sets/regression/$datatest -m $max -i $min >> $filename2
 
@@ -102,9 +102,9 @@ run_online(){
   printf "\nCATS-online" >> $filename3
   printf "\nn = $n" >> $filename3
   printf "\nh = $h" >> $filename3
-  printf "\ntime -p timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --min_value=$min --max_value=$max --bandwidth $h \
+  printf "\ntime -p timeout $timee build/vowpalwabbit/cli/vw --cbify $n --cbify_reg --min_value=$min --max_value=$max --bandwidth $h \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll \n\n" >> $filename3
-  time -p ( timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --min_value=$min --max_value=$max --bandwidth $h \
+  time -p ( timeout $timee build/vowpalwabbit/cli/vw --cbify $n --cbify_reg --min_value=$min --max_value=$max --bandwidth $h \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll >> $filename3 2>&1 ) 2>> $filename3
   fi;
   done
@@ -116,9 +116,9 @@ run_online(){
   do
   printf "\n\nDiscretized-Tree-online" >> $filename3
   printf "\nn = $n" >> $filename3
-  printf "\ntime -p timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --cb_discrete --cats_tree $n --min_value=$min --max_value=$max \
+  printf "\ntime -p timeout $timee build/vowpalwabbit/cli/vw --cbify $n --cbify_reg --cb_discrete --cats_tree $n --min_value=$min --max_value=$max \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll \n\n" >> $filename3
-  time -p ( timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --cb_discrete --cats_tree $n --min_value=$min --max_value=$max \
+  time -p ( timeout $timee build/vowpalwabbit/cli/vw --cbify $n --cbify_reg --cb_discrete --cats_tree $n --min_value=$min --max_value=$max \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll >> $filename3 2>&1 ) 2>> $filename3
   done
 
@@ -128,9 +128,9 @@ run_online(){
   do
   printf "\n\nDiscretized-Linear-online" >> $filename3
   printf "\nn = $n" >> $filename3
-  printf "\ntime -p timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --cb_discrete --min_value=$min --max_value=$max \
+  printf "\ntime -p timeout $timee build/vowpalwabbit/cli/vw --cbify $n --cbify_reg --cb_discrete --min_value=$min --max_value=$max \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll \n\n" >> $filename3
-  time -p ( timeout $timee build/vowpalwabbit/vw --cbify $n --cbify_reg --cb_discrete --min_value=$min --max_value=$max \
+  time -p ( timeout $timee build/vowpalwabbit/cli/vw --cbify $n --cbify_reg --cb_discrete --min_value=$min --max_value=$max \
   -d test/train-sets/regression/$data --passes $pass --cache_file=$data\_$bb.cache -b $bb --coin --loss_option $ll >> $filename3 2>&1 ) 2>> $filename3
   done
   cd -

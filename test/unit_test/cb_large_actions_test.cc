@@ -16,6 +16,8 @@
 using internal_action_space =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space>;
 
+BOOST_AUTO_TEST_SUITE(test_suite_las)
+
 BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 {
   auto d = 2;
@@ -723,8 +725,6 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
       action_space->explore._populate_all_SVD_components();
 
-      constexpr float FLOAT_TOL = 0.0001f;
-
       vw.predict(examples);
 
       action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
@@ -754,14 +754,14 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       // truncated randomized SVD reconstruction
       for (int i = 0; i < action_space->explore.U.cols(); ++i)
       {
-        BOOST_CHECK_CLOSE(1.f, action_space->explore.U.col(i).norm(), FLOAT_TOL);
+        BOOST_CHECK_SMALL(1.f - action_space->explore.U.col(i).norm(), FLOAT_TOL);
         for (int j = 0; j < i; ++j)
         { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
       }
 
       for (int i = 0; i < action_space->explore._V.cols(); ++i)
       {
-        BOOST_CHECK_CLOSE(1.f, action_space->explore._V.col(i).norm(), FLOAT_TOL);
+        BOOST_CHECK_SMALL(1.f - action_space->explore._V.col(i).norm(), FLOAT_TOL);
         for (int j = 0; j < i; ++j)
         { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
       }
@@ -790,7 +790,7 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       Eigen::VectorXf S = svd.singularValues();
 
       for (size_t i = 0; i < action_space->explore._S.rows(); i++)
-      { BOOST_CHECK_CLOSE(S(i), action_space->explore._S(i), FLOAT_TOL); }
+      { BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL); }
 
       vw.finish_example(examples);
     }
@@ -880,15 +880,15 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
 
   auto p = largecb.find_max_volume(0, X);
-  BOOST_CHECK_CLOSE(p.first, 30, FLOAT_TOL);
+  BOOST_CHECK_SMALL(p.first - 30, FLOAT_TOL);
   BOOST_CHECK_EQUAL(p.second, 2);
 
   p = largecb.find_max_volume(1, X);
-  BOOST_CHECK_CLOSE(p.first, 27, FLOAT_TOL);
+  BOOST_CHECK_SMALL(p.first - 27, FLOAT_TOL);
   BOOST_CHECK_EQUAL(p.second, 4);
 
   p = largecb.find_max_volume(2, X);
-  BOOST_CHECK_CLOSE(p.first, 24, FLOAT_TOL);
+  BOOST_CHECK_SMALL(p.first - 24, FLOAT_TOL);
   BOOST_CHECK_EQUAL(p.second, 5);
 
   VW::finish(vw);
@@ -979,15 +979,15 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
       {
         BOOST_CHECK_EQUAL(preds.size(), d);
       }
-      BOOST_CHECK_CLOSE(preds[0].score, 0.697270989, FLOAT_TOL);
+      BOOST_CHECK_SMALL(preds[0].score - 0.697270989f, FLOAT_TOL);
       BOOST_CHECK_EQUAL(preds[0].action, 1);
 
-      BOOST_CHECK_CLOSE(preds[1].score, 0.30272904, FLOAT_TOL);
+      BOOST_CHECK_SMALL(preds[1].score - 0.30272904f, FLOAT_TOL);
       BOOST_CHECK_EQUAL(preds[1].action, 2);
 
       if (full_preds)
       {
-        BOOST_CHECK_CLOSE(preds[2].score, 0.0, FLOAT_TOL);
+        BOOST_CHECK_SMALL(preds[2].score, FLOAT_TOL);
         BOOST_CHECK_EQUAL(preds[2].action, 0);
       }
 
@@ -1085,15 +1085,15 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
 
       size_t num_actions_non_zeroed = d;
       float epsilon_ur = epsilon / num_actions_non_zeroed;
-      BOOST_CHECK_CLOSE(preds[0].score, epsilon_ur + (1.f - epsilon), FLOAT_TOL);
+      BOOST_CHECK_SMALL(preds[0].score - (epsilon_ur + (1.f - epsilon)), FLOAT_TOL);
       BOOST_CHECK_EQUAL(preds[0].action, 2);
 
-      BOOST_CHECK_CLOSE(preds[1].score, epsilon_ur, FLOAT_TOL);
+      BOOST_CHECK_SMALL(preds[1].score - epsilon_ur, FLOAT_TOL);
       BOOST_CHECK_EQUAL(preds[1].action, 0);
 
       if (full_preds)
       {
-        BOOST_CHECK_CLOSE(preds[2].score, 0.0, FLOAT_TOL);
+        BOOST_CHECK_SMALL(preds[2].score, FLOAT_TOL);
         BOOST_CHECK_EQUAL(preds[2].action, 1);
       }
 
@@ -1140,7 +1140,7 @@ BOOST_AUTO_TEST_CASE(check_uniform_probabilities_before_learning)
       const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
       BOOST_CHECK_EQUAL(preds.size(), num_actions);
-      for (const auto& pred : preds) { BOOST_CHECK_CLOSE(pred.score, 1.0 / 3, FLOAT_TOL); }
+      for (const auto& pred : preds) { BOOST_CHECK_SMALL(pred.score - (1.f / 3.f), FLOAT_TOL); }
 
       vw.finish_example(examples);
     }
@@ -1211,11 +1211,13 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
     const auto num_actions = examples.size();
     const auto& preds = examples[0]->pred.a_s;
     BOOST_CHECK_EQUAL(preds.size(), num_actions);
-    BOOST_CHECK_CLOSE(preds[0].score, 0.966666639, FLOAT_TOL);
-    BOOST_CHECK_CLOSE(preds[1].score, 0.0166666675, FLOAT_TOL);
-    BOOST_CHECK_CLOSE(preds[2].score, 0.0166666675, FLOAT_TOL);
+    BOOST_CHECK_SMALL(preds[0].score - 0.966666639f, FLOAT_TOL);
+    BOOST_CHECK_SMALL(preds[1].score - 0.0166666675f, FLOAT_TOL);
+    BOOST_CHECK_SMALL(preds[2].score - 0.0166666675f, FLOAT_TOL);
 
     vw.finish_example(examples);
   }
   VW::finish(vw);
 }
+
+BOOST_AUTO_TEST_SUITE_END()

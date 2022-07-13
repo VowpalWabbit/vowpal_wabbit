@@ -1,4 +1,4 @@
-name: Linux / C++ - VW with privacy activation
+name: Linux / C++ - VW with large action space reduction
 
 on:
   push:
@@ -16,9 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - name: Build VW with privacy activation
+      - name: Build VW with large action space reduction
         shell: bash
-        run: ./.scripts/linux/build-privacy_activation.sh
-      - name: Test VW with privacy activation
+        run: ./.scripts/linux/build-las-reduction.sh
+      - name: Test VW with large action space reduction
         shell: bash
-        run: ./.scripts/linux/test-privacy_activation.sh
+        run: ./.scripts/linux/test-las-reduction.sh

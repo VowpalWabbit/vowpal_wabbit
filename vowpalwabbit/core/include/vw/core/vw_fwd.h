@@ -67,14 +67,6 @@ namespace details
 struct cache_temp_buffer;
 }
 
-#ifdef BUILD_EXTERNAL_PARSER
-namespace external
-{
-class parser;
-struct parser_options;
-}  // namespace external
-#endif
-
 }  // namespace VW
 
 using extent_term = std::pair<VW::namespace_index, uint64_t>;

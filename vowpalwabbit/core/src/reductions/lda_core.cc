@@ -354,7 +354,7 @@ void vexpdigammify_2(VW::workspace& all, float* gamma, const float* norm, const 
   const float* fpend = gamma + all.lda;
 
   for (np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np)
-    *fp = std::fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+  { *fp = std::fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np)); }
 
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4)
   {
@@ -367,7 +367,7 @@ void vexpdigammify_2(VW::workspace& all, float* gamma, const float* norm, const 
     _mm_store_ps(fp, arg);
   }
 
-  for (; fp < fpend; ++fp, ++np) *fp = std::fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+  for (; fp < fpend; ++fp, ++np) { *fp = std::fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np)); }
 }
 
 #  else

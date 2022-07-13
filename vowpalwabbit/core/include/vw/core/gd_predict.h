@@ -68,6 +68,7 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
 {
   uint64_t offset = ec.ft_offset;
   if (ignore_some_linear)
+  {
     for (VW::example_predict::iterator i = ec.begin(); i != ec.end(); ++i)
     {
       if (!ignore_linear[i.index()])
@@ -76,8 +77,11 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
         foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset);
       }
     }
+  }
   else
-    for (features& f : ec) foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset);
+  {
+    for (features& f : ec) { foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset); }
+  }
 
   generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(
       interactions, extent_interactions, permutations, ec, dat, weights, num_interacted_features, cache);

@@ -79,7 +79,7 @@ struct label
 
   label& operator=(const label& other)
   {
-    if (this == &other) return *this;
+    if (this == &other) { return *this; }
 
     if (outcome)
     {

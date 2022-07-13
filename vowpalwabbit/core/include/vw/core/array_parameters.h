@@ -4,10 +4,6 @@
 
 #pragma once
 
-#ifdef PRIVACY_ACTIVATION
-#  include <bitset>
-#endif
-
 #include <cstddef>
 #include <functional>
 #include <unordered_map>
@@ -74,17 +70,6 @@ private:
   bool _seeded;  // whether the instance is sharing model state with others
   bool _delete;
   std::function<void(weight*, uint64_t)> _default_func;
-#ifdef PRIVACY_ACTIVATION
-  // struct to store the tag hash and if it is set or not
-  struct tag_hash_info
-  {
-    uint64_t tag_hash;
-    bool is_set = false;
-  };
-  size_t _privacy_activation_threshold;
-  std::shared_ptr<std::unordered_map<uint64_t, std::bitset<32>>> _feature_bitset;  // define the bitset for each feature
-  tag_hash_info _tag_info;
-#endif
 
   // It is marked const so it can be used from both const and non const operator[]
   // The map itself is mutable to facilitate this
@@ -112,10 +97,6 @@ public:
       , _seeded(false)
       , _delete(false)
       , _default_func(nullptr)
-#ifdef PRIVACY_ACTIVATION
-      , _privacy_activation_threshold(0)
-      , _feature_bitset(nullptr)
-#endif
   {
   }
 
@@ -126,34 +107,10 @@ public:
       , _seeded(false)
       , _delete(false)
       , _default_func(nullptr)
-#ifdef PRIVACY_ACTIVATION
-      , _privacy_activation_threshold(0)
-      , _feature_bitset(nullptr)
-#endif
   {
   }
 
   bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
-
-#ifdef PRIVACY_ACTIVATION
-  void set_tag(uint64_t tag_hash)
-  {
-    if (_feature_bitset)
-    {
-      _tag_info.tag_hash = tag_hash;
-      _tag_info.is_set = true;
-    }
-  }
-
-  void unset_tag() { _tag_info.is_set = false; }
-
-  // function to check if the number of bits set to 1 are greater than a threshold for a feature
-  bool is_activated(uint64_t index)
-  {
-    if (!_feature_bitset) { return false; }
-    return (*_feature_bitset)[index].count() >= _privacy_activation_threshold;
-  }
-#endif
 
   sparse_parameters(const sparse_parameters& other) = delete;
   sparse_parameters& operator=(const sparse_parameters& other) = delete;
@@ -188,11 +145,6 @@ public:
 
   inline weight& operator[](size_t i)
   {
-#ifdef PRIVACY_ACTIVATION
-    // lookup a bit for a feature in the bitset using the
-    // tag hash and turn the bit on
-    if (_feature_bitset && _tag_info.is_set) { (*_feature_bitset)[i & _weight_mask][_tag_info.tag_hash] = 1; }
-#endif
     return *(get_or_default_and_get(i));
   }
 
@@ -215,10 +167,6 @@ public:
     _weight_mask = input._weight_mask;
     _stride_shift = input._stride_shift;
     _seeded = true;
-#ifdef PRIVACY_ACTIVATION
-    _privacy_activation_threshold = input._privacy_activation_threshold;
-    _feature_bitset = input._feature_bitset;
-#endif
   }
 
   template <typename Lambda>
@@ -241,14 +189,6 @@ public:
   uint32_t stride_shift() const { return _stride_shift; }
 
   void stride_shift(uint32_t stride_shift) { _stride_shift = stride_shift; }
-
-#ifdef PRIVACY_ACTIVATION
-  void privacy_activation_threshold(size_t privacy_activation_threshold)
-  {
-    _privacy_activation_threshold = privacy_activation_threshold;
-    _feature_bitset = std::make_shared<std::unordered_map<uint64_t, std::bitset<32>>>();
-  }
-#endif
 
 #ifndef _WIN32
   void share(size_t /* length */) { THROW_OR_RETURN("Operation not supported on Windows"); }
@@ -281,10 +221,11 @@ public:
 
   inline weight& operator[](size_t i)
   {
-    if (sparse)
-      return sparse_weights[i];
+    if (sparse) { return sparse_weights[i]; }
     else
+    {
       return dense_weights[i];
+    }
   }
 
   template <typename Lambda>
@@ -299,84 +240,94 @@ public:
 
   inline uint32_t stride_shift() const
   {
-    if (sparse)
-      return sparse_weights.stride_shift();
+    if (sparse) { return sparse_weights.stride_shift(); }
     else
+    {
       return dense_weights.stride_shift();
+    }
   }
 
   inline uint32_t stride() const
   {
-    if (sparse)
-      return sparse_weights.stride();
+    if (sparse) { return sparse_weights.stride(); }
     else
+    {
       return dense_weights.stride();
+    }
   }
 
   inline uint64_t mask() const
   {
-    if (sparse)
-      return sparse_weights.mask();
+    if (sparse) { return sparse_weights.mask(); }
     else
+    {
       return dense_weights.mask();
+    }
   }
 
   inline uint64_t seeded() const
   {
-    if (sparse)
-      return sparse_weights.seeded();
+    if (sparse) { return sparse_weights.seeded(); }
     else
+    {
       return dense_weights.seeded();
+    }
   }
 
   inline void shallow_copy(const parameters& input)
   {
-    if (sparse)
-      sparse_weights.shallow_copy(input.sparse_weights);
+    if (sparse) { sparse_weights.shallow_copy(input.sparse_weights); }
     else
+    {
       dense_weights.shallow_copy(input.dense_weights);
+    }
   }
 
   inline void set_zero(size_t offset)
   {
-    if (sparse)
-      sparse_weights.set_zero(offset);
+    if (sparse) { sparse_weights.set_zero(offset); }
     else
+    {
       dense_weights.set_zero(offset);
+    }
   }
 #ifndef _WIN32
 #  ifndef DISABLE_SHARED_WEIGHTS
   inline void share(size_t length)
   {
-    if (sparse)
-      sparse_weights.share(length);
+    if (sparse) { sparse_weights.share(length); }
     else
+    {
       dense_weights.share(length);
+    }
   }
 #  endif
 #endif
 
   inline void stride_shift(uint32_t stride_shift)
   {
-    if (sparse)
-      sparse_weights.stride_shift(stride_shift);
+    if (sparse) { sparse_weights.stride_shift(stride_shift); }
     else
+    {
       dense_weights.stride_shift(stride_shift);
+    }
   }
 
   inline weight& strided_index(size_t index)
   {
-    if (sparse)
-      return sparse_weights.strided_index(index);
+    if (sparse) { return sparse_weights.strided_index(index); }
     else
+    {
       return dense_weights.strided_index(index);
+    }
   }
 
   inline bool not_null()
   {
-    if (sparse)
-      return sparse_weights.not_null();
+    if (sparse) { return sparse_weights.not_null(); }
     else
+    {
       return dense_weights.not_null();
+    }
   }
 };

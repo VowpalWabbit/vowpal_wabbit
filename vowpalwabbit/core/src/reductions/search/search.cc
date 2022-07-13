@@ -3340,7 +3340,9 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   priv.active_csoaa = options.was_supplied("cs_active");
   priv.active_csoaa_verify = -1.;
   if (options.was_supplied("search_active_verify"))
-    if (!priv.active_csoaa) THROW("cannot use --search_active_verify without using --cs_active");
+  {
+    if (!priv.active_csoaa) { THROW("cannot use --search_active_verify without using --cs_active"); }
+  }
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 

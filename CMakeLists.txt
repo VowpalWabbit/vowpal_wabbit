@@ -56,6 +56,8 @@ message(STATUS "Using C++ standard: " ${VW_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD ${VW_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 
 include(VowpalWabbitUtils)
 
@@ -105,7 +107,7 @@ option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math depend
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
-option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
+option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
@@ -301,7 +303,7 @@ if(VW_INSTALL)
 
   configure_package_config_file (
     cmake/VowpalWabbitConfig.cmake.in
-    ${CMAKE_BINARY_DIR}/VowpalWabbitConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfig.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
 
   install(

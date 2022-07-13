@@ -10,7 +10,8 @@
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
 
-BOOST_AUTO_TEST_CASE(is_example_header_cb) {
+BOOST_AUTO_TEST_CASE(is_example_header_cb)
+{
   auto& vw = *VW::initialize("--cb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
   VW::multi_ex examples;
   examples.push_back(VW::read_example(vw, "shared | s_1 s_2"));
@@ -29,7 +30,8 @@ BOOST_AUTO_TEST_CASE(is_example_header_cb) {
   VW::finish(vw);
 }
 
-BOOST_AUTO_TEST_CASE(is_example_header_ccb) {
+BOOST_AUTO_TEST_CASE(is_example_header_ccb)
+{
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
   VW::multi_ex examples;
   examples.push_back(VW::read_example(vw, "ccb shared |User f"));
@@ -41,7 +43,8 @@ BOOST_AUTO_TEST_CASE(is_example_header_ccb) {
   VW::finish(vw);
 }
 
-BOOST_AUTO_TEST_CASE(is_example_header_csoaa) {
+BOOST_AUTO_TEST_CASE(is_example_header_csoaa)
+{
   auto& vw = *VW::initialize("--csoaa_ldf multiline --quiet", nullptr, false, nullptr, nullptr);
   VW::multi_ex examples;
   examples.push_back(VW::read_example(vw, "shared | a_2 b_2 c_2"));

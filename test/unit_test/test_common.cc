@@ -14,10 +14,7 @@ VW::multi_ex parse_json(VW::workspace& all, const std::string& line)
   setup_examples(all, examples);
 
   VW::multi_ex result;
-  for (size_t i = 0; i < examples.size(); ++i)
-  {
-    result.push_back(examples[i]);
-  }
+  for (size_t i = 0; i < examples.size(); ++i) { result.push_back(examples[i]); }
   return result;
 }
 
@@ -42,6 +39,7 @@ bool is_invoked_with(const std::string& arg)
   for (size_t i = 0; i < boost::unit_test::framework::master_test_suite().argc; i++)
   {
     if (VW::string_view(boost::unit_test::framework::master_test_suite().argv[i]).find(arg) != std::string::npos)
-    { return true; } }
+    { return true; }
+  }
   return false;
 }

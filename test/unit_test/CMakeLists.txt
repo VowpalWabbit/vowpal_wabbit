@@ -11,7 +11,6 @@ add_executable(vw-unit-test.out
   cats_tree_test.cc
   cats_user_provided_pdf.cc
   cb_explore_adf_test.cc
-  cb_large_actions_test.cc
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
@@ -57,6 +56,10 @@ add_executable(vw-unit-test.out
   vw_versions_test.cc
   weights_test.cc
 )
+
+if(VW_BUILD_LARGE_ACTION_SPACE)
+  target_sources(vw-unit-test.out PRIVATE cb_large_actions_test.cc)
+endif()
 
 # Add the include directories from vw target for testing
 target_link_libraries(vw-unit-test.out PRIVATE vw_core RapidJSON Boost::unit_test_framework)
