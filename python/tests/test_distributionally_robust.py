@@ -96,6 +96,7 @@ def test_recompute_duals_lower():
 
     np.testing.assert_almost_equal(duals, exp_duals, 5)
 
+
 def test_recompute_duals_upper():
     ocrl = OnlineCressieRead(alpha=0.05, tau=0.999)
 
@@ -134,6 +135,7 @@ def test_recompute_duals_upper():
     ]
 
     np.testing.assert_almost_equal(exp_bounds, bounds, 5)
+
 
 def test_qlb():
     ocrl = OnlineCressieRead(alpha=0.05, tau=0.999)
