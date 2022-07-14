@@ -20,7 +20,7 @@ jobs:
         - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           submodules: 'recursive'
       - name: Install requirements
@@ -63,11 +63,11 @@ jobs:
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
       VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           path: 'vw'
           submodules: 'recursive'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           path: 'vcpkg'
           repository: 'microsoft/vcpkg'
@@ -118,7 +118,7 @@ jobs:
         os: [macos-10.15, macos-11]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           submodules: 'recursive'
       - name: Install dependencies

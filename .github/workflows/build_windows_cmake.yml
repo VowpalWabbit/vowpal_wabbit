@@ -24,11 +24,11 @@ jobs:
       VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           path: 'vw'
           submodules: true
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v1
         with:
           path: 'vcpkg'
           repository: 'microsoft/vcpkg'
