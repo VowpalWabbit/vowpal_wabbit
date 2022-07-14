@@ -12,7 +12,7 @@ jobs:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           ref: ${{ github.base_ref }}
           submodules: 'recursive'
@@ -39,7 +39,7 @@ jobs:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
       - name: Install google benchmarks

@@ -21,7 +21,7 @@ jobs:
         - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Build wheel
         shell: bash
         run: |
@@ -43,7 +43,7 @@ jobs:
         config:
         - { version: "3.9" }
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Download Wheel
         uses: actions/download-artifact@v1
         with:
@@ -85,7 +85,7 @@ jobs:
     name: lint.c++.formatting
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Install clang-format
         # This is only needed if the diff check runs as it installs 'clang-format-diff'
         # 'clang-format' is available by default

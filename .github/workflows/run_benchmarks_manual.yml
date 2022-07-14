@@ -21,7 +21,7 @@ jobs:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.inputs.benchmarks_ref }}
       - name: Store benchmark related script(s)
@@ -34,7 +34,7 @@ jobs:
           path: test/benchmarks/
           if-no-files-found: error
 # checkout first ref
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.inputs.base_ref }}
       - name: Remove existing benchmark module (in favour of master)
@@ -80,7 +80,7 @@ jobs:
           python3 -m pip install pandas
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ test/benchmarks/ # generated or downloaded files
 # checkout second ref
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.inputs.compare_ref }}
       - name: Download ${{ github.event.inputs.base_ref }} benchmark results

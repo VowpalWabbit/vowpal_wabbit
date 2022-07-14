@@ -22,7 +22,7 @@ jobs:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Configure
         run: |
           mkdir build
@@ -42,7 +42,7 @@ jobs:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - run: |
           sudo apt update
           sudo apt install -y ninja-build
@@ -60,7 +60,7 @@ jobs:
       image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - run: echo "/opt/python/cp39-cp39/bin" >> $GITHUB_PATH
       - name: Build wheel
         shell: bash
@@ -76,7 +76,7 @@ jobs:
     needs: [python-build, dump-options-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
       - uses: actions/setup-python@v3
         with:
@@ -148,7 +148,7 @@ jobs:
           pwd
           ls
           echo $GITHUB_WORKSPACE
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           repository: VowpalWabbit/docs
           ref: master

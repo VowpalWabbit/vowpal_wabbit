@@ -12,7 +12,7 @@ jobs:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Build C++ VW binary
         run: ./.scripts/linux/build-minimal.sh Release
       - name: Upload vw binary
@@ -45,7 +45,7 @@ jobs:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions/download-artifact@v2
         with:
           name: vw
