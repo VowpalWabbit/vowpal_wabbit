@@ -16,6 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - name: Build VW with large action space reduction
         shell: bash
         run: ./.scripts/linux/build-las-reduction.sh
