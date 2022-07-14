@@ -18,6 +18,8 @@ jobs:
         build_type: [Debug, Release]
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Install dependencies
         run: brew install cmake boost flatbuffers ninja
       - name: Configure
