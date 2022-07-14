@@ -163,7 +163,7 @@ jobs:
     name: manylinux.aarch64.py${{ matrix.config.version }}.test
     needs: linux-python-build-aarch64
     # Aarch builds are slow and are only run on push and not PR
-    #if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' }}
     strategy:
       matrix:
         config:
