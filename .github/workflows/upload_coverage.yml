@@ -17,7 +17,9 @@ jobs:
       - uses: actions/checkout@v1
       - name: Build with coverage C++
         shell: bash
-        run: ./.scripts/linux/build-with-coverage.sh
+        run: |
+          git config --global --add safe.directory "*"
+          ./.scripts/linux/build-with-coverage.sh
       - name: Test with coverage C++
         shell: bash
         run: ./.scripts/linux/test-with-coverage.sh

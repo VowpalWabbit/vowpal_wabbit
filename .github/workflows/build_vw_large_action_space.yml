@@ -18,7 +18,9 @@ jobs:
       - uses: actions/checkout@v1
       - name: Build VW with large action space reduction
         shell: bash
-        run: ./.scripts/linux/build-las-reduction.sh
+        run: |
+          git config --global --add safe.directory "*"
+          ./.scripts/linux/build-las-reduction.sh
       - name: Test VW with large action space reduction
         shell: bash
         run: ./.scripts/linux/test-las-reduction.sh

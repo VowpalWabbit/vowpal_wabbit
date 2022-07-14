@@ -14,7 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Build C++ VW binary
-        run: ./.scripts/linux/build-minimal.sh Release
+        run: | 
+          git config --global --add safe.directory "*"
+          ./.scripts/linux/build-minimal.sh Release
       - name: Upload vw binary
         uses: actions/upload-artifact@v2
         with:
