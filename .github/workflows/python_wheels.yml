@@ -163,7 +163,7 @@ jobs:
     name: manylinux.aarch64.py${{ matrix.config.version }}.test
     needs: linux-python-build-aarch64
     # Aarch builds are slow and are only run on push and not PR
-    if: ${{ github.event_name == 'push' }}
+    #if: ${{ github.event_name == 'push' }}
     strategy:
       matrix:
         config:
@@ -188,7 +188,7 @@ jobs:
       run: |
             docker run --rm -v ${{ github.workspace }}:/io:rw --workdir=/io \
             arm64v8/ubuntu \
-            bash -exc 'apt-get update && \
+            bash -exc 'apt-get update && DEBIAN_FRONTEND=noninteractive && \
             apt install software-properties-common -y && \
             add-apt-repository ppa:deadsnakes/ppa -y && \
             apt install -y ${{ env.py }} && \
