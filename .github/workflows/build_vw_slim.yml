@@ -18,6 +18,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Build VW Slim
         shell: bash
+        run: git config --global --add safe.directory "*"
         run: ./.scripts/linux/build-slim.sh
       - name: Test VW Slim
         shell: bash

@@ -25,6 +25,7 @@ jobs:
       - uses: actions/checkout@v1
       - name: Configure
         run: |
+          git config --global --add safe.directory "*"
           mkdir build
           cd build
           cmake .. -DBUILD_DOCS=On
@@ -44,6 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - run: |
+          git config --global --add safe.directory "*"
           sudo apt update
           sudo apt install -y ninja-build
       - name: Configure
@@ -65,6 +67,7 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
+          git config --global --add safe.directory "*"
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp39-cp39/include/python3.9/'" --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
