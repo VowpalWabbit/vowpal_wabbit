@@ -88,6 +88,22 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
               _estimator_configs[i][j].update(w, r);
             }
           }
+          if (i == 0)
+          {
+            std::cout << "challenger-0 reward: " << r << 
+            " p_log: " << logged.probability << 
+            " p_pred: " << a_s.score <<
+            " labelled_action: " << labelled_action <<
+            std::endl;
+          }
+          if (i == model_count - 1)
+          {
+            std::cout << "champ reward: " << r << 
+            " p_log: " << logged.probability << 
+            " p_pred: " << a_s.score <<
+            " labelled_action: " << labelled_action <<
+            std::endl;
+          }
           break;
         }
       }
@@ -156,6 +172,11 @@ void epsilon_decay_data::check_estimator_bounds()
   auto final_model_idx = model_count - 1;
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
+    if (i == 0)
+    {
+      std::cout << "challenger-0 update_count " << _estimator_configs[i][i].update_count << " lb: " << _estimator_configs[i][i].lower_bound() << " ub: "
+                << _estimator_configs[i][i].upper_bound() << std::endl;
+    }
     bool better = _lb_trick
         ? _estimator_configs[i][i].lower_bound() > (1.f - _estimator_configs[final_model_idx][i].lower_bound())
         : _estimator_configs[i][i].lower_bound() > _estimator_configs[final_model_idx][i].upper_bound();
@@ -163,6 +184,10 @@ void epsilon_decay_data::check_estimator_bounds()
     {
       if (_log_champ_changes)
       {
+        std::cout << "challenger lb: " << _estimator_configs[i][i].lower_bound()
+                  << " challenger ub: " << _estimator_configs[i][i].upper_bound()
+                  << " champion lb: " << _estimator_configs[final_model_idx][i].lower_bound()
+                  << " champion ub: " << _estimator_configs[final_model_idx][i].upper_bound() << std::endl;
         _logger.out_info("Champion with update count: {} has changed to challenger {} with update count: {}",
             _estimator_configs[final_model_idx][final_model_idx].update_count, i,
             _estimator_configs[i][i].update_count);
