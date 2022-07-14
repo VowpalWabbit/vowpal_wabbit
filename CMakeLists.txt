@@ -87,7 +87,6 @@ ELSE(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   SET(vw_GIT_COMMIT "")
 ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
 
-option(VW_UPDATE_GIT_SUBMODULES "Check submodules during build" OFF)
 option(VW_GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
@@ -202,28 +201,6 @@ endif()
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
-
-# Ensure submodules are ready
-find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-  # Update submodules as needed
-  if(VW_UPDATE_GIT_SUBMODULES)
-    message(STATUS "Running Git submodule update...")
-    # Check if an abritrary file in the submodules already exists. If it does
-    # then we assume the submodules are already up to date. This is to avoid
-    # taking the git lock aggressively whenever we configure. This can cause
-    # issues if VSCode with certain extensions has the workspace open at the
-    # same time as you interact with it on the command line.
-    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ext_libs/spdlog/README.md)
-      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        RESULT_VARIABLE GIT_SUBMOD_RESULT)
-      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-      endif()
-    endif()
-  endif()
-endif()
 
 add_subdirectory(library)
 include(ext_libs/ext_libs.cmake)
