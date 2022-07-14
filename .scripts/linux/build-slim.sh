@@ -5,7 +5,7 @@ set -x
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
-git config --global --add safe.directory /__w/vowpal_wabbit/*
+git config --global --add safe.directory "*"
 rm -rf build
 cmake -S . -B build -G Ninja \
     -DBUILD_TESTING=On \
