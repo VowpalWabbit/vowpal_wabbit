@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
-// Mark all directories as safe
+# Mark all directories as safe
 git config --global --add safe.directory "*"
 
 rm -rf build
