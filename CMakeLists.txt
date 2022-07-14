@@ -87,6 +87,7 @@ ELSE(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
   SET(vw_GIT_COMMIT "")
 ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/.git)
 
+option(VW_UPDATE_GIT_SUBMODULES "Check submodules during build" OFF)
 option(VW_GCOV "Turn on flags required for gcov" OFF)
 option(WARNINGS "Turn on warning flags. ON by default." ON)
 option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
@@ -206,9 +207,8 @@ include(GNUInstallDirs)
 find_package(Git QUIET)
 if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
   # Update submodules as needed
-  option(GIT_SUBMODULE "Check submodules during build" ON)
-  if(GIT_SUBMODULE)
-    message(STATUS "Submodule update")
+  if(VW_UPDATE_GIT_SUBMODULES)
+    message(STATUS "Running Git submodule update...")
     # Check if an abritrary file in the submodules already exists. If it does
     # then we assume the submodules are already up to date. This is to avoid
     # taking the git lock aggressively whenever we configure. This can cause
