@@ -32,8 +32,5 @@ fi
 export USER_BOOST_INCLUDE="-I $BASE_BOOST/include/boost -I $BASE_BOOST/include"
 export USER_BOOST_LIBRARY="-L $BASE_BOOST/lib"
 
-# Mark all directories as safe
-git config --global --add safe.directory "*"
-
 # build the C++ binaries and python package
 pip install -e `dirname $0`/../
