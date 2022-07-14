@@ -20,7 +20,7 @@ jobs:
         - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
       - name: Install requirements
@@ -63,11 +63,11 @@ jobs:
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
       VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           path: 'vw'
           submodules: 'recursive'
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           path: 'vcpkg'
           repository: 'microsoft/vcpkg'
@@ -83,7 +83,7 @@ jobs:
             !${{ env.VCPKG_ROOT }}/downloads
           key: |
             ${{ env.VCPKG_REF }}-${{matrix.os}}-standalone-vcpkg-cache-invalidate-0
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@v2
       - name: Bootstrap vcpkg
         run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Install vcpkg dependencies
@@ -118,7 +118,7 @@ jobs:
         os: [macos-10.15, macos-11]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
       - name: Install dependencies
