@@ -1,12 +1,13 @@
-#ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
+#include "vw/core/guard.h"
+
+#include "vw/core/memory.h"
+
 #include <boost/test/test_tools.hpp>
-
-#include "guard.h"
-#include "memory.h"
+#include <boost/test/unit_test.hpp>
 
 struct non_copyable_struct
 {
@@ -18,7 +19,6 @@ struct non_copyable_struct
   non_copyable_struct(non_copyable_struct&& other) = default;
   non_copyable_struct& operator=(non_copyable_struct&& other) = default;
 };
-
 
 BOOST_AUTO_TEST_CASE(swap_guard_execute_on_scope_end)
 {

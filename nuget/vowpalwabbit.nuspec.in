@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<package>
+  <metadata>
+    <id>VowpalWabbitNative-v@MSVC_TOOLSET_VERSION@-@NATIVE_NUGET_PLATFORM_TAG@</id>
+    <version>@PACKAGE_VERSION@</version>
+    <title>Vowpal Wabbit Native</title>
+    <authors>John Langford et al</authors>
+    <license type="expression">BSD-3-Clause</license>
+    <projectUrl>https://vowpalwabbit.org/</projectUrl>
+    <iconUrl>https://github.com/VowpalWabbit/vowpal_wabbit/raw/master/logo_assets/vowpal-wabbits-icon-400x400.png</iconUrl>
+    <description>Vowpal Wabbit is a machine learning system which pushes the frontier of machine learning with techniques such as online, hashing, allreduce, reductions, learning2search, active, and interactive learning.</description>
+    <copyright>Copyright (c) by respective owners including Yahoo!, Microsoft, and individual contributors.</copyright>
+    <tags>native</tags>
+  </metadata>
+  <files>
+    <file src="vowpalwabbit.targets" target="build" />
+    <file src="include\**\*.*" target="include" />
+    <file src="lib\*.lib" target="lib" />
+    <file src="bin\vw.exe" target="bin" />
+  </files>
+</package>

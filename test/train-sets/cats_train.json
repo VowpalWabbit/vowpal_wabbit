@@ -1,0 +1,10 @@
+{"_label_ca": {"action": 0.0012017497792840004, "cost": 0.0, "pdf_value": 0.0062500000931322575}, "c": {"room=Bedroom": 1, "time_of_day=afternoon": 1}}
+{"_label_ca": {"action": 0.582044780254364, "cost": 0.0, "pdf_value": 0.40625}, "c": {"room=Bedroom": 1, "time_of_day=afternoon": 1}}
+{"_label_ca": {"action": 20.46142578125, "cost": 0.0, "pdf_value": 0.0062500000931322575}, "c": {"room=Living Room": 1, "time_of_day=afternoon": 1}}
+{"_label_ca": {"action": 10.350055694580078, "cost": 0.0, "pdf_value": 0.0062500000931322575}, "c": {"room=Bedroom": 1, "time_of_day=afternoon": 1}}
+{"_label_ca": {"action": 2.287724494934082, "cost": 0.0, "pdf_value": 0.40625}, "c": {"room=Living Room": 1, "time_of_day=morning": 1}}
+{"_label_ca": {"action": 25.27191162109375, "cost": -1.0, "pdf_value": 0.0062500000931322575}, "c": {"room=Bedroom": 1, "time_of_day=morning": 1}}
+{"_label_ca": {"action": 4.473628997802734, "cost": 0.0, "pdf_value": 0.0062500000931322575}, "c": {"room=Bedroom": 1, "time_of_day=afternoon": 1}}
+{"_label_ca": {"action": 2.4059066772460938, "cost": 0.0, "pdf_value": 0.40625}, "c": {"room=Living Room": 1, "time_of_day=afternoon": 1}}
+{"_label_ca": {"action": 0.9393037557601929, "cost": 0.0, "pdf_value": 0.40625}, "c": {"room=Living Room": 1, "time_of_day=morning": 1}}
+{"_label_ca": {"action": 2.0926501750946045, "cost": 0.0, "pdf_value": 0.40625}, "c": {"room=Living Room": 1, "time_of_day=morning": 1}}

@@ -6,9 +6,22 @@ include(NetFxResource)
 include(NetFxStrongName)
 include(T4Template)
 
+SET(NUGET_REFERENCE_SEPARATOR "@")
+
+function(find_nuget_lib package_name 
+                        package_version)
+  # find_path caches its output, so we need to treat each nuget_REFERENCE string as a unique key 
+  # mapping to an assembly (the full reference is necessary in case a package contains multiple assemblies, 
+  # which would require individually referencing all of them.)
+  find_file(nuget_${${package_name}${NUGET_REFERENCE_SEPARATOR}${package_version}}_PATH "${package_name}.${package_version}"
+      HINTS "${CMAKE_BINARY_DIR}/packages"
+      PATH_SUFFIXES ${netfx_nuget_SUFFIXES}
+      REQUIRED
+      NO_DEFAULT_PATH)
+endfunction()
 
 set(vw_CS_UNITTEST_SOURCES
-  Properties/AssemblyInfo.cs 
+  Properties/AssemblyInfo.cs
   BaseData.cs
   CbAdfData.cs
   RunTestsHelper.cs
@@ -54,7 +67,7 @@ set(vw_CS_UNITTEST_SOURCES
   VowpalWabbitListenerToEvents.cs
   VowpalWabbitStdErrPerformanceStatistics.cs
   VWTestHelper.cs
-  VowpalWabbit.g4  
+  VowpalWabbit.g4
 )
 
 set(vw_CS_UNITTEST_T4TEMPLATES
@@ -66,6 +79,11 @@ set(vw_CS_UNITTEST_COPIED_CONTENT
   json/test_array.json
   json/test_newline.json
 )
+
+# set (nuget_Newtonsoft.Json@9.0.1_LIB )
+install_nuget_package("Newtonsoft.Json" "9.0.1")
+find_nuget_lib("Newtonsoft.Json" "9.0.1")
+set(ENV{NewtonsoftDependencyValue} ${nuget_Newtonsoft.Json${NUGET_REFERENCE_SEPARATOR}9.0.1_LIB})
 
 configure_t4("${vw_CS_UNITTEST_T4TEMPLATES}" vw_CS_UNITTEST_GENERATED_SOURCES)
 
@@ -105,7 +123,7 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
   WindowsBase
 )
 
-set(cs_unittest_NUGET_REFERENCES 
+set(cs_unittest_NUGET_REFERENCES
   Antlr4.Runtime@4.6.4
   Microsoft.ApplicationInsights@2.2.0
   Microsoft.ApplicationInsights.PerfCounterCollector@2.2.0@Microsoft.AI.PerfCounterCollector
@@ -138,12 +156,12 @@ target_add_nuget_references(cs_unittest
 target_add_nuget_imports(cs_unittest
   "${cs_unittest_NUGET_IMPORTS}")
 
-target_link_libraries(cs_unittest 
+target_link_libraries(cs_unittest
   PUBLIC VowpalWabbit.Common VowpalWabbit.Core vw_cs VowpalWabbit.JSON VowpalWabbit.Parallel cs_console cs_testcommon
 )
 
-set_target_properties(cs_unittest 
-  PROPERTIES 
+set_target_properties(cs_unittest
+  PROPERTIES
   VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
   VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.6" # This needs to be 4.6 due to ApplicationInsights
   VS_GLOBAL_ROOTNAMESPACE cs_unittest

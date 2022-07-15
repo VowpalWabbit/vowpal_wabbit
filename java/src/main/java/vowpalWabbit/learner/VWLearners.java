@@ -57,7 +57,7 @@ final public class VWLearners {
             case Prob: return (T)new VWProbLearner(nativePointer);
             case Scalar: return (T)new VWScalarLearner(nativePointer);
             case Scalars: return (T)new VWScalarsLearner(nativePointer);
-            case DecisionProbs: return (T) new VWCCBLearner(nativePointer);
+            case DecisionProbs: return (T)new VWCCBLearner(nativePointer);
             case Unknown:
             default:
                 // Doing this will allow for all cases when a C object is made to be closed.

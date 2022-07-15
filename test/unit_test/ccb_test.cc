@@ -1,27 +1,26 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
-
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "test_common.h"
-#include "vw.h"
-#include "example.h"
+#include "vw/core/example.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
+#include "vw/core/vw.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <vector>
-#include "conditional_contextual_bandit.h"
 
 namespace CCB
 {
-void inject_slot_features(example* shared, example* slot);
-void remove_slot_features(example* shared, example* slot);
+void inject_slot_features(VW::example* shared, VW::example* slot);
+void remove_slot_features(VW::example* shared, VW::example* slot);
 }  // namespace CCB
 
 BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
-  multi_ex examples;
+  VW::multi_ex examples;
   examples.push_back(VW::read_example(vw, "ccb shared |"));
   examples.push_back(VW::read_example(vw, "ccb action |"));
   examples.push_back(VW::read_example(vw, "ccb action |"));
@@ -94,7 +93,7 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
 BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
-  multi_ex examples;
+  VW::multi_ex examples;
   examples.push_back(VW::read_example(vw, "ccb shared |"));
   examples.push_back(VW::read_example(vw, "ccb action |"));
   examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
@@ -107,5 +106,54 @@ BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
   BOOST_REQUIRE_THROW(vw.learn(examples), VW::vw_exception);
 
   vw.finish_example(examples);
+  VW::finish(vw);
+}
+
+std::string ns_to_str(unsigned char ns)
+{
+  if (ns == constant_namespace)
+    return "[constant]";
+  else if (ns == ccb_slot_namespace)
+    return "[ccbslot]";
+  else if (ns == ccb_id_namespace)
+    return "[ccbid]";
+  else if (ns == wildcard_namespace)
+    return "[wild]";
+  else if (ns == default_namespace)
+    return "[default]";
+  else
+    return std::string(1, ns);
+}
+
+std::set<std::string> interaction_vec_t_to_set(const std::vector<std::vector<VW::namespace_index>>& interactions)
+{
+  std::set<std::string> result;
+  std::stringstream ss;
+  for (const std::vector<VW::namespace_index>& v : interactions)
+  {
+    for (VW::namespace_index c : v) { ss << ns_to_str(c); }
+    result.insert(ss.str());
+    ss.clear();
+    ss.str("");
+  }
+  return result;
+}
+
+BOOST_AUTO_TEST_CASE(ccb_insert_interactions_impl_test)
+{
+  auto& vw = *VW::initialize("--ccb_explore_adf --quiet -q AA -q BB -q AB -q ::");
+
+  std::set<std::string> expected_before{"AA", "AB", "BB", "[wild][wild]"};
+  std::set<std::string> expected_after{
+      "AA", "AA[ccbid]", "AB", "AB[ccbid]", "BB", "BB[ccbid]", "[wild][ccbid]", "[wild][wild]", "[wild][wild][ccbid]"};
+
+  auto pre_result = interaction_vec_t_to_set(vw.interactions);
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected_before.begin(), expected_before.end(), pre_result.begin(), pre_result.end());
+
+  VW::reductions::ccb::insert_ccb_interactions(vw.interactions, vw.extent_interactions);
+  auto result = interaction_vec_t_to_set(vw.interactions);
+
+  BOOST_CHECK_EQUAL_COLLECTIONS(expected_after.begin(), expected_after.end(), result.begin(), result.end());
+
   VW::finish(vw);
 }

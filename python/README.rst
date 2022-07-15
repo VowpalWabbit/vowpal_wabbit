@@ -1,18 +1,10 @@
 Vowpal Wabbit Python Wrapper
 ============================
 
-.. image:: https://badge.fury.io/py/vowpalwabbit.svg
-    :alt: PyPI Package
-    :target: https://pypi.python.org/pypi/vowpalwabbit
-.. image:: https://travis-ci.org/VowpalWabbit/vowpal_wabbit.svg?branch=master
-    :alt: Build Status
-    :target: https://travis-ci.org/VowpalWabbit/vowpal_wabbit
-.. image:: https://ci.appveyor.com/api/projects/status/6hqpd9e64h72gybr/branch/master?svg=true
-    :alt: Windows Build Status
-    :target: https://ci.appveyor.com/project/VowpalWabbit/vowpal-wabbit
-.. image:: https://coveralls.io/repos/github/VowpalWabbit/vowpal_wabbit/badge.svg
-    :alt: Coverage
-    :target: https://coveralls.io/r/VowpalWabbit/vowpal_wabbit
+|ImageLink|_
+
+.. |ImageLink| image:: https://badge.fury.io/py/vowpalwabbit.svg
+.. _ImageLink: https://pypi.python.org/pypi/vowpalwabbit
 
 Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
 
@@ -38,8 +30,8 @@ You can use the python wrapper directly like this:
 
 .. code-block:: python
 
-    >>> from vowpalwabbit import pyvw
-    >>> vw = pyvw.vw(quiet=True)
+    >>> import vowpalwabbit
+    >>> vw = vowpalwabbit.Workspace(quiet=True)
     >>> ex = vw.example('1 | a b c')
     >>> vw.learn(ex)
     >>> vw.predict(ex)
@@ -51,7 +43,7 @@ Or you can use the included scikit-learn interface like this:
     >>> import numpy as np
     >>> from sklearn import datasets
     >>> from sklearn.model_selection import train_test_split
-    >>> from vowpalwabbit.sklearn_vw import VWClassifier
+    >>> from vowpalwabbit.sklearn import VWClassifier
     >>>
     >>> # generate some data
     >>> X, y = datasets.make_hastie_10_2(n_samples=10000, random_state=1)

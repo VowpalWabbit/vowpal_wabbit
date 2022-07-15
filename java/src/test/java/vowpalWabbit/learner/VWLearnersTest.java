@@ -55,7 +55,7 @@ public class VWLearnersTest extends VWTestHelper {
     @Test
     public void testOldModel() throws IOException {
         thrown.expect(Exception.class);
-        thrown.expectMessage("bad model format!");
+        thrown.expectMessage("Bad model format.");
         VWScalarsLearner vw = VWLearners.create("--quiet -i src/test/resources/vw_7.8.model");
         vw.close();
     }

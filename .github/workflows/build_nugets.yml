@@ -1,0 +1,98 @@
+name: Windows Nuget
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build_nuget_windows:
+    name: nuget.${{ matrix.toolset }}.${{ matrix.arch_config.arch }}
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: ["windows-2019"]
+        toolset: ["v141", "v142"]
+        arch_config:
+        - { arch: x64, generator_arch: x64}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Configure
+        run: >
+          cmake -S . -B build
+          -G "Visual Studio 16 2019" -A ${{ matrix.arch_config.generator_arch }}
+          -T ${{ matrix.toolset }}
+          -DNATIVE_NUGET_PLATFORM_TAG="${{ matrix.arch_config.arch }}"
+          -DBUILD_FLATBUFFERS=Off
+          -DBUILD_TESTING=Off
+          -DRAPIDJSON_SYS_DEP=Off
+          -DFMT_SYS_DEP=Off
+          -DSPDLOG_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_BOOST_MATH_SYS_DEP=Off
+          -DVW_BUILD_VW_C_WRAPPER=Off
+          -DVW_INSTALL=On
+      - name: Build and install
+        run: |
+          cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
+          cmake --build build --config Release -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
+
+          # Install debug first so that release overwrites the exe and nothing else
+          cmake --install build --prefix ./nuget_staging --config Debug
+          cmake --install build --prefix ./nuget_staging --config Release
+      - if: ${{ matrix.arch_config.arch == 'x64' }}
+        run: cp nuget\vowpalwabbit-x64.targets nuget_staging\vowpalwabbit.targets
+      - name: Package
+        shell: powershell
+        id: generate-nuget
+        run: |
+          cp build\nuget\vowpalwabbit.nuspec nuget_staging\vowpalwabbit.nuspec
+          cd nuget_staging
+          ..\vowpalwabbit\.nuget\NuGet.exe pack .\vowpalwabbit.nuspec
+          $NugetFileName = Get-ChildItem *.nupkg -name
+          echo "::set-output name=NugetFileName::$NugetFileName"
+      - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ steps.generate-nuget.outputs.NugetFileName }}
+          path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
+  test_nuget_windows:
+    needs: [build_nuget_windows]
+    name: nuget-test.${{ matrix.toolset }}
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: ["windows-2019"]
+        toolset: ["v141", "v142"]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: ilammy/msvc-dev-cmd@v1
+      - id: fetch-vw-version
+        run: |
+          $version = Get-Content version.txt -Raw
+          $version = $version.Trim()
+          echo "::set-output name=VWVersion::$version"
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.fetch-vw-version.outputs.VWVersion }}.nupkg
+          path: downloaded_nugets
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+      - name: Test nuget
+        run: |
+          ls downloaded_nugets
+          .\vowpalwabbit\.nuget\NuGet.exe install -Source ${{ github.workspace }}\downloaded_nugets -OutputDirectory ${{ github.workspace }}\nuget\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}-x64
+          cd nuget\test
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Release;Platform=x64"
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Debug;Platform=x64"
+          .\bin\x64\Release\test-${{ matrix.toolset }}.exe
+          .\bin\x64\Debug\test-${{ matrix.toolset }}.exe

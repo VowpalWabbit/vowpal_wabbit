@@ -28,10 +28,8 @@ IF NOT DEFINED SourceInfo (
     SET "Built without source info. Official builds should have git commit id here."
 )
 
-SET RootRelativeOutputDirX64=%vwRoot%\vowpalwabbit\out\target\
-SET RootRelativeOutputDirAnyCPU=%vwRoot%\vowpalwabbit\out\target\
-SET SolutionDir=%vwRoot%\vowpalwabbit\
-SET OutputDir="%SolutionDir%out\package\Release\x64"
+SET BinariesDir=%vwRoot%\build\binaries
+SET OutputDir="%vwRoot%\vowpalwabbit\out\package\Release\x64"
 
 IF NOT EXIST %OutputDir% MKDIR %OutputDir%
 
@@ -39,9 +37,9 @@ REM Do not add a trailing backslash here, as it will break the nuget xml parser 
 SET RepoRoot=%vwRoot%
 
 REM TODO-pre-checkin: Figure out how to parametrize this script?! (is there a standard, or do we actually need parse args?)
-"%nugetPath%" pack %SolutionDir%..\cs\cs\cs.nuspec -OutputDirectory "%OutputDir%" -Verbosity detailed -BasePath "." -Properties "RootRelativeOutputDirX64=%RootRelativeOutputDirX64%;RootRelativeOutputDirAnyCPU=%RootRelativeOutputDirAnyCPU%;Configuration=Release;Platform=X64;version=%Version%;Tag=%Tag%;RepoRoot=%RepoRoot%;SolutionDir=%SolutionDir%"
-"%nugetPath%" pack %SolutionDir%..\cs\cs_json\cs_json.nuspec -OutputDirectory "%OutputDir%" -Verbosity detailed -BasePath "." -Properties "RootRelativeOutputDirX64=%RootRelativeOutputDirX64%;RootRelativeOutputDirAnyCPU=%RootRelativeOutputDirAnyCPU%;Configuration=Release;Platform=X64;version=%Version%;Tag=%Tag%;RepoRoot=%RepoRoot%;SolutionDir=%SolutionDir%"
-"%nugetPath%" pack %SolutionDir%..\cs\cs_parallel\cs_parallel.nuspec -OutputDirectory "%OutputDir%" -Verbosity detailed -BasePath "." -Properties "RootRelativeOutputDirX64=%RootRelativeOutputDirX64%;RootRelativeOutputDirAnyCPU=%RootRelativeOutputDirAnyCPU%;Configuration=Release;Platform=X64;version=%Version%;Tag=%Tag%;RepoRoot=%RepoRoot%;SolutionDir=%SolutionDir%"
+"%nugetPath%" pack %vwRoot%\cs\cs\cs.nuspec -OutputDirectory "%OutputDir%" -Verbosity detailed -BasePath "." -Properties "BinariesDir=%BinariesDir%;Configuration=Release;Platform=X64;version=%Version%;Tag=%Tag%;RepoRoot=%RepoRoot%"
+"%nugetPath%" pack %vwRoot%\cs\cs_json\cs_json.nuspec -OutputDirectory "%OutputDir%" -Verbosity detailed -BasePath "." -Properties "BinariesDir=%BinariesDir%;Configuration=Release;Platform=X64;version=%Version%;Tag=%Tag%;RepoRoot=%RepoRoot%"
+"%nugetPath%" pack %vwRoot%\cs\cs_parallel\cs_parallel.nuspec -OutputDirectory "%OutputDir%" -Verbosity detailed -BasePath "." -Properties "BinariesDir=%BinariesDir%;Configuration=Release;Platform=X64;version=%Version%;Tag=%Tag%;RepoRoot=%RepoRoot%"
 
 REM TODO: Need to also include the .pdb files, once we fix all the GitLink warnings
 

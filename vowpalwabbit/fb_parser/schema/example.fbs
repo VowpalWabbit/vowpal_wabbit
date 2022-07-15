@@ -1,0 +1,132 @@
+namespace VW.parsers.flatbuffer;
+
+table Feature {
+  name:string;
+  value:float;
+  hash:uint64;
+}
+
+table Namespace {
+  name:string;
+  /// The index of the namespace which is either the first character of the namespace
+  /// string or a reserved namespace identifier.
+  hash:uint8;
+  features:[Feature];
+  /// The 64 bit hash of the full namespace string.
+  full_hash:uint64;
+}
+
+table SimpleLabel {
+  label:float;
+  weight:float;
+  initial:float;
+}
+
+table CB_class {
+  cost:float;
+  action:uint32;
+  probability:float;
+  partial_pred:float;
+}
+
+table CBLabel {
+  weight:float;
+  costs:[CB_class];
+}
+
+table CB_EVAL_Label {
+  action:uint32;
+  event:CBLabel;
+}
+
+table MultiLabel {
+  labels:[uint32];
+}
+
+table MultiClass {
+  namedlabel:string;
+  label:uint32;
+  weight:float;
+}
+
+enum CCB_Slates_example_type : byte {unset=0, shared=1, action=2, slot=3}
+
+table action_score {
+  action:uint32;
+  score:float;
+}
+
+table CCB_outcome {
+  cost:float;
+  probabilities:[action_score];
+}
+
+table CCBLabel {
+  example_type:CCB_Slates_example_type;
+  outcome:CCB_outcome;
+  explicit_included_actions:[uint32];
+  weight:float;
+}
+
+table wclass {
+  x:float;
+  partial_pred:float;
+  wap_value:float;
+  class_index:uint32;
+}
+
+table CS_Label {
+  costs:[wclass];
+}
+
+table no_label {
+  label:ubyte;
+}
+
+table Slates_Label {
+  example_type:CCB_Slates_example_type;
+  weight:float;
+  labeled:bool;
+  cost:float;
+  slot:uint32;
+  probabilities:[action_score];
+}
+
+table Continuous_Label_Elm {
+  action:float;
+  cost:float;
+  pdf_value:float;
+}
+
+table ContinuousLabel {
+  costs:[Continuous_Label_Elm];
+}
+
+union Label {SimpleLabel, CBLabel, CCBLabel, MultiClass, MultiLabel, CB_EVAL_Label, CS_Label, no_label, Slates_Label, ContinuousLabel}
+
+table Example {
+  namespaces:[Namespace];
+  label:Label;
+  tag:string;
+  is_newline:bool = false;
+}
+
+table MultiExample
+{
+  examples:[Example];
+}
+
+table ExampleCollection {
+  examples:[Example];
+  multi_examples:[MultiExample];
+  is_multiline:bool;
+}
+
+union ExampleType {Example, ExampleCollection, MultiExample}
+
+table ExampleRoot
+{
+  example_obj:ExampleType;
+}
+
+root_type ExampleRoot;

@@ -31,6 +31,6 @@ public class VWProbLearnerTest extends VWTestHelper {
                 0.38244691f,
                 0.4915067f
         };
-        assertArrayEquals(expected, pred, 0.00001f);
+        assertArrayEquals(expected, pred, 0.001f);
     }
 }

@@ -1,9 +1,9 @@
-#include "vw.h"
-#include "vw_exception.h"
-
 #include "jni_base_learner.h"
 
-example* read_example(JNIEnv* env, jstring example_string, vw* vwInstance)
+#include "vw/common/vw_exception.h"
+#include "vw/core/vw.h"
+
+example* read_example(JNIEnv* env, jstring example_string, VW::workspace* vwInstance)
 {
   const char* utf_string = env->GetStringUTFChars(example_string, NULL);
   example* ex = read_example(utf_string, vwInstance);
@@ -14,7 +14,7 @@ example* read_example(JNIEnv* env, jstring example_string, vw* vwInstance)
   return ex;
 }
 
-example* read_example(const char* example_string, vw* vwInstance)
+example* read_example(const char* example_string, VW::workspace* vwInstance)
 {
   return VW::read_example(*vwInstance, example_string);
 }

@@ -14,7 +14,7 @@ cd cats
 mkdir build
 cd build
 cmake ..
-make -j vw-bin
+make -j vw_cli_bin
 
 # Download data files
 cd ..
@@ -73,4 +73,3 @@ run_offline "BNG_cpu_act" -64.9 187.54
 run_offline "BNG_wisconsin" -10.87 168.12
 run_offline "zurich" -121830 7190
 run_offline "ds_1000000" $ds_min $ds_max
-

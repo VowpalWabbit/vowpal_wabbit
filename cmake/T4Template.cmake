@@ -1,13 +1,13 @@
-find_program(netfx_t4_COMMAND TextTransform.exe)
+find_program(netfx_t4_COMMAND TextTransform.exe REQUIRED)
 
 # A function to set up T4 Templates and their generated code files
 #
 # t4_templates         : A list of T4 Template Files to annotate in the project
 # generated_files_var  : Target variable to output the set of generated files
 
-function(configure_t4 t4_templates 
+function(configure_t4 t4_templates
                       generated_files_var)
-  
+
   set(generated_files)
 
   foreach(t4_TEMPLATE IN ITEMS ${t4_templates})
@@ -23,7 +23,7 @@ function(configure_t4 t4_templates
 
       set(t4_TARGET ${t4_TARGET_DIR}${t4_TARGET_FILENAME})
     endif()
-        
+
     message(STATUS "Processing ${t4_TEMPLATE} => ${t4_TARGET}")
 
     file(MAKE_DIRECTORY ${t4_TARGET_DIR})
