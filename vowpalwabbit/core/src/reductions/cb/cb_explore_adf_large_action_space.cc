@@ -153,12 +153,11 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+    {
+      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
+    }
   }
-  else
-  {
-    shrink_factors.resize(preds.size(), 1.f);
-  }
+  else { shrink_factors.resize(preds.size(), 1.f); }
 }
 
 template <typename TripletType>
@@ -275,21 +274,13 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
     row_index++;
   }
 
-  if (max_non_zero_col == 0)
-  {
-    // no non-zero columns were found for Y, it is empty
-    Y.resize(0, 0);
-  }
-  else
-  {
-    Y.resize(max_non_zero_col + 1, _d);
-    Y.setZero();
-    Y.setFromTriplets(_triplets.begin(), _triplets.end());
-    // Orthonormalize Y
-    VW::gram_schmidt(Y);
-  }
+  Y.resize(max_non_zero_col + 1, _d);
+  Y.setZero();
+  Y.setFromTriplets(_triplets.begin(), _triplets.end());
+  // Orthonormalize Y
+  VW::gram_schmidt(Y);
 
-  return (Y.cols() != 0 && Y.rows() != 0 && non_zero_rows.size() > _d);
+  return non_zero_rows.size() > _d;
 }
 
 bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
@@ -464,6 +455,16 @@ void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& 
   {
     calculate_shrink_factor(preds);
     randomized_SVD(examples);
+
+    // The U matrix is empty before learning anything.
+    if (U.rows() == 0)
+    {
+      // Set uniform random probability for empty U.
+      const float prob = 1.0f / preds.size();
+      for (auto& pred : preds) { pred.score = prob; }
+      return;
+    }
+
     compute_spanner();
     assert(_spanner_bitvec.size() == preds.size());
   }
