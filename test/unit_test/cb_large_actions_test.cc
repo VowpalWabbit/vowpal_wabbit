@@ -880,51 +880,6 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
   }
 }
 
-BOOST_AUTO_TEST_CASE(check_uniform_probabilities_before_learning)
-{
-  auto d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_epsilon, false});
-
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
-          nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_squarecb, true});
-
-  for (auto& vw_pair : vws)
-  {
-    auto& vw = *std::get<0>(vw_pair);
-    auto apply_diag_M = std::get<1>(vw_pair);
-
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1:0 2:0 3:0"));
-      examples.push_back(VW::read_example(vw, "| a_1:0 a_2:0 a_3:0"));
-      examples.push_back(VW::read_example(vw, "| a_4:0 a_5:0 a_6:0"));
-
-      learner->predict(examples);
-
-      const auto num_actions = examples.size();
-      const auto& preds = examples[0]->pred.a_s;
-      BOOST_CHECK_EQUAL(preds.size(), num_actions);
-      for (const auto& pred : preds) { BOOST_CHECK_SMALL(pred.score - (1.f / 3.f), FLOAT_TOL); }
-
-      vw.finish_example(examples);
-    }
-    VW::finish(vw);
-  }
-}
-
 BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
 {
   auto d = 3;

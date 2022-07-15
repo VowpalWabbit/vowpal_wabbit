@@ -464,16 +464,6 @@ void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& 
   {
     calculate_shrink_factor(preds);
     randomized_SVD(examples);
-
-    // The U matrix is empty before learning anything.
-    if (U.rows() == 0)
-    {
-      // Set uniform random probability for empty U.
-      const float prob = 1.0f / preds.size();
-      for (auto& pred : preds) { pred.score = prob; }
-      return;
-    }
-
     compute_spanner();
     assert(_spanner_bitvec.size() == preds.size());
   }
