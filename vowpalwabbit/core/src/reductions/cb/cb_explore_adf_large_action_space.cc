@@ -42,7 +42,7 @@ public:
   {
   }
 
-  void set(uint64_t index)
+  void set(float feature_value, uint64_t index)
   {
     if (_weights[index] != 0.f)
     {
@@ -80,7 +80,7 @@ public:
   {
   }
 
-  void set(uint64_t index)
+  void set(float feature_value, uint64_t index)
   {
     if (_weights[index] != 0.f)
     {
@@ -95,23 +95,25 @@ public:
 };
 
 template <typename WeightsT>
-struct dot_product
+struct B_triplet_constructor
 {
 private:
   WeightsT& _weights;
   uint64_t _column_index;
   Eigen::SparseMatrix<float>& _Y;
+  float& _final_dot_product;
 
 public:
-  dot_product(WeightsT& weights, uint64_t column_index, Eigen::SparseMatrix<float>& Y)
-      : _weights(weights), _column_index(column_index), _Y(Y)
+  B_triplet_constructor(
+      WeightsT& weights, uint64_t column_index, Eigen::SparseMatrix<float>& Y, float& final_dot_product)
+      : _weights(weights), _column_index(column_index), _Y(Y), _final_dot_product(final_dot_product)
   {
   }
 
-  float operator[](uint64_t index) const
+  void set(float feature_value, uint64_t index)
   {
-    if (_weights[index] == 0.f) { return 0.f; }
-    return _weights[index] * _Y.coeffRef((index & _weights.mask()), _column_index);
+    if (_weights[index] == 0.f) { return; }
+    _final_dot_product += _weights[index] * _Y.coeffRef((index & _weights.mask()), _column_index);
   }
 };
 
@@ -154,20 +156,17 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+    {
+      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
+    }
   }
-  else
-  {
-    shrink_factors.resize(preds.size(), 1.f);
-  }
+  else { shrink_factors.resize(preds.size(), 1.f); }
 }
 
-inline void just_add_weights(float& p, float, float fw) { p += fw; }
-
 template <typename TripletType>
-void triplet_construction(TripletType& tc, float, uint64_t feature_index)
+void triplet_construction(TripletType& tc, float feature_value, uint64_t feature_index)
 {
-  tc.set(feature_index);
+  tc.set(feature_value, feature_index);
 }
 
 void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
@@ -213,23 +212,23 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
       float final_dot_prod = 0.f;
       if (_all->weights.sparse)
       {
-        dot_product<sparse_parameters> weights(_all->weights.sparse_weights, col, Y);
-        GD::foreach_feature<float, float, just_add_weights, dot_product<sparse_parameters>>(weights,
-            _all->ignore_some_linear, _all->ignore_linear,
+        B_triplet_constructor<sparse_parameters> weights(_all->weights.sparse_weights, col, Y, final_dot_prod);
+        GD::foreach_feature<B_triplet_constructor<sparse_parameters>, uint64_t, triplet_construction,
+            B_triplet_constructor<sparse_parameters>>(weights, _all->ignore_some_linear, _all->ignore_linear,
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, final_dot_prod, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, weights, _all->_generate_interactions_object_cache);
       }
       else
       {
-        dot_product<dense_parameters> weights(_all->weights.dense_weights, col, Y);
-        GD::foreach_feature<float, float, just_add_weights, dot_product<dense_parameters>>(weights,
-            _all->ignore_some_linear, _all->ignore_linear,
+        B_triplet_constructor<dense_parameters> weights(_all->weights.dense_weights, col, Y, final_dot_prod);
+        GD::foreach_feature<B_triplet_constructor<dense_parameters>, uint64_t, triplet_construction,
+            B_triplet_constructor<dense_parameters>>(weights, _all->ignore_some_linear, _all->ignore_linear,
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, final_dot_prod, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, weights, _all->_generate_interactions_object_cache);
       }
 
       B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
