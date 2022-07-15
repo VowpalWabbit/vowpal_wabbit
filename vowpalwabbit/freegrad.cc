@@ -43,6 +43,7 @@ struct freegrad
   // TODO remove this 
   bool noweightinvariance;
   bool adaptiveradius;
+  float lipschitz_const;
   float radius;
   struct freegrad_update_data data;
   size_t no_win_counter;
@@ -152,6 +153,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   float absG = std::fabs(G); 
   float V  = w[Vsum]; // sum of squared gradients w.r.t. scalar feature x
   float epsilon = d.FG->epsilon;
+  float lipschitz_const = d.FG->lipschitz_const;
   
   // Computing the freegrad prediction again (Eq.(9) and Line 7 of Alg. 2 in paper)
   if (h1>0)
@@ -178,9 +180,14 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   fabs_tilde_g = std::fabs(tilde_gradient);
     
   // Updating the hint sequence
-  if (h1 == 0){
-    w[H1] = fabs_tilde_g;
-    w[HT] = fabs_tilde_g;
+  if (h1 == 0 && lipschitz_const==0){
+      w[H1] = fabs_tilde_g;
+      w[HT] = fabs_tilde_g;
+      w[Vsum] += pow(fabs_tilde_g,2.f);
+  }
+  else if (h1 == 0){
+    w[H1] = lipschitz_const;
+    w[HT] = lipschitz_const;
     w[Vsum] += pow(fabs_tilde_g,2.f);
   }
   else if (fabs_tilde_g > ht) {
@@ -320,7 +327,7 @@ base_learner* freegrad_setup(options_i& options, vw& all)
   option_group_definition new_options("FreeGrad options");
   // TODO remove the noweightinvariance option
   new_options.add(make_option("freegrad", FreeGrad).keep().help("Diagonal FreeGrad Algorithm")).add(make_option("restart", restart).help("Use the FreeRange restarts"))
-      .add(make_option("project", project).help("Project the outputs to adapt to both the lipschitz and comparator norm")).add(make_option("noweightinvariance", FG->noweightinvariance).help("No (importance) weight invariance")).add(make_option("fepsilon", FG->epsilon).default_value(1.f).help("Initial wealth"));
+      .add(make_option("project", project).help("Project the outputs to adapt to both the lipschitz and comparator norm")).add(make_option("noweightinvariance", FG->noweightinvariance).help("No (importance) weight invariance")).add(make_option("fepsilon", FG->epsilon).default_value(1.f).help("Initial wealth")).add(make_option("flipschitz_const", FG->lipschitz_const).default_value(0.f).help("Upper bound on the norm of the gradients if known in advance"));
 
   options.add_and_parse(new_options);
 
