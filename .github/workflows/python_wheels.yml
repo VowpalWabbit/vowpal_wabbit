@@ -137,7 +137,7 @@ jobs:
   linux-python-build-aarch64:
     name: manylinux.aarch64.py${{ matrix.config.version }}.build
     # Aarch builds are slow and are only run on push and not PR
-    #if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' }}
     strategy:
       matrix:
         config:
@@ -171,7 +171,7 @@ jobs:
     name: manylinux.aarch64.py${{ matrix.config.version }}.test
     needs: linux-python-build-aarch64
     # Aarch builds are slow and are only run on push and not PR
-    #if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' }}
     strategy:
       matrix:
         config:
@@ -201,7 +201,7 @@ jobs:
             bash -exc 'apt-get update && \
             apt install software-properties-common -y && \
             add-apt-repository ppa:deadsnakes/ppa -y && \
-            timedatectl set-timezone America/New_York && \
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata && \
             apt install -y ${{ env.py }} && \
             apt install -y ${{ env.py }}-venv && \
             ${{ env.py }} -m venv .env && \
