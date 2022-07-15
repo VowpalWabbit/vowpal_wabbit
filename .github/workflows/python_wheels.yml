@@ -153,7 +153,7 @@ jobs:
         submodules: recursive
     - uses: szenius/set-timezone@v1.0
       with:
-        timezoneLinux: "Asia/Singapore"
+        timezoneLinux: "America/New_York"
     - name: Set up QEMU
       id: qemu
       uses: docker/setup-qemu-action@v1
