@@ -153,11 +153,12 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    {
-      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
-    }
+    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
   }
-  else { shrink_factors.resize(preds.size(), 1.f); }
+  else
+  {
+    shrink_factors.resize(preds.size(), 1.f);
+  }
 }
 
 template <typename TripletType>
