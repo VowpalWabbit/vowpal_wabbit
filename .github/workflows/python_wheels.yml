@@ -151,6 +151,9 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
+    - uses: szenius/set-timezone@v1.0
+      with:
+        timezoneLinux: "Asia/Singapore"
     - name: Set up QEMU
       id: qemu
       uses: docker/setup-qemu-action@v1
@@ -195,11 +198,6 @@ jobs:
         name: manylinux_aarch64_${{ matrix.config.version }}
         path: built_wheel
     - name: Test Wheel
-    - uses: szenius/set-timezone@v1.0
-      with:
-        timezoneLinux: "Asia/Singapore"
-        timezoneMacos: "Asia/Singapore"
-        timezoneWindows: "Singapore Standard Time"
       run: |
             docker run --rm -v ${{ github.workspace }}:/io:rw --workdir=/io \
             arm64v8/ubuntu \
