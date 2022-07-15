@@ -201,6 +201,7 @@ jobs:
             bash -exc 'apt-get update && \
             apt install software-properties-common -y && \
             add-apt-repository ppa:deadsnakes/ppa -y && \
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata && \
             apt install -y ${{ env.py }} && \
             apt install -y ${{ env.py }}-venv && \
             ${{ env.py }} -m venv .env && \
