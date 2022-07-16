@@ -336,7 +336,7 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
                .help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used"))
       .add(make_option("fepsilon", fepsilon).default_value(1.f).help("Initial wealth"))
       .add(make_option("flipschitz_const", flipschitz_const).default_value(0.f)
-               .help("Upper bound on the norm of the gradients if known in advance"))
+               .help("Upper bound on the norm of the gradients if known in advance"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
