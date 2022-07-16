@@ -205,12 +205,12 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   if (h1 == 0 && lipschitz_const==0){
       w[H1] = fabs_tilde_g;
       w[HT] = fabs_tilde_g;
-      w[Vsum] += pow(fabs_tilde_g,2.f);
+      w[V_SUM] += pow(fabs_tilde_g,2.f);
   }
   else if (h1 == 0){
     w[H1] = lipschitz_const;
     w[HT] = lipschitz_const;
-    w[Vsum] += pow(fabs_tilde_g,2.f);
+    w[V_SUM] += pow(fabs_tilde_g,2.f);
   }
   else if (fabs_tilde_g > ht)
   {
