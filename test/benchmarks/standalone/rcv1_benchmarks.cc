@@ -1,11 +1,11 @@
+#include "../benchmarks_common.h"
+#include "vw/core/vw.h"
+
 #include <benchmark/benchmark.h>
 
-#include <string>
-#include <iostream>
 #include <fstream>
-
-#include "vw.h"
-#include "../benchmarks_common.h"
+#include <iostream>
+#include <string>
 
 static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_line)
 {
@@ -5319,18 +5319,15 @@ static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_
 
   for (auto _ : state)
   {
-    for (auto* example : examples)
-    {
-      VW::setup_example(*vw, example);
-      vw->learn(*example);
-      vw->finish_example(*example);
-    }
+    for (auto* example : examples) { vw->learn(*example); }
 
     benchmark::ClobberMemory();
   }
 
-  VW::finish(*vw, true);
+  for (auto* example : examples) { vw->finish_example(*example); }
+
+  VW::finish(*vw);
 }
 
-BENCHMARK_CAPTURE(benchmark_rcv1_dataset, simple, "--quiet");
-BENCHMARK_CAPTURE(benchmark_rcv1_dataset, quadratic, "--quiet -q ::");
+BENCHMARK_CAPTURE(benchmark_rcv1_dataset, simple, "--quiet")->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_rcv1_dataset, quadratic, "--quiet -q ::")->MinTime(15.0);

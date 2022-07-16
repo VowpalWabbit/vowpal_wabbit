@@ -1,0 +1,25 @@
+using no cache
+Reading datafile = train-sets/privacy_dataset_no_tags
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger, cbify-adf
+Input label = multiclass
+Output pred = multiclass
+average  since         example        example  current  current  current
+loss     last          counter         weight    label  predict features
+0.000000 0.000000            1            1.0        1        1       11
+0.000000 0.000000            2            2.0        2        2       11
+0.250000 0.500000            4            4.0        1        2       11
+0.375000 0.500000            8            8.0        1        1       11
+0.500000 0.625000           16           16.0        1        2       11
+
+finished run
+number of examples = 31
+weighted example sum = 31.000000
+weighted label sum = 0.000000
+average loss = 0.322581
+total feature number = 341

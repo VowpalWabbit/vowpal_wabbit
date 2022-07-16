@@ -5,13 +5,7 @@ import vowpalWabbit.learner.VWLearners;
 
 public final class VW {
     static {
-        try {
-            // Load from java.library.path
-            System.loadLibrary("vw_jni");
-        } catch (UnsatisfiedLinkError e) {
-            // Load from JAR
-            Native.load();
-        }
+        Native.load();
     }
 
     /**

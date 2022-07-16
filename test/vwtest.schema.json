@@ -1,0 +1,58 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "http://vowpalwabbit.org/schemas/runtests.schema.json",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "number"
+            },
+            "desc": {
+                "type": "string"
+            },
+            "vw_command": {
+                "type": "string"
+            },
+            "bash_command": {
+                "type": "string"
+            },
+            "diff_files": {
+                "type": "object",
+                "patternProperties": {
+                    "^.*$": {
+                        "type": "string"
+                    }
+                }
+            },
+            "input_files": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }
+            },
+            "depends_on": {
+                "type": "array",
+                "items": {
+                    "type": "number"
+                }
+            }
+        },
+        "required": [
+            "id"
+        ],
+        "oneOf": [
+            {
+                "required": [
+                    "vw_command"
+                ]
+            },
+            {
+                "required": [
+                    "bash_command"
+                ]
+            }
+        ],
+        "additionalProperties": false
+    }
+}

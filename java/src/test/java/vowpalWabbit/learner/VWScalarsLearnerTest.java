@@ -45,7 +45,7 @@ public class VWScalarsLearnerTest extends VWTestHelper {
         };
         assertEquals(expected.length, pred.length);
         for (int i=0; i<expected.length; ++i)
-            assertArrayEquals(expected[i], pred[i], 0.00001f);
+            assertArrayEquals(expected[i], pred[i], 0.001f);
     }
 
     @Before

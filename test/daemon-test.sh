@@ -25,7 +25,11 @@ do
             ;;
         --port)
             PORT="$2"
-            shift 
+            shift
+            ;;
+        --vw)
+            VW="$2"
+            shift
             ;;
         *)
             echo "$NAME: unknown argument $1"
@@ -35,8 +39,11 @@ do
     shift
 done
 
+# Test if the VW command is available
+${VW} --version > /dev/null 2>&1
+
 # -- make sure we can find vw first
-if [ -x "$VW" ]; then
+if [ $? -eq 0 ]; then
     : cool found vw at: $VW
 else
     echo "$NAME: can not find 'vw' in $PATH - sorry"
@@ -166,6 +173,9 @@ fi
 # nc.traditional does not, so let's use -w 1 which will silently close the connection if the connection
 # or stdin are silent for more than 1 second
 DELAY_OPT="-w 1"
+
+# In case the VW command run immediately before is not yet ready to accept connections wait for a little bit
+sleep 1
 
 $NETCAT $DELAY_OPT localhost $PORT < $TRAINSET > $PREDOUT
 

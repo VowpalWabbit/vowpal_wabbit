@@ -1,16 +1,17 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/reductions/cats.h"
 
-#include "cats.h"
-#include "memory.h"
-#include "vw.h"
 #include "test_common.h"
+#include "vw/core/memory.h"
+#include "vw/core/vw.h"
 
-using namespace VW::continuous_action::cats;
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
+
+using namespace VW::reductions::cats;
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_zero_for_bad_prediction)
 {
@@ -21,7 +22,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_zero_for_bad_prediction)
   data->bandwidth = 3;
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 10.0f;
   float cost = 1.0f;
   float pdf_value = 0.166666672f;
@@ -32,8 +32,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_zero_for_bad_prediction)
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_EQUAL(loss, 0.0f);
-
-  cont_label.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_not_zero_for_bad_prediction_and_large_b)
@@ -45,7 +43,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_not_zero_for_bad_prediction_and_large_b)
   data->bandwidth = 30;
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 10.0f;
   float cost = 1.0f;
   float pdf_value = 0.166666672f;
@@ -62,8 +59,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_not_zero_for_bad_prediction_and_large_b)
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_CLOSE(loss, 0.1875, FLOAT_TOL);
-
-  cont_label.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_not_close_to_range_edges)
@@ -78,7 +73,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_not_clos
   // unit_range = continuous_range / num_action = 33 / 4 = 8.25
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 17.0f;
   float cost = 1.0f;
   float pdf_value = 0.125f;
@@ -95,8 +89,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_not_clos
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_EQUAL(loss, 1.0f);
-
-  cont_label.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_close_to_range_edges)
@@ -111,7 +103,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_close_to
   // unit_range = continuous_range / num_action = 33 / 4 = 8.25
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 33.0f;
   float cost = 1.0f;
   float pdf_value = 0.125f;
@@ -128,8 +119,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_for_good_prediction_and_small_b_close_to
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_CLOSE(loss, 1.0f, FLOAT_TOL);
-
-  cont_label.costs.delete_v();
 }
 
 BOOST_AUTO_TEST_CASE(cats_test_get_loss_with_default_bandwidth)
@@ -147,7 +136,6 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_with_default_bandwidth)
   // unit_range = continuous_range / num_action = 32 / 8 = 4
 
   VW::cb_continuous::continuous_label cont_label;
-  cont_label.costs = v_init<VW::cb_continuous::continuous_label_elm>();
   float action = 32.0f;
   float cost = 1.0f;
   float pdf_value = 0.25f;
@@ -164,6 +152,4 @@ BOOST_AUTO_TEST_CASE(cats_test_get_loss_with_default_bandwidth)
   auto loss = data->get_loss(cont_label, predicted_action);
 
   BOOST_CHECK_EQUAL(loss, 1.0f);
-
-  cont_label.costs.delete_v();
 }

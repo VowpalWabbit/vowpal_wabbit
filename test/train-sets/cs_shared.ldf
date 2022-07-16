@@ -1,0 +1,6 @@
+shared | g
+1:0 | Real_f Auto_f RealAuto_f
+2:1 | Toy_f  Auto_f ToyAuto_f
+3:1 | Real_f Air_f  RealAir_f
+4:1 | Toy_f  Air_f  ToyAir_f
+

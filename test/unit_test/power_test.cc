@@ -1,18 +1,19 @@
-#ifndef STATIC_LINK_VW
-#define BOOST_TEST_DYN_LINK
-#endif
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
-#include "fast_pow10.h"
 #include "test_common.h"
+#include "vw/core/fast_pow10.h"
+
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 bool are_same(float a, float b) { return std::abs(a - b) < std::numeric_limits<float>::epsilon(); }
 
 BOOST_AUTO_TEST_CASE(pow10_tests)
 {
-  // In reality most of these tests would all evaluate to the same. The reason is that the epsilon is usually around 1.2e-7
+  // In reality most of these tests would all evaluate to the same. The reason is that the epsilon is usually
+  // around 1.2e-7
   const float base = 10;
   BOOST_CHECK(are_same(VW::fast_pow10(-127), static_cast<float>(std::pow(base, -127))));
   BOOST_CHECK(are_same(VW::fast_pow10(-46), static_cast<float>(std::pow(base, -46))));

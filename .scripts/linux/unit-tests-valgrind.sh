@@ -7,5 +7,4 @@ REPO_DIR=$SCRIPT_DIR/../../
 cd $REPO_DIR
 
 cd build
-valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full ./test/unit_test/vw-unit-test.out -- valgrind
-valgrind --quiet --error-exitcode=100 --track-origins=yes --leak-check=full ./bindings/c/test/vw_c_api_unit_test -- valgrind
+ctest --verbose --output-on-failure --label-regex VWTestList

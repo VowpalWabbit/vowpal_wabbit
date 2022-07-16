@@ -1,12 +1,11 @@
-#ifndef STATIC_LINK_VW
-#  define BOOST_TEST_DYN_LINK
-#endif
-
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
 
 #include "test_common.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <vector>
 
 BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)

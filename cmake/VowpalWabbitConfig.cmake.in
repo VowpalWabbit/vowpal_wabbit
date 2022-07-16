@@ -1,8 +1,12 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
-find_dependency(Boost REQUIRED COMPONENTS program_options)
 find_dependency(ZLIB REQUIRED)
 find_dependency(Threads REQUIRED)
+find_dependency(spdlog REQUIRED)
+find_dependency(fmt REQUIRED)
+find_dependency(RapidJSON REQUIRED)
 
 include("${CMAKE_CURRENT_LIST_DIR}/VowpalWabbitTargets.cmake")
+
+check_required_components(VowpalWabbit)

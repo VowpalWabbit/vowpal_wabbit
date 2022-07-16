@@ -4,7 +4,7 @@ include(NetFxResource)
 
 # TODO: Make AssemblyInfo a configure()ed file
 add_library(VowpalWabbit.Common SHARED
-  Properties/AssemblyInfo.cs 
+  Properties/AssemblyInfo.cs
   Reflection/InspectionHelper.cs
   Reflection/ReflectionHelper.cs
   Reflection/TypeDistance.cs
@@ -41,7 +41,13 @@ set (vw_DOTNET_FRAMEWORK_REFERENCES
     Microsoft.CSharp
 )
 
+target_compile_options(VowpalWabbit.Common PRIVATE
+  $<$<CONFIG:Release>:/debug:pdbonly>
+  $<$<CONFIG:Debug>:/debug:full>
+)
+
 set_target_properties(VowpalWabbit.Common PROPERTIES
     VS_DOTNET_REFERENCES "${vw_DOTNET_FRAMEWORK_REFERENCES}"
     VS_GLOBAL_ROOTNAMESPACE VW
+    VS_GLOBAL_DocumentationFile "VowpalWabbit.Common.xml"
 )

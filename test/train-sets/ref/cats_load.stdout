@@ -1,0 +1,3 @@
+[warning] model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDDEN by set of {-q, --cubic, --interactions} settings from command line.
+[warning] Any duplicate namespace interactions will be removed
+You can use --leave_duplicate_interactions to disable this behaviour.

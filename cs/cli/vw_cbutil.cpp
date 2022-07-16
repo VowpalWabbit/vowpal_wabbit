@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw_cbutil.h"
-#include "cb_algs.h"
+#include "vw/core/reductions/cb/cb_algs.h"
 
 namespace VW
 {

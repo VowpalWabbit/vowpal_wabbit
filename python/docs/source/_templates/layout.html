@@ -1,0 +1,36 @@
+{% extends "!layout.html" %}
+
+{% block docs_body %}
+    {# If this is set then we are rendering a notebook and should inject the binder and thebe buttons #}
+    {% if binder_url %}
+    <button title="Activate interactive cells" class="thebelab-button thebe-launch-button" onclick="initThebe()">
+        Make live
+    </button>
+    <a class="binder-button" href="{{ binder_url }}">
+        <img class="binder-button-logo" src="https://mybinder.org/badge_logo.svg" alt="Binder">
+    </a>
+    {% endif %}
+{{ super() }}
+{% endblock %}
+
+{% block docs_navbar %}
+    {%include 'main_nav.html' %}
+    {%include 'mobile_nav.html' %}
+{% endblock %}
+
+{% block footer %}
+{{ super() }}
+<script type="text/javascript" src="https://js.monitor.azure.com/scripts/c/ms.analytics-web-3.min.js">
+</script>
+<script>
+  const analytics = new oneDS.ApplicationInsights();
+  var config = {
+    instrumentationKey: "734e91f5b0594dd08e2e4768fb4f9655-a7347ca4-1142-4c1e-831a-372cd2790ac0-6806",
+    disableCookiesUsage: true,
+    webAnalyticsConfiguration: {
+      urlCollectHash: true
+    }
+  };
+  analytics.initialize(config, []);
+</script>
+{% endblock %}

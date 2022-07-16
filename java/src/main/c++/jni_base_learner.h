@@ -1,12 +1,15 @@
 #ifndef VW_BASE_LEARNER_H
 #define VW_BASE_LEARNER_H
 
-#include <jni.h>
-#include <functional>
 #include "util.h"
+#include "vw/core/vw.h"
 
-example* read_example(JNIEnv* env, jstring example_string, vw* vwInstance);
-example* read_example(const char* example_string, vw* vwInstance);
+#include <jni.h>
+
+#include <functional>
+
+example* read_example(JNIEnv* env, jstring example_string, VW::workspace* vwInstance);
+example* read_example(const char* example_string, VW::workspace* vwInstance);
 
 // It would appear that after reading posts like
 // http://stackoverflow.com/questions/6458612/c0x-proper-way-to-receive-a-lambda-as-parameter-by-reference
@@ -15,7 +18,7 @@ example* read_example(const char* example_string, vw* vwInstance);
 // it is more efficient to use another type parameter instead of std::function<T(example*)>
 // but more difficult to read.
 template <typename T, typename F>
-T base_predict(JNIEnv* env, example* ex, bool learn, vw* vwInstance, const F& predictor, const bool predict)
+T base_predict(JNIEnv* env, example* ex, bool learn, VW::workspace* vwInstance, const F& predictor, const bool predict)
 {
   T result = 0;
   try
@@ -25,8 +28,7 @@ T base_predict(JNIEnv* env, example* ex, bool learn, vw* vwInstance, const F& pr
     else
       vwInstance->predict(*ex);
 
-    if (predict)
-      result = predictor(ex, env);
+    if (predict) result = predictor(ex, env);
 
     vwInstance->finish_example(*ex);
   }
@@ -40,7 +42,7 @@ T base_predict(JNIEnv* env, example* ex, bool learn, vw* vwInstance, const F& pr
 template <typename T, typename F>
 T base_predict(JNIEnv* env, jstring example_string, jboolean learn, jlong vwPtr, const F& predictor)
 {
-  vw* vwInstance = (vw*)vwPtr;
+  VW::workspace* vwInstance = (VW::workspace*)vwPtr;
   example* ex = read_example(env, example_string, vwInstance);
   return base_predict<T>(env, ex, learn, vwInstance, predictor, true);
 }
@@ -48,7 +50,7 @@ T base_predict(JNIEnv* env, jstring example_string, jboolean learn, jlong vwPtr,
 template <typename T, typename F>
 T base_predict(JNIEnv* env, jobjectArray example_strings, jboolean learn, jlong vwPtr, const F& predictor)
 {
-  vw* vwInstance = (vw*)vwPtr;
+  VW::workspace* vwInstance = (VW::workspace*)vwPtr;
   int example_count = env->GetArrayLength(example_strings);
   multi_ex ex_coll;  // When doing multiline prediction the final result is stored in the FIRST example parsed.
   example* first_example = NULL;
@@ -57,8 +59,7 @@ T base_predict(JNIEnv* env, jobjectArray example_strings, jboolean learn, jlong 
     jstring example_string = (jstring)(env->GetObjectArrayElement(example_strings, i));
     example* ex = read_example(env, example_string, vwInstance);
     ex_coll.push_back(ex);
-    if (i == 0)
-      first_example = ex;
+    if (i == 0) first_example = ex;
   }
   env->DeleteLocalRef(example_strings);
 

@@ -1,8 +1,9 @@
 #include "vowpalWabbit_learner_VWActionProbsLearner.h"
-#include "vw.h"
-#include "jni_base_learner.h"
 
-jobject action_probs_prediction(example *vec, JNIEnv *env)
+#include "jni_base_learner.h"
+#include "vw/core/vw.h"
+
+jobject action_probs_prediction(example* vec, JNIEnv* env)
 {
   jclass action_prob_class = env->FindClass("vowpalWabbit/responses/ActionProb");
   jmethodID action_prob_constructor = env->GetMethodID(action_prob_class, "<init>", "(IF)V");
@@ -27,13 +28,13 @@ jobject action_probs_prediction(example *vec, JNIEnv *env)
 }
 
 JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWActionProbsLearner_predict(
-    JNIEnv *env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
+    JNIEnv* env, jobject obj, jstring example_string, jboolean learn, jlong vwPtr)
 {
   return base_predict<jobject>(env, example_string, learn, vwPtr, action_probs_prediction);
 }
 
 JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWActionProbsLearner_predictMultiline(
-    JNIEnv *env, jobject obj, jobjectArray example_strings, jboolean learn, jlong vwPtr)
+    JNIEnv* env, jobject obj, jobjectArray example_strings, jboolean learn, jlong vwPtr)
 {
   return base_predict<jobject>(env, example_strings, learn, vwPtr, action_probs_prediction);
 }

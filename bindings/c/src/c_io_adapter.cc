@@ -4,9 +4,8 @@
 
 #include "c_io_adapter.h"
 
+#include "vw/common/vw_exception.h"
 #include "vw/experimental/types.h"
-
-#include "vw_exception.h"
 
 c_reader::c_reader(void* context, VWReadFunc* read)
     : VW::io::reader(false /* is_resettable */), _context(context), _read_func(read)
