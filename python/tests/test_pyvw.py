@@ -41,7 +41,7 @@ class TestVW:
         assert ex.get_tag() == "baz"
 
     def test_num_weights(self):
-        assert self.model.num_weights() == 2**BIT_SIZE
+        assert self.model.num_weights() == 2 ** BIT_SIZE
 
     def test_get_weight(self):
         assert self.model.get_weight(0, 0) == 0
@@ -686,3 +686,11 @@ def test_deceprecated_labels():
         vowpalwabbit.pyvw.multiclass_probabilities_label()
         vowpalwabbit.pyvw.cost_sensitive_label()
         vowpalwabbit.pyvw.cbandits_label()
+
+
+def test_random_weights_seed():
+    a = Workspace("--random_seed 1 --random_weights")
+    b = Workspace("--random_seed 2 --random_weights")
+
+    dummy_ex_str = " | foo=bar"
+    assert a.predict(dummy_ex_str) != b.predict(dummy_ex_str)

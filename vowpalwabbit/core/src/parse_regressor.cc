@@ -36,7 +36,7 @@
 #include <utility>
 
 void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
-void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
+// void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
 
 void initialize_weights_as_polar_normal(weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
 
@@ -95,7 +95,10 @@ void initialize_regressor(VW::workspace& all, T& weights)
   }
   else if (all.random_weights)
   {
-    weights.set_default(&initialize_weights_as_random);
+    auto rand_state = *all.get_random_state();
+    auto my_lambda = [&rand_state](
+                         weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_random() - 0.5f; };
+    weights.set_default(my_lambda);
   }
   else if (all.normal_weights)
   {
