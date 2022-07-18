@@ -689,8 +689,11 @@ def test_deceprecated_labels():
 
 
 def test_random_weights_seed():
-    a = Workspace("--random_seed 1 --random_weights")
-    b = Workspace("--random_seed 2 --random_weights")
+    # TODO: why do we need min_prediction and max_prediction?
+    shared_args = "--random_weights --quiet --min_prediction -50 --max_prediction 50"
+
+    a = Workspace(f"--random_seed 1 {shared_args}")
+    b = Workspace(f"--random_seed 2 {shared_args}")
 
     dummy_ex_str = " | foo=bar"
     assert a.predict(dummy_ex_str) != b.predict(dummy_ex_str)
