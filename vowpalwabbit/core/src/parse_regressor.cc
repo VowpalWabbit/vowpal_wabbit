@@ -89,16 +89,16 @@ void initialize_regressor(VW::workspace& all, T& weights)
   else if (all.random_positive_weights)
   {
     auto rand_state = *all.get_random_state();
-    auto my_lambda = [&rand_state](
-                         weight* weights, uint64_t) { weights[0] = 0.1f * rand_state.get_and_update_random(); };
-    weights.set_default(my_lambda);
+    auto random_positive = [&rand_state](
+                               weight* weights, uint64_t) { weights[0] = 0.1f * rand_state.get_and_update_random(); };
+    weights.set_default(random_positive);
   }
   else if (all.random_weights)
   {
     auto rand_state = *all.get_random_state();
-    auto my_lambda = [&rand_state](
-                         weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_random() - 0.5f; };
-    weights.set_default(my_lambda);
+    auto random_neg_pos = [&rand_state](
+                              weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_random() - 0.5f; };
+    weights.set_default(random_neg_pos);
   }
   else if (all.normal_weights)
   {
