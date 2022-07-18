@@ -10,6 +10,7 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
+#include "vw/core/redsvd.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
@@ -47,6 +48,34 @@ public:
     {
       _triplets.emplace_back(Eigen::Triplet<float>(_row_index, index & _weights_mask, feature_value));
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
+    }
+  }
+};
+
+struct test_A_triplet_constructor
+{
+private:
+  std::unordered_map<uint64_t, float>& _vec_mult;
+  std::unordered_map<uint64_t, bool>& _vec_mult_tracker;
+
+public:
+  test_A_triplet_constructor(
+      std::unordered_map<uint64_t, float>& vec_mult, std::unordered_map<uint64_t, bool>& vec_mult_tracker)
+      : _vec_mult(vec_mult), _vec_mult_tracker(vec_mult_tracker)
+  {
+  }
+
+  void set(float feature_value, uint64_t index)
+  {
+    if (_vec_mult.find(index) != _vec_mult.end())
+    {
+      _vec_mult[index] *= feature_value;
+      _vec_mult_tracker[index] = true;
+    }
+    else
+    {
+      _vec_mult.emplace(index, feature_value);
+      _vec_mult_tracker.emplace(index, false);
     }
   }
 };
@@ -123,8 +152,8 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
   predict_or_learn_impl<true>(base, examples);
 }
 
-cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
-    uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all)
+cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
+    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, bool aatop)
     : _d(d)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
@@ -133,6 +162,7 @@ cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(
     , _all(all)
     , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _counter(0)
+    , _aatop(aatop)
 {
   _action_indices.resize(_d);
 }
@@ -153,12 +183,11 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+    {
+      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
+    }
   }
-  else
-  {
-    shrink_factors.resize(preds.size(), 1.f);
-  }
+  else { shrink_factors.resize(preds.size(), 1.f); }
 }
 
 template <typename TripletType>
@@ -233,6 +262,62 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
     }
     row_index++;
   }
+}
+
+bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
+{
+  _triplets.clear();
+  // TODO check re-allocation on this
+  A.resize(examples.size(), examples.size());
+
+  for (size_t i = 0; i < examples.size(); ++i)
+  {
+    for (size_t j = 0; j < examples.size(); ++j)
+    {
+      if (i <= j)
+      {
+        _vec_mult.clear();
+        _vec_mult_tracker.clear();
+
+        {
+          auto& red_features =
+              examples[i]->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+
+          test_A_triplet_constructor tc(_vec_mult, _vec_mult_tracker);
+          GD::foreach_feature<test_A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+              _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+              (red_features.generated_interactions ? *red_features.generated_interactions : *examples[i]->interactions),
+              (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                          : *examples[i]->extent_interactions),
+              _all->permutations, *examples[i], tc, _all->_generate_interactions_object_cache);
+        }
+
+        {
+          auto& red_features =
+              examples[j]->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+
+          test_A_triplet_constructor tc(_vec_mult, _vec_mult_tracker);
+          GD::foreach_feature<test_A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+              _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+              (red_features.generated_interactions ? *red_features.generated_interactions : *examples[j]->interactions),
+              (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                          : *examples[j]->extent_interactions),
+              _all->permutations, *examples[j], tc, _all->_generate_interactions_object_cache);
+        }
+
+        float prod = 0.f;
+        for (auto& index_val : _vec_mult)
+        {
+          if (_vec_mult_tracker[index_val.first]) { prod += index_val.second; }
+        }
+        prod *= shrink_factors[i] * shrink_factors[j];
+        A(i, j) = prod;
+        A(j, i) = prod;
+      }
+    }
+  }
+
+  return true;
 }
 
 bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
@@ -345,31 +430,40 @@ void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
 
 void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 {
-  // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
-  // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is more
-  // natural to vw's example features representation
-
-  // TODO can Y be stored in the model? on some strided location ^^ ?
-  // if the model is empty then can't create Y and there is nothing left to do
-  if (!generate_Y(examples) || Y.rows() < static_cast<Eigen::Index>(_d))
+  if (_aatop)
   {
-    U.resize(0, 0);
-    return;
+    generate_A(examples);
+    // RedSVD::RedSymEigen<Eigen::MatrixXf> rede(A, _d);
+    // U = rede.eigenvectors();
   }
-
-  generate_B(examples);
-  generate_Z(examples);
-
-  Eigen::MatrixXf C = Z.transpose() * B;
-
-  Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
-
-  U = Z * svd.matrixU();
-
-  if (_set_all_svd_components)
+  else
   {
-    _V = Y * svd.matrixV();
-    _S = svd.singularValues();
+    // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
+    // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is
+    // more natural to vw's example features representation
+
+    // TODO can Y be stored in the model? on some strided location ^^ ?
+    // if the model is empty then can't create Y and there is nothing left to do
+    if (!generate_Y(examples) || Y.rows() < static_cast<Eigen::Index>(_d))
+    {
+      U.resize(0, 0);
+      return;
+    }
+
+    generate_B(examples);
+    generate_Z(examples);
+
+    Eigen::MatrixXf C = Z.transpose() * B;
+
+    Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+    U = Z * svd.matrixU();
+
+    if (_set_all_svd_components)
+    {
+      _V = Y * svd.matrixV();
+      _S = svd.singularValues();
+    }
   }
 }
 
@@ -518,6 +612,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float c;
   bool apply_shrink_factor = false;
   bool full_predictions = false;
+  bool aatop = false;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -526,6 +621,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
+      .add(make_option("aatop", aatop))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
@@ -577,7 +673,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space>;
-  auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all);
+  auto data =
+      VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all, aatop);
 
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_large_action_space_setup))

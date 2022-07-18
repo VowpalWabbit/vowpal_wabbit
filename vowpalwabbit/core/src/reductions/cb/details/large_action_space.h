@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <iostream>
+#include <unordered_map>
 #include <vector>
 
 namespace VW
@@ -28,24 +29,28 @@ private:
   VW::workspace* _all;
   uint64_t _seed;
   size_t _counter;
+  bool _aatop;
   std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<uint64_t> _action_indices;
   std::vector<bool> _spanner_bitvec;
 
 public:
   Eigen::SparseMatrix<float> Y;
+  Eigen::MatrixXf A;
   Eigen::MatrixXf B;
   Eigen::MatrixXf Z;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
+  std::unordered_map<uint64_t, float> _vec_mult;
+  std::unordered_map<uint64_t, bool> _vec_mult_tracker;
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
   Eigen::SparseMatrix<float> _A;
   bool _set_all_svd_components = false;
 
-  cb_explore_adf_large_action_space(
-      uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all);
+  cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
+      bool apply_shrink_factor, VW::workspace* all, bool aatop = false);
   ~cb_explore_adf_large_action_space() = default;
   void save_load(io_buf& io, bool read, bool text);
 
@@ -57,6 +62,7 @@ public:
   void generate_Z(const multi_ex& examples);
   void generate_B(const multi_ex& examples);
   bool generate_Y(const multi_ex& examples);
+  bool generate_A(const multi_ex& examples);
   void randomized_SVD(const multi_ex& examples);
   std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
   void compute_spanner();
