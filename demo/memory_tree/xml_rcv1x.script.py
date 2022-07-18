@@ -37,7 +37,7 @@ saved_model = "{}.vw".format(train_data)
 print("## Training...")
 start = time.time()
 # train_data = 'tmp_rcv1.vw.txt'
-command_line = f"../../build/vowpalwabbit/vw {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --dream_at_update {dream_at_update}\
+command_line = f"../../build/vowpalwabbit/cli/vw {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --dream_at_update {dream_at_update}\
                 --max_number_of_labels {max_num_labels} --dream_repeats {dream_repeats} {'--oas' if use_oas else ''} \
                 --leaf_example_multiplier {leaf_example_multiplier} --alpha {alpha} -l {lr} -b {bits} -c --passes {passes} --loss_function {loss} -f {saved_model}"
 os.system(command_line)
@@ -46,7 +46,7 @@ train_time = time.time() - start
 print("## Testing...")
 start = time.time()
 os.system(
-    "../../build/vowpalwabbit/vw {} --oas {} -i {}".format(
+    "../../build/vowpalwabbit/cli/vw {} --oas {} -i {}".format(
         test_data, use_oas, saved_model
     )
 )

@@ -62,7 +62,7 @@ Feature Options:
                                             Empty N or S are treated as default namespace. Use ':' as a wildcard
                                             in S. (type: list[str], keep)
     -b, --bit_precision arg                 Number of bits in the feature table (type: uint)
-    --noconstant                            Don't add a constant feature (type: bool)
+    --noconstant                            Don't add a constant feature (type: bool, keep)
     -C, --constant arg                      Set initial value of constant (type: float, default: 0)
     --ngram args...                         Generate N grams. To generate N grams for a single namespace
                                             'foo', arg should be fN (type: list[str])
@@ -222,10 +222,10 @@ Weight Options:
 [Reduction] Autolink Options:
     --autolink arg                          Create link function with polynomial d (type: uint, keep, necessary)
 [Reduction] Automl Options:
-    --automl arg                            Set number of live configs (type: uint, default: 3, keep, necessary,
+    --automl arg                            Set number of live configs (type: uint, default: 4, keep, necessary,
                                             experimental)
     --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
-                                            10, keep, experimental)
+                                            4000, keep, experimental)
     --cm_type arg                           Set type of config manager (type: str, default: interaction,
                                             choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
@@ -551,6 +551,8 @@ Weight Options:
                                             false, experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
                                             (bonferroni correction) (type: bool, keep, experimental)
+    --min_champ_examples arg                Minimum number of examples for any challenger to become champion
+                                            (type: uint, default: 0, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -575,17 +577,6 @@ Weight Options:
                                             uint, keep, necessary)
     --replay_m_count arg                    How many times (in expectation) should each example be played
                                             (default: 1 = permuting) (type: uint, default: 1)
-[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space Options:
-    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
-                                            action dependent features (type: bool, keep, necessary)
-    --large_action_space                    Large action space exploration (type: bool, keep, necessary,
-                                            experimental)
-    --full_predictions                      Full representation of the prediction's action probabilities
-                                            (type: bool, experimental)
-    --max_actions arg                       Max number of actions to explore (type: uint, default: 50, keep,
-                                            experimental)
-    --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:
-                                            2, keep, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=

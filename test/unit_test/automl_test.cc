@@ -97,14 +97,14 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   auto ctr_no_save = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
-      "--random_seed 5",
+      "--random_seed 5 --global_lease 10",
       empty_hooks, num_iterations, seed, swap_after);
   BOOST_CHECK_GT(ctr_no_save.back(), 0.6f);
 
   auto ctr_with_save = simulator::_test_helper_save_load(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
-      "--random_seed 5",
+      "--random_seed 5 --global_lease 10",
       num_iterations, seed, swap_after, split);
   BOOST_CHECK_GT(ctr_with_save.back(), 0.6f);
 
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--oracle_type rand",
+      "--oracle_type rand --global_lease 10",
       test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
@@ -168,8 +168,8 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_metrics)
   });
 
   auto ctr = simulator::_test_helper_hook(
-      "--extra_metrics ut_metrics.json --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5", test_hooks,
-      num_iterations);
+      "--extra_metrics ut_metrics.json --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --global_lease 10",
+      test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
       "--random_seed 5 "
-      "--oracle_type rand",
+      "--oracle_type rand --global_lease 10",
       test_hooks, num_iterations);
 
   BOOST_CHECK_GT(ctr.back(), 0.1f);
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE(automl_cpp_simulator_automl)
 {
   auto ctr = simulator::_test_helper(
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
-      "favor_popular_namespaces --oracle_type rand");
+      "favor_popular_namespaces --oracle_type rand --global_lease 10");
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
 
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 "
-      "--global_lease 500 --oracle_type one_diff --noconstant",
+      "--global_lease 500 --oracle_type one_diff --noconstant ",
       test_hooks, num_iterations, seed, swap_after);
   BOOST_CHECK_GT(ctr.back(), 0.65f);
 }
@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
       "--fixed_significance_level "
-      "--random_seed 5 --noconstant",
+      "--random_seed 5 --noconstant --global_lease 10",
       test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.65f);
@@ -375,10 +375,10 @@ BOOST_AUTO_TEST_CASE(automl_q_col_consistency)
   const size_t seed = 88;
   const size_t num_iterations = 1000;
 
-  auto ctr_q_col =
-      simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q ::", num_iterations, seed);
+  auto ctr_q_col = simulator::_test_helper(
+      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q :: --global_lease 10", num_iterations, seed);
   auto ctr_aml = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 1", num_iterations, seed);
+      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 1 --global_lease 10", num_iterations, seed);
 
   BOOST_CHECK_CLOSE(ctr_q_col.back(), ctr_aml.back(), FLOAT_TOL);
 }

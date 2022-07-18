@@ -1,13 +1,13 @@
 from distributionally_robust_data import OnlineCressieRead
 from math import exp, pi
-import numpy
+import numpy as np
 
 
 def test_recompute_duals_lower():
     ocrl = OnlineCressieRead(alpha=0.05, tau=0.999)
 
-    ws = numpy.random.RandomState(seed=42).exponential(size=10)
-    rs = numpy.random.RandomState(seed=2112).random_sample(size=10)
+    ws = np.random.RandomState(seed=42).exponential(size=10)
+    rs = np.random.RandomState(seed=2112).random_sample(size=10)
     duals = []
     bounds = []
 
@@ -24,7 +24,7 @@ def test_recompute_duals_lower():
         (1.2312500617045903, 0.40365563207132593),
     ]
 
-    assert list(zip(ws, rs)) == ws_rs
+    np.testing.assert_almost_equal(list(zip(ws, rs)), ws_rs, 5)
 
     for (w, r) in zip(ws, rs):
         ocrl.update(1, w, r)
@@ -43,7 +43,7 @@ def test_recompute_duals_lower():
                 )
             )
 
-    assert bounds == [
+    exp_bounds = [
         0.09662899139580064,
         0.04094541671274077,
         0.12209962713632538,
@@ -54,7 +54,10 @@ def test_recompute_duals_lower():
         0.20562281337616062,
         0.23301703596172654,
     ]
-    assert duals == [
+
+    np.testing.assert_almost_equal(exp_bounds, bounds, 5)
+
+    exp_duals = [
         (True, 0, 0, 0, 0),
         (False, 0.186284935714629, -0.5242563567278763, 0, 1.999),
         (
@@ -91,12 +94,14 @@ def test_recompute_duals_lower():
         (False, 0.5684515391242324, -1.0040272155608332, 0, 9.95511979025179),
     ]
 
+    np.testing.assert_almost_equal(duals, exp_duals, 5)
+
 
 def test_recompute_duals_upper():
     ocrl = OnlineCressieRead(alpha=0.05, tau=0.999)
 
-    ws = numpy.random.RandomState(seed=42).exponential(size=10)
-    rs = numpy.random.RandomState(seed=2112).random_sample(size=10)
+    ws = np.random.RandomState(seed=42).exponential(size=10)
+    rs = np.random.RandomState(seed=2112).random_sample(size=10)
     duals = []
     bounds = []
 
@@ -117,7 +122,7 @@ def test_recompute_duals_upper():
                 )
             )
 
-    assert bounds == [
+    exp_bounds = [
         0.28128352388284217,
         0.5056614942571485,
         0.6220782066057806,
@@ -129,12 +134,14 @@ def test_recompute_duals_upper():
         0.69289830401895,
     ]
 
+    np.testing.assert_almost_equal(exp_bounds, bounds, 5)
+
 
 def test_qlb():
     ocrl = OnlineCressieRead(alpha=0.05, tau=0.999)
 
-    ws = numpy.random.RandomState(seed=42).exponential(size=10)
-    rs = numpy.random.RandomState(seed=2112).random_sample(size=10)
+    ws = np.random.RandomState(seed=42).exponential(size=10)
+    rs = np.random.RandomState(seed=2112).random_sample(size=10)
     qlbs = []
 
     ws_rs = [
@@ -150,13 +157,13 @@ def test_qlb():
         (1.2312500617045903, 0.40365563207132593),
     ]
 
-    assert list(zip(ws, rs)) == ws_rs
+    np.testing.assert_almost_equal(list(zip(ws, rs)), ws_rs, 5)
 
     for (w, r) in zip(ws, rs):
         ocrl.update(1, w, r)
         qlbs.append(ocrl.qlb(w, r))
 
-    assert qlbs == [
+    exp_qlbs = [
         1,
         0.13620517641052662,
         -0.17768396518176874,
@@ -168,3 +175,5 @@ def test_qlb():
         0.10533233309112934,
         0.08141788541188416,
     ]
+
+    np.testing.assert_almost_equal(qlbs, exp_qlbs, 5)

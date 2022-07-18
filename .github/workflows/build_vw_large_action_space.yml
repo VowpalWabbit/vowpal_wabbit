@@ -1,4 +1,4 @@
-name: Linux / C++ - VW Slim
+name: Linux / C++ - VW with large action space reduction
 
 on:
   push:
@@ -18,9 +18,9 @@ jobs:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
-      - name: Build VW Slim
+      - name: Build VW with large action space reduction
         shell: bash
-        run: ./.scripts/linux/build-slim.sh
-      - name: Test VW Slim
+        run: ./.scripts/linux/build-las-reduction.sh
+      - name: Test VW with large action space reduction
         shell: bash
-        run: ./.scripts/linux/test-slim.sh
+        run: ./.scripts/linux/test-las-reduction.sh

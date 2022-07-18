@@ -48,7 +48,7 @@ for shot, shots in available_shots.items():
 
     print("## Training...")
     start = time.time()
-    command_line = f"../../build/vowpalwabbit/vw -d {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --max_number_of_labels {num_of_classes} {'--oas' if use_oas else ''} {'--online' if online else ''} --dream_at_update {dream_at_update}\
+    command_line = f"../../build/vowpalwabbit/cli/vw -d {train_data} --memory_tree {tree_node} {'--learn_at_leaf' if learn_at_leaf else ''} --max_number_of_labels {num_of_classes} {'--oas' if use_oas else ''} {'--online' if online else ''} --dream_at_update {dream_at_update}\
               --leaf_example_multiplier {leaf_example_multiplier} --dream_repeats {dream_repeats} {'--sort_features' if sort_feature else ''} \
         --alpha {alpha} -l {lr} -b {bits} -c --passes {passes} --loss_function {loss} --holdout_off -f {saved_model}"
     print(command_line)
@@ -58,7 +58,7 @@ for shot, shots in available_shots.items():
     # test:
     print("## Testing...")
     start = time.time()
-    os.system("../../build/vowpalwabbit/vw {} -i {}".format(test_data, saved_model))
+    os.system("../../build/vowpalwabbit/cli/vw {} -i {}".format(test_data, saved_model))
 
     test_time = time.time() - start
 

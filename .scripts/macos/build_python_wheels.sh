@@ -13,8 +13,8 @@ fi
 eval "$(conda shell.bash hook)"
 
 rm -rf wheel_output
-rm -rf build
 
+rm -rf build
 conda create -y --name macos_python_build_env_38 python=3.8 wheel zlib boost py-boost flatbuffers
 conda activate macos_python_build_env_38
 pip wheel . -w wheel_output/ --global-option \
@@ -25,3 +25,9 @@ conda create -y --name macos_python_build_env_39 python=3.9 wheel zlib boost py-
 conda activate macos_python_build_env_39
 pip wheel . -w wheel_output/ --global-option \
     --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/python3.9/\"" --verbose
+
+rm -rf build
+conda create -y --name macos_python_build_env_310 python=3.10 wheel zlib boost py-boost flatbuffers
+conda activate macos_python_build_env_310
+pip wheel . -w wheel_output/ --global-option \
+    --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/python3.10/\"" --verbose
