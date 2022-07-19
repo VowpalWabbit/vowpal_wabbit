@@ -536,22 +536,16 @@ def test_example_features():
     ex.push_namespace(ns2)
     assert ex.pop_namespace()
 
-
 def test_example_features_dict():
-    vw_ex = Workspace(quiet=True)
-    ex = vw_ex.example(
-        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1.5}}
-    )
-    
-    ex.set_label_string("1")
+    vw = Workspace(quiet=True)
+    ex = vw.example({"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1.5}})    
+    fs = list(ex.iter_features())
 
-    features = list(ex.iter_features())
-
-    assert (ex.get_feature_id("a","two"), 1) in features
-    assert (ex.get_feature_id("a","features"), 1) in features
-    assert (ex.get_feature_id("b","more"), 1) in features
-    assert (ex.get_feature_id("b","features"), 1) in features
-    assert (5, 1.5) in features
+    assert (ex.get_feature_id("a","two"), 1) in fs
+    assert (ex.get_feature_id("a","features"), 1) in fs
+    assert (ex.get_feature_id("b","more"), 1) in fs
+    assert (ex.get_feature_id("b","features"), 1) in fs
+    assert (5, 1.5) in fs
 
 def test_get_weight_name():
     model = Workspace(quiet=True)

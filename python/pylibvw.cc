@@ -684,12 +684,12 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
   uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
 
-  PyObject *name, *value;
+  PyObject *key, *value, *bytes;
   Py_ssize_t size = 0, pos = 0;
   float feat_value;
   uint64_t feat_index;
 
-  while (PyDict_Next(o, &pos, &name, &value))
+  while (PyDict_Next(o, &pos, &key, &value))
   {
     if (PyFloat_Check(value)) { feat_value = (float)PyFloat_AsDouble(value); }
     else if (PyLong_Check(value))
@@ -704,11 +704,14 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
 
     if (feat_value == 0) { continue; }
 
-    if (PyUnicode_Check(name))
-    { feat_index = vw->example_parser->hasher(PyUnicode_AsUTF8AndSize(name, &size), size, ns_hash) & vw->parse_mask; }
-    else if (PyLong_Check(name))
+    if (PyUnicode_Check(key))
+    { 
+      bytes = PyUnicode_AsUTF8String(key)
+      feat_index = vw->example_parser->hasher(PyByteArray_AS_STRING(bytes), PyByteArray_GET_SIZE(size), ns_hash) & vw->parse_mask; 
+    }
+    else if (PyLong_Check(key))
     {
-      feat_index = PyLong_AsUnsignedLong(name);
+      feat_index = PyLong_AsUnsignedLong(key);
     }
     else
     {
