@@ -706,9 +706,9 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
     if (feat_value == 0) { continue; }
 
     if (PyUnicode_Check(key))
-    { 
+    {
       key_chars = PyUnicode_AsUTF8AndSize(key, &key_size);
-      feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask; 
+      feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
     }
     else if (PyLong_Check(key))
     {
