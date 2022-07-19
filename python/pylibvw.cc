@@ -683,7 +683,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
   char ns_str[2] = {(char)ns, 0};
   uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
-  const char *key_chars;
+  const char* key_chars;
 
   PyObject *key, *value;
   Py_ssize_t key_size = 0, pos = 0;
