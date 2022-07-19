@@ -41,8 +41,7 @@ public:
   Eigen::MatrixXf Z;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
-  std::unordered_map<uint64_t, float> _vec_mult;
-  std::unordered_map<uint64_t, bool> _vec_mult_tracker;
+  std::unordered_map<uint64_t, std::unordered_map<uint64_t, float>> _all_is;
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;

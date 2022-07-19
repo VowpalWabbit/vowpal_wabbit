@@ -55,28 +55,40 @@ public:
 struct test_A_triplet_constructor
 {
 private:
+  uint64_t _weights_mask;
   std::unordered_map<uint64_t, float>& _vec_mult;
-  std::unordered_map<uint64_t, bool>& _vec_mult_tracker;
 
 public:
-  test_A_triplet_constructor(
-      std::unordered_map<uint64_t, float>& vec_mult, std::unordered_map<uint64_t, bool>& vec_mult_tracker)
-      : _vec_mult(vec_mult), _vec_mult_tracker(vec_mult_tracker)
+  test_A_triplet_constructor(uint64_t weights_mask, std::unordered_map<uint64_t, float>& vec_mult)
+      : _weights_mask(weights_mask), _vec_mult(vec_mult)
   {
   }
 
   void set(float feature_value, uint64_t index)
   {
-    if (_vec_mult.find(index) != _vec_mult.end())
-    {
-      _vec_mult[index] *= feature_value;
-      _vec_mult_tracker[index] = true;
-    }
-    else
-    {
-      _vec_mult.emplace(index, feature_value);
-      _vec_mult_tracker.emplace(index, false);
-    }
+    auto wi = index & _weights_mask;
+    _vec_mult.emplace(wi, feature_value);
+  }
+};
+
+struct test_A_triplet_constructor_j
+{
+private:
+  uint64_t _weights_mask;
+  std::unordered_map<uint64_t, float>& _vec_mult;
+  std::unordered_map<uint64_t, float>& _vec_mult_i;
+
+public:
+  test_A_triplet_constructor_j(uint64_t weights_mask, std::unordered_map<uint64_t, float>& vec_mult,
+      std::unordered_map<uint64_t, float>& vec_mult_i)
+      : _weights_mask(weights_mask), _vec_mult(vec_mult), _vec_mult_i(vec_mult_i)
+  {
+  }
+
+  void set(float feature_value, uint64_t index)
+  {
+    auto wi = index & _weights_mask;
+    if (_vec_mult_i.find(wi) != _vec_mult_i.end()) { _vec_mult.emplace(wi, feature_value * _vec_mult_i[wi]); }
   }
 };
 
@@ -269,6 +281,23 @@ bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
   _triplets.clear();
   // TODO check re-allocation on this
   A.resize(examples.size(), examples.size());
+  _all_is.clear();
+  _all_is.reserve(examples.size());
+
+  for (size_t i = 0; i < examples.size(); ++i)
+  {
+    _all_is[i].clear();
+    auto& red_features =
+        examples[i]->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+
+    test_A_triplet_constructor tc(_all->weights.mask(), _all_is[i]);
+    GD::foreach_feature<test_A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+        _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+        (red_features.generated_interactions ? *red_features.generated_interactions : *examples[i]->interactions),
+        (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                    : *examples[i]->extent_interactions),
+        _all->permutations, *examples[i], tc, _all->_generate_interactions_object_cache);
+  }
 
   for (size_t i = 0; i < examples.size(); ++i)
   {
@@ -276,41 +305,20 @@ bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
     {
       if (i <= j)
       {
-        _vec_mult.clear();
-        _vec_mult_tracker.clear();
-
-        {
-          auto& red_features =
-              examples[i]->_reduction_features.template get<VW::generated_interactions::reduction_features>();
-
-          test_A_triplet_constructor tc(_vec_mult, _vec_mult_tracker);
-          GD::foreach_feature<test_A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-              _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-              (red_features.generated_interactions ? *red_features.generated_interactions : *examples[i]->interactions),
-              (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
-                                                          : *examples[i]->extent_interactions),
-              _all->permutations, *examples[i], tc, _all->_generate_interactions_object_cache);
-        }
-
-        {
-          auto& red_features =
-              examples[j]->_reduction_features.template get<VW::generated_interactions::reduction_features>();
-
-          test_A_triplet_constructor tc(_vec_mult, _vec_mult_tracker);
-          GD::foreach_feature<test_A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-              _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-              (red_features.generated_interactions ? *red_features.generated_interactions : *examples[j]->interactions),
-              (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
-                                                          : *examples[j]->extent_interactions),
-              _all->permutations, *examples[j], tc, _all->_generate_interactions_object_cache);
-        }
 
         float prod = 0.f;
-        for (auto& index_val : _vec_mult)
+        for (auto& index_val_j : _all_is[j])
         {
-          if (_vec_mult_tracker[index_val.first]) { prod += index_val.second; }
+          if (_all_is[i].find(index_val_j.first) != _all_is[i].end())
+          {
+            prod += index_val_j.second * _all_is[i][index_val_j.first];
+          }
         }
+
         prod *= shrink_factors[i] * shrink_factors[j];
+        // TODO can I loop and put stuff in A i j straight away instead of creating the maps?
+        // would need to process the first A matrix col by col as in the Y implementation though
+        // OR what about calling foreach feature for j while in the set function of i and storing in A?
         A(i, j) = prod;
         A(j, i) = prod;
       }
