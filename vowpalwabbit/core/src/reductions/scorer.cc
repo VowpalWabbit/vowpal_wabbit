@@ -142,6 +142,5 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
                 .set_update(update)
                 .build();
 
-  all.scorer = VW::LEARNER::as_singleline(l);
   return make_base(*l);
 }
