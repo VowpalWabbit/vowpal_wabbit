@@ -19,8 +19,13 @@ namespace fmt
 template <>
 struct formatter<VW::string_view> : formatter<fmt::string_view>
 {
+  #if FMT_VERSION >= 90000
   template <typename FormatContext>
   auto format(const VW::string_view& sv, FormatContext& ctx) const -> decltype(ctx.out())
+#else
+  template <typename FormatContext>
+  auto format(const VW::string_view& sv, FormatContext& ctx) -> decltype(ctx.out())
+#endif
   {
     return formatter<fmt::string_view>::format({sv.data(), sv.size()}, ctx);
   }
