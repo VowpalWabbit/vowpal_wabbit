@@ -516,7 +516,12 @@ class Workspace(pylibvw.vw):
             return str_ex
 
         elif isinstance(str_ex, list):
-            if all([getattr(ex, "setup_done", False) for ex in str_ex]):
+            if all(
+                [
+                    isinstance(ex, Example) and getattr(ex, "setup_done", None)
+                    for ex in str_ex
+                ]
+            ):
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):
