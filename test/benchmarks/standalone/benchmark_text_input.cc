@@ -109,9 +109,7 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
     std::ostringstream shared_ss;
     shared_ss << "shared |";
     for (int shared_feat = 0; shared_feat < shared_feats_count; ++shared_feat)
-    {
-      shared_ss << " " << (rand() % shared_feats_size);
-    }
+    { shared_ss << " " << (rand() % shared_feats_size); }
     examples.push_back(shared_ss.str());
     int action_ind = rand() % actions_per_example;
     for (int ac = 0; ac < actions_per_example; ++ac)
@@ -124,9 +122,7 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
         if (same_first_char) { action_ss << "f"; }
         action_ss << (static_cast<char>(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-        {
-          action_ss << (rand() % action_feats_size) << " ";
-        }
+        { action_ss << (rand() % action_feats_size) << " "; }
       }
       examples.push_back(action_ss.str());
     }
@@ -155,9 +151,7 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
     std::ostringstream shared_ss;
     shared_ss << "ccb shared |";
     for (int shared_feat = 0; shared_feat < shared_feats_count; ++shared_feat)
-    {
-      shared_ss << " " << (rand() % shared_feats_size);
-    }
+    { shared_ss << " " << (rand() % shared_feats_size); }
     examples.push_back(shared_ss.str());
     for (int ac = 0; ac < actions_per_example; ++ac)
     {
@@ -169,9 +163,7 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
         if (same_first_char) { action_ss << "f"; }
         action_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-        {
-          action_ss << (rand() % action_feats_size) << " ";
-        }
+        { action_ss << (rand() % action_feats_size) << " "; }
       }
       examples.push_back(action_ss.str());
     }
@@ -185,9 +177,7 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
         if (same_first_char) { slot_ss << "f"; }
         slot_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int slot_feat = 0; slot_feat < action_feats_count; ++slot_feat)
-        {
-          slot_ss << (rand() % action_feats_size) << " ";
-        }
+        { slot_ss << (rand() % action_feats_size) << " "; }
       }
       examples.push_back(slot_ss.str());
     }
@@ -202,10 +192,7 @@ static std::vector<multi_ex> load_examples(VW::workspace* vw, const std::vector<
   for (const auto& ex_str : ex_strs)
   {
     multi_ex mxs;
-    for (const auto& example : ex_str)
-    {
-      mxs.push_back(VW::read_example(*vw, example));
-    }
+    for (const auto& example : ex_str) { mxs.push_back(VW::read_example(*vw, example)); }
     examples_vec.push_back(mxs);
   }
   return examples_vec;

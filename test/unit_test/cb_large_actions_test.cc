@@ -28,9 +28,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  {
-    BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-  }
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -65,7 +63,10 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
         auto ft_value = ex->feature_space[ns].values[i];
 
         if (ns == default_namespace) { BOOST_CHECK_CLOSE(ft_value, ft_values[i], FLOAT_TOL); }
-        else if (ns == constant_namespace) { BOOST_CHECK_CLOSE(ft_value, 1.f, FLOAT_TOL); }
+        else if (ns == constant_namespace)
+        {
+          BOOST_CHECK_CLOSE(ft_value, 1.f, FLOAT_TOL);
+        }
 
         BOOST_CHECK_EQUAL(
             action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())), ft_value);
@@ -87,9 +88,7 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  {
-    BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-  }
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -114,9 +113,7 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
     Eigen::SparseMatrix<float> diag_M(examples.size(), examples.size());
 
     for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
-    {
-      diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
-    }
+    { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
 
     Eigen::MatrixXf AAtop = diag_M * action_space->explore._A * action_space->explore._A.transpose() * diag_M;
 
@@ -173,9 +170,7 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -197,9 +192,7 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
       for (int k = 0; k < action_space->explore.Y.outerSize(); ++k)
       {
         for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore.Y, k); it; ++it)
-        {
-          non_zero_rows.emplace(it.row());
-        }
+        { non_zero_rows.emplace(it.row()); }
       }
 
       if (!interactions) { non_interactions_rows = non_zero_rows.size(); }
@@ -238,9 +231,7 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -292,9 +283,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -344,23 +333,22 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
       }
 
       Eigen::SparseMatrix<float> Omega(num_actions, d);
-      Omega.setFromTriplets(omega_triplets.begin(), omega_triplets.end(),
-          [](const float& a, const float& b)
-          {
-            assert(a == b);
-            return b;
-          });
+      Omega.setFromTriplets(omega_triplets.begin(), omega_triplets.end(), [](const float& a, const float& b) {
+        assert(a == b);
+        return b;
+      });
 
       Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
 
       if (apply_diag_M)
       {
         for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
-        {
-          diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
-        }
+        { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
       }
-      else { diag_M.setIdentity(); }
+      else
+      {
+        diag_M.setIdentity();
+      }
 
       Eigen::SparseMatrix<float> Yd(action_space->explore.Y.rows(), d);
 
@@ -400,9 +388,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -430,11 +416,12 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
       if (apply_diag_M)
       {
         for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
-        {
-          diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
-        }
+        { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
       }
-      else { diag_M.setIdentity(); }
+      else
+      {
+        diag_M.setIdentity();
+      }
 
       Eigen::MatrixXf B = diag_M * action_space->explore._A * action_space->explore.Y;
       BOOST_CHECK_EQUAL(B.isApprox(action_space->explore.B), true);
@@ -470,9 +457,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -565,9 +550,7 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -615,18 +598,14 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       {
         BOOST_CHECK_SMALL(1.f - action_space->explore.U.col(i).norm(), FLOAT_TOL);
         for (int j = 0; j < i; ++j)
-        {
-          BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL);
-        }
+        { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
       }
 
       for (int i = 0; i < action_space->explore._V.cols(); ++i)
       {
         BOOST_CHECK_SMALL(1.f - action_space->explore._V.col(i).norm(), FLOAT_TOL);
         for (int j = 0; j < i; ++j)
-        {
-          BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL);
-        }
+        { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
       }
 
       Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
@@ -634,11 +613,12 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       if (apply_diag_M)
       {
         for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
-        {
-          diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
-        }
+        { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
       }
-      else { diag_M.setIdentity(); }
+      else
+      {
+        diag_M.setIdentity();
+      }
 
       BOOST_CHECK_SMALL(
           ((diag_M * action_space->explore._A) -
@@ -652,9 +632,7 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       Eigen::VectorXf S = svd.singularValues();
 
       for (size_t i = 0; i < action_space->explore._S.rows(); i++)
-      {
-        BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL);
-      }
+      { BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL); }
 
       vw.finish_example(examples);
     }
@@ -687,9 +665,7 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -721,12 +697,13 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
     identity_diag_M.setIdentity();
 
     for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
-    {
-      diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
-    }
+    { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
 
     if (apply_diag_M) { BOOST_CHECK_EQUAL(diag_M.isApprox(identity_diag_M), false); }
-    else { BOOST_CHECK_EQUAL(diag_M.isApprox(identity_diag_M), true); }
+    else
+    {
+      BOOST_CHECK_EQUAL(diag_M.isApprox(identity_diag_M), true);
+    }
 
     vw.finish_example(examples);
     VW::finish(vw);
@@ -818,9 +795,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -842,7 +817,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
 
       // Only d actions have non-zero scores.
       if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else { BOOST_CHECK_EQUAL(preds.size(), d); }
+      else
+      {
+        BOOST_CHECK_EQUAL(preds.size(), d);
+      }
       BOOST_CHECK_SMALL(preds[0].score - 0.697270989f, FLOAT_TOL);
       BOOST_CHECK_EQUAL(preds[0].action, 1);
 
@@ -921,9 +899,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -944,7 +920,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
       const auto& preds = examples[0]->pred.a_s;
       // Only d actions have non-zero scores.
       if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else { BOOST_CHECK_EQUAL(preds.size(), d); }
+      else
+      {
+        BOOST_CHECK_EQUAL(preds.size(), d);
+      }
 
       size_t num_actions_non_zeroed = d;
       float epsilon_ur = epsilon / num_actions_non_zeroed;
@@ -1054,9 +1033,7 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  {
-    BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-  }
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));

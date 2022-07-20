@@ -10,7 +10,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
-#include "vw/core/redsvd.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
@@ -176,11 +175,12 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    {
-      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
-    }
+    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
   }
-  else { shrink_factors.resize(preds.size(), 1.f); }
+  else
+  {
+    shrink_factors.resize(preds.size(), 1.f);
+  }
 }
 
 template <typename TripletType>
@@ -293,9 +293,7 @@ bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
         for (uint64_t index : _action_indexes[j])
         {
           if (_action_ft_vectors[i][index] != 0.f)
-          {
-            prod += _action_ft_vectors[j][index] * _action_ft_vectors[i][index];
-          }
+          { prod += _action_ft_vectors[j][index] * _action_ft_vectors[i][index]; }
         }
 
         prod *= shrink_factors[i] * shrink_factors[j];
@@ -420,8 +418,7 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
   if (_aatop)
   {
     generate_AAtop(examples);
-    // RedSVD::RedSymEigen<Eigen::MatrixXf> rede(A, _d);
-    // U = rede.eigenvectors();
+    // to run SVD on AAtop
   }
   else
   {

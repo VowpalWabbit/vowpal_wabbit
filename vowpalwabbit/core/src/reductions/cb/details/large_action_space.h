@@ -11,9 +11,9 @@
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <iostream>
+#include <set>
 #include <unordered_map>
 #include <vector>
-#include <set>
 
 namespace VW
 {
