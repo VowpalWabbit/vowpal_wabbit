@@ -1,5 +1,6 @@
 #include "vw.net.arguments.h"
-#include "options_serializer_boost_po.h"
+#include "vw/config/options.h"
+#include "vw/config/cli_options_serializer.h"
 
 API void GetWorkspaceBasicArguments(vw_net_native::workspace_context* workspace, vw_net_native::vw_basic_arguments_t* args)
 {
@@ -27,7 +28,7 @@ API const char* GetFinalRegressorFilename(vw_net_native::workspace_context* work
 API char* SerializeCommandLine(vw_net_native::workspace_context* workspace)
 {
   VW::config::options_i* options = workspace->vw->options.get();
-  VW::config::options_serializer_boost_po serializer;
+  VW::config::cli_options_serializer serializer;
   for (auto const& option : options->get_all_options())
   {
     if (options->was_supplied(option->m_name))

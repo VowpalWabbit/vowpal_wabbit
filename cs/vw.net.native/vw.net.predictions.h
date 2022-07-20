@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vw.net.native.h"
-#include "vw.h"
+#include "vw/core/vw.h"
 
 namespace vw_net_native { 
   struct scalar_confidence_t

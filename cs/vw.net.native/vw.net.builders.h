@@ -2,7 +2,7 @@
 
 #include "vw.net.native.h"
 #include "vw.net.workspace.h"
-#include "vw.h"
+#include "vw/core/vw.h"
 
 namespace vw_net_native {
 

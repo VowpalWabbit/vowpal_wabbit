@@ -4,9 +4,9 @@
 
 #include "vw.net.stream_adapter.h"
 #include "vw.net.native.h"
-#include "vw.h"
-#include "json_utils.h"
-#include "example.h"
+#include "vw/core/vw.h"
+#include "vw/core/json_utils.h"
+#include "vw/core/example.h"
 
 namespace vw_net_native {
 

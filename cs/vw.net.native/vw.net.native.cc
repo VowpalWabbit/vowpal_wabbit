@@ -1,5 +1,5 @@
 #include "vw.net.native.h"
-#include "hash.h"
+#include "vw/common/hash.h"
 #include <cstdlib>
 
 API void FreeDupString(char* str)

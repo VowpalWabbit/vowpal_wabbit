@@ -1,8 +1,8 @@
 #include "vw.net.example.h"
-#include "feature_group.h"
-#include "gd.h"
-#include "shared_data.h"
-
+#include "vw/core/parse_example.h"
+#include "vw/core/feature_group.h"
+#include "vw/core/reductions/gd.h"
+#include "vw/core/shared_data.h"
 
 #include <sstream>
 
@@ -25,7 +25,7 @@ API bool IsRingExample(vw_net_native::workspace_context* workspace, example* exa
 
 API bool IsExampleNewline(example* example)
 {
-  return example_is_newline(*example) != 0;
+  return VW::example_is_newline(*example) != 0;
 }
 
 inline void format_indicies(example* a, std::stringstream& sstream)

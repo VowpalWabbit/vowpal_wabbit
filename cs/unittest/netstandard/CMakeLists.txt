@@ -1,6 +1,49 @@
-set(VW_NET_COMMON_SOURCES
-  #../Properties/AssemblyInfoInternal.cs
-  # fill this out for VS
+set(VW_NET_UNITTEST_SOURCES
+    ../BaseData.cs
+    ../CbAdfData.cs
+    ../RunTestsHelper.cs
+    ../Test1and2.cs
+    ../Test3.cs
+    ../TestAllReduce.cs
+    ../TestAntlr.cs
+    ../TestArguments.cs
+    ../TestBase.cs
+    ../TestCbAdf.cs
+    ../TestConfidence.cs
+    ../TestConfigInspector.cs
+    ../TestConsole.cs
+    ../TestDynamic.cs
+    ../TestErrorListener.cs
+    ../TestExampleCache.cs
+    ../TestExpansion.cs
+    ../TestFeatureExtraction.cs
+    ../TestJson.cs
+    ../TestJsonDict.cs
+    ../TestJsonDirect.cs
+    ../TestLabels.cs
+    ../TestLeak.cs
+    ../TestManagedHash.cs
+    ../TestMarshalling.cs
+    ../TestMarshallingOverflow.cs
+    ../TestModelLoading.cs
+    ../TestMultiClassPredictionFactory.cs
+    ../TestMultiworldTesting.cs
+    ../TestNull.cs
+    ../TestPooling.cs
+    ../TestRunner.cs
+    ../TestSearch.cs
+    ../TestSerializer.cs
+    ../TestTelemetryProcessor.cs
+    ../TestTracing.cs
+    ../TestWiki.cs
+    ../TestWrapper.cs
+    ../TrainSet0002Dat.cs
+    ../TrainSetCs_testLdf.cs
+    ../VWTestHelper.cs
+    ../VowpalWabbitExampleJsonValidator.cs
+    ../VowpalWabbitExampleValidator.cs
+    ../VowpalWabbitListenerToEvents.cs
+    ../VowpalWabbitStdErrPerformanceStatistics.cs
 )
 
 # set(ENV{NewtonsoftDependencyValue} "Newtonsoft.Json.dll")
@@ -11,16 +54,15 @@ find_program(dotnet_t4_COMMAND t4.exe)
 if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VW.Net.UnitTest ${CMAKE_CURRENT_SOURCE_DIR}/vw.unittest.csproj VowpalWabbit VowpalWabbit.JSON VowpalWabbit.Parallel console.net testcommon)
 else()
-  add_custom_target(VW.Net.UnitTest
+  add_custom_target(VW.Net.UnitTest ALL
       COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
       COMMENT Building VW.Net.UnitTest
       DEPENDS VowpalWabbit VowpalWabbit.JSON VowpalWabbit.Parallel console.net testcommon
-      SOURCES ${VW_NET_COMMON_SOURCES})
+      SOURCES ${VW_NET_UNITTEST_SOURCES})
 endif()
 
 # TODO: Enable TRX test logging
 add_test(
   NAME VW.Net.UnitTest
-  COMMAND
-    ${DOTNET_COMMAND} test $<TARGET_FILE_DIR:vw.net.native>/VW.Net.UnitTest.dll --Platform:x64 --InIsolation "--logger:console;verbosity=default"
+  COMMAND ${DOTNET_COMMAND} test $<TARGET_FILE_DIR:vw.net.native>/VW.Net.UnitTest.dll --Platform:x64 --InIsolation "--logger:console;verbosity=default"
 )

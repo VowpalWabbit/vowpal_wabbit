@@ -36,7 +36,6 @@ IF (vw_BUILD_NET_CORE)
   endif()
 
 ELSEIF (vw_BUILD_NET_FRAMEWORK)
-
   message(STATUS "Building .NET Framework Bindings")
 
   # StrongName signing for VW assemblies - stage the keyfile, and set its location
@@ -57,5 +56,4 @@ ELSEIF (vw_BUILD_NET_FRAMEWORK)
     add_subdirectory(unittest)
     add_subdirectory(cs_unittest_nofriend)
   endif()
-
 ENDIF()

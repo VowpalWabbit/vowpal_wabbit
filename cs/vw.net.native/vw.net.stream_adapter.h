@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vw.net.native.h"
-#include "io/io_adapter.h"
+#include "vw/io/io_adapter.h"
 
 namespace vw_net_native { 
 

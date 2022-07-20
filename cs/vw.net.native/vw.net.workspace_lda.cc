@@ -1,5 +1,6 @@
 #include "vw.net.workspace_lda.h"
-#include "lda_core.h"
+#include "vw/core/reductions/lda_core.h"
+#include "vw/config/options.h"
 
 API int WorkspaceGetTopicCount(vw_net_native::workspace_context* workspace)
 {
@@ -49,7 +50,7 @@ API int64_t WorkspaceFillTopicAllocation(vw_net_native::workspace_context* works
 API vw_net_native::dotnet_size_t WorkspaceFillSingleTopicTopWeights(vw_net_native::workspace_context* workspace, int topic, feature* topic_weight_buffer, vw_net_native::dotnet_size_t buffer_size)
 {
   std::vector<feature> top_weights;
-  get_top_weights(workspace->vw, buffer_size, topic, top_weights);
+  VW::reductions::lda::get_top_weights(workspace->vw, buffer_size, topic, top_weights);
 
   return vw_net_native::stdvector_copy_to_managed(top_weights, topic_weight_buffer, buffer_size);
 }

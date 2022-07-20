@@ -27,7 +27,7 @@ API void SimpleLabelUpdateExample(vw_net_native::workspace_context* workspace, e
       red_fts.initial = *maybe_initial;
     }
 
-    count_label(workspace->vw->sd, ld->label);
+    VW::count_label(*workspace->vw->sd, ld->label);
 }
   
 API CB::cb_class* CbLabelReadFromExampleDangerous(example* ex)

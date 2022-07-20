@@ -2,8 +2,8 @@
 
 #include "vw.net.native.h"
 #include "vw.net.workspace.h"
-#include "feature_group.h"
-#include "vw.h"
+#include "vw/core/feature_group.h"
+#include "vw/core/vw.h"
 
 #include <type_traits>
 

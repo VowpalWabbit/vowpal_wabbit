@@ -1,11 +1,11 @@
 #pragma once
 
 #include "vw.net.native.h"
-#include "vw.h"
-#include "cb.h"
-#include "best_constant.h"
-#include "constant.h"
-#include "multiclass.h"
+#include "vw/core/vw.h"
+#include "vw/core/cb.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/constant.h"
+#include "vw/core/multiclass.h"
 #include "vw.net.workspace.h"
 
 extern "C" {

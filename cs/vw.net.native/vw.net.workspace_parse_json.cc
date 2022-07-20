@@ -1,9 +1,9 @@
 #include "vw.net.workspace.h"
-#include "parse_example_json.h"
+#include "vw/core/parse_example_json.h"
 
 API vw_net_native::ERROR_CODE WorkspaceParseJson(vw_net_native::workspace_context* workspace, char* json, size_t length, vw_net_native::example_pool_get_example_fn get_example, void* example_pool_context, VW::experimental::api_status* status)
 {
-  v_array<example*> examples;
+  VW::multi_ex examples;
 
   auto& ex = get_example(example_pool_context);
   examples.push_back(&ex);
@@ -32,7 +32,7 @@ API vw_net_native::ERROR_CODE WorkspaceParseJson(vw_net_native::workspace_contex
 API vw_net_native::ERROR_CODE WorkspaceParseDecisionServiceJson(vw_net_native::workspace_context* workspace, char* json, size_t length, size_t offset, bool copy_json, vw_net_native::example_pool_get_example_fn get_example, void* example_pool_context, DecisionServiceInteraction* interaction, VW::experimental::api_status* status)
 {
   char* actual_json = json + offset;
-  v_array<example*> examples;
+  VW::multi_ex examples;
 
   auto& ex = get_example(example_pool_context);
   examples.push_back(&ex);

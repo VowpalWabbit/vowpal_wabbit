@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vw.net.native.h"
-#include "spanning_tree.h"
+#include "vw/spanning_tree/spanning_tree.h"
 
 extern "C" {
   API VW::SpanningTree* CreateSpanningTree();

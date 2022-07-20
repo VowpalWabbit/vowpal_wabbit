@@ -79,7 +79,7 @@ namespace VW {
         }
 
         // TODO: There may be a way to avoid copying the string.
-        string message = NativeMethods.StringEncoding.GetString(messageBuffer).TrimEnd();
+        string message = NativeMethods.StringEncoding.GetString(messageBuffer);
 
         traceListener(message);
       }

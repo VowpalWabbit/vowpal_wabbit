@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vw.net.native.h"
-#include "vw.h"
+#include "vw/core/vw.h"
 
 extern "C" {
   API multi_ex* CreateMultiEx();

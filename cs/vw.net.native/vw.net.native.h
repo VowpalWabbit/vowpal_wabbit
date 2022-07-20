@@ -1,8 +1,8 @@
 #pragma once
 
-#include "error_constants.h"
-#include "api_status.h"
-#include "v_array.h"
+#include "vw/core/error_constants.h"
+#include "vw/core/api_status.h"
+#include "vw/core/v_array.h"
 
 #include <sstream>
 #include <vector>

@@ -1,6 +1,6 @@
-set(VW_NET_COMMON_SOURCES
-  #../Properties/AssemblyInfoInternal.cs
-  # fill this out for VS
+set(VW_NET_CS_PARALLEL_SOURCES
+    ../VowpalWabbitAsync.cs
+    ../VowpalWabbitThreadedLearning.cs
 )
 
 find_program(dotnet_t4_COMMAND t4.exe)
@@ -10,9 +10,9 @@ find_program(dotnet_t4_COMMAND t4.exe)
 if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VowpalWabbit.Parallel ${CMAKE_CURRENT_SOURCE_DIR}/vw.parallel.csproj VowpalWabbit)
 else()
-  add_custom_target(VowpalWabbit.Parallel
+  add_custom_target(VowpalWabbit.Parallel ALL
       COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
       COMMENT Building VowpalWabbit.Parallel
       DEPENDS VowpalWabbit
-      SOURCES ${VW_NET_COMMON_SOURCES})
+      SOURCES ${VW_NET_CS_PARALLEL_SOURCES})
 endif()

@@ -1,8 +1,9 @@
 #include "vw.net.workspace.h"
-#include "vw_string_view.h"
-#include "shared_data.h"
-#include "best_constant.h"
-
+#include "vw/common/string_view.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/parse_example.h"
+#include "vw/allreduce/allreduce.h"
 
 
 vw_net_native::workspace_context* create_workspace(std::string arguments, io_buf* model, trace_message_t trace_listener, void* trace_context)
@@ -168,7 +169,7 @@ API void WorkspaceGetPerformanceStatistics(vw_net_native::workspace_context* wor
       statistics->average_loss = workspace->vw->sd->holdout_best_loss;
 
   float best_constant; float best_constant_loss;
-  if (get_best_constant(workspace->vw->loss.get(), workspace->vw->sd, best_constant, best_constant_loss))
+  if (get_best_constant(*workspace->vw->loss.get(), *workspace->vw->sd, best_constant, best_constant_loss))
   {
     statistics->best_constant = best_constant;
     if (best_constant_loss != FLT_MIN)

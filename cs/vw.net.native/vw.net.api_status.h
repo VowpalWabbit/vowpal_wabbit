@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vw.net.native.h"
-#include "api_status.h"
+#include "vw/core/api_status.h"
 
 // Global exports
 extern "C" {

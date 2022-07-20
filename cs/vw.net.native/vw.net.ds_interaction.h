@@ -1,9 +1,8 @@
 #pragma once
 
 #include "vw.net.native.h"
-#include "vw.h"
-
-#include "json_utils.h"
+#include "vw/core/vw.h"
+#include "vw/core/json_utils.h"
 
 extern "C" {
   API DecisionServiceInteraction* CreateDecisionServiceInteraction();
