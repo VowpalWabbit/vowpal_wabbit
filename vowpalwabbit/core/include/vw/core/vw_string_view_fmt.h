@@ -20,7 +20,7 @@ template <>
 struct formatter<VW::string_view> : formatter<fmt::string_view>
 {
   template <typename FormatContext>
-  auto format(const VW::string_view& sv, FormatContext& ctx) -> decltype(ctx.out())
+  auto format(const VW::string_view& sv, FormatContext& ctx) const -> decltype(ctx.out())
   {
     return formatter<fmt::string_view>::format({sv.data(), sv.size()}, ctx);
   }

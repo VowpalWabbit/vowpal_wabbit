@@ -9,6 +9,7 @@
 #include "vw/common/string_view.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"
+#include "vw/core/vw_string_view_fmt.h"
 
 #include <cmath>
 #include <cstdint>

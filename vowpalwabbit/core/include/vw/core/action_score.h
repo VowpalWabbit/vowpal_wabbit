@@ -78,4 +78,12 @@ constexpr inline bool action_score_compare_gt(
 
 std::string to_string(
     const ACTION_SCORE::action_scores& action_scores_or_probs, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, ACTION_SCORE::action_score& a_s);
+
+size_t write_model_field(
+    io_buf& io, const ACTION_SCORE::action_score a_s, const std::string& upstream_name, bool text);
+}  // namespace model_utils
 }  // namespace VW
