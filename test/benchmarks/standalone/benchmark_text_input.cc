@@ -109,7 +109,9 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
     std::ostringstream shared_ss;
     shared_ss << "shared |";
     for (int shared_feat = 0; shared_feat < shared_feats_count; ++shared_feat)
-    { shared_ss << " " << (rand() % shared_feats_size); }
+    {
+      shared_ss << " " << (rand() % shared_feats_size);
+    }
     examples.push_back(shared_ss.str());
     int action_ind = rand() % actions_per_example;
     for (int ac = 0; ac < actions_per_example; ++ac)
@@ -122,7 +124,9 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
         if (same_first_char) { action_ss << "f"; }
         action_ss << (static_cast<char>(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-        { action_ss << (rand() % action_feats_size) << " "; }
+        {
+          action_ss << (rand() % action_feats_size) << " ";
+        }
       }
       examples.push_back(action_ss.str());
     }
@@ -151,7 +155,9 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
     std::ostringstream shared_ss;
     shared_ss << "ccb shared |";
     for (int shared_feat = 0; shared_feat < shared_feats_count; ++shared_feat)
-    { shared_ss << " " << (rand() % shared_feats_size); }
+    {
+      shared_ss << " " << (rand() % shared_feats_size);
+    }
     examples.push_back(shared_ss.str());
     for (int ac = 0; ac < actions_per_example; ++ac)
     {
@@ -163,7 +169,9 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
         if (same_first_char) { action_ss << "f"; }
         action_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-        { action_ss << (rand() % action_feats_size) << " "; }
+        {
+          action_ss << (rand() % action_feats_size) << " ";
+        }
       }
       examples.push_back(action_ss.str());
     }
@@ -177,7 +185,9 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
         if (same_first_char) { slot_ss << "f"; }
         slot_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int slot_feat = 0; slot_feat < action_feats_count; ++slot_feat)
-        { slot_ss << (rand() % action_feats_size) << " "; }
+        {
+          slot_ss << (rand() % action_feats_size) << " ";
+        }
       }
       examples.push_back(slot_ss.str());
     }
@@ -192,7 +202,10 @@ static std::vector<multi_ex> load_examples(VW::workspace* vw, const std::vector<
   for (const auto& ex_str : ex_strs)
   {
     multi_ex mxs;
-    for (const auto& example : ex_str) { mxs.push_back(VW::read_example(*vw, example)); }
+    for (const auto& example : ex_str)
+    {
+      mxs.push_back(VW::read_example(*vw, example));
+    }
     examples_vec.push_back(mxs);
   }
   return examples_vec;
@@ -203,6 +216,9 @@ static void benchmark_multi(
 {
   auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
   std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+
+  for (multi_ex examples : examples_vec) { vw->learn(examples); }
+
   for (auto _ : state)
   {
     for (multi_ex examples : examples_vec) { vw->learn(examples); }
@@ -258,4 +274,13 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
     ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
     "--ccb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, cb_las, gen_cb_examples(7, 50, 50, 311, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, cb_las_aatop, gen_cb_examples(7, 50, 50, 311, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --aatop --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(
+    benchmark_multi, cb_non_las, gen_cb_examples(7, 50, 20, 311, 1, 1, 20, 10, false), "--cb_explore_adf -q :: --quiet")
     ->MinTime(15.0);

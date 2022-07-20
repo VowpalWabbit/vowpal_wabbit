@@ -13,6 +13,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 namespace VW
 {
@@ -33,15 +34,16 @@ private:
   std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<uint64_t> _action_indices;
   std::vector<bool> _spanner_bitvec;
+  std::vector<std::vector<float>> _action_ft_vectors;
+  std::vector<std::set<uint64_t>> _action_indexes;
 
 public:
   Eigen::SparseMatrix<float> Y;
-  Eigen::MatrixXf A;
+  Eigen::MatrixXf AAtop;
   Eigen::MatrixXf B;
   Eigen::MatrixXf Z;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
-  std::unordered_map<uint64_t, std::unordered_map<uint64_t, float>> _all_is;
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
@@ -61,7 +63,7 @@ public:
   void generate_Z(const multi_ex& examples);
   void generate_B(const multi_ex& examples);
   bool generate_Y(const multi_ex& examples);
-  bool generate_A(const multi_ex& examples);
+  bool generate_AAtop(const multi_ex& examples);
   void randomized_SVD(const multi_ex& examples);
   std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
   void compute_spanner();

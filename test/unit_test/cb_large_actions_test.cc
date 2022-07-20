@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
     action_space->explore.calculate_shrink_factor(preds);
 
     action_space->explore._generate_A(examples);
-    action_space->explore.generate_A(examples);
+    action_space->explore.generate_AAtop(examples);
 
     Eigen::SparseMatrix<float> diag_M(examples.size(), examples.size());
 
@@ -120,26 +120,26 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
 
     Eigen::MatrixXf AAtop = diag_M * action_space->explore._A * action_space->explore._A.transpose() * diag_M;
 
-    std::cout << "A" << std::endl;
-    for (int k = 0; k < action_space->explore._A.outerSize(); ++k)
-    {
-      for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore._A, k); it; ++it)
-      {
-        std::cout << it.row() << ", " << it.col() << ", " << it.value() << std::endl;
-      }
-    }
+    // std::cout << "A" << std::endl;
+    // for (int k = 0; k < action_space->explore._A.outerSize(); ++k)
+    // {
+    //   for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore._A, k); it; ++it)
+    //   {
+    //     std::cout << it.row() << ", " << it.col() << ", " << it.value() << std::endl;
+    //   }
+    // }
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
 
-    std::cout << "AAtop" << std::endl;
-    std::cout << AAtop << std::endl;
-    std::cout << "-------" << std::endl << std::endl;
+    // std::cout << "AAtop" << std::endl;
+    // std::cout << AAtop << std::endl;
+    // std::cout << "-------" << std::endl << std::endl;
 
-    std::cout << "A" << std::endl;
-    std::cout << action_space->explore.A << std::endl;
-    std::cout << "-------" << std::endl << std::endl;
+    // std::cout << "A" << std::endl;
+    // std::cout << action_space->explore.AAtop << std::endl;
+    // std::cout << "-------" << std::endl << std::endl;
 
-    BOOST_CHECK_EQUAL(AAtop.isApprox(action_space->explore.A), true);
+    BOOST_CHECK_EQUAL(AAtop.isApprox(action_space->explore.AAtop), true);
 
     vw.finish_example(examples);
   }

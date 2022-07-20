@@ -52,43 +52,24 @@ public:
   }
 };
 
-struct test_A_triplet_constructor
+struct AAtop_triplet_constructor
 {
 private:
   uint64_t _weights_mask;
-  std::unordered_map<uint64_t, float>& _vec_mult;
+  std::vector<float>& _vec_mult;
+  std::set<uint64_t>& _indexes;
 
 public:
-  test_A_triplet_constructor(uint64_t weights_mask, std::unordered_map<uint64_t, float>& vec_mult)
-      : _weights_mask(weights_mask), _vec_mult(vec_mult)
+  AAtop_triplet_constructor(uint64_t weights_mask, std::vector<float>& vec_mult, std::set<uint64_t>& indexes)
+      : _weights_mask(weights_mask), _vec_mult(vec_mult), _indexes(indexes)
   {
   }
 
   void set(float feature_value, uint64_t index)
   {
     auto wi = index & _weights_mask;
-    _vec_mult.emplace(wi, feature_value);
-  }
-};
-
-struct test_A_triplet_constructor_j
-{
-private:
-  uint64_t _weights_mask;
-  std::unordered_map<uint64_t, float>& _vec_mult;
-  std::unordered_map<uint64_t, float>& _vec_mult_i;
-
-public:
-  test_A_triplet_constructor_j(uint64_t weights_mask, std::unordered_map<uint64_t, float>& vec_mult,
-      std::unordered_map<uint64_t, float>& vec_mult_i)
-      : _weights_mask(weights_mask), _vec_mult(vec_mult), _vec_mult_i(vec_mult_i)
-  {
-  }
-
-  void set(float feature_value, uint64_t index)
-  {
-    auto wi = index & _weights_mask;
-    if (_vec_mult_i.find(wi) != _vec_mult_i.end()) { _vec_mult.emplace(wi, feature_value * _vec_mult_i[wi]); }
+    _vec_mult[wi] = feature_value;
+    _indexes.insert(wi);
   }
 };
 
@@ -276,22 +257,25 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
   }
 }
 
-bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
+bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
 {
   _triplets.clear();
-  // TODO check re-allocation on this
-  A.resize(examples.size(), examples.size());
-  _all_is.clear();
-  _all_is.reserve(examples.size());
+  AAtop.resize(examples.size(), examples.size());
+  _action_ft_vectors.clear();
+  _action_indexes.clear();
+  _action_indexes.resize(examples.size());
+  _action_ft_vectors.resize(examples.size());
 
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    _all_is[i].clear();
+    _action_ft_vectors[i].clear();
+    _action_indexes[i].clear();
+    _action_ft_vectors[i].resize(_all->weights.mask() + 1, 0.f);
     auto& red_features =
         examples[i]->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
-    test_A_triplet_constructor tc(_all->weights.mask(), _all_is[i]);
-    GD::foreach_feature<test_A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+    AAtop_triplet_constructor tc(_all->weights.mask(), _action_ft_vectors[i], _action_indexes[i]);
+    GD::foreach_feature<AAtop_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
         _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
         (red_features.generated_interactions ? *red_features.generated_interactions : *examples[i]->interactions),
         (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
@@ -305,26 +289,21 @@ bool cb_explore_adf_large_action_space::generate_A(const multi_ex& examples)
     {
       if (i <= j)
       {
-
         float prod = 0.f;
-        for (auto& index_val_j : _all_is[j])
+        for (uint64_t index : _action_indexes[j])
         {
-          if (_all_is[i].find(index_val_j.first) != _all_is[i].end())
+          if (_action_ft_vectors[i][index] != 0.f)
           {
-            prod += index_val_j.second * _all_is[i][index_val_j.first];
+            prod += _action_ft_vectors[j][index] * _action_ft_vectors[i][index];
           }
         }
 
         prod *= shrink_factors[i] * shrink_factors[j];
-        // TODO can I loop and put stuff in A i j straight away instead of creating the maps?
-        // would need to process the first A matrix col by col as in the Y implementation though
-        // OR what about calling foreach feature for j while in the set function of i and storing in A?
-        A(i, j) = prod;
-        A(j, i) = prod;
+        AAtop(i, j) = prod;
+        AAtop(j, i) = prod;
       }
     }
   }
-
   return true;
 }
 
@@ -440,7 +419,7 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 {
   if (_aatop)
   {
-    generate_A(examples);
+    generate_AAtop(examples);
     // RedSVD::RedSymEigen<Eigen::MatrixXf> rede(A, _d);
     // U = rede.eigenvectors();
   }
