@@ -146,9 +146,12 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + str(lib_output_dir),
             ]
+            cpu_count = multiprocessing.cpu_count()
+            if cpu_count > 2:
+                cpu_count = cpu_count - 1  # leave one core free for other tasks
             build_args += [
                 "--",
-                "-j{}".format(multiprocessing.cpu_count()),
+                "-j{}".format(cpu_count),
                 # Build the pylibvw target
                 "pylibvw",
             ]
