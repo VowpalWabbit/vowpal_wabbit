@@ -400,6 +400,7 @@ class HyperOptimizer(object):
     def validation_metric_vw(self):
         y_pred_holdout = self.get_y_pred_holdout()
 
+        # pytype: disable=unsupported-operands
         if self.outer_loss_function == "logistic":
             if self.labels_clf_count > 2:
                 y_pred_holdout_proba = y_pred_holdout
@@ -421,6 +422,7 @@ class HyperOptimizer(object):
             y_pred_holdout_proba = [1.0 / (1 + exp(-i)) for i in y_pred_holdout]
             fpr, tpr, _ = roc_curve(self.y_true_holdout, y_pred_holdout_proba)
             loss = -auc(fpr, tpr)
+        # pytype: enable=unsupported-operands
 
         elif self.outer_loss_function == "quantile":  # Minimum at Median
             tau = 0.5
