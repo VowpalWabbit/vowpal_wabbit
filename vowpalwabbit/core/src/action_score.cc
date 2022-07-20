@@ -7,10 +7,10 @@
 #include "vw/common/string_view.h"
 #include "vw/core/global_data.h"
 #include "vw/core/io_buf.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"
-#include "vw/core/model_utils.h"
 
 namespace ACTION_SCORE
 {
@@ -60,8 +60,7 @@ size_t read_model_field(io_buf& io, ACTION_SCORE::action_score& a_s)
   return bytes;
 }
 
-size_t write_model_field(
-    io_buf& io, const ACTION_SCORE::action_score a_s, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const ACTION_SCORE::action_score a_s, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, a_s.action, upstream_name + "_action", text);
