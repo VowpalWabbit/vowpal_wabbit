@@ -6,13 +6,5 @@
             ],
             "url": "./test/vwtest.schema.json"
         }
-    ],
-    "files.associations": {
-        "*.tcc": "cpp",
-        "string_view": "cpp",
-        "regex": "cpp",
-        "alignedvector3": "cpp",
-        "array": "cpp",
-        "string": "cpp"
-    }
+    ]
 }

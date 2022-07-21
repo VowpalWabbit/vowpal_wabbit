@@ -482,7 +482,7 @@ class Workspace(pylibvw.vw):
         self.finish()
 
     def parse(
-        self, str_ex: Union[str, List["Example"]], labelType: Optional[Union[int, LabelType]] = None
+        self, str_ex, labelType: Optional[Union[int, LabelType]] = None
     ) -> Union["Example", List["Example"]]:
         """Returns a collection of examples for a multiline example learner or
         a single example for a single example learner.
