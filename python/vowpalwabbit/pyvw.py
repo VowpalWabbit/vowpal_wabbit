@@ -516,7 +516,15 @@ class Workspace(pylibvw.vw):
             return str_ex
 
         elif isinstance(str_ex, list):
-            if all([getattr(ex, "setup_done", None) for ex in str_ex]):
+            if all(
+                [
+                    isinstance(ex, Example) and getattr(ex, "setup_done", None)
+                    for ex in str_ex
+                ]
+            ):
+                str_ex: List[
+                    Example
+                ] = str_ex  # pytype: disable=annotation-type-mismatch
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):
