@@ -599,13 +599,13 @@ unsigned char ex_namespace(example_ptr ec, uint32_t ns) { return ec->indices[ns]
 
 uint32_t ex_num_features(example_ptr ec, unsigned char ns) { return (uint32_t)ec->feature_space[ns].size(); }
 
-uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i) { return (uint32_t)ec->feature_space[ns].indices[i]; }
+feature_index ex_feature(example_ptr ec, unsigned char ns, uint32_t i) { return (feature_index)ec->feature_space[ns].indices[i]; }
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) { return ec->feature_space[ns].values[i]; }
 
 float ex_sum_feat_sq(example_ptr ec, unsigned char ns) { return ec->feature_space[ns].sum_feat_sq; }
 
-void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
+void ex_push_feature(example_ptr ec, unsigned char ns, feature_index fid, float v)
 {  // warning: assumes namespace exists!
   ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
@@ -653,7 +653,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       }
       else
       {
-        py::extract<uint32_t> get_int(ai);
+        py::extract<feature_index> get_int(ai);
         if (get_int.check())
         {
           f.weight_index = get_int();
@@ -688,7 +688,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
   PyObject *key, *value;
   Py_ssize_t key_size = 0, pos = 0;
   float feat_value;
-  uint64_t feat_index;
+  feature_index feat_index;
 
   while (PyDict_Next(o, &pos, &key, &value))
   {
@@ -713,7 +713,10 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
     }
     else if (PyLong_Check(key))
     {
-      feat_index = (uint64_t)PyLong_AsUnsignedLongLong(key);
+      feat_index = (feature_index)PyLong_AsUnsignedLongLong(key);
+      std::cerr << PyLong_AsUnsignedLongLong(key) << std::endl;
+      std::cerr << feat_index << std::endl;
+      
     }
     else
     {
