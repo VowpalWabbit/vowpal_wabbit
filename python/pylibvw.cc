@@ -713,6 +713,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
     }
     else if (PyLong_Check(key))
     {
+
       feat_index = PyLong_AsUnsignedLong(key);
     }
     else
