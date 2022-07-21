@@ -34,8 +34,8 @@ private:
   std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<uint64_t> _action_indices;
   std::vector<bool> _spanner_bitvec;
-  std::vector<std::vector<float>> _action_ft_vectors;
-  std::vector<std::set<uint64_t>> _action_indexes;
+  std::vector<std::vector<float>> _aatop_action_ft_vectors;
+  std::vector<std::set<uint64_t>> _aatop_action_indexes;
 
 public:
   Eigen::SparseMatrix<float> Y;

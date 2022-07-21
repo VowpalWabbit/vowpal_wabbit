@@ -261,20 +261,20 @@ bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
 {
   _triplets.clear();
   AAtop.resize(examples.size(), examples.size());
-  _action_ft_vectors.clear();
-  _action_indexes.clear();
-  _action_indexes.resize(examples.size());
-  _action_ft_vectors.resize(examples.size());
+  _aatop_action_ft_vectors.clear();
+  _aatop_action_indexes.clear();
+  _aatop_action_indexes.resize(examples.size());
+  _aatop_action_ft_vectors.resize(examples.size());
 
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    _action_ft_vectors[i].clear();
-    _action_indexes[i].clear();
-    _action_ft_vectors[i].resize(_all->weights.mask() + 1, 0.f);
+    _aatop_action_ft_vectors[i].clear();
+    _aatop_action_indexes[i].clear();
+    _aatop_action_ft_vectors[i].resize(_all->weights.mask() + 1, 0.f);
     auto& red_features =
         examples[i]->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
-    AAtop_triplet_constructor tc(_all->weights.mask(), _action_ft_vectors[i], _action_indexes[i]);
+    AAtop_triplet_constructor tc(_all->weights.mask(), _aatop_action_ft_vectors[i], _aatop_action_indexes[i]);
     GD::foreach_feature<AAtop_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
         _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
         (red_features.generated_interactions ? *red_features.generated_interactions : *examples[i]->interactions),
@@ -290,10 +290,10 @@ bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
       if (i <= j)
       {
         float prod = 0.f;
-        for (uint64_t index : _action_indexes[j])
+        for (uint64_t index : _aatop_action_indexes[j])
         {
-          if (_action_ft_vectors[i][index] != 0.f)
-          { prod += _action_ft_vectors[j][index] * _action_ft_vectors[i][index]; }
+          if (_aatop_action_ft_vectors[i][index] != 0.f)
+          { prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index]; }
         }
 
         prod *= shrink_factors[i] * shrink_factors[j];
