@@ -553,9 +553,7 @@ def test_example_features_dict():
 
 def test_example_features_dict_long_long_index():
     vw = Workspace(quiet=True)
-    ex = vw.example(
-        {"a": {2**40: 2 }}
-    )
+    ex = vw.example({"a": {2**40: 2}})
     fs = list(ex.iter_features())
 
     assert (2**40, 2) in fs
