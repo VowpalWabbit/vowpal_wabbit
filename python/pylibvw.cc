@@ -599,7 +599,7 @@ unsigned char ex_namespace(example_ptr ec, uint32_t ns) { return ec->indices[ns]
 
 uint32_t ex_num_features(example_ptr ec, unsigned char ns) { return (uint32_t)ec->feature_space[ns].size(); }
 
-feature_index ex_feature(example_ptr ec, unsigned char ns, uint32_t i) 
+feature_index ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
 {
   return (feature_index)ec->feature_space[ns].indices[i];
 }
