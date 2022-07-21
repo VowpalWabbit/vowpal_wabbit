@@ -262,12 +262,11 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
     "--ccb_explore_adf --quiet -q ::")
     ->MinTime(15.0);
+#ifdef BUILD_LARGE_ACTION_SPACE
 BENCHMARK_CAPTURE(benchmark_multi, cb_las, gen_cb_examples(7, 50, 50, 311, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, cb_las_aatop, gen_cb_examples(7, 50, 50, 311, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --aatop --quiet")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(
-    benchmark_multi, cb_non_las, gen_cb_examples(7, 50, 20, 311, 1, 1, 20, 10, false), "--cb_explore_adf -q :: --quiet")
-    ->MinTime(15.0);
+#endif
