@@ -26,6 +26,7 @@
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::learner
 
+#include "plf_nanotimer.h"
 #include "vw/common/future_compat.h"
 #include "vw/core/example.h"
 #include "vw/core/label_type.h"
@@ -259,6 +260,9 @@ public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
 
+  double total_learn_time_spent_ns = 0.0f;  // total time spent in learning
+  size_t total_learn_calls = 0;             // total number of calls to learn()
+
   // learn will return a prediction.  The framework should
   // not call predict before learn
   bool learn_returns_prediction = false;
@@ -278,12 +282,18 @@ public:
   /// guaranteed and is undefined behavior if accessed.
   inline void learn(E& ec, size_t i = 0)
   {
+    total_learn_calls++;
+    plf::nanotimer timer;
+    timer.start();
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
     debug_log_message(ec, "learn");
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
+    total_learn_time_spent_ns += timer.get_elapsed_ns();
+    std::cerr << name << ":learn: " << timer.get_elapsed_ns() << std::endl;
+    total_learn_time_spent_ns = 0.0f;
   }
 
   /// \brief Make a prediction for the given example.

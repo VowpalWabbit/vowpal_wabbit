@@ -365,6 +365,8 @@ vw_add_library(
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
+target_link_libraries(vw_core PUBLIC $<BUILD_INTERFACE:plf_nanotimer>)
+
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
   target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)

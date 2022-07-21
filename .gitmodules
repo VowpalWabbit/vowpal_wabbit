@@ -16,3 +16,7 @@
 [submodule "ext_libs/eigen"]
 	path = ext_libs/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "ext_libs/plf_nanotimer"]
+	path = ext_libs/plf_nanotimer
+	url = https://github.com/lalo/plf_nanotimer.git
+	branch = patch-1

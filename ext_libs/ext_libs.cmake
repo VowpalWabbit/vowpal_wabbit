@@ -112,3 +112,9 @@ if(VW_BUILD_LARGE_ACTION_SPACE)
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
 endif()
+
+add_library(plf_nanotimer INTERFACE)
+target_include_directories(plf_nanotimer SYSTEM INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/plf_nanotimer>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
