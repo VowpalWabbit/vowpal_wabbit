@@ -699,7 +699,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
     else
     {
       feat_value = (float)PyFloat_AsDouble(value);
-      if (feat_value == -1 && PyErr_Occurred()) 
+      if (feat_value == -1 && PyErr_Occurred())
       {
         std::cerr << "warning: malformed feature in list" << std::endl;
         continue;
