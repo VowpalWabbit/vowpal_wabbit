@@ -35,9 +35,6 @@
 #include <numeric>
 #include <utility>
 
-void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
-void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
-
 void initialize_weights_as_polar_normal(weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
 
 // re-scaling to re-picking values outside the truncating boundary.
@@ -91,11 +88,17 @@ void initialize_regressor(VW::workspace& all, T& weights)
   }
   else if (all.random_positive_weights)
   {
-    weights.set_default(&initialize_weights_as_random_positive);
+    auto rand_state = *all.get_random_state();
+    auto random_positive = [&rand_state](
+                               weight* weights, uint64_t) { weights[0] = 0.1f * rand_state.get_and_update_random(); };
+    weights.set_default(random_positive);
   }
   else if (all.random_weights)
   {
-    weights.set_default(&initialize_weights_as_random);
+    auto rand_state = *all.get_random_state();
+    auto random_neg_pos = [&rand_state](
+                              weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_random() - 0.5f; };
+    weights.set_default(random_neg_pos);
   }
   else if (all.normal_weights)
   {

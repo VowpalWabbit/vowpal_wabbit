@@ -25,15 +25,6 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
           std::to_string(d) + " --quiet --random_seed 5",
       nullptr, false, nullptr, nullptr);
 
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-
-    vw.learn(examples);
-    vw.finish_example(examples);
-  }
-
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -49,30 +40,39 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
   {
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.2 3:0.3"));
+
+    std::vector<float> ft_values = {0.1f, 0.2f, 0.3f};
 
     vw.predict(examples);
 
     action_space->explore._generate_A(examples);
 
     auto num_actions = examples.size();
-    // gather the feature indexes
+    BOOST_CHECK_EQUAL(num_actions, 1);
 
-    for (size_t action_index = 0; action_index < num_actions; action_index++)
+    uint64_t action_index = 0;
+    auto* ex = examples[action_index];
+    // test sanity - test assumes no shared features
+    BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
+    for (auto ns : ex->indices)
     {
-      auto* ex = examples[action_index];
-      // test sanity - test assumes no shared features
-      BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
-      for (auto ns : ex->indices)
+      for (size_t i = 0; i < ex->feature_space[ns].indices.size(); i++)
       {
-        for (auto ft_index : ex->feature_space[ns].indices)
+        auto ft_index = ex->feature_space[ns].indices[i];
+        auto ft_value = ex->feature_space[ns].values[i];
+
+        if (ns == default_namespace) { BOOST_CHECK_CLOSE(ft_value, ft_values[i], FLOAT_TOL); }
+        else if (ns == constant_namespace)
         {
-          BOOST_CHECK_EQUAL(
-              action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())),
-              vw.weights.dense_weights[ft_index]);
+          BOOST_CHECK_CLOSE(ft_value, 1.f, FLOAT_TOL);
         }
+
+        BOOST_CHECK_EQUAL(
+            action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())), ft_value);
       }
     }
+
     vw.finish_example(examples);
   }
   VW::finish(vw);
@@ -102,39 +102,6 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
     auto& vw = *std::get<0>(vw_pair);
     bool interactions = std::get<1>(vw_pair);
 
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:0.9:0.5 |f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:0.8:0.5 |f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -150,9 +117,9 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.predict(examples);
 
@@ -196,39 +163,6 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
     auto& vw = *std::get<0>(vw_pair);
     bool interactions = std::get<1>(vw_pair);
 
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:0.9:0.5 |f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:0.8:0.5 |f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -244,9 +178,9 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.predict(examples);
 
@@ -281,111 +215,6 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
     auto& vw = *std::get<0>(vw_pair);
     auto apply_diag_M = std::get<1>(vw_pair);
 
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:0.9:0.5 | a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:0.8:0.5 | a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "0:0.7:0.5 | a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "0:0.6:0.5 | a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "0:0.5:0.5 | a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "0:0.4:0.5 | a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -401,9 +230,9 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
       examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
       examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
       examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
@@ -491,16 +320,6 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
     auto& vw = *std::get<0>(vw_pair);
     auto apply_diag_M = std::get<1>(vw_pair);
 
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -516,8 +335,8 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
 
       vw.predict(examples);
 
@@ -570,16 +389,6 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
   {
     auto& vw = *std::get<0>(vw_pair);
 
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -595,8 +404,8 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
 
       vw.predict(examples);
 
@@ -672,38 +481,6 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   {
     auto& vw = *std::get<0>(vw_pair);
     auto apply_diag_M = std::get<1>(vw_pair);
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -720,9 +497,9 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
       action_space->explore._populate_all_SVD_components();
 
       vw.predict(examples);
@@ -834,9 +611,9 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
 
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+    examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
     examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
     examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
     examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
@@ -920,9 +697,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -931,9 +708,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -942,9 +719,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -964,9 +741,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.predict(examples);
 
@@ -1024,9 +801,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -1035,9 +812,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -1046,9 +823,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -1068,9 +845,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.predict(examples);
 
@@ -1108,14 +885,14 @@ BOOST_AUTO_TEST_CASE(check_uniform_probabilities_before_learning)
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
   auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+          std::to_string(d) + " --quiet --random_seed 5 --noconstant",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
   auto* vw_squarecb =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
+              std::to_string(d) + " --quiet --random_seed 5 --noconstant",
           nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
@@ -1131,9 +908,9 @@ BOOST_AUTO_TEST_CASE(check_uniform_probabilities_before_learning)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1"));
+      examples.push_back(VW::read_example(vw, "| 1"));
+      examples.push_back(VW::read_example(vw, "| 1"));
 
       learner->predict(examples);
 
@@ -1158,9 +935,9 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   {
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
     vw.learn(examples);
     vw.finish_example(examples);
@@ -1169,9 +946,9 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   {
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+    examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
     vw.learn(examples);
     vw.finish_example(examples);
@@ -1180,9 +957,9 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   {
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
+    examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4:0.8 a_5:0.32 a_6:0.15"));
 
     vw.learn(examples);
     vw.finish_example(examples);
@@ -1202,9 +979,9 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   {
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+    examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
     vw.predict(examples);
 
