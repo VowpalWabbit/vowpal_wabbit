@@ -535,6 +535,21 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
   vws.push_back({vw_w_interactions_sq, true});
 
+  auto* vw_interleaved_w_interactions_sq =
+      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
+              std::to_string(d) + " --quiet --random_seed 5 -q :: --interleaved",
+          nullptr, false, nullptr, nullptr);
+
+  vws.push_back({vw_interleaved_w_interactions_sq, true});
+
+
+  auto* vw_aatop_w_interactions_sq =
+      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
+              std::to_string(d) + " --quiet --random_seed 5 -q :: --aatop",
+          nullptr, false, nullptr, nullptr);
+
+  vws.push_back({vw_aatop_w_interactions_sq, true});
+
   auto* vw_w_interactions_sq_sparse_weights = VW::initialize(
       "--cb_explore_adf --squarecb --sparse_weights --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5 -q ::",
@@ -565,7 +580,7 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
       examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
-      action_space->explore._populate_all_SVD_components();
+      action_space->explore._populate_all_testing_components();
 
       vw.predict(examples);
 

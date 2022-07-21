@@ -6,8 +6,6 @@
 
 namespace VW
 {
-constexpr float NORM_THRESHOLD = 0.0001f;
-
 void gram_schmidt(Eigen::MatrixXf& mat)
 {
   for (Eigen::Index i = 0; i < mat.cols(); ++i)

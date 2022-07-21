@@ -19,6 +19,14 @@ namespace VW
 {
 namespace cb_explore_adf
 {
+
+enum class implementation_type
+{
+  vanilla_rand_svd,
+  interleaved_rand_svd,
+  aatop
+};
+
 struct cb_explore_adf_large_action_space
 {
 private:
@@ -30,12 +38,13 @@ private:
   VW::workspace* _all;
   uint64_t _seed;
   size_t _counter;
-  bool _aatop;
+  implementation_type _impl_type;
   std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<uint64_t> _action_indices;
   std::vector<bool> _spanner_bitvec;
   std::vector<std::vector<float>> _aatop_action_ft_vectors;
   std::vector<std::set<uint64_t>> _aatop_action_indexes;
+  size_t _increment = 0;
 
 public:
   Eigen::SparseMatrix<float> Y;
@@ -48,10 +57,11 @@ public:
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
   Eigen::SparseMatrix<float> _A;
-  bool _set_all_svd_components = false;
+  bool _set_testing_components = false;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, bool aatop = false);
+      bool apply_shrink_factor, VW::workspace* all,
+      implementation_type impl_type = implementation_type::vanilla_rand_svd);
   ~cb_explore_adf_large_action_space() = default;
   void save_load(io_buf& io, bool read, bool text);
 
@@ -64,13 +74,17 @@ public:
   void generate_B(const multi_ex& examples);
   bool generate_Y(const multi_ex& examples);
   bool generate_AAtop(const multi_ex& examples);
+  bool generate_interleaved_Y(const multi_ex& examples, uint64_t& max_existing_column);
+  void cleanup_interleaved_Y(const multi_ex& examples);
+  void generate_B_interleaved(const multi_ex& examples, uint64_t max_existing_column);
   void randomized_SVD(const multi_ex& examples);
   std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
   void compute_spanner();
 
   // the below methods are used only during unit testing and are not called otherwise
   bool _generate_A(const multi_ex& examples);
-  void _populate_all_SVD_components();
+  void _populate_from_interleaved_Y(const multi_ex& examples);
+  void _populate_all_testing_components();
   void _set_rank(uint64_t rank);
 
 private:

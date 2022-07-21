@@ -15,6 +15,7 @@
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
+#include "vw/core/redsvd.h"
 
 #include <algorithm>
 #include <cmath>
@@ -113,6 +114,116 @@ public:
   }
 };
 
+template <typename WeightsT>
+struct Y_constructor
+{
+  WeightsT& _weights;
+  uint64_t _row_index;
+  uint64_t _column_index;
+  uint64_t _seed;
+  std::set<uint64_t>& _non_zero_rows;
+  const std::vector<float>& _shrink_factors;
+  size_t _increment;
+
+public:
+  Y_constructor(WeightsT& weights, uint64_t row_index, uint64_t column_index, uint64_t seed,
+      std::set<uint64_t>& _non_zero_rows, const std::vector<float>& shrink_factors, size_t increment)
+      : _weights(weights)
+      , _row_index(row_index)
+      , _column_index(column_index)
+      , _seed(seed)
+      , _non_zero_rows(_non_zero_rows)
+      , _shrink_factors(shrink_factors)
+      , _increment(increment)
+  {
+  }
+
+  void set(float feature_value, uint64_t index)
+  {
+    if (feature_value != 0.f)
+    {
+      _non_zero_rows.emplace(index);
+      auto strided_index = ((index + _increment * (_column_index + 1)));
+      auto combined_index = _row_index + _column_index + _seed;
+      auto calc = feature_value * merand48_boxmuller(combined_index) * _shrink_factors[_row_index];
+      _weights[strided_index] += calc;
+    }
+  }
+};
+
+template <typename WeightsT>
+struct Y_destructor
+{
+  WeightsT& _weights;
+  uint64_t _column_index;
+  size_t _increment;
+
+public:
+  Y_destructor(WeightsT& weights, uint64_t column_index, size_t increment)
+      : _weights(weights), _column_index(column_index), _increment(increment)
+  {
+  }
+
+  void set(float feature_value, uint64_t index)
+  {
+    if (feature_value != 0.f)
+    {
+      auto strided_index = ((index + _increment * (_column_index + 1)));
+      _weights[strided_index] = 0.f;  // TODO initial weight defined by cli
+    }
+  }
+};
+
+template <typename WeightsT>
+struct Y_triplet_populator
+{
+  WeightsT& _weights;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t _column_index;
+  uint64_t& _max_col;
+  size_t _increment;
+
+public:
+  Y_triplet_populator(WeightsT& weights, std::vector<Eigen::Triplet<float>>& triplets, uint64_t column_index,
+      uint64_t& max_col, size_t increment)
+      : _weights(weights), _triplets(triplets), _column_index(column_index), _max_col(max_col), _increment(increment)
+  {
+  }
+
+  void set(float, uint64_t index)
+  {
+    auto strided_index = ((index + _increment * (_column_index + 1)));
+    if (_weights[strided_index] != 0.f)
+    {
+      _triplets.emplace_back(Eigen::Triplet<float>((index & _weights.mask()), _column_index, _weights[strided_index]));
+      if ((index & _weights.mask()) > _max_col) { _max_col = (index & _weights.mask()); }
+    }
+  }
+};
+
+template <typename WeightsT>
+struct A_times_Y_dot_product
+{
+private:
+  WeightsT& _weights;
+  uint64_t _column_index;
+  size_t _increment;
+  float& _final_dot_product;
+
+public:
+  A_times_Y_dot_product(WeightsT& weights, uint64_t column_index, size_t increment, float& final_dot_product)
+      : _weights(weights), _column_index(column_index), _increment(increment), _final_dot_product(final_dot_product)
+  {
+  }
+
+  void set(float feature_value, uint64_t index)
+  {
+    if (feature_value == 0.f) { return; }
+    auto strided_index = ((index + _increment * (_column_index + 1)));
+    _final_dot_product += feature_value * _weights[strided_index];
+  }
+};
+
 struct B_triplet_constructor
 {
 private:
@@ -145,7 +256,7 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 }
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
-    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, bool aatop)
+    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, implementation_type impl_type)
     : _d(d)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
@@ -154,7 +265,7 @@ cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d,
     , _all(all)
     , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _counter(0)
-    , _aatop(aatop)
+    , _impl_type(impl_type)
 {
   _action_indices.resize(_d);
 }
@@ -175,13 +286,14 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+    {
+      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
+    }
   }
-  else
-  {
-    shrink_factors.resize(preds.size(), 1.f);
-  }
+  else { shrink_factors.resize(preds.size(), 1.f); }
 }
+
+inline void just_add_weights(float& p, float, float fw) { p += fw; }
 
 template <typename TripletType>
 void triplet_construction(TripletType& tc, float feature_value, uint64_t feature_index)
@@ -211,6 +323,50 @@ void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
     }
   }
   VW::gram_schmidt(Z);
+}
+
+void cb_explore_adf_large_action_space::generate_B_interleaved(const multi_ex& examples, uint64_t max_existing_column)
+{
+  // create B matrix with dimenstions Kxd where K = examples.size()
+  uint64_t num_actions = examples[0]->pred.a_s.size();
+  B.resize(num_actions, _d);
+  B.setZero();
+
+  uint64_t row_index = 0;
+  for (auto* ex : examples)
+  {
+    assert(!CB::ec_is_example_header(*ex));
+
+    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+
+    for (uint64_t col = 0; col < max_existing_column; ++col)
+    {
+      float final_dot_prod = 0.f;
+      if (_all->weights.sparse)
+      {
+        A_times_Y_dot_product<sparse_parameters> tc(_all->weights.sparse_weights, col, _increment, final_dot_prod);
+        GD::foreach_feature<A_times_Y_dot_product<sparse_parameters>, uint64_t, triplet_construction,
+            sparse_parameters>(_all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+      }
+      else
+      {
+        A_times_Y_dot_product<dense_parameters> tc(_all->weights.dense_weights, col, _increment, final_dot_prod);
+        GD::foreach_feature<A_times_Y_dot_product<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
+            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+      }
+
+      B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
+    }
+    row_index++;
+  }
 }
 
 void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
@@ -293,7 +449,9 @@ bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
         for (uint64_t index : _aatop_action_indexes[j])
         {
           if (_aatop_action_ft_vectors[i][index] != 0.f)
-          { prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index]; }
+          {
+            prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index];
+          }
         }
 
         prod *= shrink_factors[i] * shrink_factors[j];
@@ -354,6 +512,147 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
   return non_zero_rows.size() > _d;
 }
 
+void cb_explore_adf_large_action_space::_populate_from_interleaved_Y(const multi_ex& examples)
+{
+  std::vector<Eigen::Triplet<float>> triplets;
+  uint64_t max_non_zero_col = 0;
+  for (auto* ex : examples)
+  {
+    assert(!CB::ec_is_example_header(*ex));
+
+    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    for (uint64_t col = 0; col < _d; col++)
+    {
+      if (_all->weights.sparse)
+      {
+        Y_triplet_populator<sparse_parameters> tc_sparse(
+            _all->weights.sparse_weights, triplets, col, max_non_zero_col, _increment);
+
+        GD::foreach_feature<Y_triplet_populator<sparse_parameters>, uint64_t, triplet_construction, sparse_parameters>(
+            _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc_sparse, _all->_generate_interactions_object_cache);
+      }
+      else
+      {
+        Y_triplet_populator<dense_parameters> tc_dense(
+            _all->weights.dense_weights, triplets, col, max_non_zero_col, _increment);
+
+        GD::foreach_feature<Y_triplet_populator<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
+            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
+      }
+    }
+  }
+
+  Y.resize(max_non_zero_col + 1, _d);
+  Y.setZero();
+
+  Y.setFromTriplets(triplets.begin(), triplets.end(),
+      [](const float& a, const float& b)
+      {
+        assert(a == b);
+        return b;
+      });
+}
+
+void cb_explore_adf_large_action_space::cleanup_interleaved_Y(const multi_ex& examples)
+{
+  for (auto* ex : examples)
+  {
+    assert(!CB::ec_is_example_header(*ex));
+
+    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    for (uint64_t col = 0; col < _d; col++)
+    {
+      if (_all->weights.sparse)
+      {
+        Y_destructor<sparse_parameters> tc_sparse(_all->weights.sparse_weights, col, _increment);
+        GD::foreach_feature<Y_destructor<sparse_parameters>, uint64_t, triplet_construction, sparse_parameters>(
+            _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc_sparse, _all->_generate_interactions_object_cache);
+      }
+      else
+      {
+        Y_destructor<dense_parameters> tc_dense(_all->weights.dense_weights, col, _increment);
+        GD::foreach_feature<Y_destructor<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
+            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
+      }
+    }
+  }
+}
+
+bool cb_explore_adf_large_action_space::generate_interleaved_Y(const multi_ex& examples, uint64_t& max_existing_column)
+{
+  uint64_t row_index = 0;
+  std::set<uint64_t> non_zero_rows;
+  for (auto* ex : examples)
+  {
+    assert(!CB::ec_is_example_header(*ex));
+
+    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    for (uint64_t col = 0; col < _d; col++)
+    {
+      if (_all->weights.sparse)
+      {
+        Y_constructor<sparse_parameters> tc_sparse(
+            _all->weights.sparse_weights, row_index, col, _seed, non_zero_rows, shrink_factors, _increment);
+
+        GD::foreach_feature<Y_constructor<sparse_parameters>, uint64_t, triplet_construction, sparse_parameters>(
+            _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc_sparse, _all->_generate_interactions_object_cache);
+      }
+      else
+      {
+        Y_constructor<dense_parameters> tc_dense(
+            _all->weights.dense_weights, row_index, col, _seed, non_zero_rows, shrink_factors, _increment);
+
+        GD::foreach_feature<Y_constructor<dense_parameters>, uint64_t, triplet_construction, dense_parameters>(
+            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
+      }
+    }
+    row_index++;
+  }
+
+  if (non_zero_rows.empty())
+  {
+    // no non-zero columns were found for Y, it is empty
+    max_existing_column = 0;
+    return false;
+  }
+  else
+  {
+    // Orthonormalize Y
+    if (_all->weights.sparse)
+    {
+      max_existing_column = VW::gram_schmidt(_all->weights.sparse_weights, _d, _increment, non_zero_rows);
+    }
+    else { max_existing_column = VW::gram_schmidt(_all->weights.dense_weights, _d, _increment, non_zero_rows); }
+    return non_zero_rows.size() > _d;
+  }
+
+  return false;
+}
+
 bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
 {
   uint64_t row_index = 0;
@@ -406,7 +705,7 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
   return (_A.cols() != 0 && _A.rows() != 0);
 }
 
-void cb_explore_adf_large_action_space::_populate_all_SVD_components() { _set_all_svd_components = true; }
+void cb_explore_adf_large_action_space::_populate_all_testing_components() { _set_testing_components = true; }
 void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
 {
   _d = rank;
@@ -415,12 +714,13 @@ void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
 
 void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 {
-  if (_aatop)
+  if (_impl_type == implementation_type::aatop)
   {
     generate_AAtop(examples);
-    // to run SVD on AAtop
+    RedSVD::RedSymEigen<Eigen::MatrixXf> redsvd(AAtop, _d);
+    U = redsvd.eigenvectors();
   }
-  else
+  else if (_impl_type == implementation_type::vanilla_rand_svd)
   {
     // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
     // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is
@@ -443,7 +743,35 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 
     U = Z * svd.matrixU();
 
-    if (_set_all_svd_components)
+    if (_set_testing_components)
+    {
+      _V = Y * svd.matrixV();
+      _S = svd.singularValues();
+    }
+  }
+  else if (_impl_type == implementation_type::interleaved_rand_svd)
+  {
+    uint64_t max_existing_column = 0;
+    if (!generate_interleaved_Y(examples, max_existing_column))
+    {
+      U.resize(0, 0);
+      return;
+    }
+
+    if (_set_testing_components) { _populate_from_interleaved_Y(examples); }
+
+    generate_B_interleaved(examples, max_existing_column);
+    cleanup_interleaved_Y(examples);
+
+    generate_Z(examples);
+
+    Eigen::MatrixXf C = Z.transpose() * B;
+
+    Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+    U = Z * svd.matrixU();
+
+    if (_set_testing_components)
     {
       _V = Y * svd.matrixV();
       _S = svd.singularValues();
@@ -576,6 +904,7 @@ void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi
   else
   {
     base.predict(examples);
+    _increment = base.increment;
     update_example_prediction(examples);
   }
 }
@@ -597,6 +926,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool apply_shrink_factor = false;
   bool full_predictions = false;
   bool aatop = false;
+  bool interleaved_impl = false;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -606,6 +936,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("aatop", aatop))
+      .add(make_option("interleaved", interleaved_impl))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
@@ -649,16 +980,25 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     }
   }
 
-  size_t problem_multiplier = 1;
-
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space>;
-  auto data =
-      VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all, aatop);
+
+  size_t problem_multiplier = 1;
+
+  auto impl_type = implementation_type::vanilla_rand_svd;
+  if (aatop) { impl_type = implementation_type::aatop; }
+  if (interleaved_impl)
+  {
+    impl_type = implementation_type::interleaved_rand_svd;
+    problem_multiplier = d + 1;
+  }
+
+  auto data = VW::make_unique<explore_type>(
+      with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all, impl_type);
 
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_large_action_space_setup))
