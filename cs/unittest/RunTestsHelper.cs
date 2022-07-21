@@ -15,6 +15,13 @@ namespace cs_unittest
     {
         public static StreamReader Open(string input)
         {
+            if (string.IsNullOrEmpty(input))
+            {
+                // if filename is not given, return an empty stream
+                // this is used for compatibility with test cases that have no filename
+                return new StreamReader(new MemoryStream());
+            }
+
             if (input.EndsWith(".gz"))
                 return new StreamReader(new GZipStream(new FileStream(input, FileMode.Open), CompressionMode.Decompress));
             else

@@ -43,23 +43,23 @@ namespace Vw.Net.Test
         176, 177, 207, 208, //depend on shell scripts for input/output
         14, 16, 17, 31, 33, 34,53, 101, 102, 103, 105, 106, 111, 112, // float delta
         71, // --examples to test parser
-        143, 144, 146, 158, 189, 202, 237, 312, 316, 318, 319, 324, 325, 326, 347, 351, 348, // native json parsing
         149, 152, 156, 193, 194, 217, // bash script
         188, // possibly float delta
         195, 275, 276, //--onethread is a shell option, not available via library
         203, // Cluster mode test
         204, // Testing option usage
-        216, // DSJSON not supported
         220, // deamon mode shell script test not supported
         227, // "single continuous action, pdf value" prediction type for cats not yet supported
         229,  // "continous action with probability density function" prediction type for cats_pdf not yet supported
         239, 240, 241, 242, 243, 244, 245, 246, // flatbuffer input tests, to be enabled in due course
-        256, 299, 300, 306, 310, 311, 327, 328, 329, 330, 331 // DSJSON not supported
       });
 
     private bool ShouldInclude(RunTestEntry entry)
     {
-      return entry.vw_command != null && !entry.desc.Contains("SkipC#");
+      return entry.vw_command != null
+        && !entry.vw_command.Contains("--json")
+        && !entry.vw_command.Contains("--dsjson")
+        && !entry.desc.Contains("SkipC#");
     }
 
     private string MatchArgument(string args, string option)
