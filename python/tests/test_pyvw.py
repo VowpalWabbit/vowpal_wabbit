@@ -538,21 +538,17 @@ def test_example_features():
 
 
 def test_example_features_dict():
-    vw_ex = Workspace(quiet=True)
-    ex = vw_ex.example(
-        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1}}
+    vw = Workspace(quiet=True)
+    ex = vw.example(
+        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1.5}}
     )
-    ex.set_label_string("1")
-    ns = vowpalwabbit.NamespaceId(ex, 1)
-    assert ex.get_feature_id(ns, "a") == 127530
-    ex.push_hashed_feature(ns, 1122)
-    ex.push_features("x", [("c", 1.0), "d"])
-    ex.push_feature(ns, 11000)
-    assert ex.num_features_in("x") == 2
-    assert ex.sum_feat_sq(ns) == 5.0
-    ns2 = vowpalwabbit.NamespaceId(ex, 2)
-    ex.push_namespace(ns2)
-    assert ex.pop_namespace()
+    fs = list(ex.iter_features())
+
+    assert (ex.get_feature_id("a", "two"), 1) in fs
+    assert (ex.get_feature_id("a", "features"), 1) in fs
+    assert (ex.get_feature_id("b", "more"), 1) in fs
+    assert (ex.get_feature_id("b", "features"), 1) in fs
+    assert (5, 1.5) in fs
 
 
 def test_get_weight_name():
@@ -686,3 +682,14 @@ def test_deceprecated_labels():
         vowpalwabbit.pyvw.multiclass_probabilities_label()
         vowpalwabbit.pyvw.cost_sensitive_label()
         vowpalwabbit.pyvw.cbandits_label()
+
+
+def test_random_weights_seed():
+    # TODO: why do we need min_prediction and max_prediction?
+    shared_args = "--random_weights --quiet --min_prediction -50 --max_prediction 50"
+
+    a = Workspace(f"--random_seed 1 {shared_args}")
+    b = Workspace(f"--random_seed 2 {shared_args}")
+
+    dummy_ex_str = " | foo=bar"
+    assert a.predict(dummy_ex_str) != b.predict(dummy_ex_str)
