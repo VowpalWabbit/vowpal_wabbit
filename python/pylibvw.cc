@@ -599,7 +599,10 @@ unsigned char ex_namespace(example_ptr ec, uint32_t ns) { return ec->indices[ns]
 
 uint32_t ex_num_features(example_ptr ec, unsigned char ns) { return (uint32_t)ec->feature_space[ns].size(); }
 
-feature_index ex_feature(example_ptr ec, unsigned char ns, uint32_t i) { return (feature_index)ec->feature_space[ns].indices[i]; }
+feature_index ex_feature(example_ptr ec, unsigned char ns, uint32_t i) 
+{
+  return (feature_index)ec->feature_space[ns].indices[i];
+}
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) { return ec->feature_space[ns].values[i]; }
 
@@ -692,12 +695,12 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
 
   while (PyDict_Next(o, &pos, &key, &value))
   {
-
     if (PyLong_Check(value)) { feat_value = (float)PyLong_AsDouble(value); }
     else
     {
       feat_value = (float)PyFloat_AsDouble(value);
-      if (feat_value == -1 && PyErr_Occurred()) {
+      if (feat_value == -1 && PyErr_Occurred()) 
+      {
         std::cerr << "warning: malformed feature in list" << std::endl;
         continue;
       }
@@ -707,16 +710,13 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
 
     if (PyUnicode_Check(key))
     {
-      key_chars  = (const char*)PyUnicode_1BYTE_DATA(key);
-      key_size   = PyUnicode_GET_LENGTH(key);
+      key_chars = (const char*)PyUnicode_1BYTE_DATA(key);
+      key_size = PyUnicode_GET_LENGTH(key);
       feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
     }
     else if (PyLong_Check(key))
     {
       feat_index = (feature_index)PyLong_AsUnsignedLongLong(key);
-      std::cerr << PyLong_AsUnsignedLongLong(key) << std::endl;
-      std::cerr << feat_index << std::endl;
-      
     }
     else
     {
