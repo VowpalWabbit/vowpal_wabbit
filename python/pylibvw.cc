@@ -692,22 +692,23 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
 
   while (PyDict_Next(o, &pos, &key, &value))
   {
-    if (PyFloat_Check(value)) { feat_value = (float)PyFloat_AsDouble(value); }
-    else if (PyLong_Check(value))
-    {
-      feat_value = (float)PyLong_AsDouble(value);
-    }
+
+    if (PyLong_Check(value)) { feat_value = (float)PyLong_AsDouble(value); }
     else
-    {
-      std::cerr << "warning: malformed feature in list" << std::endl;
-      continue;
+    { 
+      feat_value = (float)PyFloat_AsDouble(value); 
+      if (feat_value == -1 && PyErr_Occurred()) {
+        std::cerr << "warning: malformed feature in list" << std::endl;
+        continue;
+      }
     }
 
     if (feat_value == 0) { continue; }
 
     if (PyUnicode_Check(key))
     {
-      key_chars = PyUnicode_AsUTF8AndSize(key, &key_size);
+      key_chars  = (const char*)PyUnicode_1BYTE_DATA(key);
+      key_size   = PyUnicode_GET_LENGTH(key);
       feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
     }
     else if (PyLong_Check(key))
