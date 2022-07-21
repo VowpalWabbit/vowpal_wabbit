@@ -150,6 +150,17 @@ void VW::reductions::output_metrics(VW::workspace& all)
     insert_dsjson_metrics(all.example_parser->metrics.get(), list_metrics, enabled_reductions);
 
     list_to_json_file(filename, list_metrics, all.logger);
+
+    const base_learner* curr_learner = all.l;
+    while (curr_learner != nullptr)
+    {
+      const base_learner* next = curr_learner->get_learn_base();
+      double exclusive = curr_learner->total_learn_time_spent_ns;
+      if (next != nullptr) { exclusive = curr_learner->total_learn_time_spent_ns - next->total_learn_time_spent_ns; }
+      std::cerr << curr_learner->get_name() << ":learn:" << curr_learner->total_learn_time_spent_ns << ":" << exclusive
+                << ":" << curr_learner->total_learn_calls << std::endl;
+      curr_learner = next;
+    }
   }
 }
 

@@ -260,6 +260,7 @@ public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
 
+  plf::nanotimer timer;
   double total_learn_time_spent_ns = 0.0f;  // total time spent in learning
   size_t total_learn_calls = 0;             // total number of calls to learn()
 
@@ -283,7 +284,6 @@ public:
   inline void learn(E& ec, size_t i = 0)
   {
     total_learn_calls++;
-    plf::nanotimer timer;
     timer.start();
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -292,8 +292,8 @@ public:
     learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
     total_learn_time_spent_ns += timer.get_elapsed_ns();
-    std::cerr << name << ":learn: " << timer.get_elapsed_ns() << std::endl;
-    total_learn_time_spent_ns = 0.0f;
+    // std::cerr << name << ":learn: " << timer.get_elapsed_ns() << std::endl;
+    // total_learn_time_spent_ns = 0.0f;
   }
 
   /// \brief Make a prediction for the given example.
