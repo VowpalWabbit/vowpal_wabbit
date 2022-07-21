@@ -66,3 +66,8 @@ add_test(
   NAME VW.Net.UnitTest
   COMMAND ${DOTNET_COMMAND} test $<TARGET_FILE_DIR:vw.net.native>/VW.Net.UnitTest.dll --Platform:x64 --InIsolation --logger "console;verbosity=detailed"
 )
+add_test(
+  NAME VW.Net.UnitTest.CopyTestFiles
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/cs/unittest/json $<TARGET_FILE_DIR:vw.net.native>/test
+)
+set_tests_properties(VW.Net.UnitTest PROPERTIES DEPENDS VW.Net.UnitTest.CopyTestFiles)
