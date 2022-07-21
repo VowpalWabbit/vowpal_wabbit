@@ -64,5 +64,5 @@ endif()
 # TODO: Enable TRX test logging
 add_test(
   NAME VW.Net.UnitTest
-  COMMAND ${DOTNET_COMMAND} test $<TARGET_FILE_DIR:vw.net.native>/VW.Net.UnitTest.dll --Platform:x64 --InIsolation "--logger:console;verbosity=default"
+  COMMAND ${DOTNET_COMMAND} test $<TARGET_FILE_DIR:vw.net.native>/VW.Net.UnitTest.dll --Platform:x64 --InIsolation --logger "console;verbosity=detailed"
 )

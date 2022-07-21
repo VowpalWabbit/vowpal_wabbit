@@ -106,6 +106,7 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Vowpal Wabbit")]
+        [Ignore]
         public void TestDictify()
         {
             using (var vw = new VowpalWabbit(new VowpalWabbitSettings { EnableStringExampleGeneration = true, EnableStringFloatCompact = true }))
