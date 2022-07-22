@@ -351,7 +351,7 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt $<BUILD_INTERFACE:plf_nanotimer>
     PRIVATE_DEPS
         ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}>
         # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
@@ -365,7 +365,7 @@ vw_add_library(
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
-target_link_libraries(vw_core PUBLIC $<BUILD_INTERFACE:plf_nanotimer>)
+# target_link_libraries(vw_core PUBLIC $<BUILD_INTERFACE:plf_nanotimer>)
 
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
