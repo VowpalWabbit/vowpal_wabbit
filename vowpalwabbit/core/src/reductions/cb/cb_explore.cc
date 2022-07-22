@@ -382,7 +382,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   data->model_file_version = all.model_file_ver;
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
-  data->cbcs.scorer = all.scorer;
+  data->cbcs.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   void (*learn_ptr)(cb_explore&, single_learner&, VW::example&);
   void (*predict_ptr)(cb_explore&, single_learner&, VW::example&);

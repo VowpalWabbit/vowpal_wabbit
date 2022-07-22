@@ -30,6 +30,8 @@
 #define VW_DEBUG_LOG vw_dbg::learner
 
 #include "plf_nanotimer.h"
+#include "vw/core/vw_string_view_fmt.h"
+
 #include "vw/common/future_compat.h"
 #include "vw/core/example.h"
 #include "vw/core/label_type.h"
