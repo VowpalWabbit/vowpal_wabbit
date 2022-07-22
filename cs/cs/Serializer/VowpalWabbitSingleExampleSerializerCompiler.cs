@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -130,7 +129,6 @@ namespace VW.Serializer
         {
             if (schema == null || schema.Features.Count == 0)
                 throw new ArgumentException("schema");
-            Contract.EndContractBlock();
 
             this.schema = schema;
             this.disableStringExampleGeneration = disableStringExampleGeneration;

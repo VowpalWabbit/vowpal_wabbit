@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="VowpalWabbitJson.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -8,7 +8,7 @@
 
 using Newtonsoft.Json;
 using System;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using VW.Labels;
 using VW.Serializer;
 
@@ -49,7 +49,6 @@ namespace VW
             {
                 throw new ArgumentNullException("vw");
             }
-            Contract.EndContractBlock();
 
             this.vw = vw;
         }
@@ -154,7 +153,7 @@ namespace VW
         /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         public void Predict(string json, ILabel label = null, int? index = null)
         {
-            Contract.Requires(json != null);
+            Debug.Assert(json != null);
 
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
             using (var result = serializer.ParseAndCreate(json, label, index))
@@ -174,7 +173,7 @@ namespace VW
         /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         public void Predict(JsonReader reader, ILabel label = null, int? index = null)
         {
-            Contract.Requires(reader != null);
+            Debug.Assert(reader != null);
 
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
             using (var result = serializer.ParseAndCreate(reader, label, index))
@@ -196,7 +195,7 @@ namespace VW
         /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         public TPrediction Predict<TPrediction>(string json, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
-            Contract.Requires(json != null);
+            Debug.Assert(json != null);
 
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
             using (var result = serializer.ParseAndCreate(json, label, index))

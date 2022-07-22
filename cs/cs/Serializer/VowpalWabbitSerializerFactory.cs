@@ -17,7 +17,7 @@ using VW.Serializer.Intermediate;
 using VW.Labels;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using VW.Reflection;
 using System.Collections.ObjectModel;
 

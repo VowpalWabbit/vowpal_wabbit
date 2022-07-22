@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using VW.Labels;
 using VW.Serializer.Intermediate;
@@ -79,10 +79,9 @@ namespace VW.Serializer
         /// </summary>
         public VowpalWabbitJsonBuilder(VowpalWabbitJsonSerializer serializer, IVowpalWabbitExamplePool vwPool, VowpalWabbitDefaultMarshaller defaultMarshaller, JsonSerializer jsonSerializer, int multiIndex = -1)
         {
-            Contract.Requires(serializer != null);
-            Contract.Requires(vw != null);
-            Contract.Requires(defaultMarshaller != null);
-            Contract.Requires(jsonSerializer != null);
+            Debug.Assert(vwPool != null);
+            Debug.Assert(defaultMarshaller != null);
+            Debug.Assert(jsonSerializer != null);
 
             this.extensionState = new VowpalWabbitJsonParseState
             {

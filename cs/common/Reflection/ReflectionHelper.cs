@@ -9,7 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -103,9 +102,9 @@ namespace VW.Reflection
         /// <remarks>This is a simple heuristic for overload resolution, not the full thing.</remarks>
         public static MethodInfo FindMethod(Type objectType, string name, params Type[] parameterTypes)
         {
-            Contract.Requires(objectType != null);
-            Contract.Requires(name != null);
-            Contract.Requires(parameterTypes != null);
+            Debug.Assert(objectType != null);
+            Debug.Assert(name != null);
+            Debug.Assert(parameterTypes != null);
 
             // let's find the "best" match:
             // order by
@@ -249,7 +248,7 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo<T, TResult>(Expression<Func<T, TResult>> expression)
         {
-            Contract.Requires(expression != null);
+            Debug.Assert(expression != null);
 
             return GetInfo(expression.Body);
         }
@@ -259,7 +258,7 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo<T>(Expression<Action<T>> expression)
         {
-            Contract.Requires(expression != null);
+            Debug.Assert(expression != null);
 
             return GetInfo(expression.Body);
         }
@@ -269,7 +268,7 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo(Expression expression)
         {
-            Contract.Requires(expression != null);
+            Debug.Assert(expression != null);
 
             var binaryExpression = expression as BinaryExpression;
             if (binaryExpression != null)

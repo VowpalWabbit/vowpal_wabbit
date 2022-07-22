@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using VW.Labels;
 
@@ -27,7 +27,7 @@ namespace VW
         public VowpalWabbitMultiLineExampleCollection(VowpalWabbit vw, VowpalWabbitExample shared, VowpalWabbitExample[] examples)
             : base(vw)
         {
-            Contract.Requires(examples != null);
+            Debug.Assert(examples != null);
 
             this.SharedExample = shared;
             this.Examples = examples;
@@ -63,7 +63,7 @@ namespace VW
         /// </summary>
         private TPrediction Execute<TPrediction>(VowpalWabbit vw, Action<List<VowpalWabbitExample>> predictOrLearn, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory = null)
         {
-            Contract.Requires(predictOrLearn != null);
+            Debug.Assert(predictOrLearn != null);
 
             // firstExample will contain prediction result
             VowpalWabbitExample firstExample = null;

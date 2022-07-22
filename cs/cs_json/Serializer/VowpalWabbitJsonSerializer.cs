@@ -9,7 +9,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -103,7 +103,7 @@ namespace VW.Serializer
         /// <param name="referenceResolver">An optional reference resolver.</param>
         public VowpalWabbitJsonSerializer(IVowpalWabbitExamplePool vwPool, VowpalWabbitJsonReferenceResolver referenceResolver = null)
         {
-            Contract.Requires(vwPool != null);
+            Debug.Assert(vwPool != null);
 
             this.extensions = new List<VowpalWabbitJsonExtension> { this.HandleMultiProperty };
             this.jsonSerializer = new JsonSerializer();

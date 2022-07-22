@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -63,9 +63,9 @@ namespace VW.Serializer
             Func<PropertyInfo, FeatureAttribute, bool> featurePropertyPredicate,
             Func<PropertyInfo, LabelAttribute, bool> labelPropertyPredicate)
         {
-            Contract.Requires(type != null);
-            Contract.Requires(featurePropertyPredicate != null);
-            Contract.Requires(labelPropertyPredicate != null);
+            Debug.Assert(type != null);
+            Debug.Assert(featurePropertyPredicate != null);
+            Debug.Assert(labelPropertyPredicate != null);
 
             var validExpressions = new Stack<Func<Expression,Expression>>();
 

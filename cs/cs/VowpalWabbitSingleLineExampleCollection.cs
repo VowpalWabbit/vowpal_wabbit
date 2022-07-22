@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,7 +27,7 @@ namespace VW
         public VowpalWabbitSingleLineExampleCollection(VowpalWabbit vw, VowpalWabbitExample example)
             : base(vw)
         {
-            Contract.Requires(example != null);
+            Debug.Assert(example != null);
 
             this.Example = example;
         }
