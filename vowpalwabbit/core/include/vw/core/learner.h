@@ -8,9 +8,6 @@
 #include <memory>
 
 #ifdef _WIN32
-// #ifndef WIN32_LEAN_AND_MEAN
-// #define WIN32_LEAN_AND_MEAN
-// #endif
 #  pragma warning(push)
 #  pragma warning(disable : 4635)
 // Warnings emitted from this header are unrelated to this project.
@@ -23,15 +20,15 @@
 #  pragma warning(pop)
 #endif
 
+#include "plf_nanotimer.h"
+
 #include "vw/core/debug_log.h"
 #include "vw/core/memory.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::learner
 
-#include "plf_nanotimer.h"
 #include "vw/core/vw_string_view_fmt.h"
-
 #include "vw/common/future_compat.h"
 #include "vw/core/example.h"
 #include "vw/core/label_type.h"
