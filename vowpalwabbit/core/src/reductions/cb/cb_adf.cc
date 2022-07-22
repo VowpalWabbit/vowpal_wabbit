@@ -512,7 +512,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
                 .set_save_load(::save_load)
                 .build(&all.logger);
 
-  bare->set_scorer(all.scorer);
+  bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));
 
   return make_base(*l);
 }
