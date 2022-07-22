@@ -2090,6 +2090,7 @@ void finish(VW::workspace& all, bool delete_all)
     writer->write(content.c_str(), content.length());
   }
   VW::reductions::output_metrics(all);
+  VW::reductions::output_per_reduction_time(all);
   all.logger.log_summary();
 }
 }  // namespace VW

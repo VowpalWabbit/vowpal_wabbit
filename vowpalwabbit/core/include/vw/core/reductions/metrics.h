@@ -11,5 +11,6 @@ namespace reductions
 {
 VW::LEARNER::base_learner* metrics_setup(VW::setup_base_i& stack_builder);
 void output_metrics(VW::workspace& all);
+void output_per_reduction_time(VW::workspace& all);
 }  // namespace reductions
 }  // namespace VW
