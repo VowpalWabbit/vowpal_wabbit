@@ -162,8 +162,7 @@ void VW::reductions::output_metrics(VW::workspace& all)
       double perc_of_total = 0.0f;
       if (total_learn_time > 0.0f) { perc_of_total = exclusive / total_learn_time; }
       std::cerr << curr_learner->get_name() << ":learn:" << curr_learner->total_learn_time_spent_ns << ":" << exclusive
-                << ":" << std::setprecision(3) << perc_of_total << ":" << curr_learner->total_learn_calls
-                << std::endl;
+                << ":" << std::setprecision(3) << perc_of_total << ":" << curr_learner->total_learn_calls << std::endl;
       curr_learner = next;
     }
   }

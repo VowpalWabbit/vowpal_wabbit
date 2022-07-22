@@ -21,7 +21,6 @@
 #endif
 
 #include "plf_nanotimer.h"
-
 #include "vw/core/debug_log.h"
 #include "vw/core/memory.h"
 
