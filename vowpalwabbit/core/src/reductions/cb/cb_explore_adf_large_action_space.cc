@@ -269,7 +269,7 @@ cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d,
     , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _counter(0)
     , _impl_type(impl_type)
-    , _internal_weights(_all->num_bits)
+    , _internal_weights(1 << _all->num_bits)
 {
   _action_indices.resize(_d);
 }

@@ -155,24 +155,9 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
     action_space->explore.generate_Y(examples);
     Eigen::SparseMatrix<float> Y_vanilla = action_space->explore.Y;
 
-    std::cout << "Y vanilla" << std::endl;
-    for (int k = 0; k < Y_vanilla.outerSize(); ++k)
-    {
-      for (Eigen::SparseMatrix<float>::InnerIterator it(Y_vanilla, k); it; ++it)
-      { std::cout << it.row() << ", " << it.col() << ", " << it.value() << std::endl; }
-    }
-
     uint64_t max_existing_column = 0;
     action_space->explore.generate_model_weight_Y(examples, max_existing_column);
-    // TODO do I need to fix qr decomp?
     action_space->explore._populate_from_model_weight_Y(examples);
-
-    std::cout << std::endl << " Y model_weight: " << std::endl;
-    for (int k = 0; k < action_space->explore.Y.outerSize(); ++k)
-    {
-      for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore.Y, k); it; ++it)
-      { std::cout << it.row() << ", " << it.col() << ", " << it.value() << std::endl; }
-    }
 
     BOOST_CHECK_EQUAL(Y_vanilla.isApprox(action_space->explore.Y), true);
 
