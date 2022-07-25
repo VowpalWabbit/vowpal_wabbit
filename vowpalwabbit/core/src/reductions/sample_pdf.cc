@@ -122,6 +122,7 @@ VW::LEARNER::base_learner* VW::reductions::sample_pdf_setup(VW::setup_base_i& st
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(sample_pdf_setup))
                 .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
+                .set_learn_returns_prediction(p_base->learn_returns_prediction)
                 .build();
 
   return VW::LEARNER::make_base(*l);
