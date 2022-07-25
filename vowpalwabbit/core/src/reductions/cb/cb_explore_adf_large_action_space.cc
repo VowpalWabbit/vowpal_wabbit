@@ -285,21 +285,18 @@ bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
 
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    for (size_t j = 0; j < examples.size(); ++j)
+    for (size_t j = i; j < examples.size(); ++j)
     {
-      if (i <= j)
+      float prod = 0.f;
+      for (uint64_t index : _aatop_action_indexes[j])
       {
-        float prod = 0.f;
-        for (uint64_t index : _aatop_action_indexes[j])
-        {
-          if (_aatop_action_ft_vectors[i][index] != 0.f)
-          { prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index]; }
-        }
-
-        prod *= shrink_factors[i] * shrink_factors[j];
-        AAtop(i, j) = prod;
-        AAtop(j, i) = prod;
+        if (_aatop_action_ft_vectors[i][index] != 0.f)
+        { prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index]; }
       }
+
+      prod *= shrink_factors[i] * shrink_factors[j];
+      AAtop(i, j) = prod;
+      AAtop(j, i) = prod;
     }
   }
   return true;
