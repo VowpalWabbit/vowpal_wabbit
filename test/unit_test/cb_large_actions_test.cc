@@ -167,11 +167,11 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
     }
 
     uint64_t max_existing_column = 0;
-    action_space->explore.generate_interleaved_Y(examples, max_existing_column);
+    action_space->explore.generate_model_weight_Y(examples, max_existing_column);
     // TODO do I need to fix qr decomp?
-    action_space->explore._populate_from_interleaved_Y(examples);
+    action_space->explore._populate_from_model_weight_Y(examples);
 
-    std::cout << std::endl << " Y interleaved: " << std::endl;
+    std::cout << std::endl << " Y model_weight: " << std::endl;
     for (int k = 0; k < action_space->explore.Y.outerSize(); ++k)
     {
       for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore.Y, k); it; ++it)
@@ -580,12 +580,12 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
   vws.push_back({vw_w_interactions_sq, true});
 
-  auto* vw_interleaved_w_interactions_sq =
+  auto* vw_model_weight_w_interactions_sq =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 -q :: --interleaved",
+              std::to_string(d) + " --quiet --random_seed 5 -q :: --model_weight",
           nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_interleaved_w_interactions_sq, true});
+  vws.push_back({vw_model_weight_w_interactions_sq, true});
 
 
   auto* vw_aatop_w_interactions_sq =

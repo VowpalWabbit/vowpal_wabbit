@@ -23,7 +23,7 @@ namespace cb_explore_adf
 enum class implementation_type
 {
   vanilla_rand_svd,
-  interleaved_rand_svd,
+  model_weight_rand_svd,
   aatop
 };
 
@@ -44,7 +44,6 @@ private:
   std::vector<bool> _spanner_bitvec;
   std::vector<std::vector<float>> _aatop_action_ft_vectors;
   std::vector<std::set<uint64_t>> _aatop_action_indexes;
-  size_t _increment = 0;
   dense_parameters _internal_weights;
 
 public:
@@ -75,16 +74,16 @@ public:
   void generate_B(const multi_ex& examples);
   bool generate_Y(const multi_ex& examples);
   bool generate_AAtop(const multi_ex& examples);
-  bool generate_interleaved_Y(const multi_ex& examples, uint64_t& max_existing_column);
-  void cleanup_interleaved_Y(const multi_ex& examples);
-  void generate_B_interleaved(const multi_ex& examples, uint64_t max_existing_column);
+  bool generate_model_weight_Y(const multi_ex& examples, uint64_t& max_existing_column);
+  void cleanup_model_weight_Y(const multi_ex& examples);
+  void generate_B_model_weight(const multi_ex& examples, uint64_t max_existing_column);
   void randomized_SVD(const multi_ex& examples);
   std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
   void compute_spanner();
 
   // the below methods are used only during unit testing and are not called otherwise
   bool _generate_A(const multi_ex& examples);
-  void _populate_from_interleaved_Y(const multi_ex& examples);
+  void _populate_from_model_weight_Y(const multi_ex& examples);
   void _populate_all_testing_components();
   void _set_rank(uint64_t rank);
 
