@@ -45,21 +45,22 @@ namespace Vw.Net.Test
         71, // --examples to test parser
         149, 152, 156, 193, 194, 217, // bash script
         188, // possibly float delta
-        195, 275, 276, //--onethread is a shell option, not available via library
+        193, 195, 203, 324, 325, 326, //--onethread is a shell option, not available via library
+        275, 276, // --help
         203, // Cluster mode test
         204, // Testing option usage
         220, // deamon mode shell script test not supported
         227, // "single continuous action, pdf value" prediction type for cats not yet supported
         229,  // "continous action with probability density function" prediction type for cats_pdf not yet supported
         239, 240, 241, 242, 243, 244, 245, 246, // flatbuffer input tests, to be enabled in due course
+        189, // JSON checkpoint line
+        399, 400, 401, 403, 404, // multiple part input files
+        310, 311, 347, 348 // _label_ca not supported
       });
 
     private bool ShouldInclude(RunTestEntry entry)
     {
-      return entry.vw_command != null
-        && !entry.vw_command.Contains("--json")
-        && !entry.vw_command.Contains("--dsjson")
-        && !entry.desc.Contains("SkipC#");
+      return entry.vw_command != null && !entry.desc.Contains("SkipC#");
     }
 
     private string MatchArgument(string args, string option)

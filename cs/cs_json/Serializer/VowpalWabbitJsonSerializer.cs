@@ -274,6 +274,7 @@ namespace VW.Serializer
         {
             using (var textReader = new JsonTextReader(new StringReader(json)))
             {
+                textReader.DateParseHandling = DateParseHandling.None;
                 this.Parse(textReader, label);
             }
         }
@@ -287,6 +288,7 @@ namespace VW.Serializer
         {
             using (var textReader = new JsonTextReader(new StringReader(json)))
             {
+                textReader.DateParseHandling = DateParseHandling.None;
                 return GetNumberOfActionDependentExamples(textReader);
             }
         }
@@ -420,7 +422,9 @@ namespace VW.Serializer
             {
                 if (this.ExampleBuilders == null)
                 {
-                    return new VowpalWabbitSingleLineExampleCollection(this.vwPool.Native, this.ExampleBuilder.CreateExample());
+                    var example = this.ExampleBuilder.CreateExample();
+                    Debug.Assert(example != null, "ExampleBuilder.CreateExample() returned null");
+                    return new VowpalWabbitSingleLineExampleCollection(this.vwPool.Native, example);
                 }
                 else
                 {
@@ -432,8 +436,8 @@ namespace VW.Serializer
                     {
                         // mark shared example as shared
                         VowpalWabbitDefaultMarshaller.Instance.MarshalLabel(this.ExampleBuilder.DefaultNamespaceContext, SharedLabel.Instance);
-
                         sharedExample = this.ExampleBuilder.CreateExample();
+
                         for (int i = 0; i < this.ExampleBuilders.Count; i++)
                             examples[i] = this.ExampleBuilders[i].CreateExample();
 

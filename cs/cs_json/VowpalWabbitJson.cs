@@ -217,6 +217,8 @@ namespace VW
         /// <param name="index">Optional index of example the given label should be applied for multi-line examples.</param>
         public TPrediction Predict<TPrediction>(JsonReader reader, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
+            Debug.Assert(reader != null);
+
             using (var serializer = new VowpalWabbitJsonSerializer(vw))
             using (var result = serializer.ParseAndCreate(reader, label, index))
             {
