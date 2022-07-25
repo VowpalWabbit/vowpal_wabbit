@@ -78,6 +78,52 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
   VW::finish(vw);
 }
 
+BOOST_AUTO_TEST_CASE(creation_of_AAtop)
+{
+  auto d = 2;
+  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --squarecb --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5",
+      nullptr, false, nullptr, nullptr);
+
+  std::vector<std::string> e_r;
+  vw.l->get_enabled_reductions(e_r);
+  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+  VW::LEARNER::multi_learner* learner =
+      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+  BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.2 3:0.3"));
+    examples.push_back(VW::read_example(vw, " | 2:0.1 3:0.2 4:0.3"));
+
+    vw.predict(examples);
+    auto& preds = examples[0]->pred.a_s;
+    action_space->explore.calculate_shrink_factor(preds);
+
+    action_space->explore._generate_A(examples);
+    action_space->explore.generate_AAtop(examples);
+
+    Eigen::SparseMatrix<float> diag_M(examples.size(), examples.size());
+
+    for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+    { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
+
+    Eigen::MatrixXf AAtop = diag_M * action_space->explore._A * action_space->explore._A.transpose() * diag_M;
+
+    BOOST_CHECK_EQUAL(AAtop.isApprox(action_space->explore.AAtop), true);
+
+    vw.finish_example(examples);
+  }
+  VW::finish(vw);
+}
+
 BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
 {
   auto d = 2;
