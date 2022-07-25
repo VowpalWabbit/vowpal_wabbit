@@ -4,6 +4,7 @@
 #pragma once
 
 #include "vw/core/action_score.h"
+#include "vw/core/array_parameters_dense.h"
 #include "vw/core/rand48.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
@@ -19,7 +20,6 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-
 enum class implementation_type
 {
   vanilla_rand_svd,
@@ -45,6 +45,7 @@ private:
   std::vector<std::vector<float>> _aatop_action_ft_vectors;
   std::vector<std::set<uint64_t>> _aatop_action_indexes;
   size_t _increment = 0;
+  dense_parameters _internal_weights;
 
 public:
   Eigen::SparseMatrix<float> Y;

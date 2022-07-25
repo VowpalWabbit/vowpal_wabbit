@@ -5,7 +5,6 @@
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
-
 #include <set>
 
 namespace VW
@@ -13,32 +12,32 @@ namespace VW
 constexpr float NORM_THRESHOLD = 0.0001f;
 
 template <typename WeightsT>
-uint64_t gram_schmidt(WeightsT& weights, uint64_t d, uint64_t increment, const std::set<uint64_t>& rows)
+uint64_t gram_schmidt(WeightsT& weights, uint64_t d, const std::set<uint64_t>& rows)
 {
   auto max_col = d;
-  for (uint64_t j = 1; j <= d; j++)
+  for (uint64_t j = 0; j < d; j++)
   {
-    for (uint64_t k = 1; k <= j - 1; k++)
+    for (uint64_t k = 0; k < j; k++)
     {
       float temp = 0;
 
       for (auto i : rows)
       {
-        auto strided_index_j = ((i + increment * j));
-        auto strided_index_k = ((i + increment * k));
+        auto strided_index_j = i + j;
+        auto strided_index_k = i + k;
         temp += (static_cast<double>(weights[strided_index_j])) * weights[strided_index_k];
       }
       for (auto i : rows)
       {
-        auto strided_index_j = ((i + increment * j));
-        auto strided_index_k = ((i + increment * k));
+        auto strided_index_j = i + j;
+        auto strided_index_k = i + k;
         (weights[strided_index_j]) -= static_cast<float>(temp) * weights[strided_index_k];
       }
     }
     double norm = 0;
     for (auto i : rows)
     {
-      auto strided_index_j = ((i + increment * j));
+      auto strided_index_j = i + j;
       norm += (static_cast<double>(weights[strided_index_j])) * weights[strided_index_j];
     }
 
@@ -49,7 +48,7 @@ uint64_t gram_schmidt(WeightsT& weights, uint64_t d, uint64_t increment, const s
       {
         for (auto i : rows)
         {
-          auto strided_index_k = ((i + increment * k));
+          auto strided_index_k = i + k;
           weights[strided_index_k] = 0.f;
         }
       }
@@ -58,8 +57,8 @@ uint64_t gram_schmidt(WeightsT& weights, uint64_t d, uint64_t increment, const s
     }
     for (auto i : rows)
     {
-      auto strided_index_k = ((i + increment * j));
-      weights[strided_index_k] /= static_cast<float>(norm);
+      auto strided_index_j = i + j;
+      weights[strided_index_j] /= static_cast<float>(norm);
     }
   }
   return max_col;
