@@ -210,7 +210,8 @@ private:
   float& _final_dot_product;
 
 public:
-  A_times_Y_dot_product(uint64_t weights_mask, dense_parameters& weights, uint64_t column_index, float& final_dot_product)
+  A_times_Y_dot_product(
+      uint64_t weights_mask, dense_parameters& weights, uint64_t column_index, float& final_dot_product)
       : _weights_mask(weights_mask)
       , _weights(weights)
       , _column_index(column_index)
@@ -289,11 +290,12 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    {
-      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
-    }
+    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
   }
-  else { shrink_factors.resize(preds.size(), 1.f); }
+  else
+  {
+    shrink_factors.resize(preds.size(), 1.f);
+  }
 }
 
 inline void just_add_weights(float& p, float, float fw) { p += fw; }
@@ -523,8 +525,7 @@ void cb_explore_adf_large_action_space::_populate_from_model_weight_Y(const mult
     {
       if (_all->weights.sparse)
       {
-        Y_triplet_populator tc_sparse(
-            _all->weights.mask(), _internal_weights, triplets, col, max_non_zero_col);
+        Y_triplet_populator tc_sparse(_all->weights.mask(), _internal_weights, triplets, col, max_non_zero_col);
 
         GD::foreach_feature<Y_triplet_populator, uint64_t, triplet_construction, sparse_parameters>(
             _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
@@ -535,8 +536,7 @@ void cb_explore_adf_large_action_space::_populate_from_model_weight_Y(const mult
       }
       else
       {
-        Y_triplet_populator tc_dense(
-            _all->weights.mask(), _internal_weights, triplets, col, max_non_zero_col);
+        Y_triplet_populator tc_dense(_all->weights.mask(), _internal_weights, triplets, col, max_non_zero_col);
 
         GD::foreach_feature<Y_triplet_populator, uint64_t, triplet_construction, dense_parameters>(
             _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
@@ -709,7 +709,7 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
   if (_impl_type == implementation_type::aatop)
   {
     generate_AAtop(examples);
-    //TODO run svd here
+    // TODO run svd here
   }
   else if (_impl_type == implementation_type::vanilla_rand_svd)
   {

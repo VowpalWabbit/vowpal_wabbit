@@ -134,9 +134,7 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  {
-    BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-  }
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -161,9 +159,7 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
     for (int k = 0; k < Y_vanilla.outerSize(); ++k)
     {
       for (Eigen::SparseMatrix<float>::InnerIterator it(Y_vanilla, k); it; ++it)
-      {
-        std::cout << it.row() << ", " << it.col() << ", " << it.value() << std::endl;
-      }
+      { std::cout << it.row() << ", " << it.col() << ", " << it.value() << std::endl; }
     }
 
     uint64_t max_existing_column = 0;
@@ -175,9 +171,7 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
     for (int k = 0; k < action_space->explore.Y.outerSize(); ++k)
     {
       for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore.Y, k); it; ++it)
-      {
-        std::cout << it.row() << ", " << it.col() << ", " << it.value() << std::endl;
-      }
+      { std::cout << it.row() << ", " << it.col() << ", " << it.value() << std::endl; }
     }
 
     BOOST_CHECK_EQUAL(Y_vanilla.isApprox(action_space->explore.Y), true);
@@ -379,9 +373,9 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
       Eigen::SparseMatrix<float> Omega(num_actions, d);
       Omega.setFromTriplets(omega_triplets.begin(), omega_triplets.end(), [](const float& a, const float& b) {
-            assert(a == b);
-            return b;
-          });
+        assert(a == b);
+        return b;
+      });
 
       Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
 
@@ -389,7 +383,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
       {
         for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
         { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
-        }
+      }
       else
       {
         diag_M.setIdentity();
@@ -462,7 +456,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
       {
         for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
         { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
-        }
+      }
       else
       {
         diag_M.setIdentity();
@@ -587,7 +581,6 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
   vws.push_back({vw_model_weight_w_interactions_sq, true});
 
-
   auto* vw_aatop_w_interactions_sq =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
               std::to_string(d) + " --quiet --random_seed 5 -q :: --aatop",
@@ -676,9 +669,9 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
         { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
       }
       else
-        {
+      {
         diag_M.setIdentity();
-        }
+      }
 
       BOOST_CHECK_SMALL(
           ((diag_M * action_space->explore._A) -
