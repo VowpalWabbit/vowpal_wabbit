@@ -7,6 +7,7 @@
 #include "vw/common/string_view.h"
 #include "vw/core/global_data.h"
 #include "vw/core/io_buf.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"
@@ -49,4 +50,22 @@ std::string to_string(const ACTION_SCORE::action_scores& action_scores_or_probs,
   return ss.str();
 }
 
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, ACTION_SCORE::action_score& a_s)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, a_s.action);
+  bytes += read_model_field(io, a_s.score);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const ACTION_SCORE::action_score a_s, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, a_s.action, upstream_name + "_action", text);
+  bytes += write_model_field(io, a_s.score, upstream_name + "_score", text);
+  return bytes;
+}
+}  // namespace model_utils
 }  // namespace VW
