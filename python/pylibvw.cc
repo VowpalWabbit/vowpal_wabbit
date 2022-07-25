@@ -599,13 +599,16 @@ unsigned char ex_namespace(example_ptr ec, uint32_t ns) { return ec->indices[ns]
 
 uint32_t ex_num_features(example_ptr ec, unsigned char ns) { return (uint32_t)ec->feature_space[ns].size(); }
 
-uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i) { return (uint32_t)ec->feature_space[ns].indices[i]; }
+feature_index ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
+{
+  return (feature_index)ec->feature_space[ns].indices[i];
+}
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) { return ec->feature_space[ns].values[i]; }
 
 float ex_sum_feat_sq(example_ptr ec, unsigned char ns) { return ec->feature_space[ns].sum_feat_sq; }
 
-void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
+void ex_push_feature(example_ptr ec, unsigned char ns, feature_index fid, float v)
 {  // warning: assumes namespace exists!
   ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
@@ -653,7 +656,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       }
       else
       {
-        py::extract<uint32_t> get_int(ai);
+        py::extract<feature_index> get_int(ai);
         if (get_int.check())
         {
           f.weight_index = get_int();
@@ -683,32 +686,37 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
   char ns_str[2] = {(char)ns, 0};
   uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
+  const char* key_chars;
 
-  PyObject *name, *value;
-  Py_ssize_t size = 0, pos = 0;
+  PyObject *key, *value;
+  Py_ssize_t key_size = 0, pos = 0;
   float feat_value;
-  uint64_t feat_index;
+  feature_index feat_index;
 
-  while (PyDict_Next(o, &pos, &name, &value))
+  while (PyDict_Next(o, &pos, &key, &value))
   {
-    if (PyFloat_Check(value)) { feat_value = (float)PyFloat_AsDouble(value); }
-    else if (PyLong_Check(value))
-    {
-      feat_value = (float)PyLong_AsDouble(value);
-    }
+    if (PyLong_Check(value)) { feat_value = (float)PyLong_AsDouble(value); }
     else
     {
-      std::cerr << "warning: malformed feature in list" << std::endl;
-      continue;
+      feat_value = (float)PyFloat_AsDouble(value);
+      if (feat_value == -1 && PyErr_Occurred())
+      {
+        std::cerr << "warning: malformed feature in list" << std::endl;
+        continue;
+      }
     }
 
     if (feat_value == 0) { continue; }
 
-    if (PyUnicode_Check(name))
-    { feat_index = vw->example_parser->hasher(PyUnicode_AsUTF8AndSize(name, &size), size, ns_hash) & vw->parse_mask; }
-    else if (PyLong_Check(name))
+    if (PyUnicode_Check(key))
     {
-      feat_index = PyLong_AsUnsignedLong(name);
+      key_chars = (const char*)PyUnicode_1BYTE_DATA(key);
+      key_size = PyUnicode_GET_LENGTH(key);
+      feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
+    }
+    else if (PyLong_Check(key))
+    {
+      feat_index = (feature_index)PyLong_AsUnsignedLongLong(key);
     }
     else
     {

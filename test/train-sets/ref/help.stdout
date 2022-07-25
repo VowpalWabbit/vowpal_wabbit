@@ -603,6 +603,8 @@ Weight Options:
     --radius arg                            Radius of the l2-ball for the projection. If not supplied, an
                                             adaptive radius will be used (type: float)
     --fepsilon arg                          Initial wealth (type: float, default: 1)
+    --flipschitz_const arg                  Upper bound on the norm of the gradients if known in advance
+                                            (type: float, default: 0)
 [Reduction] Generate Interactions Options:
     --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
                                             For ex. this is a duplicate: '-q ab -q ba' and a lot more in
