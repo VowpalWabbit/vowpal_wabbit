@@ -551,6 +551,14 @@ def test_example_features_dict():
     assert (5, 1.5) in fs
 
 
+def test_example_features_dict_long_long_index():
+    vw = Workspace(quiet=True)
+    ex = vw.example({"a": {2**40: 2}})
+    fs = list(ex.iter_features())
+
+    assert (2**40, 2) in fs
+
+
 def test_get_weight_name():
     model = Workspace(quiet=True)
     model.learn("1 | a a b c |ns x")

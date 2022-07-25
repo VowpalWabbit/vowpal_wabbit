@@ -376,7 +376,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
 
   l = nullptr;
-  scorer = nullptr;
   cost_sensitive = nullptr;
   loss = nullptr;
   example_parser = nullptr;
