@@ -183,7 +183,7 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
   bool always_predict = all.final_prediction_sink.size() > 0;
   auto p_reduction = VW::make_unique<cats_pdf>(as_singleline(p_base), always_predict);
-  
+
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_pdf_setup))
                 .set_learn_returns_prediction(p_base->learn_returns_prediction)
