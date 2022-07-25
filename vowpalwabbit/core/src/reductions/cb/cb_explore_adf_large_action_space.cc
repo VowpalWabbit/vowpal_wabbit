@@ -298,8 +298,6 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
   }
 }
 
-inline void just_add_weights(float& p, float, float fw) { p += fw; }
-
 template <typename TripletType>
 void triplet_construction(TripletType& tc, float feature_value, uint64_t feature_index)
 {
@@ -984,7 +982,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   if (model_weight_impl)
   {
     impl_type = implementation_type::model_weight_rand_svd;
-    problem_multiplier = d + 1;
   }
 
   auto data = VW::make_unique<explore_type>(
