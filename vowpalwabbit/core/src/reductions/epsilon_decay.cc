@@ -65,8 +65,8 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
     labelled_action = std::distance(examples.begin(), it);
     if (_epsilon_decay_audit_str != "")
     {
-      audit_msg << "Example: " << global_counter << "\nLabelled_action: " << labelled_action << "\n";
-      ++global_counter;
+      _audit_msg << "Example: " << _global_counter << "\nLabelled_action: " << labelled_action << "\n";
+      ++_global_counter;
     }
     const float r = -logged.cost;
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
@@ -92,12 +92,12 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
           }
           if (_epsilon_decay_audit_str != "")
           {
-            if (i == model_count - 1) { audit_msg << "champ "; }
+            if (i == model_count - 1) { _audit_msg << "champ "; }
             else
             {
-              audit_msg << "challenger[" << (i + 1) << "] ";
+              _audit_msg << "challenger[" << (i + 1) << "] ";
             }
-            audit_msg << "update_count: " << _estimator_configs[i][i].update_count
+            _audit_msg << "update_count: " << _estimator_configs[i][i].update_count
                       << " lb: " << _estimator_configs[i][i].lower_bound()
                       << " ub: " << _estimator_configs[i][i].upper_bound() << " p_log: " << logged.probability
                       << " p_pred: " << a_s.score << "\n";
@@ -175,7 +175,7 @@ void epsilon_decay_data::check_estimator_bounds()
         : _estimator_configs[i][i].lower_bound() > _estimator_configs[final_model_idx][i].upper_bound();
     if (better && _estimator_configs[i][i].update_count >= _min_champ_examples)
     {
-      if (_epsilon_decay_audit_str != "") { audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP\n"; }
+      if (_epsilon_decay_audit_str != "") { _audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP\n"; }
       shift_model(i, final_model_idx - i, model_count);
       if (_lb_trick)
       {
@@ -232,6 +232,7 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
   size_t bytes = 0;
   epsilon_decay._estimator_configs.clear();
   bytes += read_model_field(io, epsilon_decay._estimator_configs);
+  bytes += read_model_field(io, epsilon_decay._global_counter);
   return bytes;
 }
 
@@ -240,6 +241,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
 {
   size_t bytes = 0;
   bytes += write_model_field(io, epsilon_decay._estimator_configs, upstream_name + "_estimator_configs", text);
+  bytes += write_model_field(io, epsilon_decay._global_counter, upstream_name + "_global_counter", text);
   return bytes;
 }
 }  // namespace model_utils
@@ -285,7 +287,7 @@ void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
   {
     io_buf buf;
     buf.add_file(VW::io::open_file_writer(data._epsilon_decay_audit_str));
-    bin_text_write(buf, nullptr, 0, data.audit_msg, true);
+    bin_text_write(buf, nullptr, 0, data._audit_msg, true);
     buf.flush();
     buf.close_file();
   }
@@ -338,7 +340,6 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .help("Time constant for count decay")
                .experimental())
       .add(make_option("epsilon_decay_audit", _epsilon_decay_audit_str)
-               .keep()
                .default_value("")
                .help("Epsilon decay audit file name")
                .experimental())
