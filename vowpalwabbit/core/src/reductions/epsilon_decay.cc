@@ -34,7 +34,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
     , _weights(weights)
-    , _epsilon_decay_audit_str(epsilon_decay_audit_str)
+    , _epsilon_decay_audit_str(std::move(epsilon_decay_audit_str))
     , _constant_epsilon(constant_epsilon)
     , _wpp(wpp)
     , _lb_trick(lb_trick)
