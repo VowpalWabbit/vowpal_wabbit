@@ -20,6 +20,7 @@ namespace distributionally_robust
 {
 struct Duals;
 class ChiSquared;
+class EmpBernDynCS;
 }  // namespace distributionally_robust
 
 namespace model_utils
@@ -28,6 +29,8 @@ size_t read_model_field(io_buf&, VW::distributionally_robust::Duals&);
 size_t write_model_field(io_buf&, const VW::distributionally_robust::Duals&, const std::string&, bool);
 size_t read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
 size_t write_model_field(io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::distributionally_robust::EmpBernDynCS&);
+size_t write_model_field(io_buf&, const VW::distributionally_robust::EmpBernDynCS&, const std::string&, bool);
 }  // namespace model_utils
 
 namespace distributionally_robust
@@ -111,6 +114,55 @@ public:
   friend size_t VW::model_utils::write_model_field(
       io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
   void save_load(io_buf& model_file, bool read, bool text, const char* name);
+};
+
+class IncrementalFsum:
+{
+private:
+  std::vector<double> partials;
+
+public:
+  IncrementalFsum();
+  friend IncrementalFsum operator+(IncrementalFsum&, IncrementalFsum&);
+  operator double( );
+}
+
+class EmpBernDynCS
+{
+private:
+  double rho;
+  double rmin;
+  double rmax;
+  bool adjust;
+
+  int t;
+  IncrementalFsum sumwsqrsq;
+  IncrementalFsum sumwsqr;
+  IncrementalFsum sumwsq;
+  IncrementalFsum sumwr;
+  IncrementalFsum sumw;
+  IncrementalFsum sumwrxhatlow;
+  IncrementalFsum sumwxhatlow;
+  IncrementalFsum sumxhatlowsq;
+  IncrementalFsum sumwrxhathigh;
+  IncrementalFsum sumwxhathigh;
+  IncrementalFsum sumxhathighsq;
+
+public:
+  // alpha: confidence level
+  explicit EmpBernDynCS(double _rmin = 0.0, double _rmax = 1.0, bool adjust = True);
+  EmpBernDynCS& update(double w, double r);
+  std::vector<double> getci(double alpha);
+  double cs_lower_bound(double alpha) const;
+  double cs_upper_bound(double alpha) const;
+  friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::EmpBernDynCS&);
+  friend size_t VW::model_utils::write_model_field(
+      io_buf&, const VW::distributionally_robust::EmpBernDynCS&, const std::string&, bool);
+  void save_load(io_buf& model_file, bool read, bool text, const char* name);
+
+private:
+  double logwealth(double s, double v, double rho);
+  double lblogwealth(int t, double sumXt, double v, double rho, double alpha);
 };
 
 }  // namespace distributionally_robust
