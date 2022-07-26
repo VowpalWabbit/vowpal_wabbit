@@ -95,7 +95,7 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
             if (i == model_count - 1) { audit_msg << "champ "; }
             else
             {
-              audit_msg << "challenger[" << i << "] ";
+              audit_msg << "challenger[" << (i + 1) << "] ";
             }
             audit_msg << "update_count: " << _estimator_configs[i][i].update_count
                       << " lb: " << _estimator_configs[i][i].lower_bound()

@@ -48,7 +48,7 @@ struct epsilon_decay_data
   dense_parameters& _weights;
   std::string _epsilon_decay_audit_str;
   std::stringstream audit_msg;
-  uint64_t global_counter = 0;
+  uint64_t global_counter = 1;
   bool _constant_epsilon;
   uint32_t& _wpp;
   bool _lb_trick;
