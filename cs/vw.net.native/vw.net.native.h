@@ -4,6 +4,8 @@
 #include "vw/core/api_status.h"
 #include "vw/core/v_array.h"
 
+#include <algorithm>
+#include <cmath>
 #include <sstream>
 #include <vector>
 
@@ -28,13 +30,13 @@ namespace vw_net_native
 
   inline bool FloatEqual(float a, float b)
   { 
-    if ((abs(a) < 1e-20 && abs(b) < 1e-20) ||
-      (isinf(a) && isinf(b)))
+    if ((std::abs(a) < 1e-20 && std::abs(b) < 1e-20) ||
+      (std::isinf(a) && std::isinf(b)))
     { 
       return true;
     }
 
-    return abs(a - b) / std::max(a, b) < 1e-6;
+    return std::abs(a - b) / std::max(a, b) < 1e-6;
   }
 
   inline char* stdstr_to_cstr(const std::string& str)

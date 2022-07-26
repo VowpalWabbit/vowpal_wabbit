@@ -14,51 +14,51 @@ namespace Vw.Net.Native
 
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateExample(IntPtr vw);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void DeleteExample(IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern bool IsRingExample(IntPtr vw, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern bool IsExampleNewline(IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr ComputeDiffDescriptionExample(IntPtr vw, IntPtr ex1, IntPtr ex2);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern ulong GetExampleNumberOfFeatures(IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void EmptyExampleData(IntPtr vw, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void MakeIntoNewlineExample(IntPtr vw, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void MakeLabelDefault(IntPtr vw, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void UpdateExampleWeight(IntPtr vw, IntPtr example);
 
     #region Example Enumerator
     
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateNamespaceEnumerator(IntPtr vw, IntPtr ex);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void DeleteNamespaceEnumerator(IntPtr enumerator);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern bool NamespaceEnumeratorMoveNext(IntPtr enumerator);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void NamespaceEnumeratorReset(IntPtr enumerator);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern namespace_index NamespaceEnumeratorGetNamespace(IntPtr enumerator);
 
     #endregion

@@ -38,10 +38,6 @@ set(VW_NET_CS_SOURCES
     ../Serializer/Intermediate/PreHashedFeature.cs
 )
 
-find_program(dotnet_t4_COMMAND t4.exe)
-
-#(STATUS "Found dotnet-t4: ${dotnet_t4_COMMAND}"
-
 if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VowpalWabbit ${CMAKE_CURRENT_SOURCE_DIR}/vw.net.csproj VowpalWabbit.Common VowpalWabbit.Core)
 else()

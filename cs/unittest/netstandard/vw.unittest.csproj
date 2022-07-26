@@ -56,9 +56,9 @@
     <PackageReference Include="MSTest.TestAdapter" Version="1.3.2" />
     <PackageReference Include="MSTest.TestFramework" Version="1.3.2" />
 
-    <PackageReference Include="Antlr4" Version="4.6.4" ReferenceOutputAssembly="false" />
-    <PackageReference Include="Antlr4.Runtime" Version="4.6.4" />
-    <PackageReference Include="Antlr4.CodeGenerator" Version="4.6.4" ReferenceOutputAssembly="false" />
+    <PackageReference Include="Antlr4" Version="4.6.6" ReferenceOutputAssembly="false" />
+    <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+    <PackageReference Include="Antlr4.CodeGenerator" Version="4.6.6" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <Import Project="../../codegen/TextTemplate.targets" />

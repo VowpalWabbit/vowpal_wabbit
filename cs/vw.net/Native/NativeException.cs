@@ -7,10 +7,10 @@ namespace Vw.Net.Native
   // TODO: This should ideally be modelled as a stack-only type
   internal class NativeException : NativeObject<NativeException>
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern IntPtr NativeExceptionWhat(IntPtr exception);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern IntPtr NativeVwExceptionWhere(IntPtr exception, out int lineNumber);
 
     internal enum ExceptionTypes

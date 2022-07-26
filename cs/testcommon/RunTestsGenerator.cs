@@ -203,8 +203,6 @@ $@"
 
         string source = GenerateSource(testSet, testCases);
         
-        //File.WriteAllText("C:\\s\\generated.txt", source);
-
         context.AddSource(targetFile, source);
       }
     }

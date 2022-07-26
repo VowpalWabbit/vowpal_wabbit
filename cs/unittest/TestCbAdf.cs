@@ -119,7 +119,7 @@ namespace cs_unittest
         [TestCategory("Vowpal Wabbit")]
         public void TestSharedModel()
         {
-            string cbadfModelFile = "models/cb_adf.model";
+            string cbadfModelFile = Path.Join("models", "cb_adf.model");
 
             var sampleData = CreateSampleCbAdfData();
 

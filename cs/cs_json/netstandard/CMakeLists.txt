@@ -15,10 +15,6 @@ set(VW_NET_CS_JSON_SOURCES
     ../Serializer/VowpalWabbitJsonSerializer.cs
 )
 
-find_program(dotnet_t4_COMMAND t4.exe)
-
-#(STATUS "Found dotnet-t4: ${dotnet_t4_COMMAND}"
-
 if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VowpalWabbit.JSON ${CMAKE_CURRENT_SOURCE_DIR}/vw.json.csproj VowpalWabbit)
 else()

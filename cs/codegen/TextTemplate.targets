@@ -5,8 +5,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <T4Command>dotnet t4</T4Command>
-    <T4Command Condition="'$(OS)' == 'Windows_NT'">t4</T4Command>
+    <T4Command>t4</T4Command>
   </PropertyGroup>
 
   <Target Name="TextTemplateTransform" BeforeTargets="BeforeBuild">

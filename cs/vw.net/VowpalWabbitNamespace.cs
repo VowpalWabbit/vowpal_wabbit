@@ -10,19 +10,19 @@ namespace Vw.Net.Native
 
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateFeatureEnumerator(IntPtr vw, IntPtr ex, namespace_index ns);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void DeleteFeatureEnumerator(IntPtr enumerator);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern bool FeatureEnumeratorMoveNext(IntPtr enumerator);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void FeatureEnumeratorReset(IntPtr enumerator);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void FeatureEnumeratorGetFeature(IntPtr enumerator, out NativeFeature feature);
   }
 }

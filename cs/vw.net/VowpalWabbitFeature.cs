@@ -16,13 +16,13 @@ namespace Vw.Net.Native
 
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern feature_index GetShiftedWeightIndex(IntPtr vw, IntPtr ex, ulong weight_index_unshifted);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern float GetWeight(IntPtr vw, IntPtr ex, ulong weight_index_unshifted);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern float GetAuditWeight(IntPtr vw, IntPtr ex, ulong weight_index_unshifted);
   }
 }

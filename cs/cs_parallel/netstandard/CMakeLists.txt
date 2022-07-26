@@ -3,10 +3,6 @@ set(VW_NET_CS_PARALLEL_SOURCES
     ../VowpalWabbitThreadedLearning.cs
 )
 
-find_program(dotnet_t4_COMMAND t4.exe)
-
-#(STATUS "Found dotnet-t4: ${dotnet_t4_COMMAND}"
-
 if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VowpalWabbit.Parallel ${CMAKE_CURRENT_SOURCE_DIR}/vw.parallel.csproj VowpalWabbit)
 else()

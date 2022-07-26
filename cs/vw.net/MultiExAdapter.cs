@@ -10,13 +10,13 @@ namespace Vw.Net.Native
   
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateMultiEx();
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void DeleteMultiEx(IntPtr multi_ex);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void MultiExAddExample(IntPtr multi_ex, IntPtr example);
   }
 }

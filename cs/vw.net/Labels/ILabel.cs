@@ -27,13 +27,13 @@ namespace Vw.Net.Native
         continuous  // continuous actions
     }
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CbLabelReadFromExampleDangerous(IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void CbLabelUpdateExample(IntPtr example, ref CbClassData labelData);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern label_type_t WorkspaceGetLabelType(IntPtr workspace);
   }
 }
@@ -135,7 +135,7 @@ namespace VW.Labels
 
   public sealed class SharedLabel : ILabel
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern float SharedLabelGetCostConstant();
 
     private static readonly string SharedLabelString = "shared";
@@ -186,10 +186,10 @@ namespace VW.Labels
 
   public sealed class SimpleLabel : ILabel
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern float SimpleLabelReadFromExample(IntPtr example, out float weight, out float initial);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern void SimpleLabelUpdateExample(IntPtr workspace, IntPtr example, float label, IntPtr maybe_weight, IntPtr maybe_initial);
 
     [JsonProperty]
@@ -324,7 +324,7 @@ namespace VW.Labels
 
   public sealed class StringLabel : ILabel
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private extern static int StringLabelParseAndUpdateExample(IntPtr workspace, IntPtr example, IntPtr label, IntPtr label_len, IntPtr api_status);
 
     public StringLabel() 

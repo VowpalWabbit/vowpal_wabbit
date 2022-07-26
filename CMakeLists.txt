@@ -119,6 +119,12 @@ option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Inst
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(VW_BUILD_CSV "Build csv parser" OFF)
 option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
+option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
+option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
+
+if(vw_BUILD_NET_FRAMEWORK AND NOT WIN32)
+  message(FATAL_ERROR ".NET Framework can only be built on Windows")
+endif()
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")

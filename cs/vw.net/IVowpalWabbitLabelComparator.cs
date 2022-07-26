@@ -5,10 +5,10 @@ namespace Vw.Net.Native
 {
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public extern static IntPtr ComputeDiffDescriptionSimpleLabels(IntPtr ex1, IntPtr ex2);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     internal extern static IntPtr ComputeDiffDescriptionCbLabels(IntPtr ex1, IntPtr ex2);
   }
 }

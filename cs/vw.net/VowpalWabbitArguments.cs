@@ -19,22 +19,22 @@ namespace Vw.Net.Native
       public float powerT;
     }
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void GetWorkspaceBasicArguments(IntPtr workspace, ref vw_basic_arguments_t arguments);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr GetWorkspaceDataFilename(IntPtr workspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr GetFinalRegressorFilename(IntPtr workspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr SerializeCommandLine(IntPtr workspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr GetInitialRegressorFilenamesCount(IntPtr workspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetInitialRegressorFilenames(IntPtr workspace, IntPtr filenamesPtr, int count);
   }
 }

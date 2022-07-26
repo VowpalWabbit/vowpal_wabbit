@@ -9,92 +9,92 @@ namespace Vw.Net.Native
 {
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr WorkspaceHashSpace(IntPtr workspace, IntPtr str, UIntPtr len);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr WorkspaceHashFeature(IntPtr workspace, IntPtr str, UIntPtr len, UIntPtr _base);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void WorkspaceSetUpAllReduceThreadsRoot(IntPtr workspace, UIntPtr total, UIntPtr node);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void WorkspaceSetUpAllReduceThreadsNode(IntPtr workspace, UIntPtr total, UIntPtr node, IntPtr rootWorkspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceRunMultiPass(IntPtr workspace, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceRunDriver(IntPtr workspace, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceNotifyEndOfPass(IntPtr workspace, IntPtr api_status);
 
     internal unsafe delegate IntPtr ExamplePoolGetExampleFn(IntPtr context);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceParseJson(IntPtr workspace, IntPtr json, UIntPtr json_len, [MarshalAs(UnmanagedType.FunctionPtr)] ExamplePoolGetExampleFn get_example, IntPtr example_pool_context, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceParseDecisionServiceJson(IntPtr workspace, IntPtr json, UIntPtr json_len, UIntPtr offset, bool copy_json, [MarshalAs(UnmanagedType.FunctionPtr)] ExamplePoolGetExampleFn get_example, IntPtr example_pool_context, IntPtr interaction, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceGetTopicCount(IntPtr workspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern ulong WorkspaceGetTopicSize(IntPtr workspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern long WorkspaceFillTopicAllocation(IntPtr workspace, IntPtr topic_weights_buffers, int topic_weights_buffer_size, int topic_weights_buffers_count);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceFillSingleTopicTopWeights(IntPtr workspace, int topic, IntPtr feature_buffer, int feature_buffer_size);
 
     internal delegate void CreatePredictionCallback();
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceParseSingleLine(IntPtr workspace, IntPtr example, IntPtr line, UIntPtr line_length, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceLearn(IntPtr workspace, IntPtr example, [MarshalAs(UnmanagedType.FunctionPtr)] CreatePredictionCallback create_prediction, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspacePredict(IntPtr workspace, IntPtr example, [MarshalAs(UnmanagedType.FunctionPtr)] CreatePredictionCallback create_prediction, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceLearnMulti(IntPtr workspace, IntPtr example_pool, [MarshalAs(UnmanagedType.FunctionPtr)] CreatePredictionCallback create_prediction, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspacePredictMulti(IntPtr workspace, IntPtr example_pool, [MarshalAs(UnmanagedType.FunctionPtr)] CreatePredictionCallback create_prediction, IntPtr api_status);
   }
 
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateDecisionServiceInteraction();
         
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void DeleteDecisionServiceInteraction(IntPtr interaction);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr GetDSInteractionEventIdDup(IntPtr interaction);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr GetDSInteractionActionsCount(IntPtr interaction);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetDSInteractionActions(IntPtr interaction, IntPtr actions_buffer, int actions_buffer_size);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr GetDSInteractionProbabilitiesCount(IntPtr interaction);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetDSInteractionProbabilities(IntPtr interaction, IntPtr probabilities_buffer, int probabilities_buffer_size);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern float GetDSInteractionProbabilityOfDrop(IntPtr interaction);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern bool GetDSInteractionSkipLearn(IntPtr interaction);
   }
 

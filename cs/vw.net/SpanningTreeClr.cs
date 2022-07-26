@@ -7,22 +7,22 @@ using Vw.Net.Native;
 namespace VW {
   public sealed class SpanningTreeClr : NativeObject<SpanningTreeClr>
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern IntPtr CreateSpanningTree();
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern void DeleteSpanningTree(IntPtr handle);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern ushort GetSpanningTreePort(IntPtr handle);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern void StartSpanningTree(IntPtr handle);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern void StopSpanningTree(IntPtr handle);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     private static extern void RunSpanningTree(IntPtr handle);
 
     public SpanningTreeClr() : base(new New<SpanningTreeClr>(CreateSpanningTree), new Delete<SpanningTreeClr>(DeleteSpanningTree))

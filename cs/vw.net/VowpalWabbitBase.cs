@@ -11,34 +11,34 @@ namespace Vw.Net.Native
   {
     public delegate void trace_message_t(IntPtr trace_context, IntPtr message);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateWorkspaceWithSeedVwModel(IntPtr seed_workspace, IntPtr arguments, UIntPtr argument_size, trace_message_t trace_message, IntPtr trace_context, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateWorkspaceWithModelData(IntPtr arguments, UIntPtr argument_size, IOReaderAdapter.VTable model_reader, trace_message_t trace_listener, IntPtr trace_context, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateWorkspace(IntPtr arguments, UIntPtr argument_size, trace_message_t trace_listener, IntPtr trace_context, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int DeleteWorkspace(IntPtr workspace, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern VW.prediction_type_t WorkspaceGetOutputPredictionType(IntPtr workspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceReload(IntPtr workspace, IntPtr arguments, UIntPtr argument_size, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceSavePredictorToFile(IntPtr workspace, IntPtr filename, UIntPtr filename_size, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceSavePredictorToWriter(IntPtr workspace, IOWriterAdapter.VTable model_writer, IntPtr api_status);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr WorkspaceGetIdDup(IntPtr workspace);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void WorkspaceSetId(IntPtr workspace, IntPtr id, UIntPtr id_length);
   }
 }

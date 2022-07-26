@@ -19,7 +19,7 @@ namespace Vw.Net.Native
   internal static partial class NativeMethods
   {
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void WorkspaceGetPerformanceStatistics(IntPtr workspace, ref performance_statistics_t statistics);
   }
 }

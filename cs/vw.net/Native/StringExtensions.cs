@@ -7,10 +7,10 @@ namespace Vw.Net.Native
 {
     internal static partial class NativeMethods
     {
-        [DllImport("vw.net.native.dll")]
+        [DllImport("vw.net.native")]
         public static extern UIntPtr StdStringGetLength(IntPtr str);
 
-        [DllImport("vw.net.native.dll")]
+        [DllImport("vw.net.native")]
         public static extern int StdStringCopyToBuffer(IntPtr str, IntPtr buffer, int buffer_length);
     }
 

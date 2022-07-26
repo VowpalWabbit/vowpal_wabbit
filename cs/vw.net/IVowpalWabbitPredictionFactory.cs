@@ -11,52 +11,52 @@ namespace Vw.Net.Native
   // different simple (blittable) prediction types.
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern float GetPredictionScalar(IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern VW.VowpalWabbitScalar GetPredictionScalarConfidence(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr GetPredictionScalarsCount(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetPredictionScalars(IntPtr workspace, IntPtr example, IntPtr scalars_buffer, int scalars_buffer_size, bool limited = false);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern float GetPredictionProb(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern float GetPredictionCostSensitive(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern uint GetPredictionMulticlassClass(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr GetPredictionMultilabelCount(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetPredictionMultilabel(IntPtr workspace, IntPtr example, IntPtr multilabel_buffer, int multilabel_buffer_size);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr GetPredictionActionScoresCount(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetPredictionActionScores(IntPtr workspace, IntPtr example, IntPtr action_scores_buffer, int action_scores_buffer_size);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr GetPredictionTopicProbsCount(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetPredictionTopicProbs(IntPtr workspace, IntPtr example, IntPtr topic_probs_buffer, int topic_probs_buffer_size);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetPredictionActiveMulticlassClass(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr GetPredictionActiveMulticlassMoreInfoRequiredClassesCount(IntPtr workspace, IntPtr example);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int GetPredictionActiveMulticlassMoreInfoRequiredClasses(IntPtr workspace, IntPtr example, IntPtr more_info_required_classes_buffer, int more_info_required_classes_buffer_size);
   }
 }

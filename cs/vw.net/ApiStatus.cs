@@ -10,22 +10,22 @@ namespace Vw.Net {
 
     public sealed class ApiStatus : NativeObject<ApiStatus>
     {
-        [DllImport("vw.net.native.dll")]
+        [DllImport("vw.net.native")]
         private static extern IntPtr CreateApiStatus();
 
-        [DllImport("vw.net.native.dll")]
+        [DllImport("vw.net.native")]
         private static extern void DeleteApiStatus(IntPtr config);
 
-        [DllImport("vw.net.native.dll")]
+        [DllImport("vw.net.native")]
         private static extern IntPtr GetApiStatusErrorMessage(IntPtr status);
 
-        [DllImport("vw.net.native.dll")]
+        [DllImport("vw.net.native")]
         private static extern int GetApiStatusErrorCode(IntPtr status);
 
-        // [DllImport("vw.net.native.dll")]
+        // [DllImport("vw.net.native")]
         // private static extern void UpdateApiStatusSafe(IntPtr status, int error_code, IntPtr message);
         
-        // [DllImport("vw.net.native.dll")] 
+        // [DllImport("vw.net.native")] 
         // private static extern void ClearApiStatusSafe(IntPtr status);
 
         public ApiStatus() : base(new New<ApiStatus>(CreateApiStatus), new Delete<ApiStatus>(DeleteApiStatus))

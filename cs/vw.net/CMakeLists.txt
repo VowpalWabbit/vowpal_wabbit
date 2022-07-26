@@ -1,5 +1,24 @@
 set(VW_NET_CORE_SOURCES
-  
+  ApiStatus.cs
+  IVowpalWabbitExamplePool.cs
+  IVowpalWabbitLabelComparator.cs
+  IVowpalWabbitPredictionFactory.cs
+  MultiExAdapter.cs
+  SpanningTreeClr.cs
+  VowpalWabbit.cs
+  VowpalWabbitArguments.cs
+  VowpalWabbitBase.cs
+  VowpalWabbitContextualBanditUtil.cs
+  VowpalWabbitExample.cs
+  VowpalWabbitExampleBuilder.cs
+  VowpalWabbitException.cs
+  VowpalWabbitFeature.cs
+  VowpalWabbitModel.cs
+  VowpalWabbitNamespace.cs
+  VowpalWabbitNamespaceBuilder.cs
+  VowpalWabbitPerformanceStatistics.cs
+  VowpalWabbitSettings.cs
+  VwException.cs 
 )
 
 if (vw_DOTNET_USE_MSPROJECT)

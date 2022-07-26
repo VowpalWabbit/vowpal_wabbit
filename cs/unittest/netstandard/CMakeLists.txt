@@ -46,11 +46,6 @@ set(VW_NET_UNITTEST_SOURCES
     ../VowpalWabbitStdErrPerformanceStatistics.cs
 )
 
-# set(ENV{NewtonsoftDependencyValue} "Newtonsoft.Json.dll")
-find_program(dotnet_t4_COMMAND t4.exe)
-
-#(STATUS "Found dotnet-t4: ${dotnet_t4_COMMAND}"
-
 if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VW.Net.UnitTest ${CMAKE_CURRENT_SOURCE_DIR}/vw.unittest.csproj VowpalWabbit VowpalWabbit.JSON VowpalWabbit.Parallel console.net testcommon)
 else()

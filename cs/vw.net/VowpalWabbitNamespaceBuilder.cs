@@ -5,22 +5,22 @@ namespace Vw.Net.Native
 {
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern IntPtr CreateBuilder(IntPtr vw, IntPtr ex, byte feature_group);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void DeleteBuilder(IntPtr builder);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void BuilderPreallocate(IntPtr builder, int size);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void BuilderAddFeature(IntPtr builder, ulong weight_index, float x);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern void BuilderAddFeaturesUnchecked(IntPtr builder, ulong weight_index_base, IntPtr begin, IntPtr end);
 
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern UIntPtr BuilderGetFeatureCount(IntPtr builder);
   }
 }

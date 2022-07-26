@@ -22,7 +22,7 @@ namespace cs_unittest
         {
             // CMake will copy test files to a "test" sub-directory of the binary output directory
             var basePath = Path.GetDirectoryName(typeof(TestBase).Assembly.Location);
-            var testPath = basePath + @"\test";
+            var testPath = Path.Join(basePath, "test");
             Debug.Assert(Directory.Exists(testPath), $"Could not find directory: {testPath}");
 
             Environment.CurrentDirectory = testPath;

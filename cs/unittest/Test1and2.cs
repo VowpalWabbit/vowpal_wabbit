@@ -21,7 +21,7 @@ namespace cs_test
         [TestCategory("Vowpal Wabbit/Command line through marshalling")]
         public void Test1and2()
         {
-            var references = File.ReadAllLines(@"pred-sets\ref\0001.predict").Select(l => float.Parse(l, CultureInfo.InvariantCulture)).ToArray();
+            var references = File.ReadAllLines(Path.Join("pred-sets", "ref", "0001.predict")).Select(l => float.Parse(l, CultureInfo.InvariantCulture)).ToArray();
 
             var input = new List<Test1>();
 
@@ -32,7 +32,7 @@ namespace cs_test
             {
                 var lineNr = 0;
                 VWTestHelper.ParseInput(
-                    File.OpenRead(@"train-sets\0001.dat"),
+                    File.OpenRead(Path.Join("train-sets", "0001.dat")),
                     new MyListener(data =>
                     {
                         input.Add(data);
@@ -54,19 +54,19 @@ namespace cs_test
                 vwStr.RunMultiPass();
                 vw.Native.RunMultiPass();
 
-                vwStr.SaveModel("models/str0001.model");
-                vw.Native.SaveModel("models/0001.model");
+                vwStr.SaveModel(Path.Join("models", "str0001.model"));
+                vw.Native.SaveModel(Path.Join("models", "0001.model"));
 
-                VWTestHelper.AssertEqual(@"train-sets\ref\0001.stderr", vwStr.PerformanceStatistics);
-                VWTestHelper.AssertEqual(@"train-sets\ref\0001.stderr", vw.Native.PerformanceStatistics);
+                VWTestHelper.AssertEqual(Path.Join("train-sets", "ref", "0001.stderr"), vwStr.PerformanceStatistics);
+                VWTestHelper.AssertEqual(Path.Join("train-sets", "ref", "0001.stderr"), vw.Native.PerformanceStatistics);
             }
 
             Assert.AreEqual(input.Count, references.Length);
 
-            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-k -t --invariant") { ModelStream = File.OpenRead("models/0001.model") }))
+            using (var vwModel = new VowpalWabbitModel(new VowpalWabbitSettings("-k -t --invariant") { ModelStream = File.OpenRead(Path.Join("models", "0001.model")) }))
             using (var vwInMemoryShared1 = new VowpalWabbit(new VowpalWabbitSettings { Model = vwModel }))
             using (var vwInMemoryShared2 = new VowpalWabbit<Test1>(new VowpalWabbitSettings { Model = vwModel }))
-            using (var vwInMemory = new VowpalWabbit(new VowpalWabbitSettings("-k -t --invariant") { ModelStream = File.OpenRead("models/0001.model") }))
+            using (var vwInMemory = new VowpalWabbit(new VowpalWabbitSettings("-k -t --invariant") { ModelStream = File.OpenRead(Path.Join("models", "0001.model")) }))
             using (var vwStr = new VowpalWabbit("-k -t -i models/str0001.model --invariant"))
             using (var vwNative = new VowpalWabbit("-k -t -i models/0001.model --invariant"))
             using (var vw = new VowpalWabbit<Test1>("-k -t -i models/0001.model --invariant"))
@@ -94,12 +94,12 @@ namespace cs_test
                 }
 
                 // due to shared usage the counters don't match up
-                //VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemoryShared2.Native.PerformanceStatistics);
-                //VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemoryShared1.PerformanceStatistics);
+                //VWTestHelper.AssertEqual(Path.Join("test-sets", "ref", "0001.stderr"), vwInMemoryShared2.Native.PerformanceStatistics);
+                //VWTestHelper.AssertEqual(Path.Join("test-sets", "ref", "0001.stderr"), vwInMemoryShared1.PerformanceStatistics);
 
-                VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwInMemory.PerformanceStatistics);
-                VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vwStr.PerformanceStatistics);
-                VWTestHelper.AssertEqual(@"test-sets\ref\0001.stderr", vw.Native.PerformanceStatistics);
+                VWTestHelper.AssertEqual(Path.Join("test-sets", "ref", "0001.stderr"), vwInMemory.PerformanceStatistics);
+                VWTestHelper.AssertEqual(Path.Join("test-sets", "ref", "0001.stderr"), vwStr.PerformanceStatistics);
+                VWTestHelper.AssertEqual(Path.Join("test-sets", "ref", "0001.stderr"), vw.Native.PerformanceStatistics);
             }
         }
     }

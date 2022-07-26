@@ -13,7 +13,7 @@ namespace vw_net_native
   
   struct feature_enumerator
   {
-    const features* features;
+    const features* feat;
     features::const_iterator it;
     namespace_index ns;
   };

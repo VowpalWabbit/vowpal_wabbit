@@ -9,7 +9,7 @@ namespace Vw.Net.Native
 {
   internal static partial class NativeMethods
   {
-    [DllImport("vw.net.native.dll")]
+    [DllImport("vw.net.native")]
     public static extern int SetupExample(IntPtr vw, IntPtr ex, IntPtr status);
   }
 }

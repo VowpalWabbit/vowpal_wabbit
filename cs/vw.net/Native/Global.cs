@@ -22,10 +22,10 @@ namespace Vw.Net.Native {
             return nativeObject.DangerousGetHandle();
         }
 
-        [DllImport("vw.net.native.dll")]
+        [DllImport("vw.net.native")]
         public static extern void FreeDupString(IntPtr dupString);
 
-        [DllImport("vw.net.native.dll")]
+        [DllImport("vw.net.native")]
         public static extern ulong VwUniformHash(IntPtr key, UIntPtr len, ulong seed);
 
         public unsafe static ulong VwUniformHash(string key, ulong seed)
@@ -39,7 +39,7 @@ namespace Vw.Net.Native {
             }
         }
 
-        // [DllImport("vw.net.native.dll")]
+        // [DllImport("vw.net.native")]
         // public static extern IntPtr LookupMessageForErrorCode(int error_code);
 
         // public static string MarshalMessageForErrorCode(int error_code)
