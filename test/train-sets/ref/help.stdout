@@ -545,7 +545,7 @@ Weight Options:
                                             0.05, keep, experimental)
     --epsilon_decay_estimator_decay arg     Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
-    --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, keep, experimental)
+    --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
     --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
                                             false, experimental)
