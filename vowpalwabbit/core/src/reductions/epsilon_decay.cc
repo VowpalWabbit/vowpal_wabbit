@@ -98,9 +98,9 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
               _audit_msg << "challenger[" << (i + 1) << "] ";
             }
             _audit_msg << "update_count: " << _estimator_configs[i][i].update_count
-                      << " lb: " << _estimator_configs[i][i].lower_bound()
-                      << " ub: " << _estimator_configs[i][i].upper_bound() << " p_log: " << logged.probability
-                      << " p_pred: " << a_s.score << "\n";
+                       << " lb: " << _estimator_configs[i][i].lower_bound()
+                       << " ub: " << _estimator_configs[i][i].upper_bound() << " p_log: " << logged.probability
+                       << " p_pred: " << a_s.score << "\n";
           }
           break;
         }
