@@ -10,5 +10,5 @@ else()
     COMMENT Building console.net
     DEPENDS VowpalWabbit.JSON
     SOURCES ${VW_NET_CS_CONSOLE_SOURCES})
-  set_property(TARGET VW.Net.UnitTest APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
+  set_property(TARGET console.net APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
 endif()

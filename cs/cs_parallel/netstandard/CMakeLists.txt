@@ -15,5 +15,5 @@ else()
     COMMENT Building VowpalWabbit.Parallel
     DEPENDS VowpalWabbit
     SOURCES ${VW_NET_CS_PARALLEL_SOURCES})
-  set_property(TARGET VW.Net.UnitTest APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
+  set_property(TARGET VowpalWabbit.Parallel APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
 endif()

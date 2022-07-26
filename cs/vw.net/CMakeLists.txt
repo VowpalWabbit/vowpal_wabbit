@@ -11,5 +11,5 @@ else()
     COMMENT Building VowpalWabbit.Core
     DEPENDS vw.net.native VowpalWabbit.Common
     SOURCES ${VW_NET_CORE_SOURCES})
-  set_property(TARGET VW.Net.UnitTest APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
+  set_property(TARGET VowpalWabbit.Core APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
 endif()
