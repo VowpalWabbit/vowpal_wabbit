@@ -128,13 +128,10 @@ namespace VW.Serializer
         {
             try
             {
-                /*
                 if (this.featureCount == 0)
                 {
-                    Debug.WriteLine("CreateExample() returning null because featureCount == 0");
                     return null;
                 }
-                */
 
                 var vwExample = this.DefaultNamespaceContext.ExampleBuilder.CreateExample();
 
@@ -697,10 +694,8 @@ namespace VW.Serializer
         {
             var propertyConfiguration = this.vw.Settings.PropertyConfiguration;
 
-            var tokenCount = 0;
             while (reader.Read())
             {
-                tokenCount += 1;
                 switch (reader.TokenType)
                 {
                     case JsonToken.PropertyName:
@@ -722,12 +717,6 @@ namespace VW.Serializer
                             this.ParseFeature(path, propertyName);
                         break;
                     case JsonToken.EndObject:
-                        if (tokenCount == 1)
-                        {
-                            // empty object
-                            // the JsonToken.EndObject was the only token seen
-                            Debug.WriteLine("Found empty JSON object");
-                        }
                         return;
                 }
             }

@@ -55,11 +55,19 @@ if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VW.Net.UnitTest ${CMAKE_CURRENT_SOURCE_DIR}/vw.unittest.csproj VowpalWabbit VowpalWabbit.JSON VowpalWabbit.Parallel console.net testcommon)
 else()
   add_custom_target(VW.Net.UnitTest ALL
-      COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
-      COMMENT Building VW.Net.UnitTest
-      DEPENDS VowpalWabbit VowpalWabbit.JSON VowpalWabbit.Parallel console.net testcommon
-      SOURCES ${VW_NET_UNITTEST_SOURCES})
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
+    COMMENT Building VW.Net.UnitTest
+    DEPENDS VowpalWabbit VowpalWabbit.JSON VowpalWabbit.Parallel console.net testcommon
+    SOURCES ${VW_NET_UNITTEST_SOURCES})
+  set_property(TARGET VW.Net.UnitTest APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
 endif()
+
+# C# tests expect files from top level test/ directory to be copied to the binary output directory
+add_custom_target(VW.Net.UnitTest.CopyTestFiles ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/cs/unittest/json $<TARGET_FILE_DIR:vw.net.native>/test
+  COMMENT "Copying test files to C# binary directory..."
+  DEPENDS VW.Net.UnitTest
+)
 
 # TODO: Enable TRX test logging
 add_test(
@@ -67,7 +75,7 @@ add_test(
   COMMAND ${DOTNET_COMMAND} test $<TARGET_FILE_DIR:vw.net.native>/VW.Net.UnitTest.dll --Platform:x64 --InIsolation --logger "console;verbosity=detailed"
 )
 add_test(
-  NAME VW.Net.UnitTest.CopyTestFiles
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/cs/unittest/json $<TARGET_FILE_DIR:vw.net.native>/test
+  NAME VW.Net.UnitTest.CopyTestFilesBeforeTest
+  COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target VW.Net.UnitTest.CopyTestFiles
 )
-set_tests_properties(VW.Net.UnitTest PROPERTIES DEPENDS VW.Net.UnitTest.CopyTestFiles)
+set_tests_properties(VW.Net.UnitTest PROPERTIES DEPENDS VW.Net.UnitTest.CopyTestFilesBeforeTest)

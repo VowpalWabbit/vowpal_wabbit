@@ -46,8 +46,9 @@ if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VowpalWabbit ${CMAKE_CURRENT_SOURCE_DIR}/vw.net.csproj VowpalWabbit.Common VowpalWabbit.Core)
 else()
   add_custom_target(VowpalWabbit ALL
-      COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
-      COMMENT Building VowpalWabbit
-      DEPENDS VowpalWabbit.Common VowpalWabbit.Core
-      SOURCES ${VW_NET_CS_SOURCES})
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
+    COMMENT Building VowpalWabbit
+    DEPENDS VowpalWabbit.Common VowpalWabbit.Core
+    SOURCES ${VW_NET_CS_SOURCES})
+  set_property(TARGET VW.Net.UnitTest APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
 endif()
