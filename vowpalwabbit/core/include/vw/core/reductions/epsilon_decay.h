@@ -7,7 +7,7 @@
 #include "vw/core/distributionally_robust.h"
 #include "vw/core/estimator_config.h"
 #include "vw/core/reductions_fwd.h"
-#include "vw/io/logger.h"
+#include "vw/core/io_buf.h"
 
 #include <algorithm>
 #include <numeric>
@@ -30,7 +30,7 @@ struct epsilon_decay_estimator : estimator_config
 struct epsilon_decay_data
 {
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
-      double epsilon_decay_estimator_decay, dense_parameters& weights, VW::io::logger logger, bool log_champ_changes,
+      double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
       bool constant_epsilon, uint32_t& wpp, bool lb_trick, uint64_t _min_champ_examples);
   void update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
@@ -46,8 +46,9 @@ struct epsilon_decay_data
   double _epsilon_decay_significance_level;  // Confidence interval
   double _epsilon_decay_estimator_decay;     // Count decay time constant
   dense_parameters& _weights;
-  VW::io::logger _logger;
-  bool _log_champ_changes;
+  std::string _epsilon_decay_audit_str;
+  std::stringstream audit_msg;
+  uint64_t global_counter = 0;
   bool _constant_epsilon;
   uint32_t& _wpp;
   bool _lb_trick;
