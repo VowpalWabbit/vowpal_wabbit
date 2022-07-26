@@ -6,8 +6,8 @@
 #include "vw/core/array_parameters.h"
 #include "vw/core/distributionally_robust.h"
 #include "vw/core/estimator_config.h"
-#include "vw/core/reductions_fwd.h"
 #include "vw/core/io_buf.h"
+#include "vw/core/reductions_fwd.h"
 
 #include <algorithm>
 #include <numeric>

@@ -92,20 +92,15 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
           }
           if (_epsilon_decay_audit_str != "")
           {
-            if (i == model_count - 1)
-            {
-              audit_msg << "champ ";
-            }
+            if (i == model_count - 1) { audit_msg << "champ "; }
             else
             {
               audit_msg << "challenger[" << i << "] ";
             }
             audit_msg << "update_count: " << _estimator_configs[i][i].update_count
-            << " lb: " << _estimator_configs[i][i].lower_bound()
-            << " ub: " << _estimator_configs[i][i].upper_bound()
-            << " p_log: " << logged.probability
-            << " p_pred: " << a_s.score
-            << "\n";
+                      << " lb: " << _estimator_configs[i][i].lower_bound()
+                      << " ub: " << _estimator_configs[i][i].upper_bound() << " p_log: " << logged.probability
+                      << " p_pred: " << a_s.score << "\n";
           }
           break;
         }
@@ -180,10 +175,7 @@ void epsilon_decay_data::check_estimator_bounds()
         : _estimator_configs[i][i].lower_bound() > _estimator_configs[final_model_idx][i].upper_bound();
     if (better && _estimator_configs[i][i].update_count >= _min_champ_examples)
     {
-      if (_epsilon_decay_audit_str != "")
-      {
-        audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP\n";
-      }
+      if (_epsilon_decay_audit_str != "") { audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP\n"; }
       shift_model(i, final_model_idx - i, model_count);
       if (_lb_trick)
       {
@@ -345,7 +337,11 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
                .experimental())
-      .add(make_option("epsilon_decay_audit", _epsilon_decay_audit_str).keep().default_value("").help("Epsilon decay audit file name").experimental())
+      .add(make_option("epsilon_decay_audit", _epsilon_decay_audit_str)
+               .keep()
+               .default_value("")
+               .help("Epsilon decay audit file name")
+               .experimental())
       .add(make_option("constant_epsilon", _constant_epsilon)
                .keep()
                .help("Keep epsilon constant across models")
