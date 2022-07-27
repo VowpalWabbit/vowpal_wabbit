@@ -29,12 +29,13 @@ enum class implementation_type
 
 struct vanilla_rand_svd_impl
 {
- private:
+private:
   VW::workspace* _all;
   uint64_t _d;
   std::vector<Eigen::Triplet<float>> _triplets;
   uint64_t _seed;
- public:
+
+public:
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -51,14 +52,15 @@ struct vanilla_rand_svd_impl
 
 struct model_weight_rand_svd_impl
 {
- private:
+private:
   VW::workspace* _all;
   uint64_t _d;
   std::vector<Eigen::Triplet<float>> _triplets;
   void cleanup_model_weight_Y(const multi_ex& examples);
   uint64_t _seed;
   dense_parameters _internal_weights;
- public:
+
+public:
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -68,8 +70,10 @@ struct model_weight_rand_svd_impl
   model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
 
   void run(const multi_ex& examples, std::vector<float>& shrink_factors);
-  bool generate_model_weight_Y(const multi_ex& examples, uint64_t& max_existing_column, std::vector<float>& shrink_factors);
-  void generate_B_model_weight(const multi_ex& examples, uint64_t max_existing_column, std::vector<float>& shrink_factors);
+  bool generate_model_weight_Y(
+      const multi_ex& examples, uint64_t& max_existing_column, std::vector<float>& shrink_factors);
+  void generate_B_model_weight(
+      const multi_ex& examples, uint64_t max_existing_column, std::vector<float>& shrink_factors);
 
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::VectorXf _S;

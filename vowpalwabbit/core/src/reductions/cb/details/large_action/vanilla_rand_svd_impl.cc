@@ -163,7 +163,6 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, std::vector<flo
   }
 }
 
-
 void vanilla_rand_svd_impl::run(const multi_ex& examples, std::vector<float>& shrink_factors)
 {
   // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
@@ -194,9 +193,10 @@ void vanilla_rand_svd_impl::run(const multi_ex& examples, std::vector<float>& sh
   }
 }
 
-vanilla_rand_svd_impl::vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed) : _all(all), _d(d), _seed(seed)
-{ }
-
+vanilla_rand_svd_impl::vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed)
+    : _all(all), _d(d), _seed(seed)
+{
+}
 
 }  // namespace cb_explore_adf
 }  // namespace VW

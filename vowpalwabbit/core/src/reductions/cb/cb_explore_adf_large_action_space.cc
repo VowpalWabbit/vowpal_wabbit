@@ -220,9 +220,12 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
   return (_A.cols() != 0 && _A.rows() != 0);
 }
 
-void cb_explore_adf_large_action_space::_populate_all_testing_components() { _set_testing_components = true;
-_vanilla_rand_svd_impl._set_testing_components = true;
-_model_weight_rand_svd_impl._set_testing_components = true; }
+void cb_explore_adf_large_action_space::_populate_all_testing_components()
+{
+  _set_testing_components = true;
+  _vanilla_rand_svd_impl._set_testing_components = true;
+  _model_weight_rand_svd_impl._set_testing_components = true;
+}
 
 void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
 {

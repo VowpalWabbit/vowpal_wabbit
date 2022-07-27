@@ -156,12 +156,13 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
     Eigen::SparseMatrix<float> Y_vanilla = action_space->explore._vanilla_rand_svd_impl.Y;
 
     uint64_t max_existing_column = 0;
-    action_space->explore._model_weight_rand_svd_impl.generate_model_weight_Y(examples, max_existing_column, action_space->explore.shrink_factors);
+    action_space->explore._model_weight_rand_svd_impl.generate_model_weight_Y(
+        examples, max_existing_column, action_space->explore.shrink_factors);
     action_space->explore._model_weight_rand_svd_impl._populate_from_model_weight_Y(examples);
 
     BOOST_CHECK_EQUAL(action_space->explore._model_weight_rand_svd_impl.Y.rows() > 0, true);
     BOOST_CHECK_EQUAL(action_space->explore._model_weight_rand_svd_impl.Y.cols(), d);
-  
+
     BOOST_CHECK_EQUAL(Y_vanilla.isApprox(action_space->explore._model_weight_rand_svd_impl.Y), true);
 
     vw.finish_example(examples);
@@ -203,8 +204,10 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
     Eigen::MatrixXf B_vanilla = action_space->explore._vanilla_rand_svd_impl.B;
 
     uint64_t max_existing_column = 0;
-    action_space->explore._model_weight_rand_svd_impl.generate_model_weight_Y(examples, max_existing_column, action_space->explore.shrink_factors);
-    action_space->explore._model_weight_rand_svd_impl.generate_B_model_weight(examples, max_existing_column, action_space->explore.shrink_factors);
+    action_space->explore._model_weight_rand_svd_impl.generate_model_weight_Y(
+        examples, max_existing_column, action_space->explore.shrink_factors);
+    action_space->explore._model_weight_rand_svd_impl.generate_B_model_weight(
+        examples, max_existing_column, action_space->explore.shrink_factors);
 
     BOOST_CHECK_EQUAL(B_vanilla.isApprox(action_space->explore._model_weight_rand_svd_impl.B), true);
 
@@ -549,7 +552,8 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
       action_space->explore._generate_A(examples);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore._vanilla_rand_svd_impl.generate_B(examples, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::generate_Z(examples, action_space->explore._vanilla_rand_svd_impl.Z, action_space->explore._vanilla_rand_svd_impl.B, action_space->explore._d, action_space->explore._seed );
+      VW::cb_explore_adf::generate_Z(examples, action_space->explore._vanilla_rand_svd_impl.Z,
+          action_space->explore._vanilla_rand_svd_impl.B, action_space->explore._d, action_space->explore._seed);
 
       Eigen::MatrixXf P(d, d);
 
@@ -683,7 +687,11 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       {
         BOOST_CHECK_SMALL(1.f - action_space->explore._vanilla_rand_svd_impl._V.col(i).norm(), FLOAT_TOL);
         for (int j = 0; j < i; ++j)
-        { BOOST_CHECK_SMALL(action_space->explore._vanilla_rand_svd_impl._V.col(i).dot(action_space->explore._vanilla_rand_svd_impl._V.col(j)), FLOAT_TOL); }
+        {
+          BOOST_CHECK_SMALL(action_space->explore._vanilla_rand_svd_impl._V.col(i).dot(
+                                action_space->explore._vanilla_rand_svd_impl._V.col(j)),
+              FLOAT_TOL);
+        }
       }
 
       Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
@@ -698,10 +706,11 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
         diag_M.setIdentity();
       }
 
-      BOOST_CHECK_SMALL(
-          ((diag_M * action_space->explore._A) -
-              action_space->explore._vanilla_rand_svd_impl.U * action_space->explore._vanilla_rand_svd_impl._S.asDiagonal() * action_space->explore._vanilla_rand_svd_impl._V.transpose())
-              .norm(),
+      BOOST_CHECK_SMALL(((diag_M * action_space->explore._A) -
+                            action_space->explore._vanilla_rand_svd_impl.U *
+                                action_space->explore._vanilla_rand_svd_impl._S.asDiagonal() *
+                                action_space->explore._vanilla_rand_svd_impl._V.transpose())
+                            .norm(),
           FLOAT_TOL);
 
       // compare singular values with actual SVD singular values

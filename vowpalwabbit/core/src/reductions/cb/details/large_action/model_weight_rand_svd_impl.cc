@@ -121,7 +121,8 @@ public:
   }
 };
 
-bool model_weight_rand_svd_impl::generate_model_weight_Y(const multi_ex& examples, uint64_t& max_existing_column, std::vector<float>& shrink_factors)
+bool model_weight_rand_svd_impl::generate_model_weight_Y(
+    const multi_ex& examples, uint64_t& max_existing_column, std::vector<float>& shrink_factors)
 {
   uint64_t row_index = 0;
   std::set<uint64_t> non_zero_rows;
@@ -176,7 +177,8 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(const multi_ex& example
   return false;
 }
 
-void model_weight_rand_svd_impl::generate_B_model_weight(const multi_ex& examples, uint64_t max_existing_column, std::vector<float>& shrink_factors)
+void model_weight_rand_svd_impl::generate_B_model_weight(
+    const multi_ex& examples, uint64_t max_existing_column, std::vector<float>& shrink_factors)
 {
   // create B matrix with dimenstions Kxd where K = examples.size()
   uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -300,10 +302,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
 void model_weight_rand_svd_impl::run(const multi_ex& examples, std::vector<float>& shrink_factors)
 {
   uint64_t max_existing_column = 0;
-  if (!generate_model_weight_Y(examples, max_existing_column, shrink_factors))
-  {
-    return;
-  }
+  if (!generate_model_weight_Y(examples, max_existing_column, shrink_factors)) { return; }
   {
     U.resize(0, 0);
     return;
@@ -329,9 +328,10 @@ void model_weight_rand_svd_impl::run(const multi_ex& examples, std::vector<float
   }
 }
 
-model_weight_rand_svd_impl::model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed) : _all(all), _d(d), _seed(seed), _internal_weights(1 << _all->num_bits)
-{ }
-
+model_weight_rand_svd_impl::model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed)
+    : _all(all), _d(d), _seed(seed), _internal_weights(1 << _all->num_bits)
+{
+}
 
 }  // namespace cb_explore_adf
 }  // namespace VW
