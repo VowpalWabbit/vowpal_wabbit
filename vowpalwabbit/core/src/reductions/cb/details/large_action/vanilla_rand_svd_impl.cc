@@ -186,5 +186,35 @@ void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
   VW::gram_schmidt(Z);
 }
 
+void cb_explore_adf_large_action_space::vanilla_rand_svd_impl(const multi_ex& examples)
+{
+  // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
+  // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is
+  // more natural to vw's example features representation
+
+  // TODO can Y be stored in the model? on some strided location ^^ ?
+  // if the model is empty then can't create Y and there is nothing left to do
+  if (!generate_Y(examples) || Y.rows() < static_cast<Eigen::Index>(_d))
+  {
+    U.resize(0, 0);
+    return;
+  }
+
+  generate_B(examples);
+  generate_Z(examples);
+
+  Eigen::MatrixXf C = Z.transpose() * B;
+
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+  U = Z * svd.matrixU();
+
+  if (_set_testing_components)
+  {
+    _V = Y * svd.matrixV();
+    _S = svd.singularValues();
+  }
+}
+
 }  // namespace cb_explore_adf
 }  // namespace VW

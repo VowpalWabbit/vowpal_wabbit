@@ -297,6 +297,34 @@ void cb_explore_adf_large_action_space::cleanup_model_weight_Y(const multi_ex& e
     }
   }
 }
+void cb_explore_adf_large_action_space::model_weight_rand_svd_impl(const multi_ex& examples)
+{
+  uint64_t max_existing_column = 0;
+  if (!generate_model_weight_Y(examples, max_existing_column))
+  {
+    U.resize(0, 0);
+    return;
+  }
+
+  if (_set_testing_components) { _populate_from_model_weight_Y(examples); }
+
+  generate_B_model_weight(examples, max_existing_column);
+  cleanup_model_weight_Y(examples);
+
+  generate_Z(examples);
+
+  Eigen::MatrixXf C = Z.transpose() * B;
+
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+
+  U = Z * svd.matrixU();
+
+  if (_set_testing_components)
+  {
+    _V = Y * svd.matrixV();
+    _S = svd.singularValues();
+  }
+}
 
 }  // namespace cb_explore_adf
 }  // namespace VW

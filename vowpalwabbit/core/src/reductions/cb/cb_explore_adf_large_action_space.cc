@@ -235,60 +235,11 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
   }
   else if (_impl_type == implementation_type::vanilla_rand_svd)
   {
-    // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
-    // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is
-    // more natural to vw's example features representation
-
-    // TODO can Y be stored in the model? on some strided location ^^ ?
-    // if the model is empty then can't create Y and there is nothing left to do
-    if (!generate_Y(examples) || Y.rows() < static_cast<Eigen::Index>(_d))
-    {
-      U.resize(0, 0);
-      return;
-    }
-
-    generate_B(examples);
-    generate_Z(examples);
-
-    Eigen::MatrixXf C = Z.transpose() * B;
-
-    Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
-
-    U = Z * svd.matrixU();
-
-    if (_set_testing_components)
-    {
-      _V = Y * svd.matrixV();
-      _S = svd.singularValues();
-    }
+    return vanilla_rand_svd_impl(examples);
   }
   else if (_impl_type == implementation_type::model_weight_rand_svd)
   {
-    uint64_t max_existing_column = 0;
-    if (!generate_model_weight_Y(examples, max_existing_column))
-    {
-      U.resize(0, 0);
-      return;
-    }
-
-    if (_set_testing_components) { _populate_from_model_weight_Y(examples); }
-
-    generate_B_model_weight(examples, max_existing_column);
-    cleanup_model_weight_Y(examples);
-
-    generate_Z(examples);
-
-    Eigen::MatrixXf C = Z.transpose() * B;
-
-    Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
-
-    U = Z * svd.matrixU();
-
-    if (_set_testing_components)
-    {
-      _V = Y * svd.matrixV();
-      _S = svd.singularValues();
-    }
+    return model_weight_rand_svd_impl(examples);
   }
 }
 
