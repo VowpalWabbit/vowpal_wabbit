@@ -230,6 +230,8 @@ void cb_explore_adf_large_action_space::_populate_all_testing_components()
 void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
 {
   _d = rank;
+  _vanilla_rand_svd_impl._d = rank;
+  _model_weight_rand_svd_impl._d = rank;
   _action_indices.resize(_d);
 }
 
@@ -242,11 +244,17 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
   }
   else if (_impl_type == implementation_type::vanilla_rand_svd)
   {
-    return _vanilla_rand_svd_impl.run(examples, shrink_factors);
+    _vanilla_rand_svd_impl.run(examples, shrink_factors);
+    // TODO: remove this overwrite of U after aatop becomes independent
+    // spanner expects this U to be the one being operated on
+    U = _vanilla_rand_svd_impl.U;
   }
   else if (_impl_type == implementation_type::model_weight_rand_svd)
   {
-    return _model_weight_rand_svd_impl.run(examples, shrink_factors);
+    _model_weight_rand_svd_impl.run(examples, shrink_factors);
+    // TODO: remove this overwrite of U after aatop becomes independent
+    // spanner expects this U to be the one being operated on
+    U = _model_weight_rand_svd_impl.U;
   }
 }
 

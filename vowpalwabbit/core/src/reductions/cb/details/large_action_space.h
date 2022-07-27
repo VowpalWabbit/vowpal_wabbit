@@ -31,11 +31,11 @@ struct vanilla_rand_svd_impl
 {
 private:
   VW::workspace* _all;
-  uint64_t _d;
   std::vector<Eigen::Triplet<float>> _triplets;
   uint64_t _seed;
 
 public:
+  uint64_t _d;
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -54,13 +54,13 @@ struct model_weight_rand_svd_impl
 {
 private:
   VW::workspace* _all;
-  uint64_t _d;
   std::vector<Eigen::Triplet<float>> _triplets;
   void cleanup_model_weight_Y(const multi_ex& examples);
   uint64_t _seed;
   dense_parameters _internal_weights;
 
 public:
+  uint64_t _d;
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
