@@ -680,22 +680,14 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       {
         BOOST_CHECK_SMALL(1.f - action_space->explore.U.col(i).norm(), FLOAT_TOL);
         for (int j = 0; j < i; ++j)
-        {
-          BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(
-                                action_space->explore.U.col(j)),
-              FLOAT_TOL);
-        }
+        { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
       }
 
       for (int i = 0; i < action_space->explore._V.cols(); ++i)
       {
         BOOST_CHECK_SMALL(1.f - action_space->explore._V.col(i).norm(), FLOAT_TOL);
         for (int j = 0; j < i; ++j)
-        {
-          BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(
-                                action_space->explore._V.col(j)),
-              FLOAT_TOL);
-        }
+        { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
       }
 
       Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
@@ -710,11 +702,10 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
         diag_M.setIdentity();
       }
 
-      BOOST_CHECK_SMALL(((diag_M * action_space->explore._A) -
-                            action_space->explore.U *
-                                action_space->explore._S.asDiagonal() *
-                                action_space->explore._V.transpose())
-                            .norm(),
+      BOOST_CHECK_SMALL(
+          ((diag_M * action_space->explore._A) -
+              action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
+              .norm(),
           FLOAT_TOL);
 
       // compare singular values with actual SVD singular values

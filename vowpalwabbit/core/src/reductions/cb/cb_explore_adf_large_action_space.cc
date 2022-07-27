@@ -114,11 +114,12 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    {
-      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
-    }
+    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
   }
-  else { shrink_factors.resize(preds.size(), 1.f); }
+  else
+  {
+    shrink_factors.resize(preds.size(), 1.f);
+  }
 }
 
 bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
@@ -155,9 +156,7 @@ bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
       for (uint64_t index : _aatop_action_indexes[j])
       {
         if (_aatop_action_ft_vectors[i][index] != 0.f)
-        {
-          prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index];
-        }
+        { prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index]; }
       }
 
       prod *= shrink_factors[i] * shrink_factors[j];
