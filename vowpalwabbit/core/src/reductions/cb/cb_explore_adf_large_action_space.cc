@@ -93,7 +93,8 @@ cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d,
     , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _counter(0)
     , _impl_type(impl_type)
-    , _internal_weights(1 << _all->num_bits)
+    , _vanilla_rand_svd_impl(all, d, _seed)
+    , _model_weight_rand_svd_impl(all, d, _seed)
 {
   _action_indices.resize(_d);
 }
@@ -219,7 +220,10 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
   return (_A.cols() != 0 && _A.rows() != 0);
 }
 
-void cb_explore_adf_large_action_space::_populate_all_testing_components() { _set_testing_components = true; }
+void cb_explore_adf_large_action_space::_populate_all_testing_components() { _set_testing_components = true;
+_vanilla_rand_svd_impl._set_testing_components = true;
+_model_weight_rand_svd_impl._set_testing_components = true; }
+
 void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
 {
   _d = rank;
@@ -235,12 +239,36 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
   }
   else if (_impl_type == implementation_type::vanilla_rand_svd)
   {
-    return vanilla_rand_svd_impl(examples);
+    return _vanilla_rand_svd_impl.run(examples, shrink_factors);
   }
   else if (_impl_type == implementation_type::model_weight_rand_svd)
   {
-    return model_weight_rand_svd_impl(examples);
+    return _model_weight_rand_svd_impl.run(examples, shrink_factors);
   }
+}
+
+void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B, uint64_t d, uint64_t seed)
+{
+  // create Z matrix with dimenstions Kxd where K = examples.size()
+  // Z = B * P where P is a dxd gaussian matrix
+
+  uint64_t num_actions = examples[0]->pred.a_s.size();
+  Z.resize(num_actions, d);
+  Z.setZero();
+
+  for (Eigen::Index row = 0; row < B.rows(); row++)
+  {
+    for (uint64_t col = 0; col < d; col++)
+    {
+      for (uint64_t inner_index = 0; inner_index < d; inner_index++)
+      {
+        auto combined_index = inner_index + col + seed;
+        auto dot_prod_prod = B(row, inner_index) * merand48_boxmuller(combined_index);
+        Z(row, col) += dot_prod_prod;
+      }
+    }
+  }
+  VW::gram_schmidt(Z);
 }
 
 // spanner

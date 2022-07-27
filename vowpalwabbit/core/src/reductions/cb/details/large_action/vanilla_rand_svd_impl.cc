@@ -69,7 +69,8 @@ public:
     _final_dot_product += feature_value * _Y.coeffRef((index & _weights_mask), _column_index);
   }
 };
-bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
+
+bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, std::vector<float>& shrink_factors)
 {
   uint64_t max_non_zero_col = 0;
   _triplets.clear();
@@ -118,7 +119,7 @@ bool cb_explore_adf_large_action_space::generate_Y(const multi_ex& examples)
   return non_zero_rows.size() > _d;
 }
 
-void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
+void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, std::vector<float>& shrink_factors)
 {
   // create B matrix with dimenstions Kxd where K = examples.size()
   uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -162,31 +163,8 @@ void cb_explore_adf_large_action_space::generate_B(const multi_ex& examples)
   }
 }
 
-void cb_explore_adf_large_action_space::generate_Z(const multi_ex& examples)
-{
-  // create Z matrix with dimenstions Kxd where K = examples.size()
-  // Z = B * P where P is a dxd gaussian matrix
 
-  uint64_t num_actions = examples[0]->pred.a_s.size();
-  Z.resize(num_actions, _d);
-  Z.setZero();
-
-  for (Eigen::Index row = 0; row < B.rows(); row++)
-  {
-    for (uint64_t col = 0; col < _d; col++)
-    {
-      for (uint64_t inner_index = 0; inner_index < _d; inner_index++)
-      {
-        auto combined_index = inner_index + col + _seed;
-        auto dot_prod_prod = B(row, inner_index) * merand48_boxmuller(combined_index);
-        Z(row, col) += dot_prod_prod;
-      }
-    }
-  }
-  VW::gram_schmidt(Z);
-}
-
-void cb_explore_adf_large_action_space::vanilla_rand_svd_impl(const multi_ex& examples)
+void vanilla_rand_svd_impl::run(const multi_ex& examples, std::vector<float>& shrink_factors)
 {
   // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
   // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is
@@ -194,14 +172,14 @@ void cb_explore_adf_large_action_space::vanilla_rand_svd_impl(const multi_ex& ex
 
   // TODO can Y be stored in the model? on some strided location ^^ ?
   // if the model is empty then can't create Y and there is nothing left to do
-  if (!generate_Y(examples) || Y.rows() < static_cast<Eigen::Index>(_d))
+  if (!generate_Y(examples, shrink_factors) || Y.rows() < static_cast<Eigen::Index>(_d))
   {
     U.resize(0, 0);
     return;
   }
 
-  generate_B(examples);
-  generate_Z(examples);
+  generate_B(examples, shrink_factors);
+  generate_Z(examples, Z, B, _d, _seed);
 
   Eigen::MatrixXf C = Z.transpose() * B;
 
@@ -215,6 +193,10 @@ void cb_explore_adf_large_action_space::vanilla_rand_svd_impl(const multi_ex& ex
     _S = svd.singularValues();
   }
 }
+
+vanilla_rand_svd_impl::vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed) : _all(all), _d(d), _seed(seed)
+{ }
+
 
 }  // namespace cb_explore_adf
 }  // namespace VW
