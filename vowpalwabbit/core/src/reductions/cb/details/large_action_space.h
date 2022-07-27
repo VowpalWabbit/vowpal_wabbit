@@ -31,11 +31,15 @@ struct vanilla_rand_svd_impl
 {
 private:
   VW::workspace* _all;
+
+public:
+  uint64_t _d;
+
+private:
   std::vector<Eigen::Triplet<float>> _triplets;
   uint64_t _seed;
 
 public:
-  uint64_t _d;
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -55,11 +59,15 @@ struct model_weight_rand_svd_impl
 private:
   VW::workspace* _all;
   void cleanup_model_weight_Y(const multi_ex& examples);
+
+public:
+  uint64_t _d;
+
+private:
   uint64_t _seed;
   dense_parameters _internal_weights;
 
 public:
-  uint64_t _d;
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -129,6 +137,9 @@ public:
   bool _generate_A(const multi_ex& examples);
   void _populate_all_testing_components();
   void _set_rank(uint64_t rank);
+  // the below matrixes are used only during unit testing and are not set otherwise
+  Eigen::VectorXf _S;
+  Eigen::MatrixXf _V;
 
 private:
   template <bool is_learn>

@@ -72,7 +72,6 @@ public:
   }
 };
 
-
 void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<false>(base, examples);
@@ -84,15 +83,15 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, implementation_type impl_type)
-    : _d(d)
-    , _gamma_scale(gamma_scale)
+    : _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
     , _c(c)
     , _apply_shrink_factor(apply_shrink_factor)
     , _all(all)
-    , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _counter(0)
     , _impl_type(impl_type)
+    , _d(d)
+    , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _vanilla_rand_svd_impl(all, d, _seed)
     , _model_weight_rand_svd_impl(all, d, _seed)
 {
@@ -115,12 +114,11 @@ void cb_explore_adf_large_action_space::calculate_shrink_factor(const ACTION_SCO
     float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
-    { shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck))); }
+    {
+      shrink_factors.push_back(std::sqrt(1 + _d + gamma / (4.0f * _d) * (preds[i].score - min_ck)));
+    }
   }
-  else
-  {
-    shrink_factors.resize(preds.size(), 1.f);
-  }
+  else { shrink_factors.resize(preds.size(), 1.f); }
 }
 
 bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
@@ -157,7 +155,9 @@ bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
       for (uint64_t index : _aatop_action_indexes[j])
       {
         if (_aatop_action_ft_vectors[i][index] != 0.f)
-        { prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index]; }
+        {
+          prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index];
+        }
       }
 
       prod *= shrink_factors[i] * shrink_factors[j];
@@ -248,6 +248,11 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
     // TODO: remove this overwrite of U after aatop becomes independent
     // spanner expects this U to be the one being operated on
     U = _vanilla_rand_svd_impl.U;
+    if (_set_testing_components)
+    {
+      _V = _vanilla_rand_svd_impl._V;
+      _S = _vanilla_rand_svd_impl._S;
+    }
   }
   else if (_impl_type == implementation_type::model_weight_rand_svd)
   {
@@ -255,6 +260,11 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
     // TODO: remove this overwrite of U after aatop becomes independent
     // spanner expects this U to be the one being operated on
     U = _model_weight_rand_svd_impl.U;
+    if (_set_testing_components)
+    {
+      _V = _model_weight_rand_svd_impl._V;
+      _S = _model_weight_rand_svd_impl._S;
+    }
   }
 }
 
@@ -495,10 +505,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
 
   auto impl_type = implementation_type::vanilla_rand_svd;
   if (aatop) { impl_type = implementation_type::aatop; }
-  if (model_weight_impl)
-  {
-    impl_type = implementation_type::model_weight_rand_svd;
-  }
+  if (model_weight_impl) { impl_type = implementation_type::model_weight_rand_svd; }
 
   auto data = VW::make_unique<explore_type>(
       with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all, impl_type);
