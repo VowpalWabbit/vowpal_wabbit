@@ -88,8 +88,6 @@ char* format_features(vw_net_native::workspace_context* workspace, features& fea
 
 char* compare_features(vw_net_native::workspace_context* workspace, features& fa, features& fb, namespace_index ns)
 {
-  std::vector<size_t> f1_missing;
-
   std::vector<size_t> fa_missing;
   for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
   { 
@@ -150,20 +148,14 @@ API char* ComputeDiffDescriptionExample(vw_net_native::workspace_context* worksp
   if (a->indices.size() != b->indices.size())
     return FormatIndicies(a, b);
 
-  for (auto i = a->indices.begin(), j = b->indices.begin();  i != a->indices.end(); i++, j++)
+  for (auto i = a->indices.begin(), j = b->indices.begin();  (i != a->indices.end()) && (j != b->indices.end()); i++, j++)
   {
-    if (*i == *j)
-      j++;
-    else
+    if (*i != *j)
     {
       // fall back on search
-      auto j_old = j;
-
       auto maybe_found = std::find(b->indices.begin(), b->indices.end(), *i);
       if (maybe_found == b->indices.end())
         return FormatIndicies(a, b);
-
-      j = j_old + 1;
     }
   
     // compare features

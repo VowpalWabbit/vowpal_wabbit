@@ -72,7 +72,10 @@ set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 include(VowpalWabbitUtils)
 
 if(MSVC)
-  # Do nothing as the default compile flags for MSVC are okay.
+  # Use C++ standard exception handling instead of MSVC default
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS /EHsc")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /fsanitize=address")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
 else()
   # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
   # is O2 and Release is O3, override that here:
