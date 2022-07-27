@@ -92,5 +92,12 @@ private:
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
 };
+template <typename TripletType>
+void triplet_construction(TripletType& tc, float feature_value, uint64_t feature_index)
+{
+  // std::cerr<<feature_index<<" tripletconstr "<<feature_value<<"\n";
+  tc.set(feature_value, feature_index);
+}
+
 }  // namespace cb_explore_adf
 }  // namespace VW
