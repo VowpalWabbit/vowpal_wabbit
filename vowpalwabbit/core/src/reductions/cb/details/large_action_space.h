@@ -81,6 +81,9 @@ public:
   std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
   void compute_spanner();
 
+  void vanilla_rand_svd_impl(const multi_ex& examples);
+  void model_weight_rand_svd_impl(const multi_ex& examples);
+
   // the below methods are used only during unit testing and are not called otherwise
   bool _generate_A(const multi_ex& examples);
   void _populate_from_model_weight_Y(const multi_ex& examples);
@@ -92,5 +95,12 @@ private:
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
 };
+
+template <typename TripletType>
+void triplet_construction(TripletType& tc, float feature_value, uint64_t feature_index)
+{
+  tc.set(feature_value, feature_index);
+}
+
 }  // namespace cb_explore_adf
 }  // namespace VW
