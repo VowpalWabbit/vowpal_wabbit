@@ -124,6 +124,96 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
   VW::finish(vw);
 }
 
+BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
+{
+  auto d = 2;
+  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 -q ::",
+      nullptr, false, nullptr, nullptr);
+
+  std::vector<std::string> e_r;
+  vw.l->get_enabled_reductions(e_r);
+  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+  VW::LEARNER::multi_learner* learner =
+      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+  BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
+
+    vw.predict(examples);
+
+    action_space->explore.generate_Y(examples);
+    Eigen::SparseMatrix<float> Y_vanilla = action_space->explore.Y;
+
+    uint64_t max_existing_column = 0;
+    action_space->explore.generate_model_weight_Y(examples, max_existing_column);
+    action_space->explore._populate_from_model_weight_Y(examples);
+
+    BOOST_CHECK_EQUAL(action_space->explore.Y.rows() > 0, true);
+    BOOST_CHECK_EQUAL(action_space->explore.Y.cols(), d);
+  
+    BOOST_CHECK_EQUAL(Y_vanilla.isApprox(action_space->explore.Y), true);
+
+    vw.finish_example(examples);
+
+    VW::finish(vw);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
+{
+  auto d = 2;
+  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 -q ::",
+      nullptr, false, nullptr, nullptr);
+
+  std::vector<std::string> e_r;
+  vw.l->get_enabled_reductions(e_r);
+  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+
+  VW::LEARNER::multi_learner* learner =
+      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+
+  BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
+
+    vw.predict(examples);
+
+    action_space->explore.generate_Y(examples);
+    action_space->explore.generate_B(examples);
+    Eigen::MatrixXf B_vanilla = action_space->explore.B;
+
+    uint64_t max_existing_column = 0;
+    action_space->explore.generate_model_weight_Y(examples, max_existing_column);
+    action_space->explore.generate_B_model_weight(examples, max_existing_column);
+
+    BOOST_CHECK_EQUAL(B_vanilla.isApprox(action_space->explore.B), true);
+
+    vw.finish_example(examples);
+
+    VW::finish(vw);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
 {
   auto d = 2;
@@ -516,6 +606,13 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
   vws.push_back({vw_w_interactions_sq, true});
 
+  auto* vw_model_weight_w_interactions_sq =
+      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
+              std::to_string(d) + " --quiet --random_seed 5 -q :: --model_weight",
+          nullptr, false, nullptr, nullptr);
+
+  vws.push_back({vw_model_weight_w_interactions_sq, true});
+
   auto* vw_w_interactions_sq_sparse_weights = VW::initialize(
       "--cb_explore_adf --squarecb --sparse_weights --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5 -q ::",
@@ -546,7 +643,7 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
       examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
-      action_space->explore._populate_all_SVD_components();
+      action_space->explore._populate_all_testing_components();
 
       vw.predict(examples);
 
