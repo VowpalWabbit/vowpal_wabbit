@@ -54,7 +54,6 @@ struct model_weight_rand_svd_impl
 {
 private:
   VW::workspace* _all;
-  std::vector<Eigen::Triplet<float>> _triplets;
   void cleanup_model_weight_Y(const multi_ex& examples);
   uint64_t _seed;
   dense_parameters _internal_weights;
