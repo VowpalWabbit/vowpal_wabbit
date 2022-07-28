@@ -94,7 +94,6 @@ public:
   aatop_impl(VW::workspace* all);
   // the below matrixes are used only during unit testing and are not set otherwise
   std::vector<Eigen::Triplet<float>> _triplets;
-  Eigen::SparseMatrix<float> _A;
   Eigen::MatrixXf AAtop;
 
   bool run(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -161,6 +160,7 @@ public:
   void _populate_all_testing_components();
   void _set_rank(uint64_t rank);
   // the below matrixes are used only during unit testing and are not set otherwise
+  Eigen::SparseMatrix<float> _A;
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
 

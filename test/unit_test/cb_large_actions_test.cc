@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
     vw.predict(examples);
 
     VW::cb_explore_adf::_generate_A(
-        &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
+        &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
 
     auto num_actions = examples.size();
     BOOST_CHECK_EQUAL(num_actions, 1);
@@ -70,8 +70,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
         }
 
         BOOST_CHECK_EQUAL(
-            action_space->explore._aatop_impl._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())),
-            ft_value);
+            action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())), ft_value);
       }
     }
 
@@ -111,7 +110,7 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
         0, action_space->explore._d, preds, action_space->explore.shrink_factors);
 
     VW::cb_explore_adf::_generate_A(
-        &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
+        &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
     action_space->explore._aatop_impl.run(examples, action_space->explore.shrink_factors);
 
     Eigen::SparseMatrix<float> diag_M(examples.size(), examples.size());
@@ -119,8 +118,7 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
     for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
     { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
 
-    Eigen::MatrixXf AAtop =
-        diag_M * action_space->explore._aatop_impl._A * action_space->explore._aatop_impl._A.transpose() * diag_M;
+    Eigen::MatrixXf AAtop = diag_M * action_space->explore._A * action_space->explore._A.transpose() * diag_M;
 
     BOOST_CHECK_EQUAL(AAtop.isApprox(action_space->explore._aatop_impl.AAtop), true);
 
@@ -387,7 +385,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       VW::cb_explore_adf::_generate_A(
-          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
+          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
 
       uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -433,7 +431,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
       Eigen::SparseMatrix<float> Yd(action_space->explore._vanilla_rand_svd_impl.Y.rows(), d);
 
-      Yd = action_space->explore._aatop_impl._A.transpose() * diag_M * Omega;
+      Yd = action_space->explore._A.transpose() * diag_M * Omega;
       // Orthonormalize Yd
       VW::gram_schmidt(Yd);
       BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore._vanilla_rand_svd_impl.Y), true);
@@ -487,7 +485,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
       vw.predict(examples);
 
       VW::cb_explore_adf::_generate_A(
-          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
+          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
@@ -506,8 +504,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
         diag_M.setIdentity();
       }
 
-      Eigen::MatrixXf B =
-          diag_M * action_space->explore._aatop_impl._A * action_space->explore._vanilla_rand_svd_impl.Y;
+      Eigen::MatrixXf B = diag_M * action_space->explore._A * action_space->explore._vanilla_rand_svd_impl.Y;
       BOOST_CHECK_EQUAL(B.isApprox(action_space->explore._vanilla_rand_svd_impl.B), true);
 
       vw.finish_example(examples);
@@ -561,7 +558,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       VW::cb_explore_adf::_generate_A(
-          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
+          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore._vanilla_rand_svd_impl.generate_B(examples, action_space->explore.shrink_factors);
       VW::cb_explore_adf::generate_Z(examples, action_space->explore._vanilla_rand_svd_impl.Z,
@@ -668,9 +665,9 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       action_space->explore.randomized_SVD(examples);
 
       VW::cb_explore_adf::_generate_A(
-          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
+          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
       {
-        Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._aatop_impl._A);
+        Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._A);
         auto rank = lu_decomp.rank();
         // for test set actual rank of A
         action_space->explore._set_rank(rank);
@@ -718,13 +715,13 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       }
 
       BOOST_CHECK_SMALL(
-          ((diag_M * action_space->explore._aatop_impl._A) -
+          ((diag_M * action_space->explore._A) -
               action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
               .norm(),
           FLOAT_TOL);
 
       // compare singular values with actual SVD singular values
-      Eigen::MatrixXf A_dense = diag_M * action_space->explore._aatop_impl._A;
+      Eigen::MatrixXf A_dense = diag_M * action_space->explore._A;
       Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
       Eigen::VectorXf S = svd.singularValues();
 
