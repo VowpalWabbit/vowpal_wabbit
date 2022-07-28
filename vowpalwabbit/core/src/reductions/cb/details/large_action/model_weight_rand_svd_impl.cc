@@ -122,7 +122,7 @@ public:
 };
 
 bool model_weight_rand_svd_impl::generate_model_weight_Y(
-    const multi_ex& examples, uint64_t& max_existing_column, std::vector<float>& shrink_factors)
+    const multi_ex& examples, uint64_t& max_existing_column, const std::vector<float>& shrink_factors)
 {
   uint64_t row_index = 0;
   std::set<uint64_t> non_zero_rows;
@@ -178,7 +178,7 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
 }
 
 void model_weight_rand_svd_impl::generate_B_model_weight(
-    const multi_ex& examples, uint64_t max_existing_column, std::vector<float>& shrink_factors)
+    const multi_ex& examples, uint64_t max_existing_column, const std::vector<float>& shrink_factors)
 {
   // create B matrix with dimenstions Kxd where K = examples.size()
   uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -299,7 +299,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
     }
   }
 }
-void model_weight_rand_svd_impl::run(const multi_ex& examples, std::vector<float>& shrink_factors)
+void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   uint64_t max_existing_column = 0;
   if (!generate_model_weight_Y(examples, max_existing_column, shrink_factors))

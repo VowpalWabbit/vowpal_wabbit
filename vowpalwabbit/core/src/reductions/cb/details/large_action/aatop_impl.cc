@@ -105,7 +105,7 @@ bool aatop_impl::_generate_A(const multi_ex& examples)
   return (_A.cols() != 0 && _A.rows() != 0);
 }
 
-bool aatop_impl::run(const multi_ex& examples, std::vector<float>& shrink_factors)
+bool aatop_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   _triplets.clear();
   AAtop.resize(examples.size(), examples.size());

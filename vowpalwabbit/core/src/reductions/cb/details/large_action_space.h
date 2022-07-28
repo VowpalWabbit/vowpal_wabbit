@@ -46,9 +46,9 @@ public:
   Eigen::MatrixXf U;
   bool _set_testing_components = false;
   vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
-  void run(const multi_ex& examples, std::vector<float>& shrink_factors);
-  bool generate_Y(const multi_ex& examples, std::vector<float>& shrink_factors);
-  void generate_B(const multi_ex& examples, std::vector<float>& shrink_factors);
+  void run(const multi_ex& examples, const std::vector<float>& shrink_factors);
+  bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
+  void generate_B(const multi_ex& examples, const std::vector<float>& shrink_factors);
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
@@ -76,11 +76,11 @@ public:
 
   model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
 
-  void run(const multi_ex& examples, std::vector<float>& shrink_factors);
+  void run(const multi_ex& examples, const std::vector<float>& shrink_factors);
   bool generate_model_weight_Y(
-      const multi_ex& examples, uint64_t& max_existing_column, std::vector<float>& shrink_factors);
+      const multi_ex& examples, uint64_t& max_existing_column, const std::vector<float>& shrink_factors);
   void generate_B_model_weight(
-      const multi_ex& examples, uint64_t max_existing_column, std::vector<float>& shrink_factors);
+      const multi_ex& examples, uint64_t max_existing_column, const std::vector<float>& shrink_factors);
 
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::VectorXf _S;
@@ -103,7 +103,7 @@ public:
   Eigen::SparseMatrix<float> _A;
   Eigen::MatrixXf AAtop;
 
-  bool run(const multi_ex& examples, std::vector<float>& shrink_factors);
+  bool run(const multi_ex& examples, const std::vector<float>& shrink_factors);
 
   // the below methods are used only during unit testing and are not called otherwise
   bool _generate_A(const multi_ex& examples);

@@ -70,7 +70,7 @@ public:
   }
 };
 
-bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, std::vector<float>& shrink_factors)
+bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   uint64_t max_non_zero_col = 0;
   _triplets.clear();
@@ -119,7 +119,7 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, std::vector<flo
   return non_zero_rows.size() > _d;
 }
 
-void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, std::vector<float>& shrink_factors)
+void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   // create B matrix with dimenstions Kxd where K = examples.size()
   uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -163,7 +163,7 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, std::vector<flo
   }
 }
 
-void vanilla_rand_svd_impl::run(const multi_ex& examples, std::vector<float>& shrink_factors)
+void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
   // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is
