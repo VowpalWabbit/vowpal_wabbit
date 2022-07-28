@@ -121,7 +121,8 @@ public:
   }
 };
 
-bool cb_explore_adf_large_action_space::generate_model_weight_Y(const multi_ex& examples, uint64_t& max_existing_column)
+bool model_weight_rand_svd_impl::generate_model_weight_Y(
+    const multi_ex& examples, uint64_t& max_existing_column, const std::vector<float>& shrink_factors)
 {
   uint64_t row_index = 0;
   std::set<uint64_t> non_zero_rows;
@@ -176,7 +177,8 @@ bool cb_explore_adf_large_action_space::generate_model_weight_Y(const multi_ex& 
   return false;
 }
 
-void cb_explore_adf_large_action_space::generate_B_model_weight(const multi_ex& examples, uint64_t max_existing_column)
+void model_weight_rand_svd_impl::generate_B_model_weight(
+    const multi_ex& examples, uint64_t max_existing_column, const std::vector<float>& shrink_factors)
 {
   // create B matrix with dimenstions Kxd where K = examples.size()
   uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -220,7 +222,7 @@ void cb_explore_adf_large_action_space::generate_B_model_weight(const multi_ex& 
   }
 }
 
-void cb_explore_adf_large_action_space::_populate_from_model_weight_Y(const multi_ex& examples)
+void model_weight_rand_svd_impl::_populate_from_model_weight_Y(const multi_ex& examples)
 {
   std::vector<Eigen::Triplet<float>> triplets;
   uint64_t max_non_zero_col = 0;
@@ -265,7 +267,7 @@ void cb_explore_adf_large_action_space::_populate_from_model_weight_Y(const mult
   });
 }
 
-void cb_explore_adf_large_action_space::cleanup_model_weight_Y(const multi_ex& examples)
+void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples)
 {
   for (auto* ex : examples)
   {
@@ -297,10 +299,11 @@ void cb_explore_adf_large_action_space::cleanup_model_weight_Y(const multi_ex& e
     }
   }
 }
-void cb_explore_adf_large_action_space::model_weight_rand_svd_impl(const multi_ex& examples)
+void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors,
+    Eigen::MatrixXf& U, Eigen::VectorXf& _S, Eigen::MatrixXf& _V)
 {
   uint64_t max_existing_column = 0;
-  if (!generate_model_weight_Y(examples, max_existing_column))
+  if (!generate_model_weight_Y(examples, max_existing_column, shrink_factors))
   {
     U.resize(0, 0);
     return;
@@ -308,10 +311,10 @@ void cb_explore_adf_large_action_space::model_weight_rand_svd_impl(const multi_e
 
   if (_set_testing_components) { _populate_from_model_weight_Y(examples); }
 
-  generate_B_model_weight(examples, max_existing_column);
+  generate_B_model_weight(examples, max_existing_column, shrink_factors);
   cleanup_model_weight_Y(examples);
 
-  generate_Z(examples);
+  generate_Z(examples, Z, B, _d, _seed);
 
   Eigen::MatrixXf C = Z.transpose() * B;
 
@@ -324,6 +327,11 @@ void cb_explore_adf_large_action_space::model_weight_rand_svd_impl(const multi_e
     _V = Y * svd.matrixV();
     _S = svd.singularValues();
   }
+}
+
+model_weight_rand_svd_impl::model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed)
+    : _all(all), _d(d), _seed(seed), _internal_weights(1 << _all->num_bits)
+{
 }
 
 }  // namespace cb_explore_adf
