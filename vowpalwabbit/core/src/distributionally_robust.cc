@@ -262,6 +262,72 @@ ScoredDual ChiSquared::recompute_duals()
   return duals;
 }
 
+IncrementalFsum::IncrementalFsum(){
+}
+
+std::vector<double> IncrementalFsum::get_partials()
+{
+    return partials;
+}
+
+IncrementalFsum& IncrementalFsum::operator+=(double x)
+{
+    size_t i = 0;
+    for (double y : partials)
+    {
+        if (std::abs(x) < std::abs(y))
+        {
+            std::swap(x, y);
+        }
+        double hi = x + y;
+        double lo = y - (hi - x);
+        if (lo != 0)
+        {
+            size_t length = partials.size();
+            if (i < length)
+            {
+                partials[i] = lo;
+            }
+            else
+            {
+                partials.push_back(lo);
+            }
+            i += 1;
+        }
+        x = hi;
+    }
+    for (unsigned index = 0; index < partials.size(); index++)
+    {
+        double pq = *(partials.begin() + index);
+    }
+    partials.erase(partials.begin() + i, partials.end());
+    partials.push_back(x);
+    return *this;
+}
+
+IncrementalFsum IncrementalFsum::operator+(IncrementalFsum &other)
+{
+    IncrementalFsum result;
+    result.partials = this->partials;
+    std::vector<double> other_partials = other.get_partials();
+    for (double y : other_partials)
+    {
+        result += y;
+    }
+    return result;
+}
+
+IncrementalFsum::operator double()
+{
+    double sum = 0.0;
+    for (double f : partials)
+    {
+        sum = sum + f;
+    }
+    return sum;
+}
+
+
 }  // namespace distributionally_robust
 
 namespace model_utils

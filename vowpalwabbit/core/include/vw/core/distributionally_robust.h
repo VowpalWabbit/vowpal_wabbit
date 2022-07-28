@@ -20,6 +20,7 @@ namespace distributionally_robust
 {
 struct Duals;
 class ChiSquared;
+class IncrementalFsum;
 class EmpBernDynCS;
 }  // namespace distributionally_robust
 
@@ -116,16 +117,18 @@ public:
   void save_load(io_buf& model_file, bool read, bool text, const char* name);
 };
 
-class IncrementalFsum:
+class IncrementalFsum
 {
 private:
   std::vector<double> partials;
 
 public:
   IncrementalFsum();
-  friend IncrementalFsum operator+(IncrementalFsum&, IncrementalFsum&);
-  operator double( );
-}
+  std::vector<double> get_partials();
+  IncrementalFsum &operator+=(double);
+  IncrementalFsum operator+(IncrementalFsum&);
+  operator double();
+};
 
 class EmpBernDynCS
 {
