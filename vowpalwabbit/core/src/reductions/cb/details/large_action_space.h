@@ -89,6 +89,26 @@ public:
   void _populate_from_model_weight_Y(const multi_ex& examples);
 };
 
+struct aatop_impl
+{
+private:
+  VW::workspace* _all;
+  std::vector<Eigen::Triplet<float>> _triplets;
+  std::vector<std::vector<float>> _aatop_action_ft_vectors;
+  std::vector<std::set<uint64_t>> _aatop_action_indexes;
+
+public:
+  aatop_impl(VW::workspace* all);
+  // the below matrixes are used only during unit testing and are not set otherwise
+  Eigen::SparseMatrix<float> _A;
+  Eigen::MatrixXf AAtop;
+
+  bool generate_AAtop(const multi_ex& examples, std::vector<float>& shrink_factors);
+
+  // the below methods are used only during unit testing and are not called otherwise
+  bool _generate_A(const multi_ex& examples);
+};
+
 struct shrink_factor_config
 {
 public:
@@ -112,20 +132,16 @@ private:
   std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<uint64_t> _action_indices;
   std::vector<bool> _spanner_bitvec;
-  std::vector<std::vector<float>> _aatop_action_ft_vectors;
-  std::vector<std::set<uint64_t>> _aatop_action_indexes;
 
 public:
   uint64_t _d;
   uint64_t _seed;
   shrink_factor_config _shrink_factor_config;
+  aatop_impl _aatop_impl;
   vanilla_rand_svd_impl _vanilla_rand_svd_impl;
   model_weight_rand_svd_impl _model_weight_rand_svd_impl;
-  Eigen::MatrixXf AAtop;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
-  // the below matrixes are used only during unit testing and are not set otherwise
-  Eigen::SparseMatrix<float> _A;
   bool _set_testing_components = false;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
@@ -138,13 +154,11 @@ public:
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  bool generate_AAtop(const multi_ex& examples);
   void randomized_SVD(const multi_ex& examples);
   std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
   void compute_spanner();
 
   // the below methods are used only during unit testing and are not called otherwise
-  bool _generate_A(const multi_ex& examples);
   void _populate_all_testing_components();
   void _set_rank(uint64_t rank);
   // the below matrixes are used only during unit testing and are not set otherwise

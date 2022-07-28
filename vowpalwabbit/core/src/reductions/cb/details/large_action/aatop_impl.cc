@@ -53,7 +53,7 @@ public:
   }
 };
 
-bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
+bool aatop_impl::_generate_A(const multi_ex& examples)
 {
   uint64_t row_index = 0;
   uint64_t max_non_zero_col = 0;
@@ -105,7 +105,7 @@ bool cb_explore_adf_large_action_space::_generate_A(const multi_ex& examples)
   return (_A.cols() != 0 && _A.rows() != 0);
 }
 
-bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
+bool aatop_impl::generate_AAtop(const multi_ex& examples, std::vector<float>& shrink_factors)
 {
   _triplets.clear();
   AAtop.resize(examples.size(), examples.size());
@@ -149,5 +149,8 @@ bool cb_explore_adf_large_action_space::generate_AAtop(const multi_ex& examples)
   }
   return true;
 }
+
+aatop_impl::aatop_impl(VW::workspace* all) : _all(all) {}
+
 }  // namespace cb_explore_adf
 }  // namespace VW

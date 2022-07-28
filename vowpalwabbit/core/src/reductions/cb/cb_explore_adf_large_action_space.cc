@@ -44,6 +44,7 @@ cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d,
     , _impl_type(impl_type)
     , _d(d)
     , _seed(all->get_random_state()->get_current_state() * 10.f)
+    , _aatop_impl(all)
     , _vanilla_rand_svd_impl(all, d, _seed)
     , _model_weight_rand_svd_impl(all, d, _seed)
 {
@@ -121,7 +122,7 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 {
   if (_impl_type == implementation_type::aatop)
   {
-    generate_AAtop(examples);
+    _aatop_impl.generate_AAtop(examples, shrink_factors);
     // TODO run svd here
   }
   else if (_impl_type == implementation_type::vanilla_rand_svd)
