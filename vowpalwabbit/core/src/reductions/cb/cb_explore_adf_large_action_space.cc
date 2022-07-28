@@ -152,7 +152,7 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
 }
 
 // spanner
-std::pair<float, uint64_t> cb_explore_adf_large_action_space::find_max_volume(uint64_t X_rid, Eigen::MatrixXf& X)
+std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X)
 {
   // Finds the max volume by replacing row X[X_rid] with some row in U.
   // Returns the max volume, and the row id of U used for replacing X[X_rid].
@@ -190,7 +190,7 @@ void cb_explore_adf_large_action_space::compute_spanner()
   // Compute a basis contained in U.
   for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
   {
-    uint64_t U_rid = find_max_volume(X_rid, X).second;
+    uint64_t U_rid = find_max_volume(U, X_rid, X).second;
     X.row(X_rid) = U.row(U_rid);
     _action_indices[X_rid] = U_rid;
   }
@@ -206,7 +206,7 @@ void cb_explore_adf_large_action_space::compute_spanner()
     // If replacing some row in X results in larger volume, replace it with the row from U.
     for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
     {
-      const auto max_volume_and_row_id = find_max_volume(X_rid, X);
+      const auto max_volume_and_row_id = find_max_volume(U, X_rid, X);
       const float max_volume = max_volume_and_row_id.first;
       if (max_volume > _c * X_volume)
       {

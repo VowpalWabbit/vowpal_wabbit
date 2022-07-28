@@ -129,9 +129,8 @@ private:
   float _c = 2;  // spanner parameter
   VW::workspace* _all;
   implementation_type _impl_type;
-  std::vector<Eigen::Triplet<float>> _triplets;
-  std::vector<uint64_t> _action_indices;
-  std::vector<bool> _spanner_bitvec;
+  std::vector<uint64_t> _action_indices;  // spanner state
+  std::vector<bool> _spanner_bitvec;      // spanner state
 
 public:
   uint64_t _d;
@@ -148,14 +147,13 @@ public:
       bool apply_shrink_factor, VW::workspace* all,
       implementation_type impl_type = implementation_type::vanilla_rand_svd);
   ~cb_explore_adf_large_action_space() = default;
-  void save_load(io_buf& io, bool read, bool text);
 
+  void save_load(io_buf& io, bool read, bool text);
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
-  std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);
   void compute_spanner();
 
   // the below methods are used only during unit testing and are not called otherwise
@@ -177,6 +175,7 @@ void triplet_construction(TripletType& tc, float feature_value, uint64_t feature
   tc.set(feature_value, feature_index);
 }
 
+std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t x_row, Eigen::MatrixXf& X);
 void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B, uint64_t d, uint64_t seed);
 
 }  // namespace cb_explore_adf
