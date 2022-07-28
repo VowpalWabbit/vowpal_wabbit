@@ -157,6 +157,12 @@ void end_pass(gd& g)
   }
 }
 
+void merge(const std::vector<float>& example_counts, const std::vector<VW::workspace*>& all_workspaces,
+    const std::vector<gd*>& all_data, VW::workspace& output_workspace, gd& output_data)
+{
+  // nothing to do here
+}
+
 #include <algorithm>
 
 struct string_value
