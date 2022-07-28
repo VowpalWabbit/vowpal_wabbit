@@ -46,7 +46,8 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 
     vw.predict(examples);
 
-    action_space->explore._aatop_impl._generate_A(examples);
+    VW::cb_explore_adf::_generate_A(
+        &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
 
     auto num_actions = examples.size();
     BOOST_CHECK_EQUAL(num_actions, 1);
@@ -109,7 +110,8 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
     action_space->explore._shrink_factor_config.calculate_shrink_factor(
         0, action_space->explore._d, preds, action_space->explore.shrink_factors);
 
-    action_space->explore._aatop_impl._generate_A(examples);
+    VW::cb_explore_adf::_generate_A(
+        &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
     action_space->explore._aatop_impl.run(examples, action_space->explore.shrink_factors);
 
     Eigen::SparseMatrix<float> diag_M(examples.size(), examples.size());
@@ -384,7 +386,8 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      action_space->explore._aatop_impl._generate_A(examples);
+      VW::cb_explore_adf::_generate_A(
+          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
 
       uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -483,7 +486,8 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 
       vw.predict(examples);
 
-      action_space->explore._aatop_impl._generate_A(examples);
+      VW::cb_explore_adf::_generate_A(
+          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
@@ -556,7 +560,8 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      action_space->explore._aatop_impl._generate_A(examples);
+      VW::cb_explore_adf::_generate_A(
+          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore._vanilla_rand_svd_impl.generate_B(examples, action_space->explore.shrink_factors);
       VW::cb_explore_adf::generate_Z(examples, action_space->explore._vanilla_rand_svd_impl.Z,
@@ -662,7 +667,8 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore.randomized_SVD(examples);
 
-      action_space->explore._aatop_impl._generate_A(examples);
+      VW::cb_explore_adf::_generate_A(
+          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._aatop_impl._A);
       {
         Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._aatop_impl._A);
         auto rank = lu_decomp.rank();

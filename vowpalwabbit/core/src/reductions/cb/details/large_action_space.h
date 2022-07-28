@@ -87,20 +87,17 @@ struct aatop_impl
 {
 private:
   VW::workspace* _all;
-  std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<std::vector<float>> _aatop_action_ft_vectors;
   std::vector<std::set<uint64_t>> _aatop_action_indexes;
 
 public:
   aatop_impl(VW::workspace* all);
   // the below matrixes are used only during unit testing and are not set otherwise
+  std::vector<Eigen::Triplet<float>> _triplets;
   Eigen::SparseMatrix<float> _A;
   Eigen::MatrixXf AAtop;
 
   bool run(const multi_ex& examples, const std::vector<float>& shrink_factors);
-
-  // the below methods are used only during unit testing and are not called otherwise
-  bool _generate_A(const multi_ex& examples);
 };
 
 struct shrink_factor_config
@@ -181,6 +178,9 @@ void triplet_construction(TripletType& tc, float feature_value, uint64_t feature
 
 std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t x_row, Eigen::MatrixXf& X);
 void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B, uint64_t d, uint64_t seed);
+// the below methods are used only during unit testing and are not called otherwise
+bool _generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
+    Eigen::SparseMatrix<float>& _A);
 
 }  // namespace cb_explore_adf
 }  // namespace VW

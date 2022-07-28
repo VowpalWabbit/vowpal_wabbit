@@ -53,7 +53,8 @@ public:
   }
 };
 
-bool aatop_impl::_generate_A(const multi_ex& examples)
+bool _generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
+    Eigen::SparseMatrix<float>& _A)
 {
   uint64_t row_index = 0;
   uint64_t max_non_zero_col = 0;
