@@ -18,18 +18,14 @@ namespace reductions
 {
 struct active
 {
-  active(float active_c0, shared_data* shared_data, std::shared_ptr<VW::rand_state> random_state,
-      VW::version_struct model_version)
+  active(float active_c0, VW::workspace* all)
       : active_c0(active_c0)
-      , _shared_data(shared_data)
-      , _random_state(std::move(random_state))
-      , _model_version{std::move(model_version)}
+      , _all(all)
   {
   }
 
   float active_c0;
-  shared_data* _shared_data;  // statistics, loss
-  std::shared_ptr<VW::rand_state> _random_state;
+  VW::workspace* _all = nullptr;
 
   float _min_seen_label = 0.f;
   float _max_seen_label = 1.f;

@@ -26,11 +26,6 @@ CB::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 struct cb_adf
 {
 private:
-  shared_data* _sd;
-  // model_file_ver is only used to conditionally run save_load(). In the setup function
-  // model_file_ver is not always set.
-  VW::version_struct* _model_file_ver;
-
   std::vector<CB::label> _cb_labels;
   COST_SENSITIVE::label _cs_labels;
   std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
@@ -41,12 +36,12 @@ private:
   VW::v_array<uint32_t> _backup_nf;         // temporary storage for sm; backup for numFeatures in examples
   VW::v_array<float> _backup_weights;       // temporary storage for sm; backup for weights in examples
 
-  uint64_t _offset;
+  uint64_t _offset = 0;
   const bool _no_predict;
   const bool _rank_all;
   const float _clip_p;
 
-  VW::io::logger logger;
+  VW::workspace* _all = nullptr;
 
 public:
   GEN_CS::cb_to_cs_adf _gen_cs;
@@ -54,15 +49,11 @@ public:
   void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
   bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq);
 
-  cb_adf(shared_data* sd, VW::cb_type_t cb_type, VW::version_struct* model_file_ver, bool rank_all, float clip_p,
-      bool no_predict, VW::io::logger logger)
-      : _sd(sd)
-      , _model_file_ver(model_file_ver)
-      , _offset(0)
-      , _no_predict(no_predict)
-      , _rank_all(rank_all)
+  cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, VW::workspace* all)
+      : _rank_all(rank_all)
       , _clip_p(clip_p)
-      , logger(std::move(logger))
+      , _no_predict(no_predict)
+      , _all(all)
   {
     _gen_cs.cb_type = cb_type;
   }
@@ -74,7 +65,7 @@ public:
   const GEN_CS::cb_to_cs_adf& get_gen_cs() const { return _gen_cs; }
   GEN_CS::cb_to_cs_adf& get_gen_cs() { return _gen_cs; }
 
-  const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
+  const VW::version_struct* get_model_file_ver() const { return &_all->model_file_ver; }
 
   bool learn_returns_prediction() const
   {

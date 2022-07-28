@@ -125,6 +125,11 @@ namespace VW {
             IntPtr result = NativeMethods.CreateWorkspaceWithSeedVwModel(settings.Model.DangerousGetHandle(), new IntPtr(argumentsPtr), argumentsSize, traceListener, localTraceContext, localStatus.ToNativeHandleOrNullptrDangerous());
             GC.KeepAlive(settings.Model);
 
+            if (result == IntPtr.Zero || localStatus.ErrorCode != NativeMethods.SuccessStatus)
+            {
+              throw new VWException(localStatus);
+            }
+
             return result;
           }
           else if (settings.ModelStream != null)
