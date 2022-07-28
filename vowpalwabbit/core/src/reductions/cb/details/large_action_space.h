@@ -103,7 +103,7 @@ public:
   Eigen::SparseMatrix<float> _A;
   Eigen::MatrixXf AAtop;
 
-  bool generate_AAtop(const multi_ex& examples, std::vector<float>& shrink_factors);
+  bool run(const multi_ex& examples, std::vector<float>& shrink_factors);
 
   // the below methods are used only during unit testing and are not called otherwise
   bool _generate_A(const multi_ex& examples);
@@ -122,19 +122,30 @@ public:
       size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors);
 };
 
+struct spanner_state
+{
+private:
+  float _c = 2;
+
+public:
+  std::vector<bool> _spanner_bitvec;
+  std::vector<uint64_t> _action_indices;
+  spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
+
+  void compute_spanner(Eigen::MatrixXf& U, size_t _d);
+};
+
 struct cb_explore_adf_large_action_space
 {
 private:
   size_t _counter;
-  float _c = 2;  // spanner parameter
   VW::workspace* _all;
   implementation_type _impl_type;
-  std::vector<uint64_t> _action_indices;  // spanner state
-  std::vector<bool> _spanner_bitvec;      // spanner state
 
 public:
   uint64_t _d;
   uint64_t _seed;
+  spanner_state _spanner_state;
   shrink_factor_config _shrink_factor_config;
   aatop_impl _aatop_impl;
   vanilla_rand_svd_impl _vanilla_rand_svd_impl;
@@ -154,7 +165,6 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
-  void compute_spanner();
 
   // the below methods are used only during unit testing and are not called otherwise
   void _populate_all_testing_components();

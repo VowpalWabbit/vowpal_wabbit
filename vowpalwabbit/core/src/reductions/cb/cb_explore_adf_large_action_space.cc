@@ -37,26 +37,17 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, implementation_type impl_type)
-    : _c(c)
+    : _d(d)
+    , _spanner_state(c, d)
     , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
     , _all(all)
     , _counter(0)
     , _impl_type(impl_type)
-    , _d(d)
     , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _aatop_impl(all)
     , _vanilla_rand_svd_impl(all, d, _seed)
     , _model_weight_rand_svd_impl(all, d, _seed)
 {
-  _action_indices.resize(_d);
-}
-
-void cb_explore_adf_large_action_space::save_load(io_buf& io, bool read, bool text)
-{
-  if (io.num_files() == 0) { return; }
-  std::stringstream msg;
-  if (!read) { msg << "cb large action space storing example counter:  = " << _counter << "\n"; }
-  bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
 }
 
 void cb_explore_adf_large_action_space::_populate_all_testing_components()
@@ -71,7 +62,102 @@ void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
   _d = rank;
   _vanilla_rand_svd_impl._d = rank;
   _model_weight_rand_svd_impl._d = rank;
-  _action_indices.resize(_d);
+  _spanner_state._action_indices.resize(_d);
+}
+
+void cb_explore_adf_large_action_space::save_load(io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  std::stringstream msg;
+  if (!read) { msg << "cb large action space storing example counter:  = " << _counter << "\n"; }
+  bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+}
+
+void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
+{
+  if (_impl_type == implementation_type::aatop)
+  {
+    _aatop_impl.run(examples, shrink_factors);
+    // TODO run svd here
+  }
+  else if (_impl_type == implementation_type::vanilla_rand_svd)
+  {
+    _vanilla_rand_svd_impl.run(examples, shrink_factors);
+    // TODO: remove this overwrite of U after aatop becomes independent
+    // spanner expects this U to be the one being operated on
+    U = _vanilla_rand_svd_impl.U;
+    if (_set_testing_components)
+    {
+      _V = _vanilla_rand_svd_impl._V;
+      _S = _vanilla_rand_svd_impl._S;
+    }
+  }
+  else if (_impl_type == implementation_type::model_weight_rand_svd)
+  {
+    _model_weight_rand_svd_impl.run(examples, shrink_factors);
+    // TODO: remove this overwrite of U after aatop becomes independent
+    // spanner expects this U to be the one being operated on
+    U = _model_weight_rand_svd_impl.U;
+    if (_set_testing_components)
+    {
+      _V = _model_weight_rand_svd_impl._V;
+      _S = _model_weight_rand_svd_impl._S;
+    }
+  }
+}
+
+void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& examples)
+{
+  auto& preds = examples[0]->pred.a_s;
+
+  if (_d < preds.size())
+  {
+    _shrink_factor_config.calculate_shrink_factor(_counter, _d, preds, shrink_factors);
+    randomized_SVD(examples);
+
+    // The U matrix is empty before learning anything.
+    if (U.rows() == 0)
+    {
+      // Set uniform random probability for empty U.
+      const float prob = 1.0f / preds.size();
+      for (auto& pred : preds) { pred.score = prob; }
+      return;
+    }
+
+    _spanner_state.compute_spanner(U, _d);
+    assert(_spanner_state._spanner_bitvec.size() == preds.size());
+  }
+  else
+  {
+    // When the number of actions is not larger than d, all actions are selected.
+    _spanner_state._spanner_bitvec.clear();
+    _spanner_state._spanner_bitvec.resize(preds.size(), true);
+  }
+
+  // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
+  // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later
+  // if the --full_predictions flag is supplied.
+  size_t index = 0;
+  for (auto it = preds.begin(); it != preds.end(); it++)
+  {
+    if (!_spanner_state._spanner_bitvec[index]) { preds.erase(it--); }
+    index++;
+  }
+}
+
+template <bool is_learn>
+void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+{
+  if (is_learn)
+  {
+    base.learn(examples);
+    ++_counter;
+  }
+  else
+  {
+    base.predict(examples);
+    update_example_prediction(examples);
+  }
 }
 
 void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B, uint64_t d, uint64_t seed)
@@ -114,171 +200,6 @@ void shrink_factor_config::calculate_shrink_factor(
   else
   {
     shrink_factors.resize(preds.size(), 1.f);
-  }
-}
-
-
-void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
-{
-  if (_impl_type == implementation_type::aatop)
-  {
-    _aatop_impl.generate_AAtop(examples, shrink_factors);
-    // TODO run svd here
-  }
-  else if (_impl_type == implementation_type::vanilla_rand_svd)
-  {
-    _vanilla_rand_svd_impl.run(examples, shrink_factors);
-    // TODO: remove this overwrite of U after aatop becomes independent
-    // spanner expects this U to be the one being operated on
-    U = _vanilla_rand_svd_impl.U;
-    if (_set_testing_components)
-    {
-      _V = _vanilla_rand_svd_impl._V;
-      _S = _vanilla_rand_svd_impl._S;
-    }
-  }
-  else if (_impl_type == implementation_type::model_weight_rand_svd)
-  {
-    _model_weight_rand_svd_impl.run(examples, shrink_factors);
-    // TODO: remove this overwrite of U after aatop becomes independent
-    // spanner expects this U to be the one being operated on
-    U = _model_weight_rand_svd_impl.U;
-    if (_set_testing_components)
-    {
-      _V = _model_weight_rand_svd_impl._V;
-      _S = _model_weight_rand_svd_impl._S;
-    }
-  }
-}
-
-// spanner
-std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X)
-{
-  // Finds the max volume by replacing row X[X_rid] with some row in U.
-  // Returns the max volume, and the row id of U used for replacing X[X_rid].
-
-  float max_volume = -1.0f;
-  uint64_t U_rid{};
-  const Eigen::RowVectorXf original_row = X.row(X_rid);
-
-  for (auto i = 0; i < U.rows(); ++i)
-  {
-    X.row(X_rid) = U.row(i);
-    const float volume = std::abs(X.determinant());
-    if (volume > max_volume)
-    {
-      max_volume = volume;
-      U_rid = i;
-    }
-  }
-  X.row(X_rid) = original_row;
-
-  assert(max_volume >= 0.0f);
-  return {max_volume, U_rid};
-}
-
-// spanner
-void cb_explore_adf_large_action_space::compute_spanner()
-{
-  // Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
-  // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
-
-  // The size of U is K x d, where K is the total number of all actions.
-  assert(static_cast<uint64_t>(U.cols()) == _d);
-  Eigen::MatrixXf X = Eigen::MatrixXf::Identity(_d, _d);
-
-  // Compute a basis contained in U.
-  for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
-  {
-    uint64_t U_rid = find_max_volume(U, X_rid, X).second;
-    X.row(X_rid) = U.row(U_rid);
-    _action_indices[X_rid] = U_rid;
-  }
-
-  // Transform the basis into C-approximate spanner.
-  // According to the paper, the total number of iterations needed is O(d*log_c(d)).
-  const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
-  float X_volume = std::abs(X.determinant());
-  for (int iter = 0; iter < max_iterations; ++iter)
-  {
-    bool found_larger_volume = false;
-
-    // If replacing some row in X results in larger volume, replace it with the row from U.
-    for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
-    {
-      const auto max_volume_and_row_id = find_max_volume(U, X_rid, X);
-      const float max_volume = max_volume_and_row_id.first;
-      if (max_volume > _c * X_volume)
-      {
-        uint64_t U_rid = max_volume_and_row_id.second;
-        X.row(X_rid) = U.row(U_rid);
-        _action_indices[X_rid] = U_rid;
-
-        X_volume = max_volume;
-        found_larger_volume = true;
-        break;
-      }
-    }
-
-    if (!found_larger_volume) { break; }
-  }
-
-  _spanner_bitvec.clear();
-  _spanner_bitvec.resize(U.rows(), false);
-  for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
-}
-
-void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& examples)
-{
-  auto& preds = examples[0]->pred.a_s;
-
-  if (_d < preds.size())
-  {
-    _shrink_factor_config.calculate_shrink_factor(_counter, _d, preds, shrink_factors);
-    randomized_SVD(examples);
-
-    // The U matrix is empty before learning anything.
-    if (U.rows() == 0)
-    {
-      // Set uniform random probability for empty U.
-      const float prob = 1.0f / preds.size();
-      for (auto& pred : preds) { pred.score = prob; }
-      return;
-    }
-
-    compute_spanner();
-    assert(_spanner_bitvec.size() == preds.size());
-  }
-  else
-  {
-    // When the number of actions is not larger than d, all actions are selected.
-    _spanner_bitvec.clear();
-    _spanner_bitvec.resize(preds.size(), true);
-  }
-
-  // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
-  // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later
-  // if the --full_predictions flag is supplied.
-  size_t index = 0;
-  for (auto it = preds.begin(); it != preds.end(); it++)
-  {
-    if (!_spanner_bitvec[index]) { preds.erase(it--); }
-    index++;
-  }
-}
-
-template <bool is_learn>
-void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
-{
-  if (is_learn)
-  {
-    base.learn(examples);
-    ++_counter;
-  }
-  else
-  {
-    base.predict(examples);
-    update_example_prediction(examples);
   }
 }
 

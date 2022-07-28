@@ -110,7 +110,7 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
         0, action_space->explore._d, preds, action_space->explore.shrink_factors);
 
     action_space->explore._aatop_impl._generate_A(examples);
-    action_space->explore._aatop_impl.generate_AAtop(examples, action_space->explore.shrink_factors);
+    action_space->explore._aatop_impl.run(examples, action_space->explore.shrink_factors);
 
     Eigen::SparseMatrix<float> diag_M(examples.size(), examples.size());
 
