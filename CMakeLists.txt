@@ -73,9 +73,7 @@ include(VowpalWabbitUtils)
 
 if(MSVC)
   # Use C++ standard exception handling instead of MSVC default
-  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS /EHsc")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc /fsanitize=address")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 else()
   # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
   # is O2 and Release is O3, override that here:
@@ -124,6 +122,19 @@ option(VW_BUILD_CSV "Build csv parser" OFF)
 option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
+option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
+
+if(VW_USE_ASAN)
+  if(MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /fsanitize=address")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fsanitize=address")
+    set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} /fsanitize=address")
+  else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address -fno-omit-frame-pointer")
+  endif()
+endif()
 
 if(vw_BUILD_NET_FRAMEWORK AND NOT WIN32)
   message(FATAL_ERROR ".NET Framework can only be built on Windows")
