@@ -722,8 +722,8 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
       Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
       Eigen::VectorXf S = svd.singularValues();
 
-      for (size_t i = 0; i < action_space->explore._vanilla_rand_svd_impl._S.rows(); i++)
-      { BOOST_CHECK_SMALL(S(i) - action_space->explore._vanilla_rand_svd_impl._S(i), FLOAT_TOL); }
+      for (size_t i = 0; i < action_space->explore._S.rows(); i++)
+      { BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL); }
 
       vw.finish_example(examples);
     }

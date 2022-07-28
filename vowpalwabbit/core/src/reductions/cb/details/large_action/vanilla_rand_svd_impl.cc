@@ -163,7 +163,8 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
   }
 }
 
-void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors)
+void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,
+    Eigen::VectorXf& _S, Eigen::MatrixXf& _V)
 {
   // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
   // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is

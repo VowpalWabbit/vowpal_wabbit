@@ -299,7 +299,8 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
     }
   }
 }
-void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors)
+void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors,
+    Eigen::MatrixXf& U, Eigen::VectorXf& _S, Eigen::MatrixXf& _V)
 {
   uint64_t max_existing_column = 0;
   if (!generate_model_weight_Y(examples, max_existing_column, shrink_factors))
