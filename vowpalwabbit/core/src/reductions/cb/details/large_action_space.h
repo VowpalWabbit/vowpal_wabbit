@@ -102,9 +102,9 @@ public:
 struct shrink_factor_config
 {
 public:
-  float _gamma_scale;
-  float _gamma_exponent;
-  bool _apply_shrink_factor;
+  const float _gamma_scale;
+  const float _gamma_exponent;
+  const bool _apply_shrink_factor;
   shrink_factor_config(float gamma_scale, float gamma_exponent, bool apply_shrink_factor)
       : _gamma_scale(gamma_scale), _gamma_exponent(gamma_exponent), _apply_shrink_factor(apply_shrink_factor){};
 
@@ -115,7 +115,7 @@ public:
 struct spanner_state
 {
 private:
-  float _c = 2;
+  const float _c = 2;
 
 public:
   std::vector<bool> _spanner_bitvec;
