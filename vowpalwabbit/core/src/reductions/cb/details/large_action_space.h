@@ -89,15 +89,25 @@ public:
   void _populate_from_model_weight_Y(const multi_ex& examples);
 };
 
+struct shrink_factor_config
+{
+public:
+  float _gamma_scale;
+  float _gamma_exponent;
+  bool _apply_shrink_factor;
+  shrink_factor_config(float gamma_scale, float gamma_exponent, bool apply_shrink_factor)
+      : _gamma_scale(gamma_scale), _gamma_exponent(gamma_exponent), _apply_shrink_factor(apply_shrink_factor){};
+
+  void calculate_shrink_factor(
+      size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors);
+};
+
 struct cb_explore_adf_large_action_space
 {
 private:
-  float _gamma_scale;
-  float _gamma_exponent;
-  float _c = 2;
-  bool _apply_shrink_factor;
-  VW::workspace* _all;
   size_t _counter;
+  float _c = 2;  // spanner parameter
+  VW::workspace* _all;
   implementation_type _impl_type;
   std::vector<Eigen::Triplet<float>> _triplets;
   std::vector<uint64_t> _action_indices;
@@ -108,6 +118,7 @@ private:
 public:
   uint64_t _d;
   uint64_t _seed;
+  shrink_factor_config _shrink_factor_config;
   vanilla_rand_svd_impl _vanilla_rand_svd_impl;
   model_weight_rand_svd_impl _model_weight_rand_svd_impl;
   Eigen::MatrixXf AAtop;
@@ -127,7 +138,6 @@ public:
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  void calculate_shrink_factor(const ACTION_SCORE::action_scores& preds);
   bool generate_AAtop(const multi_ex& examples);
   void randomized_SVD(const multi_ex& examples);
   std::pair<float, uint64_t> find_max_volume(uint64_t x_row, Eigen::MatrixXf& X);

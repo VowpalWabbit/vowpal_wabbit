@@ -105,7 +105,8 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
 
     vw.predict(examples);
     auto& preds = examples[0]->pred.a_s;
-    action_space->explore.calculate_shrink_factor(preds);
+    action_space->explore._shrink_factor_config.calculate_shrink_factor(
+        0, action_space->explore._d, preds, action_space->explore.shrink_factors);
 
     action_space->explore._generate_A(examples);
     action_space->explore.generate_AAtop(examples);
@@ -379,7 +380,8 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
       vw.predict(examples);
 
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+      action_space->explore._shrink_factor_config.calculate_shrink_factor(
+          0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore._generate_A(examples);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
 
@@ -480,7 +482,8 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
       vw.predict(examples);
 
       action_space->explore._generate_A(examples);
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+      action_space->explore._shrink_factor_config.calculate_shrink_factor(
+          0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore._vanilla_rand_svd_impl.generate_B(examples, action_space->explore.shrink_factors);
 
@@ -548,7 +551,8 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 
       vw.predict(examples);
 
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+      action_space->explore._shrink_factor_config.calculate_shrink_factor(
+          0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore._generate_A(examples);
       action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore._vanilla_rand_svd_impl.generate_B(examples, action_space->explore.shrink_factors);
@@ -651,7 +655,8 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
       vw.predict(examples);
 
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+      action_space->explore._shrink_factor_config.calculate_shrink_factor(
+          0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore.randomized_SVD(examples);
 
       action_space->explore._generate_A(examples);
@@ -666,7 +671,8 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 
       vw.predict(examples);
 
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+      action_space->explore._shrink_factor_config.calculate_shrink_factor(
+          0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore.randomized_SVD(examples);
 
       auto num_actions = examples.size();
@@ -772,7 +778,8 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
 
     BOOST_CHECK_EQUAL(num_actions, 7);
 
-    action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+    action_space->explore._shrink_factor_config.calculate_shrink_factor(
+        0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
     Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
     Eigen::SparseMatrix<float> identity_diag_M(num_actions, num_actions);
