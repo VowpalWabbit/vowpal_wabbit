@@ -4,7 +4,7 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X)
+std::pair<float, uint64_t> spanner_state::find_max_volume(Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X)
 {
   // Finds the max volume by replacing row X[X_rid] with some row in U.
   // Returns the max volume, and the row id of U used for replacing X[X_rid].

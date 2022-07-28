@@ -123,6 +123,7 @@ public:
   spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
 
   void compute_spanner(Eigen::MatrixXf& U, size_t _d);
+  static std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t x_row, Eigen::MatrixXf& X);
 };
 
 struct cb_explore_adf_large_action_space
@@ -176,7 +177,6 @@ void triplet_construction(TripletType& tc, float feature_value, uint64_t feature
   tc.set(feature_value, feature_index);
 }
 
-std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t x_row, Eigen::MatrixXf& X);
 void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B, uint64_t d, uint64_t seed);
 // the below methods are used only during unit testing and are not called otherwise
 bool _generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
