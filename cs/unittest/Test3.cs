@@ -20,22 +20,22 @@ namespace cs_unittest
 
             using (var exampleBuilder = new VowpalWabbitExampleBuilder(vw))
             using (var nsBuilder = exampleBuilder.AddNamespace('U'))
-                {
-                    ulong nsHash = vw.HashSpace("User");
-                    nsBuilder.AddFeature(vw.HashFeature("e1", nsHash), 0.3425f);
+            {
+                ulong nsHash = vw.HashSpace("User");
+                nsBuilder.AddFeature(vw.HashFeature("e1", nsHash), 0.3425f);
 
-                    e = exampleBuilder.CreateExample();
-                }
+                e = exampleBuilder.CreateExample();
+            }
 
-            Debug.WriteLine(e.VowpalWabbitString);
+            Debug.Assert(e != null);
             foreach (var n in e)
+            {
+                Debug.WriteLine($"+ ({n.Index})=>'{(char)n.Index}'");
+                foreach (var f in n)
                 {
-                    Debug.WriteLine($"+ ({n.Index})=>'{(char)n.Index}'");
-                    foreach (var f in n)
-                    {
-                        Debug.WriteLine($"-- {f.WeightIndex}:{f.X}");
-                    }
+                    Debug.WriteLine($"-- {f.WeightIndex}:{f.X}");
                 }
+            }
           }
         }
     }

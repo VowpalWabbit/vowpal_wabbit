@@ -20,5 +20,5 @@ extern "C" {
   API float GetDSInteractionProbabilityOfDrop(DecisionServiceInteraction* interaction);
   API float GetDSInteractionOriginalLabelCost(DecisionServiceInteraction* interaction);
   API float GetDSInteractionOriginalLabelCostFirstSlot(DecisionServiceInteraction* interaction);
-  API bool GetDSInteractionSkipLearn(DecisionServiceInteraction* interaction);
+  API int GetDSInteractionSkipLearn(DecisionServiceInteraction* interaction);
 }

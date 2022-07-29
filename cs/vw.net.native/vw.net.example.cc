@@ -18,12 +18,12 @@ API void DeleteExample(example* example)
   VW::dealloc_examples(example, 1);
 }
 
-API bool IsRingExample(vw_net_native::workspace_context* workspace, example* example)
+API int IsRingExample(vw_net_native::workspace_context* workspace, example* example)
 {
   return VW::is_ring_example(*workspace->vw, example);
 }
 
-API bool IsExampleNewline(example* example)
+API int IsExampleNewline(example* example)
 {
   return VW::example_is_newline(*example) != 0;
 }
@@ -230,7 +230,7 @@ API void DeleteNamespaceEnumerator(vw_net_native::namespace_enumerator* it)
   delete it;
 }
 
-API bool NamespaceEnumeratorMoveNext(vw_net_native::namespace_enumerator* it)
+API int NamespaceEnumeratorMoveNext(vw_net_native::namespace_enumerator* it)
 {
   it->it++;
   return it->it < it->v->cend();
@@ -262,7 +262,7 @@ API void DeleteFeatureEnumerator(vw_net_native::feature_enumerator* it)
   delete it;
 }
 
-API bool FeatureEnumeratorMoveNext(vw_net_native::feature_enumerator* it)
+API int FeatureEnumeratorMoveNext(vw_net_native::feature_enumerator* it)
 {
   it->it.operator++(); // Not sure why it does not like to compile without explicit reference to the operator.
   return it->it < it->feat->cend();

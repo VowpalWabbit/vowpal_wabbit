@@ -23,8 +23,8 @@ extern "C" {
   API example* CreateExample(vw_net_native::workspace_context* workspace);
   API void DeleteExample(example* example);
 
-  API bool IsRingExample(vw_net_native::workspace_context* workspace, example* example);
-  API bool IsExampleNewline(example* example);
+  API int IsRingExample(vw_net_native::workspace_context* workspace, example* example);
+  API int IsExampleNewline(example* example);
   API char* ComputeDiffDescriptionExample(vw_net_native::workspace_context* workspace, example* ex1, example* ex2);
   API uint64_t GetExampleNumberOfFeatures(example* example);
   API void EmptyExampleData(vw_net_native::workspace_context* workspace, example* example);
@@ -34,13 +34,13 @@ extern "C" {
 
   API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(vw_net_native::workspace_context* workspace, example* example);
   API void DeleteNamespaceEnumerator(vw_net_native::namespace_enumerator* it);
-  API bool NamespaceEnumeratorMoveNext(vw_net_native::namespace_enumerator* it);
+  API int NamespaceEnumeratorMoveNext(vw_net_native::namespace_enumerator* it);
   API void NamespaceEnumeratorReset(vw_net_native::namespace_enumerator* it);
   API namespace_index NamespaceEnumeratorGetNamespace(vw_net_native::namespace_enumerator* it);
 
   API vw_net_native::feature_enumerator* CreateFeatureEnumerator(vw_net_native::workspace_context* workspace, example* example, namespace_index ns);
   API void DeleteFeatureEnumerator(vw_net_native::feature_enumerator* it);
-  API bool FeatureEnumeratorMoveNext(vw_net_native::feature_enumerator* it);
+  API int FeatureEnumeratorMoveNext(vw_net_native::feature_enumerator* it);
   API void FeatureEnumeratorReset(vw_net_native::feature_enumerator* it);
   API void FeatureEnumeratorGetFeature(vw_net_native::feature_enumerator* it, feature* feature);
   API float FeatureEnumeratorGetFeatureValue(vw_net_native::feature_enumerator* it);

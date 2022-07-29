@@ -65,7 +65,7 @@ API float GetDSInteractionOriginalLabelCostFirstSlot(DecisionServiceInteraction*
   return interaction->originalLabelCostFirstSlot;
 }
 
-API bool GetDSInteractionSkipLearn(DecisionServiceInteraction* interaction)
+API int GetDSInteractionSkipLearn(DecisionServiceInteraction* interaction)
 {
   return interaction->skipLearn;
 }
