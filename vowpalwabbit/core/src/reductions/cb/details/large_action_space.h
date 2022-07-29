@@ -158,7 +158,6 @@ public:
   model_weight_rand_svd_impl _model_weight_rand_svd_impl;
   one_pass_svd_impl _one_pass_svd_impl;
   Eigen::MatrixXf U;
-  Eigen::MatrixXf AOmega;
   std::vector<float> shrink_factors;
   bool _set_testing_components = false;
 
@@ -173,7 +172,6 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
-  void generate_AOmega(const multi_ex& examples);
 
   // the below methods are used only during unit testing and are not called otherwise
   void _populate_all_testing_components();
