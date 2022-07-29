@@ -42,6 +42,16 @@ if(WIN32)
   endif()
 endif()
 
+option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
+if(BUILD_FLATBUFFERS)
+  list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
+endif()
+
+option(BUILD_TESTING "Build tests" ON)
+if(BUILD_TESTING)
+  list(APPEND VCPKG_MANIFEST_FEATURES "tests")
+endif()
+
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
@@ -105,8 +115,8 @@ option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead wil
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
 option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
+option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
-option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
 option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
@@ -124,16 +134,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
       message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
     endif()
-    cmake_minimum_required(VERSION 3.11)
-    include(FetchContent)
-    FetchContent_Declare(
-      googletest
-      URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-    )
-    # For Windows: Prevent overriding the parent project's compiler/linker settings
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
+    if(VW_GTEST_SYS_DEP)
+      find_package(GTest REQUIRED)
+    else()
+      cmake_minimum_required(VERSION 3.11)
+      include(FetchContent)
+      FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+      )
+      # For Windows: Prevent overriding the parent project's compiler/linker settings
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+      set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+      FetchContent_MakeAvailable(googletest)
+    endif()
   endif()
 endif()
 
