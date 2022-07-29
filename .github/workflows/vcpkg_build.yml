@@ -1,5 +1,14 @@
 name: Vcpkg build
-on: [push, pr]
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
 
 jobs:
   job:
