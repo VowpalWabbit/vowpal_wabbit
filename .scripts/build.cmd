@@ -14,6 +14,7 @@ ECHO Building "%vwRoot%" for Release x64
 REM CMAKE_PROGRAM_PATH is for nuget and texttransform
 cmake -S "%vwRoot%" -B "%vwRoot%\build" -G "Visual Studio 16 2019" -A "x64" ^
     -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake" ^
+    -DVCPKG_MANIFEST_MODE=OFF ^
     -Dvw_BUILD_NET_FRAMEWORK=On ^
     -DBUILD_FLATBUFFERS=On ^
     -Dvw_BUILD_NET_FRAMEWORK=On ^
