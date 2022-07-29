@@ -102,7 +102,6 @@ private:
   uint64_t _d;
   uint64_t _seed;
   Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
-  uint64_t _p;
 
 public:
   Eigen::MatrixXf AOmega;
@@ -160,7 +159,6 @@ public:
   one_pass_svd_impl _one_pass_svd_impl;
   Eigen::MatrixXf U;
   Eigen::MatrixXf AOmega;
-  Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
   std::vector<float> shrink_factors;
   bool _set_testing_components = false;
 
