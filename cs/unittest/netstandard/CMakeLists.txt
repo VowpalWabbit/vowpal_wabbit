@@ -61,7 +61,6 @@ endif()
 add_custom_target(VW.Net.UnitTest.CopyTestFiles ALL
   COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/cs/unittest/json $<TARGET_FILE_DIR:vw.net.native>/test
   COMMENT "Copying test files to C# binary directory..."
-  DEPENDS VW.Net.UnitTest
 )
 
 # TODO: Enable TRX test logging
