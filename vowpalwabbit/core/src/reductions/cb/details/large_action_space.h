@@ -24,20 +24,17 @@ enum class implementation_type
 {
   vanilla_rand_svd,
   model_weight_rand_svd,
-  aatop
+  aatop,
+  one_pass_svd
 };
 
 struct vanilla_rand_svd_impl
 {
 private:
   VW::workspace* _all;
-
-public:
   uint64_t _d;
-
-private:
-  std::vector<Eigen::Triplet<float>> _triplets;
   uint64_t _seed;
+  std::vector<Eigen::Triplet<float>> _triplets;
 
 public:
   Eigen::MatrixXf B;
@@ -49,20 +46,18 @@ public:
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
   void generate_B(const multi_ex& examples, const std::vector<float>& shrink_factors);
+  // testing only
+  void _set_rank(uint64_t rank);
 };
 
 struct model_weight_rand_svd_impl
 {
 private:
   VW::workspace* _all;
-  void cleanup_model_weight_Y(const multi_ex& examples);
-
-public:
   uint64_t _d;
-
-private:
   uint64_t _seed;
   dense_parameters _internal_weights;
+  void cleanup_model_weight_Y(const multi_ex& examples);
 
 public:
   Eigen::MatrixXf B;
@@ -81,6 +76,7 @@ public:
 
   // the below methods are used only during unit testing and are not called otherwise
   void _populate_from_model_weight_Y(const multi_ex& examples);
+  void _set_rank(uint64_t rank);
 };
 
 struct aatop_impl
@@ -97,6 +93,26 @@ public:
   Eigen::MatrixXf AAtop;
 
   bool run(const multi_ex& examples, const std::vector<float>& shrink_factors);
+};
+
+struct one_pass_svd_impl
+{
+private:
+  VW::workspace* _all;
+  uint64_t _d;
+  uint64_t _seed;
+  Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
+  uint64_t _p;
+
+public:
+  Eigen::MatrixXf AOmega;
+  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
+  void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
+      Eigen::MatrixXf& _V);
+  void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
+  // for testing purposes only
+  void _set_rank(uint64_t rank);
+  bool _set_testing_components = false;
 };
 
 struct shrink_factor_config
@@ -129,19 +145,22 @@ public:
 struct cb_explore_adf_large_action_space
 {
 private:
-  size_t _counter;
   VW::workspace* _all;
+  uint64_t _d;
+  uint64_t _seed;
+  size_t _counter;
   implementation_type _impl_type;
 
 public:
-  uint64_t _d;
-  uint64_t _seed;
   spanner_state _spanner_state;
   shrink_factor_config _shrink_factor_config;
   aatop_impl _aatop_impl;
   vanilla_rand_svd_impl _vanilla_rand_svd_impl;
   model_weight_rand_svd_impl _model_weight_rand_svd_impl;
+  one_pass_svd_impl _one_pass_svd_impl;
   Eigen::MatrixXf U;
+  Eigen::MatrixXf AOmega;
+  Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
   std::vector<float> shrink_factors;
   bool _set_testing_components = false;
 
@@ -156,6 +175,7 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
+  void generate_AOmega(const multi_ex& examples);
 
   // the below methods are used only during unit testing and are not called otherwise
   void _populate_all_testing_components();
