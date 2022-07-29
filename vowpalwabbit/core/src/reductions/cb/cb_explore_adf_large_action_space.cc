@@ -188,7 +188,10 @@ void shrink_factor_config::calculate_shrink_factor(
       shrink_factors.push_back(std::sqrt(1 + max_actions + gamma / (4.0f * max_actions) * (preds[i].score - min_ck)));
     }
   }
-  else { shrink_factors.resize(preds.size(), 1.f); }
+  else
+  {
+    shrink_factors.resize(preds.size(), 1.f);
+  }
 }
 
 }  // namespace cb_explore_adf

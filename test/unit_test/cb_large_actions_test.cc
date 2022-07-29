@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
     vw.predict(examples);
     auto& preds = examples[0]->pred.a_s;
     action_space->explore._shrink_factor_config.calculate_shrink_factor(
-          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
     VW::cb_explore_adf::_generate_A(
         &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
@@ -173,7 +173,6 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
   VW::finish(vw);
 }
 
-
 BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 {
   auto d = 3;
@@ -215,20 +214,20 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 
     vw.predict(examples);
 
-    // check that the representation of the fourth action is the same linear combination of the representation of the 2nd and 3rd actions
-    Eigen::VectorXf action_2 =  action_space->explore.U.row(1);
-    Eigen::VectorXf action_3 =  action_space->explore.U.row(2);
-    Eigen::VectorXf action_4 =  action_space->explore.U.row(3);
+    // check that the representation of the fourth action is the same linear combination of the representation of the
+    // 2nd and 3rd actions
+    Eigen::VectorXf action_2 = action_space->explore.U.row(1);
+    Eigen::VectorXf action_3 = action_space->explore.U.row(2);
+    Eigen::VectorXf action_4 = action_space->explore.U.row(3);
 
     Eigen::VectorXf action_lin_rep = action_2 + 2.f * action_3;
 
     BOOST_CHECK_EQUAL(action_lin_rep.isApprox(action_4), true);
-    
+
     vw.finish_example(examples);
   }
   VW::finish(vw);
 }
-
 
 BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 {

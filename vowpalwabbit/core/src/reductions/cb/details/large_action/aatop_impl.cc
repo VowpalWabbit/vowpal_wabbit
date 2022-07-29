@@ -144,9 +144,7 @@ bool aatop_impl::run(const multi_ex& examples, const std::vector<float>& shrink_
       for (uint64_t index : _aatop_action_indexes[j])
       {
         if (_aatop_action_ft_vectors[i][index] != 0.f)
-        {
-          prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index];
-        }
+        { prod += _aatop_action_ft_vectors[j][index] * _aatop_action_ft_vectors[i][index]; }
       }
 
       prod *= shrink_factors[i] * shrink_factors[j];
