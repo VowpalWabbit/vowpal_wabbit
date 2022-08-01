@@ -17,8 +17,6 @@ using internal_action_space = VW::cb_explore_adf::cb_explore_adf_base<
     VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::vanilla_rand_svd_impl>>;
 using internal_action_space_mw = VW::cb_explore_adf::cb_explore_adf_base<
     VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::model_weight_rand_svd_impl>>;
-using internal_action_space_aa = VW::cb_explore_adf::cb_explore_adf_base<
-    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::aatop_impl>>;
 
 BOOST_AUTO_TEST_SUITE(test_suite_las)
 
@@ -41,7 +39,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
-  VW::cb_explore_adf::aatop_impl _aatop_impl(&vw);
+  std::vector<Eigen::Triplet<float>> _triplets;
 
   {
     VW::multi_ex examples;
@@ -52,7 +50,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 
     vw.predict(examples);
 
-    VW::cb_explore_adf::_generate_A(&vw, examples, _aatop_impl._triplets, action_space->explore._A);
+    VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
 
     auto num_actions = examples.size();
     BOOST_CHECK_EQUAL(num_actions, 1);
@@ -379,7 +377,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
     BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
-    VW::cb_explore_adf::aatop_impl _aatop_impl(&vw);
+    std::vector<Eigen::Triplet<float>> _triplets;
 
     {
       VW::multi_ex examples;
@@ -396,7 +394,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::_generate_A(&vw, examples, _aatop_impl._triplets, action_space->explore._A);
+      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
 
       uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -473,7 +471,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
-    VW::cb_explore_adf::aatop_impl _aatop_impl(&vw);
+    std::vector<Eigen::Triplet<float>> _triplets;
     auto apply_diag_M = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
@@ -496,7 +494,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 
       vw.predict(examples);
 
-      VW::cb_explore_adf::_generate_A(&vw, examples, _aatop_impl._triplets, action_space->explore._A);
+      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
@@ -545,7 +543,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
-    VW::cb_explore_adf::aatop_impl _aatop_impl(&vw);
+    std::vector<Eigen::Triplet<float>> _triplets;
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -569,7 +567,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::_generate_A(&vw, examples, _aatop_impl._triplets, action_space->explore._A);
+      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore._impl.generate_B(examples, action_space->explore.shrink_factors);
       VW::cb_explore_adf::generate_Z(examples, action_space->explore._impl.Z, action_space->explore._impl.B,
@@ -602,7 +600,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 template <typename T>
 void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<T>>* action_space,
-    bool apply_diag_M, VW::cb_explore_adf::aatop_impl& _aatop_impl)
+    bool apply_diag_M, std::vector<Eigen::Triplet<float>> _triplets)
 {
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
@@ -621,7 +619,7 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
         0, action_space->explore._d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
     action_space->explore.randomized_SVD(examples);
 
-    VW::cb_explore_adf::_generate_A(&vw, examples, _aatop_impl._triplets, action_space->explore._A);
+    VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
     {
       Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._A);
       auto rank = lu_decomp.rank();
@@ -738,7 +736,7 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
-    VW::cb_explore_adf::aatop_impl _aatop_impl(&vw);
+    std::vector<Eigen::Triplet<float>> _triplets;
     auto apply_diag_M = std::get<1>(vw_pair);
     auto impl_type = std::get<2>(vw_pair);
 
@@ -754,13 +752,13 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     {
       auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
       check_final_truncated_SVD_validity_impl<VW::cb_explore_adf::vanilla_rand_svd_impl>(
-          vw, action_space, apply_diag_M, _aatop_impl);
+          vw, action_space, apply_diag_M, _triplets);
     }
     else if (impl_type == VW::cb_explore_adf::implementation_type::model_weight_rand_svd)
     {
       auto action_space = (internal_action_space_mw*)learner->get_internal_type_erased_data_pointer_test_use_only();
       check_final_truncated_SVD_validity_impl<VW::cb_explore_adf::model_weight_rand_svd_impl>(
-          vw, action_space, apply_diag_M, _aatop_impl);
+          vw, action_space, apply_diag_M, _triplets);
     }
     else
     {
