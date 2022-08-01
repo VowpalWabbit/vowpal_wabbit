@@ -79,6 +79,20 @@ if (workspaces_to_merge.size() < 2) { THROW("Must specify at least two model fil
     }
   }
 }
+
+void merge_shared_data(shared_data& destination, const std::vector<const shared_data*>& sources)
+{
+  for (const auto* source : sources)
+  {
+    destination.sum_loss += source->sum_loss;
+    destination.weighted_labeled_examples += source->weighted_labeled_examples;
+    destination.weighted_labels += source->weighted_labels;
+    destination.weighted_unlabeled_examples += source->weighted_unlabeled_examples;
+    destination.example_number += source->example_number;
+    destination.total_features += source->total_features;
+
+  }
+}
 }  // namespace
 
 namespace VW
@@ -124,6 +138,14 @@ std::unique_ptr<VW::workspace> merge_models(
     }
     target_learner = target_learner->get_learn_base();
   }
+
+  std::vector<const shared_data*> shared_datas;
+  shared_datas.reserve(workspaces_to_merge.size());
+  for (const auto& model : workspaces_to_merge) { shared_datas.push_back(model->sd); }
+
+  // Merge shared data too
+  merge_shared_data(*destination_model->sd, shared_datas);
+
   return destination_model;
 }
 

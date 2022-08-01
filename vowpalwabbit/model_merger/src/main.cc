@@ -33,31 +33,31 @@ void print_help(const options_cli& options)
   std::cout << formatter.format_help(option_groups);
 }
 
-struct logger_context_t
+struct logger_context
 {
   VW::io::logger& logger;
   std::string model_file_name;
 };
 
-VW::io::logger_output_func_t output_func = [](void* context, VW::io::log_level level, const std::string& message)
+void logger_output_func(void* void_context, VW::io::log_level level, const std::string& message)
 {
-  auto* logger_context = static_cast<logger_context_t*>(context);
+  auto* context = static_cast<logger_context*>(void_context);
   auto newline_stripped_message = message;
   newline_stripped_message.erase(std::remove(newline_stripped_message.begin(), newline_stripped_message.end(), '\n'),
       newline_stripped_message.cend());
   switch (level)
   {
     case VW::io::log_level::info:
-      logger_context->logger.info("({}): {}", logger_context->model_file_name, newline_stripped_message);
+      context->logger.info("({}): {}", context->model_file_name, newline_stripped_message);
       break;
     case VW::io::log_level::warn:
-      logger_context->logger.warn("({}): {}", logger_context->model_file_name, newline_stripped_message);
+      context->logger.warn("({}): {}", context->model_file_name, newline_stripped_message);
       break;
     case VW::io::log_level::error:
-      logger_context->logger.error("({}): {}", logger_context->model_file_name, newline_stripped_message);
+      context->logger.error("({}): {}", context->model_file_name, newline_stripped_message);
       break;
     case VW::io::log_level::critical:
-      logger_context->logger.critical("({}): {}", logger_context->model_file_name, newline_stripped_message);
+      context->logger.critical("({}): {}", context->model_file_name, newline_stripped_message);
       break;
     case VW::io::log_level::off:
       break;
@@ -142,21 +142,21 @@ int main(int argc, char* argv[])
     logger.set_location(options.log_output_stream);
 
     std::vector<std::unique_ptr<VW::workspace>> models;
-    std::vector<logger_context_t> logger_contexts;
+    std::vector<logger_context> logger_contexts;
     for (const auto& model_file : options.input_files)
     {
       logger.info("Loading model: {}", model_file);
-      logger_contexts.push_back(logger_context_t{logger, model_file});
+      logger_contexts.push_back(logger_context{logger, model_file});
 
-      auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), output_func);
+      auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), logger_output_func);
       auto model = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
                                                    "--driver_output_off", "--preserve_performance_counters"}),
           VW::io::open_file_reader(model_file), nullptr, nullptr, &custom_logger);
       models.push_back(std::move(model));
     }
 
-    logger_contexts.push_back(logger_context_t{logger, "dest: " + options.input_files[0]});
-    auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), output_func);
+    logger_contexts.push_back(logger_context{logger, "dest: " + options.input_files[0]});
+    auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), logger_output_func);
     std::vector<const VW::workspace*> const_workspaces;
     const_workspaces.reserve(models.size());
     for (const auto& model : models) { const_workspaces.push_back(model.get()); }
