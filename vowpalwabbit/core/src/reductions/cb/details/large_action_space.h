@@ -70,12 +70,7 @@ public:
   Eigen::MatrixXf Z;
   bool _set_testing_components = false;
 
-  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size)
-      : _all(all), _d(d), _seed(seed), _internal_weights(total_size)
-  {
-  }
-
-  model_weight_rand_svd_impl(const model_weight_rand_svd_impl& other) = delete;
+  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size);
 
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
@@ -141,9 +136,9 @@ private:
 
 public:
   uint64_t _d;
+  uint64_t _seed;
   spanner_state _spanner_state;
   shrink_factor_config _shrink_factor_config;
-  uint64_t _seed;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
   bool _set_testing_components = false;

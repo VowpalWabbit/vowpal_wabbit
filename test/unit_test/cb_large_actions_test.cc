@@ -152,8 +152,7 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
-  // hardcoded seed might be causing test failure
-  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 0, 1 << vw.num_bits);
+  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 50, 1 << vw.num_bits);
 
   {
     VW::multi_ex examples;
@@ -202,8 +201,7 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
-  // hardcoded seed might be causing test failure
-  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 0, 1 << vw.num_bits);
+  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 50, 1 << vw.num_bits);
 
   {
     VW::multi_ex examples;
