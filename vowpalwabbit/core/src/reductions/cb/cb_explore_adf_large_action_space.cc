@@ -47,8 +47,7 @@ template <typename impl_detail>
 void cb_explore_adf_large_action_space<impl_detail>::_populate_all_testing_components()
 {
   _set_testing_components = true;
-  _vanilla_rand_svd_impl._set_testing_components = true;
-  if (_impl_type == implementation_type::model_weight_rand_svd) { _impl._set_testing_components = true; }
+  _impl._set_testing_components = true;
 }
 
 template <>
@@ -62,9 +61,7 @@ template <typename impl_detail>
 void cb_explore_adf_large_action_space<impl_detail>::_set_rank(uint64_t rank)
 {
   _d = rank;
-  _vanilla_rand_svd_impl._d = rank;
-  if (_impl_type == implementation_type::model_weight_rand_svd) { _impl._d = rank; }
-  // _model_weight_rand_svd_impl._d = rank;
+  _impl._d = rank;
   _spanner_state._action_indices.resize(_d);
 }
 
@@ -80,17 +77,13 @@ void cb_explore_adf_large_action_space<impl_detail>::save_load(io_buf& io, bool 
 template <>
 void cb_explore_adf_large_action_space<aatop_impl>::randomized_SVD(const multi_ex& examples)
 {
-  _aatop_impl.run(examples, shrink_factors);
+  _impl.run(examples, shrink_factors);
 }
 
 template <typename impl_detail>
 void cb_explore_adf_large_action_space<impl_detail>::randomized_SVD(const multi_ex& examples)
 {
-  if (_impl_type == implementation_type::model_weight_rand_svd) { _impl.run(examples, shrink_factors, U, _S, _V); }
-  else if (_impl_type == implementation_type::vanilla_rand_svd)
-  {
-    _vanilla_rand_svd_impl.run(examples, shrink_factors, U, _S, _V);
-  }
+  _impl.run(examples, shrink_factors, U, _S, _V);
 }
 
 template <typename impl_detail>
@@ -184,10 +177,8 @@ cb_explore_adf_large_action_space<model_weight_rand_svd_impl>::cb_explore_adf_la
     , _all(all)
     , _counter(0)
     , _seed(seed)
-    , _impl(all, d, _seed, total_size)
     , _impl_type(impl_type)
-    , _aatop_impl(all)
-    , _vanilla_rand_svd_impl(all, d, _seed)
+    , _impl(all, d, _seed, total_size)
 {
   assert(impl_type == implementation_type::model_weight_rand_svd);
 }
@@ -201,10 +192,8 @@ cb_explore_adf_large_action_space<vanilla_rand_svd_impl>::cb_explore_adf_large_a
     , _all(all)
     , _counter(0)
     , _seed(seed)
-    , _impl(all, d, _seed)
     , _impl_type(impl_type)
-    , _aatop_impl(all)
-    , _vanilla_rand_svd_impl(all, d, _seed)
+    , _impl(all, d, _seed)
 {
   assert(impl_type == implementation_type::vanilla_rand_svd);
 }
@@ -218,10 +207,8 @@ cb_explore_adf_large_action_space<aatop_impl>::cb_explore_adf_large_action_space
     , _all(all)
     , _counter(0)
     , _seed(seed)
-    , _impl(all)
     , _impl_type(impl_type)
-    , _aatop_impl(all)
-    , _vanilla_rand_svd_impl(all, d, _seed)
+    , _impl(all)
 {
   assert(impl_type == implementation_type::aatop);
 }

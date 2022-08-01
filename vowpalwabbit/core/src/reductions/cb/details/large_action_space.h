@@ -144,12 +144,10 @@ public:
   spanner_state _spanner_state;
   shrink_factor_config _shrink_factor_config;
   uint64_t _seed;
-  randomized_svd_impl _impl;
-  aatop_impl _aatop_impl;
-  vanilla_rand_svd_impl _vanilla_rand_svd_impl;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
   bool _set_testing_components = false;
+  randomized_svd_impl _impl;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
       bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
