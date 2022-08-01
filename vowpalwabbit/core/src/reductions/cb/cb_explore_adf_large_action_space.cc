@@ -61,7 +61,7 @@ template <typename impl_detail>
 void cb_explore_adf_large_action_space<impl_detail>::_set_rank(uint64_t rank)
 {
   _d = rank;
-  _impl._d = rank;
+  _impl._set_rank(rank);
   _spanner_state._action_indices.resize(_d);
 }
 
@@ -212,6 +212,21 @@ cb_explore_adf_large_action_space<aatop_impl>::cb_explore_adf_large_action_space
 {
   assert(impl_type == implementation_type::aatop);
 }
+template <>
+cb_explore_adf_large_action_space<one_pass_svd_impl>::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
+    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
+    implementation_type impl_type)
+    : _d(d)
+    , _spanner_state(c, d)
+    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
+    , _all(all)
+    , _counter(0)
+    , _seed(seed)
+    , _impl_type(impl_type)
+    , _impl(all, d, _seed)
+{
+  assert(impl_type == implementation_type::one_pass_svd);
+}
 
 void shrink_factor_config::calculate_shrink_factor(
     size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors)
@@ -235,6 +250,7 @@ void shrink_factor_config::calculate_shrink_factor(
 template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl>;
 template class cb_explore_adf_large_action_space<model_weight_rand_svd_impl>;
 template class cb_explore_adf_large_action_space<aatop_impl>;
+template class cb_explore_adf_large_action_space<one_pass_svd_impl>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -282,6 +298,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool full_predictions = false;
   bool aatop = false;
   bool model_weight_impl = false;
+  bool use_one_pass_svd = false;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -292,6 +309,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("aatop", aatop))
       .add(make_option("model_weight", model_weight_impl))
+      .add(make_option("one_pass", use_one_pass_svd))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
@@ -352,6 +370,12 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   {
     impl_type = implementation_type::model_weight_rand_svd;
     return make_las_with_impl<model_weight_rand_svd_impl>(
+        stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
+  }
+  else if (use_one_pass_svd)
+  {
+    impl_type = implementation_type::one_pass_svd;
+    return make_las_with_impl<one_pass_svd_impl>(
         stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
   }
   else

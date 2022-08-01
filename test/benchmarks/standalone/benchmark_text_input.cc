@@ -204,11 +204,26 @@ static void benchmark_multi(
   auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
   std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
 
+  for (auto _ : state)
+  {
+    for (multi_ex examples : examples_vec) { vw->learn(examples); }
+    benchmark::ClobberMemory();
+  }
+  for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
+  VW::finish(*vw);
+}
+
+static void benchmark_multi_predict(
+    benchmark::State& state, const std::vector<std::vector<std::string>>& examples_str, const std::string& cmd)
+{
+  auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
+  std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+
   for (multi_ex examples : examples_vec) { vw->learn(examples); }
 
   for (auto _ : state)
   {
-    for (multi_ex examples : examples_vec) { vw->learn(examples); }
+    for (multi_ex examples : examples_vec) { vw->predict(examples); }
     benchmark::ClobberMemory();
   }
   for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
@@ -263,23 +278,36 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examp
     "--ccb_explore_adf --quiet -q ::")
     ->MinTime(15.0);
 #ifdef BUILD_LARGE_ACTION_SPACE
-BENCHMARK_CAPTURE(benchmark_multi, cb_las, gen_cb_examples(7, 50, 20, 311, 1, 1, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las, gen_cb_examples(1, 50, 20, 311, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, cb_las_aatop, gen_cb_examples(7, 50, 20, 311, 1, 1, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_aatop, gen_cb_examples(1, 50, 20, 311, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --aatop --quiet")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, cb_las_model_weight, gen_cb_examples(7, 50, 20, 311, 1, 1, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_model_weight, gen_cb_examples(1, 50, 20, 300, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --model_weight --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_onestep, gen_cb_examples(1, 50, 20, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --one_pass --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_plaincb, gen_cb_examples(1, 50, 20, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf -q :: --quiet")
     ->MinTime(15.0);
 
-BENCHMARK_CAPTURE(benchmark_multi, cb_las_large, gen_cb_examples(7, 50, 50, 311, 1, 1, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large, gen_cb_examples(1, 50, 50, 311, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, cb_las_large_aatop, gen_cb_examples(7, 50, 50, 311, 1, 1, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_aatop, gen_cb_examples(1, 50, 50, 311, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --aatop --quiet")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, cb_las_large_model_weight, gen_cb_examples(7, 50, 50, 311, 1, 1, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --model_weight --quiet")
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_model_weight,
+    gen_cb_examples(1, 50, 50, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 2- --model_weight --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_onestep, gen_cb_examples(1, 50, 50, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 2- --one_pass --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_plaincb, gen_cb_examples(1, 50, 50, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf -q :: --quiet")
     ->MinTime(15.0);
 #endif
