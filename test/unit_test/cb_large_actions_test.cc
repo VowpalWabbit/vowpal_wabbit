@@ -13,8 +13,12 @@
 
 #include <boost/test/unit_test.hpp>
 
-using internal_action_space =
-    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space>;
+using internal_action_space = VW::cb_explore_adf::cb_explore_adf_base<
+    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::vanilla_rand_svd_impl>>;
+using internal_action_space_mw = VW::cb_explore_adf::cb_explore_adf_base<
+    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::model_weight_rand_svd_impl>>;
+using internal_action_space_op = VW::cb_explore_adf::cb_explore_adf_base<
+    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::one_pass_svd_impl>>;
 
 BOOST_AUTO_TEST_SUITE(test_suite_las)
 
@@ -37,6 +41,8 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  std::vector<Eigen::Triplet<float>> _triplets;
+
   {
     VW::multi_ex examples;
 
@@ -46,8 +52,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 
     vw.predict(examples);
 
-    VW::cb_explore_adf::_generate_A(
-        &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
+    VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
 
     auto num_actions = examples.size();
     BOOST_CHECK_EQUAL(num_actions, 1);
@@ -98,6 +103,8 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  VW::cb_explore_adf::aatop_impl _aatop_impl(&vw);
+
   {
     VW::multi_ex examples;
 
@@ -109,9 +116,8 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
     action_space->explore._shrink_factor_config.calculate_shrink_factor(
         0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
-    VW::cb_explore_adf::_generate_A(
-        &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
-    action_space->explore._aatop_impl.run(examples, action_space->explore.shrink_factors);
+    VW::cb_explore_adf::_generate_A(&vw, examples, _aatop_impl._triplets, action_space->explore._A);
+    _aatop_impl.run(examples, action_space->explore.shrink_factors);
 
     Eigen::SparseMatrix<float> diag_M(examples.size(), examples.size());
 
@@ -120,7 +126,7 @@ BOOST_AUTO_TEST_CASE(creation_of_AAtop)
 
     Eigen::MatrixXf AAtop = diag_M * action_space->explore._A * action_space->explore._A.transpose() * diag_M;
 
-    BOOST_CHECK_EQUAL(AAtop.isApprox(action_space->explore._aatop_impl.AAtop), true);
+    BOOST_CHECK_EQUAL(AAtop.isApprox(_aatop_impl.AAtop), true);
 
     vw.finish_example(examples);
   }
@@ -143,7 +149,7 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+  auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
@@ -189,7 +195,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+  auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
@@ -248,6 +254,8 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 50, 1 << vw.num_bits);
+
   {
     VW::multi_ex examples;
 
@@ -257,18 +265,18 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 
     vw.predict(examples);
 
-    action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
-    Eigen::SparseMatrix<float> Y_vanilla = action_space->explore._vanilla_rand_svd_impl.Y;
+    action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
+    Eigen::SparseMatrix<float> Y_vanilla = action_space->explore._impl.Y;
 
     uint64_t max_existing_column = 0;
-    action_space->explore._model_weight_rand_svd_impl.generate_model_weight_Y(
+    _model_weight_rand_svd_impl.generate_model_weight_Y(
         examples, max_existing_column, action_space->explore.shrink_factors);
-    action_space->explore._model_weight_rand_svd_impl._populate_from_model_weight_Y(examples);
+    _model_weight_rand_svd_impl._populate_from_model_weight_Y(examples);
 
-    BOOST_CHECK_EQUAL(action_space->explore._model_weight_rand_svd_impl.Y.rows() > 0, true);
-    BOOST_CHECK_EQUAL(action_space->explore._model_weight_rand_svd_impl.Y.cols(), d);
+    BOOST_CHECK_EQUAL(_model_weight_rand_svd_impl.Y.rows() > 0, true);
+    BOOST_CHECK_EQUAL(_model_weight_rand_svd_impl.Y.cols(), d);
 
-    BOOST_CHECK_EQUAL(Y_vanilla.isApprox(action_space->explore._model_weight_rand_svd_impl.Y), true);
+    BOOST_CHECK_EQUAL(Y_vanilla.isApprox(_model_weight_rand_svd_impl.Y), true);
 
     vw.finish_example(examples);
 
@@ -295,6 +303,8 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 50, 1 << vw.num_bits);
+
   {
     VW::multi_ex examples;
 
@@ -304,17 +314,17 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
 
     vw.predict(examples);
 
-    action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
-    action_space->explore._vanilla_rand_svd_impl.generate_B(examples, action_space->explore.shrink_factors);
-    Eigen::MatrixXf B_vanilla = action_space->explore._vanilla_rand_svd_impl.B;
+    action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
+    action_space->explore._impl.generate_B(examples, action_space->explore.shrink_factors);
+    Eigen::MatrixXf B_vanilla = action_space->explore._impl.B;
 
     uint64_t max_existing_column = 0;
-    action_space->explore._model_weight_rand_svd_impl.generate_model_weight_Y(
+    _model_weight_rand_svd_impl.generate_model_weight_Y(
         examples, max_existing_column, action_space->explore.shrink_factors);
-    action_space->explore._model_weight_rand_svd_impl.generate_B_model_weight(
+    _model_weight_rand_svd_impl.generate_B_model_weight(
         examples, max_existing_column, action_space->explore.shrink_factors);
 
-    BOOST_CHECK_EQUAL(B_vanilla.isApprox(action_space->explore._model_weight_rand_svd_impl.B), true);
+    BOOST_CHECK_EQUAL(B_vanilla.isApprox(_model_weight_rand_svd_impl.B), true);
 
     vw.finish_example(examples);
 
@@ -368,9 +378,9 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
       vw.predict(examples);
 
       std::set<uint64_t> non_zero_rows;
-      for (int k = 0; k < action_space->explore._vanilla_rand_svd_impl.Y.outerSize(); ++k)
+      for (int k = 0; k < action_space->explore._impl.Y.outerSize(); ++k)
       {
-        for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore._vanilla_rand_svd_impl.Y, k); it; ++it)
+        for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore._impl.Y, k); it; ++it)
         { non_zero_rows.emplace(it.row()); }
       }
 
@@ -428,8 +438,8 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
 
       vw.predict(examples);
 
-      if (!interactions) { B_non_interactions = action_space->explore._vanilla_rand_svd_impl.B; }
-      if (interactions) { B_interactions = action_space->explore._vanilla_rand_svd_impl.B; }
+      if (!interactions) { B_non_interactions = action_space->explore._impl.B; }
+      if (interactions) { B_interactions = action_space->explore._impl.B; }
       vw.finish_example(examples);
     }
     VW::finish(vw);
@@ -471,6 +481,8 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
     BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+    std::vector<Eigen::Triplet<float>> _triplets;
+
     {
       VW::multi_ex examples;
 
@@ -486,9 +498,9 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::_generate_A(
-          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
-      action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
+
+      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
+      action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
 
       uint64_t num_actions = examples[0]->pred.a_s.size();
 
@@ -531,12 +543,12 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
         diag_M.setIdentity();
       }
 
-      Eigen::SparseMatrix<float> Yd(action_space->explore._vanilla_rand_svd_impl.Y.rows(), d);
+      Eigen::SparseMatrix<float> Yd(action_space->explore._impl.Y.rows(), d);
 
       Yd = action_space->explore._A.transpose() * diag_M * Omega;
       // Orthonormalize Yd
       VW::gram_schmidt(Yd);
-      BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore._vanilla_rand_svd_impl.Y), true);
+      BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore._impl.Y), true);
 
       vw.finish_example(examples);
     }
@@ -564,6 +576,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
+    std::vector<Eigen::Triplet<float>> _triplets;
     auto apply_diag_M = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
@@ -586,12 +599,12 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 
       vw.predict(examples);
 
-      VW::cb_explore_adf::_generate_A(
-          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
+      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
-      action_space->explore._vanilla_rand_svd_impl.generate_B(examples, action_space->explore.shrink_factors);
+
+      action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
+      action_space->explore._impl.generate_B(examples, action_space->explore.shrink_factors);
 
       auto num_actions = examples[0]->pred.a_s.size();
       Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
@@ -606,8 +619,8 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
         diag_M.setIdentity();
       }
 
-      Eigen::MatrixXf B = diag_M * action_space->explore._A * action_space->explore._vanilla_rand_svd_impl.Y;
-      BOOST_CHECK_EQUAL(B.isApprox(action_space->explore._vanilla_rand_svd_impl.B), true);
+      Eigen::MatrixXf B = diag_M * action_space->explore._A * action_space->explore._impl.Y;
+      BOOST_CHECK_EQUAL(B.isApprox(action_space->explore._impl.B), true);
 
       vw.finish_example(examples);
     }
@@ -636,6 +649,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
+    std::vector<Eigen::Triplet<float>> _triplets;
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -659,12 +673,10 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::_generate_A(
-          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
-      action_space->explore._vanilla_rand_svd_impl.generate_Y(examples, action_space->explore.shrink_factors);
-      action_space->explore._vanilla_rand_svd_impl.generate_B(examples, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::generate_Z(examples, action_space->explore._vanilla_rand_svd_impl.Z,
-          action_space->explore._vanilla_rand_svd_impl.B, d, vw.get_random_state()->get_current_state() * 10.f);
+      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
+      action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
+      action_space->explore._impl.generate_B(examples, action_space->explore.shrink_factors);
+      VW::cb_explore_adf::generate_Z(examples, action_space->explore._impl.Z, action_space->explore._impl.B, d, 50);
 
       Eigen::MatrixXf P(d, d);
 
@@ -680,9 +692,9 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
         }
       }
 
-      Eigen::MatrixXf Zp = action_space->explore._vanilla_rand_svd_impl.B * P;
+      Eigen::MatrixXf Zp = action_space->explore._impl.B * P;
       VW::gram_schmidt(Zp);
-      BOOST_CHECK_EQUAL(Zp.isApprox(action_space->explore._vanilla_rand_svd_impl.Z), true);
+      BOOST_CHECK_EQUAL(Zp.isApprox(action_space->explore._impl.Z), true);
       vw.finish_example(examples);
     }
 
@@ -690,55 +702,147 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
   }
 }
 
+template <typename T>
+void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
+    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<T>>* action_space,
+    bool apply_diag_M, std::vector<Eigen::Triplet<float>> _triplets, uint64_t d)
+{
+  BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
+    action_space->explore._populate_all_testing_components();
+
+    vw.predict(examples);
+
+    action_space->explore._shrink_factor_config.calculate_shrink_factor(
+        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+    action_space->explore.randomized_SVD(examples);
+
+    VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
+    {
+      Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._A);
+      auto rank = lu_decomp.rank();
+      // for test set actual rank of A
+      action_space->explore._set_rank(rank);
+      // should have a rank larger than 1 for the test
+      BOOST_CHECK_GT(rank, 1);
+    }
+
+    vw.predict(examples);
+
+    action_space->explore._shrink_factor_config.calculate_shrink_factor(
+        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+    action_space->explore.randomized_SVD(examples);
+
+    auto num_actions = examples.size();
+
+    // U dimensions should be K x d
+    BOOST_CHECK_EQUAL(action_space->explore.U.rows(), num_actions);
+    BOOST_CHECK_EQUAL(action_space->explore.U.cols(), d);
+
+    // truncated randomized SVD reconstruction
+    for (int i = 0; i < action_space->explore.U.cols(); ++i)
+    {
+      BOOST_CHECK_SMALL(1.f - action_space->explore.U.col(i).norm(), FLOAT_TOL);
+      for (int j = 0; j < i; ++j)
+      { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
+    }
+
+    for (int i = 0; i < action_space->explore._V.cols(); ++i)
+    {
+      BOOST_CHECK_SMALL(1.f - action_space->explore._V.col(i).norm(), FLOAT_TOL);
+      for (int j = 0; j < i; ++j)
+      { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
+    }
+
+    Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
+
+    if (apply_diag_M)
+    {
+      for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+      { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
+    }
+    else
+    {
+      diag_M.setIdentity();
+    }
+
+    BOOST_CHECK_SMALL(
+        ((diag_M * action_space->explore._A) -
+            action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
+            .norm(),
+        FLOAT_TOL);
+
+    // compare singular values with actual SVD singular values
+    Eigen::MatrixXf A_dense = diag_M * action_space->explore._A;
+    Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::VectorXf S = svd.singularValues();
+
+    for (size_t i = 0; i < action_space->explore._S.rows(); i++)
+    { BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL); }
+
+    vw.finish_example(examples);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 {
   auto d = 3;
 
-  std::vector<std::pair<VW::workspace*, bool>> vws;
+  std::vector<std::tuple<VW::workspace*, bool, VW::cb_explore_adf::implementation_type>> vws;
   auto* vw_wo_interactions = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_wo_interactions, false});
+  vws.emplace_back(vw_wo_interactions, false, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
 
   auto* vw_w_interactions = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5 -q ::",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_w_interactions, false});
+  vws.emplace_back(vw_w_interactions, false, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
 
   auto* vw_wo_interactions_sq =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
               std::to_string(d) + " --quiet --random_seed 5",
           nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_wo_interactions_sq, true});
+  vws.emplace_back(vw_wo_interactions_sq, true, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
 
   auto* vw_w_interactions_sq =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
               std::to_string(d) + " --quiet --random_seed 5 -q ::",
           nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_w_interactions_sq, true});
+  vws.emplace_back(vw_w_interactions_sq, true, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
 
   auto* vw_model_weight_w_interactions_sq =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
               std::to_string(d) + " --quiet --random_seed 5 -q :: --model_weight",
           nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_model_weight_w_interactions_sq, true});
+  vws.emplace_back(
+      vw_model_weight_w_interactions_sq, true, VW::cb_explore_adf::implementation_type::model_weight_rand_svd);
 
   auto* vw_w_interactions_sq_sparse_weights = VW::initialize(
       "--cb_explore_adf --squarecb --sparse_weights --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5 -q ::",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_w_interactions_sq_sparse_weights, true});
+  vws.emplace_back(
+      vw_w_interactions_sq_sparse_weights, true, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
 
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
+    std::vector<Eigen::Triplet<float>> _triplets;
     auto apply_diag_M = std::get<1>(vw_pair);
+    auto impl_type = std::get<2>(vw_pair);
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -748,91 +852,23 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-
-    BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
+    if (impl_type == VW::cb_explore_adf::implementation_type::vanilla_rand_svd)
     {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
-      examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
-      examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
-      action_space->explore._populate_all_testing_components();
-
-      vw.predict(examples);
-
-      action_space->explore._shrink_factor_config.calculate_shrink_factor(
-          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      action_space->explore.randomized_SVD(examples);
-
-      VW::cb_explore_adf::_generate_A(
-          &vw, examples, action_space->explore._aatop_impl._triplets, action_space->explore._A);
-      {
-        Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._A);
-        auto rank = lu_decomp.rank();
-        // for test set actual rank of A
-        action_space->explore._set_rank(rank);
-        d = rank;
-        // should have a rank larger than 1 for the test
-        BOOST_CHECK_GT(rank, 1);
-      }
-
-      vw.predict(examples);
-
-      action_space->explore._shrink_factor_config.calculate_shrink_factor(
-          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      action_space->explore.randomized_SVD(examples);
-
-      auto num_actions = examples.size();
-
-      // U dimensions should be K x d
-      BOOST_CHECK_EQUAL(action_space->explore.U.rows(), num_actions);
-      BOOST_CHECK_EQUAL(action_space->explore.U.cols(), d);
-
-      // truncated randomized SVD reconstruction
-      for (int i = 0; i < action_space->explore.U.cols(); ++i)
-      {
-        BOOST_CHECK_SMALL(1.f - action_space->explore.U.col(i).norm(), FLOAT_TOL);
-        for (int j = 0; j < i; ++j)
-        { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
-      }
-
-      for (int i = 0; i < action_space->explore._V.cols(); ++i)
-      {
-        BOOST_CHECK_SMALL(1.f - action_space->explore._V.col(i).norm(), FLOAT_TOL);
-        for (int j = 0; j < i; ++j)
-        { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
-      }
-
-      Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
-
-      if (apply_diag_M)
-      {
-        for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
-        { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
-      }
-      else
-      {
-        diag_M.setIdentity();
-      }
-
-      BOOST_CHECK_SMALL(
-          ((diag_M * action_space->explore._A) -
-              action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
-              .norm(),
-          FLOAT_TOL);
-
-      // compare singular values with actual SVD singular values
-      Eigen::MatrixXf A_dense = diag_M * action_space->explore._A;
-      Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
-      Eigen::VectorXf S = svd.singularValues();
-
-      for (size_t i = 0; i < action_space->explore._S.rows(); i++)
-      { BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL); }
-
-      vw.finish_example(examples);
+      auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+      check_final_truncated_SVD_validity_impl<VW::cb_explore_adf::vanilla_rand_svd_impl>(
+          vw, action_space, apply_diag_M, _triplets, d);
     }
+    else if (impl_type == VW::cb_explore_adf::implementation_type::model_weight_rand_svd)
+    {
+      auto action_space = (internal_action_space_mw*)learner->get_internal_type_erased_data_pointer_test_use_only();
+      check_final_truncated_SVD_validity_impl<VW::cb_explore_adf::model_weight_rand_svd_impl>(
+          vw, action_space, apply_diag_M, _triplets, d);
+    }
+    else
+    {
+      BOOST_FAIL("test for implementation type not implemented");
+    }
+
     VW::finish(vw);
   }
 }
@@ -914,8 +950,10 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
   auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5",
       nullptr, false, nullptr, nullptr);
-  VW::cb_explore_adf::cb_explore_adf_large_action_space largecb(
-      /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw);
+  uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+  VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::model_weight_rand_svd_impl> largecb(
+      /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits,
+      VW::cb_explore_adf::implementation_type::model_weight_rand_svd);
   largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
 

@@ -65,7 +65,7 @@ public:
   Eigen::MatrixXf Z;
   bool _set_testing_components = false;
 
-  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
+  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size);
 
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
@@ -141,6 +141,7 @@ public:
   static std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t x_row, Eigen::MatrixXf& X);
 };
 
+template <typename randomized_svd_impl>
 struct cb_explore_adf_large_action_space
 {
 private:
@@ -153,17 +154,14 @@ private:
 public:
   spanner_state _spanner_state;
   shrink_factor_config _shrink_factor_config;
-  aatop_impl _aatop_impl;
-  vanilla_rand_svd_impl _vanilla_rand_svd_impl;
-  model_weight_rand_svd_impl _model_weight_rand_svd_impl;
-  one_pass_svd_impl _one_pass_svd_impl;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
   bool _set_testing_components = false;
+  randomized_svd_impl _impl;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all,
-      implementation_type impl_type = implementation_type::vanilla_rand_svd);
+      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
+
   ~cb_explore_adf_large_action_space() = default;
 
   void save_load(io_buf& io, bool read, bool text);
