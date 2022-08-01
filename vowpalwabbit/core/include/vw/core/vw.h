@@ -74,15 +74,14 @@ VW_WARNING_DISABLE_BADLY_FORMED_XML
  * Will override any model specified on the command line.
  * @param driver_output_func optional function to forward driver ouput to
  * @param driver_output_func_context context for driver_output_func
- * @param logger_output_func optional function to forward logger ouput to
- * @param logger_output_func_context context for logger_output_func
+ * @param custom_logger optional custom logger object to override with
  * @param setup_base optional advanced override of reduction stack
  * @return std::unique_ptr<VW::workspace> initialized workspace
  */
 std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options,
     std::unique_ptr<VW::io::reader> model_override_reader = nullptr, driver_output_func_t driver_output_func = nullptr,
-    void* driver_output_func_context = nullptr, VW::io::logger_output_func_t logger_output_func = nullptr,
-    void* logger_output_func_context = nullptr, std::unique_ptr<VW::setup_base_i> setup_base = nullptr);
+    void* driver_output_func_context = nullptr,
+    VW::io::logger* custom_logger = nullptr, std::unique_ptr<VW::setup_base_i> setup_base = nullptr);
 VW_WARNING_STATE_POP
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
@@ -92,7 +91,7 @@ char** to_argv(std::string const& s, int& argc);
 char** to_argv_escaped(std::string const& s, int& argc);
 void free_args(int argc, char* argv[]);
 
-const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2);
+const char* are_features_compatible(const VW::workspace& vw1, const VW::workspace& vw2);
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML

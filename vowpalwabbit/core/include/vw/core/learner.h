@@ -126,7 +126,7 @@ struct finish_example_data
 };
 
 using merge_with_all_fn = void (*)(const std::vector<float>& example_counts,
-    const std::vector<VW::workspace*>& all_workspaces, const std::vector<void*>& all_data,
+    const std::vector<const VW::workspace*>& all_workspaces, const std::vector<void*>& all_data,
     VW::workspace& output_workspace, void* output_data);
 // When the workspace reference is not needed this signature should definitely be used.
 using merge_fn = void (*)(
@@ -457,7 +457,7 @@ public:
 
   // This is effectively static implementing a trait for this learner type.
   // NOT auto recursive
-  void merge(const std::vector<float>& example_counts, const std::vector<VW::workspace*>& all_workspaces,
+  void merge(const std::vector<float>& example_counts, const std::vector<const VW::workspace*>& all_workspaces,
       const std::vector<void*>& all_data, VW::workspace& output_workspace, void* output_data)
   {
     if (_merge_with_all_fn != nullptr)
@@ -707,6 +707,9 @@ struct reduction_learner_builder
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
     this->_learner->learn_fd.multipredict_f = nullptr;
+    // Don't propagate merge functions
+    this->_learner->_merge_fn = nullptr;
+    this->_learner->_merge_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
@@ -788,6 +791,9 @@ struct reduction_no_data_learner_builder
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
+    // Don't propagate merge functions
+    this->_learner->_merge_fn = nullptr;
+    this->_learner->_merge_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     // By default, will produce what the base expects
@@ -852,10 +858,10 @@ struct base_learner_builder
   }
 
   base_learner_builder<DataT, ExampleT>& set_merge_with_all(void (*merge_with_all_fn)(
-      const std::vector<float>& example_counts, const std::vector<VW::workspace*>& all_workspaces,
+      const std::vector<float>& example_counts, const std::vector<const VW::workspace*>& all_workspaces,
       const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data))
   {
-    this->_learner->_merge_with_all_fn = merge_with_all_fn;
+    this->_learner->_merge_with_all_fn = reinterpret_cast<details::merge_with_all_fn>(merge_with_all_fn);
     return *this;
   }
 

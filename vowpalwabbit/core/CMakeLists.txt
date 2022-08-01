@@ -50,6 +50,7 @@ set(vw_core_headers
   include/vw/core/learner.h
   include/vw/core/loss_functions.h
   include/vw/core/memory.h
+  include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
   include/vw/core/multiclass.h
@@ -216,6 +217,7 @@ set(vw_core_sources
   src/label_type.cc
   src/learner.cc
   src/loss_functions.cc
+  src/merge.cc
   src/metric_sink.cc
   src/multiclass.cc
   src/multilabel.cc
