@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "../large_action_space.h"
 #include "vw/core/cb.h"
 #include "vw/core/qr_decomposition.h"
@@ -162,6 +166,8 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
     row_index++;
   }
 }
+
+void vanilla_rand_svd_impl::_set_rank(uint64_t rank) { _d = rank; }
 
 void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,
     Eigen::VectorXf& _S, Eigen::MatrixXf& _V)

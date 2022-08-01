@@ -1,3 +1,7 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #include "../large_action_space.h"
 #include "vw/core/cb.h"
 #include "vw/core/qr_decomposition.h"

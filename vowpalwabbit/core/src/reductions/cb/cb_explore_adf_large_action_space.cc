@@ -37,16 +37,17 @@ void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, 
 
 cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, implementation_type impl_type)
-    : _d(d)
-    , _spanner_state(c, d)
-    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
-    , _all(all)
+    : _all(all)
+    , _d(d)
+    , _seed(all->get_random_state()->get_current_state() * 10.f)
     , _counter(0)
     , _impl_type(impl_type)
-    , _seed(all->get_random_state()->get_current_state() * 10.f)
+    , _spanner_state(c, d)
+    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
     , _aatop_impl(all)
     , _vanilla_rand_svd_impl(all, d, _seed)
     , _model_weight_rand_svd_impl(all, d, _seed)
+    , _one_pass_svd_impl(all, d, _seed)
 {
 }
 
@@ -55,13 +56,15 @@ void cb_explore_adf_large_action_space::_populate_all_testing_components()
   _set_testing_components = true;
   _vanilla_rand_svd_impl._set_testing_components = true;
   _model_weight_rand_svd_impl._set_testing_components = true;
+  _one_pass_svd_impl._set_testing_components = true;
 }
 
 void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
 {
   _d = rank;
-  _vanilla_rand_svd_impl._d = rank;
-  _model_weight_rand_svd_impl._d = rank;
+  _vanilla_rand_svd_impl._set_rank(rank);
+  _model_weight_rand_svd_impl._set_rank(rank);
+  _one_pass_svd_impl._set_rank(rank);
   _spanner_state._action_indices.resize(_d);
 }
 
@@ -87,6 +90,10 @@ void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
   else if (_impl_type == implementation_type::model_weight_rand_svd)
   {
     _model_weight_rand_svd_impl.run(examples, shrink_factors, U, _S, _V);
+  }
+  else if (_impl_type == implementation_type::one_pass_svd)
+  {
+    _one_pass_svd_impl.run(examples, shrink_factors, U, _S, _V);
   }
 }
 
@@ -205,6 +212,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool full_predictions = false;
   bool aatop = false;
   bool model_weight_impl = false;
+  bool one_pass_svd_impl = false;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -215,6 +223,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("aatop", aatop))
       .add(make_option("model_weight", model_weight_impl))
+      .add(make_option("one_pass", one_pass_svd_impl))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
@@ -270,6 +279,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   auto impl_type = implementation_type::vanilla_rand_svd;
   if (aatop) { impl_type = implementation_type::aatop; }
   if (model_weight_impl) { impl_type = implementation_type::model_weight_rand_svd; }
+  if (one_pass_svd_impl) { impl_type = implementation_type::one_pass_svd; }
 
   auto data = VW::make_unique<explore_type>(
       with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all, impl_type);
