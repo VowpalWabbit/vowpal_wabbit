@@ -88,11 +88,6 @@ namespace VW.Serializer
         private readonly List<ParameterExpression> variables;
 
         /// <summary>
-        /// Local variables holding namespaces.
-        /// </summary>
-        private readonly List<ParameterExpression> namespaceVariables;
-
-        /// <summary>
         /// The parameter of the main lambda to <see cref="VowpalWabbit"/>.
         /// </summary>
         private ParameterExpression vwParameter;
@@ -116,11 +111,6 @@ namespace VW.Serializer
         /// The list of featurizers.
         /// </summary>
         private readonly List<ParameterExpression> marshallers;
-
-        /// <summary>
-        /// The list of meta features such as <see cref="PreHashedFeature"/>.
-        /// </summary>
-        private readonly List<ParameterExpression> metaFeatures;
 
         /// <summary>
         /// If true, VowpalWabbit string generation is disabled.
@@ -154,9 +144,7 @@ namespace VW.Serializer
             this.body = new List<Expression>();
             this.perExampleBody = new List<Expression>();
             this.variables = new List<ParameterExpression>();
-            this.namespaceVariables = new List<ParameterExpression>();
             this.marshallers = new List<ParameterExpression>();
-            this.metaFeatures = new List<ParameterExpression>();
 
             this.CreateMarshallers();
 
@@ -500,8 +488,6 @@ namespace VW.Serializer
                         Expression.Constant(ns.Key.Namespace, typeof(string)),
                         ns.Key.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
                          Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)ns.Key.FeatureGroup)))));
-
-                var fullNamespaceCalls = new List<Expression>();
 
                 var featureVisits = new List<Expression>(ns.Count());
                 foreach (var feature in ns.OrderBy(f => f.Source.Order))
