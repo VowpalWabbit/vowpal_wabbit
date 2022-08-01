@@ -778,8 +778,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
       VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore._impl.generate_B(examples, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::generate_Z(examples, action_space->explore._impl.Z, action_space->explore._impl.B,
-          d, 50);
+      VW::cb_explore_adf::generate_Z(examples, action_space->explore._impl.Z, action_space->explore._impl.B, d, 50);
 
       Eigen::MatrixXf P(d, d);
 
