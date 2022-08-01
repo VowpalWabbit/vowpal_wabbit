@@ -460,6 +460,7 @@ public:
   void merge(const std::vector<float>& example_counts, const std::vector<const VW::workspace*>& all_workspaces,
       const std::vector<void*>& all_data, VW::workspace& output_workspace, void* output_data)
   {
+    assert(example_counts.size() == all_workspaces.size()== all_data.size());
     if (_merge_with_all_fn != nullptr)
     { _merge_with_all_fn(example_counts, all_workspaces, all_data, output_workspace, output_data); }
     else if (_merge_fn != nullptr)

@@ -1987,6 +1987,38 @@ class Example(pylibvw.example):
         return switch_prediction_type[prediction_type]()
 
 
+def merge_models(models: List[Workspace]) -> Workspace:
+    """Merge the models loaded into separate workspaces into a single workspace which can then be serialized to a model.
+
+    All of the given workspaces must use the exact same arguments, and only differ in training. `--preserve_performance_counters` should be used if models are loaded from disk and then given to this call.
+
+    Args:
+        models (List[Workspace]): List of models to merge.
+
+    Returns:
+        Workspace: The merged workspace
+
+    Examples:
+        >>> from vowpalwabbit import Workspace, merge_models
+        >>> model1 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model1.model')
+        >>> model2 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model2.model')
+        >>> merged_model = merge_models([model1, model2])
+        >>> merged_model.save('merged.model')
+
+    .. note::
+        This is an experimental feature and may change in future releases.
+    """
+
+    # This needs to be promoted to the Workspace object defined in Python.
+    result = pylibvw._merge_models_impl(models)
+    result.__class__ = Workspace
+    result._log_wrapper = None
+    result.parser_ran = False
+    result.init = True
+    result.finished = False
+    result._log_fwd = None
+    return result
+
 ############################ DEPREECATED CLASSES ############################
 
 

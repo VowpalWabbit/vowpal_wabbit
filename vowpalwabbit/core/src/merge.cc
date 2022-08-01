@@ -7,18 +7,18 @@
 #include "vw/config/cli_options_serializer.h"
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/core/parse_primitives.h"
 
 namespace
 {
-std::string get_command_line(const VW::workspace& workspace)
+std::string get_keep_command_line(const VW::workspace& workspace)
 {
   VW::config::cli_options_serializer serializer;
   for (auto const& option : workspace.options->get_all_options())
   {
-    if (workspace.options->was_supplied(option->m_name)) { serializer.add(*option); }
+    if (workspace.options->was_supplied(option->m_name) && option->m_keep) { serializer.add(*option); }
   }
 
   return serializer.str();
@@ -26,7 +26,7 @@ std::string get_command_line(const VW::workspace& workspace)
 
 void validate_compatability(const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
 {
-if (workspaces_to_merge.size() < 2) { THROW("Must specify at least two model files to merge."); }
+  if (workspaces_to_merge.size() < 2) { THROW("Must specify at least two model files to merge."); }
 
   const auto& ref_model = *workspaces_to_merge[0];
   for (const auto& model : workspaces_to_merge)
@@ -48,12 +48,12 @@ if (workspaces_to_merge.size() < 2) { THROW("Must specify at least two model fil
     }
   }
 
-  if(at_least_one_has_no_preserve && (logger != nullptr))
+  if (at_least_one_has_no_preserve && (logger != nullptr))
   {
     logger->warn(
-            "At least one model given to merge_models has no recorded examples. This could result in inaccurate merging. "
-            "To fix this issue, pass the --preserve_performance_counters flag to the model if loading from disk or if "
-            "training in memory then pass some examples prior to merging.");
+        "At least one model given to merge_models has no recorded examples. This could result in inaccurate merging. "
+        "To fix this issue, pass the --preserve_performance_counters flag to the model if loading from disk or if "
+        "training in memory then pass some examples prior to merging.");
   }
 
   std::vector<std::string> destination_enabled_reductions;
@@ -65,17 +65,19 @@ if (workspaces_to_merge.size() < 2) { THROW("Must specify at least two model fil
 
     if (source_enabled_reductions != destination_enabled_reductions)
     {
-      THROW("Enabled reductions are not identical between models.");
+      THROW("Enabled reductions are not identical between models.\n One: " << source_enabled_reductions << "\n Other: "
+                                                                           << destination_enabled_reductions);
     }
   }
 
-  auto destination_command_line = get_command_line(ref_model);
+  auto destination_command_line = get_keep_command_line(ref_model);
   for (const auto& model : workspaces_to_merge)
   {
-    auto src_command_line = get_command_line(*model);
+    auto src_command_line = get_keep_command_line(*model);
     if (destination_command_line != src_command_line)
     {
-      THROW("Command lines are not identical between models.");
+      THROW("Command lines are not identical between models. One: " << destination_command_line
+                                                                    << "\n Other: " << src_command_line);
     }
   }
 }
@@ -90,7 +92,6 @@ void merge_shared_data(shared_data& destination, const std::vector<const shared_
     destination.weighted_unlabeled_examples += source->weighted_unlabeled_examples;
     destination.example_number += source->example_number;
     destination.total_features += source->total_features;
-
   }
 }
 }  // namespace
@@ -103,19 +104,12 @@ std::unique_ptr<VW::workspace> merge_models(
 {
   validate_compatability(workspaces_to_merge, logger);
 
-  auto dest_command_line = VW::split_command_line(get_command_line(*workspaces_to_merge[0]));
-  if (logger == nullptr)
-  {
-    dest_command_line.emplace_back("--quiet");
-  }
-  else
-  {
-    dest_command_line.emplace_back("--driver_output_off");
-  }
+  auto dest_command_line = VW::split_command_line(get_keep_command_line(*workspaces_to_merge[0]));
+  if (logger == nullptr) { dest_command_line.emplace_back("--quiet"); }
+  else { dest_command_line.emplace_back("--driver_output_off"); }
 
-  auto destination_model =
-      VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr,
-          nullptr, nullptr, logger);
+  auto destination_model = VW::initialize_experimental(
+      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, logger);
 
   std::vector<float> example_counts;
   example_counts.reserve(workspaces_to_merge.size());
