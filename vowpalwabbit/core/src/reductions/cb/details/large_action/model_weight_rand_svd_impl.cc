@@ -329,10 +329,6 @@ void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector
   }
 }
 
-model_weight_rand_svd_impl::model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed)
-    : _all(all), _d(d), _seed(seed), _internal_weights(1 << _all->num_bits)
-{
-}
 
 }  // namespace cb_explore_adf
 }  // namespace VW

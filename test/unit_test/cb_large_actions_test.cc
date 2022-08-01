@@ -13,8 +13,12 @@
 
 #include <boost/test/unit_test.hpp>
 
-using internal_action_space =
-    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space>;
+using internal_action_space = VW::cb_explore_adf::cb_explore_adf_base<
+    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::vanilla_rand_svd_impl>>;
+using internal_action_space_mw = VW::cb_explore_adf::cb_explore_adf_base<
+    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::model_weight_rand_svd_impl>>;
+using internal_action_space_aa = VW::cb_explore_adf::cb_explore_adf_base<
+    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::aatop_impl>>;
 
 BOOST_AUTO_TEST_SUITE(test_suite_las)
 
@@ -146,6 +150,8 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 0, 1 << vw.num_bits);
+
   {
     VW::multi_ex examples;
 
@@ -159,14 +165,14 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
     Eigen::SparseMatrix<float> Y_vanilla = action_space->explore._vanilla_rand_svd_impl.Y;
 
     uint64_t max_existing_column = 0;
-    action_space->explore._model_weight_rand_svd_impl.generate_model_weight_Y(
+    _model_weight_rand_svd_impl.generate_model_weight_Y(
         examples, max_existing_column, action_space->explore.shrink_factors);
-    action_space->explore._model_weight_rand_svd_impl._populate_from_model_weight_Y(examples);
+    _model_weight_rand_svd_impl._populate_from_model_weight_Y(examples);
 
-    BOOST_CHECK_EQUAL(action_space->explore._model_weight_rand_svd_impl.Y.rows() > 0, true);
-    BOOST_CHECK_EQUAL(action_space->explore._model_weight_rand_svd_impl.Y.cols(), d);
+    BOOST_CHECK_EQUAL(_model_weight_rand_svd_impl.Y.rows() > 0, true);
+    BOOST_CHECK_EQUAL(_model_weight_rand_svd_impl.Y.cols(), d);
 
-    BOOST_CHECK_EQUAL(Y_vanilla.isApprox(action_space->explore._model_weight_rand_svd_impl.Y), true);
+    BOOST_CHECK_EQUAL(Y_vanilla.isApprox(_model_weight_rand_svd_impl.Y), true);
 
     vw.finish_example(examples);
 
@@ -193,6 +199,8 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 0, 1 << vw.num_bits);
+
   {
     VW::multi_ex examples;
 
@@ -207,12 +215,12 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
     Eigen::MatrixXf B_vanilla = action_space->explore._vanilla_rand_svd_impl.B;
 
     uint64_t max_existing_column = 0;
-    action_space->explore._model_weight_rand_svd_impl.generate_model_weight_Y(
+    _model_weight_rand_svd_impl.generate_model_weight_Y(
         examples, max_existing_column, action_space->explore.shrink_factors);
-    action_space->explore._model_weight_rand_svd_impl.generate_B_model_weight(
+    _model_weight_rand_svd_impl.generate_B_model_weight(
         examples, max_existing_column, action_space->explore.shrink_factors);
 
-    BOOST_CHECK_EQUAL(B_vanilla.isApprox(action_space->explore._model_weight_rand_svd_impl.B), true);
+    BOOST_CHECK_EQUAL(B_vanilla.isApprox(_model_weight_rand_svd_impl.B), true);
 
     vw.finish_example(examples);
 
@@ -811,8 +819,10 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
   auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5",
       nullptr, false, nullptr, nullptr);
-  VW::cb_explore_adf::cb_explore_adf_large_action_space largecb(
-      /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw);
+  uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+  VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::model_weight_rand_svd_impl> largecb(
+      /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits,
+      VW::cb_explore_adf::implementation_type::model_weight_rand_svd);
   largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
 
