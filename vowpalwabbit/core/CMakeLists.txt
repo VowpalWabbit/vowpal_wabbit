@@ -343,6 +343,10 @@ if(VW_BUILD_LARGE_ACTION_SPACE)
   set(vw_core_sources
     ${vw_core_sources}
     src/reductions/cb/cb_explore_adf_large_action_space.cc
+    src/reductions/cb/details/large_action/model_weight_rand_svd_impl.cc
+    src/reductions/cb/details/large_action/vanilla_rand_svd_impl.cc
+    src/reductions/cb/details/large_action/aatop_impl.cc
+    src/reductions/cb/details/large_action/spanner_impl.cc
     src/reductions/cb/cb_actions_mask.cc src/qr_decomposition.cc
   )
 endif()
