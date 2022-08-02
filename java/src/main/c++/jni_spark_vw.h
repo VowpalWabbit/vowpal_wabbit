@@ -1,5 +1,6 @@
-#include "jni_spark_vw_generated.h"
 #include "vw/core/vw.h"
+
+#include <jni.h>
 
 // some JNI helper
 

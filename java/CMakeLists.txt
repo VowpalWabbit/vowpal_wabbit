@@ -3,6 +3,19 @@ set(JAVA_AWT_LIBRARY NotNeeded)
 set(JAVA_JVM_LIBRARY NotNeeded)
 
 find_package(JNI REQUIRED)
+find_package(Java)
+include(UseJava)
+
+# This jar is just to make use of the GENERATE_NATIVE_HEADERS functionality.
+# The vw_jni_generate_native_headers_do_not_use_jar.jar itself should not be used in any way.
+add_jar(vw_jni_generate_native_headers_do_not_use_jar
+SOURCES
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitNative.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitExample.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitArguments.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics.java
+  src/main/java/common/Native.java
+GENERATE_NATIVE_HEADERS vw_jni_native_headers)
 
 set(src_base src/main/c++)
 set(vw_jni_headers
@@ -40,7 +53,10 @@ set(vw_jni_sources
 )
 
 add_library(vw_jni SHARED ${vw_jni_headers} ${vw_jni_sources})
-target_link_libraries(vw_jni PUBLIC vw_core vw_spanning_tree)
+target_link_libraries(vw_jni
+  PUBLIC vw_core vw_spanning_tree
+  PRIVATE vw_jni_native_headers
+)
 set_property(TARGET vw_jni PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET vw_jni PROPERTY BUILD_RPATH_USE_ORIGIN ON)
 target_include_directories(vw_jni PUBLIC
@@ -67,27 +83,6 @@ if(NOT WIN32)
   file(MAKE_DIRECTORY target/classes)
   file(MAKE_DIRECTORY target/test-classes)
   file(MAKE_DIRECTORY target/bin/natives/linux_64)
-
-  # Development
-  # - uncomment the following section to generate the jni headers
-  # - it's commented to speed up the build as it's not expected to change frequently
-
-  # find_package(Java)
-  # include(UseJava)
-
-  # add_custom_target(javacompile
-      # COMMAND mvn compile
-      # WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      # COMMENT "Compile classes for javah")
-
-  # create_javah(TARGET javaheaders
-  #   CLASSES
-  #     org.vowpalwabbit.spark.VowpalWabbitNative
-  #     org.vowpalwabbit.spark.VowpalWabbitExample
-  #     org.vowpalwabbit.spark.ClusterSpanningTree
-  #   CLASSPATH ${CMAKE_CURRENT_SOURCE_DIR}/target/classes
-  #   OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_spark_vw_generated.h)
-  # add_dependencies(javaheaders javacompile)
 
   if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(JAVA_INSTALL_PATH /Library/Java/Extensions)
