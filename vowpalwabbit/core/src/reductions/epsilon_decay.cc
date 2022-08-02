@@ -63,12 +63,12 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
   {
     logged = (*it)->l.cb.costs[0];
     labelled_action = std::distance(examples.begin(), it);
+    const float r = -logged.cost;
     if (_epsilon_decay_audit_str != "")
     {
-      _audit_msg << "Example: " << _global_counter << "\nLabelled_action: " << labelled_action << "\n";
+      _audit_msg << "Example: " << _global_counter << " Labelled_action: " << labelled_action << " p_log: " << logged.probability << " reward: " << r << "\n";
       ++_global_counter;
     }
-    const float r = -logged.cost;
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     // Process each model, then update the upper/lower bounds for each model
     for (int64_t i = 0; i < model_count; ++i)
@@ -99,7 +99,7 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
             }
             _audit_msg << "update_count: " << _estimator_configs[i][i].update_count
                        << " lb: " << _estimator_configs[i][i].lower_bound()
-                       << " ub: " << _estimator_configs[i][i].upper_bound() << " p_log: " << logged.probability
+                       << " ub: " << _estimator_configs[i][i].upper_bound()
                        << " p_pred: " << a_s.score << "\n";
           }
           break;
