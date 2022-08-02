@@ -26,46 +26,47 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-void cb_explore_adf_large_action_space::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+template <typename impl_detail>
+void cb_explore_adf_large_action_space<impl_detail>::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<false>(base, examples);
 }
-void cb_explore_adf_large_action_space::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
+template <typename impl_detail>
+void cb_explore_adf_large_action_space<impl_detail>::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<true>(base, examples);
 }
 
-cb_explore_adf_large_action_space::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
-    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, implementation_type impl_type)
-    : _d(d)
-    , _spanner_state(c, d)
-    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
-    , _all(all)
-    , _counter(0)
-    , _impl_type(impl_type)
-    , _seed(all->get_random_state()->get_current_state() * 10.f)
-    , _aatop_impl(all)
-    , _vanilla_rand_svd_impl(all, d, _seed)
-    , _model_weight_rand_svd_impl(all, d, _seed)
-{
-}
-
-void cb_explore_adf_large_action_space::_populate_all_testing_components()
+template <>
+void cb_explore_adf_large_action_space<aatop_impl>::_populate_all_testing_components()
 {
   _set_testing_components = true;
-  _vanilla_rand_svd_impl._set_testing_components = true;
-  _model_weight_rand_svd_impl._set_testing_components = true;
 }
 
-void cb_explore_adf_large_action_space::_set_rank(uint64_t rank)
+template <typename impl_detail>
+void cb_explore_adf_large_action_space<impl_detail>::_populate_all_testing_components()
+{
+  _set_testing_components = true;
+  _impl._set_testing_components = true;
+}
+
+template <>
+void cb_explore_adf_large_action_space<aatop_impl>::_set_rank(uint64_t rank)
 {
   _d = rank;
-  _vanilla_rand_svd_impl._d = rank;
-  _model_weight_rand_svd_impl._d = rank;
   _spanner_state._action_indices.resize(_d);
 }
 
-void cb_explore_adf_large_action_space::save_load(io_buf& io, bool read, bool text)
+template <typename impl_detail>
+void cb_explore_adf_large_action_space<impl_detail>::_set_rank(uint64_t rank)
+{
+  _d = rank;
+  _impl._set_rank(rank);
+  _spanner_state._action_indices.resize(_d);
+}
+
+template <typename impl_detail>
+void cb_explore_adf_large_action_space<impl_detail>::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   std::stringstream msg;
@@ -73,24 +74,20 @@ void cb_explore_adf_large_action_space::save_load(io_buf& io, bool read, bool te
   bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
 }
 
-void cb_explore_adf_large_action_space::randomized_SVD(const multi_ex& examples)
+template <>
+void cb_explore_adf_large_action_space<aatop_impl>::randomized_SVD(const multi_ex& examples)
 {
-  if (_impl_type == implementation_type::aatop)
-  {
-    _aatop_impl.run(examples, shrink_factors);
-    // TODO run svd here
-  }
-  else if (_impl_type == implementation_type::vanilla_rand_svd)
-  {
-    _vanilla_rand_svd_impl.run(examples, shrink_factors, U, _S, _V);
-  }
-  else if (_impl_type == implementation_type::model_weight_rand_svd)
-  {
-    _model_weight_rand_svd_impl.run(examples, shrink_factors, U, _S, _V);
-  }
+  _impl.run(examples, shrink_factors);
 }
 
-void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& examples)
+template <typename impl_detail>
+void cb_explore_adf_large_action_space<impl_detail>::randomized_SVD(const multi_ex& examples)
+{
+  _impl.run(examples, shrink_factors, U, _S, _V);
+}
+
+template <typename impl_detail>
+void cb_explore_adf_large_action_space<impl_detail>::update_example_prediction(VW::multi_ex& examples)
 {
   auto& preds = examples[0]->pred.a_s;
 
@@ -129,8 +126,10 @@ void cb_explore_adf_large_action_space::update_example_prediction(VW::multi_ex& 
   }
 }
 
+template <typename impl_detail>
 template <bool is_learn>
-void cb_explore_adf_large_action_space::predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void cb_explore_adf_large_action_space<impl_detail>::predict_or_learn_impl(
+    VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   if (is_learn)
   {
@@ -168,6 +167,67 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
   VW::gram_schmidt(Z);
 }
 
+template <>
+cb_explore_adf_large_action_space<model_weight_rand_svd_impl>::cb_explore_adf_large_action_space(uint64_t d,
+    float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed,
+    size_t total_size, implementation_type impl_type)
+    : _d(d)
+    , _spanner_state(c, d)
+    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
+    , _all(all)
+    , _counter(0)
+    , _seed(seed)
+    , _impl_type(impl_type)
+    , _impl(all, d, _seed, total_size)
+{
+  assert(impl_type == implementation_type::model_weight_rand_svd);
+}
+template <>
+cb_explore_adf_large_action_space<vanilla_rand_svd_impl>::cb_explore_adf_large_action_space(uint64_t d,
+    float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed,
+    size_t total_size, implementation_type impl_type)
+    : _d(d)
+    , _spanner_state(c, d)
+    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
+    , _all(all)
+    , _counter(0)
+    , _seed(seed)
+    , _impl_type(impl_type)
+    , _impl(all, d, _seed)
+{
+  assert(impl_type == implementation_type::vanilla_rand_svd);
+}
+template <>
+cb_explore_adf_large_action_space<aatop_impl>::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
+    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
+    implementation_type impl_type)
+    : _d(d)
+    , _spanner_state(c, d)
+    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
+    , _all(all)
+    , _counter(0)
+    , _seed(seed)
+    , _impl_type(impl_type)
+    , _impl(all)
+{
+  assert(impl_type == implementation_type::aatop);
+}
+template <>
+cb_explore_adf_large_action_space<one_pass_svd_impl>::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
+    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
+    implementation_type impl_type)
+    : _d(d)
+    , _spanner_state(c, d)
+    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
+    , _all(all)
+    , _counter(0)
+    , _seed(seed)
+    , _impl_type(impl_type)
+    , _impl(all, d, _seed)
+{
+  assert(impl_type == implementation_type::one_pass_svd);
+}
+
 void shrink_factor_config::calculate_shrink_factor(
     size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors)
 {
@@ -187,8 +247,41 @@ void shrink_factor_config::calculate_shrink_factor(
   }
 }
 
+template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl>;
+template class cb_explore_adf_large_action_space<model_weight_rand_svd_impl>;
+template class cb_explore_adf_large_action_space<aatop_impl>;
+template class cb_explore_adf_large_action_space<one_pass_svd_impl>;
 }  // namespace cb_explore_adf
 }  // namespace VW
+
+template <typename T>
+VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::multi_learner* base,
+    implementation_type& impl_type, VW::workspace& all, bool with_metrics, uint64_t d, float gamma_scale,
+    float gamma_exponent, float c, bool apply_shrink_factor)
+{
+  using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space<T>>;
+
+  size_t problem_multiplier = 1;
+
+  uint64_t seed = all.get_random_state()->get_current_state() * 10.f;
+
+  auto data = VW::make_unique<explore_type>(
+      with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all, seed, 1 << all.num_bits, impl_type);
+
+  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+      stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                .set_params_per_weight(problem_multiplier)
+                .set_finish_example(explore_type::finish_multiline_example)
+                .set_print_example(explore_type::print_multiline_example)
+                .set_persist_metrics(explore_type::persist_metrics)
+                .set_save_load(explore_type::save_load)
+                .build(&all.logger);
+  return make_base(*l);
+}
 
 VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
 {
@@ -205,6 +298,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool full_predictions = false;
   bool aatop = false;
   bool model_weight_impl = false;
+  bool use_one_pass_svd = false;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -215,6 +309,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("aatop", aatop))
       .add(make_option("model_weight", model_weight_impl))
+      .add(make_option("one_pass", use_one_pass_svd))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
@@ -263,28 +358,29 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
-  using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space>;
-
-  size_t problem_multiplier = 1;
-
   auto impl_type = implementation_type::vanilla_rand_svd;
-  if (aatop) { impl_type = implementation_type::aatop; }
-  if (model_weight_impl) { impl_type = implementation_type::model_weight_rand_svd; }
+  if (aatop)
+  {
+    impl_type = implementation_type::aatop;
 
-  auto data = VW::make_unique<explore_type>(
-      with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all, impl_type);
-
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
-      stack_builder.get_setupfn_name(cb_explore_adf_large_action_space_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_scores)
-                .set_params_per_weight(problem_multiplier)
-                .set_finish_example(explore_type::finish_multiline_example)
-                .set_print_example(explore_type::print_multiline_example)
-                .set_persist_metrics(explore_type::persist_metrics)
-                .set_save_load(explore_type::save_load)
-                .build(&all.logger);
-  return make_base(*l);
+    return make_las_with_impl<aatop_impl>(
+        stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
+  }
+  else if (model_weight_impl)
+  {
+    impl_type = implementation_type::model_weight_rand_svd;
+    return make_las_with_impl<model_weight_rand_svd_impl>(
+        stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
+  }
+  else if (use_one_pass_svd)
+  {
+    impl_type = implementation_type::one_pass_svd;
+    return make_las_with_impl<one_pass_svd_impl>(
+        stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
+  }
+  else
+  {
+    return make_las_with_impl<vanilla_rand_svd_impl>(
+        stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
+  }
 }
