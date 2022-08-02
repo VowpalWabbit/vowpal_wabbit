@@ -66,7 +66,8 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
     const float r = -logged.cost;
     if (_epsilon_decay_audit_str != "")
     {
-      _audit_msg << "Example: " << _global_counter << " Labelled_action: " << labelled_action << " p_log: " << logged.probability << " reward: " << r << "\n";
+      _audit_msg << "Example: " << _global_counter << " Labelled_action: " << labelled_action
+                 << " p_log: " << logged.probability << " reward: " << r << "\n";
       ++_global_counter;
     }
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
@@ -99,8 +100,7 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
             }
             _audit_msg << "update_count: " << _estimator_configs[i][i].update_count
                        << " lb: " << _estimator_configs[i][i].lower_bound()
-                       << " ub: " << _estimator_configs[i][i].upper_bound()
-                       << " p_pred: " << a_s.score << "\n";
+                       << " ub: " << _estimator_configs[i][i].upper_bound() << " p_pred: " << a_s.score << "\n";
           }
           break;
         }
