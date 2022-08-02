@@ -33,9 +33,7 @@ void validate_compatability(const std::vector<const VW::workspace*>& workspaces_
   {
     const auto* incompatible = VW::are_features_compatible(ref_model, *model);
     if (incompatible != nullptr)
-    {
-      THROW("Model is incompatible with the destination model. Reason: " << incompatible);
-    }
+    { THROW("Model is incompatible with the destination model. Reason: " << incompatible); }
   }
 
   bool at_least_one_has_no_preserve = false;
@@ -106,7 +104,10 @@ std::unique_ptr<VW::workspace> merge_models(
 
   auto dest_command_line = VW::split_command_line(get_keep_command_line(*workspaces_to_merge[0]));
   if (logger == nullptr) { dest_command_line.emplace_back("--quiet"); }
-  else { dest_command_line.emplace_back("--driver_output_off"); }
+  else
+  {
+    dest_command_line.emplace_back("--driver_output_off");
+  }
 
   auto destination_model = VW::initialize_experimental(
       VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, logger);
