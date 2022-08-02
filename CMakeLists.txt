@@ -294,6 +294,11 @@ if(VW_INSTALL)
     configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
   endif()
 
+  if(EXISTS nuget/dotnetcore.nuspec.in AND vw_BUILD_NET_CORE)
+    configure_file(nuget/dotnetcore.nuspec.in nuget/dotnetcore.nuspec @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/dotnetcore.nuspec DESTINATION ./)
+  endif()
+
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/libvw_c_wrapper.pc

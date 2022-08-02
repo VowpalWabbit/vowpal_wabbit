@@ -61,7 +61,23 @@ target_link_libraries(
 
 # Enable warnings as errors, crossplatform
 target_compile_options(vw.net.native PRIVATE
-     $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
-          -Werror>
-     $<$<CXX_COMPILER_ID:MSVC>:
-          /WX>)
+  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
+    -Werror>
+  $<$<CXX_COMPILER_ID:MSVC>:
+    /WX>
+)
+
+if(VW_INSTALL)
+  if(WIN32)
+    set(dotnet_native_platform "win-x64")
+  elseif(APPLE)
+    set(dotnet_native_platform "osx-x64")
+  else()
+    set(dotnet_native_platform "linux-x64")
+  endif()
+  install(
+    TARGETS vw.net.native
+    LIBRARY DESTINATION "./runtimes/${dotnet_native_platform}/native/"
+    RUNTIME DESTINATION "./runtimes/${dotnet_native_platform}/native/"
+  )
+endif()

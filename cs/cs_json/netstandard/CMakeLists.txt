@@ -25,3 +25,13 @@ else()
     SOURCES ${VW_NET_CS_JSON_SOURCES})
   set_property(TARGET VowpalWabbit.JSON APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
 endif()
+
+if(VW_INSTALL)
+  install(
+    FILES 
+      "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.JSON.dll"
+      "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.JSON.pdb"
+      "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.JSON.deps.json"
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/netstandard2.1"
+  )
+endif()
