@@ -2,7 +2,6 @@
 
 #include "org_vowpalwabbit_spark_VowpalWabbitExample.h"
 #include "org_vowpalwabbit_spark_VowpalWabbitNative.h"
-
 #include "util.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/vw_exception.h"

@@ -17,6 +17,7 @@ SOURCES
   src/main/java/org/vowpalwabbit/spark/VowpalWabbitExample.java
   src/main/java/org/vowpalwabbit/spark/VowpalWabbitArguments.java
   src/main/java/org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics.java
+  src/main/java/org/vowpalwabbit/spark/ClusterSpanningTree.java
   src/main/java/common/Native.java
 GENERATE_NATIVE_HEADERS vw_jni_native_headers)
 
