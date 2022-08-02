@@ -118,7 +118,7 @@ jobs:
             cmake
             ninja-build
       - name: Configure Linux
-        shell: wsl-bash
+        shell: wsl-bash {0}
         run: >
           cmake -S . -B build_linux -G Ninja
           -Dvw_BUILD_NET_CORE=On
@@ -133,11 +133,11 @@ jobs:
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DVW_INSTALL=On
       - name: Build Linux
-        shell: wsl-bash
+        shell: wsl-bash {0}
         # Build only the linux vw.net.native shared library
         run: cmake --build build_linux --target vw.net.native
       - name: Install Linux
-        shell: wsl-bash
+        shell: wsl-bash {0}
         # Install only the linux vw.net.native shared library
         run: cmake --install build_linux/cs/vw.net.native --prefix ./nuget_staging
       - name: Configure Windows
