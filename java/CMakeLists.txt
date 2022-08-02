@@ -53,15 +53,6 @@ GENERATE_NATIVE_HEADERS vw_jni_native_headers)
 set(src_base src/main/c++)
 set(vw_jni_headers
   ${src_base}/jni_base_learner.h
-  ${src_base}/vowpalWabbit_learner_VWCCBLearner.h
-  ${src_base}/vowpalWabbit_learner_VWActionProbsLearner.h
-  ${src_base}/vowpalWabbit_learner_VWActionScoresLearner.h
-  ${src_base}/vowpalWabbit_learner_VWLearners.h
-  ${src_base}/vowpalWabbit_learner_VWMulticlassLearner.h
-  ${src_base}/vowpalWabbit_learner_VWMultilabelsLearner.h
-  ${src_base}/vowpalWabbit_learner_VWProbLearner.h
-  ${src_base}/vowpalWabbit_learner_VWScalarLearner.h
-  ${src_base}/vowpalWabbit_learner_VWScalarsLearner.h
   ${src_base}/vowpalWabbit_VW.h
   ${src_base}/jni_spark_vw.h
   ${src_base}/util.h
