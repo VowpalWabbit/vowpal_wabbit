@@ -13,12 +13,41 @@ include(UseJava)
 # The vw_jni_generate_native_headers_do_not_use_jar.jar itself should not be used in any way.
 add_jar(vw_jni_generate_native_headers_do_not_use_jar
 SOURCES
-  src/main/java/org/vowpalwabbit/spark/VowpalWabbitNative.java
-  src/main/java/org/vowpalwabbit/spark/VowpalWabbitExample.java
-  src/main/java/org/vowpalwabbit/spark/VowpalWabbitArguments.java
-  src/main/java/org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics.java
-  src/main/java/org/vowpalwabbit/spark/ClusterSpanningTree.java
   src/main/java/common/Native.java
+  src/main/java/org/vowpalwabbit/spark/ClusterSpanningTree.java
+  src/main/java/org/vowpalwabbit/spark/prediction
+  src/main/java/org/vowpalwabbit/spark/prediction/ScalarPrediction.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitArguments.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitExample.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitMurmur.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitNative.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics.java
+  src/main/java/vowpalWabbit/learner/package-info.java
+  src/main/java/vowpalWabbit/learner/VWActionProbsLearner.java
+  src/main/java/vowpalWabbit/learner/VWActionScoresLearner.java
+  src/main/java/vowpalWabbit/learner/VWBase.java
+  src/main/java/vowpalWabbit/learner/VWCCBLearner.java
+  src/main/java/vowpalWabbit/learner/VWFloatLearner.java
+  src/main/java/vowpalWabbit/learner/VWIntLearner.java
+  src/main/java/vowpalWabbit/learner/VWLearner.java
+  src/main/java/vowpalWabbit/learner/VWLearnerBase.java
+  src/main/java/vowpalWabbit/learner/VWLearners.java
+  src/main/java/vowpalWabbit/learner/VWMulticlassLearner.java
+  src/main/java/vowpalWabbit/learner/VWMultilabelsLearner.java
+  src/main/java/vowpalWabbit/learner/VWProbLearner.java
+  src/main/java/vowpalWabbit/learner/VWScalarLearner.java
+  src/main/java/vowpalWabbit/learner/VWScalarsLearner.java
+  src/main/java/vowpalWabbit/learner/VWTypedLearner.java
+  src/main/java/vowpalWabbit/responses/ActionProb.java
+  src/main/java/vowpalWabbit/responses/ActionProbs.java
+  src/main/java/vowpalWabbit/responses/ActionScore.java
+  src/main/java/vowpalWabbit/responses/ActionScores.java
+  src/main/java/vowpalWabbit/responses/DecisionScores.java
+  src/main/java/vowpalWabbit/responses/Multilabels.java
+  src/main/java/vowpalWabbit/responses/PDF.java
+  src/main/java/vowpalWabbit/responses/PDFSegment.java
+  src/main/java/vowpalWabbit/responses/PDFValue.java
+  src/main/java/vowpalWabbit/VW.java
 GENERATE_NATIVE_HEADERS vw_jni_native_headers)
 
 set(src_base src/main/c++)

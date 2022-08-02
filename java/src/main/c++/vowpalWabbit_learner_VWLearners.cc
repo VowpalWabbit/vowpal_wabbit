@@ -1,7 +1,9 @@
 #include "vowpalWabbit_learner_VWLearners.h"
 
 #include "jni_base_learner.h"
+#include "jni_spark_vw.h"
 #include "vw/core/vw.h"
+#include "vw/core/merge.h"
 
 #define RETURN_TYPE "vowpalWabbit/learner/VWLearners$VWReturnType"
 #define RETURN_TYPE_INSTANCE "L" RETURN_TYPE ";"

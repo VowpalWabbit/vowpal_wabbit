@@ -2,6 +2,8 @@ package org.vowpalwabbit.spark;
 
 import common.Native;
 import java.io.Closeable;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Main wrapper for VowpalWabbit native implementation.
@@ -136,6 +138,10 @@ public class VowpalWabbitNative implements Closeable {
         this.nativePointer = initializeFromModel(args, model);
     }
 
+    private VowpalWabbitNative(long existingWorkspace) {
+        this.nativePointer = existingWorkspace;
+    }
+
     /**
      * Creates a new VW example associated with this this instance.
      *
@@ -154,6 +160,28 @@ public class VowpalWabbitNative implements Closeable {
     public VowpalWabbitExample createEmptyExample() {
         return new VowpalWabbitExample(this.nativePointer, true);
     }
+
+    public static VowpalWabbitNative mergeModels(Collection<VowpalWabbitNative> models)
+    {
+        Iterator<VowpalWabbitNative> iterator = models.iterator();
+        long[] pointers = new long[models.size()];
+        int index = 0;
+        while(iterator.hasNext())
+        {
+            VowpalWabbitNative model = iterator.next();
+            pointers[index] = model.nativePointer;
+            index++;
+        }
+        long nativePointer = mergeModels(pointers);
+        return new VowpalWabbitNative(nativePointer);
+    }
+
+    /**
+     * Merge several models together and return the result.
+     * @param workspacePointers array of pointers to VW models.
+     * @return merged VW model.
+     */
+    private static native long mergeModels(long[] workspacePointers);
 
     /**
      * Frees the native resources.
