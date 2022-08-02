@@ -117,6 +117,15 @@ jobs:
             build-essential
             cmake
             ninja-build
+      - name: Install dotnet in WSL
+        shell: wsl-bash {0}
+        run: |
+          wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+          sudo dpkg -i packages-microsoft-prod.deb
+          rm packages-microsoft-prod.deb
+          sudo apt update
+          sudo apt install -y dotnet-sdk-6.0
+          dotnet tool install --global dotnet-t4
       - name: Configure Linux
         shell: wsl-bash {0}
         run: >
