@@ -7,10 +7,11 @@ This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
 */
 
+#include "vw/core/accumulate.h"
+
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/global_data.h"
 #include "vw/core/vw_allreduce.h"
-#include "vw/core/accumulate.h"
 
 #include <cmath>
 #include <cstdint>

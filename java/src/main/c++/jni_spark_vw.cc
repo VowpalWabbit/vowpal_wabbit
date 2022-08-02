@@ -9,8 +9,8 @@
 #include "vw/config/options.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/learner.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/merge.h"
+#include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 
@@ -1065,9 +1065,7 @@ try
 
   std::vector<const VW::workspace*> workspaces;
   for (int i = 0; i < guard.length(); ++i)
-  {
-    workspaces.push_back(reinterpret_cast<const VW::workspace*>(reinterpret_cast<jlong*>(guard.data())[i]));
-  }
+  { workspaces.push_back(reinterpret_cast<const VW::workspace*>(reinterpret_cast<jlong*>(guard.data())[i])); }
 
   auto result = VW::merge_models(workspaces);
   return reinterpret_cast<jlong>(result.release());

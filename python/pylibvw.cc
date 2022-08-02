@@ -10,6 +10,7 @@
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/global_data.h"
 #include "vw/core/kskip_ngram_transformer.h"
+#include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
 #include "vw/core/parse_example.h"
@@ -19,7 +20,6 @@
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/slates_label.h"
-#include "vw/core/merge.h"
 #include "vw/core/vw.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
@@ -289,9 +289,7 @@ boost::shared_ptr<VW::workspace> merge_workspaces(py::list workspaces)
 {
   std::vector<const VW::workspace*> const_workspaces;
   for (size_t i = 0; i < py::len(workspaces); i++)
-  {
-    const_workspaces.push_back(py::extract<VW::workspace*>(workspaces[i]));
-  }
+  { const_workspaces.push_back(py::extract<VW::workspace*>(workspaces[i])); }
   return boost::shared_ptr<VW::workspace>(VW::merge_models(const_workspaces).release());
 }
 
@@ -1694,5 +1692,6 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Tell search that on a single structured 'run', you don't change the examples you pass to predict")
       .def_readonly("IS_LDF", Search::IS_LDF, "Tell search that this is an LDF task");
 
-  py::def("_merge_models_impl", merge_workspaces, py::args("workspaces"), "Merge several Workspaces into one. Experimental.");
+  py::def("_merge_models_impl", merge_workspaces, py::args("workspaces"),
+      "Merge several Workspaces into one. Experimental.");
 }

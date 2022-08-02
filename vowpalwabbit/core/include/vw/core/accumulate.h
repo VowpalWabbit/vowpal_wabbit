@@ -14,9 +14,10 @@ float accumulate_scalar(VW::workspace& all, float local_sum);
 void accumulate_weighted_avg(VW::workspace& all, parameters& weights);
 void accumulate_avg(VW::workspace& all, parameters& weights, size_t o);
 
-namespace VW {
-    namespace details
-    {
+namespace VW
+{
+namespace details
+{
 template <class T>
 void do_weighting(size_t normalized_idx, uint64_t length, const float* local_weights, T& weights)
 {
@@ -40,5 +41,5 @@ void do_weighting(size_t normalized_idx, uint64_t length, const float* local_wei
   }
 }
 
-    }
-}
+}  // namespace details
+}  // namespace VW
