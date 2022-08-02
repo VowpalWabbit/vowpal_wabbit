@@ -1,3 +1,6 @@
+# 3.11+ is required to use add_jar
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+
 # make sure it works with OpenJDK
 set(JAVA_AWT_LIBRARY NotNeeded)
 set(JAVA_JVM_LIBRARY NotNeeded)
@@ -31,7 +34,6 @@ set(vw_jni_headers
   ${src_base}/vowpalWabbit_learner_VWScalarsLearner.h
   ${src_base}/vowpalWabbit_VW.h
   ${src_base}/jni_spark_vw.h
-  ${src_base}/jni_spark_vw_generated.h
   ${src_base}/util.h
 )
 
