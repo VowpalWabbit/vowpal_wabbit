@@ -1827,8 +1827,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   // Set up logger as early as possible
-  auto all =
-      parse_args(std::move(options), trace_listener, trace_context, custom_logger);
+  auto all = parse_args(std::move(options), trace_listener, trace_context, custom_logger);
 
   // if user doesn't pass in a model, read from options
   io_buf local_model;
@@ -1918,8 +1917,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
 
 std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options,
     std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
-    void* driver_output_func_context, VW::io::logger* custom_logger,
-    std::unique_ptr<VW::setup_base_i> learner_builder)
+    void* driver_output_func_context, VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   auto* released_options = options.release();
   std::unique_ptr<options_i, options_deleter_type> options_custom_deleter(
@@ -1933,8 +1931,7 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
     model->add_file(std::move(model_override_reader));
   }
   return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
-      driver_output_func, driver_output_func_context, custom_logger,
-      std::move(learner_builder));
+      driver_output_func, driver_output_func_context, custom_logger, std::move(learner_builder));
 }
 
 VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
@@ -1942,8 +1939,8 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
 
     std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
-  return initialize_internal(std::move(options), model, skip_model_load, trace_listener, trace_context,
-      nullptr, std::move(learner_builder))
+  return initialize_internal(
+      std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr, std::move(learner_builder))
       .release();
 }
 

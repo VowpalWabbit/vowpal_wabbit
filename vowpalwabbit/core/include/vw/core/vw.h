@@ -80,8 +80,8 @@ VW_WARNING_DISABLE_BADLY_FORMED_XML
  */
 std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options,
     std::unique_ptr<VW::io::reader> model_override_reader = nullptr, driver_output_func_t driver_output_func = nullptr,
-    void* driver_output_func_context = nullptr,
-    VW::io::logger* custom_logger = nullptr, std::unique_ptr<VW::setup_base_i> setup_base = nullptr);
+    void* driver_output_func_context = nullptr, VW::io::logger* custom_logger = nullptr,
+    std::unique_ptr<VW::setup_base_i> setup_base = nullptr);
 VW_WARNING_STATE_POP
 
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);

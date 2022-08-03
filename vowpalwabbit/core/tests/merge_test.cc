@@ -2,10 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/merge.h"
+
 #include "vw/config/options_cli.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-#include "vw/core/merge.h"
 
 #include <gtest/gtest.h>
 
@@ -53,14 +54,14 @@ TEST(merge_tests, merge_cb_model)
   vw1->finish_example(examples1);
 
   VW::multi_ex examples2;
-  examples2.push_back(VW::read_example(*vw2,"shared |User user=Anna time_of_day=morning"));
-  examples2.push_back(VW::read_example(*vw2,"0:0.0:0.14285713008471937 |Action article=politics"));
-  examples2.push_back(VW::read_example(*vw2,"|Action article=sports"));
-  examples2.push_back(VW::read_example(*vw2,"|Action article=music"));
-  examples2.push_back(VW::read_example(*vw2,"|Action article=food"));
-  examples2.push_back(VW::read_example(*vw2,"|Action article=finance"));
-  examples2.push_back(VW::read_example(*vw2,"|Action article=health"));
-  examples2.push_back(VW::read_example(*vw2,"|Action article=camping"));
+  examples2.push_back(VW::read_example(*vw2, "shared |User user=Anna time_of_day=morning"));
+  examples2.push_back(VW::read_example(*vw2, "0:0.0:0.14285713008471937 |Action article=politics"));
+  examples2.push_back(VW::read_example(*vw2, "|Action article=sports"));
+  examples2.push_back(VW::read_example(*vw2, "|Action article=music"));
+  examples2.push_back(VW::read_example(*vw2, "|Action article=food"));
+  examples2.push_back(VW::read_example(*vw2, "|Action article=finance"));
+  examples2.push_back(VW::read_example(*vw2, "|Action article=health"));
+  examples2.push_back(VW::read_example(*vw2, "|Action article=camping"));
 
   VW::setup_examples(*vw2, examples2);
   vw2->learn(examples2);

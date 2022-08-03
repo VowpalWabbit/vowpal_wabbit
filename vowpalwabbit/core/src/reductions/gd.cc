@@ -43,7 +43,6 @@ using namespace VW::config;
 constexpr double L1_STATE_DEFAULT = 0.;
 constexpr double L2_STATE_DEFAULT = 1.;
 
-
 namespace
 {
 template <typename WeightsT>
@@ -54,9 +53,7 @@ void merge_weights_simple(size_t length, const std::vector<std::reference_wrappe
   {
     const auto& this_source = source[i].get();
     for (uint64_t i = 0; i < length; i++)
-    {
-      weights.strided_index(i) += (this_source.strided_index(i) * per_model_weighting[i]);
-    }
+    { weights.strided_index(i) += (this_source.strided_index(i) * per_model_weighting[i]); }
   }
 }
 
@@ -73,9 +70,7 @@ void merge_weights_with_save_resume(size_t length,
   }
 
   for (size_t i = 0; i < source.size(); i++)
-  {
-    VW::details::do_weighting(output_workspace.normalized_idx, length, adaptive_totals.data(), weights);
-  }
+  { VW::details::do_weighting(output_workspace.normalized_idx, length, adaptive_totals.data(), weights); }
 
   // Weights have already been reweighted, so just accumulate.
   for (const auto& model_num : source)
@@ -99,7 +94,7 @@ std::vector<float> calc_per_model_weighting(const std::vector<float>& example_co
   for (size_t i = 0; i < example_counts.size(); i++) { per_model_weighting[i] = example_counts[i] / sum; }
   return per_model_weighting;
 }
-}
+}  // namespace
 
 // todo:
 // 4. Factor various state out of VW::workspace&
@@ -188,7 +183,7 @@ void train(gd& g, VW::example& ec, float update)
 {
   if VW_STD17_CONSTEXPR (normalized != 0) { update *= g.update_multiplier; }
   VW_DBG(ec) << "gd: train() spare=" << spare << std::endl;
-  foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare> >(*g.all, ec, update);
+  foreach_feature<float, update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare>>(*g.all, ec, update);
 }
 
 void end_pass(gd& g)
@@ -230,7 +225,10 @@ void merge(const std::vector<float>& example_counts, const std::vector<const VW:
     source.reserve(all_workspaces.size());
     for (const auto* workspace : all_workspaces) { source.emplace_back(workspace->weights.sparse_weights); }
     if (output_workspace.weights.adaptive) { THROW("Sparse parameters not supported for merging with save_resume"); }
-    else { merge_weights_simple(length, source, per_model_weighting, output_workspace.weights.sparse_weights); }
+    else
+    {
+      merge_weights_simple(length, source, per_model_weighting, output_workspace.weights.sparse_weights);
+    }
   }
   else
   {
@@ -242,7 +240,10 @@ void merge(const std::vector<float>& example_counts, const std::vector<const VW:
       merge_weights_with_save_resume(
           length, source, per_model_weighting, output_workspace, output_workspace.weights.dense_weights);
     }
-    else { merge_weights_simple(length, source, per_model_weighting, output_workspace.weights.dense_weights); }
+    else
+    {
+      merge_weights_simple(length, source, per_model_weighting, output_workspace.weights.dense_weights);
+    }
   }
 
   for (size_t i = 0; i < output_data.per_model_states.size(); i++)
@@ -253,8 +254,7 @@ void merge(const std::vector<float>& example_counts, const std::vector<const VW:
       output_data.per_model_states[i].normalized_sum_norm_x +=
           source_data_obj->per_model_states[i].normalized_sum_norm_x;
       // total_weight is additive
-      output_data.per_model_states[i].total_weight +=
-          source_data_obj->per_model_states[i].total_weight;
+      output_data.per_model_states[i].total_weight += source_data_obj->per_model_states[i].total_weight;
     }
   }
 }
@@ -656,7 +656,7 @@ float get_pred_per_update(gd& g, VW::example& ec)
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}, {0}, &g.all->logger};
   foreach_feature<norm_data,
-      pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless> >(all, ec, nd);
+      pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless>>(all, ec, nd);
   if VW_STD17_CONSTEXPR (normalized != 0)
   {
     if (!stateless)
@@ -763,9 +763,7 @@ void update(gd& g, base_learner&, VW::example& ec)
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
-  {
-    train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
-  }
+  { train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update); }
 
   if (g.all->sd->contraction < 1e-9 || g.all->sd->gravity > 1e3)
   {  // updating weights now to avoid numerical instability
