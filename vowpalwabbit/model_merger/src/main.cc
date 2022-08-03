@@ -18,6 +18,7 @@
 #include "vw/io/logger.h"
 
 #include <fstream>
+#include <vector>
 
 using namespace VW::config;
 
@@ -100,7 +101,11 @@ command_line_options parse_command_line(int argc, char** argv, VW::io::logger& l
 
   options.add_and_parse(diagnostics_options);
   options.add_and_parse(output_options);
-  options.check_unregistered();
+  auto warnings = options.check_unregistered();
+  if (!warnings.empty())
+  {
+    logger.warn("Warnings: {}", warnings);
+  }
 
   if (help)
   {
