@@ -957,17 +957,19 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
   largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
 
-  auto p = VW::cb_explore_adf::spanner_state::find_max_volume(largecb.U, 0, X);
-  BOOST_CHECK_SMALL(p.first - 30, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(p.second, 2);
+  float max_volume;
+  uint64_t U_rid;
+  VW::cb_explore_adf::find_max_volume(largecb.U, 0, X, max_volume, U_rid);
+  BOOST_CHECK_SMALL(max_volume - 30, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(U_rid, 2);
 
-  p = VW::cb_explore_adf::spanner_state::find_max_volume(largecb.U, 1, X);
-  BOOST_CHECK_SMALL(p.first - 27, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(p.second, 4);
+  VW::cb_explore_adf::find_max_volume(largecb.U, 1, X, max_volume, U_rid);
+  BOOST_CHECK_SMALL(max_volume - 27, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(U_rid, 4);
 
-  p = VW::cb_explore_adf::spanner_state::find_max_volume(largecb.U, 2, X);
-  BOOST_CHECK_SMALL(p.first - 24, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(p.second, 5);
+  VW::cb_explore_adf::find_max_volume(largecb.U, 2, X, max_volume, U_rid);
+  BOOST_CHECK_SMALL(max_volume - 24, FLOAT_TOL);
+  BOOST_CHECK_EQUAL(U_rid, 5);
 
   VW::finish(vw);
 }

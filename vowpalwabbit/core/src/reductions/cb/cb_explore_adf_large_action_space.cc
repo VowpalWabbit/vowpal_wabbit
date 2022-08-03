@@ -107,6 +107,7 @@ void cb_explore_adf_large_action_space<impl_detail>::update_example_prediction(V
 
     _spanner_state.compute_spanner(U, _d, shrink_factors);
     _spanner_state.compute_spanner1(U, _d);
+
     assert(_spanner_state._spanner_bitvec.size() == preds.size());
   }
   else
@@ -241,10 +242,7 @@ void shrink_factor_config::calculate_shrink_factor(
       shrink_factors.push_back(std::sqrt(1 + max_actions + gamma / (4.0f * max_actions) * (preds[i].score - min_ck)));
     }
   }
-  else
-  {
-    shrink_factors.resize(preds.size(), 1.f);
-  }
+  else { shrink_factors.resize(preds.size(), 1.f); }
 }
 
 template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl>;
