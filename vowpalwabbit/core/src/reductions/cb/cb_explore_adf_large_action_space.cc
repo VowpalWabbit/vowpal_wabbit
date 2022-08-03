@@ -105,14 +105,14 @@ void cb_explore_adf_large_action_space<impl_detail>::update_example_prediction(V
       return;
     }
 
-    _spanner_state.compute_spanner(U, _d);
+    _spanner_state.compute_spanner(U, _d, shrink_factors);
+    _spanner_state.compute_spanner1(U, _d);
     assert(_spanner_state._spanner_bitvec.size() == preds.size());
   }
   else
   {
     // When the number of actions is not larger than d, all actions are selected.
-    _spanner_state._spanner_bitvec.clear();
-    _spanner_state._spanner_bitvec.resize(preds.size(), true);
+    return;
   }
 
   // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
