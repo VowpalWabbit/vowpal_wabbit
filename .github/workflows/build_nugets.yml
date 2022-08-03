@@ -121,11 +121,13 @@ jobs:
         shell: wsl-bash {0}
         run: |
           wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-          sudo dpkg -i packages-microsoft-prod.deb
+          dpkg -i packages-microsoft-prod.deb
           rm packages-microsoft-prod.deb
-          sudo apt update
-          sudo apt install -y dotnet-sdk-6.0
-          dotnet tool install --global dotnet-t4
+          apt update
+          apt install -y dotnet-sdk-6.0
+      - name: Install dotnet t4
+        shell: wsl-bash {0}
+        run: dotnet tool install --global --verbosity detailed dotnet-t4
       - name: Configure Linux
         shell: wsl-bash {0}
         run: >
@@ -149,6 +151,8 @@ jobs:
         shell: wsl-bash {0}
         # Install only the linux vw.net.native shared library
         run: cmake --install build_linux/cs/vw.net.native --prefix ./nuget_staging
+      - name: Install dotnet t4
+        run: dotnet tool install --global --verbosity detailed dotnet-t4
       - name: Configure Windows
         run: >
           cmake -S . -B build_windows -G Ninja
