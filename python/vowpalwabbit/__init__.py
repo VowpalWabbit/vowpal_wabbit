@@ -58,7 +58,7 @@ from .pyvw import (
     SlatesLabel,
     SlatesLabelType,
     Workspace,
-    merge_models
+    merge_models,
 )
 
 

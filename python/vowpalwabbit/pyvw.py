@@ -2019,6 +2019,7 @@ def merge_models(models: List[Workspace]) -> Workspace:
     result._log_fwd = None
     return result
 
+
 ############################ DEPREECATED CLASSES ############################
 
 

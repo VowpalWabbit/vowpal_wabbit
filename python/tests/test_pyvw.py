@@ -713,10 +713,13 @@ def test_merge_models():
     model2.learn("1 | bar")
 
     merged_model = vowpalwabbit.merge_models([model1, model2])
-    assert(merged_model.get_weighted_examples() == model1.get_weighted_examples() + model2.get_weighted_examples())
-    assert(model1.get_weight_from_name("foo") != 0)
-    assert(model1.get_weight_from_name("bar") == 0)
-    assert(merged_model.get_weight_from_name("foo") != 0)
-    assert(model2.get_weight_from_name("foo") == 0)
-    assert(model2.get_weight_from_name("bar") != 0)
-    assert(merged_model.get_weight_from_name("bar") != 0)
+    assert (
+        merged_model.get_weighted_examples()
+        == model1.get_weighted_examples() + model2.get_weighted_examples()
+    )
+    assert model1.get_weight_from_name("foo") != 0
+    assert model1.get_weight_from_name("bar") == 0
+    assert merged_model.get_weight_from_name("foo") != 0
+    assert model2.get_weight_from_name("foo") == 0
+    assert model2.get_weight_from_name("bar") != 0
+    assert merged_model.get_weight_from_name("bar") != 0
