@@ -176,7 +176,7 @@ int main(int argc, char* argv[])
   }
   catch (const std::exception& e)
   {
-    logger.critical(e.what());
+    logger.critical("{}", e.what());
     return 1;
   }
 
