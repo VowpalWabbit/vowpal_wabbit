@@ -132,12 +132,12 @@ public:
 
 class EmpBernDynCS
 {
+
 private:
   double rho;
   double rmin;
   double rmax;
   bool adjust;
-
   int t;
   IncrementalFsum sumwsqrsq;
   IncrementalFsum sumwsqr;
@@ -150,23 +150,19 @@ private:
   IncrementalFsum sumwrxhathigh;
   IncrementalFsum sumwxhathigh;
   IncrementalFsum sumxhathighsq;
+  double _loggammalowerinc(double a, double x);
+  double _logwealth(double s, double v, double rho);
+  double _lblogwealth(int t, double sumXt, double v, double rho, double alpha);
 
 public:
-  // alpha: confidence level
-  explicit EmpBernDynCS(double _rmin = 0.0, double _rmax = 1.0, bool adjust = True);
-  EmpBernDynCS& update(double w, double r);
+  explicit EmpBernDynCS(double _rmin = 0.0, double _rmax = 1.0, bool _adjust = true);
+  EmpBernDynCS &update(double w, double r);
   std::vector<double> getci(double alpha);
-  double cs_lower_bound(double alpha) const;
-  double cs_upper_bound(double alpha) const;
-  friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::EmpBernDynCS&);
-  friend size_t VW::model_utils::write_model_field(
-      io_buf&, const VW::distributionally_robust::EmpBernDynCS&, const std::string&, bool);
-  void save_load(io_buf& model_file, bool read, bool text, const char* name);
-
-private:
-  double logwealth(double s, double v, double rho);
-  double lblogwealth(int t, double sumXt, double v, double rho, double alpha);
+  double cs_lower_bound(double alpha);
+  double cs_upper_bound(double alpha);
+  
 };
 
 }  // namespace distributionally_robust
+
 }  // namespace VW

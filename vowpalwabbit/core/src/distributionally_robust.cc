@@ -327,6 +327,108 @@ IncrementalFsum::operator double()
     return sum;
 }
 
+EmpBernDynCS::EmpBernDynCS(double _rmin = 0.0, double _rmax = 1.0, bool _adjust = true): rho(_rmin), rmax(_rmax), adjust(_adjust){
+}
+
+EmpBernDynCS& EmpBernDynCS::update(double w, double r)
+{
+    if (!adjust)
+    {
+        double r = std::min(rmax, std::max(rmin, r));
+    }
+    else
+    {
+        rmin = std::min(rmin, r);
+        rmax = std::max(rmax, r);
+    }
+    double sumXlow = (float(sumwr) - float(sumw) * rmin) / (rmax - rmin);
+    double Xhatlow = (sumXlow + 1 / 2) / (t + 1);
+    double sumXhigh = (float(sumw) * rmax - float(sumwr)) / (rmax - rmin);
+    double Xhathigh = (sumXhigh + 1 / 2) / (t + 1);
+
+    sumwsqrsq += std::pow((w * r), 2);
+    sumwsqr += std::pow(w, 2) * r;
+    sumwsq += std::pow(w, 2);
+    sumwr += w * r;
+    sumw += w;
+    sumwrxhatlow += w * r * Xhatlow;
+    sumwxhatlow += w * Xhatlow;
+    sumxhatlowsq += std::pow(Xhatlow, 2);
+    sumwrxhathigh += w * r * Xhathigh;
+    sumwxhathigh += w * Xhathigh;
+    sumxhathighsq += std::pow(Xhathigh, 2);
+    t += 1;
+}
+
+std::vector<double> EmpBernDynCS::getci(double alpha)
+{
+    if (t == 0 || rmin == rmax)
+    {
+        std::vector<double> result;
+        result.push_back(rmin);
+        result.push_back(rmax);
+    }
+    double sumvlow = ((float(sumwsqrsq) - 2 * rmin * float(sumwsqr) + std::pow(rmin, 2) * float(sumwsq)) / std::pow(rmax - rmin, 2) - 2 * (float(sumwrxhatlow) - rmin * float(sumwxhatlow)) / (rmax - rmin) + float(sumxhatlowsq));
+    double sumXlow = (float(sumwr) - float(sumw) * rmin) / (rmax - rmin);
+    double l = _lblogwealth(t, sumXlow, sumvlow, rho, alpha / 2);
+    double sumvhigh = ((float(sumwsqrsq) - 2 * rmax * float(sumwsqr) + std::pow(rmax, 2) * float(sumwsq)) / std::pow(rmax - rmin, 2) + 2 * (float(sumwrxhathigh) - rmax * float(sumwxhathigh)) / (rmax - rmin) + float(sumxhathighsq));
+    double sumXhigh = (float(sumw) * rmax - float(sumwr)) / (rmax - rmin);
+    double u = 1 - _lblogwealth(t, sumXhigh, sumvhigh, rho, alpha / 2);
+
+    std::vector<double> result;
+    result.push_back(rmin + l * (rmax - rmin));
+    result.push_back(rmin + u * (rmax - rmin));
+    return result;
+}
+
+double EmpBernDynCS::cs_lower_bound(double alpha)
+{
+    std::vector<double> result_vec = getci(alpha);
+    return result_vec[0];
+}
+
+double EmpBernDynCS::cs_upper_bound(double alpha)
+{
+    std::vector<double> result_vec = getci(alpha);
+    return result_vec[1];
+}
+
+double EmpBernDynCS::_loggammalowerinc(double a, double x)
+{
+    return std::log(gamma_p(a, x)) + std::lgamma(a);
+}
+
+double EmpBernDynCS::_logwealth(double s, double v, double rho)
+{
+    return (s + v + rho * std::log(rho) - (v + rho) * log(s + v + rho) + _loggammalowerinc(v + rho, s + v + rho) - _loggammalowerinc(rho, rho));
+}
+
+double EmpBernDynCS::_lblogwealth(int t, double sumXt, double v, double rho, double alpha)
+{
+    double thres = -std::log(alpha);
+
+    double minmu = 0;
+    double logwealthminmu = _logwealth(s = sumXt, v = v, rho = rho);
+
+    if (logwealthminmu <= thres)
+    {
+        return minmu;
+    }
+    double maxmu = std::min(1, sumXt / t);
+    double logwealthmaxmu = _logwealth(s = sumXt - t * maxmu, v = v, rho = rho);
+
+    if (logwealthmaxmu >= thres)
+    {
+        return maxmu;
+    }
+    int bits = std::numeric_limits<double>::digits;
+
+    std::pair<double, double> r = brent_find_minima(funcdouble(), -4., 4. / 3, bits);
+    double fun = [sumXt, t, mu, v, rho](double mu)
+    { _logwealth(sumXt - t * mu, v, rho) - thres };
+    std::pair<double, double> r = brent_find_minima(fun(), minmu, maxmu, bits);
+    return r.first;
+}
 
 }  // namespace distributionally_robust
 
