@@ -142,10 +142,7 @@ void output_example(VW::workspace& all, const VW::example& ec)
   print_update(all, test_label(ld), ec);
 }
 
-void labels::reset_to_default()
-{
-  label_v.clear();
-}
+void labels::reset_to_default() { label_v.clear(); }
 
 }  // namespace MULTILABEL
 

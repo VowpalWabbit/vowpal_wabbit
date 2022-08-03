@@ -301,10 +301,7 @@ bool ec_is_example_header(const VW::example& ec)  // example headers look like "
   return true;
 }
 
-void label::reset_to_default()
-{
-  costs.clear();
-}
+void label::reset_to_default() { costs.clear(); }
 
 }  // namespace COST_SENSITIVE
 

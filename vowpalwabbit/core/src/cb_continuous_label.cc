@@ -149,10 +149,7 @@ label_parser the_label_parser = {
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////
 
-void continuous_label::reset_to_default()
-{
-  costs.clear();
-}
+void continuous_label::reset_to_default() { costs.clear(); }
 
 }  // namespace cb_continuous
 
