@@ -30,25 +30,25 @@ Eigen::VectorXf get_row_to_replace(Eigen::VectorXf y, float shrink_factor, Eigen
   return y.cwiseProduct(pow);
 }
 
-void update_inverse(Eigen::MatrixXf& _S_inv, const Eigen::VectorXf& y, const Eigen::VectorXf& Si, uint64_t i)
+void update_inverse(Eigen::MatrixXf& Inv, const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t i)
 {
-  Eigen::VectorXf u = y - Si;
-  Eigen::MatrixXf Sinvu = _S_inv * u;
-  Eigen::VectorXf vtopSinv = _S_inv.row(i);
+  Eigen::VectorXf u = y - Xi;
+  Eigen::MatrixXf Sinvu = Inv * u;
+  Eigen::VectorXf vtopSinv = Inv.row(i);
   float vtopSinvu = Sinvu(i, 0);
 
-  _S_inv -= (1.f / (1.f + vtopSinvu)) * (Sinvu * vtopSinv.transpose());
+  Inv -= (1.f / (1.f + vtopSinvu)) * (Sinvu * vtopSinv.transpose());
 }
 
 void update_all(
-    Eigen::MatrixXf& _S_inv, Eigen::MatrixXf& _X, Eigen::VectorXf& log_determinant_factor, uint64_t _d, float max_volume)
+    Eigen::MatrixXf& Inv, Eigen::MatrixXf& X, Eigen::VectorXf& log_determinant_factor, uint64_t _d, float max_volume)
 {
   Eigen::VectorXf thislogdet = (1.f / _d) * std::log(max_volume) - log_determinant_factor.array();
   Eigen::VectorXf scale = Eigen::exp(thislogdet.array());
-  for (uint64_t col = 0; col < _d; col++) { _S_inv.col(col) = _S_inv.col(col).cwiseProduct(scale); }
+  for (uint64_t col = 0; col < _d; col++) { Inv.col(col) = Inv.col(col).cwiseProduct(scale); }
 
   scale = scale.cwiseInverse();
-  for (uint64_t col = 0; col < _d; col++) { _X.col(col) = _X.col(col).cwiseProduct(scale); }
+  for (uint64_t col = 0; col < _d; col++) { X.col(col) = X.col(col).cwiseProduct(scale); }
 
   log_determinant_factor += thislogdet;
 }
@@ -57,14 +57,14 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
 {
   assert(static_cast<uint64_t>(U.cols()) == _d);
   _X.setIdentity(_d, _d);
-  _S_inv.setIdentity(_d, _d);
+  _Inv.setIdentity(_d, _d);
   Eigen::VectorXf log_determinant_factor(_d);
   log_determinant_factor.setZero();
 
   // Compute a basis contained in U.
   for (uint64_t i = 0; i < _d; ++i)
   {
-    Eigen::VectorXf Sinvtopei = _S_inv.row(i);
+    Eigen::VectorXf Sinvtopei = _Inv.row(i);
     // max volume returns the various determinants
     float max_volume = -1.0f;
     uint64_t U_rid = 0;
@@ -72,12 +72,12 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
 
     // best action is U_rid
     Eigen::VectorXf y = get_row_to_replace(U.row(U_rid), shrink_factors[U_rid], log_determinant_factor);
-    update_inverse(_S_inv, y, _X.row(i), i);
+    update_inverse(_Inv, y, _X.row(i), i);
 
     _X.row(i) = y;
     _action_indices[i] = U_rid;
 
-    update_all(_S_inv, _X, log_determinant_factor, _d, max_volume);
+    update_all(_Inv, _X, log_determinant_factor, _d, max_volume);
   }
 
   const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
@@ -94,18 +94,18 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
     {
       float max_volume = -1.0f;
       uint64_t U_rid = 0;
-      Eigen::VectorXf Sinvtopei = _S_inv.row(i);
+      Eigen::VectorXf Sinvtopei = _Inv.row(i);
       find_fast_max_vol(U, Sinvtopei, max_volume, U_rid);
       if (max_volume > _c * X_volume)
       {
         // best action is U_rid
         Eigen::VectorXf y = get_row_to_replace(U.row(U_rid), shrink_factors[U_rid], log_determinant_factor);
-        update_inverse(_S_inv, y, _X.row(i), i);
+        update_inverse(_Inv, y, _X.row(i), i);
 
         _X.row(i) = y;
         _action_indices[i] = U_rid;
 
-        update_all(_S_inv, _X, log_determinant_factor, _d, max_volume);
+        update_all(_Inv, _X, log_determinant_factor, _d, max_volume);
 
         X_volume = max_volume;
         found_larger_volume = true;
