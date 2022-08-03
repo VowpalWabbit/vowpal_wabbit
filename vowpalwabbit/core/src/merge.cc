@@ -74,8 +74,8 @@ void validate_compatability(const std::vector<const VW::workspace*>& workspaces_
     auto src_command_line = get_keep_command_line(*model);
     if (destination_command_line != src_command_line)
     {
-      THROW("Command lines are not identical between models. One: '" << destination_command_line
-                                                                    << "', Other: '" << src_command_line << "'");
+      THROW("Command lines are not identical between models. One: '" << destination_command_line << "', Other: '"
+                                                                     << src_command_line << "'");
     }
   }
 }
@@ -135,7 +135,10 @@ std::unique_ptr<VW::workspace> merge_models(
     {
       if (logger != nullptr)
       {
-        logger->warn("Reduction '{}' supports save/load but does not have a merge function defined. Merging will still run but this reduction will not be merged and may result in incorrect results.", target_learner->get_name());
+        logger->warn(
+            "Reduction '{}' supports save/load but does not have a merge function defined. Merging will still run but "
+            "this reduction will not be merged and may result in incorrect results.",
+            target_learner->get_name());
       }
     }
     target_learner = target_learner->get_learn_base();
