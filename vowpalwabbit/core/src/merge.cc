@@ -131,6 +131,10 @@ std::unique_ptr<VW::workspace> merge_models(
       target_learner->merge(example_counts, workspaces_to_merge, reduction_data_per_model, *destination_model,
           target_learner->get_internal_type_erased_data_pointer_test_use_only());
     }
+    else if (!target_learner->has_merge() && target_learner->learner_defines_own_save_load())
+    {
+      logger->warn("Reduction '{}' supports save/load but does not have a merge function defined. Merging will still run but this reduction will not be merged and may result in incorrect results.", target_learner->get_name());
+    }
     target_learner = target_learner->get_learn_base();
   }
 
