@@ -162,7 +162,7 @@ public class VowpalWabbitNative implements Closeable {
     }
 
     /**
-     * Merge several models together and return the result.
+     * Merge several models together and return the result. Experimental API.
      * @param workspacePointers array of pointers to VW models.
      * @return merged VW model.
      */

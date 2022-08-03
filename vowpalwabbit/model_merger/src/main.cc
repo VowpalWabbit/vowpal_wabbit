@@ -30,6 +30,8 @@ void print_help(const options_cli& options)
   std::cout << R"(Usage: vw-merge [options] <model1> <model2> ... <modelN>
 
     Merges multiple VW models into a single model. Models must be compatible.
+
+    Note: This is an experimental tool.
 )" << std::endl;
   std::cout << formatter.format_help(option_groups);
 }
