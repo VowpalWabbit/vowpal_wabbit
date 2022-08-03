@@ -1998,12 +1998,12 @@ def merge_models(models: List[Workspace]) -> Workspace:
     Returns:
         Workspace: The merged workspace
 
-    Examples:
+    Example:
         >>> from vowpalwabbit import Workspace, merge_models
-        >>> model1 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model1.model')
-        >>> model2 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model2.model')
-        >>> merged_model = merge_models([model1, model2])
-        >>> merged_model.save('merged.model')
+        >>> model1 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model1.model') # doctest: +SKIP
+        >>> model2 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model2.model') # doctest: +SKIP
+        >>> merged_model = merge_models([model1, model2]) # doctest: +SKIP
+        >>> merged_model.save('merged.model') # doctest: +SKIP
 
     .. note::
         This is an experimental feature and may change in future releases.
