@@ -107,6 +107,7 @@ struct interaction_config_manager : config_manager
   VW::io::logger* logger;
   uint32_t& wpp;
   bool lb_trick;
+  bool ccb_on = false;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset
   std::vector<double> per_live_model_state_double;
@@ -132,7 +133,7 @@ struct interaction_config_manager : config_manager
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, std::string, std::string,
       dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
-      VW::io::logger*, uint32_t&, bool);
+      VW::io::logger*, uint32_t&, bool, bool);
 
   void apply_config(example*, uint64_t);
   void do_learning(multi_learner&, multi_ex&, uint64_t);

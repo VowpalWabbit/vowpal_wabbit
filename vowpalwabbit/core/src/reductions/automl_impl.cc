@@ -8,6 +8,7 @@
 #include "vw/core/interactions.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/reductions/automl/automl_util.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -76,7 +77,7 @@ void aml_estimator::persist(
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string interaction_type,
     std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
-    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick)
+    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -90,6 +91,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , logger(logger)
     , wpp(wpp)
     , lb_trick(lb_trick)
+    , ccb_on(ccb_on)
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
@@ -106,6 +108,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 
 void interaction_config_manager::gen_interactions(uint64_t live_slot)
 {
+  std::vector<std::vector<extent_term>> empty;
   if (interaction_type == "quadratic")
   {
     auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
@@ -121,6 +124,7 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
         if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
       }
     }
+    if (ccb_on) { ccb::insert_ccb_interactions(interactions, empty); }
   }
   else if (interaction_type == "cubic")
   {
