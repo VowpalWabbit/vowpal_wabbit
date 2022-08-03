@@ -41,7 +41,7 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   for (size_t i = 0; i < examples.size(); i++)
   {
     CCB::label ccb_label;
-    CCB::default_label(ccb_label);
+    ccb_label.reset_to_default();
     const auto& slates_label = _stashed_labels[i];
     if (slates_label.type == slates::example_type::shared)
     {

@@ -180,6 +180,13 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
     }
   }
 }
+
+void label::reset_to_default()
+{
+  costs.clear();
+  weight = 1.f;
+}
+
 }  // namespace CB
 
 namespace CB_EVAL
@@ -227,6 +234,12 @@ VW::label_parser cb_eval = {
     [](const VW::polylabel& label) { return CB_EVAL::test_label(label.cb_eval); },
     // Label type
     VW::label_type_t::cb_eval};
+
+void label::reset_to_default()
+{
+  action = 0;
+  event.reset_to_default();
+}
 
 }  // namespace CB_EVAL
 

@@ -42,6 +42,7 @@ struct wclass
 struct label
 {
   std::vector<wclass> costs;
+  void reset_to_default();
 };
 
 void output_example(VW::workspace& all, const VW::example& ec);
@@ -54,7 +55,6 @@ void finish_example(VW::workspace& all, T&, VW::example& ec)
   COST_SENSITIVE::finish_example(all, ec);
 }
 
-void default_label(label& ld);
 extern VW::label_parser cs_label;
 
 void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq, bool multilabel,

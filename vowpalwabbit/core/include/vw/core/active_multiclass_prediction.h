@@ -17,6 +17,11 @@ struct active_multiclass_prediction
 {
   uint32_t predicted_class = 0;
   v_array<uint32_t> more_info_required_for_classes;
+  void reset_to_default()
+  {
+    predicted_class = 0;
+    more_info_required_for_classes.clear();
+  }
 };
 
 inline std::string to_string(const VW::active_multiclass_prediction& active_multiclass)

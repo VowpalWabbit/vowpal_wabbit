@@ -44,6 +44,7 @@ struct label
 {
   std::vector<cb_class> costs;
   float weight = 1.f;
+  void reset_to_default();
 };
 
 extern VW::label_parser cb_label;                  // for learning
@@ -61,6 +62,7 @@ struct label
 {
   uint32_t action = 0;
   CB::label event;
+  void reset_to_default();
 };
 
 extern VW::label_parser cb_eval;  // for evaluation of an arbitrary policy.

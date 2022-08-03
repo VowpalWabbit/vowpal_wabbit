@@ -866,6 +866,33 @@ void parse_example_label(VW::workspace& all, example& ec, const std::string& lab
       ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words, all.logger);
 }
 
+void default_labels(polylabel& label)
+{
+  label.simple.reset_to_default();
+  label.multi.reset_to_default();
+  label.cs.reset_to_default();
+  label.cb.reset_to_default();
+  label.cb_cont.reset_to_default();
+  label.conditional_contextual_bandit.reset_to_default();
+  label.slates.reset_to_default();
+  label.cb_eval.reset_to_default();
+  label.multilabels.reset_to_default();
+}
+
+void default_predictions(polyprediction& pred)
+{
+  pred.scalar = 0.f;
+  pred.scalars.clear();
+  pred.a_s.clear();
+  pred.decision_scores.clear();
+  pred.multiclass = 0;
+  pred.multilabels.reset_to_default();
+  pred.prob = 0.f;
+  pred.pdf.clear();
+  pred.pdf_value.reset_to_default();
+  pred.active_multiclass.reset_to_default();
+}
+
 void empty_example(VW::workspace& /*all*/, example& ec)
 {
   for (features& fs : ec) { fs.clear(); }
@@ -877,6 +904,8 @@ void empty_example(VW::workspace& /*all*/, example& ec)
   ec.is_newline = false;
   ec._reduction_features.clear();
   ec.num_features_from_interactions = 0;
+  default_labels(ec.l);
+  default_predictions(ec.pred);
 }
 
 void clean_example(VW::workspace& all, example& ec)

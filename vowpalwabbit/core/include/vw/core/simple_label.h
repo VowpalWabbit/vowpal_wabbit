@@ -9,7 +9,7 @@
 
 struct label_data
 {
-  float label = 0.f;
+  float label;
 
   label_data();
   label_data(float label);

@@ -1299,7 +1299,7 @@ action single_prediction_LDF(search_private& priv, VW::example* ecs, size_t ec_c
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != static_cast<action>(-1));
 
-  CS::default_label(priv.ldf_test_label);
+  priv.ldf_test_label.reset_to_default();
   CS::wclass wc = {0., 1, 0., 0.};
   priv.ldf_test_label.costs.push_back(wc);
 
@@ -2496,7 +2496,7 @@ void search_initialize(VW::workspace* all, search& sch)
   priv.active_uncertainty.clear();
   priv.active_known.clear();
 
-  CS::default_label(priv.empty_cs_label);
+  priv.empty_cs_label.reset_to_default();
 
   priv.rawOutputStringStream = VW::make_unique<std::stringstream>();
 }

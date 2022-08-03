@@ -19,6 +19,11 @@ struct probability_density_function_value
 
   probability_density_function_value() = default;
   probability_density_function_value(float action, float pdf_value) : action(action), pdf_value(pdf_value) {}
+  void reset_to_default()
+  {
+    action = 0.f;
+    pdf_value = 0.f;
+  }
 };
 
 struct pdf_segment

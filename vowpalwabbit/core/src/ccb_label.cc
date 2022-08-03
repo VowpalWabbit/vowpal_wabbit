@@ -34,20 +34,6 @@ namespace CCB
 {
 float ccb_weight(const CCB::label& ld) { return ld.weight; }
 
-void default_label(label& ld)
-{
-  // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
-  if (ld.outcome != nullptr)
-  {
-    delete ld.outcome;
-    ld.outcome = nullptr;
-  }
-
-  ld.explicit_included_actions.clear();
-  ld.type = example_type::unset;
-  ld.weight = 1.0;
-}
-
 bool test_label(const CCB::label& ld) { return ld.outcome == nullptr; }
 
 ACTION_SCORE::action_score convert_to_score(
@@ -172,7 +158,7 @@ void parse_label(
 
 VW::label_parser ccb_label_parser = {
     // default_label
-    [](VW::polylabel& label) { default_label(label.conditional_contextual_bandit); },
+    [](VW::polylabel& label) { label.conditional_contextual_bandit.reset_to_default(); },
     // parse_label
     [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
@@ -194,6 +180,21 @@ VW::label_parser ccb_label_parser = {
     [](const VW::polylabel& label) { return test_label(label.conditional_contextual_bandit); },
     // label type
     VW::label_type_t::ccb};
+
+void label::reset_to_default()
+{
+  // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
+  if (outcome != nullptr)
+  {
+    delete outcome;
+    outcome = nullptr;
+  }
+
+  explicit_included_actions.clear();
+  type = example_type::unset;
+  weight = 1.0;
+}
+
 }  // namespace CCB
 
 namespace VW
@@ -221,7 +222,7 @@ size_t read_model_field(io_buf& io, CCB::label& ccb)
 {
   size_t bytes = 0;
   // Since read_cached_features doesn't default the label we must do it here.
-  default_label(ccb);
+  ccb.reset_to_default();
   if (ccb.outcome != nullptr) { ccb.outcome->probabilities.clear(); }
   ccb.explicit_included_actions.clear();
   bytes += read_model_field(io, ccb.type);

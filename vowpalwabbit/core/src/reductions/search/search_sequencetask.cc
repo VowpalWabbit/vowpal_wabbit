@@ -395,7 +395,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
   for (size_t a = 0; a < num_actions; a++)
   {
     CS::label& lab = data->ldf_examples[a].l.cs;
-    CS::default_label(lab);
+    lab.reset_to_default();
     lab.costs.push_back(default_wclass);
     data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
     data->ldf_examples[a].extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;

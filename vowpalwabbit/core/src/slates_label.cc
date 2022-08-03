@@ -19,11 +19,7 @@ namespace VW
 {
 namespace slates
 {
-void default_label(slates::label& v);
-
 float weight(const slates::label& ld) { return ld.weight; }
-
-void default_label(slates::label& ld) { ld.reset_to_default(); }
 
 bool test_label(const slates::label& ld) { return ld.labeled == false; }
 
@@ -120,7 +116,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
 
 label_parser slates_label_parser = {
     // default_label
-    [](polylabel& label) { default_label(label.slates); },
+    [](polylabel& label) { label.slates.reset_to_default(); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
@@ -174,8 +170,8 @@ namespace model_utils
 size_t read_model_field(io_buf& io, VW::slates::label& slates)
 {
   // Since read_cached_features doesn't default the label we must do it here.
-  default_label(slates);
   size_t bytes = 0;
+  slates.reset_to_default();
   bytes += read_model_field(io, slates.type);
   bytes += read_model_field(io, slates.weight);
   bytes += read_model_field(io, slates.labeled);

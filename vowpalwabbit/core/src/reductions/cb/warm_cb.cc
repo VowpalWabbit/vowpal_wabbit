@@ -520,7 +520,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   data.csls.resize(num_actions);
   for (uint32_t a = 0; a < num_actions; ++a)
   {
-    COST_SENSITIVE::default_label(data.csls[a]);
+    data.csls[a].reset_to_default();
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
   data.cbls.resize(num_actions);

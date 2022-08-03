@@ -57,8 +57,6 @@ char* bufread_label(label& ld, char* c, io_buf& cache)
 
 float weight(const label&) { return 1.; }
 
-void default_label(label& ld) { ld.costs.clear(); }
-
 bool test_label_internal(const label& ld)
 {
   if (ld.costs.size() == 0) { return true; }
@@ -143,7 +141,7 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
 
 VW::label_parser cs_label = {
     // default_label
-    [](VW::polylabel& label) { default_label(label.cs); },
+    [](VW::polylabel& label) { label.cs.reset_to_default(); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
@@ -302,6 +300,12 @@ bool ec_is_example_header(const VW::example& ec)  // example headers look like "
   if (costs[0].x != -FLT_MAX) { return false; }
   return true;
 }
+
+void label::reset_to_default()
+{
+  costs.clear();
+}
+
 }  // namespace COST_SENSITIVE
 
 namespace VW

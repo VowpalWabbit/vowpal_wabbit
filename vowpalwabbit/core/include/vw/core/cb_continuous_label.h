@@ -28,6 +28,7 @@ struct continuous_label_elm
 struct continuous_label
 {
   v_array<continuous_label_elm> costs;
+  void reset_to_default();
 };
 
 extern VW::label_parser the_label_parser;

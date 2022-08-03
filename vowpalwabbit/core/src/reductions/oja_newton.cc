@@ -458,7 +458,14 @@ void learn(OjaNewton& ON, base_learner& base, VW::example& ec)
   if (ON.cnt == ON.epoch_size)
   {
     ON.cnt = 0;
-    for (int k = 0; k < ON.epoch_size; k++) { VW::finish_example(*ON.all, *ON.buffer[k]); }
+    for (int k = 0; k < ON.epoch_size; k++)
+    {
+      float temp_lbl = ON.buffer[k]->l.simple.label;
+      float temp_pred = ec.pred.scalar;
+      VW::finish_example(*ON.all, *ON.buffer[k]);
+      ON.buffer[k]->l.simple.label = temp_lbl;
+      ON.buffer[k]->pred.scalar = temp_pred;
+    }
   }
 }
 

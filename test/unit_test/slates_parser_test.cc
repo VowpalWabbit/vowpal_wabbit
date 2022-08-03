@@ -18,7 +18,7 @@ void parse_slates_label(VW::string_view label, VW::slates::label& l)
 {
   std::vector<VW::string_view> words;
   VW::tokenize(' ', label, words);
-  VW::slates::default_label(l);
+  l.reset_to_default();
   VW::reduction_features red_fts;
   VW::label_parser_reuse_mem mem;
   auto null_logger = VW::io::create_null_logger();
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_shared_label)
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;
-  VW::slates::default_label(uncached_label);
+  uncached_label.reset_to_default();
   VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::shared);
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_action_label)
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;
-  VW::slates::default_label(uncached_label);
+  uncached_label.reset_to_default();
   VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::action);
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;
-  VW::slates::default_label(uncached_label);
+  uncached_label.reset_to_default();
   VW::model_utils::read_model_field(io_reader, uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::slot);
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(slates_copy_label)
   parse_slates_label("slates slot 0:0.5,1:0.25,2:0.25", label);
 
   VW::slates::label copied_to;
-  VW::slates::default_label(copied_to);
+  copied_to.reset_to_default();
   copied_to = label;
   BOOST_CHECK_EQUAL(copied_to.type, VW::slates::example_type::slot);
   BOOST_CHECK_EQUAL(copied_to.labeled, true);

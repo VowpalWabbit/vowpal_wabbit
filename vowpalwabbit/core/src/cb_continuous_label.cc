@@ -149,6 +149,11 @@ label_parser the_label_parser = {
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////
 
+void continuous_label::reset_to_default()
+{
+  costs.clear();
+}
+
 }  // namespace cb_continuous
 
 std::string to_string(const cb_continuous::continuous_label_elm& elm, int decimal_precision)
