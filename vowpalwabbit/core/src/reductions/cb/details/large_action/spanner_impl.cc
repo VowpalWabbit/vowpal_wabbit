@@ -21,6 +21,38 @@ void find_fast_max_vol(const Eigen::MatrixXf& U, const Eigen::VectorXf& Sinvtope
   }
 }
 
+Eigen::VectorXf get_row_to_replace(Eigen::VectorXf y, float shrink_factor, Eigen::VectorXf logdetfact)
+{
+  y /= shrink_factor;
+
+  Eigen::VectorXf pow = Eigen::exp(logdetfact.array());
+  pow = pow.cwiseInverse();
+  return y.cwiseProduct(pow);
+}
+
+void update_inverse(Eigen::MatrixXf& _S_inv, const Eigen::VectorXf& y, const Eigen::VectorXf& Si, uint64_t i)
+{
+  Eigen::VectorXf u = y - Si;
+  Eigen::MatrixXf Sinvu = _S_inv * u;
+  Eigen::VectorXf vtopSinv = _S_inv.row(i);
+  float vtopSinvu = Sinvu(i, 0);
+
+  _S_inv -= (1.f / (1.f + vtopSinvu)) * (Sinvu * vtopSinv.transpose());
+}
+
+void update_all(
+    Eigen::MatrixXf& _S_inv, Eigen::MatrixXf& _X, Eigen::VectorXf& logdetfact, uint64_t _d, float max_volume)
+{
+  Eigen::VectorXf thislogdet = (1.f / _d) * std::log(max_volume) - logdetfact.array();
+  Eigen::VectorXf scale = Eigen::exp(thislogdet.array());
+  for (uint64_t col = 0; col < _d; col++) { _S_inv.col(col) = _S_inv.col(col).cwiseProduct(scale); }
+
+  scale = scale.cwiseInverse();
+  for (uint64_t col = 0; col < _d; col++) { _X.col(col) = _X.col(col).cwiseProduct(scale); }
+
+  logdetfact += thislogdet;
+}
+
 void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
 {
   assert(static_cast<uint64_t>(U.cols()) == _d);
@@ -29,50 +61,23 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
   Eigen::VectorXf logdetfact(_d);
   logdetfact.setZero();
 
-  float max_volume;
   // Compute a basis contained in U.
   for (uint64_t i = 0; i < _d; ++i)
   {
     Eigen::VectorXf Sinvtopei = _S_inv.row(i);
     // max volume returns the various determinants
-    max_volume = -1.0f;
+    float max_volume = -1.0f;
     uint64_t U_rid = 0;
     find_fast_max_vol(U, Sinvtopei, max_volume, U_rid);
 
     // best action is U_rid
-    Eigen::VectorXf y = U.row(U_rid);
-    y /= shrink_factors[U_rid];
-
-    Eigen::VectorXf pow = logdetfact;
-    pow = Eigen::exp(pow.array());
-    Eigen::VectorXf powinv = pow;
-    powinv = powinv.cwiseInverse();
-    y = y.cwiseProduct(powinv);
-
-    Eigen::VectorXf Si = _X.row(i);
-    Eigen::VectorXf u = y - Si;
-    Eigen::MatrixXf Sinvu = _S_inv * u;
-    Eigen::VectorXf vtopSinv = _S_inv.row(i);
-    float vtopSinvu = Sinvu(i, 0);
-
-    _S_inv -= (1.f / (1.f + vtopSinvu)) * (Sinvu * vtopSinv.transpose());
+    Eigen::VectorXf y = get_row_to_replace(U.row(U_rid), shrink_factors[U_rid], logdetfact);
+    update_inverse(_S_inv, y, _X.row(i), i);
 
     _X.row(i) = y;
     _action_indices[i] = U_rid;
 
-    Eigen::VectorXf tmp = logdetfact;
-    tmp = std::log(max_volume) - logdetfact.array();
-
-    Eigen::VectorXf thislogdet = (1.f / _d) * (tmp);
-    Eigen::VectorXf pow2 = thislogdet;
-    pow2 = Eigen::exp(pow2.array());
-    Eigen::VectorXf scale = pow2;
-    for (uint64_t col = 0; col < _d; col++) { _S_inv.col(col) = _S_inv.col(col).cwiseProduct(scale); }
-
-    scale = scale.cwiseInverse();
-    for (uint64_t col = 0; col < _d; col++) { _X.col(col) = _X.col(col).cwiseProduct(scale); }
-
-    logdetfact += thislogdet;
+    update_all(_S_inv, _X, logdetfact, _d, max_volume);
   }
 
   const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
@@ -94,39 +99,13 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
       if (max_volume > _c * X_volume)
       {
         // best action is U_rid
-        Eigen::VectorXf y = U.row(U_rid);
-        y /= shrink_factors[U_rid];
-
-        Eigen::VectorXf pow = logdetfact;
-        pow = Eigen::exp(pow.array());
-        Eigen::VectorXf powinv = pow;
-        powinv = powinv.cwiseInverse();
-        y = y.cwiseProduct(powinv);
-
-        Eigen::VectorXf Si = _X.row(i);
-        Eigen::VectorXf u = y - Si;
-        Eigen::MatrixXf Sinvu = _S_inv * u;
-        Eigen::VectorXf vtopSinv = _S_inv.row(i);
-        float vtopSinvu = Sinvu(i, 0);
-
-        _S_inv -= (1.f / (1.f + vtopSinvu)) * (Sinvu * vtopSinv.transpose());
+        Eigen::VectorXf y = get_row_to_replace(U.row(U_rid), shrink_factors[U_rid], logdetfact);
+        update_inverse(_S_inv, y, _X.row(i), i);
 
         _X.row(i) = y;
         _action_indices[i] = U_rid;
 
-        Eigen::VectorXf tmp = logdetfact;
-        tmp = std::log(max_volume) - logdetfact.array();
-
-        Eigen::VectorXf thislogdet = (1.f / _d) * (tmp);
-        Eigen::VectorXf pow2 = thislogdet;
-        pow2 = Eigen::exp(pow2.array());
-        Eigen::VectorXf scale = pow2;
-        for (uint64_t col = 0; col < _d; col++) { _S_inv.col(col) = _S_inv.col(col).cwiseProduct(scale); }
-
-        scale = scale.cwiseInverse();
-        for (uint64_t col = 0; col < _d; col++) { _X.col(col) = _X.col(col).cwiseProduct(scale); }
-
-        logdetfact += thislogdet;
+        update_all(_S_inv, _X, logdetfact, _d, max_volume);
 
         X_volume = max_volume;
         found_larger_volume = true;
