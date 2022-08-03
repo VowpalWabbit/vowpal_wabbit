@@ -106,34 +106,7 @@ void cb_explore_adf_large_action_space<impl_detail>::update_example_prediction(V
     }
 
     _spanner_state.compute_spanner(U, _d, shrink_factors);
-    auto tmp = _spanner_state._action_indices;
-
     _spanner_state.compute_spanner1(U, _d);
-
-    bool found = false;
-    for (size_t i = 0; i < _spanner_state._action_indices.size(); i++)
-    {
-      if (_spanner_state._action_indices[i] != tmp[i])
-      {
-        found = true;
-        break;
-      }
-    }
-    if (found)
-    {
-      // std::cout << "=====" << std::endl;
-      // std::cout << _S << std::endl;
-      std::cout << "--" << std::endl;
-      for (auto ind : _spanner_state._action_indices) { std::cout << ind << ","; }
-      std::cout << std::endl;
-      for (auto ind : tmp) { std::cout << ind << ","; }
-      std::cout << std::endl;
-    }
-    // std::cout << "--" << std::endl;
-    // for (auto ind : _spanner_state._action_indices) { std::cout << ind << ","; }
-    // std::cout << std::endl;
-    // for (auto ind : tmp) { std::cout << ind << ","; }
-    // std::cout << std::endl;
 
     assert(_spanner_state._spanner_bitvec.size() == preds.size());
   }
