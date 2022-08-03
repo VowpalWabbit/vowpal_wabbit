@@ -131,6 +131,11 @@ std::unique_ptr<VW::workspace> merge_models(
       target_learner->merge(example_counts, workspaces_to_merge, reduction_data_per_model, *destination_model,
           target_learner->get_internal_type_erased_data_pointer_test_use_only());
     }
+    // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly not going to work.
+    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    {
+      THROW("Base learner '" << target_learner->get_name() << "' does not have a merge function defined. Since it is a base learner, merging will not work as expected.");
+    }
     else if (!target_learner->has_merge() && target_learner->learner_defines_own_save_load())
     {
       if (logger != nullptr)
