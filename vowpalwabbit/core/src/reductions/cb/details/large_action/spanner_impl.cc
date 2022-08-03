@@ -8,6 +8,19 @@ namespace VW
 {
 namespace cb_explore_adf
 {
+void find_fast_max_vol(Eigen::MatrixXf& U, const Eigen::VectorXf& Sinvtopei, float& max_volume, uint64_t& U_rid)
+{
+  for (auto i = 0; i < U.rows(); ++i)
+  {
+    float vol = std::abs(U.row(i) * Sinvtopei);
+    if (vol > max_volume)
+    {
+      max_volume = vol;
+      U_rid = i;
+    }
+  }
+}
+
 void spanner_state::compute_spanner(Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
 {
   assert(static_cast<uint64_t>(U.cols()) == _d);
@@ -23,15 +36,7 @@ void spanner_state::compute_spanner(Eigen::MatrixXf& U, size_t _d, const std::ve
 
     float max_volume = -1.0f;
     uint64_t U_rid = 0;
-    for (auto i = 0; i < U.rows(); ++i)
-    {
-      float vol = std::abs(U.row(i) * Sinvtopei);
-      if (vol > max_volume)
-      {
-        max_volume = vol;
-        U_rid = i;
-      }
-    }
+    find_fast_max_vol(U, Sinvtopei, max_volume, U_rid);
 
     // best action is U_rid
     Eigen::VectorXf y = U.row(U_rid);
@@ -149,7 +154,7 @@ void spanner_state::compute_spanner1(Eigen::MatrixXf& U, size_t _d)
 
   _spanner_bitvec.clear();
   _spanner_bitvec.resize(U.rows(), false);
-  for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
+  for (uint64_t idx : _action_indices1) { _spanner_bitvec[idx] = true; }
 }
 
 }  // namespace cb_explore_adf
