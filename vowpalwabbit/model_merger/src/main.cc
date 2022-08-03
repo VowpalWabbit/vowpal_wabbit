@@ -65,7 +65,7 @@ void logger_output_func(void* void_context, VW::io::log_level level, const std::
     default:
       THROW("Unsupported log level");
   }
-};
+}
 
 struct command_line_options
 {
