@@ -483,7 +483,8 @@ public:
   VW_ATTR(nodiscard) const std::string& get_name() const { return name; }
   VW_ATTR(nodiscard) const base_learner* get_learn_base() const { return learn_fd.base; }
   VW_ATTR(nodiscard) base_learner* get_learn_base() { return learn_fd.base; }
-  /// If true, this specific learner defines a save load function. If false, it simply forwards to a base implementation.
+  /// If true, this specific learner defines a save load function. If false, it simply forwards to a base
+  /// implementation.
   VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return learn_fd.data == save_load_fd.data; }
 };
 
