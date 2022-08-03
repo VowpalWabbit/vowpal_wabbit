@@ -102,10 +102,7 @@ command_line_options parse_command_line(int argc, char** argv, VW::io::logger& l
   options.add_and_parse(diagnostics_options);
   options.add_and_parse(output_options);
   auto warnings = options.check_unregistered();
-  if (!warnings.empty())
-  {
-    logger.warn("Warnings: {}", warnings);
-  }
+  _UNUSED(warnings);
 
   if (help)
   {
