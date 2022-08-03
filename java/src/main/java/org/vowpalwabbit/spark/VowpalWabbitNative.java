@@ -161,27 +161,12 @@ public class VowpalWabbitNative implements Closeable {
         return new VowpalWabbitExample(this.nativePointer, true);
     }
 
-    public static VowpalWabbitNative mergeModels(Collection<VowpalWabbitNative> models)
-    {
-        Iterator<VowpalWabbitNative> iterator = models.iterator();
-        long[] pointers = new long[models.size()];
-        int index = 0;
-        while(iterator.hasNext())
-        {
-            VowpalWabbitNative model = iterator.next();
-            pointers[index] = model.nativePointer;
-            index++;
-        }
-        long nativePointer = mergeModels(pointers);
-        return new VowpalWabbitNative(nativePointer);
-    }
-
     /**
      * Merge several models together and return the result.
      * @param workspacePointers array of pointers to VW models.
      * @return merged VW model.
      */
-    private static native long mergeModels(long[] workspacePointers);
+    public static native VowpalWabbitNative mergeModels(VowpalWabbitNative[] workspacePointers);
 
     /**
      * Frees the native resources.

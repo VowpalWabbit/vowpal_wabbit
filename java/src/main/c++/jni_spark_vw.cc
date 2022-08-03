@@ -13,6 +13,7 @@
 #include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
+#include "vw/core/vw_fwd.h"
 
 #include <algorithm>
 #include <exception>
@@ -1057,21 +1058,37 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
   }
 }
 
-JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_mergeModels(
-    JNIEnv* env, jclass, jlongArray workspacePointers)
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_mergeModels(
+    JNIEnv* env, jclass, jobjectArray workspacePointers)
 try
 {
-  CriticalArrayGuard guard(env, workspacePointers);
-
   std::vector<const VW::workspace*> workspaces;
-  for (int i = 0; i < guard.length(); ++i)
-  { workspaces.push_back(reinterpret_cast<const VW::workspace*>(reinterpret_cast<jlong*>(guard.data())[i])); }
+  int length = env->GetArrayLength(workspacePointers);
+  if (length > 0)
+  {
+    workspaces.reserve(length);
+    jobject jworkspace = env->GetObjectArrayElement(workspacePointers, 0);
+    jclass cls = env->GetObjectClass(jworkspace);
+    jfieldID fieldId = env->GetFieldID(cls, "nativePointer", "J");
+    for (int i = 0; i < length; i++)
+    {
+      const auto* workspace = reinterpret_cast<const VW::workspace*>(get_native_pointer(env, jworkspace));
+      workspaces.push_back(workspace);
+    }
+  }
 
   auto result = VW::merge_models(workspaces);
-  return reinterpret_cast<jlong>(result.release());
+
+  jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitNative");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(J)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  return env->NewObject(clazz, ctor, reinterpret_cast<jlong>(result.release()));
 }
 catch (...)
 {
   rethrow_cpp_exception_as_java_exception(env);
-  return 0;
+  return nullptr;
 }
