@@ -1899,6 +1899,18 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     std::exit(0);
   }
 
+  if (all->options->was_supplied("automl") && all->options->was_supplied("aml_predict_only_model"))
+  {
+    std::string automl_predict_only_filename =
+        all->options->get_typed_option<std::string>("aml_predict_only_model").value();
+    // check if string is empty
+    if (automl_predict_only_filename.empty())
+    { THROW("error: --aml_predict_only_model has to be non-zero string representing filename to write"); }
+
+    finalize_regressor(*all, automl_predict_only_filename);
+    std::exit(0);
+  }
+
   print_enabled_reductions(*all, enabled_reductions);
 
   if (!all->quiet)
