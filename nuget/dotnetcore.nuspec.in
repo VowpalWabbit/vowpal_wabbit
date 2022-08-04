@@ -22,7 +22,7 @@
     </dependencies>
   </metadata>
   <files>
-  	  <file src="ref/**" target="" />
+  	  <file src="ref/**/*.dll" target="" />
   	  <file src="runtime.json" target="" />
   </files>
 </package>
