@@ -781,8 +781,8 @@ Weight Options:
     --search_metatask arg                   The search metatask (use "--search_metatask list" to get a list
                                             of available metatasks Note: a valid search_task needs to be
                                             supplied in addition for this to output.) (type: str, keep)
-    --search_interpolation arg              At what level should interpolation happen? [*data|policy] (type:
-                                            str, keep)
+    --search_interpolation arg              At what level should interpolation happen? (type: str, choices
+                                            {data, policy}, keep)
     --search_rollout arg                    How should rollouts be executed (type: str, choices {learn, mix,
                                             mix_per_roll, mix_per_state, none, oracle, policy, ref})
     --search_rollin arg                     How should past trajectories be generated (type: str, choices
