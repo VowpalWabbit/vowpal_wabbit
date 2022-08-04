@@ -106,8 +106,8 @@ struct interaction_config_manager : config_manager
   double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
-  bool lb_trick;
-  bool ccb_on = false;
+  const bool lb_trick;
+  const bool ccb_on = false;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset
   std::vector<double> per_live_model_state_double;

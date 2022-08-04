@@ -152,6 +152,12 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
   }
 }
 
+bool is_allowed_to_remove(const unsigned char ns)
+{
+  if (ns == ccb_slot_namespace || ns == wildcard_namespace || ns == ccb_id_namespace) { return false; }
+  return true;
+}
+
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
 // newly seen namespaces.
@@ -164,6 +170,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
     for (const auto& ns : ex->indices)
     {
       if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
+      if (!is_allowed_to_remove(ns)) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
@@ -273,8 +280,11 @@ void interaction_config_manager::config_oracle()
       {
         namespace_index ns1 = interaction[0];
         namespace_index ns2 = interaction[1];
-        std::vector<namespace_index> idx{ns1, ns2};
-        new_exclusions.insert(idx);
+        if (is_allowed_to_remove(ns1) && is_allowed_to_remove(ns2))
+        {
+          std::vector<namespace_index> idx{ns1, ns2};
+          new_exclusions.insert(idx);
+        }
       }
       else if (interaction_type == "cubic")
       {
