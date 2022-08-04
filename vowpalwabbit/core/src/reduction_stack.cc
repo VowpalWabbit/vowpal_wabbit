@@ -94,6 +94,7 @@
 #include "vw/core/reductions/stagewise_poly.h"
 #include "vw/core/reductions/svrg.h"
 #include "vw/core/reductions/topk.h"
+#include "vw/core/reductions/uniform_exploration.h"
 
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
@@ -106,10 +107,9 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::reductions::cb_explore_adf_regcb_setup, "cb_explore_adf_regcb"},
       {VW::reductions::shared_feature_merger_setup, "shared_feature_merger"},
       {VW::reductions::generate_interactions_setup, "generate_interactions"},
-      {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"}
+      {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"},
 #ifdef BUILD_LARGE_ACTION_SPACE
-      ,
-      {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}
+      , {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}
 #endif
   };
 
@@ -209,6 +209,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cb_explore_adf_first_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_cover_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_bag_setup);
+  reductions.push_back(VW::reductions::uniform_exploration_setup);
   reductions.push_back(VW::reductions::cb_dro_setup);
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);

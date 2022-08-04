@@ -29,6 +29,7 @@ set(vw_core_headers
   include/vw/core/error_constants.h
   include/vw/core/error_data.h
   include/vw/core/error_reporting.h
+  include/vw/core/estimator_config.h
   include/vw/core/example_predict.h
   include/vw/core/example.h
   include/vw/core/fast_pow10.h
@@ -41,6 +42,7 @@ set(vw_core_headers
   include/vw/core/guard.h
   include/vw/core/hashstring.h
   include/vw/core/interactions_predict.h
+  include/vw/core/interactions.h
   include/vw/core/io_buf.h
   include/vw/core/json_utils.h
   include/vw/core/kskip_ngram_transformer.h
@@ -80,10 +82,10 @@ set(vw_core_headers
   include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h
   include/vw/core/reductions/autolink.h
-  include/vw/core/reductions/automl/automl.h
   include/vw/core/reductions/automl/automl_impl.h
   include/vw/core/reductions/automl/automl_iomodel.h
   include/vw/core/reductions/automl/automl_util.h
+  include/vw/core/reductions/automl/automl.h
   include/vw/core/reductions/baseline_challenger_cb.h
   include/vw/core/reductions/baseline.h
   include/vw/core/reductions/bfgs.h
@@ -131,7 +133,6 @@ set(vw_core_headers
   include/vw/core/reductions/get_pmf.h
   include/vw/core/reductions/interact.h
   include/vw/core/reductions/interaction_ground.h
-  include/vw/core/interactions.h
   include/vw/core/reductions/kernel_svm.h
   include/vw/core/reductions/lda_core.h
   include/vw/core/reductions/log_multi.h
@@ -168,8 +169,8 @@ set(vw_core_headers
   include/vw/core/reductions/stagewise_poly.h
   include/vw/core/reductions/svrg.h
   include/vw/core/reductions/topk.h
+  include/vw/core/reductions/uniform_exploration.h
   include/vw/core/scope_exit.h
-  include/vw/core/estimator_config.h
   include/vw/core/shared_data.h
   include/vw/core/simple_label_parser.h
   include/vw/core/simple_label.h
@@ -231,6 +232,8 @@ set(vw_core_sources
   src/print_utils.cc
   src/prob_dist_cont.cc
   src/rand48.cc
+  src/estimator_config.cc
+  src/interactions.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
   src/reductions/active.cc
@@ -284,7 +287,6 @@ set(vw_core_sources
   src/reductions/get_pmf.cc
   src/reductions/interact.cc
   src/reductions/interaction_ground.cc
-  src/interactions.cc
   src/reductions/kernel_svm.cc
   src/reductions/lda_core.cc
   src/reductions/log_multi.cc
@@ -321,7 +323,7 @@ set(vw_core_sources
   src/reductions/stagewise_poly.cc
   src/reductions/svrg.cc
   src/reductions/topk.cc
-  src/estimator_config.cc
+  src/reductions/uniform_exploration.cc
   src/shared_data.cc
   src/simple_label_parser.cc
   src/simple_label.cc
