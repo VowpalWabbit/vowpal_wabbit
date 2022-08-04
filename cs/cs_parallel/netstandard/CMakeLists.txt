@@ -14,12 +14,17 @@ else()
   set_property(TARGET VowpalWabbit.Parallel APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
 endif()
 
-if(VW_INSTALL)
-  install(
-    FILES 
-      "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.dll"
-      "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.pdb"
-      "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.deps.json"
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/netstandard2.1"
-  )
-endif()
+install(
+  FILES
+    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.dll"
+    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.pdb"
+    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.deps.json"
+  DESTINATION "./runtimes/${NUGET_RUNTIME_ID}/lib/netstandard2.1"
+)
+install(
+  FILES
+    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.dll"
+    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.pdb"
+    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.Parallel.deps.json"
+  DESTINATION "./ref/netstandard2.1"
+)

@@ -104,83 +104,61 @@ jobs:
           .\bin\x64\Debug\test-${{ matrix.toolset }}.exe
 
   build_nuget_dotnetcore:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
+    runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
-      - uses: ilammy/msvc-dev-cmd@v1
-      - uses: Vampire/setup-wsl@v1
-        with:
-          distribution: Ubuntu-22.04
-          additional-packages:
-            build-essential
-            cmake
-            ninja-build
-      - name: Install dotnet in WSL
-        shell: wsl-bash {0}
-        run: |
-          wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-          dpkg -i packages-microsoft-prod.deb
-          rm packages-microsoft-prod.deb
-          apt update
-          apt install -y dotnet-sdk-6.0
+      - if: ${{matrix.os}} == "windows-latest"
+        uses: ilammy/msvc-dev-cmd@v1
       - name: Install dotnet t4
-        shell: wsl-bash {0}
-        run: dotnet tool install --global --verbosity detailed dotnet-t4
-      - name: Configure Linux
-        shell: wsl-bash {0}
+        run: dotnet tool install --global dotnet-t4
+      - name: Configure
         run: >
-          cmake -S . -B build_linux -G Ninja
+          cmake -S . -B build
           -Dvw_BUILD_NET_CORE=On
           -Dvw_DOTNET_USE_MSPROJECT=Off
           -DBUILD_FLATBUFFERS=Off
-          -DBUILD_TESTING=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
           -DVW_ZLIB_SYS_DEP=Off
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_BUILD_VW_C_WRAPPER=Off
-          -DVW_INSTALL=On
-      - name: Build Linux
-        shell: wsl-bash {0}
-        # Build only the linux vw.net.native shared library
-        run: cmake --build build_linux --target vw.net.native
-      - name: Install Linux
-        shell: wsl-bash {0}
-        # Install only the linux vw.net.native shared library
-        run: cmake --install build_linux/cs/vw.net.native --prefix ./nuget_staging
-      - name: Install dotnet t4
-        run: dotnet tool install --global --verbosity detailed dotnet-t4
-      - name: Configure Windows
-        run: >
-          cmake -S . -B build_windows -G Ninja
-          -Dvw_BUILD_NET_CORE=On
-          -Dvw_DOTNET_USE_MSPROJECT=Off
-          -DBUILD_FLATBUFFERS=Off
           -DBUILD_TESTING=Off
-          -DRAPIDJSON_SYS_DEP=Off
-          -DFMT_SYS_DEP=Off
-          -DSPDLOG_SYS_DEP=Off
-          -DVW_ZLIB_SYS_DEP=Off
-          -DVW_BOOST_MATH_SYS_DEP=Off
-          -DVW_BUILD_VW_C_WRAPPER=Off
-          -DVW_INSTALL=On
-      - name: Build Windows
-        run: cmake --build build_windows --config Release
-      - name: Install Windows
-        run: cmake --install build_windows --prefix ./nuget_staging
+          -DBUILD_SHARED_LIBS=Off
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Install
+        run: cmake --install build --prefix ./nuget_staging
       - name: Package
+        if: ${{matrix.os}} == "windows-latest"
         shell: powershell
         id: generate-nuget
         run: |
           cd nuget_staging
-          nuget pack .\dotnetcore.nuspec
+          nuget pack dotnetcore.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
       - name: Upload
+        if: ${{matrix.os}} == "windows-latest"
         uses: actions/upload-artifact@v1
         with:
           name: ${{ steps.generate-nuget.outputs.NugetFileName }}
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
+      - name: Package Runtime
+        shell: bash
+        id: generate-runtime-nuget
+        run: |
+          cd nuget_staging
+          nuget pack dotnetcore_runtime.nuspec
+          NugetFileName=(runtime*.nupkg)
+          echo "::set-output name=NugetFileName::${NugetFileName[0]}"
+      - name: Upload Runtime
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
+          path: nuget_staging/${{ steps.generate-runtime-nuget.outputs.NugetFileName }}

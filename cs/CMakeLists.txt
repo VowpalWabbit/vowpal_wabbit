@@ -2,8 +2,6 @@ IF(vw_BUILD_NET_CORE AND vw_BUILD_NET_FRAMEWORK)
   MESSAGE(FATAL_ERROR "Cannot build VW bindings for .NET Core and .NET Framework at the same time.")
 ENDIF()
 
-# enable_language(CSharp)
-
 # Explicitly set the `PlatformTarget` for C# projects, since AnyCPU can result in
 # System.BadImageFormatException throws, when trying to load C++/CLI assemblies.
 IF(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")

@@ -282,8 +282,29 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-if(vw_BUILD_NET_FRAMEWORK OR vw_BUILD_NET_CORE)
+if(vw_BUILD_NET_FRAMEWORK)
   add_subdirectory(cs)
+endif()
+
+if(vw_BUILD_NET_CORE)
+  set(NUGET_PACKAGE_NAME "VowpalWabbitNetCore")
+  set(NUGET_PACKAGE_VERSION ${PACKAGE_VERSION})
+  if(WIN32)
+    set(NUGET_RUNTIME_ID "win-x64")
+  elseif(APPLE)
+    set(NUGET_RUNTIME_ID "osx-x64")
+  else()
+    set(NUGET_RUNTIME_ID "linux-x64")
+  endif()
+
+  add_subdirectory(cs)
+
+  configure_file(nuget/dotnetcore.nuspec.in nuget/dotnetcore.nuspec @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/dotnetcore.nuspec DESTINATION ./)
+  configure_file(nuget/dotnetcore_runtime.nuspec.in nuget/dotnetcore_runtime.nuspec @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/dotnetcore_runtime.nuspec DESTINATION ./)
+  configure_file(nuget/runtime.json.in nuget/runtime.json @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/runtime.json DESTINATION ./)
 endif()
 
 
@@ -292,11 +313,6 @@ if(VW_INSTALL)
   # only do this if the file exists. Some packages dont have this file and its only needed in a very specific use case
   if(EXISTS nuget/vowpalwabbit.nuspec.in)
     configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
-  endif()
-
-  if(EXISTS nuget/dotnetcore.nuspec.in AND vw_BUILD_NET_CORE)
-    configure_file(nuget/dotnetcore.nuspec.in nuget/dotnetcore.nuspec @ONLY)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/dotnetcore.nuspec DESTINATION ./)
   endif()
 
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)
