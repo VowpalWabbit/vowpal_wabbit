@@ -163,6 +163,7 @@ namespace model_utils
 size_t read_model_field(io_buf& io, MULTILABEL::labels& multi)
 {
   size_t bytes = 0;
+  multi.label_v.clear();
   bytes += read_model_field(io, multi.label_v);
   return bytes;
 }
