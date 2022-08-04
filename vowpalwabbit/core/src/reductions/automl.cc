@@ -140,6 +140,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   bool reversed_learning_order = false;
   bool lb_trick = false;
   bool fixed_significance_level;
+  std::string predict_only_model_file;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -191,6 +192,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
       .add(make_option("lb_trick", lb_trick)
                .default_value(false)
                .help("Use 1-lower_bound as upper_bound for estimator")
+               .experimental())
+      .add(make_option("aml_predict_only_model", predict_only_model_file)
+               .default_value("")
+               .help("transform input automl model into predict only automl model")
                .experimental())
       .add(make_option("automl_significance_level", automl_significance_level)
                .keep()
