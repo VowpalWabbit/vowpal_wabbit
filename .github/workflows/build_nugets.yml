@@ -112,7 +112,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
-      - if: ${{matrix.os}} == "windows-latest"
+      - name: Setup MSVC Developer Command Prompt
+        if: ${{ startsWith(matrix.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
@@ -135,7 +136,7 @@ jobs:
       - name: Install
         run: cmake --install build --prefix ./nuget_staging
       - name: Package
-        if: ${{matrix.os}} == "windows-latest"
+        if: ${{ startsWith(matrix.os, 'windows') }}
         shell: powershell
         id: generate-nuget
         run: |
@@ -144,7 +145,7 @@ jobs:
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
       - name: Upload
-        if: ${{matrix.os}} == "windows-latest"
+        if: ${{ startsWith(matrix.os, 'windows') }}
         uses: actions/upload-artifact@v1
         with:
           name: ${{ steps.generate-nuget.outputs.NugetFileName }}
