@@ -78,6 +78,8 @@ struct config_manager
   // the impl is responsible of tracking this config-live_slot mapping
   void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);
+  // config managers own the underlaying weights so they need to know how to clear
+  void clear_non_champ_weights();
 
   // Public Chacha functions
   void config_oracle();
@@ -94,7 +96,7 @@ struct interaction_config_manager : config_manager
   uint64_t total_learn_count = 0;
   uint64_t current_champ = 0;
   uint64_t global_lease;
-  uint64_t max_live_configs;
+  const uint64_t max_live_configs;
   std::shared_ptr<VW::rand_state> random_state;
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
@@ -146,6 +148,7 @@ struct interaction_config_manager : config_manager
 
   // Public for save_load
   void gen_interactions(uint64_t);
+  void clear_non_champ_weights();
 
 private:
   bool better(uint64_t live_slot);
@@ -164,8 +167,12 @@ struct automl
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   bool debug_reverse_learning_order = false;
+  const bool should_save_predict_only_model;
 
-  automl(std::unique_ptr<CMType> cm, VW::io::logger* logger) : cm(std::move(cm)), logger(logger) {}
+  automl(std::unique_ptr<CMType> cm, VW::io::logger* logger, bool predict_only_model)
+      : cm(std::move(cm)), logger(logger), should_save_predict_only_model(predict_only_model)
+  {
+  }
   // This fn gets called before learning any example
   // void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
   // template <typename CMType>

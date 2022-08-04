@@ -92,6 +92,7 @@ void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& 
 template <typename CMType>
 void save_load_aml(VW::reductions::automl::automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
+  if (aml.should_save_predict_only_model) { aml.cm->clear_non_champ_weights(); }
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }
   else
@@ -230,13 +231,15 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   if (!fixed_significance_level) { automl_significance_level /= max_live_configs; }
 
+  bool predict_only_model = options.was_supplied("aml_predict_only_model");
+
   // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
       all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
       all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
       lb_trick);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
-      std::move(cm), &all.logger);
+      std::move(cm), &all.logger, predict_only_model);
   data->debug_reverse_learning_order = reversed_learning_order;
   data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 2, 0.f);
   data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
