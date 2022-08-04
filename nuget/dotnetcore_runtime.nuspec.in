@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>runtime.@NUGET_RUNTIME_ID@.@NUGET_PACKAGE_NAME@</id>
+    <title>runtime.@NUGET_RUNTIME_ID@.@NUGET_PACKAGE_NAME@</title>
+    <authors>John Langford et al</authors>
+    <version>@NUGET_PACKAGE_VERSION@</version>
+    <projectUrl>https://github.com/VowpalWabbit/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
+    <license type="expression">BSD-3-Clause</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Platform specific runtime library for @NUGET_PACKAGE_NAME@</description>
+    <copyright>Copyright (C) Microsoft Corp 2012-2022, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
+  </metadata>
+  <files>
+  	  <file src="runtimes/@NUGET_RUNTIME_ID@/**" target="" />
+  </files>
+</package>
