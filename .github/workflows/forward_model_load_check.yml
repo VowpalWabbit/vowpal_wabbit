@@ -12,8 +12,8 @@ on:
       - '*'
 
 jobs:
-  linux-python-build:
-    name: Build latest python wheel
+  generate-latest-model:
+    name: Generate latest python model
     container:
       image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
