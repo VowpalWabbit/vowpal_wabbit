@@ -47,7 +47,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: vw_generated_models
-          path: models
+          path: vw_generated_models
       - name: Test loading model with latest release
         shell: bash
         run: |
