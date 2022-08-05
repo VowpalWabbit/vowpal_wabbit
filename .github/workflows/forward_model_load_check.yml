@@ -12,7 +12,6 @@ on:
 jobs:
   generate-latest-model:
     name: Generate model using latest artifact
-    needs: linux-python-build
     container:
       image: python:3.10
     runs-on: ubuntu-latest
