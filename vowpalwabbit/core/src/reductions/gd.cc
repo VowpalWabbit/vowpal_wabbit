@@ -80,8 +80,6 @@ void merge_weights_with_save_resume(size_t length,
     const auto full_weights_size = length << weights.stride_shift();
     for (uint64_t i = 0; i < full_weights_size; i++)
     {
-      // Should per_model_weighting be used? adaptive has already caused reweighting?
-      // weights[i] += (this_source[i] * per_model_weighting[model_num]);
       weights[i] += this_source[i];
     }
   }

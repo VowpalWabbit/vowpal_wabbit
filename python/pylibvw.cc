@@ -290,7 +290,7 @@ boost::shared_ptr<VW::workspace> merge_workspaces(py::list workspaces)
   std::vector<const VW::workspace*> const_workspaces;
   for (size_t i = 0; i < py::len(workspaces); i++)
   { const_workspaces.push_back(py::extract<VW::workspace*>(workspaces[i])); }
-  return boost::shared_ptr<VW::workspace>(VW::merge_models(const_workspaces).release());
+  return boost::shared_ptr<VW::workspace>(VW::merge_models(const_workspaces));
 }
 
 void my_run_parser(vw_ptr all)

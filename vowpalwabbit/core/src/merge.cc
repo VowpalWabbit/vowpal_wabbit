@@ -24,7 +24,7 @@ std::string get_keep_command_line(const VW::workspace& workspace)
   return serializer.str();
 }
 
-void validate_compatability(const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
+void validate_compatibility(const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
 {
   if (workspaces_to_merge.size() < 2) { THROW("Must specify at least two model files to merge."); }
 
@@ -100,7 +100,7 @@ namespace VW
 std::unique_ptr<VW::workspace> merge_models(
     const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
 {
-  validate_compatability(workspaces_to_merge, logger);
+  validate_compatibility(workspaces_to_merge, logger);
 
   auto dest_command_line = VW::split_command_line(get_keep_command_line(*workspaces_to_merge[0]));
   if (logger == nullptr) { dest_command_line.emplace_back("--quiet"); }

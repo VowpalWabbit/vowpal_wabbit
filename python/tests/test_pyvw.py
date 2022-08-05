@@ -704,10 +704,10 @@ def test_random_weights_seed():
 
 
 def test_merge_models():
-    model1 = vowpalwabbit.Workspace(quiet=True, noconstant=True)
+    model1 = vowpalwabbit.Workspace(quiet=True)
     model1.learn("1 | foo")
     model1.learn("1 | foo")
-    model2 = vowpalwabbit.Workspace(quiet=True, noconstant=True)
+    model2 = vowpalwabbit.Workspace(quiet=True)
     model2.learn("1 | bar")
     model2.learn("1 | bar")
     model2.learn("1 | bar")
