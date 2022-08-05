@@ -1,4 +1,4 @@
-import vowpalwabbit as pyvw
+import vowpalwabbit
 
 
 cb_ex = """
