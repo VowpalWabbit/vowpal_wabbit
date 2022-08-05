@@ -19,7 +19,7 @@ jobs:
     name: manylinux.amd64.py${{ matrix.config.version}}.build
     container:
       image: vowpalwabbit/manylinux2010-build:latest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest 
     strategy:
       matrix:
         config:
