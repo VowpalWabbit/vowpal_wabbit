@@ -73,5 +73,5 @@ jobs:
       - name: Test loading model with latest release
         shell: bash
         run: |
-          pip install vowpalwabbit
+          pip install pytest vowpalwabbit
           python -m pytest ./python/model_version_tests/test
