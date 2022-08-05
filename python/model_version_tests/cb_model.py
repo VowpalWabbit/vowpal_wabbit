@@ -21,7 +21,8 @@ def generate():
 
 
 def load(model_path):
-    vw = pyvw.Workspace(f"-i {model_path}/cb_explore_adf_model_with_regularization.vw")
+    from vowpalwabbit import pyvw
+    vw = pyvw.vw(f"-i {model_path}/cb_explore_adf_model_with_regularization.vw")
     for _ in range(0,5):
         vw.predict(cb_ex)
         vw.learn(cb_ex)

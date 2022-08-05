@@ -73,5 +73,5 @@ jobs:
       - name: Test loading model with latest release
         shell: bash
         run: |
-          pip install vowpalwabbit
+          pip install vowpalwabbit==8.11.0
           python ./python/model_version_tests/cb_model.py --load
