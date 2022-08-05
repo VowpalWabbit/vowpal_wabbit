@@ -1,4 +1,4 @@
-final_regressor = automl.model
+final_regressor = models/automl.model
 using no cache
 Reading datafile = train-sets/decisionservice.json
 num sources = 1
