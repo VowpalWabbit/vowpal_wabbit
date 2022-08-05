@@ -199,7 +199,7 @@ void end_pass(gd& g)
   }
 }
 
-void merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+void merge(const std::vector<float>& per_model_weighting, const VW::workspace& /* base_workspace */,
     const std::vector<const VW::workspace*>& all_workspaces, const GD::gd& base_data,
     const std::vector<GD::gd*>& all_data, VW::workspace& output_workspace, GD::gd& output_data)
 {
