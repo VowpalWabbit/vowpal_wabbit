@@ -8,6 +8,11 @@ on:
   pull_request:
     branches:
       - '*'
+
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }} 
+  cancel-in-progress: true
+
 jobs:
   build_vendor_linux:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
