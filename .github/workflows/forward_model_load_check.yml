@@ -12,8 +12,8 @@ on:
       - '*'
 
 jobs:
-  generate-latest-model:
-    name: Generate latest python model
+  python-build:
+    name: Build latest python wheel
     container:
       image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
@@ -26,7 +26,28 @@ jobs:
         shell: bash
         run: |
           /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
-          auditwheel repair wheel_output/*whl -w built_wheel/
+          auditwheel repair wheel_output/*whl -w audit_output/
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: test_manylinux_amd64_3.10
+          path: audit_output/
+  generate-latest-model:
+    name: Generate model using latest artifact
+    needs: python-build
+    container:
+      image: python:3.10
+    runs-on: ubuntu-latest
+    steps:
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
+      - uses: actions/checkout@v1
+      - name: Download artifact
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          workflow: python_wheels.yml
+          workflow_conclusion: success
+          name: manylinux_amd64_3.10
+          path: built_wheel
       - name: Build recent-models
         shell: bash
         run: |
