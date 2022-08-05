@@ -26,12 +26,14 @@ class CriticalArrayGuard
   JNIEnv* _env;
   jarray _arr;
   void* _arr0;
+  size_t _length;
 
 public:
   CriticalArrayGuard(JNIEnv* env, jarray arr);
   ~CriticalArrayGuard();
 
   void* data();
+  size_t length() const;
 };
 
 // bind VW instance and example together to reduce the number of variables passed around
