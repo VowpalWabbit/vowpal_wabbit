@@ -200,6 +200,16 @@ jobs:
       - name: Test nuget
         run: |
           cd nuget/test
+
+          # Clear the local nuget cache
           dotnet nuget locals all --clear
-          dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --packages "${{github.workspace}}/downloaded_nugets" --output build
+
+          # This installs local packages to cache but generates errors for dependencies that are yet to be downloaded
+          dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets" --ignore-failed-sources
+
+          # This downloads remaining dependencies to cache
+          dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}}
+
+          # Build and run program
+          dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --output build --no-restore
           ./build/dotnetcore_nuget_test
