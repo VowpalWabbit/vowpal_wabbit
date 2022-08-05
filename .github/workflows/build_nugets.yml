@@ -164,3 +164,41 @@ jobs:
         with:
           name: ${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
           path: nuget_staging/${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
+
+  test_nuget_dotnetcore:
+    needs: [build_nuget_dotnetcore]
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { os: "windows-latest", runtime_id: "win-x64" }
+          - { os: "ubuntu-latest", runtime_id: "linux-x64" }
+          - { os: "macos-latest", runtime_id: "osx-x64" }
+    runs-on: ${{matrix.config.os}}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - if: ${{ startsWith(matrix.config.os, 'windows') }}
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Get version of VW
+        id: fetch-vw-version
+        shell: bash
+        run: |
+          version=$(cat version.txt)
+          echo "::set-output name=VWVersion::$version"
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbitNetCore.${{steps.fetch-vw-version.outputs.VWVersion}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbitNetCore.runtime.${{matrix.config.runtime_id}}.${{steps.fetch-vw-version.outputs.VWVersion}}.nupkg
+          path: downloaded_nugets
+      - name: Test nuget
+        run: |
+          ls downloaded_nugets
+          cd nuget/test
+          dotnet nuget locals all --clear
+          dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --packages "${{github.workspace}}/downloaded_nugets" --output build
+          ./build/dotnetcore_nuget_test

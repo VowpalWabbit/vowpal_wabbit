@@ -2,17 +2,17 @@
   "runtimes": {
     "linux-x64": {
       "@NUGET_PACKAGE_NAME@": {
-        "runtime.linux-x64.@NUGET_PACKAGE_NAME@": "@NUGET_PACKAGE_VERSION@"
+        "@NUGET_PACKAGE_NAME@.runtime.linux-x64": "@NUGET_PACKAGE_VERSION@"
       }
     },
     "win-x64": {
       "@NUGET_PACKAGE_NAME@": {
-        "runtime.win-x64.@NUGET_PACKAGE_NAME@": "@NUGET_PACKAGE_VERSION@"
+        "@NUGET_PACKAGE_NAME@.runtime.win-x64": "@NUGET_PACKAGE_VERSION@"
       }
     },
     "osx-x64": {
       "@NUGET_PACKAGE_NAME@": {
-        "runtime.osx-x64.@NUGET_PACKAGE_NAME@": "@NUGET_PACKAGE_VERSION@"
+        "@NUGET_PACKAGE_NAME@.runtime.osx-x64": "@NUGET_PACKAGE_VERSION@"
       }
     }
   }

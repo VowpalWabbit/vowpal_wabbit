@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
   <metadata>
-    <id>runtime.@NUGET_RUNTIME_ID@.@NUGET_PACKAGE_NAME@</id>
-    <title>runtime.@NUGET_RUNTIME_ID@.@NUGET_PACKAGE_NAME@</title>
+    <id>@NUGET_PACKAGE_NAME@.runtime.@NUGET_RUNTIME_ID@</id>
+    <title>@NUGET_PACKAGE_NAME@.runtime.@NUGET_RUNTIME_ID@</title>
     <authors>John Langford et al</authors>
     <version>@NUGET_PACKAGE_VERSION@</version>
     <projectUrl>https://github.com/VowpalWabbit/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
