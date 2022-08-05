@@ -3,23 +3,13 @@ name: Model checks
 # This file builds and tests Python binary wheels across major platforms. The
 
 on:
-  push:
-    branches:
-      - master
-      - 'releases/**'
-  pull_request:
-    branches:
-      - '*'
+  workflow_run:
+    workflows:
+      - Python
+    types:
+      - completed
 
 jobs:
-  do-nothing:
-    name: Do nothing
-    runs-on: ubuntu-latest
-    steps:
-      - name: Print hello
-        shell: bash
-        run: |
-          echo "hello"
   generate-latest-model:
     name: Generate model using latest artifact
     needs: linux-python-build
