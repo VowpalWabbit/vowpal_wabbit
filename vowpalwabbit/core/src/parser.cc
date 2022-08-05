@@ -875,7 +875,7 @@ void empty_example(VW::workspace& /*all*/, example& ec)
   ec.sorted = false;
   ec.end_pass = false;
   ec.is_newline = false;
-  ec._reduction_features.clear();
+  //ec._reduction_features.clear();
   ec.num_features_from_interactions = 0;
 }
 
