@@ -6,6 +6,10 @@ on:
       - master
       - 'releases/**'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build-benchmark-master:
     container:
