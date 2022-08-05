@@ -18,6 +18,7 @@ def generate_cb_with_regularization():
         vw.learn(cb_ex)
 
     vw.save("cb_explore_adf_model_with_regularization.vw")
+    vw.finish()
 
 
 def main():
