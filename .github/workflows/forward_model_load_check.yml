@@ -45,8 +45,6 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: test_manylinux_amd64_3.10
-          workflow_conclusion: success
-          name: manylinux_amd64_3.10
           path: built_wheel
       - name: Build recent-models
         shell: bash
