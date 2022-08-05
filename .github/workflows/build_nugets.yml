@@ -197,19 +197,21 @@ jobs:
         with:
           name: VowpalWabbitNetCore.runtime.${{matrix.config.runtime_id}}.${{steps.fetch-vw-version.outputs.VWVersion}}.nupkg
           path: downloaded_nugets
-      - name: Test nuget
+      - name: Clear nuget cache
+        run: dotnet nuget locals all --clear
+      - name: Install VW package
+        # this may generate an error because we are installing packages from local source with remote dependencies
+        # the missing dependencies are installed in the next step
+        continue-on-error: true
         run: |
           cd nuget/test
-
-          # Clear the local nuget cache
-          dotnet nuget locals all --clear
-
-          # This installs local packages to cache but generates errors for dependencies that are yet to be downloaded
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets" --ignore-failed-sources
-
-          # This downloads remaining dependencies to cache
+      - name: Install remaining dependencies
+        run: |
+          cd nuget/test
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}}
-
-          # Build and run program
+      - name: Build and run test
+        run: |
+          cd nuget/test
           dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --output build --no-restore
           ./build/dotnetcore_nuget_test
