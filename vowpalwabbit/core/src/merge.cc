@@ -153,7 +153,7 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
   auto base_workspace_concrete = get_beginning_destination_workspace(base_workspace, dest_command_line, nullptr);
   auto dest_workspace = get_beginning_destination_workspace(base_workspace, dest_command_line, logger);
 
-  auto destination_model = VW::initialize_experimental(
+  auto destination_workspace = VW::initialize_experimental(
       VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, logger);
 
   float base_example_count = base_workspace_concrete->sd->weighted_labeled_examples;
@@ -169,24 +169,23 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
   for (const auto& model : workspaces_to_merge) { example_counts.push_back(model->sd->weighted_labeled_examples); }
   const auto per_model_weighting = calc_per_model_weighting(example_counts);
 
-  auto* target_learner = destination_model->l;
+  auto* target_learner = destination_workspace->l;
   while (target_learner != nullptr)
   {
     if (target_learner->has_merge())
     {
-      std::vector<void*> reduction_data_per_model;
+      std::vector<const LEARNER::base_learner*> source_learners;
       for (const auto& model : workspaces_to_merge)
       {
         auto* source_data = model->l->get_learner_by_name_prefix(target_learner->get_name());
-        reduction_data_per_model.push_back(source_data->get_internal_type_erased_data_pointer_test_use_only());
+        source_learners.push_back(source_data);
       }
 
-      auto* base_data = base_workspace_concrete->l->get_learner_by_name_prefix(target_learner->get_name())
-                            ->get_internal_type_erased_data_pointer_test_use_only();
+      auto* base_workspace_learner = base_workspace_concrete->l->get_learner_by_name_prefix(target_learner->get_name());
 
-      target_learner->merge(per_model_weighting, *base_workspace_concrete, workspaces_to_merge, base_data,
-          reduction_data_per_model, *destination_model,
-          target_learner->get_internal_type_erased_data_pointer_test_use_only());
+      target_learner->merge(per_model_weighting, *base_workspace_concrete, workspaces_to_merge, base_workspace_learner,
+          source_learners, *destination_workspace,
+          target_learner);
     }
     // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
     // not going to work.
@@ -214,9 +213,9 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
   for (const auto& model : workspaces_to_merge) { shared_datas.push_back(model->sd); }
 
   // Merge shared data too
-  merge_shared_data(*base_workspace_concrete->sd, *destination_model->sd, shared_datas);
+  merge_shared_data(*base_workspace_concrete->sd, *destination_workspace->sd, shared_datas);
 
-  return destination_model;
+  return destination_workspace;
 }
 
 }  // namespace VW
