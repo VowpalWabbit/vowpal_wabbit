@@ -452,7 +452,7 @@ input_options parse_source(VW::workspace& all, options_i& options)
 
 namespace VW
 {
-const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
+const char* are_features_compatible(const VW::workspace& vw1, const VW::workspace& vw2)
 {
   if (vw1.example_parser->hasher != vw2.example_parser->hasher) { return "hasher"; }
 
@@ -1390,11 +1390,10 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
 }
 
 std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_deleter_type> options,
-    trace_message_t trace_listener, void* trace_context, VW::io::logger_output_func_t logger_output_func = nullptr,
-    void* logger_output_func_context = nullptr)
+    trace_message_t trace_listener, void* trace_context, VW::io::logger* custom_logger)
 {
-  auto logger = logger_output_func != nullptr
-      ? VW::io::create_custom_sink_logger(logger_output_func_context, logger_output_func)
+  auto logger = custom_logger != nullptr
+      ? *custom_logger
       : (trace_listener != nullptr ? VW::io::create_custom_sink_logger_legacy(trace_context, trace_listener)
                                    : VW::io::create_default_logger());
 
@@ -1825,12 +1824,10 @@ VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_m
 
 std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, options_deleter_type> options,
     io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context,
-    VW::io::logger_output_func_t logger_output_func = nullptr, void* logger_output_func_context = nullptr,
-    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
+    VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   // Set up logger as early as possible
-  auto all =
-      parse_args(std::move(options), trace_listener, trace_context, logger_output_func, logger_output_func_context);
+  auto all = parse_args(std::move(options), trace_listener, trace_context, custom_logger);
 
   // if user doesn't pass in a model, read from options
   io_buf local_model;
@@ -1931,8 +1928,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
 
 std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options,
     std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
-    void* driver_output_func_context, VW::io::logger_output_func_t logger_output_func, void* logger_output_func_context,
-    std::unique_ptr<VW::setup_base_i> learner_builder)
+    void* driver_output_func_context, VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   auto* released_options = options.release();
   std::unique_ptr<options_i, options_deleter_type> options_custom_deleter(
@@ -1946,8 +1942,7 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
     model->add_file(std::move(model_override_reader));
   }
   return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
-      driver_output_func, driver_output_func_context, logger_output_func, logger_output_func_context,
-      std::move(learner_builder));
+      driver_output_func, driver_output_func_context, custom_logger, std::move(learner_builder));
 }
 
 VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
@@ -1955,8 +1950,8 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
 
     std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
-  return initialize_internal(std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr,
-      nullptr, std::move(learner_builder))
+  return initialize_internal(
+      std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr, std::move(learner_builder))
       .release();
 }
 

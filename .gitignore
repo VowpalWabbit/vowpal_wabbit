@@ -156,3 +156,6 @@ node_modules
 
 #VS Code
 .vscode/settings.json
+
+cmake-build-debug
+cmake-build-release

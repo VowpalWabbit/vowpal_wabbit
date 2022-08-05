@@ -7,6 +7,8 @@ This implements the allreduce function of MPI.  Code primarily by
 Alekh Agarwal and John Langford, with help Olivier Chapelle.
 */
 
+#include "vw/core/accumulate.h"
+
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/global_data.h"
 #include "vw/core/vw_allreduce.h"
@@ -109,30 +111,6 @@ float min_elem(float* arr, int length)
   return min;
 }
 
-template <class T>
-void do_weighting(VW::workspace& all, uint64_t length, float* local_weights, T& weights)
-{
-  for (uint64_t i = 0; i < length; i++)
-  {
-    float* weight = &weights[i << weights.stride_shift()];
-    if (local_weights[i] > 0)
-    {
-      float ratio = weight[1] / local_weights[i];
-      weight[0] *= ratio;
-      weight[1] *= ratio;  // A crude max
-      if (all.normalized_idx > 0)
-      {
-        weight[all.normalized_idx] *= ratio;  // A crude max
-      }
-    }
-    else
-    {
-      local_weights[i] = 0;
-      *weight = 0;
-    }
-  }
-}
-
 void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
 {
   if (!weights.adaptive)
@@ -158,10 +136,10 @@ void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
   // First compute weights for averaging
   all_reduce<float, add_float>(all, local_weights, length);
 
-  if (weights.sparse) { do_weighting(all, length, local_weights, weights.sparse_weights); }
+  if (weights.sparse) { VW::details::do_weighting(all.normalized_idx, length, local_weights, weights.sparse_weights); }
   else
   {
-    do_weighting(all, length, local_weights, weights.dense_weights);
+    VW::details::do_weighting(all.normalized_idx, length, local_weights, weights.dense_weights);
   }
 
   if (weights.sparse)
