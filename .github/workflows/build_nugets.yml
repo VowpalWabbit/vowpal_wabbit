@@ -116,11 +116,13 @@ jobs:
       - name: Setup MSVC Developer Command Prompt
         if: ${{ startsWith(matrix.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
       - name: Configure
         run: >
-          cmake -S . -B build
+          cmake -S . -B build -G Ninja
           -Dvw_BUILD_NET_CORE=On
           -Dvw_DOTNET_USE_MSPROJECT=Off
           -DBUILD_FLATBUFFERS=Off
