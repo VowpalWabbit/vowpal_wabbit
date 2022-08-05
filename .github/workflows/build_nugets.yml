@@ -157,7 +157,7 @@ jobs:
         run: |
           cd nuget_staging
           nuget pack dotnetcore_runtime.nuspec
-          NugetFileName=(runtime*.nupkg)
+          NugetFileName=(*runtime*.nupkg)
           echo "::set-output name=NugetFileName::${NugetFileName[0]}"
       - name: Upload Runtime
         uses: actions/upload-artifact@v1
@@ -197,7 +197,6 @@ jobs:
           path: downloaded_nugets
       - name: Test nuget
         run: |
-          ls downloaded_nugets
           cd nuget/test
           dotnet nuget locals all --clear
           dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --packages "${{github.workspace}}/downloaded_nugets" --output build
