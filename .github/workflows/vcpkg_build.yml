@@ -1,36 +1,36 @@
-# name: Vcpkg build
+name: Vcpkg build
 
-# on:
-#   push:
-#     branches:
-#       - master
-#       - 'releases/**'
-#   pull_request:
-#     branches:
-#       - '*'
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
 
 
-# jobs:
-#   job:
-#     name: ${{ matrix.os }}-${{ matrix.preset }}-${{ github.workflow }}
-#     runs-on: ${{ matrix.os }}
-#     strategy:
-#       fail-fast: false
-#       matrix:
-#         os: [ubuntu-latest, macos-latest, windows-latest]
-#         preset: [vcpkg-debug, vcpkg-release]
-#     steps:
-#       - uses: actions/checkout@v2
-#         with:
-#           submodules: true
-#       - uses: lukka/get-cmake@latest
-#       - uses: lukka/run-vcpkg@main
-#         with:
-#           vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-#           vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
-#       - uses: lukka/run-cmake@v10
-#         with:
-#           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
-#           configurePreset: "${{ matrix.preset }}"
-#           buildPreset: "${{ matrix.preset }}"
-#           testPreset: "${{ matrix.preset }}"
+jobs:
+  job:
+    name: ${{ matrix.os }}-${{ matrix.preset }}-${{ github.workflow }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        preset: [vcpkg-debug, vcpkg-release]
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: lukka/get-cmake@latest
+      - uses: lukka/run-vcpkg@main
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+      - uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
+          configurePreset: "${{ matrix.preset }}"
+          buildPreset: "${{ matrix.preset }}"
+          testPreset: "${{ matrix.preset }}"
