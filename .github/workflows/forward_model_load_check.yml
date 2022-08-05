@@ -42,9 +42,9 @@ jobs:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
       - name: Download artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: actions/download-artifact@v1
         with:
-          workflow: python_wheels.yml
+          name: test_manylinux_amd64_3.10
           workflow_conclusion: success
           name: manylinux_amd64_3.10
           path: built_wheel
