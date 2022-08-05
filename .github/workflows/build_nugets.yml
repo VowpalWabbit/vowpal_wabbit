@@ -197,6 +197,8 @@ jobs:
         with:
           name: VowpalWabbitNetCore.runtime.${{matrix.config.runtime_id}}.${{steps.fetch-vw-version.outputs.VWVersion}}.nupkg
           path: downloaded_nugets
+      - name: List downloaded packages
+        run: ls downloaded_nugets
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
       - name: Install VW package
@@ -205,7 +207,7 @@ jobs:
         continue-on-error: true
         run: |
           cd nuget/test
-          dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets" --ignore-failed-sources
+          dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets"
       - name: Install remaining dependencies
         run: |
           cd nuget/test
@@ -213,5 +215,5 @@ jobs:
       - name: Build and run test
         run: |
           cd nuget/test
-          dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --output build --no-restore
+          dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --output build --no-restore --self-contained
           ./build/dotnetcore_nuget_test

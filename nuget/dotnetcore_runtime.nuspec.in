@@ -12,7 +12,7 @@
     <copyright>Copyright (C) Microsoft Corp 2012-2022, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
   </metadata>
   <files>
-  	  <file src="runtimes/@NUGET_RUNTIME_ID@/lib/**/*.dll" target="" />
-  	  <file src="runtimes/@NUGET_RUNTIME_ID@/native/**" target="" />
+  	  <file src="runtimes\@NUGET_RUNTIME_ID@\lib\netstandard2.1\*.dll" target="runtimes\@NUGET_RUNTIME_ID@\lib\netstandard2.1\" />
+  	  <file src="runtimes\@NUGET_RUNTIME_ID@\native\*" target="runtimes\@NUGET_RUNTIME_ID@\native\" />
   </files>
 </package>
