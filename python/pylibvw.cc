@@ -285,12 +285,12 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 
 vw_ptr my_initialize(py::list args) { return my_initialize_with_log(args, nullptr); }
 
-boost::shared_ptr<VW::workspace> merge_workspaces(py::list workspaces)
+boost::shared_ptr<VW::workspace> merge_workspaces(vw_ptr base_workspace, py::list workspaces)
 {
   std::vector<const VW::workspace*> const_workspaces;
   for (size_t i = 0; i < py::len(workspaces); i++)
   { const_workspaces.push_back(py::extract<VW::workspace*>(workspaces[i])); }
-  return boost::shared_ptr<VW::workspace>(VW::merge_models(const_workspaces));
+  return boost::shared_ptr<VW::workspace>(VW::merge_models(base_workspace.get(), const_workspaces));
 }
 
 void my_run_parser(vw_ptr all)
@@ -1692,6 +1692,6 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Tell search that on a single structured 'run', you don't change the examples you pass to predict")
       .def_readonly("IS_LDF", Search::IS_LDF, "Tell search that this is an LDF task");
 
-  py::def("_merge_models_impl", merge_workspaces, py::args("workspaces"),
+  py::def("_merge_models_impl", merge_workspaces, py::args("base_workspace", "workspaces"),
       "Merge several Workspaces into one. Experimental.");
 }

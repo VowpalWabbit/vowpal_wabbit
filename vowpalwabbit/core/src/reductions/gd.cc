@@ -81,14 +81,6 @@ void merge_weights_with_save_resume(size_t length,
     for (uint64_t i = 0; i < full_weights_size; i++) { weights[i] += this_source[i]; }
   }
 }
-
-std::vector<float> calc_per_model_weighting(const std::vector<float>& example_counts)
-{
-  const auto sum = std::accumulate(example_counts.begin(), example_counts.end(), 0.f);
-  std::vector<float> per_model_weighting(example_counts.size(), 0.f);
-  for (size_t i = 0; i < example_counts.size(); i++) { per_model_weighting[i] = example_counts[i] / sum; }
-  return per_model_weighting;
-}
 }  // namespace
 
 // todo:
@@ -207,10 +199,10 @@ void end_pass(gd& g)
   }
 }
 
-void merge(const std::vector<float>& example_counts, const std::vector<const VW::workspace*>& all_workspaces,
+void merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+    const std::vector<const VW::workspace*>& all_workspaces, const GD::gd& base_data,
     const std::vector<GD::gd*>& all_data, VW::workspace& output_workspace, GD::gd& output_data)
 {
-  const auto per_model_weighting = calc_per_model_weighting(example_counts);
   const uint32_t length = 1 << output_workspace.num_bits;
 
   // Weight aggregation is based on same method as allreduce.
@@ -247,10 +239,15 @@ void merge(const std::vector<float>& example_counts, const std::vector<const VW:
     {
       // normalized_sum_norm_x is additive
       output_data.per_model_states[i].normalized_sum_norm_x +=
-          source_data_obj->per_model_states[i].normalized_sum_norm_x;
+          (source_data_obj->per_model_states[i].normalized_sum_norm_x -
+              base_data.per_model_states[i].normalized_sum_norm_x);
       // total_weight is additive
-      output_data.per_model_states[i].total_weight += source_data_obj->per_model_states[i].total_weight;
+      output_data.per_model_states[i].total_weight +=
+          (source_data_obj->per_model_states[i].total_weight - base_data.per_model_states[i].total_weight);
     }
+    // Add in the base value.
+    output_data.per_model_states[i].normalized_sum_norm_x += base_data.per_model_states[i].normalized_sum_norm_x;
+    output_data.per_model_states[i].total_weight += base_data.per_model_states[i].total_weight;
   }
 }
 
