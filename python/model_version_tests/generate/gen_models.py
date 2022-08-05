@@ -1,5 +1,4 @@
-import argparse
-import vowpalwabbit as pyvw
+import vowpalwabbit
 
 
 cb_ex = """
@@ -13,7 +12,7 @@ cb_ex = """
 
 
 def generate_cb_with_regularization():
-    vw = pyvw.Workspace(quiet=True, cb_explore_adf=True, l1=0.2, l2=0.3)
+    vw = vowpalwabbit.Workspace(quiet=True, cb_explore_adf=True, l1=0.2, l2=0.3)
 
     for _ in range(0, 5):
         vw.learn(cb_ex)
