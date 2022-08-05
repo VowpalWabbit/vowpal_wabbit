@@ -1,26 +1,26 @@
-name: Linux / C++ - VW with large action space reduction
+# name: Linux / C++ - VW with large action space reduction
 
-on:
-  push:
-    branches:
-      - master
-      - 'releases/**'
-  pull_request:
-    branches:
-      - '*'
+# on:
+#   push:
+#     branches:
+#       - master
+#       - 'releases/**'
+#   pull_request:
+#     branches:
+#       - '*'
 
-jobs:
-  check:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: recursive
-      - name: Build VW with large action space reduction
-        shell: bash
-        run: ./.scripts/linux/build-las-reduction.sh
-      - name: Test VW with large action space reduction
-        shell: bash
-        run: ./.scripts/linux/test-las-reduction.sh
+# jobs:
+#   check:
+#     container:
+#       image: vowpalwabbit/ubuntu1804-build:latest
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v1
+#         with:
+#           submodules: recursive
+#       - name: Build VW with large action space reduction
+#         shell: bash
+#         run: ./.scripts/linux/build-las-reduction.sh
+#       - name: Test VW with large action space reduction
+#         shell: bash
+#         run: ./.scripts/linux/test-las-reduction.sh
