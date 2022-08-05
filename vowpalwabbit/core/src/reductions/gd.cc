@@ -78,10 +78,7 @@ void merge_weights_with_save_resume(size_t length,
     const auto& this_source = model_num.get();
     // Intentionally add irrespective of stride.
     const auto full_weights_size = length << weights.stride_shift();
-    for (uint64_t i = 0; i < full_weights_size; i++)
-    {
-      weights[i] += this_source[i];
-    }
+    for (uint64_t i = 0; i < full_weights_size; i++) { weights[i] += this_source[i]; }
   }
 }
 
