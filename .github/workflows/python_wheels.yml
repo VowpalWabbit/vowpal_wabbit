@@ -14,6 +14,10 @@ on:
     branches:
       - '*'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   linux-python-build:
     name: manylinux.amd64.py${{ matrix.config.version}}.build
