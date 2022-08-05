@@ -3,17 +3,10 @@ name: Model checks
 # This file builds and tests Python binary wheels across major platforms. The
 
 on:
-  push:
-    branches:
-      - master
-      - 'releases/**'
   workflow_run:
     workflows: [Python]
     types:
       - completed
-  pull_request:
-    branches:
-      - '*'
 
 jobs:
   generate-latest-model:
@@ -24,8 +17,6 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
-        with:
-          submodules: recursive
       - name: Download artifact
         uses: dawidd6/action-download-artifact@v2
         with:
@@ -53,8 +44,6 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
-        with:
-          submodules: recursive
       - uses: actions/download-artifact@v1
         with:
           name: vw_generated_models
