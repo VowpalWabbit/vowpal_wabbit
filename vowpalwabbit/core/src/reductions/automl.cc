@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/reductions/automl/automl_impl.h"
 #include "vw/core/reductions/automl/automl_iomodel.h"
+#include "vw/core/shared_data.h"
 
 // TODO: delete this two includes
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -235,7 +236,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
       std::move(cm), &all.logger);
   data->debug_reverse_learning_order = reversed_learning_order;
-  data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 2, 0.f);
+  data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 3, 0.f);
   data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
 
   if (max_live_configs > VW::reductions::automl::MAX_CONFIGS)
@@ -278,6 +279,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     data->cm->_gd_total_weight = &(gd.per_model_states[0].total_weight);
     data->cm->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
     data->cm->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
+    data->cm->_sd_gravity = &(all.sd->gravity);
 
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
         learn_automl<VW::reductions::automl::interaction_config_manager, true>,

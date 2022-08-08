@@ -94,7 +94,7 @@ struct interaction_config_manager : config_manager
   uint64_t total_learn_count = 0;
   uint64_t current_champ = 0;
   uint64_t global_lease;
-  uint64_t max_live_configs;
+  const uint64_t max_live_configs;
   std::shared_ptr<VW::rand_state> random_state;
   uint64_t priority_challengers;
   uint64_t valid_config_size = 0;
@@ -114,6 +114,7 @@ struct interaction_config_manager : config_manager
   std::vector<uint64_t> per_live_model_state_uint64;
   double* _gd_normalized = nullptr;
   double* _gd_total_weight = nullptr;
+  double* _sd_gravity = nullptr;
   uint64_t* _cb_adf_event_sum = nullptr;
   uint64_t* _cb_adf_action_sum = nullptr;
 
