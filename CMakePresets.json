@@ -64,6 +64,24 @@
           "value": "Release"
         }
       }
+    },
+    {
+      "name": "vcpkg-asan",
+      "inherits": "vcpkg-release",
+      "cacheVariables": {
+        "VW_USE_ASAN": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "USE_LATEST_STD": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "BUILD_FLATBUFFERS": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
     }
   ],
   "buildPresets": [

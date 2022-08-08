@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_and_test_asan:
+  test_with_asan:
     strategy:
       fail-fast: false
       matrix:
@@ -31,21 +31,16 @@ jobs:
       - name: Setup MSVC Developer Command Prompt
         if: ${{ startsWith(matrix.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
-      - name: Install Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
-      - name: Install vcpkg dependencies
-        run: vcpkg install zlib boost-test flatbuffers
-      - name: Configure
-        run: |
-          cmake -S . -B build -G Ninja
-          -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_INSTALLATION_ROOT }}/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_MANIFEST_MODE=Off
-          -DBUILD_FLATBUFFERS=On
-          -DUSE_LATEST_STD=On
-          -DVW_USE_ASAN=On
-      - name: Build
-        run: |
-          cmake --build build --config Release
+      - uses: lukka/get-cmake@latest
+      - uses: lukka/run-vcpkg@main
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+      - uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
+          configurePreset: "vcpkg-asan"
+          buildPreset: "vcpkg-release"
       - name: Run unit tests
         run: |
           cd build
