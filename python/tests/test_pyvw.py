@@ -701,3 +701,25 @@ def test_random_weights_seed():
 
     dummy_ex_str = " | foo=bar"
     assert a.predict(dummy_ex_str) != b.predict(dummy_ex_str)
+
+
+def test_merge_models():
+    model1 = vowpalwabbit.Workspace(quiet=True)
+    model1.learn("1 | foo")
+    model1.learn("1 | foo")
+    model2 = vowpalwabbit.Workspace(quiet=True)
+    model2.learn("1 | bar")
+    model2.learn("1 | bar")
+    model2.learn("1 | bar")
+
+    merged_model = vowpalwabbit.merge_models([model1, model2])
+    assert (
+        merged_model.get_weighted_examples()
+        == model1.get_weighted_examples() + model2.get_weighted_examples()
+    )
+    assert model1.get_weight_from_name("foo") != 0
+    assert model1.get_weight_from_name("bar") == 0
+    assert merged_model.get_weight_from_name("foo") != 0
+    assert model2.get_weight_from_name("foo") == 0
+    assert model2.get_weight_from_name("bar") != 0
+    assert merged_model.get_weight_from_name("bar") != 0

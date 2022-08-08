@@ -158,6 +158,13 @@ bool is_allowed_to_remove(const unsigned char ns)
   return true;
 }
 
+void interaction_config_manager::clear_non_champ_weights()
+{
+  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < estimators.size();
+       ++current_slot_index)
+  { weights.clear_offset(current_slot_index, wpp); }
+}
+
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
 // newly seen namespaces.

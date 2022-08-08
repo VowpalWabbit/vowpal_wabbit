@@ -125,6 +125,13 @@ struct finish_example_data
   fn print_example_f = nullptr;
 };
 
+using merge_with_all_fn = void (*)(const std::vector<float>& example_counts,
+    const std::vector<const VW::workspace*>& all_workspaces, const std::vector<void*>& all_data,
+    VW::workspace& output_workspace, void* output_data);
+// When the workspace reference is not needed this signature should definitely be used.
+using merge_fn = void (*)(
+    const std::vector<float>& example_counts, const std::vector<void*>& all_data, void* output_data);
+
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
 inline void noop(void*) {}
@@ -240,6 +247,10 @@ private:
   label_type_t _output_label_type;
   label_type_t _input_label_type;
   bool _is_multiline;  // Is this a single-line or multi-line reduction?
+
+  // There should only only ever be either none, or one of these two set. Never both.
+  details::merge_with_all_fn _merge_with_all_fn;
+  details::merge_fn _merge_fn;
 
   std::shared_ptr<void> learner_data;
 
@@ -444,6 +455,26 @@ public:
     }
   }
 
+  // This is effectively static implementing a trait for this learner type.
+  // NOT auto recursive
+  void merge(const std::vector<float>& example_counts, const std::vector<const VW::workspace*>& all_workspaces,
+      const std::vector<void*>& all_data, VW::workspace& output_workspace, void* output_data)
+  {
+    assert(example_counts.size() == all_workspaces.size());
+    assert(example_counts.size() == all_data.size());
+    if (_merge_with_all_fn != nullptr)
+    { _merge_with_all_fn(example_counts, all_workspaces, all_data, output_workspace, output_data); }
+    else if (_merge_fn != nullptr)
+    {
+      _merge_fn(example_counts, all_data, output_data);
+    }
+    else
+    {
+      THROW("learner " << name << " does not support merging.");
+    }
+  }
+
+  VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_fn != nullptr) || (_merge_fn != nullptr); }
   VW_ATTR(nodiscard) prediction_type_t get_output_prediction_type() const { return _output_pred_type; }
   VW_ATTR(nodiscard) prediction_type_t get_input_prediction_type() const { return _input_pred_type; }
   VW_ATTR(nodiscard) label_type_t get_output_label_type() const { return _output_label_type; }
@@ -451,6 +482,10 @@ public:
   VW_ATTR(nodiscard) bool is_multiline() const { return _is_multiline; }
   VW_ATTR(nodiscard) const std::string& get_name() const { return name; }
   VW_ATTR(nodiscard) const base_learner* get_learn_base() const { return learn_fd.base; }
+  VW_ATTR(nodiscard) base_learner* get_learn_base() { return learn_fd.base; }
+  /// If true, this specific learner defines a save load function. If false, it simply forwards to a base
+  /// implementation.
+  VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return learn_fd.data == save_load_fd.data; }
 };
 
 template <class T, class E>
@@ -677,6 +712,9 @@ struct reduction_learner_builder
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
     this->_learner->learn_fd.multipredict_f = nullptr;
+    // Don't propagate merge functions
+    this->_learner->_merge_fn = nullptr;
+    this->_learner->_merge_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
@@ -695,6 +733,13 @@ struct reduction_learner_builder
   {
     this->_learner->weights = params_per_weight;
     this->_learner->increment = this->_learner->learn_fd.base->increment * this->_learner->weights;
+    return *this;
+  }
+
+  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_merge_with_all(void (*merge_fn)(
+      const std::vector<float>& example_counts, const std::vector<DataT*>& all_data, DataT& output_data))
+  {
+    this->_learner->_merge_fn = merge_fn;
     return *this;
   }
 
@@ -722,6 +767,10 @@ struct reduction_learner_builder
             this->_learner->learn_fd.base->get_name());
       }
     }
+
+    if (this->_learner->_merge_fn != nullptr && this->_learner->_merge_with_all_fn != nullptr)
+    { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
+
     return this->_learner;
   }
 };
@@ -747,6 +796,9 @@ struct reduction_no_data_learner_builder
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
+    // Don't propagate merge functions
+    this->_learner->_merge_fn = nullptr;
+    this->_learner->_merge_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     // By default, will produce what the base expects
@@ -810,7 +862,20 @@ struct base_learner_builder
     return *this;
   }
 
-  learner<DataT, ExampleT>* build() { return this->_learner; }
+  base_learner_builder<DataT, ExampleT>& set_merge_with_all(void (*merge_with_all_fn)(
+      const std::vector<float>& example_counts, const std::vector<const VW::workspace*>& all_workspaces,
+      const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data))
+  {
+    this->_learner->_merge_with_all_fn = reinterpret_cast<details::merge_with_all_fn>(merge_with_all_fn);
+    return *this;
+  }
+
+  learner<DataT, ExampleT>* build()
+  {
+    if (this->_learner->_merge_fn != nullptr && this->_learner->_merge_with_all_fn != nullptr)
+    { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
+    return this->_learner;
+  }
 };
 VW_WARNING_STATE_POP
 

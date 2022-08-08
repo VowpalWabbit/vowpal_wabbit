@@ -93,6 +93,7 @@ void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& 
 template <typename CMType>
 void save_load_aml(VW::reductions::automl::automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
+  if (aml.should_save_predict_only_model) { aml.cm->clear_non_champ_weights(); }
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }
   else
@@ -141,6 +142,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   bool reversed_learning_order = false;
   bool lb_trick = false;
   bool fixed_significance_level;
+  std::string predict_only_model_file;
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -193,6 +195,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .default_value(false)
                .help("Use 1-lower_bound as upper_bound for estimator")
                .experimental())
+      .add(make_option("aml_predict_only_model", predict_only_model_file)
+               .default_value("")
+               .help("transform input automl model into predict only automl model")
+               .experimental())
       .add(make_option("automl_significance_level", automl_significance_level)
                .keep()
                .default_value(DEFAULT_ALPHA)
@@ -227,6 +233,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   if (!fixed_significance_level) { automl_significance_level /= max_live_configs; }
 
   bool ccb_on = options.was_supplied("ccb_explore_adf");
+  bool predict_only_model = options.was_supplied("aml_predict_only_model");
 
   // Note that all.wpp will not be set correctly until after setup
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
@@ -234,7 +241,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
       all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
       lb_trick, ccb_on);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
-      std::move(cm), &all.logger);
+      std::move(cm), &all.logger, predict_only_model);
   data->debug_reverse_learning_order = reversed_learning_order;
   data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 3, 0.f);
   data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);

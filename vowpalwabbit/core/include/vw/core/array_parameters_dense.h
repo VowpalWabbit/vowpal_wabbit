@@ -141,6 +141,7 @@ public:
   }
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
+  inline const weight& strided_index(size_t index) const { return operator[](index << _stride_shift); }
 
   template <typename Lambda>
   void set_default(Lambda&& default_func)
