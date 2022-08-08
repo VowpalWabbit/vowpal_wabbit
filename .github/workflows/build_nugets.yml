@@ -1,4 +1,4 @@
-name: Windows Nuget
+name: Build Nugets
 
 on:
   push:
@@ -201,13 +201,14 @@ jobs:
         run: ls downloaded_nugets
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - name: Install VW package
+      - name: Install package
         # this may generate an error because we are installing packages from local source with remote dependencies
         # the missing dependencies are installed in the next step
-        continue-on-error: true
         run: |
+          set +e
           cd nuget/test
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets"
+          exit 0
       - name: Install remaining dependencies
         run: |
           cd nuget/test
