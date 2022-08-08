@@ -759,9 +759,9 @@ struct reduction_learner_builder
     return *this;
   }
 
-  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_merge_with_all(
+  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_merge(
       void (*merge_fn)(const std::vector<float>& per_model_weighting, const DataT& base_data,
-          const std::vector<DataT*>& all_data, DataT& output_data))
+          const std::vector<const DataT*>& all_data, DataT& output_data))
   {
     this->_learner->_merge_fn = merge_fn;
     return *this;
