@@ -118,6 +118,17 @@ option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instea
 option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
+option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
+
+if(VW_USE_ASAN)
+  if(MSVC)
+    add_compile_options(/fsanitize=address /GS- /wd5072)
+    add_link_options(/InferASanLibs /incremental:no /debug)
+  else()
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -Og -g3)
+    add_link_options(-fsanitize=address -fno-omit-frame-pointer -Og -g3)
+  endif()
+endif()
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
