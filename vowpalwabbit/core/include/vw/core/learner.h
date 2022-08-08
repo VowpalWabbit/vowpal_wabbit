@@ -763,7 +763,7 @@ struct reduction_learner_builder
       void (*merge_fn)(const std::vector<float>& per_model_weighting, const DataT& base_data,
           const std::vector<const DataT*>& all_data, DataT& output_data))
   {
-    this->_learner->_merge_fn = merge_fn;
+    this->_learner->_merge_fn = reinterpret_cast<details::merge_fn>(merge_fn);
     return *this;
   }
 
