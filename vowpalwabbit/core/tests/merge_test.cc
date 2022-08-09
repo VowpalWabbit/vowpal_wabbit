@@ -5,6 +5,7 @@
 #include "vw/core/merge.h"
 
 #include "vw/config/options_cli.h"
+#include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 
@@ -73,4 +74,16 @@ TEST(merge_tests, merge_cb_model)
   EXPECT_FLOAT_EQ(vw1->sd->weighted_labeled_examples, 1.f);
   EXPECT_FLOAT_EQ(vw2->sd->weighted_labeled_examples, 1.f);
   EXPECT_FLOAT_EQ(result->sd->weighted_labeled_examples, 2.f);
+
+  auto* vw1_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+      vw1->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
+  auto* vw2_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+      vw2->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
+  auto* vw_merged_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+      result->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
+
+  EXPECT_EQ(vw_merged_cb_adf->get_gen_cs().event_sum,
+      vw1_cb_adf->get_gen_cs().event_sum + vw2_cb_adf->get_gen_cs().event_sum);
+  EXPECT_EQ(vw_merged_cb_adf->get_gen_cs().action_sum,
+      vw1_cb_adf->get_gen_cs().action_sum + vw2_cb_adf->get_gen_cs().action_sum);
 }
