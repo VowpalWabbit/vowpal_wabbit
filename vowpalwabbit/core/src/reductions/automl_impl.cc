@@ -108,7 +108,6 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 
 void interaction_config_manager::gen_interactions(uint64_t live_slot)
 {
-  std::vector<std::vector<extent_term>> empty;
   if (interaction_type == "quadratic")
   {
     auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
@@ -149,7 +148,13 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
   {
     THROW("Unknown interaction type.");
   }
-  if (ccb_on) { ccb::insert_ccb_interactions(interactions, empty); }
+
+  if (ccb_on)
+  {
+    std::vector<std::vector<extent_term>> empty;
+    auto& interactions = estimators[live_slot].first.live_interactions;
+    ccb::insert_ccb_interactions(interactions, empty);
+  }
 }
 
 bool is_allowed_to_remove(const unsigned char ns)
