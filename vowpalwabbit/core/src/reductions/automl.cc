@@ -129,74 +129,74 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  uint64_t global_lease;
-  uint64_t max_live_configs;
-  std::string cm_type;
-  std::string priority_type;
-  int32_t priority_challengers;
+  uint64_t global_lease = 4000;
+  uint64_t max_live_configs = 4;
+  std::string cm_type = "interaction";
+  std::string priority_type = "none";
+  int32_t priority_challengers = -1;
   bool verbose_metrics = false;
-  std::string interaction_type;
-  std::string oracle_type;
-  float automl_significance_level;
-  float automl_estimator_decay;
+  std::string interaction_type = "quadratic";
+  std::string oracle_type = "one_diff";
+  float automl_significance_level = DEFAULT_ALPHA;
+  float automl_estimator_decay = CRESSEREAD_DEFAULT_TAU;
   bool reversed_learning_order = false;
   bool lb_trick = false;
-  bool fixed_significance_level;
-  std::string predict_only_model_file;
+  bool fixed_significance_level = false;
+  std::string predict_only_model_file = "";
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
       .add(make_option("automl", max_live_configs)
                .necessary()
                .keep()
-               .default_value(4)
+               .default_value(max_live_configs)
                .help("Set number of live configs")
                .experimental())
       .add(make_option("global_lease", global_lease)
                .keep()
-               .default_value(4000)
+               .default_value(global_lease)
                .help("Set initial lease for automl interactions")
                .experimental())
       .add(make_option("cm_type", cm_type)
                .keep()
-               .default_value("interaction")
+               .default_value(cm_type)
                .one_of({"interaction"})
                .help("Set type of config manager")
                .experimental())
       .add(make_option("priority_type", priority_type)
                .keep()
-               .default_value("none")
+               .default_value(priority_type)
                .one_of({"none", "favor_popular_namespaces"})
                .help("Set function to determine next config")
                .experimental())
       .add(make_option("priority_challengers", priority_challengers)
                .keep()
-               .default_value(-1)
+               .default_value(priority_challengers)
                .help("Set number of priority challengers to use")
                .experimental())
       .add(make_option("verbose_metrics", verbose_metrics).help("Extended metrics for debugging").experimental())
       .add(make_option("interaction_type", interaction_type)
                .keep()
-               .default_value("quadratic")
+               .default_value(interaction_type)
                .one_of({"quadratic", "cubic"})
                .help("Set what type of interactions to use")
                .experimental())
       .add(make_option("oracle_type", oracle_type)
                .keep()
-               .default_value("one_diff")
+               .default_value(oracle_type)
                .one_of({"one_diff", "rand", "champdupe"})
                .help("Set oracle to generate configs")
                .experimental())
       .add(make_option("debug_reversed_learn", reversed_learning_order)
-               .default_value(false)
+               .default_value(reversed_learning_order)
                .help("Debug: learn each config in reversed order (last to first).")
                .experimental())
       .add(make_option("lb_trick", lb_trick)
-               .default_value(false)
+               .default_value(lb_trick)
                .help("Use 1-lower_bound as upper_bound for estimator")
                .experimental())
       .add(make_option("aml_predict_only_model", predict_only_model_file)
-               .default_value("")
+               .default_value(predict_only_model_file)
                .help("transform input automl model into predict only automl model")
                .experimental())
       .add(make_option("automl_significance_level", automl_significance_level)
