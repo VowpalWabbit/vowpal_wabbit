@@ -10,7 +10,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -20,7 +20,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        preset: [vcpkg-asan-debug, vcpkg-asan-release]
+        preset: [vcpkg-asan-release]
     runs-on: ${{matrix.os}}
     env:
       ASAN_OPTIONS: "alloc_dealloc_mismatch=0"
