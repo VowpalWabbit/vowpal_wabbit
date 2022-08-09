@@ -124,7 +124,6 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
         if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
       }
     }
-    if (ccb_on) { ccb::insert_ccb_interactions(interactions, empty); }
   }
   else if (interaction_type == "cubic")
   {
@@ -150,6 +149,7 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
   {
     THROW("Unknown interaction type.");
   }
+  if (ccb_on) { ccb::insert_ccb_interactions(interactions, empty); }
 }
 
 bool is_allowed_to_remove(const unsigned char ns)
