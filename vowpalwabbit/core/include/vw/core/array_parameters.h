@@ -101,12 +101,7 @@ public:
   }
 
   sparse_parameters()
-      : _map()
-      , _weight_mask(0)
-      , _stride_shift(0)
-      , _seeded(false)
-      , _delete(false)
-      , _default_func(nullptr)
+      : _map(), _weight_mask(0), _stride_shift(0), _seeded(false), _delete(false), _default_func(nullptr)
   {
   }
 
@@ -143,10 +138,7 @@ public:
     return const_iterator(i, stride());
   }
 
-  inline weight& operator[](size_t i)
-  {
-    return *(get_or_default_and_get(i));
-  }
+  inline weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
 
   inline const weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
 

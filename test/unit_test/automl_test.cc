@@ -64,9 +64,7 @@ void check_config_states(VW::reductions::automl::automl<interaction_config_manag
     auto config_index = index_queue.top().second;
     index_queue.pop();
     if (config_index >= 0 && config_index < aml->cm->configs.size())
-    {
-      BOOST_CHECK(aml->cm->configs[config_index].state != VW::reductions::automl::config_state::Live);
-    }
+    { BOOST_CHECK(aml->cm->configs[config_index].state != VW::reductions::automl::config_state::Live); }
     else
     {
       BOOST_FAIL("Index out of bounds!");

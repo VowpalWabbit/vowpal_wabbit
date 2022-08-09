@@ -98,13 +98,7 @@ public:
   {
   }
 
-  dense_parameters()
-      : _begin(nullptr)
-      , _weight_mask(0)
-      , _stride_shift(0)
-      , _seeded(false)
-  {
-  }
+  dense_parameters() : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false) {}
 
   bool not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
@@ -126,10 +120,7 @@ public:
   const_iterator cend() const { return const_iterator(_begin + _weight_mask + 1, _begin, stride_shift()); }
 
   inline const weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
-  inline weight& operator[](size_t i)
-  {
-    return _begin[i & _weight_mask];
-  }
+  inline weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
 
   void shallow_copy(const dense_parameters& input)
   {
