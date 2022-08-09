@@ -415,7 +415,7 @@ public class VowpalWabbitNativeIT {
             vw2 = new VowpalWabbitNative("--quiet");
             vw2.learnFromString("1 'second_house | price:.18 sqft:.15 age:.35 1976");
 
-            vwMerged = VowpalWabbitNative.mergeModels(new VowpalWabbitNative[] { vw1, vw2 });
+            vwMerged = VowpalWabbitNative.mergeModels(null, new VowpalWabbitNative[] { vw1, vw2 });
 
             assertEquals(1.0, vw1.getPerformanceStatistics().getWeightedExampleSum(), 0.001);
             assertEquals(1.0, vw2.getPerformanceStatistics().getWeightedExampleSum(), 0.001);
