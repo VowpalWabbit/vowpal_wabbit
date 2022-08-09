@@ -61,11 +61,16 @@ void check_config_states(VW::reductions::automl::automl<interaction_config_manag
   auto index_queue = aml->cm->index_queue;
   while (!index_queue.empty())
   {
-    auto& config_index = index_queue.top().second;
+    auto config_index = index_queue.top().second;
     index_queue.pop();
-    auto& configs = aml->cm->configs;
-    auto config_state = configs[config_index].state;
-    BOOST_CHECK(config_state != VW::reductions::automl::config_state::Live);
+    if (config_index >= 0 && config_index < aml->cm->configs.size())
+    {
+      BOOST_CHECK(aml->cm->configs[config_index].state != VW::reductions::automl::config_state::Live);
+    }
+    else
+    {
+      BOOST_FAIL("Index out of bounds!");
+    }
   }
 
   // All configs in the estimators should be live
