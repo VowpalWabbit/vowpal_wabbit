@@ -15,16 +15,11 @@ vw_add_library(
 
 target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_DEPRECATE ZLIB_WINAPI)
 
-include(WindowsSetPath)
-
 vw_add_test_executable(
   FOR_LIB "c_wrapper"
   SOURCES tests/vwdll_test.cc
   EXTRA_DEPS vw_core
 )
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
-  windows_set_path(vw_c_wrapper_test vw_c_wrapper)
-endif()
 
 # Also for compat install to old location.
 if(VW_INSTALL)
