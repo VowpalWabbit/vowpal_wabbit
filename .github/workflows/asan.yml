@@ -43,16 +43,7 @@ jobs:
           configurePreset: "${{ matrix.preset }}"
       - name: Build
         run: cmake --build build
-      - name: Run c wrapper test
-        if: ${{ startsWith(matrix.os, 'windows') }}
-        run: |
-          cd build/vowpalwabbit/c_wrapper
-          ls
-          dumpbin /dependents vw_c_wrapper_test.exe
-          dumpbin /dependents vw_c_wrapper.dll
-          ./vw_c_wrapper_test.exe
       - name: Run unit tests
-        if: ${{ success() || failure() }}
         run: |
           cd build
           ctest --verbose --output-on-failure

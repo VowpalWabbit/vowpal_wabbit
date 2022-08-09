@@ -63,7 +63,9 @@ void check_config_states(VW::reductions::automl::automl<interaction_config_manag
   {
     auto& config_index = index_queue.top().second;
     index_queue.pop();
-    BOOST_CHECK(aml->cm->configs[config_index].state != VW::reductions::automl::config_state::Live);
+    auto& configs = aml->cm->configs;
+    auto config_state = configs[config_index].state;
+    BOOST_CHECK(config_state != VW::reductions::automl::config_state::Live);
   }
 
   // All configs in the estimators should be live
