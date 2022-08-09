@@ -647,7 +647,7 @@ def find_to_flatbuf_binary(
     ]
 
     def is_to_flatbuff_binary(file: Path) -> bool:
-        return file.name == "to_flatbuff"
+        return file.name == "to_flatbuff" or file.name == "to_flatbuff.exe"
 
     user_supplied_bin_path = (
         Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
