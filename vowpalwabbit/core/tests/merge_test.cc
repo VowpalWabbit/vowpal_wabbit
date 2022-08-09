@@ -27,7 +27,7 @@ TEST(merge_tests, merge_simple_model)
   vw2->finish_example(*ex2);
 
   std::vector<const VW::workspace*> workspaces = {vw1.get(), vw2.get()};
-  auto result = VW::merge_models(workspaces);
+  auto result = VW::merge_models(nullptr, workspaces);
 
   EXPECT_FLOAT_EQ(vw1->sd->weighted_labeled_examples, 1.f);
   EXPECT_FLOAT_EQ(vw2->sd->weighted_labeled_examples, 1.f);
@@ -68,7 +68,7 @@ TEST(merge_tests, merge_cb_model)
   vw2->finish_example(examples2);
 
   std::vector<const VW::workspace*> workspaces = {vw1.get(), vw2.get()};
-  auto result = VW::merge_models(workspaces);
+  auto result = VW::merge_models(nullptr, workspaces);
 
   EXPECT_FLOAT_EQ(vw1->sd->weighted_labeled_examples, 1.f);
   EXPECT_FLOAT_EQ(vw2->sd->weighted_labeled_examples, 1.f);
