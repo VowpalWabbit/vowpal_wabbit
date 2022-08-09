@@ -50,6 +50,7 @@ set(vw_core_headers
   include/vw/core/learner.h
   include/vw/core/loss_functions.h
   include/vw/core/memory.h
+  include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
   include/vw/core/multiclass.h
@@ -216,6 +217,7 @@ set(vw_core_sources
   src/label_type.cc
   src/learner.cc
   src/loss_functions.cc
+  src/merge.cc
   src/metric_sink.cc
   src/multiclass.cc
   src/multilabel.cc
@@ -343,6 +345,11 @@ if(VW_BUILD_LARGE_ACTION_SPACE)
   set(vw_core_sources
     ${vw_core_sources}
     src/reductions/cb/cb_explore_adf_large_action_space.cc
+    src/reductions/cb/details/large_action/model_weight_rand_svd_impl.cc
+    src/reductions/cb/details/large_action/one_pass_svd_impl.cc
+    src/reductions/cb/details/large_action/vanilla_rand_svd_impl.cc
+    src/reductions/cb/details/large_action/aatop_impl.cc
+    src/reductions/cb/details/large_action/spanner_impl.cc
     src/reductions/cb/cb_actions_mask.cc src/qr_decomposition.cc
   )
 endif()
@@ -404,5 +411,9 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "core"
-    SOURCES tests/cache_test.cc tests/parse_args_test.cc tests/save_load_test.cc
+    SOURCES
+      tests/cache_test.cc
+      tests/merge_test.cc
+      tests/parse_args_test.cc
+      tests/save_load_test.cc
 )

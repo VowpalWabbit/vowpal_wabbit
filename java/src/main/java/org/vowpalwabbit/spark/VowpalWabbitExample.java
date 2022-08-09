@@ -21,7 +21,7 @@ public class VowpalWabbitExample implements Closeable {
     /**
      * Frees the native resources.
      */
-    private native long finish();
+    private native void finish();
 
     /**
      * Clears the features and label.
