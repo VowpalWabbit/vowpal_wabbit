@@ -72,6 +72,7 @@ public:
   bool get_rank_all() const { return _rank_all; }
 
   const GEN_CS::cb_to_cs_adf& get_gen_cs() const { return _gen_cs; }
+  GEN_CS::cb_to_cs_adf& get_gen_cs() { return _gen_cs; }
 
   const VW::version_struct* get_model_file_ver() const { return _model_file_ver; }
 

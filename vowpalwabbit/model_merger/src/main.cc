@@ -74,6 +74,7 @@ struct command_line_options
   VW::io::log_level log_level{};
   VW::io::output_location log_output_stream{};
   std::string output_file;
+  std::string base_file;
   std::vector<std::string> input_files;
 };
 
@@ -94,9 +95,11 @@ command_line_options parse_command_line(int argc, char** argv, VW::io::logger& l
   diagnostics_options.add(make_option("help", help).short_name("h").help("Output this help message."));
 
   std::string output_file;
-  option_group_definition output_options("Ouput");
+  std::string base_file;
+  option_group_definition output_options("Merge models");
   output_options.add(
       make_option("output", output_file).short_name('o').help("Name of file of merged model. Required."));
+  output_options.add(make_option("base", base_file).short_name('b').help("Name of file the base model."));
 
   std::vector<std::string> args(argv + 1, argv + argc);
   options_cli options(args);
@@ -131,6 +134,7 @@ command_line_options parse_command_line(int argc, char** argv, VW::io::logger& l
   result.log_level = VW::io::get_log_level(log_level);
   result.log_output_stream = VW::io::get_output_location(log_output_stream);
   result.output_file = output_file;
+  result.base_file = base_file;
   result.input_files = model_files;
 
   return result;
@@ -164,7 +168,19 @@ int main(int argc, char* argv[])
     std::vector<const VW::workspace*> const_workspaces;
     const_workspaces.reserve(models.size());
     for (const auto& model : models) { const_workspaces.push_back(model.get()); }
-    auto merged = VW::merge_models(const_workspaces, &custom_logger);
+
+    std::unique_ptr<VW::workspace> base_model = nullptr;
+    if (!options.base_file.empty())
+    {
+      logger.info("Loading base model: {}", options.base_file);
+      logger_contexts.push_back(logger_context{logger, "base: " + options.base_file});
+      auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), logger_output_func);
+      base_model = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
+                                                   "--driver_output_off", "--preserve_performance_counters"}),
+          VW::io::open_file_reader(options.base_file), nullptr, nullptr, &custom_logger);
+    }
+
+    auto merged = VW::merge_models(base_model.get(), const_workspaces, &custom_logger);
 
     logger.info("Saving model: {}", options.output_file);
     VW::save_predictor(*merged, options.output_file);
