@@ -166,7 +166,7 @@ public class VowpalWabbitNative implements Closeable {
      * @param workspacePointers array of pointers to VW models.
      * @return merged VW model.
      */
-    public static native VowpalWabbitNative mergeModels(VowpalWabbitNative[] workspacePointers);
+    public static native VowpalWabbitNative mergeModels(VowpalWabbitNative baseWorkspace, VowpalWabbitNative[] workspacePointers);
 
     /**
      * Frees the native resources.

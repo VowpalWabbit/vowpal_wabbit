@@ -4,6 +4,8 @@
 #pragma once
 // This is the interface for a learning algorithm
 
+#include "vw/core/global_data.h"
+
 #include <iostream>
 #include <memory>
 
@@ -125,12 +127,12 @@ struct finish_example_data
   fn print_example_f = nullptr;
 };
 
-using merge_with_all_fn = void (*)(const std::vector<float>& example_counts,
-    const std::vector<const VW::workspace*>& all_workspaces, const std::vector<void*>& all_data,
+using merge_with_all_fn = void (*)(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+    const std::vector<const VW::workspace*>& all_workspaces, const void* base_data, const std::vector<void*>& all_data,
     VW::workspace& output_workspace, void* output_data);
 // When the workspace reference is not needed this signature should definitely be used.
-using merge_fn = void (*)(
-    const std::vector<float>& example_counts, const std::vector<void*>& all_data, void* output_data);
+using merge_fn = void (*)(const std::vector<float>& per_model_weighting, const void* base_data,
+    const std::vector<void*>& all_data, void* output_data);
 
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
@@ -457,16 +459,20 @@ public:
 
   // This is effectively static implementing a trait for this learner type.
   // NOT auto recursive
-  void merge(const std::vector<float>& example_counts, const std::vector<const VW::workspace*>& all_workspaces,
+  void merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+      const std::vector<const VW::workspace*>& all_workspaces, const void* base_data,
       const std::vector<void*>& all_data, VW::workspace& output_workspace, void* output_data)
   {
-    assert(example_counts.size() == all_workspaces.size());
-    assert(example_counts.size() == all_data.size());
+    assert(per_model_weighting.size() == all_workspaces.size());
+    assert(per_model_weighting.size() == all_data.size());
     if (_merge_with_all_fn != nullptr)
-    { _merge_with_all_fn(example_counts, all_workspaces, all_data, output_workspace, output_data); }
+    {
+      _merge_with_all_fn(
+          per_model_weighting, base_workspace, all_workspaces, base_data, all_data, output_workspace, output_data);
+    }
     else if (_merge_fn != nullptr)
     {
-      _merge_fn(example_counts, all_data, output_data);
+      _merge_fn(per_model_weighting, base_data, all_data, output_data);
     }
     else
     {
@@ -736,8 +742,9 @@ struct reduction_learner_builder
     return *this;
   }
 
-  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_merge_with_all(void (*merge_fn)(
-      const std::vector<float>& example_counts, const std::vector<DataT*>& all_data, DataT& output_data))
+  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_merge_with_all(
+      void (*merge_fn)(const std::vector<float>& per_model_weighting, const DataT& base_data,
+          const std::vector<DataT*>& all_data, DataT& output_data))
   {
     this->_learner->_merge_fn = merge_fn;
     return *this;
@@ -862,9 +869,10 @@ struct base_learner_builder
     return *this;
   }
 
-  base_learner_builder<DataT, ExampleT>& set_merge_with_all(void (*merge_with_all_fn)(
-      const std::vector<float>& example_counts, const std::vector<const VW::workspace*>& all_workspaces,
-      const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data))
+  base_learner_builder<DataT, ExampleT>& set_merge_with_all(
+      void (*merge_with_all_fn)(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+          const std::vector<const VW::workspace*>& all_workspaces, const DataT& base_data,
+          const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data))
   {
     this->_learner->_merge_with_all_fn = reinterpret_cast<details::merge_with_all_fn>(merge_with_all_fn);
     return *this;

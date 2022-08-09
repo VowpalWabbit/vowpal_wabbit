@@ -202,13 +202,14 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   fabs_tilde_g = std::fabs(tilde_gradient);
 
   // Updating the hint sequence
-  if (h1 == 0 && lipschitz_const==0)
+  if (h1 == 0 && lipschitz_const == 0)
   {
     w[H1] = fabs_tilde_g;
     w[HT] = fabs_tilde_g;
     w[V_SUM] += d.ec_weight * std::pow(fabs_tilde_g, 2.f);
   }
-  else if (h1 == 0){
+  else if (h1 == 0)
+  {
     w[H1] = lipschitz_const;
     w[HT] = lipschitz_const;
     w[V_SUM] += d.ec_weight * std::pow(fabs_tilde_g, 2.f);
@@ -335,7 +336,8 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
       .add(make_option("radius", radius)
                .help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used"))
       .add(make_option("fepsilon", fepsilon).default_value(1.f).help("Initial wealth"))
-      .add(make_option("flipschitz_const", flipschitz_const).default_value(0.f)
+      .add(make_option("flipschitz_const", flipschitz_const)
+               .default_value(0.f)
                .help("Upper bound on the norm of the gradients if known in advance"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }

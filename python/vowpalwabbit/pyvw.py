@@ -1987,12 +1987,13 @@ class Example(pylibvw.example):
         return switch_prediction_type[prediction_type]()
 
 
-def merge_models(models: List[Workspace]) -> Workspace:
+def merge_models(base_model: Optional[Workspace], models: List[Workspace]) -> Workspace:
     """Merge the models loaded into separate workspaces into a single workspace which can then be serialized to a model.
 
     All of the given workspaces must use the exact same arguments, and only differ in training. `--preserve_performance_counters` should be used if models are loaded from disk and then given to this call.
 
     Args:
+        base_model (Optional[Workspace]): Base model the other models were based on. None, if they are trained from scratch.
         models (List[Workspace]): List of models to merge.
 
     Returns:
@@ -2010,7 +2011,7 @@ def merge_models(models: List[Workspace]) -> Workspace:
     """
 
     # This needs to be promoted to the Workspace object defined in Python.
-    result = pylibvw._merge_models_impl(models)
+    result = pylibvw._merge_models_impl(base_model, models)
     result.__class__ = Workspace
     result._log_wrapper = None
     result.parser_ran = False

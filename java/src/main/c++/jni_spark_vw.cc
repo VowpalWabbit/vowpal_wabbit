@@ -8,6 +8,7 @@
 #include "vw/config/cli_options_serializer.h"
 #include "vw/config/options.h"
 #include "vw/core/best_constant.h"
+#include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/merge.h"
 #include "vw/core/parse_example.h"
@@ -1059,9 +1060,12 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 }
 
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_mergeModels(
-    JNIEnv* env, jclass, jobjectArray workspacePointers)
+    JNIEnv* env, jclass, jobject baseWorkspace, jobjectArray workspacePointers)
 try
 {
+  VW::workspace* base = nullptr;
+  if (baseWorkspace != nullptr) { base = reinterpret_cast<VW::workspace*>(get_native_pointer(env, baseWorkspace)); }
+
   std::vector<const VW::workspace*> workspaces;
   int length = env->GetArrayLength(workspacePointers);
   if (length > 0)
@@ -1077,7 +1081,7 @@ try
     }
   }
 
-  auto result = VW::merge_models(workspaces);
+  auto result = VW::merge_models(base, workspaces);
 
   jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitNative");
   CHECK_JNI_EXCEPTION(nullptr);
