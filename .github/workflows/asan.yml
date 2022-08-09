@@ -21,7 +21,7 @@ jobs:
         os: [windows-latest, ubuntu-latest, macos-latest]
         preset: [vcpkg-asan-release]
     runs-on: ${{matrix.os}}
-    env:
+    #env:
       #ASAN_OPTIONS: "alloc_dealloc_mismatch=0"
 
     steps:
