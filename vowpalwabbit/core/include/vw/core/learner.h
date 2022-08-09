@@ -462,7 +462,7 @@ public:
   void merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
       const std::vector<const VW::workspace*>& all_workspaces, const base_learner* base_workspaces_learner,
       const std::vector<const base_learner*>& all_learners, VW::workspace& output_workspace,
-      const base_learner* output_learner)
+      base_learner* output_learner)
   {
     assert(per_model_weighting.size() == all_workspaces.size());
     assert(per_model_weighting.size() == all_learners.size());
