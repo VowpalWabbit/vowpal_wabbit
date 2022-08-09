@@ -184,8 +184,7 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
       auto* base_workspace_learner = base_workspace_concrete->l->get_learner_by_name_prefix(target_learner->get_name());
 
       target_learner->merge(per_model_weighting, *base_workspace_concrete, workspaces_to_merge, base_workspace_learner,
-          source_learners, *destination_workspace,
-          target_learner);
+          source_learners, *destination_workspace, target_learner);
     }
     // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
     // not going to work.

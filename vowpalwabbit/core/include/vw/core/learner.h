@@ -128,8 +128,8 @@ struct finish_example_data
 };
 
 using merge_with_all_fn = void (*)(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
-    const std::vector<const VW::workspace*>& all_workspaces, const void* base_data, const std::vector<const void*>& all_data,
-    VW::workspace& output_workspace, void* output_data);
+    const std::vector<const VW::workspace*>& all_workspaces, const void* base_data,
+    const std::vector<const void*>& all_data, VW::workspace& output_workspace, void* output_data);
 // When the workspace reference is not needed this signature should definitely be used.
 using merge_fn = void (*)(const std::vector<float>& per_model_weighting, const void* base_data,
     const std::vector<const void*>& all_data, void* output_data);
@@ -461,7 +461,8 @@ public:
   // NOT auto recursive
   void merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
       const std::vector<const VW::workspace*>& all_workspaces, const base_learner* base_workspaces_learner,
-      const std::vector<const base_learner*>& all_learners, VW::workspace& output_workspace, const base_learner* output_learner)
+      const std::vector<const base_learner*>& all_learners, VW::workspace& output_workspace,
+      const base_learner* output_learner)
   {
     assert(per_model_weighting.size() == all_workspaces.size());
     assert(per_model_weighting.size() == all_learners.size());
@@ -469,27 +470,22 @@ public:
 #ifndef NDEBUG
     // All learners should refer to the same learner 'type'
     const auto& name = base_workspaces_learner->get_name();
-    for (const auto& learner : all_learners)
-    {
-      assert(learner->get_name() == name);
-    }
+    for (const auto& learner : all_learners) { assert(learner->get_name() == name); }
 #endif
 
     std::vector<const void*> all_data;
     all_data.reserve(all_learners.size());
-for (const auto& learner : all_learners)
-    {
-      all_data.push_back(learner->learner_data.get());
-    }
+    for (const auto& learner : all_learners) { all_data.push_back(learner->learner_data.get()); }
 
     if (_merge_with_all_fn != nullptr)
     {
-      _merge_with_all_fn(
-          per_model_weighting, base_workspace, all_workspaces, base_workspaces_learner->learner_data.get(), all_data, output_workspace, output_learner->learner_data.get());
+      _merge_with_all_fn(per_model_weighting, base_workspace, all_workspaces,
+          base_workspaces_learner->learner_data.get(), all_data, output_workspace, output_learner->learner_data.get());
     }
     else if (_merge_fn != nullptr)
     {
-      _merge_fn(per_model_weighting, base_workspaces_learner->learner_data.get(), all_data, output_learner->learner_data.get());
+      _merge_fn(per_model_weighting, base_workspaces_learner->learner_data.get(), all_data,
+          output_learner->learner_data.get());
     }
     else
     {

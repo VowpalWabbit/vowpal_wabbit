@@ -409,7 +409,8 @@ void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
       model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
 }
 
-void cb_adf_merge(const std::vector<float>& /* per_model_weights */, const CB_ADF::cb_adf& base_data, const std::vector<const CB_ADF::cb_adf*>& sources, CB_ADF::cb_adf& output_data)
+void cb_adf_merge(const std::vector<float>& /* per_model_weights */, const CB_ADF::cb_adf& base_data,
+    const std::vector<const CB_ADF::cb_adf*>& sources, CB_ADF::cb_adf& output_data)
 {
   // Add in the source values relative to the base model.
   for (const auto* source : sources)
