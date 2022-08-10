@@ -85,9 +85,12 @@ private:
   // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
   void make_space_at(size_t idx, size_t width)
   {
-    _end += width;
-    if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
-    memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
+    if (width > 0)
+    {
+      _end += width;
+      if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
+      memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
+    }
   }
 
   void resize_no_initialize(size_t old_size, size_t length)

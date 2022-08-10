@@ -10,10 +10,7 @@ license as described in the file LICENSE.
 // http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.h
 //
 // Notes:
-// 1) this code assumes we can read a 4-byte value from any address
-//    without crashing (i.e non aligned access is supported). This is
-//    not a problem on Intel/x86/AMD64 machines (including new Macs)
-// 2) It produces different results on little-endian and big-endian machines.
+//   It produces different results on little-endian and big-endian machines.
 //
 // Adopted for VW and contributed by Ariel Faigon.
 //
@@ -34,6 +31,7 @@ license as described in the file LICENSE.
 #include <sys/types.h>
 
 #include <cstdint>
+#include <cstring>
 
 namespace VW
 {
@@ -58,7 +56,12 @@ VW_STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept
 //-----------------------------------------------------------------------------
 // Block read - if your platform needs to do endian-swapping or can only
 // handle aligned reads, do the conversion here
-constexpr static inline uint32_t getblock(const uint32_t* p, int i) noexcept { return p[i]; }
+constexpr static inline uint32_t getblock(const uint32_t* p, int i) noexcept
+{
+  uint32_t block = 0;
+  memcpy(&block, p+i, sizeof(uint32_t));
+  return block;
+}
 
 }  // namespace details
 

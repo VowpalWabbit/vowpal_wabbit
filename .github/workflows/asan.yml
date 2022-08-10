@@ -22,6 +22,8 @@ jobs:
         preset: [vcpkg-asan-debug]
     runs-on: ${{ matrix.os }}
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
+    env:
+      UBSAN_OPTIONS: "print_stacktrace=1"
 
     steps:
       - uses: actions/checkout@v2

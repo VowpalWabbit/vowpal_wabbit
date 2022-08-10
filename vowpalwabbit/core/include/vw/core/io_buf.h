@@ -229,7 +229,7 @@ public:
   {
     char* c;
     buf_write(c, sizeof(T));
-    *reinterpret_cast<T*>(c) = value;
+    memcpy(c, &value, sizeof(T));
     c += sizeof(T);
     set(c);
     return sizeof(T);
@@ -249,7 +249,7 @@ public:
         THROW("Failed to read cache value with size: " << sizeof(T));
       }
     }
-    value = *reinterpret_cast<T*>(read_head);
+    memcpy(&value, read_head, sizeof(T));
     return value;
   }
 

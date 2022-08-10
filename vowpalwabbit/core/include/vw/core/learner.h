@@ -291,7 +291,7 @@ public:
   /// multiple regressors/learners you can increment this value for each call.
   /// \returns While some reductions may fill the example::pred, this is not
   /// guaranteed and is undefined behavior if accessed.
-  inline void learn(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED learn(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -310,7 +310,7 @@ public:
   /// \returns The prediction calculated by this reduction be set on
   /// example::pred. If <code>E</code> is ::multi_ex then the prediction is set
   /// on the 0th item in the list.
-  inline void predict(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED predict(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -320,7 +320,7 @@ public:
     details::decrement_offset(ec, increment, i);
   }
 
-  inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
+  inline void NO_SANITIZE_UNDEFINED multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -355,7 +355,7 @@ public:
     }
   }
 
-  inline void update(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED update(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -365,7 +365,7 @@ public:
     details::decrement_offset(ec, increment, i);
   }
 
-  inline float sensitivity(example& ec, size_t i = 0)
+  inline float NO_SANITIZE_UNDEFINED sensitivity(example& ec, size_t i = 0)
   {
     details::increment_offset(ec, increment, i);
     debug_log_message(ec, "sensitivity");
