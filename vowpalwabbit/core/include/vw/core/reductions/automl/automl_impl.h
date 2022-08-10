@@ -108,14 +108,14 @@ struct config_oracle
       std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
       std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
       std::shared_ptr<VW::rand_state> rand_state)
-      : global_lease(global_lease)
-      , calc_priority(calc_priority)
+      : _interaction_type(interaction_type)
+      , _oracle_type(oracle_type)
+      , random_state(rand_state)
       , index_queue(index_queue)
       , ns_counter(ns_counter)
       , configs(configs)
-      , _interaction_type(interaction_type)
-      , _oracle_type(oracle_type)
-      , random_state(rand_state)
+      , calc_priority(calc_priority)
+      , global_lease(global_lease)
   {
   }
   void do_work(std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
