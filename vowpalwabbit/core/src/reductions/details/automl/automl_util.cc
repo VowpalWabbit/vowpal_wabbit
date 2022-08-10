@@ -2,7 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl/automl.h"
 #include "vw/core/vw.h"
 
 namespace VW
@@ -48,7 +47,7 @@ std::string ns_to_str(unsigned char ns)
 }
 
 std::string interaction_vec_t_to_string(
-    const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type)
+    const std::vector<std::vector<namespace_index>>& interactions, const std::string& interaction_type)
 {
   std::stringstream ss;
   for (const std::vector<VW::namespace_index>& v : interactions)

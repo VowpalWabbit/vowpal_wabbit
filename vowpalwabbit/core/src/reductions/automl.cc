@@ -2,11 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl/automl.h"
+#include "vw/core/reductions/automl.h"
 
+#include "details/automl_impl.h"
 #include "vw/config/options.h"
-#include "vw/core/reductions/automl/automl_impl.h"
-#include "vw/core/reductions/automl/automl_iomodel.h"
 #include "vw/core/shared_data.h"
 
 // TODO: delete this two includes
@@ -93,7 +92,8 @@ void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& 
 template <typename CMType>
 void save_load_aml(VW::reductions::automl::automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
-  if (aml.should_save_predict_only_model) { aml.cm->clear_non_champ_weights(); }
+  if (aml.should_save_predict_only_model)
+  { VW::reductions::automl::clear_non_champ_weights(aml.cm->weights, aml.cm->estimators.size(), aml.cm->wpp); }
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }
   else

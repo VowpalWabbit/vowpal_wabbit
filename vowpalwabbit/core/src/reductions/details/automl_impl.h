@@ -178,8 +178,9 @@ struct interaction_config_manager : config_manager
   void update_champ();
 
   // Public for save_load
-  void gen_interactions(uint64_t);
-  void clear_non_champ_weights();
+  static void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter,
+      std::string& interaction_type, std::vector<exclusion_config>& configs,
+      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot);
 
 private:
   bool better(uint64_t live_slot);
@@ -279,6 +280,8 @@ struct automl
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
+bool is_allowed_to_remove(const unsigned char ns);
+void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
 }  // namespace automl
 
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
