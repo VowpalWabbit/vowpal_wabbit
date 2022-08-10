@@ -80,24 +80,23 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
-    , random_state(std::move(rand_state))
     , priority_challengers(priority_challengers)
-    , interaction_type(std::move(interaction_type))
-    , oracle_type(std::move(oracle_type))
+    , interaction_type(interaction_type)
     , weights(weights)
-    , calc_priority(calc_priority)
     , automl_significance_level(automl_significance_level)
     , automl_estimator_decay(automl_estimator_decay)
     , logger(logger)
     , wpp(wpp)
     , lb_trick(lb_trick)
     , ccb_on(ccb_on)
+    , _config_oracle(config_oracle(global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type,
+          oracle_type, std::move(rand_state)))
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
   estimators.emplace_back(std::make_pair(aml_estimator(automl_significance_level, automl_estimator_decay),
       estimator_config(automl_significance_level, automl_estimator_decay)));
-  ++valid_config_size;
+  ++_config_oracle.valid_config_size;
 }
 
 // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
@@ -196,7 +195,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
 }
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
-void interaction_config_manager::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups)
+void config_oracle::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups)
 {
   // First check if config already exists
   if (!allow_dups)
@@ -240,24 +239,25 @@ void interaction_config_manager::insert_config(std::set<std::vector<namespace_in
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
 // TODO: Add logic to avoid duplicate configs (could be very costly)
-void interaction_config_manager::config_oracle()
+void config_oracle::do_work(
+    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
 {
   auto& champ_interactions = estimators[current_champ].first.live_interactions;
-  if (oracle_type == "rand")
+  if (_oracle_type == "rand")
   {
     for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
     {
       uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
       std::set<std::vector<namespace_index>> new_exclusions(
           configs[estimators[current_champ].first.config_index].exclusions);
-      if (interaction_type == "quadratic")
+      if (_interaction_type == "quadratic")
       {
         namespace_index ns1 = champ_interactions[rand_ind][0];
         namespace_index ns2 = champ_interactions[rand_ind][1];
         std::vector<namespace_index> idx{ns1, ns2};
         new_exclusions.insert(idx);
       }
-      else if (interaction_type == "cubic")
+      else if (_interaction_type == "cubic")
       {
         namespace_index ns1 = champ_interactions[rand_ind][0];
         namespace_index ns2 = champ_interactions[rand_ind][1];
@@ -281,14 +281,14 @@ void interaction_config_manager::config_oracle()
    * one of those to the current exclusion set (eg it will generate {aa, ab, ac}, {aa, ab, bb}, {aa, ab, bc},
    * {aa, ab, cc}). Then the second part will create all exclusion sets which remove one (eg {aa} and {ab}).
    */
-  else if (oracle_type == "one_diff")
+  else if (_oracle_type == "one_diff")
   {
     // Add one exclusion (for each interaction)
     for (auto& interaction : champ_interactions)
     {
       std::set<std::vector<namespace_index>> new_exclusions(
           configs[estimators[current_champ].first.config_index].exclusions);
-      if (interaction_type == "quadratic")
+      if (_interaction_type == "quadratic")
       {
         namespace_index ns1 = interaction[0];
         namespace_index ns2 = interaction[1];
@@ -298,7 +298,7 @@ void interaction_config_manager::config_oracle()
           new_exclusions.insert(idx);
         }
       }
-      else if (interaction_type == "cubic")
+      else if (_interaction_type == "cubic")
       {
         namespace_index ns1 = interaction[0];
         namespace_index ns2 = interaction[1];
@@ -320,9 +320,9 @@ void interaction_config_manager::config_oracle()
       insert_config(std::move(new_exclusions));
     }
   }
-  else if (oracle_type == "champdupe")
+  else if (_oracle_type == "champdupe")
   {
-    for (uint64_t i = 0; i < max_live_configs; ++i)
+    for (uint64_t i = 0; configs.size() <= 1; ++i)
     {
       insert_config(
           std::set<std::vector<namespace_index>>(configs[estimators[current_champ].first.config_index].exclusions),
@@ -331,7 +331,7 @@ void interaction_config_manager::config_oracle()
   }
   else
   {
-    THROW("Unknown oracle type.");
+    THROW("Unknown oracle type: " << _oracle_type);
   }
 }
 // This function is triggered when all sets of interactions generated by the oracle have been tried and
@@ -339,7 +339,7 @@ void interaction_config_manager::config_oracle()
 // 'index_queue' which can be used to swap out live configs as they run out of lease. This functionality
 // may be better within the oracle, which could generate better priorities for different configs based
 // on ns_counter (which is updated as each example is processed)
-bool interaction_config_manager::repopulate_index_queue()
+bool config_oracle::repopulate_index_queue()
 {
   for (size_t i = 0; i < valid_config_size; ++i)
   {
@@ -399,7 +399,7 @@ void interaction_config_manager::schedule()
       while (!index_queue.empty() &&
           configs[index_queue.top().second].state == VW::reductions::automl::config_state::Removed)
       { index_queue.pop(); }
-      if (index_queue.empty() && !repopulate_index_queue()) { continue; }
+      if (index_queue.empty() && !_config_oracle.repopulate_index_queue()) { continue; }
       // Allocate new estimator if we haven't reached maximum yet
       if (need_new_estimator)
       {
@@ -495,7 +495,7 @@ void interaction_config_manager::update_champ()
     estimators.push_back(std::move(champ_estimator));
     estimators.push_back(std::move(old_champ_estimator));
     current_champ = 0;
-    valid_config_size = 2;
+    _config_oracle.valid_config_size = 2;
 
     /*
      * These operations rearrange the scoring data to sync up the new champion and old champion. Assume the first
@@ -516,7 +516,7 @@ void interaction_config_manager::update_champ()
       estimators[1].first.reset_stats();
       estimators[1].second.reset_stats();
     }
-    config_oracle();
+    _config_oracle.do_work(estimators, current_champ);
   }
 }
 

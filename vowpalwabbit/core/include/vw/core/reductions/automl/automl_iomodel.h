@@ -56,7 +56,7 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   size_t bytes = 0;
   bytes += read_model_field(io, cm.total_learn_count);
   bytes += read_model_field(io, cm.current_champ);
-  bytes += read_model_field(io, cm.valid_config_size);
+  bytes += read_model_field(io, cm._config_oracle.valid_config_size);
   bytes += read_model_field(io, cm.ns_counter);
   bytes += read_model_field(io, cm.configs);
   bytes += read_model_field(io, cm.estimators);
@@ -73,7 +73,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::automl::interaction_c
   size_t bytes = 0;
   bytes += write_model_field(io, cm.total_learn_count, upstream_name + "_count", text);
   bytes += write_model_field(io, cm.current_champ, upstream_name + "_champ", text);
-  bytes += write_model_field(io, cm.valid_config_size, upstream_name + "_valid_config_size", text);
+  bytes += write_model_field(io, cm._config_oracle.valid_config_size, upstream_name + "_valid_config_size", text);
   bytes += write_model_field(io, cm.ns_counter, upstream_name + "_ns_counter", text);
   bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
   bytes += write_model_field(io, cm.estimators, upstream_name + "_estimators", text);

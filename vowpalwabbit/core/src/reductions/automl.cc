@@ -235,6 +235,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   bool predict_only_model = options.was_supplied("aml_predict_only_model");
 
   // Note that all.wpp will not be set correctly until after setup
+  assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe");
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
       all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
       all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
