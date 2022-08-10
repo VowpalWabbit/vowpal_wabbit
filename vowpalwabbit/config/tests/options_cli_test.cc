@@ -444,6 +444,8 @@ TEST(options_cli_test, check_necessary)
 
   int int_opt;
   std::string str_opt;
+  std::string default_str_opt;
+  float float_opt;
   bool bool_opt;
   bool other_bool_opt;
   option_group_definition arg_group("group1");
@@ -451,6 +453,8 @@ TEST(options_cli_test, check_necessary)
   arg_group.add(make_option("str_opt", str_opt).keep());
   arg_group.add(make_option("bool_opt", bool_opt).keep());
   arg_group.add(make_option("other_bool_opt", other_bool_opt).keep());
+  arg_group.add(make_option("str_opt_with_default", default_str_opt).default_value("HELLOTHERE").keep());
+  arg_group.add(make_option("float_opt", float_opt).default_value(0.08789f));
 
   bool result;
   EXPECT_NO_THROW(result = options->add_parse_and_check_necessary(arg_group));
@@ -460,6 +464,8 @@ TEST(options_cli_test, check_necessary)
   EXPECT_EQ(str_opt, "test");
   EXPECT_EQ(bool_opt, false);
   EXPECT_EQ(other_bool_opt, true);
+  EXPECT_EQ(default_str_opt, "HELLOTHERE");
+  EXPECT_EQ(float_opt, 0.08789f);
 }
 
 TEST(options_cli_test, check_missing_necessary)

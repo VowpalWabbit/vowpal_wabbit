@@ -289,15 +289,14 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
   std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
   std::vector<std::tuple<float, float, float, float>> automl_champ_weights_vector;
 
-  while (iter_1 != weights_qcolcol.end())
-  {
-    if (*iter_1 != 0.0f)
-    {
-      float* first_weight = (float*)&(*iter_1);
-      qcolcol_weights_vector.emplace_back(first_weight[0], first_weight[1], first_weight[2], first_weight[3]);
-    }
-    ++iter_1;
-  }
+  dense_iterator<float> qcolcol_it = weights_qcolcol.begin();
+  auto end = weights_qcolcol.end();
+
+  if (*qcolcol_it != 0.0f)
+  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+
+  while (qcolcol_it.next_non_zero(end) < end)
+  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
 
   std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
 
@@ -315,6 +314,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
 
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
   BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 31);
+  BOOST_CHECK_EQUAL(automl_champ_weights_vector.size(), 31);
   BOOST_CHECK(qcolcol_weights_vector == automl_champ_weights_vector);
   BOOST_CHECK(ctr1 == ctr2);
 
