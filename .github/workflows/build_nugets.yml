@@ -35,7 +35,6 @@ jobs:
           -T ${{ matrix.toolset }}
           -DNATIVE_NUGET_PLATFORM_TAG="${{ matrix.arch_config.arch }}"
           -DBUILD_FLATBUFFERS=Off
-          -DBUILD_CSV=Off
           -DBUILD_TESTING=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
