@@ -42,7 +42,7 @@ void predict_or_learn(uniform_exploration_data& data, VW::LEARNER::multi_learner
 	}
       else
 	{
-	  p_unchanged += prob;
+	  p_unchanged += prob.score;
 	}
   }
 
