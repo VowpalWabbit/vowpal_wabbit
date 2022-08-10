@@ -66,6 +66,17 @@ public:
     return *this;
   }
 
+  dense_iterator& next_non_zero(const dense_iterator& end)
+  {
+    while (_current + _stride < end._current)
+    {
+      _current += _stride;
+      if (*_current != 0.0f) { return *this; }
+    }
+    _current = end._current;
+    return *this;
+  }
+
   // ignores the stride
   pointer operator[](size_t n)
   {

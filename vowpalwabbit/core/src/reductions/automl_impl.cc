@@ -8,6 +8,7 @@
 #include "vw/core/interactions.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/reductions/automl/automl_util.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -76,7 +77,7 @@ void aml_estimator::persist(
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string interaction_type,
     std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
-    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick)
+    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , random_state(std::move(rand_state))
@@ -90,6 +91,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , logger(logger)
     , wpp(wpp)
     , lb_trick(lb_trick)
+    , ccb_on(ccb_on)
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
@@ -146,6 +148,19 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
   {
     THROW("Unknown interaction type.");
   }
+
+  if (ccb_on)
+  {
+    std::vector<std::vector<extent_term>> empty;
+    auto& interactions = estimators[live_slot].first.live_interactions;
+    ccb::insert_ccb_interactions(interactions, empty);
+  }
+}
+
+bool is_allowed_to_remove(const unsigned char ns)
+{
+  if (ns == ccb_slot_namespace || ns == wildcard_namespace || ns == ccb_id_namespace) { return false; }
+  return true;
 }
 
 void interaction_config_manager::clear_non_champ_weights()
@@ -167,6 +182,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
     for (const auto& ns : ex->indices)
     {
       if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
+      if (!is_allowed_to_remove(ns)) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
@@ -276,8 +292,11 @@ void interaction_config_manager::config_oracle()
       {
         namespace_index ns1 = interaction[0];
         namespace_index ns2 = interaction[1];
-        std::vector<namespace_index> idx{ns1, ns2};
-        new_exclusions.insert(idx);
+        if (is_allowed_to_remove(ns1) && is_allowed_to_remove(ns2))
+        {
+          std::vector<namespace_index> idx{ns1, ns2};
+          new_exclusions.insert(idx);
+        }
       }
       else if (interaction_type == "cubic")
       {
@@ -532,15 +551,17 @@ void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
 void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
 {
   // TODO: what to do if that slot is switched with a new config?
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
+  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
   for (example* ex : ec) { apply_config(ex, live_slot); }
   if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
   base.learn(ec, live_slot);
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
+  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 }
