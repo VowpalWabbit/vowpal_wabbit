@@ -81,10 +81,7 @@ set(vw_core_headers
   include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h
   include/vw/core/reductions/autolink.h
-  include/vw/core/reductions/automl/automl.h
-  include/vw/core/reductions/automl/automl_impl.h
-  include/vw/core/reductions/automl/automl_iomodel.h
-  include/vw/core/reductions/automl/automl_util.h
+  include/vw/core/reductions/automl.h
   include/vw/core/reductions/baseline_challenger_cb.h
   include/vw/core/reductions/baseline.h
   include/vw/core/reductions/bfgs.h
@@ -238,7 +235,7 @@ set(vw_core_sources
   src/reductions/active.cc
   src/reductions/audit_regressor.cc
   src/reductions/autolink.cc
-  src/reductions/automl_impl.cc
+  src/reductions/details/automl/automl_impl.cc
   src/reductions/automl.cc
   src/reductions/baseline_challenger_cb.cc
   src/reductions/baseline.cc

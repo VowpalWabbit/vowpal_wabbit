@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "automl_impl.h"
 #include "vw/core/model_utils.h"
-#include "vw/core/reductions/automl/automl_impl.h"
 
 namespace VW
 {

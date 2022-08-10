@@ -2,12 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl/automl_impl.h"
+#include "automl_impl.h"
 
+#include "automl_util.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/interactions.h"
 #include "vw/core/metric_sink.h"
-#include "vw/core/reductions/automl/automl_util.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 
 /*

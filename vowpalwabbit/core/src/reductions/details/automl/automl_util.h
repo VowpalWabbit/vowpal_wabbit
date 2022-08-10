@@ -2,7 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl/automl.h"
 #include "vw/core/vw.h"
 
 namespace VW

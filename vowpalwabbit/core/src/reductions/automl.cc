@@ -2,11 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl/automl.h"
+#include "vw/core/reductions/automl.h"
 
+#include "details/automl/automl_impl.h"
+#include "details/automl/automl_iomodel.h"
 #include "vw/config/options.h"
-#include "vw/core/reductions/automl/automl_impl.h"
-#include "vw/core/reductions/automl/automl_iomodel.h"
 #include "vw/core/shared_data.h"
 
 // TODO: delete this two includes
