@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        preset: [vcpkg-asan-release, vcpkg-asan-debug]
+        preset: [vcpkg-asan-debug]
     runs-on: ${{ matrix.os }}
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
 
