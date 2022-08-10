@@ -7,6 +7,42 @@
 
 namespace VW
 {
+namespace reductions
+{
+namespace automl
+{
+void aml_estimator::persist(
+    metric_sink& metrics, const std::string& suffix, bool verbose, const std::string& interaction_type)
+{
+  VW::estimator_config::persist(metrics, suffix);
+  metrics.set_uint("conf_idx" + suffix, config_index);
+  if (verbose)
+  {
+    metrics.set_string("interactions" + suffix,
+        VW::reductions::util::interaction_vec_t_to_string(live_interactions, interaction_type));
+  }
+}
+
+void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
+{
+  metrics.set_uint("test_county", total_learn_count);
+  metrics.set_uint("current_champ", current_champ);
+  for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
+  {
+    estimators[live_slot].first.persist(metrics, "_amls_" + std::to_string(live_slot), verbose, interaction_type);
+    estimators[live_slot].second.persist(metrics, "_sc_" + std::to_string(live_slot));
+    if (verbose)
+    {
+      auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
+      metrics.set_string(
+          "exclusionc_" + std::to_string(live_slot), VW::reductions::util::exclusions_to_string(exclusions));
+    }
+  }
+  metrics.set_uint("total_champ_switches", total_champ_switches);
+}
+}  // namespace automl
+}  // namespace reductions
+
 namespace model_utils
 {
 size_t read_model_field(io_buf& io, VW::reductions::automl::exclusion_config& ec)

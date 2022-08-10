@@ -4,6 +4,7 @@
 
 #include "../automl_impl.h"
 #include "vw/core/interactions.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
 
 namespace VW
@@ -12,6 +13,91 @@ namespace reductions
 {
 namespace automl
 {
+void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
+{
+  assert(live_slot < max_live_configs);
+  // TODO: what to do if that slot is switched with a new config?
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
+  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
+  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+  for (example* ex : ec) { apply_config(ex, &estimators[live_slot].first.live_interactions); }
+  if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
+  base.learn(ec, live_slot);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
+  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
+  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+}
+
+uint64_t interaction_config_manager::choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue)
+{
+  uint64_t ret = index_queue.top().second;
+  index_queue.pop();
+  return ret;
+}
+
+// This code is primarily borrowed from expand_quadratics_wildcard_interactions in
+// interactions.cc. It will generate interactions with -q :: and exclude namespaces
+// from the corresponding live_slot. This function can be swapped out depending on
+// preference of how to generate interactions from a given set of exclusions.
+// Transforms exclusions -> interactions expected by VW.
+
+void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
+    std::vector<exclusion_config>& configs, std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
+    uint64_t live_slot)
+{
+  if (interaction_type == "quadratic")
+  {
+    auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
+    auto& interactions = estimators[live_slot].first.live_interactions;
+    if (!interactions.empty()) { interactions.clear(); }
+    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+    {
+      auto idx1 = (*it).first;
+      for (auto jt = it; jt != ns_counter.end(); ++jt)
+      {
+        auto idx2 = (*jt).first;
+        std::vector<namespace_index> idx{idx1, idx2};
+        if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
+      }
+    }
+  }
+  else if (interaction_type == "cubic")
+  {
+    auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
+    auto& interactions = estimators[live_slot].first.live_interactions;
+    if (!interactions.empty()) { interactions.clear(); }
+    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+    {
+      auto idx1 = (*it).first;
+      for (auto jt = it; jt != ns_counter.end(); ++jt)
+      {
+        auto idx2 = (*jt).first;
+        for (auto kt = jt; kt != ns_counter.end(); ++kt)
+        {
+          auto idx3 = (*kt).first;
+          std::vector<namespace_index> idx{idx1, idx2, idx3};
+          if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2, idx3}); }
+        }
+      }
+    }
+  }
+  else
+  {
+    THROW("Unknown interaction type.");
+  }
+
+  if (ccb_on)
+  {
+    std::vector<std::vector<extent_term>> empty;
+    auto& interactions = estimators[live_slot].first.live_interactions;
+    ccb::insert_ccb_interactions(interactions, empty);
+  }
+}
+
 bool worse()
 {
   // Dummy return false
