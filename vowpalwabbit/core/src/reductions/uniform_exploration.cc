@@ -29,12 +29,43 @@ void predict_or_learn(uniform_exploration_data& data, VW::LEARNER::multi_learner
 
   auto& probs = ec_seq[0]->pred.a_s;
   const auto size = probs.size();
-  const auto scale = (1.f - data._uniform_epsilon);
+  const auto minimum_probability = data._uniform_epsilon / size;
+
+  size_t n_changed = 0;
+  float p_unchanged = 0.f;
+  
   for (auto& prob : probs)
-  {
-    prob.score *= scale;
-    prob.score += data._uniform_epsilon / size;
+    {
+      if (prob.score < minimum_probability)
+	{
+	  n_changed += 1;
+	}
+      else
+	{
+	  p_unchanged += prob;
+	}
   }
+
+  for (auto& prob : probs)
+    {
+      if (prob.score < minimum_probability)
+	{
+	  prob.score = minimum_probability;
+	}
+      else
+	{
+	  prob.score *= (1-n_changed * minimum_probability) / p_unchanged;
+	}
+  }
+
+  // auto& probs = ec_seq[0]->pred.a_s;
+  // const auto size = probs.size();
+  // const auto scale = (1.f - data._uniform_epsilon);
+  // for (auto& prob : probs)
+  // {
+  //   prob.score *= scale;
+  //   prob.score += data._uniform_epsilon / size;
+  // }
 }
 }  // namespace
 
