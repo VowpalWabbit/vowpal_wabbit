@@ -143,7 +143,8 @@ public:
   void compute_spanner1(const Eigen::MatrixXf& U, size_t _d);
 };
 
-inline void find_max_volume(const Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X, float& max_volume, uint64_t& U_rid)
+inline void find_max_volume(
+    const Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X, float& max_volume, uint64_t& U_rid)
 {
   // Finds the max volume by replacing row X[X_rid] with some row in U.
   // Returns the max volume, and the row id of U used for replacing X[X_rid].
