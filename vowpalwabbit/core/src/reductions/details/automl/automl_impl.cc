@@ -4,7 +4,6 @@
 
 #include "automl_impl.h"
 
-#include "automl_util.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/interactions.h"
 #include "vw/core/metric_sink.h"
