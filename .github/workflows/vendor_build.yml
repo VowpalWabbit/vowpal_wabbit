@@ -55,6 +55,12 @@ jobs:
           python3 test/run_tests.py -f --clean_dirty -E 0.001
           cd build
           ctest --verbose --output-on-failure --label-regex VWTestList
+      - name: Upload vw binary
+        uses: actions/upload-artifact@v2
+        with:
+          name: vw
+          path: build/vowpalwabbit/cli/vw
+          if-no-files-found: error
   build_vendor_windows:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
     runs-on: ${{matrix.os}}
