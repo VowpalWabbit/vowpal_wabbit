@@ -29,7 +29,7 @@ struct input_options
   bool compressed;
   bool chain_hash_json;
   bool flatbuffer = false;
-#ifdef BUILD_CSV
+#ifdef VW_BUILD_CSV
   std::unique_ptr<VW::parsers::csv_parser_options> csv_opts;
 #endif
 };

@@ -38,7 +38,7 @@ jobs:
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DBUILD_FLATBUFFERS=Off
-          -DBUILD_CSV=On
+          -DVW_BUILD_CSV=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -101,7 +101,7 @@ jobs:
           -DVCPKG_MANIFEST_MODE=OFF
           -DUSE_LATEST_STD=On
           -DBUILD_FLATBUFFERS=Off
-          -DBUILD_CSV=On
+          -DVW_BUILD_CSV=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -136,7 +136,7 @@ jobs:
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DBUILD_FLATBUFFERS=Off
-          -DBUILD_CSV=On
+          -DVW_BUILD_CSV=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off

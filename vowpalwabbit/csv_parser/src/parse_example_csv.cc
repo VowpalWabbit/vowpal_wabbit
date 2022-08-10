@@ -21,7 +21,7 @@ int parse_csv_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
   return keep_reading ? 1 : 0;
 }
 
-void csv_parser::handling_csv_separator(std::string& str, const std::string& name)
+void csv_parser::set_csv_separator(std::string& str, const std::string& name)
 {
   if (str.length() > 1)
   {
@@ -84,7 +84,7 @@ void csv_parser::handle_parse_args(csv_parser_options& parsed_options)
   {
     const char* csv_separator_forbid_chars = "\"|:";
 
-    handling_csv_separator(parsed_options.csv_separator, "CSV separator");
+    set_csv_separator(parsed_options.csv_separator, "CSV separator");
     for (size_t i = 0; i < strlen(csv_separator_forbid_chars); i++)
     {
       if (parsed_options.csv_separator[0] == csv_separator_forbid_chars[i])

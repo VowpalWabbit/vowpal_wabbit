@@ -372,9 +372,9 @@ vw_add_library(
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
-if(BUILD_CSV)
+if(VW_BUILD_CSV)
   target_link_libraries(vw_core PRIVATE vw_csv_parser)
-  target_compile_definitions(vw_core PUBLIC BUILD_CSV)
+  target_compile_definitions(vw_core PUBLIC VW_BUILD_CSV)
 endif()
 
 if(BUILD_FLATBUFFERS)

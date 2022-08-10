@@ -53,7 +53,7 @@ public:
   }
 
 private:
-  static void handling_csv_separator(std::string& str, const std::string& name);
+  static void set_csv_separator(std::string& str, const std::string& name);
   void reset();
   int parse_csv(VW::workspace* all, VW::example* ae, io_buf& buf);
   size_t read_line(VW::workspace* all, VW::example* ae, io_buf& buf);
