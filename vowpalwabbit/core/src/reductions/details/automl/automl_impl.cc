@@ -378,7 +378,7 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
 }
 
 // This sets up example with correct ineractions vector
-void interaction_config_manager::apply_config(example* ec, interaction_vec_t* live_interactions)
+void apply_config(example* ec, interaction_vec_t* live_interactions)
 {
   if (ec == nullptr) { return; }
   ec->interactions = live_interactions;

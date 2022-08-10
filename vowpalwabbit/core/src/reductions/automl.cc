@@ -33,7 +33,7 @@ void predict_automl(VW::reductions::automl::automl<CMType>& data, multi_learner&
   // { data.logger->out_info("pred: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec)
-  { data.cm->apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
+  { VW::reductions::automl::apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
 
   auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
     for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
@@ -78,7 +78,7 @@ void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& 
 
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec)
-  { data.cm->apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
+  { VW::reductions::automl::apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
 
   {
     auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {

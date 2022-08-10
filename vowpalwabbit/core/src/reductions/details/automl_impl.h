@@ -73,10 +73,6 @@ enum class automl_state
 
 struct config_manager
 {
-  // This fn is responsible for applying a config
-  // tracked by 'live_slot' into the example.
-  // the impl is responsible of tracking this config-live_slot mapping
-  void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);
   // config managers own the underlaying weights so they need to know how to clear
   void clear_non_champ_weights();
@@ -173,9 +169,6 @@ struct interaction_config_manager : config_manager
   // Public Chacha functions
   void schedule();
   void update_champ();
-
-  static void apply_config(example* ec, interaction_vec_t* live_interactions);
-  // Public for save_load
 
 private:
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
@@ -297,6 +290,7 @@ private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
 
+void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const unsigned char ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
 bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
