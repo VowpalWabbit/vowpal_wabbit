@@ -104,9 +104,9 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
 
-void interaction_config_manager::gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter,
-    std::string& interaction_type, std::vector<exclusion_config>& configs,
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot)
+void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
+    std::vector<exclusion_config>& configs, std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
+    uint64_t live_slot)
 {
   if (interaction_type == "quadratic")
   {
@@ -172,7 +172,7 @@ void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
 // newly seen namespaces.
-void interaction_config_manager::pre_process(const multi_ex& ecs)
+bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter)
 {
   // Count all namepsace seen in current example
   bool new_ns_seen = false;
@@ -187,12 +187,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
     }
   }
 
-  // Regenerate interactions if new namespaces are seen
-  if (new_ns_seen)
-  {
-    for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
-    { gen_interactions(ccb_on, ns_counter, interaction_type, configs, estimators, live_slot); }
-  }
+  return new_ns_seen;
 }
 
 bool interaction_config_manager::swap_eligible_to_inactivate(
