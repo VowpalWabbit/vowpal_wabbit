@@ -104,7 +104,9 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
 
-void interaction_config_manager::gen_interactions(uint64_t live_slot)
+void interaction_config_manager::gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter,
+    std::string& interaction_type, std::vector<exclusion_config>& configs,
+    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot)
 {
   if (interaction_type == "quadratic")
   {
@@ -161,10 +163,9 @@ bool is_allowed_to_remove(const unsigned char ns)
   return true;
 }
 
-void interaction_config_manager::clear_non_champ_weights()
+void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp)
 {
-  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < estimators.size();
-       ++current_slot_index)
+  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < total; ++current_slot_index)
   { weights.clear_offset(current_slot_index, wpp); }
 }
 
@@ -189,7 +190,8 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
   // Regenerate interactions if new namespaces are seen
   if (new_ns_seen)
   {
-    for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot) { gen_interactions(live_slot); }
+    for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
+    { gen_interactions(ccb_on, ns_counter, interaction_type, configs, estimators, live_slot); }
   }
 }
 
@@ -258,7 +260,7 @@ void interaction_config_manager::schedule()
       configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      gen_interactions(live_slot);
+      gen_interactions(ccb_on, ns_counter, interaction_type, configs, estimators, live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
     }
   }

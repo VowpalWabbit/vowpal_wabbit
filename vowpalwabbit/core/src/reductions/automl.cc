@@ -92,7 +92,8 @@ void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& 
 template <typename CMType>
 void save_load_aml(VW::reductions::automl::automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
-  if (aml.should_save_predict_only_model) { aml.cm->clear_non_champ_weights(); }
+  if (aml.should_save_predict_only_model)
+  { VW::reductions::automl::clear_non_champ_weights(aml.cm->weights, aml.cm->estimators.size(), aml.cm->wpp); }
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }
   else
