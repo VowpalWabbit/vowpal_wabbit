@@ -5,7 +5,6 @@
 #include "vw/core/reductions/automl.h"
 
 #include "details/automl/automl_impl.h"
-#include "details/automl/automl_iomodel.h"
 #include "vw/config/options.h"
 #include "vw/core/shared_data.h"
 

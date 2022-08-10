@@ -92,6 +92,9 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::automl<CMType>& aml)
   return bytes;
 }
 
+template size_t read_model_field(
+    io_buf&, VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>&);
+
 template <typename CMType>
 size_t write_model_field(
     io_buf& io, const VW::reductions::automl::automl<CMType>& aml, const std::string& upstream_name, bool text)
@@ -101,6 +104,10 @@ size_t write_model_field(
   bytes += write_model_field(io, *aml.cm, upstream_name + "_config_manager", text);
   return bytes;
 }
+
+template size_t write_model_field(io_buf&,
+    const VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>&, const std::string&,
+    bool);
 
 }  // namespace model_utils
 
