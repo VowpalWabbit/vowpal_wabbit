@@ -2,11 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl/automl.h"
+#include "vw/core/reductions/automl.h"
 
+#include "details/automl_impl.h"
 #include "vw/config/options.h"
-#include "vw/core/reductions/automl/automl_impl.h"
-#include "vw/core/reductions/automl/automl_iomodel.h"
+#include "vw/core/shared_data.h"
 
 // TODO: delete this two includes
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -92,6 +92,8 @@ void finish_example(VW::workspace& all, VW::reductions::automl::automl<CMType>& 
 template <typename CMType>
 void save_load_aml(VW::reductions::automl::automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
+  if (aml.should_save_predict_only_model)
+  { VW::reductions::automl::clear_non_champ_weights(aml.cm->weights, aml.cm->estimators.size(), aml.cm->wpp); }
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }
   else
@@ -127,19 +129,20 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  uint64_t global_lease;
-  uint64_t max_live_configs;
-  std::string cm_type;
-  std::string priority_type;
-  int32_t priority_challengers;
+  uint64_t global_lease = 4000;
+  uint64_t max_live_configs = 4;
+  std::string cm_type = "interaction";
+  std::string priority_type = "none";
+  int32_t priority_challengers = -1;
   bool verbose_metrics = false;
-  std::string interaction_type;
-  std::string oracle_type;
-  float automl_significance_level;
-  float automl_estimator_decay;
+  std::string interaction_type = "quadratic";
+  std::string oracle_type = "one_diff";
+  float automl_significance_level = DEFAULT_ALPHA;
+  float automl_estimator_decay = CRESSEREAD_DEFAULT_TAU;
   bool reversed_learning_order = false;
   bool lb_trick = false;
-  bool fixed_significance_level;
+  bool fixed_significance_level = false;
+  std::string predict_only_model_file = "";
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -192,6 +195,9 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .default_value(false)
                .help("Use 1-lower_bound as upper_bound for estimator")
                .experimental())
+      .add(make_option("aml_predict_only_model", predict_only_model_file)
+               .help("transform input automl model into predict only automl model")
+               .experimental())
       .add(make_option("automl_significance_level", automl_significance_level)
                .keep()
                .default_value(DEFAULT_ALPHA)
@@ -225,15 +231,19 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   if (!fixed_significance_level) { automl_significance_level /= max_live_configs; }
 
+  bool ccb_on = options.was_supplied("ccb_explore_adf");
+  bool predict_only_model = options.was_supplied("aml_predict_only_model");
+
   // Note that all.wpp will not be set correctly until after setup
+  assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe");
   auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
       all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
       all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
-      lb_trick);
+      lb_trick, ccb_on);
   auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
-      std::move(cm), &all.logger);
+      std::move(cm), &all.logger, predict_only_model);
   data->debug_reverse_learning_order = reversed_learning_order;
-  data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 2, 0.f);
+  data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 3, 0.f);
   data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
 
   if (max_live_configs > VW::reductions::automl::MAX_CONFIGS)
@@ -276,6 +286,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     data->cm->_gd_total_weight = &(gd.per_model_states[0].total_weight);
     data->cm->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
     data->cm->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
+    data->cm->_sd_gravity = &(all.sd->gravity);
 
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
         learn_automl<VW::reductions::automl::interaction_config_manager, true>,

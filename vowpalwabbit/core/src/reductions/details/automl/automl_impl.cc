@@ -2,12 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl/automl_impl.h"
+#include "../automl_impl.h"
 
 #include "vw/common/vw_exception.h"
 #include "vw/core/interactions.h"
 #include "vw/core/metric_sink.h"
-#include "vw/core/reductions/automl/automl_util.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -76,26 +76,26 @@ void aml_estimator::persist(
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string interaction_type,
     std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
-    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick)
+    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
-    , random_state(std::move(rand_state))
     , priority_challengers(priority_challengers)
-    , interaction_type(std::move(interaction_type))
-    , oracle_type(std::move(oracle_type))
+    , interaction_type(interaction_type)
     , weights(weights)
-    , calc_priority(calc_priority)
     , automl_significance_level(automl_significance_level)
     , automl_estimator_decay(automl_estimator_decay)
     , logger(logger)
     , wpp(wpp)
     , lb_trick(lb_trick)
+    , ccb_on(ccb_on)
+    , _config_oracle(config_oracle(global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type,
+          oracle_type, std::move(rand_state)))
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
   estimators.emplace_back(std::make_pair(aml_estimator(automl_significance_level, automl_estimator_decay),
       estimator_config(automl_significance_level, automl_estimator_decay)));
-  ++valid_config_size;
+  ++_config_oracle.valid_config_size;
 }
 
 // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
@@ -104,7 +104,9 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
 
-void interaction_config_manager::gen_interactions(uint64_t live_slot)
+void interaction_config_manager::gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter,
+    std::string& interaction_type, std::vector<exclusion_config>& configs,
+    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot)
 {
   if (interaction_type == "quadratic")
   {
@@ -146,6 +148,25 @@ void interaction_config_manager::gen_interactions(uint64_t live_slot)
   {
     THROW("Unknown interaction type.");
   }
+
+  if (ccb_on)
+  {
+    std::vector<std::vector<extent_term>> empty;
+    auto& interactions = estimators[live_slot].first.live_interactions;
+    ccb::insert_ccb_interactions(interactions, empty);
+  }
+}
+
+bool is_allowed_to_remove(const unsigned char ns)
+{
+  if (ns == ccb_slot_namespace || ns == wildcard_namespace || ns == ccb_id_namespace) { return false; }
+  return true;
+}
+
+void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp)
+{
+  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < total; ++current_slot_index)
+  { weights.clear_offset(current_slot_index, wpp); }
 }
 
 // This function will process an incoming multi_ex, update the namespace_counter,
@@ -160,6 +181,7 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
     for (const auto& ns : ex->indices)
     {
       if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
+      if (!is_allowed_to_remove(ns)) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
@@ -168,164 +190,9 @@ void interaction_config_manager::pre_process(const multi_ex& ecs)
   // Regenerate interactions if new namespaces are seen
   if (new_ns_seen)
   {
-    for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot) { gen_interactions(live_slot); }
+    for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
+    { gen_interactions(ccb_on, ns_counter, interaction_type, configs, estimators, live_slot); }
   }
-}
-// Helper function to insert new configs from oracle into map of configs as well as index_queue.
-// Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
-void interaction_config_manager::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups)
-{
-  // First check if config already exists
-  if (!allow_dups)
-  {
-    for (size_t i = 0; i < configs.size(); ++i)
-    {
-      if (configs[i].exclusions == new_exclusions)
-      {
-        if (i < valid_config_size) { return; }
-        else
-        {
-          configs[valid_config_size].exclusions = std::move(configs[i].exclusions);
-          configs[valid_config_size].lease = global_lease;
-          configs[valid_config_size].state = VW::reductions::automl::config_state::New;
-        }
-      }
-    }
-  }
-
-  // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
-  // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
-  // configs exist we'll generate a new one.
-  if (valid_config_size < configs.size())
-  {
-    configs[valid_config_size].exclusions = std::move(new_exclusions);
-    configs[valid_config_size].lease = global_lease;
-    configs[valid_config_size].state = VW::reductions::automl::config_state::New;
-  }
-  else
-  {
-    configs.emplace_back(global_lease);
-    configs[valid_config_size].exclusions = std::move(new_exclusions);
-  }
-  float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
-  index_queue.push(std::make_pair(priority, valid_config_size));
-  ++valid_config_size;
-}
-
-// This will generate configs based on the current champ. These configs will be
-// stored as 'exclusions.' The current design is to look at the interactions of
-// the current champ and remove one interaction for each new config. The number
-// of configs to generate per champ is hard-coded to 5 at the moment.
-// TODO: Add logic to avoid duplicate configs (could be very costly)
-void interaction_config_manager::config_oracle()
-{
-  auto& champ_interactions = estimators[current_champ].first.live_interactions;
-  if (oracle_type == "rand")
-  {
-    for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
-    {
-      uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
-      std::set<std::vector<namespace_index>> new_exclusions(
-          configs[estimators[current_champ].first.config_index].exclusions);
-      if (interaction_type == "quadratic")
-      {
-        namespace_index ns1 = champ_interactions[rand_ind][0];
-        namespace_index ns2 = champ_interactions[rand_ind][1];
-        std::vector<namespace_index> idx{ns1, ns2};
-        new_exclusions.insert(idx);
-      }
-      else if (interaction_type == "cubic")
-      {
-        namespace_index ns1 = champ_interactions[rand_ind][0];
-        namespace_index ns2 = champ_interactions[rand_ind][1];
-        namespace_index ns3 = champ_interactions[rand_ind][2];
-        std::vector<namespace_index> idx{ns1, ns2, ns3};
-        new_exclusions.insert(idx);
-      }
-      else
-      {
-        THROW("Unknown interaction type.");
-      }
-      insert_config(std::move(new_exclusions));
-    }
-  }
-  /*
-   * Example of one_diff oracle:
-   * Say we have namespaces {a,b,c}, so all quadratic interactions are {aa, ab, ac, bb, bc, cc}. If the champ has
-   * an exclusion set {aa, ab}, then the champs interactions would be {ac, bb, bc, cc}. We want to generate all
-   * configs with a distance of 1 from the champ, meaning all sets with one less exclusion, and all sets with one
-   * more exclusion. So the first part looks through the champs interaction set, and creates new configs which add
-   * one of those to the current exclusion set (eg it will generate {aa, ab, ac}, {aa, ab, bb}, {aa, ab, bc},
-   * {aa, ab, cc}). Then the second part will create all exclusion sets which remove one (eg {aa} and {ab}).
-   */
-  else if (oracle_type == "one_diff")
-  {
-    // Add one exclusion (for each interaction)
-    for (auto& interaction : champ_interactions)
-    {
-      std::set<std::vector<namespace_index>> new_exclusions(
-          configs[estimators[current_champ].first.config_index].exclusions);
-      if (interaction_type == "quadratic")
-      {
-        namespace_index ns1 = interaction[0];
-        namespace_index ns2 = interaction[1];
-        std::vector<namespace_index> idx{ns1, ns2};
-        new_exclusions.insert(idx);
-      }
-      else if (interaction_type == "cubic")
-      {
-        namespace_index ns1 = interaction[0];
-        namespace_index ns2 = interaction[1];
-        namespace_index ns3 = interaction[2];
-        std::vector<namespace_index> idx{ns1, ns2, ns3};
-        new_exclusions.insert(idx);
-      }
-      else
-      {
-        THROW("Unknown interaction type.");
-      }
-      insert_config(std::move(new_exclusions));
-    }
-    // Remove one exclusion (for each exclusion)
-    for (auto& ns_pair : configs[estimators[current_champ].first.config_index].exclusions)
-    {
-      auto new_exclusions = configs[estimators[current_champ].first.config_index].exclusions;
-      new_exclusions.erase(ns_pair);
-      insert_config(std::move(new_exclusions));
-    }
-  }
-  else if (oracle_type == "champdupe")
-  {
-    for (uint64_t i = 0; i < max_live_configs; ++i)
-    {
-      insert_config(
-          std::set<std::vector<namespace_index>>(configs[estimators[current_champ].first.config_index].exclusions),
-          true);
-    }
-  }
-  else
-  {
-    THROW("Unknown oracle type.");
-  }
-}
-// This function is triggered when all sets of interactions generated by the oracle have been tried and
-// reached their lease. It will then add inactive configs (stored in the config manager) to the queue
-// 'index_queue' which can be used to swap out live configs as they run out of lease. This functionality
-// may be better within the oracle, which could generate better priorities for different configs based
-// on ns_counter (which is updated as each example is processed)
-bool interaction_config_manager::repopulate_index_queue()
-{
-  for (size_t i = 0; i < valid_config_size; ++i)
-  {
-    // Only re-add if not removed and not live
-    if (configs[i].state == VW::reductions::automl::config_state::New ||
-        configs[i].state == VW::reductions::automl::config_state::Inactive)
-    {
-      float priority = (*calc_priority)(configs[i], ns_counter);
-      index_queue.push(std::make_pair(priority, i));
-    }
-  }
-  return !index_queue.empty();
 }
 
 bool interaction_config_manager::swap_eligible_to_inactivate(uint64_t live_slot)
@@ -373,7 +240,7 @@ void interaction_config_manager::schedule()
       while (!index_queue.empty() &&
           configs[index_queue.top().second].state == VW::reductions::automl::config_state::Removed)
       { index_queue.pop(); }
-      if (index_queue.empty() && !repopulate_index_queue()) { continue; }
+      if (index_queue.empty() && !_config_oracle.repopulate_index_queue()) { continue; }
       // Allocate new estimator if we haven't reached maximum yet
       if (need_new_estimator)
       {
@@ -393,7 +260,7 @@ void interaction_config_manager::schedule()
       configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      gen_interactions(live_slot);
+      gen_interactions(ccb_on, ns_counter, interaction_type, configs, estimators, live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
     }
   }
@@ -469,7 +336,7 @@ void interaction_config_manager::update_champ()
     estimators.push_back(std::move(champ_estimator));
     estimators.push_back(std::move(old_champ_estimator));
     current_champ = 0;
-    valid_config_size = 2;
+    _config_oracle.valid_config_size = 2;
 
     /*
      * These operations rearrange the scoring data to sync up the new champion and old champion. Assume the first
@@ -490,7 +357,7 @@ void interaction_config_manager::update_champ()
       estimators[1].first.reset_stats();
       estimators[1].second.reset_stats();
     }
-    config_oracle();
+    _config_oracle.do_work(estimators, current_champ);
   }
 }
 
@@ -525,15 +392,17 @@ void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
 void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
 {
   // TODO: what to do if that slot is switched with a new config?
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
+  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
   for (example* ex : ec) { apply_config(ex, live_slot); }
   if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
   base.learn(ec, live_slot);
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 2]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 2 + 1]);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
+  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 }

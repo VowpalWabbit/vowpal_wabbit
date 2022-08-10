@@ -151,6 +151,7 @@ public:
   inline const weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
 
   inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
+  inline const weight& strided_index(size_t index) const { return operator[](index << _stride_shift); }
 
   void shallow_copy(const sparse_parameters& input)
   {

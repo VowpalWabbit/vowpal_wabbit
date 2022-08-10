@@ -2,12 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/reductions/automl/automl.h"
+#include "vw/core/reductions/automl.h"
 
+#include "reductions/details/automl_impl.h"
 #include "simulator.h"
 #include "test_common.h"
 #include "vw/core/metric_sink.h"
-#include "vw/core/reductions/automl/automl_impl.h"
 #include "vw/core/vw_fwd.h"
 
 #include <boost/test/test_tools.hpp>
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
-    BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 4);
+    BOOST_CHECK_EQUAL(aml->cm->_config_oracle.valid_config_size, 4);
     BOOST_CHECK_EQUAL(clear_champ_switch - 1, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->estimators[0].first.live_interactions.size(), 3);
     BOOST_CHECK_EQUAL(aml->cm->estimators[1].first.live_interactions.size(), 2);
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->estimators.size(), 2);
-    BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 4);
+    BOOST_CHECK_EQUAL(aml->cm->_config_oracle.valid_config_size, 4);
     BOOST_CHECK_EQUAL(aml->cm->estimators[0].first.live_interactions.size(), 2);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
-    BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 4);
+    BOOST_CHECK_EQUAL(aml->cm->_config_oracle.valid_config_size, 4);
     BOOST_CHECK_EQUAL(clear_champ_switch - 1, aml->cm->total_learn_count);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
     BOOST_CHECK_EQUAL(aml->cm->estimators.size(), 2);
-    BOOST_CHECK_EQUAL(aml->cm->valid_config_size, 4);
+    BOOST_CHECK_EQUAL(aml->cm->_config_oracle.valid_config_size, 4);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
   });

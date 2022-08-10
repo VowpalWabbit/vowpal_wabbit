@@ -1,5 +1,5 @@
-Version 9.2.0
-Id 
+Version 9.3.0
+Id
 Min label:-1
 Max label:0
 bits:18
@@ -215,13 +215,16 @@ _automl_config_manager_index_queue[6].first = -12
 _automl_config_manager_index_queue[6].second = 8
 _automl_config_manager_index_queue[7].first = -12
 _automl_config_manager_index_queue[7].second = 6
-_automl_config_manager_per_live_model_state_double.size() = 6
+_automl_config_manager_per_live_model_state_double.size() = 9
 _automl_config_manager_per_live_model_state_double[0] = 98.98610879850912
 _automl_config_manager_per_live_model_state_double[1] = 0.30612243711948395
-_automl_config_manager_per_live_model_state_double[2] = 59.39374421118373
-_automl_config_manager_per_live_model_state_double[3] = 0.20408162474632263
-_automl_config_manager_per_live_model_state_double[4] = 64.29170320509547
-_automl_config_manager_per_live_model_state_double[5] = 0.20408162474632263
+_automl_config_manager_per_live_model_state_double[2] = 0
+_automl_config_manager_per_live_model_state_double[3] = 59.39374421118373
+_automl_config_manager_per_live_model_state_double[4] = 0.20408162474632263
+_automl_config_manager_per_live_model_state_double[5] = 0
+_automl_config_manager_per_live_model_state_double[6] = 64.29170320509547
+_automl_config_manager_per_live_model_state_double[7] = 0.20408162474632263
+_automl_config_manager_per_live_model_state_double[8] = 0
 _automl_config_manager_per_live_model_state_uint64.size() = 6
 _automl_config_manager_per_live_model_state_uint64[0] = 3
 _automl_config_manager_per_live_model_state_uint64[1] = 36

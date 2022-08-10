@@ -78,9 +78,10 @@ struct config_manager
   // the impl is responsible of tracking this config-live_slot mapping
   void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);
+  // config managers own the underlaying weights so they need to know how to clear
+  void clear_non_champ_weights();
 
   // Public Chacha functions
-  void config_oracle();
   void pre_process(const multi_ex&);
   void schedule();
   void update_champ();
@@ -88,31 +89,64 @@ struct config_manager
 
 using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
 
+struct config_oracle
+{
+  std::string _interaction_type;
+  const std::string _oracle_type;
+  std::shared_ptr<VW::rand_state> random_state;
+
+  // insert_config(..)
+  std::priority_queue<std::pair<float, uint64_t>>& index_queue;
+  std::map<namespace_index, uint64_t>& ns_counter;
+  std::vector<exclusion_config>& configs;
+
+  priority_func* calc_priority;
+  const uint64_t global_lease;
+  uint64_t valid_config_size = 0;
+
+  config_oracle(uint64_t global_lease, priority_func* calc_priority,
+      std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
+      std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
+      std::shared_ptr<VW::rand_state> rand_state)
+      : _interaction_type(interaction_type)
+      , _oracle_type(oracle_type)
+      , random_state(rand_state)
+      , index_queue(index_queue)
+      , ns_counter(ns_counter)
+      , configs(configs)
+      , calc_priority(calc_priority)
+      , global_lease(global_lease)
+  {
+  }
+  void do_work(std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
+  bool repopulate_index_queue();
+};
+
 struct interaction_config_manager : config_manager
 {
   uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
   uint64_t current_champ = 0;
-  uint64_t global_lease;
-  uint64_t max_live_configs;
-  std::shared_ptr<VW::rand_state> random_state;
+  const uint64_t global_lease;
+  const uint64_t max_live_configs;
   uint64_t priority_challengers;
-  uint64_t valid_config_size = 0;
-  std::string interaction_type;
-  std::string oracle_type;
+  std::string interaction_type;  // candidate to be removed from here
   dense_parameters& weights;
-  priority_func* calc_priority;
   double automl_significance_level;
   double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
-  bool lb_trick;
+  const bool lb_trick;
+  const bool ccb_on = false;
+  config_oracle _config_oracle;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset
   std::vector<double> per_live_model_state_double;
   std::vector<uint64_t> per_live_model_state_uint64;
   double* _gd_normalized = nullptr;
   double* _gd_total_weight = nullptr;
+  double* _sd_gravity = nullptr;
   uint64_t* _cb_adf_event_sum = nullptr;
   uint64_t* _cb_adf_action_sum = nullptr;
 
@@ -132,28 +166,27 @@ struct interaction_config_manager : config_manager
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, std::string, std::string,
       dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
-      VW::io::logger*, uint32_t&, bool);
+      VW::io::logger*, uint32_t&, bool, bool);
 
   void apply_config(example*, uint64_t);
   void do_learning(multi_learner&, multi_ex&, uint64_t);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
-  void config_oracle();
   void pre_process(const multi_ex&);
   void schedule();
   void update_champ();
 
   // Public for save_load
-  void gen_interactions(uint64_t);
+  static void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter,
+      std::string& interaction_type, std::vector<exclusion_config>& configs,
+      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot);
 
 private:
   bool better(uint64_t live_slot);
   bool worse(uint64_t live_slot);
   uint64_t choose();
-  bool repopulate_index_queue();
   bool swap_eligible_to_inactivate(uint64_t);
-  void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
 };
 
 template <typename CMType>
@@ -164,8 +197,12 @@ struct automl
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   bool debug_reverse_learning_order = false;
+  const bool should_save_predict_only_model;
 
-  automl(std::unique_ptr<CMType> cm, VW::io::logger* logger) : cm(std::move(cm)), logger(logger) {}
+  automl(std::unique_ptr<CMType> cm, VW::io::logger* logger, bool predict_only_model)
+      : cm(std::move(cm)), logger(logger), should_save_predict_only_model(predict_only_model)
+  {
+  }
   // This fn gets called before learning any example
   // void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
   // template <typename CMType>
@@ -176,7 +213,7 @@ struct automl
     {
       case automl_state::Collecting:
         cm->pre_process(ec);
-        cm->config_oracle();
+        cm->_config_oracle.do_work(cm->estimators, cm->current_champ);
         offset_learn(base, ec, logged, labelled_action);
         current_state = automl_state::Experimenting;
         break;
@@ -243,6 +280,8 @@ struct automl
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
+bool is_allowed_to_remove(const unsigned char ns);
+void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
 }  // namespace automl
 
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);

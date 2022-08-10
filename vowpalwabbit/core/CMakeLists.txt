@@ -50,6 +50,7 @@ set(vw_core_headers
   include/vw/core/learner.h
   include/vw/core/loss_functions.h
   include/vw/core/memory.h
+  include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
   include/vw/core/multiclass.h
@@ -80,10 +81,7 @@ set(vw_core_headers
   include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h
   include/vw/core/reductions/autolink.h
-  include/vw/core/reductions/automl/automl.h
-  include/vw/core/reductions/automl/automl_impl.h
-  include/vw/core/reductions/automl/automl_iomodel.h
-  include/vw/core/reductions/automl/automl_util.h
+  include/vw/core/reductions/automl.h
   include/vw/core/reductions/baseline_challenger_cb.h
   include/vw/core/reductions/baseline.h
   include/vw/core/reductions/bfgs.h
@@ -216,6 +214,7 @@ set(vw_core_sources
   src/label_type.cc
   src/learner.cc
   src/loss_functions.cc
+  src/merge.cc
   src/metric_sink.cc
   src/multiclass.cc
   src/multilabel.cc
@@ -236,7 +235,10 @@ set(vw_core_sources
   src/reductions/active.cc
   src/reductions/audit_regressor.cc
   src/reductions/autolink.cc
-  src/reductions/automl_impl.cc
+  src/reductions/details/automl/automl_impl.cc
+  src/reductions/details/automl/automl_oracle.cc
+  src/reductions/details/automl/automl_iomodel.cc
+  src/reductions/details/automl/automl_util.cc
   src/reductions/automl.cc
   src/reductions/baseline_challenger_cb.cc
   src/reductions/baseline.cc
@@ -409,5 +411,9 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "core"
-    SOURCES tests/cache_test.cc tests/parse_args_test.cc tests/save_load_test.cc
+    SOURCES
+      tests/cache_test.cc
+      tests/merge_test.cc
+      tests/parse_args_test.cc
+      tests/save_load_test.cc
 )

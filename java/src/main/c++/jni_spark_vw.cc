@@ -8,10 +8,13 @@
 #include "vw/config/cli_options_serializer.h"
 #include "vw/config/options.h"
 #include "vw/core/best_constant.h"
+#include "vw/core/global_data.h"
 #include "vw/core/learner.h"
+#include "vw/core/merge.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
+#include "vw/core/vw_fwd.h"
 
 #include <algorithm>
 #include <exception>
@@ -72,14 +75,16 @@ size_t StringGuard::length() { return _length; }
 CriticalArrayGuard::CriticalArrayGuard(JNIEnv* env, jarray arr) : _env(env), _arr(arr), _arr0(nullptr)
 {
   _arr0 = env->GetPrimitiveArrayCritical(arr, nullptr);
+  _length = env->GetArrayLength(arr);
 }
 
 CriticalArrayGuard::~CriticalArrayGuard()
 {
-  if (_arr0) { _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT); }
+  if (_arr0 != nullptr) { _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT); }
 }
 
 void* CriticalArrayGuard::data() { return _arr0; }
+size_t CriticalArrayGuard::length() const { return _length; }
 
 // VW
 JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initialize(JNIEnv* env, jclass, jstring args)
@@ -1052,4 +1057,42 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
       return nullptr;
     }
   }
+}
+
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_mergeModels(
+    JNIEnv* env, jclass, jobject baseWorkspace, jobjectArray workspacePointers)
+try
+{
+  VW::workspace* base = nullptr;
+  if (baseWorkspace != nullptr) { base = reinterpret_cast<VW::workspace*>(get_native_pointer(env, baseWorkspace)); }
+
+  std::vector<const VW::workspace*> workspaces;
+  int length = env->GetArrayLength(workspacePointers);
+  if (length > 0)
+  {
+    workspaces.reserve(length);
+    jobject jworkspace = env->GetObjectArrayElement(workspacePointers, 0);
+    jclass cls = env->GetObjectClass(jworkspace);
+    jfieldID fieldId = env->GetFieldID(cls, "nativePointer", "J");
+    for (int i = 0; i < length; i++)
+    {
+      const auto* workspace = reinterpret_cast<const VW::workspace*>(get_native_pointer(env, jworkspace));
+      workspaces.push_back(workspace);
+    }
+  }
+
+  auto result = VW::merge_models(base, workspaces);
+
+  jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitNative");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(J)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  return env->NewObject(clazz, ctor, reinterpret_cast<jlong>(result.release()));
+}
+catch (...)
+{
+  rethrow_cpp_exception_as_java_exception(env);
+  return nullptr;
 }

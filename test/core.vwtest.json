@@ -5082,7 +5082,7 @@
   {
     "id": 394,
     "desc": "Test using automl with ccb",
-    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json",
+    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json --oracle_type one_diff",
     "diff_files": {
       "aml_ccb_metrics.json": "test-sets/ref/aml_ccb_metrics.json"
     },
@@ -5293,7 +5293,7 @@
   {
     "id": 411,
     "desc": "automl with cb_adf",
-    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --oracle_type rand",
+    "vw_command": "-f models/automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --oracle_type rand",
     "diff_files": {
       "stderr": "train-sets/ref/cb_adf_dsjson_metrics_.stderr",
       "metrics_.json": "test-sets/ref/metrics_cbadfautoml.json",
@@ -5371,6 +5371,20 @@
     },
     "input_files": [
       "train-sets/csoaa_ldf_multiline_with_shared.txt"
+    ]
+  },
+  {
+    "id": 417,
+    "desc": "automl with cb_adf - transform to predict only model",
+    "vw_command": "--aml_predict_only_model automl_predict_only.model -i models/automl.model --readable_model automl_readable.txt",
+    "diff_files": {
+      "automl_readable.txt": "train-sets/ref/cbadf_automl_readable_predictonly.txt"
+    },
+    "input_files": [
+      "models/automl.model"
+    ],
+    "depends_on": [
+      411
     ]
   }
 ]
