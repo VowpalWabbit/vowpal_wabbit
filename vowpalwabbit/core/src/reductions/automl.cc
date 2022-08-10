@@ -269,7 +269,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   assert(all.weights.sparse == false);
   if (all.weights.sparse) THROW("--automl does not work with sparse weights");
 
-  VW::reductions::fail_if_enabled(all,
+  VW::reductions::util::fail_if_enabled(all,
       {"ccb_explore_adf", "audit_regressor", "baseline", "cb_explore_adf_rnd", "cb_to_cb_adf", "cbify", "replay_c",
           "replay_b", "replay_m", "memory_tree", "new_mf", "nn", "stage_poly"});
 

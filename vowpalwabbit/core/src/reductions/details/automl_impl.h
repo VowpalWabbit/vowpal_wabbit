@@ -297,11 +297,13 @@ bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
 bool worse();
 }  // namespace automl
 
+namespace util
+{
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
 std::string interaction_vec_t_to_string(
     const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type);
 std::string exclusions_to_string(const std::set<std::vector<VW::namespace_index>>& exclusions);
-
+}  // namespace util
 }  // namespace reductions
 namespace model_utils
 {

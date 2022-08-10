@@ -5,7 +5,6 @@
 #include "../automl_impl.h"
 
 #include "vw/common/vw_exception.h"
-#include "vw/core/interactions.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 
@@ -65,8 +64,8 @@ void aml_estimator::persist(
   metrics.set_uint("conf_idx" + suffix, config_index);
   if (verbose)
   {
-    metrics.set_string(
-        "interactions" + suffix, VW::reductions::interaction_vec_t_to_string(live_interactions, interaction_type));
+    metrics.set_string("interactions" + suffix,
+        VW::reductions::util::interaction_vec_t_to_string(live_interactions, interaction_type));
   }
 }
 
@@ -157,39 +156,6 @@ void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_count
   }
 }
 
-bool is_allowed_to_remove(const unsigned char ns)
-{
-  if (ns == ccb_slot_namespace || ns == wildcard_namespace || ns == ccb_id_namespace) { return false; }
-  return true;
-}
-
-void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp)
-{
-  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < total; ++current_slot_index)
-  { weights.clear_offset(current_slot_index, wpp); }
-}
-
-// This function will process an incoming multi_ex, update the namespace_counter,
-// log if new namespaces are encountered, and regenerate interactions based on
-// newly seen namespaces.
-bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter)
-{
-  // Count all namepsace seen in current example
-  bool new_ns_seen = false;
-  for (const example* ex : ecs)
-  {
-    for (const auto& ns : ex->indices)
-    {
-      if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
-      if (!is_allowed_to_remove(ns)) { continue; }
-      ns_counter[ns]++;
-      if (ns_counter[ns] == 1) { new_ns_seen = true; }
-    }
-  }
-
-  return new_ns_seen;
-}
-
 bool interaction_config_manager::swap_eligible_to_inactivate(
     bool lb_trick, std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot)
 {
@@ -269,12 +235,6 @@ bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ)
 {
   return lb_trick ? challenger.lower_bound() > (1.f - champ.lower_bound())
                   : challenger.lower_bound() > champ.upper_bound();
-}
-
-bool worse()
-{
-  // Dummy return false
-  return false;
 }
 
 uint64_t interaction_config_manager::choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue)
@@ -371,17 +331,11 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
     if (verbose)
     {
       auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
-      metrics.set_string("exclusionc_" + std::to_string(live_slot), VW::reductions::exclusions_to_string(exclusions));
+      metrics.set_string(
+          "exclusionc_" + std::to_string(live_slot), VW::reductions::util::exclusions_to_string(exclusions));
     }
   }
   metrics.set_uint("total_champ_switches", total_champ_switches);
-}
-
-// This sets up example with correct ineractions vector
-void apply_config(example* ec, interaction_vec_t* live_interactions)
-{
-  if (ec == nullptr) { return; }
-  ec->interactions = live_interactions;
 }
 
 void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
@@ -402,7 +356,6 @@ void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, 
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 }
-
 }  // namespace automl
 }  // namespace reductions
 }  // namespace VW
