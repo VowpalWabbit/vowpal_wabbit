@@ -4,7 +4,7 @@
 
 #include "vw/core/reductions/automl.h"
 
-#include "reductions/details/automl/automl_impl.h"
+#include "reductions/details/automl_impl.h"
 #include "simulator.h"
 #include "test_common.h"
 #include "vw/core/metric_sink.h"
