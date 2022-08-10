@@ -168,7 +168,6 @@ struct interaction_config_manager : config_manager
       dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
       VW::io::logger*, uint32_t&, bool, bool);
 
-  void apply_config(example*, uint64_t);
   void do_learning(multi_learner&, multi_ex&, uint64_t);
   void persist(metric_sink&, bool);
 
@@ -177,6 +176,7 @@ struct interaction_config_manager : config_manager
   void schedule();
   void update_champ();
 
+  static void apply_config(example* ec, interaction_vec_t* live_interactions);
   // Public for save_load
   static void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter,
       std::string& interaction_type, std::vector<exclusion_config>& configs,

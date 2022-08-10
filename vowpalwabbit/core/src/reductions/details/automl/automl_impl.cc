@@ -383,25 +383,22 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
 }
 
 // This sets up example with correct ineractions vector
-void interaction_config_manager::apply_config(example* ec, uint64_t live_slot)
+void interaction_config_manager::apply_config(example* ec, interaction_vec_t* live_interactions)
 {
   if (ec == nullptr) { return; }
-  if (live_slot < max_live_configs) { ec->interactions = &(estimators[live_slot].first.live_interactions); }
-  else
-  {
-    THROW("fatal (automl): trying to apply a config higher than max configs allowed");
-  }
+  ec->interactions = live_interactions;
 }
 
 void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
 {
+  assert(live_slot < max_live_configs);
   // TODO: what to do if that slot is switched with a new config?
   std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
   std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
   std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
-  for (example* ex : ec) { apply_config(ex, live_slot); }
+  for (example* ex : ec) { apply_config(ex, &estimators[live_slot].first.live_interactions); }
   if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
   base.learn(ec, live_slot);
   std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
