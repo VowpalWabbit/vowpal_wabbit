@@ -279,6 +279,7 @@ struct automl
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
+bool is_allowed_to_remove(const unsigned char ns);
 }  // namespace automl
 
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);

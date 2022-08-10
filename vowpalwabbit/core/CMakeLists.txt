@@ -236,6 +236,7 @@ set(vw_core_sources
   src/reductions/audit_regressor.cc
   src/reductions/autolink.cc
   src/reductions/details/automl/automl_impl.cc
+  src/reductions/details/automl/automl_oracle.cc
   src/reductions/automl.cc
   src/reductions/baseline_challenger_cb.cc
   src/reductions/baseline.cc
