@@ -127,7 +127,7 @@ struct interaction_config_manager : config_manager
 {
   uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
-  uint64_t current_champ = 0;
+  const uint64_t current_champ = 0;
   const uint64_t global_lease;
   const uint64_t max_live_configs;
   uint64_t priority_challengers;
@@ -183,10 +183,9 @@ struct interaction_config_manager : config_manager
       std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot);
 
 private:
-  bool better(uint64_t live_slot);
-  bool worse(uint64_t live_slot);
-  uint64_t choose();
-  bool swap_eligible_to_inactivate(uint64_t);
+  static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
+  static bool swap_eligible_to_inactivate(
+      bool lb_trick, std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t);
 };
 
 template <typename CMType>
@@ -280,8 +279,11 @@ struct automl
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
+
 bool is_allowed_to_remove(const unsigned char ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
+bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
+bool worse();
 }  // namespace automl
 
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
