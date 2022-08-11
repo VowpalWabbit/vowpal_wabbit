@@ -42,9 +42,9 @@ void interaction_config_manager<config_oracle_impl>::persist(metric_sink& metric
   metrics.set_uint("total_champ_switches", total_champ_switches);
 }
 
-template class interaction_config_manager<config_oracle<oracle_rand_impl>>;
-template class interaction_config_manager<config_oracle<one_diff_impl>>;
-template class interaction_config_manager<config_oracle<champdupe_impl>>;
+template struct interaction_config_manager<config_oracle<oracle_rand_impl>>;
+template struct interaction_config_manager<config_oracle<one_diff_impl>>;
+template struct interaction_config_manager<config_oracle<champdupe_impl>>;
 
 }  // namespace automl
 }  // namespace reductions

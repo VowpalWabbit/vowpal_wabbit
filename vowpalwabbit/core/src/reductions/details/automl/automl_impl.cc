@@ -274,9 +274,9 @@ void interaction_config_manager<config_oracle_impl>::do_learning(multi_learner& 
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 }
 
-template class interaction_config_manager<config_oracle<oracle_rand_impl>>;
-template class interaction_config_manager<config_oracle<one_diff_impl>>;
-template class interaction_config_manager<config_oracle<champdupe_impl>>;
+template struct interaction_config_manager<config_oracle<oracle_rand_impl>>;
+template struct interaction_config_manager<config_oracle<one_diff_impl>>;
+template struct interaction_config_manager<config_oracle<champdupe_impl>>;
 
 template <typename CMType>
 void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
@@ -368,9 +368,9 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   }
 }
 
-template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>>>;
-template class automl<interaction_config_manager<config_oracle<one_diff_impl>>>;
-template class automl<interaction_config_manager<config_oracle<champdupe_impl>>>;
+template struct automl<interaction_config_manager<config_oracle<oracle_rand_impl>>>;
+template struct automl<interaction_config_manager<config_oracle<one_diff_impl>>>;
+template struct automl<interaction_config_manager<config_oracle<champdupe_impl>>>;
 
 }  // namespace automl
 }  // namespace reductions
