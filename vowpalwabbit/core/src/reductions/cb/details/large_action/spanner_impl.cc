@@ -76,7 +76,7 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
     update_all(_Inv, _X, log_determinant_factor, max_volume, U.rows());
   }
 
-  const int max_iterations = static_cast<int>(_d * std::log(_d));
+  const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
   float X_volume = max_volume;
 
   for (int iter = 0; iter < max_iterations; ++iter)
