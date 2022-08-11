@@ -331,7 +331,6 @@ size_t write_model_field(io_buf& io, const COST_SENSITIVE::wclass& wc, const std
 size_t read_model_field(io_buf& io, COST_SENSITIVE::label& cs)
 {
   size_t bytes = 0;
-  cs.costs.clear();
   bytes += read_model_field(io, cs.costs);
   return bytes;
 }
