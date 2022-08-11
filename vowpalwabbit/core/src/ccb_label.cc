@@ -221,7 +221,6 @@ size_t read_model_field(io_buf& io, CCB::label& ccb)
 {
   size_t bytes = 0;
   // Since read_cached_features doesn't default the label we must do it here.
-  default_label(ccb);
   if (ccb.outcome != nullptr) { ccb.outcome->probabilities.clear(); }
   ccb.explicit_included_actions.clear();
   bytes += read_model_field(io, ccb.type);

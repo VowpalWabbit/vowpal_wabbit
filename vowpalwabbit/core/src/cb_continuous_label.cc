@@ -190,7 +190,6 @@ size_t write_model_field(
 size_t read_model_field(io_buf& io, VW::cb_continuous::continuous_label& cl)
 {
   size_t bytes = 0;
-  cl.costs.clear();
   bytes += read_model_field(io, cl.costs);
   return bytes;
 }
