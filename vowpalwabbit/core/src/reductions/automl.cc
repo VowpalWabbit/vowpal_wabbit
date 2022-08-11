@@ -126,6 +126,69 @@ float calc_priority_empty(
 }
 }  // namespace
 
+template <typename T>
+VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder,
+    VW::LEARNER::base_learner* base_learner, uint64_t max_live_configs, bool verbose_metrics, std::string& oracle_type,
+    uint64_t global_lease, VW::workspace& all, int32_t priority_challengers, std::string& interaction_type,
+    std::string& priority_type, float automl_significance_level, float automl_estimator_decay, bool lb_trick,
+    bool ccb_on, bool predict_only_model, bool reversed_learning_order)
+{
+  VW::reductions::automl::priority_func* calc_priority;
+
+  if (priority_type == "none") { calc_priority = &calc_priority_empty; }
+  else if (priority_type == "favor_popular_namespaces")
+  {
+    calc_priority = &calc_priority_favor_popular_namespaces;
+  }
+  else
+  {
+    THROW("Invalid priority function provided");
+  }
+
+  // Note that all.wpp will not be set correctly until after setup
+  assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe");
+  auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager<T>>(global_lease, max_live_configs,
+      all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
+      all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
+      lb_trick, ccb_on);
+  auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<T>>>(
+      std::move(cm), &all.logger, predict_only_model);
+  data->debug_reverse_learning_order = reversed_learning_order;
+  data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 3, 0.f);
+  data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
+
+  auto ppw = max_live_configs;
+  auto* persist_ptr = verbose_metrics ? persist<VW::reductions::automl::interaction_config_manager<T>, true>
+                                      : persist<VW::reductions::automl::interaction_config_manager<T>, false>;
+  data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
+  GD::gd& gd = *static_cast<GD::gd*>(
+      base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
+  auto& adf_data =
+      *static_cast<CB_ADF::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
+  data->cm->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
+  data->cm->_gd_total_weight = &(gd.per_model_states[0].total_weight);
+  data->cm->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
+  data->cm->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
+  data->cm->_sd_gravity = &(all.sd->gravity);
+
+  auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+      learn_automl<VW::reductions::automl::interaction_config_manager<T>, true>,
+      predict_automl<VW::reductions::automl::interaction_config_manager<T>, true>,
+      stack_builder.get_setupfn_name(VW::reductions::automl_setup))
+                .set_params_per_weight(ppw)  // refactor pm
+                .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_scores)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_finish_example(::finish_example<VW::reductions::automl::interaction_config_manager<T>>)
+                .set_save_load(save_load_aml<VW::reductions::automl::interaction_config_manager<T>>)
+                .set_persist_metrics(persist_ptr)
+                .set_output_prediction_type(base_learner->get_output_prediction_type())
+                .set_learn_returns_prediction(true)
+                .build();
+  return make_base(*l);
+}
+
 VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
@@ -217,36 +280,12 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  VW::reductions::automl::priority_func* calc_priority;
-
-  if (priority_type == "none") { calc_priority = &calc_priority_empty; }
-  else if (priority_type == "favor_popular_namespaces")
-  {
-    calc_priority = &calc_priority_favor_popular_namespaces;
-  }
-  else
-  {
-    THROW("Invalid priority function provided");
-  }
-
   if (priority_challengers < 0) { priority_challengers = (static_cast<int>(max_live_configs) - 1) / 2; }
 
   if (!fixed_significance_level) { automl_significance_level /= max_live_configs; }
 
   bool ccb_on = options.was_supplied("ccb_explore_adf");
   bool predict_only_model = options.was_supplied("aml_predict_only_model");
-
-  // Note that all.wpp will not be set correctly until after setup
-  assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe");
-  auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
-      all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
-      all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
-      lb_trick, ccb_on);
-  auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
-      std::move(cm), &all.logger, predict_only_model);
-  data->debug_reverse_learning_order = reversed_learning_order;
-  data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 3, 0.f);
-  data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
 
   if (max_live_configs > VW::reductions::automl::MAX_CONFIGS)
   {
@@ -276,40 +315,32 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   // only this has been tested
   if (base_learner->is_multiline())
   {
-    auto ppw = max_live_configs;
-    auto* persist_ptr = verbose_metrics ? persist<VW::reductions::automl::interaction_config_manager, true>
-                                        : persist<VW::reductions::automl::interaction_config_manager, false>;
-    data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
-    GD::gd& gd = *static_cast<GD::gd*>(
-        base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
-    auto& adf_data =
-        *static_cast<CB_ADF::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
-    data->cm->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
-    data->cm->_gd_total_weight = &(gd.per_model_states[0].total_weight);
-    data->cm->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
-    data->cm->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
-    data->cm->_sd_gravity = &(all.sd->gravity);
-
-    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-        learn_automl<VW::reductions::automl::interaction_config_manager, true>,
-        predict_automl<VW::reductions::automl::interaction_config_manager, true>,
-        stack_builder.get_setupfn_name(automl_setup))
-                  .set_params_per_weight(ppw)  // refactor pm
-                  .set_output_prediction_type(VW::prediction_type_t::action_scores)
-                  .set_input_label_type(VW::label_type_t::cb)
-                  .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                  .set_output_label_type(VW::label_type_t::cb)
-                  .set_finish_example(::finish_example<VW::reductions::automl::interaction_config_manager>)
-                  .set_save_load(save_load_aml<VW::reductions::automl::interaction_config_manager>)
-                  .set_persist_metrics(persist_ptr)
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(true)
-                  .build();
-    return make_base(*l);
+    if (oracle_type == "one_diff")
+    {
+      return make_automl_with_impl<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>(
+          stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type, global_lease, all,
+          priority_challengers, interaction_type, priority_type, automl_significance_level, automl_estimator_decay,
+          lb_trick, ccb_on, predict_only_model, reversed_learning_order);
+    }
+    else if (oracle_type == "rand")
+    {
+      return make_automl_with_impl<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>>(
+          stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type, global_lease, all,
+          priority_challengers, interaction_type, priority_type, automl_significance_level, automl_estimator_decay,
+          lb_trick, ccb_on, predict_only_model, reversed_learning_order);
+    }
+    else if (oracle_type == "champdupe")
+    {
+      return make_automl_with_impl<VW::reductions::automl::config_oracle<VW::reductions::automl::champdupe_impl>>(
+          stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type, global_lease, all,
+          priority_challengers, interaction_type, priority_type, automl_significance_level, automl_estimator_decay,
+          lb_trick, ccb_on, predict_only_model, reversed_learning_order);
+    }
   }
   else
   {
     // not implemented yet
     THROW("fatal: automl not supported for single line learners yet");
   }
+  return nullptr;
 }
