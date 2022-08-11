@@ -143,8 +143,8 @@ struct interaction_config_manager : config_manager
   double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
-  const bool lb_trick;
-  const bool ccb_on = false;
+  const bool _lb_trick;
+  const bool _ccb_on;
   config_oracle_impl _config_oracle;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset

@@ -320,21 +320,21 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
       return make_automl_with_impl<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>(
           stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type, global_lease, all,
           priority_challengers, interaction_type, priority_type, automl_significance_level, automl_estimator_decay,
-          reversed_learning_order, lb_trick, predict_only_model, ccb_on);
+          lb_trick, ccb_on, predict_only_model, reversed_learning_order);
     }
     else if (oracle_type == "rand")
     {
       return make_automl_with_impl<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>>(
           stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type, global_lease, all,
           priority_challengers, interaction_type, priority_type, automl_significance_level, automl_estimator_decay,
-          reversed_learning_order, lb_trick, predict_only_model, ccb_on);
+          lb_trick, ccb_on, predict_only_model, reversed_learning_order);
     }
     else if (oracle_type == "champdupe")
     {
       return make_automl_with_impl<VW::reductions::automl::config_oracle<VW::reductions::automl::champdupe_impl>>(
           stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type, global_lease, all,
           priority_challengers, interaction_type, priority_type, automl_significance_level, automl_estimator_decay,
-          reversed_learning_order, lb_trick, predict_only_model, ccb_on);
+          lb_trick, ccb_on, predict_only_model, reversed_learning_order);
     }
   }
   else

@@ -73,8 +73,8 @@ interaction_config_manager<config_oracle_impl>::interaction_config_manager(uint6
     , automl_estimator_decay(automl_estimator_decay)
     , logger(logger)
     , wpp(wpp)
-    , lb_trick(lb_trick)
-    , ccb_on(ccb_on)
+    , _lb_trick(lb_trick)
+    , _ccb_on(ccb_on)
     , _config_oracle(config_oracle_impl(global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type,
           oracle_type, std::move(rand_state)))
 {
@@ -129,7 +129,7 @@ void interaction_config_manager<config_oracle_impl>::schedule()
       {
         configs[estimators[live_slot].first.config_index].lease *= 2;
         if (!estimators[live_slot].first.eligible_to_inactivate ||
-            swap_eligible_to_inactivate(lb_trick, estimators, live_slot))
+            swap_eligible_to_inactivate(_lb_trick, estimators, live_slot))
         { continue; }
       }
       // Skip over removed configs in index queue, and do nothing we we run out of eligible configs
@@ -156,7 +156,7 @@ void interaction_config_manager<config_oracle_impl>::schedule()
       configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      gen_interactions(ccb_on, ns_counter, interaction_type, configs, estimators, live_slot);
+      gen_interactions(_ccb_on, ns_counter, interaction_type, configs, estimators, live_slot);
       // We may also want to 0 out weights here? Currently keep all same in live_slot position
     }
   }
@@ -189,7 +189,7 @@ void interaction_config_manager<config_oracle_impl>::update_champ()
   {
     if (live_slot == current_champ) { continue; }
     // If challenger is better ('better function from Chacha')
-    if (better(lb_trick, estimators[live_slot].first, estimators[live_slot].second))
+    if (better(_lb_trick, estimators[live_slot].first, estimators[live_slot].second))
     {
       champ_change = true;
       winning_challenger_slot = live_slot;
@@ -245,7 +245,7 @@ void interaction_config_manager<config_oracle_impl>::update_champ()
     estimators[1].first = aml_estimator(std::move(estimators[0].second), estimators[1].first.config_index,
         estimators[1].first.eligible_to_inactivate, estimators[1].first.live_interactions);
     estimators[1].second = estimators[0].first;
-    if (lb_trick)
+    if (_lb_trick)
     {
       estimators[1].first.reset_stats();
       estimators[1].second.reset_stats();
@@ -292,7 +292,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
       {
         for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
         {
-          gen_interactions(cm->ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
+          gen_interactions(cm->_ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
         }
       }
       cm->_config_oracle.do_work(cm->estimators, cm->current_champ);
@@ -307,7 +307,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
       {
         for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
         {
-          gen_interactions(cm->ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
+          gen_interactions(cm->_ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
         }
       }
       cm->schedule();
@@ -360,7 +360,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   auto champ_action = ec[0]->pred.a_s[0].action;
   for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
   {
-    if (cm->lb_trick) { cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, 1 - r); }
+    if (cm->_lb_trick) { cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, 1 - r); }
     else
     {
       cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r);
