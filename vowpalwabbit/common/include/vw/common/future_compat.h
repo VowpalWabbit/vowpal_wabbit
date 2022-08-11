@@ -116,15 +116,21 @@
 #ifdef VW_USE_ASAN
 #  if defined(_MSC_VER)
 #    define NO_SANITIZE_ADDRESS __declspec(no_sanitize_address)
-#    define NO_SANITIZE_UNDEFINED
 #  elif defined(__GNUC__) || defined(__CLANG__)
 #    define NO_SANITIZE_ADDRESS __attribute__((no_sanitize("address")))
-#    define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
 #  else
 #    define NO_SANITIZE_ADDRESS
-#    define NO_SANITIZE_UNDEFINED
 #  endif
 #else
 #  define NO_SANITIZE_ADDRESS
+#endif
+
+#ifdef VW_USE_UBSAN
+#  if defined(__GNUC__) || defined(__CLANG__)
+#    define NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
+#  else
+#    define NO_SANITIZE_UNDEFINED
+#  endif
+#else
 #  define NO_SANITIZE_UNDEFINED
 #endif

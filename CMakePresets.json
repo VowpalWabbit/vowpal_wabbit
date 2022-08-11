@@ -66,13 +66,9 @@
       }
     },
     {
-      "name": "vcpkg-asan-debug",
-      "inherits": "vcpkg-debug",
+      "name": "vcpkg-sanitizer-base",
+      "inherits": "default",
       "cacheVariables": {
-        "VW_USE_ASAN": {
-          "type": "BOOL",
-          "value": "On"
-        },
         "USE_LATEST_STD": {
           "type": "BOOL",
           "value": "On"
@@ -88,22 +84,56 @@
       }
     },
     {
-      "name": "vcpkg-asan-release",
-      "inherits": "vcpkg-release",
+      "name": "vcpkg-asan-debug",
+      "inherits": "vcpkg-sanitizer-base",
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        },
         "VW_USE_ASAN": {
           "type": "BOOL",
           "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-asan-release",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
         },
-        "USE_LATEST_STD": {
+        "VW_USE_ASAN": {
           "type": "BOOL",
           "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-ubsan-debug",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
         },
-        "BUILD_FLATBUFFERS": {
+        "VW_USE_UBSAN": {
           "type": "BOOL",
           "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-ubsan-release",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
         },
-        "VW_BUILD_CSV": {
+        "VW_USE_UBSAN": {
           "type": "BOOL",
           "value": "On"
         }

@@ -19,7 +19,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        preset: [vcpkg-asan-debug]
+        preset: [vcpkg-asan-debug, vcpkg-ubsan-debug]
+        exclude:
+          # UBSan not supported by MSVC on Windows
+          - { os: windows-latest, preset: vcpkg-ubsan-debug }
     runs-on: ${{ matrix.os }}
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
     env:

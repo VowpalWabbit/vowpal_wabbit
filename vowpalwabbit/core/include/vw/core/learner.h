@@ -425,13 +425,13 @@ public:
   void init_driver() { init_fd.func(init_fd.data); }
 
   // called after learn example for each example.  Explicitly not recursive.
-  inline void finish_example(VW::workspace& all, E& ec)
+  inline void NO_SANITIZE_UNDEFINED finish_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
   }
 
-  inline void print_example(VW::workspace& all, E& ec)
+  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "print_example");
 
