@@ -5,6 +5,7 @@
 
 cmd_first_steps
 cmd_linear_regression
+cmd_csv_with_iris_dataset
 off_policy_evaluation
 python_cats
 python_classification
