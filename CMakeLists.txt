@@ -122,6 +122,7 @@ option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
 
 if(VW_USE_ASAN)
+  add_compile_definitions(VW_USE_ASAN)
   if(MSVC)
     add_compile_options(/fsanitize=address /GS- /wd5072)
     add_link_options(/InferASanLibs /incremental:no /debug)

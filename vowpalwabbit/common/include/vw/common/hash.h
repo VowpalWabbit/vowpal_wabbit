@@ -59,7 +59,7 @@ VW_STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept
 static inline uint32_t getblock(const uint32_t* p, int i) noexcept
 {
   uint32_t block = 0;
-  memcpy(&block, p+i, sizeof(uint32_t));
+  memcpy(&block, p + i, sizeof(uint32_t));
   return block;
 }
 
@@ -125,7 +125,4 @@ inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
 }  // namespace VW
 
 VW_DEPRECATED("uniform_hash has been moved into VW namespace")
-inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
-{
-  return VW::uniform_hash(key, len, seed);
-}
+inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed) { return VW::uniform_hash(key, len, seed); }
