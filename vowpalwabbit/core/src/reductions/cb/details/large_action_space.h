@@ -132,7 +132,7 @@ struct spanner_state
 private:
   const float _c = 2;
   Eigen::MatrixXf _X;
-  Eigen::MatrixXf _Inv;
+  Eigen::MatrixXf _X_inv;
 
 public:
   std::vector<bool> _spanner_bitvec;

@@ -1337,7 +1337,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
 
   auto* vw_squarecb =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --random_seed 5",
+              std::to_string(d) + " --quiet --random_seed 5",
           nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_squarecb);
