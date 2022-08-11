@@ -10,9 +10,25 @@ namespace reductions
 {
 namespace automl
 {
+template <>
+config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
+    std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
+    std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
+    std::shared_ptr<VW::rand_state> rand_state)
+    : _interaction_type(interaction_type)
+    , _oracle_type(oracle_type)
+    , index_queue(index_queue)
+    , ns_counter(ns_counter)
+    , configs(configs)
+    , calc_priority(calc_priority)
+    , global_lease(global_lease)
+    , _impl(oracle_rand_impl(std::move(rand_state)))
+{
+}
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
-void config_oracle::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups)
+template <typename oracle_impl>
+void config_oracle<oracle_impl>::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups)
 {
   // First check if config already exists
   if (!allow_dups)
@@ -51,44 +67,49 @@ void config_oracle::insert_config(std::set<std::vector<namespace_index>>&& new_e
   ++valid_config_size;
 }
 
+void oracle_rand_impl::do_work(config_oracle<oracle_rand_impl>* co,
+    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+{
+  auto& champ_interactions = estimators[current_champ].first.live_interactions;
+  for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
+  {
+    uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
+    std::set<std::vector<namespace_index>> new_exclusions(
+        co->configs[estimators[current_champ].first.config_index].exclusions);
+    if (co->_interaction_type == "quadratic")
+    {
+      namespace_index ns1 = champ_interactions[rand_ind][0];
+      namespace_index ns2 = champ_interactions[rand_ind][1];
+      std::vector<namespace_index> idx{ns1, ns2};
+      new_exclusions.insert(idx);
+    }
+    else if (co->_interaction_type == "cubic")
+    {
+      namespace_index ns1 = champ_interactions[rand_ind][0];
+      namespace_index ns2 = champ_interactions[rand_ind][1];
+      namespace_index ns3 = champ_interactions[rand_ind][2];
+      std::vector<namespace_index> idx{ns1, ns2, ns3};
+      new_exclusions.insert(idx);
+    }
+    else
+    {
+      THROW("Unknown interaction type.");
+    }
+    co->insert_config(std::move(new_exclusions));
+  }
+}
+
 // This will generate configs based on the current champ. These configs will be
 // stored as 'exclusions.' The current design is to look at the interactions of
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
 // TODO: Add logic to avoid duplicate configs (could be very costly)
-void config_oracle::do_work(
+template <typename oracle_impl>
+void config_oracle<oracle_impl>::do_work(
     std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
 {
   auto& champ_interactions = estimators[current_champ].first.live_interactions;
-  if (_oracle_type == "rand")
-  {
-    for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
-    {
-      uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
-      std::set<std::vector<namespace_index>> new_exclusions(
-          configs[estimators[current_champ].first.config_index].exclusions);
-      if (_interaction_type == "quadratic")
-      {
-        namespace_index ns1 = champ_interactions[rand_ind][0];
-        namespace_index ns2 = champ_interactions[rand_ind][1];
-        std::vector<namespace_index> idx{ns1, ns2};
-        new_exclusions.insert(idx);
-      }
-      else if (_interaction_type == "cubic")
-      {
-        namespace_index ns1 = champ_interactions[rand_ind][0];
-        namespace_index ns2 = champ_interactions[rand_ind][1];
-        namespace_index ns3 = champ_interactions[rand_ind][2];
-        std::vector<namespace_index> idx{ns1, ns2, ns3};
-        new_exclusions.insert(idx);
-      }
-      else
-      {
-        THROW("Unknown interaction type.");
-      }
-      insert_config(std::move(new_exclusions));
-    }
-  }
+  if (_oracle_type == "rand") { _impl.do_work(this, estimators, current_champ); }
   /*
    * Example of one_diff oracle:
    * Say we have namespaces {a,b,c}, so all quadratic interactions are {aa, ab, ac, bb, bc, cc}. If the champ has
@@ -156,7 +177,8 @@ void config_oracle::do_work(
 // 'index_queue' which can be used to swap out live configs as they run out of lease. This functionality
 // may be better within the oracle, which could generate better priorities for different configs based
 // on ns_counter (which is updated as each example is processed)
-bool config_oracle::repopulate_index_queue()
+template <typename oracle_impl>
+bool config_oracle<oracle_impl>::repopulate_index_queue()
 {
   for (size_t i = 0; i < valid_config_size; ++i)
   {
@@ -170,6 +192,8 @@ bool config_oracle::repopulate_index_queue()
   }
   return !index_queue.empty();
 }
+
+template class config_oracle<oracle_rand_impl>;
 
 }  // namespace automl
 }  // namespace reductions

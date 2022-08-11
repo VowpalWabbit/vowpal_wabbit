@@ -238,11 +238,13 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   // Note that all.wpp will not be set correctly until after setup
   assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe");
-  auto cm = VW::make_unique<VW::reductions::automl::interaction_config_manager>(global_lease, max_live_configs,
-      all.get_random_state(), static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type,
-      all.weights.dense_weights, calc_priority, automl_significance_level, automl_estimator_decay, &all.logger, all.wpp,
-      lb_trick, ccb_on);
-  auto data = VW::make_unique<VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>>(
+  auto cm =
+      VW::make_unique<VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>>(
+          global_lease, max_live_configs, all.get_random_state(), static_cast<uint64_t>(priority_challengers),
+          interaction_type, oracle_type, all.weights.dense_weights, calc_priority, automl_significance_level,
+          automl_estimator_decay, &all.logger, all.wpp, lb_trick, ccb_on);
+  auto data = VW::make_unique<VW::reductions::automl::automl<
+      VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>>>(
       std::move(cm), &all.logger, predict_only_model);
   data->debug_reverse_learning_order = reversed_learning_order;
   data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 3, 0.f);
@@ -277,8 +279,9 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   if (base_learner->is_multiline())
   {
     auto ppw = max_live_configs;
-    auto* persist_ptr = verbose_metrics ? persist<VW::reductions::automl::interaction_config_manager, true>
-                                        : persist<VW::reductions::automl::interaction_config_manager, false>;
+    auto* persist_ptr = verbose_metrics
+        ? persist<VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>, true>
+        : persist<VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>, false>;
     data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
     GD::gd& gd = *static_cast<GD::gd*>(
         base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
@@ -291,16 +294,20 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     data->cm->_sd_gravity = &(all.sd->gravity);
 
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-        learn_automl<VW::reductions::automl::interaction_config_manager, true>,
-        predict_automl<VW::reductions::automl::interaction_config_manager, true>,
+        learn_automl<VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>,
+            true>,
+        predict_automl<VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>,
+            true>,
         stack_builder.get_setupfn_name(automl_setup))
                   .set_params_per_weight(ppw)  // refactor pm
                   .set_output_prediction_type(VW::prediction_type_t::action_scores)
                   .set_input_label_type(VW::label_type_t::cb)
                   .set_input_prediction_type(VW::prediction_type_t::action_scores)
                   .set_output_label_type(VW::label_type_t::cb)
-                  .set_finish_example(::finish_example<VW::reductions::automl::interaction_config_manager>)
-                  .set_save_load(save_load_aml<VW::reductions::automl::interaction_config_manager>)
+                  .set_finish_example(::finish_example<
+                      VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>>)
+                  .set_save_load(save_load_aml<
+                      VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>>)
                   .set_persist_metrics(persist_ptr)
                   .set_output_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(true)

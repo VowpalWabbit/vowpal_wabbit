@@ -13,7 +13,8 @@ namespace reductions
 {
 namespace automl
 {
-void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
+template <typename oracle_impl>
+void interaction_config_manager<oracle_impl>::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
 {
   assert(live_slot < max_live_configs);
   // TODO: what to do if that slot is switched with a new config?
@@ -32,12 +33,15 @@ void interaction_config_manager::do_learning(multi_learner& base, multi_ex& ec, 
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 }
 
-uint64_t interaction_config_manager::choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue)
+template <typename oracle_impl>
+uint64_t interaction_config_manager<oracle_impl>::choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue)
 {
   uint64_t ret = index_queue.top().second;
   index_queue.pop();
   return ret;
 }
+
+template class interaction_config_manager<oracle_rand_impl>;
 
 // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
 // interactions.cc. It will generate interactions with -q :: and exclude namespaces

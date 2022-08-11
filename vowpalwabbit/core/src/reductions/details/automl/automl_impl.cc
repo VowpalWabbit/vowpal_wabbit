@@ -58,7 +58,8 @@ namespace automl
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
+template <typename oracle_impl>
+interaction_config_manager<oracle_impl>::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
     std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string interaction_type,
     std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
     double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
@@ -73,8 +74,8 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , wpp(wpp)
     , lb_trick(lb_trick)
     , ccb_on(ccb_on)
-    , _config_oracle(config_oracle(global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type,
-          oracle_type, std::move(rand_state)))
+    , _config_oracle(config_oracle<oracle_impl>(global_lease, calc_priority, index_queue, ns_counter, configs,
+          interaction_type, oracle_type, std::move(rand_state)))
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
@@ -83,7 +84,8 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
   ++_config_oracle.valid_config_size;
 }
 
-bool interaction_config_manager::swap_eligible_to_inactivate(
+template <typename oracle_impl>
+bool interaction_config_manager<oracle_impl>::swap_eligible_to_inactivate(
     bool lb_trick, std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot)
 {
   const uint64_t current_champ = 0;
@@ -104,7 +106,8 @@ bool interaction_config_manager::swap_eligible_to_inactivate(
 
 // This function defines the logic update the live configs' leases, and to swap out
 // new configs when the lease runs out.
-void interaction_config_manager::schedule()
+template <typename oracle_impl>
+void interaction_config_manager<oracle_impl>::schedule()
 {
   for (uint64_t live_slot = 0; live_slot < max_live_configs; ++live_slot)
   {
@@ -164,7 +167,8 @@ bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ)
                   : challenger.lower_bound() > champ.upper_bound();
 }
 
-void interaction_config_manager::update_champ()
+template <typename oracle_impl>
+void interaction_config_manager<oracle_impl>::update_champ()
 {
   bool champ_change = false;
   uint64_t old_champ_slot = current_champ;
@@ -239,6 +243,9 @@ void interaction_config_manager::update_champ()
     _config_oracle.do_work(estimators, current_champ);
   }
 }
+
+template class interaction_config_manager<oracle_rand_impl>;
+
 }  // namespace automl
 }  // namespace reductions
 }  // namespace VW

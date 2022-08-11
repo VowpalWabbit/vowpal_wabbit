@@ -23,7 +23,8 @@ void aml_estimator::persist(
   }
 }
 
-void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
+template <typename oracle_impl>
+void interaction_config_manager<oracle_impl>::persist(metric_sink& metrics, bool verbose)
 {
   metrics.set_uint("test_county", total_learn_count);
   metrics.set_uint("current_champ", current_champ);
@@ -40,6 +41,9 @@ void interaction_config_manager::persist(metric_sink& metrics, bool verbose)
   }
   metrics.set_uint("total_champ_switches", total_champ_switches);
 }
+
+template class interaction_config_manager<oracle_rand_impl>;
+
 }  // namespace automl
 }  // namespace reductions
 
@@ -83,7 +87,8 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_manager& cm)
+template <typename oracle_impl>
+size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_manager<oracle_impl>& cm)
 {
   cm.estimators.clear();
   cm.configs.clear();
@@ -105,7 +110,8 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::reductions::automl::interaction_config_manager& cm,
+template <typename oracle_impl>
+size_t write_model_field(io_buf& io, const VW::reductions::automl::interaction_config_manager<oracle_impl>& cm,
     const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
@@ -131,8 +137,9 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::automl<CMType>& aml)
   return bytes;
 }
 
-template size_t read_model_field(
-    io_buf&, VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>&);
+template size_t read_model_field(io_buf&,
+    VW::reductions::automl::automl<
+        VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>>&);
 
 template <typename CMType>
 size_t write_model_field(
@@ -145,8 +152,9 @@ size_t write_model_field(
 }
 
 template size_t write_model_field(io_buf&,
-    const VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager>&, const std::string&,
-    bool);
+    const VW::reductions::automl::automl<
+        VW::reductions::automl::interaction_config_manager<VW::reductions::automl::oracle_rand_impl>>&,
+    const std::string&, bool);
 
 }  // namespace model_utils
 

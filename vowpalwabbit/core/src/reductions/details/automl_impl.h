@@ -84,11 +84,11 @@ struct config_manager
 
 using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
 
+template <typename oracle_impl>
 struct config_oracle
 {
   std::string _interaction_type;
   const std::string _oracle_type;
-  std::shared_ptr<VW::rand_state> random_state;
 
   // insert_config(..)
   std::priority_queue<std::pair<float, uint64_t>>& index_queue;
@@ -98,26 +98,27 @@ struct config_oracle
   priority_func* calc_priority;
   const uint64_t global_lease;
   uint64_t valid_config_size = 0;
+  oracle_impl _impl;
 
   config_oracle(uint64_t global_lease, priority_func* calc_priority,
       std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
       std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
-      std::shared_ptr<VW::rand_state> rand_state)
-      : _interaction_type(interaction_type)
-      , _oracle_type(oracle_type)
-      , random_state(rand_state)
-      , index_queue(index_queue)
-      , ns_counter(ns_counter)
-      , configs(configs)
-      , calc_priority(calc_priority)
-      , global_lease(global_lease)
-  {
-  }
+      std::shared_ptr<VW::rand_state> rand_state);
+
   void do_work(std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
   bool repopulate_index_queue();
 };
 
+struct oracle_rand_impl
+{
+  std::shared_ptr<VW::rand_state> random_state;
+  oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(random_state) {}
+  void do_work(config_oracle<oracle_rand_impl>* config_oracle,
+      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+};
+
+template <typename oracle_impl>
 struct interaction_config_manager : config_manager
 {
   uint64_t total_champ_switches = 0;
@@ -134,7 +135,7 @@ struct interaction_config_manager : config_manager
   uint32_t& wpp;
   const bool lb_trick;
   const bool ccb_on = false;
-  config_oracle _config_oracle;
+  config_oracle<oracle_impl> _config_oracle;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset
   std::vector<double> per_live_model_state_double;
@@ -311,12 +312,15 @@ template <typename CMType>
 size_t write_model_field(io_buf&, const VW::reductions::automl::automl<CMType>&, const std::string&, bool);
 size_t read_model_field(io_buf&, VW::reductions::automl::exclusion_config&);
 size_t read_model_field(io_buf&, VW::reductions::automl::aml_estimator&);
-size_t read_model_field(io_buf&, VW::reductions::automl::interaction_config_manager&);
+template <typename oracle_impl>
+size_t read_model_field(io_buf&, VW::reductions::automl::interaction_config_manager<oracle_impl>&);
 template <typename CMType>
 size_t read_model_field(io_buf&, VW::reductions::automl::automl<CMType>&);
 size_t write_model_field(io_buf&, const VW::reductions::automl::exclusion_config&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::automl::aml_estimator&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::reductions::automl::interaction_config_manager&, const std::string&, bool);
+template <typename oracle_impl>
+size_t write_model_field(
+    io_buf&, const VW::reductions::automl::interaction_config_manager<oracle_impl>&, const std::string&, bool);
 }  // namespace model_utils
 VW::string_view to_string(reductions::automl::automl_state state);
 VW::string_view to_string(reductions::automl::config_state state);
