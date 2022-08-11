@@ -100,7 +100,7 @@ int main(int argc, char** argv)
   }
 
   size_t bytes = 0;
-  std::vector<std::string> lines;
+  std::vector<std::string> file_contents_as_lines;
   std::ifstream file(file_name);
   if (file.is_open())
   {
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
     while (std::getline(file, line))
     {
       bytes += line.size() * sizeof(std::string::value_type);
-      lines.push_back(std::move(line));
+      file_contents_as_lines.push_back(std::move(line));
     }
     file.close();
   }
@@ -116,6 +116,13 @@ int main(int argc, char** argv)
   {
     std::cerr << "error: could not open file: '" << file_name << "'\n";
   }
+
+  // Other option is the parser can use this io_buf. It's using more memory for no good reason, unless we run out it
+  // shouldnt matter in this test tool.
+  io_buf file_contents_as_io_buf;
+  std::ifstream testFile(file_name, std::ios::binary);
+  std::vector<char> fileContents((std::istreambuf_iterator<char>(testFile)), std::istreambuf_iterator<char>());
+  file_contents_as_io_buf.add_file(VW::io::create_buffer_view(fileContents.data(), fileContents.size()));
 
   const auto type = to_parser_type(type_str);
   if (type == parser_type::dsjson) { args += " --dsjson"; }
@@ -137,7 +144,7 @@ int main(int argc, char** argv)
     if (is_multiline)
     {
       VW::multi_ex exs;
-      for (const auto& line : lines)
+      for (const auto& line : file_contents_as_lines)
       {
         if (line.empty() && !exs.empty())
         {
@@ -159,7 +166,7 @@ int main(int argc, char** argv)
     }
     else
     {
-      for (const auto& line : lines)
+      for (const auto& line : file_contents_as_lines)
       {
         VW::example& ae = VW::get_unused_example(vw);
         VW::string_view example(line.c_str(), line.size());
@@ -171,7 +178,7 @@ int main(int argc, char** argv)
   else if (type == parser_type::dsjson)
   {
     DecisionServiceInteraction interaction;
-    for (const auto& line : lines)
+    for (const auto& line : file_contents_as_lines)
     {
       VW::multi_ex examples;
       examples.push_back(&VW::get_unused_example(vw));
@@ -183,13 +190,9 @@ int main(int argc, char** argv)
   else
   {
 #ifdef VW_BUILD_CSV
-
-    io_buf file_contents;
-    file_contents.add_file(VW::io::open_file_reader(file_name));
-
     VW::multi_ex examples;
     examples.push_back(&VW::get_unused_example(vw));
-    while (VW::parsers::parse_csv_examples(vw, file_contents, examples) != 0)
+    while (VW::parsers::parse_csv_examples(vw, file_contents_as_io_buf, examples) != 0)
     {
       VW::finish_example(*vw, *examples[0]);
       examples.clear();
