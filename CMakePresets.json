@@ -80,6 +80,10 @@
         "BUILD_FLATBUFFERS": {
           "type": "BOOL",
           "value": "On"
+        },
+        "VW_BUILD_CSV": {
+          "type": "BOOL",
+          "value": "On"
         }
       }
     },
@@ -96,6 +100,10 @@
           "value": "On"
         },
         "BUILD_FLATBUFFERS": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "VW_BUILD_CSV": {
           "type": "BOOL",
           "value": "On"
         }
