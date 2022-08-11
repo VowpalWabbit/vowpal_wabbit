@@ -59,8 +59,8 @@ namespace automl
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
 interaction_config_manager::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
-    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string interaction_type,
-    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
+    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string& interaction_type,
+    std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
     double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
