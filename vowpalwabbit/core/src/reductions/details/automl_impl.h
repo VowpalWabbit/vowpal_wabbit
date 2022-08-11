@@ -84,11 +84,11 @@ struct config_manager
 
 using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
 
+template <typename oracle_impl>
 struct config_oracle
 {
   std::string _interaction_type;
   const std::string _oracle_type;
-  std::shared_ptr<VW::rand_state> random_state;
 
   // insert_config(..)
   std::priority_queue<std::pair<float, uint64_t>>& index_queue;
@@ -98,26 +98,37 @@ struct config_oracle
   priority_func* calc_priority;
   const uint64_t global_lease;
   uint64_t valid_config_size = 0;
+  oracle_impl _impl;
 
   config_oracle(uint64_t global_lease, priority_func* calc_priority,
       std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
       std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
-      std::shared_ptr<VW::rand_state> rand_state)
-      : _interaction_type(interaction_type)
-      , _oracle_type(oracle_type)
-      , random_state(rand_state)
-      , index_queue(index_queue)
-      , ns_counter(ns_counter)
-      , configs(configs)
-      , calc_priority(calc_priority)
-      , global_lease(global_lease)
-  {
-  }
+      std::shared_ptr<VW::rand_state>& rand_state);
+
   void do_work(std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
   bool repopulate_index_queue();
 };
 
+struct oracle_rand_impl
+{
+  std::shared_ptr<VW::rand_state> random_state;
+  oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
+  void do_work(config_oracle<oracle_rand_impl>* config_oracle,
+      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+};
+struct one_diff_impl
+{
+  void do_work(config_oracle<one_diff_impl>* config_oracle,
+      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+};
+struct champdupe_impl
+{
+  void do_work(config_oracle<champdupe_impl>* config_oracle,
+      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+};
+
+template <typename config_oracle_impl>
 struct interaction_config_manager : config_manager
 {
   uint64_t total_champ_switches = 0;
@@ -132,9 +143,9 @@ struct interaction_config_manager : config_manager
   double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
-  const bool lb_trick;
-  const bool ccb_on = false;
-  config_oracle _config_oracle;
+  const bool _lb_trick;
+  const bool _ccb_on;
+  config_oracle_impl _config_oracle;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset
   std::vector<double> per_live_model_state_double;
@@ -159,9 +170,10 @@ struct interaction_config_manager : config_manager
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
-  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, std::string, std::string,
-      dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
-      VW::io::logger*, uint32_t&, bool, bool);
+  interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, const std::string&,
+      const std::string&, dense_parameters&,
+      float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double, VW::io::logger*,
+      uint32_t&, bool, bool);
 
   void do_learning(multi_learner&, multi_ex&, uint64_t);
   void persist(metric_sink&, bool);
@@ -198,93 +210,9 @@ struct automl
   // This fn gets called before learning any example
   // void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
   // template <typename CMType>
-  void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
-  {
-    cm->total_learn_count++;
-    bool new_ns_seen = false;
-    switch (current_state)
-    {
-      case automl_state::Collecting:
-        new_ns_seen = count_namespaces(ec, cm->ns_counter);
-        // Regenerate interactions if new namespaces are seen
-        if (new_ns_seen)
-        {
-          for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
-          {
-            gen_interactions(cm->ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
-          }
-        }
-        cm->_config_oracle.do_work(cm->estimators, cm->current_champ);
-        offset_learn(base, ec, logged, labelled_action);
-        current_state = automl_state::Experimenting;
-        break;
-
-      case automl_state::Experimenting:
-        new_ns_seen = count_namespaces(ec, cm->ns_counter);
-        // Regenerate interactions if new namespaces are seen
-        if (new_ns_seen)
-        {
-          for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
-          {
-            gen_interactions(cm->ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
-          }
-        }
-        cm->schedule();
-        offset_learn(base, ec, logged, labelled_action);
-        cm->update_champ();
-        break;
-
-      default:
-        break;
-    }
-  };
+  void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
   // inner loop of learn driven by # MAX_CONFIGS
-  void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
-  {
-    interaction_vec_t* incoming_interactions = ec[0]->interactions;
-    for (VW::example* ex : ec)
-    {
-      _UNUSED(ex);
-      assert(ex->interactions == incoming_interactions);
-    }
-
-    const float w = logged.probability > 0 ? 1 / logged.probability : 0;
-    const float r = -logged.cost;
-
-    int64_t live_slot = 0;
-    int64_t current_champ = static_cast<int64_t>(cm->current_champ);
-    assert(current_champ == 0);
-
-    auto restore_guard = VW::scope_exit([&ec, &incoming_interactions]() {
-      for (example* ex : ec) { ex->interactions = incoming_interactions; }
-    });
-
-    // Learn and update estimators of challengers
-    for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < cm->estimators.size();
-         ++current_slot_index)
-    {
-      if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
-      else
-      {
-        live_slot = cm->estimators.size() - current_slot_index;
-      }
-      cm->do_learning(base, ec, live_slot);
-      cm->estimators[live_slot].first.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
-    }
-
-    // ** Note: champ learning is done after to ensure correct feature count in gd **
-    // Learn and get action of champ
-    cm->do_learning(base, ec, current_champ);
-    auto champ_action = ec[0]->pred.a_s[0].action;
-    for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
-    {
-      if (cm->lb_trick) { cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, 1 - r); }
-      else
-      {
-        cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r);
-      }
-    }
-  };
+  void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
 
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
@@ -311,12 +239,15 @@ template <typename CMType>
 size_t write_model_field(io_buf&, const VW::reductions::automl::automl<CMType>&, const std::string&, bool);
 size_t read_model_field(io_buf&, VW::reductions::automl::exclusion_config&);
 size_t read_model_field(io_buf&, VW::reductions::automl::aml_estimator&);
-size_t read_model_field(io_buf&, VW::reductions::automl::interaction_config_manager&);
+template <typename config_oracle_impl>
+size_t read_model_field(io_buf&, VW::reductions::automl::interaction_config_manager<config_oracle_impl>&);
 template <typename CMType>
 size_t read_model_field(io_buf&, VW::reductions::automl::automl<CMType>&);
 size_t write_model_field(io_buf&, const VW::reductions::automl::exclusion_config&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::automl::aml_estimator&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::reductions::automl::interaction_config_manager&, const std::string&, bool);
+template <typename config_oracle_impl>
+size_t write_model_field(
+    io_buf&, const VW::reductions::automl::interaction_config_manager<config_oracle_impl>&, const std::string&, bool);
 }  // namespace model_utils
 VW::string_view to_string(reductions::automl::automl_state state);
 VW::string_view to_string(reductions::automl::config_state state);
