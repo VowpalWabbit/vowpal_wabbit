@@ -376,7 +376,7 @@ public:
   }
 
   // called anytime saving or loading needs to happen. Autorecursive.
-  inline void save_load(io_buf& io, const bool read, const bool text)
+  inline void NO_SANITIZE_UNDEFINED save_load(io_buf& io, const bool read, const bool text)
   {
     try
     {
