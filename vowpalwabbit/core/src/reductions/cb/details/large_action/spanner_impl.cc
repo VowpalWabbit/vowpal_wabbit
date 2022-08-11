@@ -73,7 +73,7 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
     _X.row(i) = y;
     _action_indices[i] = U_rid;
 
-    update_all(_Inv, _X, log_determinant_factor, _d, max_volume, U.rows());
+    update_all(_Inv, _X, log_determinant_factor, max_volume, U.rows());
   }
 
   const int max_iterations = static_cast<int>(_d * std::log(_d));
@@ -99,7 +99,7 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
         _X.row(i) = y;
         _action_indices[i] = U_rid;
 
-        update_all(_Inv, _X, log_determinant_factor, _d, max_volume, U.rows());
+        update_all(_Inv, _X, log_determinant_factor, max_volume, U.rows());
 
         X_volume = max_volume;
         found_larger_volume = true;
