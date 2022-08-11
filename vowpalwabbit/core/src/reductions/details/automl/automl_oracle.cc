@@ -14,7 +14,7 @@ template <>
 config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
     std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
     std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
-    std::shared_ptr<VW::rand_state> rand_state)
+    std::shared_ptr<VW::rand_state>& rand_state)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , index_queue(index_queue)
@@ -29,7 +29,7 @@ template <typename oracle_impl>
 config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
     std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
     std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
-    std::shared_ptr<VW::rand_state>)
+    std::shared_ptr<VW::rand_state>&)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , index_queue(index_queue)

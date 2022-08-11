@@ -75,8 +75,8 @@ interaction_config_manager<config_oracle_impl>::interaction_config_manager(uint6
     , wpp(wpp)
     , _lb_trick(lb_trick)
     , _ccb_on(ccb_on)
-    , _config_oracle(config_oracle_impl(global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type,
-          oracle_type, std::move(rand_state)))
+    , _config_oracle(config_oracle_impl(
+          global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type, oracle_type, rand_state))
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
