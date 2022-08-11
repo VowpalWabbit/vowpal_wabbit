@@ -56,7 +56,7 @@ int main(int argc, char** argv)
       .add(VW::config::make_option("args", extra_args).short_name("a").help("VW args to setup parser correctly"))
       .add(VW::config::make_option("type", type_str)
                .short_name("t")
-               .help("Type of input format. [text, djson, csv] (required)"));
+               .help("Type of input format. [text, dsjson, csv] (required)"));
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.
@@ -87,7 +87,7 @@ int main(int argc, char** argv)
   std::string args = "--no_stdin --quiet ";
   if (opts.was_supplied("args"))
   {
-    const auto& illegal_options = {"--djson", "--json", "--data", "-d", "--csv"};
+    const auto& illegal_options = {"--dsjson", "--json", "--data", "-d", "--csv"};
     for (const auto& illegal_option : illegal_options)
     {
       if (extra_args.find(illegal_option) != std::string::npos)
