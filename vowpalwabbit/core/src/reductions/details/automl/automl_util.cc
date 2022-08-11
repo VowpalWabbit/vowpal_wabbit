@@ -13,42 +13,11 @@ namespace reductions
 {
 namespace automl
 {
-template <typename oracle_impl>
-void interaction_config_manager<oracle_impl>::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
-{
-  assert(live_slot < max_live_configs);
-  // TODO: what to do if that slot is switched with a new config?
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
-  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
-  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
-  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
-  for (example* ex : ec) { apply_config(ex, &estimators[live_slot].first.live_interactions); }
-  if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
-  base.learn(ec, live_slot);
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
-  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
-  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
-  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
-}
-
-template <typename oracle_impl>
-uint64_t interaction_config_manager<oracle_impl>::choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue)
-{
-  uint64_t ret = index_queue.top().second;
-  index_queue.pop();
-  return ret;
-}
-
-template class interaction_config_manager<oracle_rand_impl>;
-
 // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
 // interactions.cc. It will generate interactions with -q :: and exclude namespaces
 // from the corresponding live_slot. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-
 void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
     std::vector<exclusion_config>& configs, std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
     uint64_t live_slot)

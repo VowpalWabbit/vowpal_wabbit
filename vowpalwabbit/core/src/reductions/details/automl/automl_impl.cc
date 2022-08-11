@@ -58,11 +58,12 @@ namespace automl
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
 // into its own base_learner.learn(). see learn_automl(...)
-template <typename oracle_impl>
-interaction_config_manager<oracle_impl>::interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
-    std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, std::string interaction_type,
-    std::string oracle_type, dense_parameters& weights, priority_func* calc_priority, double automl_significance_level,
-    double automl_estimator_decay, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
+template <typename config_oracle_impl>
+interaction_config_manager<config_oracle_impl>::interaction_config_manager(uint64_t global_lease,
+    uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
+    const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
+    priority_func* calc_priority, double automl_significance_level, double automl_estimator_decay,
+    VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -74,8 +75,8 @@ interaction_config_manager<oracle_impl>::interaction_config_manager(uint64_t glo
     , wpp(wpp)
     , lb_trick(lb_trick)
     , ccb_on(ccb_on)
-    , _config_oracle(config_oracle<oracle_impl>(global_lease, calc_priority, index_queue, ns_counter, configs,
-          interaction_type, oracle_type, std::move(rand_state)))
+    , _config_oracle(config_oracle_impl(global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type,
+          oracle_type, std::move(rand_state)))
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
@@ -84,8 +85,8 @@ interaction_config_manager<oracle_impl>::interaction_config_manager(uint64_t glo
   ++_config_oracle.valid_config_size;
 }
 
-template <typename oracle_impl>
-bool interaction_config_manager<oracle_impl>::swap_eligible_to_inactivate(
+template <typename config_oracle_impl>
+bool interaction_config_manager<config_oracle_impl>::swap_eligible_to_inactivate(
     bool lb_trick, std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot)
 {
   const uint64_t current_champ = 0;
@@ -106,8 +107,8 @@ bool interaction_config_manager<oracle_impl>::swap_eligible_to_inactivate(
 
 // This function defines the logic update the live configs' leases, and to swap out
 // new configs when the lease runs out.
-template <typename oracle_impl>
-void interaction_config_manager<oracle_impl>::schedule()
+template <typename config_oracle_impl>
+void interaction_config_manager<config_oracle_impl>::schedule()
 {
   for (uint64_t live_slot = 0; live_slot < max_live_configs; ++live_slot)
   {
@@ -161,14 +162,23 @@ void interaction_config_manager<oracle_impl>::schedule()
   }
 }
 
+template <typename config_oracle_impl>
+uint64_t interaction_config_manager<config_oracle_impl>::choose(
+    std::priority_queue<std::pair<float, uint64_t>>& index_queue)
+{
+  uint64_t ret = index_queue.top().second;
+  index_queue.pop();
+  return ret;
+}
+
 bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ)
 {
   return lb_trick ? challenger.lower_bound() > (1.f - champ.lower_bound())
                   : challenger.lower_bound() > champ.upper_bound();
 }
 
-template <typename oracle_impl>
-void interaction_config_manager<oracle_impl>::update_champ()
+template <typename config_oracle_impl>
+void interaction_config_manager<config_oracle_impl>::update_champ()
 {
   bool champ_change = false;
   uint64_t old_champ_slot = current_champ;
@@ -244,7 +254,123 @@ void interaction_config_manager<oracle_impl>::update_champ()
   }
 }
 
-template class interaction_config_manager<oracle_rand_impl>;
+template <typename config_oracle_impl>
+void interaction_config_manager<config_oracle_impl>::do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot)
+{
+  assert(live_slot < max_live_configs);
+  // TODO: what to do if that slot is switched with a new config?
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
+  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
+  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+  for (example* ex : ec) { apply_config(ex, &estimators[live_slot].first.live_interactions); }
+  if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
+  base.learn(ec, live_slot);
+  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
+  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
+  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
+  std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
+  std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
+}
+
+template class interaction_config_manager<config_oracle<oracle_rand_impl>>;
+template class interaction_config_manager<config_oracle<one_diff_impl>>;
+template class interaction_config_manager<config_oracle<champdupe_impl>>;
+
+template <typename CMType>
+void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
+{
+  cm->total_learn_count++;
+  bool new_ns_seen = false;
+  switch (current_state)
+  {
+    case automl_state::Collecting:
+      new_ns_seen = count_namespaces(ec, cm->ns_counter);
+      // Regenerate interactions if new namespaces are seen
+      if (new_ns_seen)
+      {
+        for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
+        {
+          gen_interactions(cm->ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
+        }
+      }
+      cm->_config_oracle.do_work(cm->estimators, cm->current_champ);
+      offset_learn(base, ec, logged, labelled_action);
+      current_state = automl_state::Experimenting;
+      break;
+
+    case automl_state::Experimenting:
+      new_ns_seen = count_namespaces(ec, cm->ns_counter);
+      // Regenerate interactions if new namespaces are seen
+      if (new_ns_seen)
+      {
+        for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
+        {
+          gen_interactions(cm->ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
+        }
+      }
+      cm->schedule();
+      offset_learn(base, ec, logged, labelled_action);
+      cm->update_champ();
+      break;
+
+    default:
+      break;
+  }
+}
+
+template <typename CMType>
+void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
+{
+  interaction_vec_t* incoming_interactions = ec[0]->interactions;
+  for (VW::example* ex : ec)
+  {
+    _UNUSED(ex);
+    assert(ex->interactions == incoming_interactions);
+  }
+
+  const float w = logged.probability > 0 ? 1 / logged.probability : 0;
+  const float r = -logged.cost;
+
+  int64_t live_slot = 0;
+  int64_t current_champ = static_cast<int64_t>(cm->current_champ);
+  assert(current_champ == 0);
+
+  auto restore_guard = VW::scope_exit([&ec, &incoming_interactions]() {
+    for (example* ex : ec) { ex->interactions = incoming_interactions; }
+  });
+
+  // Learn and update estimators of challengers
+  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < cm->estimators.size();
+       ++current_slot_index)
+  {
+    if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
+    else
+    {
+      live_slot = cm->estimators.size() - current_slot_index;
+    }
+    cm->do_learning(base, ec, live_slot);
+    cm->estimators[live_slot].first.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
+  }
+
+  // ** Note: champ learning is done after to ensure correct feature count in gd **
+  // Learn and get action of champ
+  cm->do_learning(base, ec, current_champ);
+  auto champ_action = ec[0]->pred.a_s[0].action;
+  for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
+  {
+    if (cm->lb_trick) { cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, 1 - r); }
+    else
+    {
+      cm->estimators[live_slot].second.update(champ_action == labelled_action ? w : 0, r);
+    }
+  }
+}
+
+template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>>>;
+template class automl<interaction_config_manager<config_oracle<one_diff_impl>>>;
+template class automl<interaction_config_manager<config_oracle<champdupe_impl>>>;
 
 }  // namespace automl
 }  // namespace reductions
