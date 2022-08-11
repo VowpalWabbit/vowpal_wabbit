@@ -73,16 +73,11 @@ enum class automl_state
 
 struct config_manager
 {
-  // This fn is responsible for applying a config
-  // tracked by 'live_slot' into the example.
-  // the impl is responsible of tracking this config-live_slot mapping
-  void apply_config(example*, uint64_t);
   void persist(metric_sink&, bool);
   // config managers own the underlaying weights so they need to know how to clear
   void clear_non_champ_weights();
 
   // Public Chacha functions
-  void pre_process(const multi_ex&);
   void schedule();
   void update_champ();
 };
@@ -127,7 +122,7 @@ struct interaction_config_manager : config_manager
 {
   uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
-  uint64_t current_champ = 0;
+  const uint64_t current_champ = 0;
   const uint64_t global_lease;
   const uint64_t max_live_configs;
   uint64_t priority_challengers;
@@ -168,26 +163,23 @@ struct interaction_config_manager : config_manager
       dense_parameters&, float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double,
       VW::io::logger*, uint32_t&, bool, bool);
 
-  void apply_config(example*, uint64_t);
   void do_learning(multi_learner&, multi_ex&, uint64_t);
   void persist(metric_sink&, bool);
 
   // Public Chacha functions
-  void pre_process(const multi_ex&);
   void schedule();
   void update_champ();
 
-  // Public for save_load
-  static void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter,
-      std::string& interaction_type, std::vector<exclusion_config>& configs,
-      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot);
-
 private:
-  bool better(uint64_t live_slot);
-  bool worse(uint64_t live_slot);
-  uint64_t choose();
-  bool swap_eligible_to_inactivate(uint64_t);
+  static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
+  static bool swap_eligible_to_inactivate(
+      bool lb_trick, std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t);
 };
+
+bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
+void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
+    std::vector<exclusion_config>& configs, std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
+    uint64_t live_slot);
 
 template <typename CMType>
 struct automl
@@ -209,17 +201,34 @@ struct automl
   void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
   {
     cm->total_learn_count++;
+    bool new_ns_seen = false;
     switch (current_state)
     {
       case automl_state::Collecting:
-        cm->pre_process(ec);
+        new_ns_seen = count_namespaces(ec, cm->ns_counter);
+        // Regenerate interactions if new namespaces are seen
+        if (new_ns_seen)
+        {
+          for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
+          {
+            gen_interactions(cm->ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
+          }
+        }
         cm->_config_oracle.do_work(cm->estimators, cm->current_champ);
         offset_learn(base, ec, logged, labelled_action);
         current_state = automl_state::Experimenting;
         break;
 
       case automl_state::Experimenting:
-        cm->pre_process(ec);
+        new_ns_seen = count_namespaces(ec, cm->ns_counter);
+        // Regenerate interactions if new namespaces are seen
+        if (new_ns_seen)
+        {
+          for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
+          {
+            gen_interactions(cm->ccb_on, cm->ns_counter, cm->interaction_type, cm->configs, cm->estimators, live_slot);
+          }
+        }
         cm->schedule();
         offset_learn(base, ec, logged, labelled_action);
         cm->update_champ();
@@ -280,15 +289,21 @@ struct automl
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
+
+void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const unsigned char ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
+bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
+bool worse();
 }  // namespace automl
 
+namespace util
+{
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
 std::string interaction_vec_t_to_string(
     const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type);
 std::string exclusions_to_string(const std::set<std::vector<VW::namespace_index>>& exclusions);
-
+}  // namespace util
 }  // namespace reductions
 namespace model_utils
 {
