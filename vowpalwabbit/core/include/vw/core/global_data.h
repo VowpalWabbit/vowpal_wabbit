@@ -71,6 +71,11 @@ namespace flatbuffer
 {
 class parser;
 }
+
+#ifdef VW_BUILD_CSV
+class csv_parser;
+struct csv_parser_options;
+#endif
 }  // namespace parsers
 }  // namespace VW
 
