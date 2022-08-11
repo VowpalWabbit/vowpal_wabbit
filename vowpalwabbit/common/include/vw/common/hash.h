@@ -56,26 +56,16 @@ VW_STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept
 //-----------------------------------------------------------------------------
 // Block read - if your platform needs to do endian-swapping or can only
 // handle aligned reads, do the conversion here
-VW_STD14_CONSTEXPR static inline uint32_t getblock(const uint32_t* p, int i) noexcept
+static inline uint32_t getblock(const uint32_t* p, int i) noexcept
 {
-  const uint32_t* read_ptr = p + i;
-
-  // aligned 32-bit read
-  if ((reinterpret_cast<uintptr_t>(read_ptr) & (alignof(uint32_t) - 1)) == 0) { return *read_ptr; }
-
-  // unaligned pointer, so we must do four 8-bit reads instead
   uint32_t block = 0;
-  const uint8_t* byte_ptr = reinterpret_cast<const uint8_t*>(read_ptr);
-  block |= *byte_ptr++;
-  block |= *byte_ptr++ << 8;
-  block |= *byte_ptr++ << 16;
-  block |= *byte_ptr++ << 24;
+  memcpy(&block, p+i, sizeof(uint32_t));
   return block;
 }
 
 }  // namespace details
 
-VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
+inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
 {
   const uint8_t* data = static_cast<const uint8_t*>(key);
   const int nblocks = static_cast<int>(len) / 4;
@@ -135,7 +125,7 @@ VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uin
 }  // namespace VW
 
 VW_DEPRECATED("uniform_hash has been moved into VW namespace")
-VW_STD14_CONSTEXPR inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
+inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
 {
   return VW::uniform_hash(key, len, seed);
 }
