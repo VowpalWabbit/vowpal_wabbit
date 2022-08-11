@@ -633,7 +633,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
 
       priv.dat_new_feature_ec = &me;
       priv.dat_new_feature_value = 1.;
-      priv.dat_new_feature_idx = priv.neighbor_features[n_id] * 13748127;
+      priv.dat_new_feature_idx = static_cast<uint64_t>(priv.neighbor_features[n_id]) * static_cast<uint64_t>(13748127);
       priv.dat_new_feature_namespace = neighbor_namespace;
       if (priv.all->audit)
       {

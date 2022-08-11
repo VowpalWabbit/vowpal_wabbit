@@ -320,7 +320,8 @@ public:
     details::decrement_offset(ec, increment, i);
   }
 
-  inline void NO_SANITIZE_UNDEFINED multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
+  inline void NO_SANITIZE_UNDEFINED multipredict(
+      E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile

@@ -27,7 +27,7 @@ class dense_iterator
 private:
   T* _current;
   T* _begin;
-  uint32_t _stride;
+  uint64_t _stride;
   uint32_t _stride_shift;
 
 public:
@@ -38,7 +38,7 @@ public:
   using reference = T&;
 
   dense_iterator(T* current, T* begin, uint32_t stride_shift)
-      : _current(current), _begin(begin), _stride(1 << stride_shift), _stride_shift(stride_shift)
+      : _current(current), _begin(begin), _stride(static_cast<uint64_t>(1) << stride_shift), _stride_shift(stride_shift)
   {
   }
 
@@ -207,7 +207,7 @@ public:
 
   uint64_t seeded() const { return _seeded; }
 
-  uint32_t stride() const { return 1 << _stride_shift; }
+  uint64_t stride() const { return static_cast<uint64_t>(1) << _stride_shift; }
 
   uint32_t stride_shift() const { return _stride_shift; }
 
