@@ -65,7 +65,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
-    , interaction_type(interaction_type)
+    , interaction_type(std::move(interaction_type))
     , weights(weights)
     , automl_significance_level(automl_significance_level)
     , automl_estimator_decay(automl_estimator_decay)
@@ -74,7 +74,7 @@ interaction_config_manager::interaction_config_manager(uint64_t global_lease, ui
     , lb_trick(lb_trick)
     , ccb_on(ccb_on)
     , _config_oracle(config_oracle(global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type,
-          oracle_type, std::move(rand_state)))
+          std::move(oracle_type), std::move(rand_state)))
 {
   configs.emplace_back(global_lease);
   configs[0].state = VW::reductions::automl::config_state::Live;
