@@ -218,46 +218,6 @@ private:
   void update_example_prediction(VW::multi_ex& examples);
 };
 
-template <typename randomized_svd_impl, typename spanner_impl>
-struct cb_explore_adf_large_action_space_impl
-    : public cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>
-{
-  cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
-
-  ~cb_explore_adf_large_action_space_impl() = default;
-};
-
-template <typename spanner_impl>
-struct cb_explore_adf_large_action_space_impl<vanilla_rand_svd_impl, spanner_impl>
-    : public cb_explore_adf_large_action_space<vanilla_rand_svd_impl, spanner_impl>
-{
-  cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
-
-  ~cb_explore_adf_large_action_space_impl() = default;
-};
-
-template <typename spanner_impl>
-struct cb_explore_adf_large_action_space_impl<model_weight_rand_svd_impl, spanner_impl>
-    : public cb_explore_adf_large_action_space<model_weight_rand_svd_impl, spanner_impl>
-{
-  cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
-
-  ~cb_explore_adf_large_action_space_impl() = default;
-};
-
-template <typename spanner_impl>
-struct cb_explore_adf_large_action_space_impl<one_pass_svd_impl, spanner_impl>
-    : public cb_explore_adf_large_action_space<one_pass_svd_impl, spanner_impl>
-{
-  cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
-
-  ~cb_explore_adf_large_action_space_impl() = default;
-};
-
 template <typename TripletType>
 void triplet_construction(TripletType& tc, float feature_value, uint64_t feature_index)
 {

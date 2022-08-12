@@ -233,36 +233,6 @@ cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint6
 {
 }
 
-template <typename spanner_impl>
-cb_explore_adf_large_action_space_impl<model_weight_rand_svd_impl,
-    spanner_impl>::cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-    bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type)
-    : cb_explore_adf_large_action_space<model_weight_rand_svd_impl, spanner_impl>(
-          d, gamma_scale, gamma_exponent, c, apply_shrink_factor, all, seed, total_size, impl_type)
-{
-  assert(impl_type == implementation_type::model_weight_rand_svd);
-}
-
-template <typename spanner_impl>
-cb_explore_adf_large_action_space_impl<vanilla_rand_svd_impl, spanner_impl>::cb_explore_adf_large_action_space_impl(
-    uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all,
-    uint64_t seed, size_t total_size, implementation_type impl_type)
-    : cb_explore_adf_large_action_space<vanilla_rand_svd_impl, spanner_impl>(
-          d, gamma_scale, gamma_exponent, c, apply_shrink_factor, all, seed, total_size, impl_type)
-{
-  assert(impl_type == implementation_type::vanilla_rand_svd);
-}
-
-template <typename spanner_impl>
-cb_explore_adf_large_action_space_impl<one_pass_svd_impl, spanner_impl>::cb_explore_adf_large_action_space_impl(
-    uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all,
-    uint64_t seed, size_t total_size, implementation_type impl_type)
-    : cb_explore_adf_large_action_space<one_pass_svd_impl, spanner_impl>(
-          d, gamma_scale, gamma_exponent, c, apply_shrink_factor, all, seed, total_size, impl_type)
-{
-  assert(impl_type == implementation_type::one_pass_svd);
-}
-
 void shrink_factor_config::calculate_shrink_factor(
     size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors)
 {
@@ -289,7 +259,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
     implementation_type& impl_type, VW::workspace& all, bool with_metrics, uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor)
 {
-  using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space_impl<T, S>>;
+  using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space<T, S>>;
 
   size_t problem_multiplier = 1;
 
