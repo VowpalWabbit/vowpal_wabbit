@@ -78,11 +78,24 @@ interaction_config_manager<config_oracle_impl>::interaction_config_manager(uint6
     , _config_oracle(config_oracle_impl(
           global_lease, calc_priority, index_queue, ns_counter, configs, interaction_type, oracle_type, rand_state))
 {
-  configs.emplace_back(global_lease);
-  configs[0].state = VW::reductions::automl::config_state::Live;
-  estimators.emplace_back(std::make_pair(aml_estimator(automl_significance_level, automl_estimator_decay),
-      estimator_config(automl_significance_level, automl_estimator_decay)));
-  ++_config_oracle.valid_config_size;
+  insert_qcolcol(estimators, _config_oracle, automl_significance_level, automl_estimator_decay);
+}
+
+template <typename config_oracle_impl>
+void interaction_config_manager<config_oracle_impl>::insert_qcolcol(
+    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, config_oracle_impl& config_oracle,
+    double sig_level, double decay)
+{
+  assert(config_oracle.index_queue.size() == 0);
+  assert(config_oracle.configs.size() == 0);
+
+  config_oracle.insert_qcolcol();
+
+  assert(config_oracle.index_queue.size() == 0);
+  assert(config_oracle.configs.size() >= 1);
+
+  config_oracle.configs[0].state = VW::reductions::automl::config_state::Live;
+  estimators.emplace_back(std::make_pair(aml_estimator(sig_level, decay), estimator_config(sig_level, decay)));
 }
 
 template <typename config_oracle_impl>
@@ -112,6 +125,7 @@ void interaction_config_manager<config_oracle_impl>::schedule()
 {
   for (uint64_t live_slot = 0; live_slot < max_live_configs; ++live_slot)
   {
+    uint64_t slot_config = estimators[live_slot].first.config_index;
     bool need_new_estimator = estimators.size() <= live_slot;
     /*
     Scheduling a new live config is necessary in 3 cases:
@@ -119,15 +133,13 @@ void interaction_config_manager<config_oracle_impl>::schedule()
     2. The current live config has been removed due to Chacha's worse function
     3. A config has reached its lease
     */
-    if (need_new_estimator ||
-        configs[estimators[live_slot].first.config_index].state == VW::reductions::automl::config_state::Removed ||
-        estimators[live_slot].first.update_count >= configs[estimators[live_slot].first.config_index].lease)
+    if (need_new_estimator || configs[slot_config].state == VW::reductions::automl::config_state::Removed ||
+        estimators[live_slot].first.update_count >= configs[slot_config].lease)
     {
       // Double the lease check swap for eligible_to_inactivate configs
-      if (!need_new_estimator &&
-          configs[estimators[live_slot].first.config_index].state == VW::reductions::automl::config_state::Live)
+      if (!need_new_estimator && configs[slot_config].state == VW::reductions::automl::config_state::Live)
       {
-        configs[estimators[live_slot].first.config_index].lease *= 2;
+        configs[slot_config].lease *= 2;
         if (!estimators[live_slot].first.eligible_to_inactivate ||
             swap_eligible_to_inactivate(_lb_trick, estimators, live_slot))
         { continue; }
@@ -145,9 +157,8 @@ void interaction_config_manager<config_oracle_impl>::schedule()
         if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
       }
       // Only inactivate current config if lease is reached
-      if (!need_new_estimator &&
-          configs[estimators[live_slot].first.config_index].state == VW::reductions::automl::config_state::Live)
-      { configs[estimators[live_slot].first.config_index].state = VW::reductions::automl::config_state::Inactive; }
+      if (!need_new_estimator && configs[slot_config].state == VW::reductions::automl::config_state::Live)
+      { configs[slot_config].state = VW::reductions::automl::config_state::Inactive; }
       // Set all features of new live config
       estimators[live_slot].first.reset_stats(automl_significance_level, automl_estimator_decay);
       estimators[live_slot].second.reset_stats(automl_significance_level, automl_estimator_decay);

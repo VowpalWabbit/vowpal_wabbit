@@ -108,6 +108,7 @@ struct config_oracle
   void do_work(std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
   bool repopulate_index_queue();
+  void insert_qcolcol();
 };
 
 struct oracle_rand_impl
@@ -181,6 +182,8 @@ struct interaction_config_manager : config_manager
   // Public Chacha functions
   void schedule();
   void update_champ();
+  static void insert_qcolcol(std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
+      config_oracle_impl& config_oracle, double sig_level, double decay);
 
 private:
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);

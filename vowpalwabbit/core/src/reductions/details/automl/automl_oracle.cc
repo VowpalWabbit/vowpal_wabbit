@@ -40,6 +40,14 @@ config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* 
     , _impl(oracle_impl())
 {
 }
+template <typename oracle_impl>
+void config_oracle<oracle_impl>::insert_qcolcol()
+{
+  assert(valid_config_size == 0);
+  configs.emplace_back(global_lease);
+  ++valid_config_size;
+}
+
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 template <typename oracle_impl>

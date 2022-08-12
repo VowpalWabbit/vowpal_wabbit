@@ -95,9 +95,6 @@ get_automl_data(VW::workspace& all);
 template VW::reductions::automl::automl<
     interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>*
 get_automl_data(VW::workspace& all);
-template VW::reductions::automl::automl<
-    interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::champdupe_impl>>>*
-get_automl_data(VW::workspace& all);
 }  // namespace aml_test
 
 // Need to add save_load functionality to multiple structs in automl reduction including
