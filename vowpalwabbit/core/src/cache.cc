@@ -56,7 +56,7 @@ inline int64_t zig_zag_decode(uint64_t n) { return (n >> 1) ^ -static_cast<int64
 
 inline uint64_t zig_zag_encode(int64_t n)
 {
-  uint64_t ret = (n << 1) ^ (n >> 63);
+  uint64_t ret = (static_cast<uint64_t>(n) << 1) ^ (n >> 63);
   return ret;
 }
 

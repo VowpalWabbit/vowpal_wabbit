@@ -283,6 +283,12 @@ public:
 
   void* get_internal_type_erased_data_pointer_test_use_only() { return learner_data.get(); }
 
+  // For all functions here that invoke stored function pointers,
+  // NO_SANITIZE_UNDEFINED is needed because the function pointer's type may be
+  // cast to something different from the original function's signature.
+  // This will throw an error in UndefinedBehaviorSanitizer even when the
+  // function can be correctly called through the pointer.
+
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
@@ -392,13 +398,13 @@ public:
   }
 
   // called when metrics is enabled.  Autorecursive.
-  void persist_metrics(metric_sink& metrics)
+  void NO_SANITIZE_UNDEFINED persist_metrics(metric_sink& metrics)
   {
     persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
     if (persist_metrics_fd.base) { persist_metrics_fd.base->persist_metrics(metrics); }
   }
 
-  inline void finish()
+  inline void NO_SANITIZE_UNDEFINED finish()
   {
     if (finisher_fd.data) { finisher_fd.func(finisher_fd.data); }
     if (finisher_fd.base)
@@ -408,21 +414,21 @@ public:
     }
   }
 
-  void end_pass()
+  void NO_SANITIZE_UNDEFINED end_pass()
   {
     end_pass_fd.func(end_pass_fd.data);
     if (end_pass_fd.base) { end_pass_fd.base->end_pass(); }
   }  // autorecursive
 
   // called after parsing of examples is complete.  Autorecursive.
-  void end_examples()
+  void NO_SANITIZE_UNDEFINED end_examples()
   {
     end_examples_fd.func(end_examples_fd.data);
     if (end_examples_fd.base) { end_examples_fd.base->end_examples(); }
   }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
-  void init_driver() { init_fd.func(init_fd.data); }
+  void NO_SANITIZE_UNDEFINED init_driver() { init_fd.func(init_fd.data); }
 
   // called after learn example for each example.  Explicitly not recursive.
   inline void NO_SANITIZE_UNDEFINED finish_example(VW::workspace& all, E& ec)
@@ -460,7 +466,7 @@ public:
 
   // This is effectively static implementing a trait for this learner type.
   // NOT auto recursive
-  void merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+  void NO_SANITIZE_UNDEFINED merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
       const std::vector<const VW::workspace*>& all_workspaces, const base_learner* base_workspaces_learner,
       const std::vector<const base_learner*>& all_learners, VW::workspace& output_workspace,
       base_learner* output_learner)
