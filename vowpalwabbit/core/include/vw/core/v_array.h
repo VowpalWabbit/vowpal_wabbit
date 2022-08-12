@@ -87,9 +87,10 @@ private:
   {
     if (width > 0)
     {
-      _end += width;
       if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
-      memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
+      memmove(&_begin[idx + width], &_begin[idx], (size() - idx) * sizeof(T));
+      memset(&_begin[idx], 0, width * sizeof(T));
+      _end += width;
     }
   }
 

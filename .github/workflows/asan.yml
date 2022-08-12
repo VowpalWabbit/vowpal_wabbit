@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test_with_asan:
+  test_with_sanitizers:
     strategy:
       fail-fast: false
       matrix:
@@ -23,6 +23,8 @@ jobs:
         exclude:
           # UBSan not supported by MSVC on Windows
           - { os: windows-latest, preset: vcpkg-ubsan-debug }
+          # UBSan runs out of disk space on Linux
+          - { os: ubuntu-latest, preset: vcpkg-ubsan-debug }
     runs-on: ${{ matrix.os }}
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
     env:
@@ -53,10 +55,43 @@ jobs:
       - name: Run python test script - Windows
         # separate case needed for windows because of test 67
         if: ${{ startsWith(matrix.os, 'windows') && (success() || failure()) }}
-        run: |
-          python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 67 --jobs 1
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 67 --jobs 1
       - name: Run python test script - Unix
         # temporarily skipping tests with heap use-after-free
         if: ${{ !startsWith(matrix.os, 'windows') && (success() || failure()) }}
-        run: |
-          python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 61 152 220
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 61 152 220
+
+  test_ubsan_minimal:
+  # To avoid running out of disk space, build only VW executables and Boost unit tests on Linux
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ubuntu-latest
+        preset: vcpkg-ubsan-debug
+    runs-on: ${{ matrix.os }}
+    name: asan.${{ matrix.os }}.${{ matrix.preset }}
+    env:
+      UBSAN_OPTIONS: "print_stacktrace=1"
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+        uses: ilammy/msvc-dev-cmd@v1
+      - uses: lukka/get-cmake@latest
+      - uses: lukka/run-vcpkg@main
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+      - uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
+          configurePreset: "${{ matrix.preset }}"
+      - name: Build
+        run: cmake --build build --target vw_cli_bin spanning_tree vw-unit-test.out
+      - name: Run unit tests
+        run: ./build/test/unit_test/vw-unit-test.out
+      - name: Run python test script
+        # temporarily skipping tests with heap use-after-free
+        if: ${{ success() || failure() }}
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 61 152 220
