@@ -75,7 +75,8 @@ void spanner_state::rank_one_determinant_update(
   scale_all(max_volume, U.rows());
 }
 
-void spanner_state::compute_spanner_one_rank(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
+void spanner_state::compute_spanner_one_rank(
+    const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
 {
   /**
    * Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper

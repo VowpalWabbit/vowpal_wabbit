@@ -527,9 +527,9 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
       Eigen::SparseMatrix<float> Omega(num_actions, d);
       Omega.setFromTriplets(omega_triplets.begin(), omega_triplets.end(), [](const float& a, const float& b) {
-            assert(a == b);
-            return b;
-          });
+        assert(a == b);
+        return b;
+      });
 
       Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
 
@@ -539,9 +539,9 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
         { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
       }
       else
-        {
+      {
         diag_M.setIdentity();
-        }
+      }
 
       Eigen::SparseMatrix<float> Yd(action_space->explore._impl.Y.rows(), d);
 
@@ -615,9 +615,9 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
         { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
       }
       else
-        {
+      {
         diag_M.setIdentity();
-        }
+      }
 
       Eigen::MatrixXf B = diag_M * action_space->explore._A * action_space->explore._impl.Y;
       BOOST_CHECK_EQUAL(B.isApprox(action_space->explore._impl.B), true);
@@ -768,9 +768,9 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
       { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
     }
     else
-      {
+    {
       diag_M.setIdentity();
-      }
+    }
 
     BOOST_CHECK_SMALL(
         ((diag_M * action_space->explore._A) -
@@ -1055,7 +1055,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
 
       // Only d actions have non-zero scores.
       if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else { BOOST_CHECK_EQUAL(preds.size(), d); }
+      else
+      {
+        BOOST_CHECK_EQUAL(preds.size(), d);
+      }
       BOOST_CHECK_SMALL(preds[0].score - 0.693350017f, FLOAT_TOL);
       BOOST_CHECK_EQUAL(preds[0].action, 0);
 
@@ -1311,9 +1314,7 @@ static std::vector<std::string> gen_cb_examples(
 
     action_ss << "| ";
     for (int action_feat = 0; action_feat < coordinates; ++action_feat)
-    {
-      action_ss << "x" << action_feat << ":" << (drand48() * scale) << " ";
-    }
+    { action_ss << "x" << action_feat << ":" << (drand48() * scale) << " "; }
 
     examples.push_back(action_ss.str());
   }
@@ -1365,9 +1366,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -1391,7 +1390,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
       for (auto a_s : preds)
       {
         if (a_s.action < K - d) { BOOST_CHECK_EQUAL(a_s.score, 0.f); }
-        else { BOOST_CHECK_NE(a_s.score, 0.f); }
+        else
+        {
+          BOOST_CHECK_NE(a_s.score, 0.f);
+        }
       }
 
       vw.finish_example(examples);
@@ -1412,7 +1414,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
       for (auto a_s : preds)
       {
         if (a_s.action < d) { BOOST_CHECK_NE(a_s.score, 0.f); }
-        else { BOOST_CHECK_EQUAL(a_s.score, 0.f); }
+        else
+        {
+          BOOST_CHECK_EQUAL(a_s.score, 0.f);
+        }
       }
 
       vw.finish_example(examples);
