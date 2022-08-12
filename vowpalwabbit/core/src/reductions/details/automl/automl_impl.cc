@@ -124,7 +124,6 @@ void interaction_config_manager<config_oracle_impl>::schedule()
 {
   for (uint64_t live_slot = 0; live_slot < max_live_configs; ++live_slot)
   {
-    uint64_t slot_config = estimators[live_slot].first.config_index;
     bool need_new_estimator = estimators.size() <= live_slot;
     /*
     Scheduling a new live config is necessary in 3 cases:
@@ -132,9 +131,11 @@ void interaction_config_manager<config_oracle_impl>::schedule()
     2. The current live config has been removed due to Chacha's worse function
     3. A config has reached its lease
     */
-    if (need_new_estimator || configs[slot_config].state == VW::reductions::automl::config_state::Removed ||
-        estimators[live_slot].first.update_count >= configs[slot_config].lease)
+    if (need_new_estimator ||
+        configs[estimators[live_slot].first.config_index].state == VW::reductions::automl::config_state::Removed ||
+        estimators[live_slot].first.update_count >= configs[estimators[live_slot].first.config_index].lease)
     {
+      const uint64_t slot_config = estimators[live_slot].first.config_index;
       // Double the lease check swap for eligible_to_inactivate configs
       if (!need_new_estimator && configs[slot_config].state == VW::reductions::automl::config_state::Live)
       {
@@ -155,6 +156,7 @@ void interaction_config_manager<config_oracle_impl>::schedule()
             estimator_config(automl_significance_level, automl_estimator_decay)));
         if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
       }
+      assert(estimators.size() > live_slot);
       // Only inactivate current config if lease is reached
       if (!need_new_estimator && configs[slot_config].state == VW::reductions::automl::config_state::Live)
       { configs[slot_config].state = VW::reductions::automl::config_state::Inactive; }
@@ -243,15 +245,19 @@ void interaction_config_manager<config_oracle_impl>::apply_new_champ_config(cons
 
   estimators[winning_challenger_slot].first.eligible_to_inactivate = false;
   if (priority_challengers > 1) { estimators[old_champ_slot].first.eligible_to_inactivate = false; }
-  exclusion_config new_champ_config = configs[estimators[winning_challenger_slot].first.config_index];
-  exclusion_config old_champ_config = configs[estimators[old_champ_slot].first.config_index];
-  configs[0] = std::move(new_champ_config);
-  configs[1] = std::move(old_champ_config);
+
+  auto winner_config_index = estimators[winning_challenger_slot].first.config_index;
+  std::swap(configs[0], configs[winner_config_index]);
+  if (winner_config_index != 1) { std::swap(configs[1], configs[winner_config_index]); }
+
   estimators[winning_challenger_slot].first.config_index = 0;
   estimators[old_champ_slot].first.config_index = 1;
+
   auto champ_estimator = std::move(estimators[winning_challenger_slot]);
   auto old_champ_estimator = std::move(estimators[old_champ_slot]);
+
   estimators.clear();
+
   estimators.push_back(std::move(champ_estimator));
   estimators.push_back(std::move(old_champ_estimator));
 
@@ -269,6 +275,7 @@ void interaction_config_manager<config_oracle_impl>::apply_new_champ_config(cons
   estimators[1].first = aml_estimator(std::move(estimators[0].second), estimators[1].first.config_index,
       estimators[1].first.eligible_to_inactivate, estimators[1].first.live_interactions);
   estimators[1].second = estimators[0].first;
+
   if (lb_trick)
   {
     estimators[1].first.reset_stats();
