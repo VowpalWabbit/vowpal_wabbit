@@ -182,8 +182,9 @@ struct interaction_config_manager : config_manager
   // Public Chacha functions
   void schedule();
   void update_champ();
-  static void apply_new_champ_config(const uint64_t winning_challenger_slot, estimator_vec_t& estimators,
-      std::vector<exclusion_config>& configs, uint64_t priority_challengers, bool lb_trick);
+  static void apply_new_champ_config(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
+      estimator_vec_t& estimators, std::vector<exclusion_config>& configs, uint64_t priority_challengers,
+      bool lb_trick);
   static void insert_qcolcol(
       estimator_vec_t& estimators, config_oracle_impl& config_oracle, double sig_level, double decay);
 

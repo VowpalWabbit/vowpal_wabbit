@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
   // const std::vector<uint64_t> swap_after = {500};
   const size_t seed = 88;
 
-  test_hooks.emplace(0, [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&) {
+  test_hooks.emplace(1, [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&) {
     const size_t CHAMP = 0;
     VW::reductions::automl::automl<
         interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>* aml =
@@ -484,6 +484,25 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     std::set<std::vector<namespace_index>> excl_3{{'B', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_3.begin(), excl_3.end());
+
+    BOOST_CHECK_EQUAL(estimators.size(), 1);
+    // add dummy evaluators to simulate that all configs are in play
+    for (size_t i = 1; i < configs.size(); ++i)
+    {
+      estimators.emplace_back(
+          std::make_pair(aml_estimator(aml->cm->automl_significance_level, aml->cm->automl_estimator_decay),
+              VW::estimator_config(aml->cm->automl_significance_level, aml->cm->automl_estimator_decay)));
+      estimators[i].first.config_index = i;
+    }
+    BOOST_CHECK_EQUAL(estimators.size(), 4);
+
+    interaction_config_manager<config_oracle<one_diff_impl>>::apply_new_champ_config(
+        oracle, 2, estimators, configs, 0, false);
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_2.begin(), excl_2.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_0.begin(), excl_0.end());
 
     return true;
   });

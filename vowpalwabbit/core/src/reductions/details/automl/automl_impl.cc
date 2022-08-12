@@ -230,18 +230,19 @@ void interaction_config_manager<config_oracle_impl>::update_champ()
     weights.move_offsets(winning_challenger_slot, old_champ_slot, wpp, true);
     if (winning_challenger_slot != 1) { weights.move_offsets(winning_challenger_slot, 1, wpp, false); }
 
-    while (!index_queue.empty()) { index_queue.pop(); };
-    apply_new_champ_config(winning_challenger_slot, estimators, configs, priority_challengers, _lb_trick);
-    _config_oracle.valid_config_size = 2;
-    _config_oracle.do_work(estimators, current_champ);
+    apply_new_champ_config(
+        _config_oracle, winning_challenger_slot, estimators, configs, priority_challengers, _lb_trick);
   }
 }
 
 template <typename config_oracle_impl>
-void interaction_config_manager<config_oracle_impl>::apply_new_champ_config(const uint64_t winning_challenger_slot,
-    estimator_vec_t& estimators, std::vector<exclusion_config>& configs, uint64_t priority_challengers, bool lb_trick)
+void interaction_config_manager<config_oracle_impl>::apply_new_champ_config(config_oracle_impl& config_oracle,
+    const uint64_t winning_challenger_slot, estimator_vec_t& estimators, std::vector<exclusion_config>& configs,
+    uint64_t priority_challengers, bool lb_trick)
 {
   const uint64_t old_champ_slot = 0;
+
+  while (!config_oracle.index_queue.empty()) { config_oracle.index_queue.pop(); };
 
   estimators[winning_challenger_slot].first.eligible_to_inactivate = false;
   if (priority_challengers > 1) { estimators[old_champ_slot].first.eligible_to_inactivate = false; }
@@ -249,6 +250,7 @@ void interaction_config_manager<config_oracle_impl>::apply_new_champ_config(cons
   auto winner_config_index = estimators[winning_challenger_slot].first.config_index;
   std::swap(configs[0], configs[winner_config_index]);
   if (winner_config_index != 1) { std::swap(configs[1], configs[winner_config_index]); }
+  config_oracle.valid_config_size = 2;
 
   estimators[winning_challenger_slot].first.config_index = 0;
   estimators[old_champ_slot].first.config_index = 1;
@@ -281,6 +283,8 @@ void interaction_config_manager<config_oracle_impl>::apply_new_champ_config(cons
     estimators[1].first.reset_stats();
     estimators[1].second.reset_stats();
   }
+
+  config_oracle.do_work(estimators, old_champ_slot);
 }
 
 template <typename config_oracle_impl>
