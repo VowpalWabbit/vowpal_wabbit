@@ -22,7 +22,9 @@ using namespace VW::reductions::automl;
 
 namespace aml_test
 {
-void check_interactions_match_exclusions(VW::reductions::automl::automl<interaction_config_manager>* aml)
+template <typename T>
+void check_interactions_match_exclusions(
+    VW::reductions::automl::automl<interaction_config_manager<VW::reductions::automl::config_oracle<T>>>* aml)
 {
   for (const auto& estimator : aml->cm->estimators)
   {
@@ -55,7 +57,9 @@ void check_interactions_match_exclusions(VW::reductions::automl::automl<interact
   }
 }
 
-void check_config_states(VW::reductions::automl::automl<interaction_config_manager>* aml)
+template <typename T>
+void check_config_states(
+    VW::reductions::automl::automl<interaction_config_manager<VW::reductions::automl::config_oracle<T>>>* aml)
 {
   // No configs in the index queue should be live
   auto index_queue = aml->cm->index_queue;
@@ -71,7 +75,9 @@ void check_config_states(VW::reductions::automl::automl<interaction_config_manag
   { BOOST_CHECK(aml->cm->configs[score.first.config_index].state == VW::reductions::automl::config_state::Live); }
 }
 
-VW::reductions::automl::automl<interaction_config_manager>* get_automl_data(VW::workspace& all)
+template <typename T>
+VW::reductions::automl::automl<interaction_config_manager<VW::reductions::automl::config_oracle<T>>>* get_automl_data(
+    VW::workspace& all)
 {
   std::vector<std::string> e_r;
   all.l->get_enabled_reductions(e_r);
@@ -80,9 +86,18 @@ VW::reductions::automl::automl<interaction_config_manager>* get_automl_data(VW::
 
   VW::LEARNER::multi_learner* automl_learner = as_multiline(all.l->get_learner_by_name_prefix("automl"));
 
-  return (VW::reductions::automl::automl<interaction_config_manager>*)
+  return (VW::reductions::automl::automl<interaction_config_manager<VW::reductions::automl::config_oracle<T>>>*)
       automl_learner->get_internal_type_erased_data_pointer_test_use_only();
 }
+template VW::reductions::automl::automl<
+    interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>>>*
+get_automl_data(VW::workspace& all);
+template VW::reductions::automl::automl<
+    interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>*
+get_automl_data(VW::workspace& all);
+template VW::reductions::automl::automl<
+    interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::champdupe_impl>>>*
+get_automl_data(VW::workspace& all);
 }  // namespace aml_test
 
 // Need to add save_load functionality to multiple structs in automl reduction including
@@ -119,7 +134,9 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
 
   // technically runs after the 0th example is learned
   test_hooks.emplace(zero, [&zero](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>>>*
+        aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, zero);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Collecting);
     return true;
@@ -127,7 +144,9 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
 
   // test executes right after learn call of the 10th example
   test_hooks.emplace(num_iterations, [&num_iterations](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>>>*
+        aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, num_iterations);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
@@ -183,7 +202,9 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
 
   // Note this is after learning 14 examples (first iteration is Collecting)
   test_hooks.emplace(fifteen, [&fifteen](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>>>*
+        aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
@@ -236,7 +257,9 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   const size_t seed = 88;
 
   test_hooks.emplace(100, [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>* aml =
+        aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
     auto count_ns_T = aml->cm->ns_counter.count('T');
     BOOST_CHECK_EQUAL(count_ns_T, 0);
 
@@ -246,7 +269,9 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   });
 
   test_hooks.emplace(101, [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>* aml =
+        aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
     size_t tser_count = aml->cm->ns_counter.at('T');
     BOOST_CHECK_GT(tser_count, 1);
 
@@ -256,7 +281,9 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   });
 
   test_hooks.emplace(num_iterations, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>* aml =
+        aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
 
     auto champ_exclusions = aml->cm->configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].exclusions;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
@@ -284,8 +311,10 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
-    aml_test::check_interactions_match_exclusions(aml);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>>>*
+        aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
+    aml_test::check_interactions_match_exclusions<VW::reductions::automl::oracle_rand_impl>(aml);
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(aml->cm->_config_oracle.valid_config_size, 4);
@@ -298,7 +327,9 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
   });
 
   test_hooks.emplace(clear_champ_switch, [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>>>*
+        aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
@@ -329,7 +360,9 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>* aml =
+        aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
@@ -340,7 +373,9 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
   });
 
   test_hooks.emplace(clear_champ_switch, [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>* aml =
+        aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
     aml_test::check_interactions_match_exclusions(aml);
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
@@ -352,7 +387,9 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
   });
 
   test_hooks.emplace(clear_champ_switch + 1, [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    VW::reductions::automl::automl<interaction_config_manager>* aml = aml_test::get_automl_data(all);
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>* aml =
+        aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
     BOOST_CHECK_EQUAL(aml->cm->estimators.size(), 3);
     BOOST_CHECK_EQUAL(aml->cm->estimators[0].first.live_interactions.size(), 2);
     BOOST_CHECK_EQUAL(aml->cm->estimators[1].first.live_interactions.size(), 3);

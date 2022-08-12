@@ -180,7 +180,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
     if (current_offset == 0)
     {
       float* first_weight = &weights.first()[(prestride_index + 0) << weights.stride_shift()];
-      auto till = 2;  // instead of all.wpp, champdupe only uses 2 configs
+      auto till = 3;  // instead of all.wpp, champdupe only uses 3 configs
       for (uint32_t i = 1; i < till; ++i)
       {
         float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];
