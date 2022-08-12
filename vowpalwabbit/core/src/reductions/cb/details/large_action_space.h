@@ -133,6 +133,12 @@ private:
   const float _c = 2;
   Eigen::MatrixXf _X;
   Eigen::MatrixXf _X_inv;
+  float _log_determinant_factor = 0.f;
+
+  void rank_one_determinant_update(
+      const Eigen::MatrixXf& U, float max_volume, uint64_t U_rid, float shrink_factor, uint64_t row_iteration);
+  void update_inverse(const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t row_iteration);
+  void scale_all(float max_volume, uint64_t num_examples);
 
 public:
   std::vector<bool> _spanner_bitvec;

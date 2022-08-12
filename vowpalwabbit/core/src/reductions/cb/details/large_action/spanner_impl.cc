@@ -24,78 +24,90 @@ void find_action_to_maximize_volume(
   }
 }
 
-Eigen::VectorXf adapt_replacement_row(Eigen::VectorXf y, float shrink_factor, float log_determinant_factor)
+void spanner_state::update_inverse(const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t i)
+{
+  /**
+   * update the inverse after the replacement of the ith row of X with y
+   * Sherman–Morrison formula
+   * -----------------------------
+   * X' = X + (y - X.row(i)) e_i.transpose = X + u v.transpose
+   * X_inv' = X_inv - 1/(1 + v.transpose X_inv u) (X_inv u) (v.transpose X_inv).transpose
+   */
+
+  Eigen::VectorXf u = y - Xi;
+  // TODO this should be a vector
+  Eigen::MatrixXf Xinvu = _X_inv * u;
+  Eigen::VectorXf vtopXinv = _X_inv.row(i);
+  float vtopXinvu = Xinvu(i, 0);
+
+  _X_inv -= (1.f / (1.f + vtopXinvu)) * (Xinvu * vtopXinv.transpose());
+}
+
+void spanner_state::scale_all(float max_volume, uint64_t num_examples)
+{
+  /**
+   * Scale inverse and X using the log of det(X):
+   * for numerical stability det(X) is always 1 and we maintain
+   * _log_determinant_factor which is the log of det(X). So we are accumulating det(X) in logspace
+   */
+
+  float thislogdet = (1.f / num_examples) * (std::log(max_volume) - _log_determinant_factor);
+  float scale = std::exp(thislogdet);
+  _X_inv *= scale;
+  _X /= scale;
+
+  _log_determinant_factor += thislogdet;
+}
+
+void spanner_state::rank_one_determinant_update(
+    const Eigen::MatrixXf& U, float max_volume, uint64_t U_rid, float shrink_factor, uint64_t i)
 {
   // this is the row from U that will replace the current row in X
   // adapt using shrink factor and log determinant
+  Eigen::VectorXf y = U.row(U_rid);
   y /= shrink_factor;
-  y /= std::exp(log_determinant_factor);
-  return y;
-}
+  y /= std::exp(_log_determinant_factor);
 
-void update_inverse(Eigen::MatrixXf& Inv, const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t i)
-{
-  // update the inverse after the replacement of the ith row of X with y
-  // Sherman–Morrison formula
-  // -----------------------------
-  // X' = X + (y - X.row(i)) e_i.transpose = X + u v.transpose
-  // X_inv' = X_inv - 1/(1 + v.transpose X_inv u) (X_inv u) (v.transpose X_inv).transpose
+  update_inverse(y, _X.row(i), i);
 
-  Eigen::VectorXf u = y - Xi;
-  Eigen::MatrixXf Xinvu = Inv * u;
-  Eigen::VectorXf vtopXinv = Inv.row(i);
-  float vtopXinvu = Xinvu(i, 0);
+  _X.row(i) = y;
+  _action_indices[i] = U_rid;
 
-  Inv -= (1.f / (1.f + vtopXinvu)) * (Xinvu * vtopXinv.transpose());
-}
-
-void update_all(
-    Eigen::MatrixXf& Inv, Eigen::MatrixXf& X, float& log_determinant_factor, float max_volume, uint64_t num_examples)
-{
-  // scale inverse and X
-  float thislogdet = (1.f / num_examples) * (std::log(max_volume) - log_determinant_factor);
-  float scale = std::exp(thislogdet);
-  Inv *= scale;
-  X /= scale;
-
-  log_determinant_factor += thislogdet;
+  scale_all(max_volume, U.rows());
 }
 
 void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
 {
+  /**
+   * following Sherman–Morrison formula and matrix determinant lemma, updating the inverse and determinants in a
+   * one-rank fashion
+   * X'_a <- replace row i of X with action a where det(X)=1
+   *      (keeping det(X) = 1 and adjusting with the _log_determinant_factor and shirnk factor)
+   * X'_a = X + (a - X.row(i)) e_i.transpose = X + u v.transpose (i.e. e_i== v)
+   * det(X'_a) = det(X) (1 + e_i.transpose * X_inverse (a - X.row(i)))
+   *               = (1 - (X_inverse.transpose() e_i).transpose X.row(i)) + (X_inverse.transpose() e_i).transpose * a
+   *               = 0 + phi.transpose * a (where phi == X_inverse.transpose() e_i -> essentially _X_inv at row i)
+   *
+   * for numerical stability det(X) is always 1 (hence the simplification in the above equation) and we maintain
+   * _log_determinant_factor which is the log of det(X). So we are accumulating det(X) in the logspace
+   */
+
   assert(static_cast<uint64_t>(U.cols()) == _d);
   _X.setIdentity(_d, _d);
   _X_inv.setIdentity(_d, _d);
-  float log_determinant_factor = 0;
+  _log_determinant_factor = 0;
 
   float max_volume;
   // Compute a basis contained in U.
   for (uint64_t i = 0; i < _d; ++i)
   {
-    // following Sherman–Morrison formula and matrix determinant lemma, updating the inverse and determinants in a
-    // one-rank fashion
-
-    // X'_a <- replace row i of X with action a where det(X)=1 (keeping det(X) = 1 and adjusting with the
-    // log_determinant_factor and shirnk factor)
-    // X'_a = X + (a - X.row(i)) e_i.transpose = X + u v.transpose (i.e. e_i== v)
-    // det(X'_a) = det(X) (1 + e_i.transpose * X_inverse (a - X.row(i)))
-    //               = (1 - (X_inverse.transpose() e_i).transpose X.row(i)) + (X_inverse.transpose() e_i).transpose * a
-    //               = 0 + phi.transpose * a (where phi == X_inverse.transpose() e_i -> essentially _X_inv
-    //               matrix at row i)
-
     Eigen::VectorXf phi = _X_inv.row(i);
     max_volume = -1.0f;
     uint64_t U_rid = 0;
     find_action_to_maximize_volume(U, phi, max_volume, U_rid);
 
     // best action is U_rid
-    Eigen::VectorXf y = adapt_replacement_row(U.row(U_rid), shrink_factors[U_rid], log_determinant_factor);
-    update_inverse(_X_inv, y, _X.row(i), i);
-
-    _X.row(i) = y;
-    _action_indices[i] = U_rid;
-
-    update_all(_X_inv, _X, log_determinant_factor, max_volume, U.rows());
+    rank_one_determinant_update(U, max_volume, U_rid, shrink_factors[U_rid], i);
   }
 
   const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
@@ -115,13 +127,7 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
       if (max_volume > _c * X_volume)
       {
         // best action is U_rid
-        Eigen::VectorXf y = adapt_replacement_row(U.row(U_rid), shrink_factors[U_rid], log_determinant_factor);
-        update_inverse(_X_inv, y, _X.row(i), i);
-
-        _X.row(i) = y;
-        _action_indices[i] = U_rid;
-
-        update_all(_X_inv, _X, log_determinant_factor, max_volume, U.rows());
+        rank_one_determinant_update(U, max_volume, U_rid, shrink_factors[U_rid], i);
 
         X_volume = max_volume;
         found_larger_volume = true;
