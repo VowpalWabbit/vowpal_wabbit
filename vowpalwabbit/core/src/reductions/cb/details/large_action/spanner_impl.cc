@@ -35,10 +35,9 @@ void spanner_state::update_inverse(const Eigen::VectorXf& y, const Eigen::Vector
    */
 
   Eigen::VectorXf u = y - Xi;
-  // TODO this should be a vector
-  Eigen::MatrixXf Xinvu = _X_inv * u;
+  Eigen::VectorXf Xinvu = _X_inv * u;
   Eigen::VectorXf vtopXinv = _X_inv.row(i);
-  float vtopXinvu = Xinvu(i, 0);
+  float vtopXinvu = Xinvu(i);
 
   _X_inv -= (1.f / (1.f + vtopXinvu)) * (Xinvu * vtopXinv.transpose());
 }
