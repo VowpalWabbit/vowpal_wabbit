@@ -8,52 +8,169 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-std::pair<float, uint64_t> spanner_state::find_max_volume(Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X)
+void find_action_to_maximize_volume(
+    const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid)
 {
-  // Finds the max volume by replacing row X[X_rid] with some row in U.
-  // Returns the max volume, and the row id of U used for replacing X[X_rid].
-
-  float max_volume = -1.0f;
-  uint64_t U_rid{};
-  const Eigen::RowVectorXf original_row = X.row(X_rid);
-
+  // find which action (which row of U) will provide the maximum phi * a volume
+  // that a will replace the current row in _X and provide the determinant with the maximum volume
   for (auto i = 0; i < U.rows(); ++i)
   {
-    X.row(X_rid) = U.row(i);
-    const float volume = std::abs(X.determinant());
-    if (volume > max_volume)
+    float vol = std::abs(U.row(i) * phi);
+    if (vol > max_volume)
     {
-      max_volume = volume;
+      max_volume = vol;
       U_rid = i;
     }
   }
-  X.row(X_rid) = original_row;
-
-  assert(max_volume >= 0.0f);
-  return {max_volume, U_rid};
 }
 
-void spanner_state::compute_spanner(Eigen::MatrixXf& U, size_t _d)
+void spanner_state::update_inverse(const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t i)
+{
+  /**
+   * update the inverse after the replacement of the ith row of X with y
+   * Sherman–Morrison formula
+   * -----------------------------
+   * X' = X + (y - X.row(i)) e_i.transpose = X + u v.transpose
+   * X_inv' = X_inv - 1/(1 + v.transpose X_inv u) (X_inv u) (v.transpose X_inv).transpose
+   */
+
+  Eigen::VectorXf u = y - Xi;
+  Eigen::VectorXf Xinvu = _X_inv * u;
+  Eigen::VectorXf vtopXinv = _X_inv.row(i);
+  float vtopXinvu = Xinvu(i);
+
+  _X_inv -= (1.f / (1.f + vtopXinvu)) * (Xinvu * vtopXinv.transpose());
+}
+
+void spanner_state::scale_all(float max_volume, uint64_t num_examples)
+{
+  /**
+   * Scale inverse and X using the log of det(X):
+   * for numerical stability det(X) is always 1 and we maintain
+   * _log_determinant_factor which is the log of det(X). So we are accumulating det(X) in logspace
+   */
+
+  float thislogdet = (1.f / num_examples) * (std::log(max_volume) - _log_determinant_factor);
+  float scale = std::exp(thislogdet);
+  _X_inv *= scale;
+  _X /= scale;
+
+  _log_determinant_factor += thislogdet;
+}
+
+void spanner_state::rank_one_determinant_update(
+    const Eigen::MatrixXf& U, float max_volume, uint64_t U_rid, float shrink_factor, uint64_t i)
+{
+  // this is the row from U that will replace the current row in X
+  // adapt using shrink factor and log determinant
+  Eigen::VectorXf y = U.row(U_rid);
+  y /= shrink_factor;
+  y /= std::exp(_log_determinant_factor);
+
+  update_inverse(y, _X.row(i), i);
+
+  _X.row(i) = y;
+  _action_indices[i] = U_rid;
+
+  scale_all(max_volume, U.rows());
+}
+
+void spanner_state::compute_spanner_one_rank(
+    const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
+{
+  /**
+   * Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
+   * Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
+   *
+   * One rank determinant update approach:
+   * -------------------------------------
+   * following Sherman–Morrison formula and matrix determinant lemma, updating the inverse and determinants in a
+   * one-rank fashion
+   * X'_a <- replace row i of X with action a where det(X)=1 **
+   * X'_a = X + (a - X.row(i)) e_i.transpose = X + u v.transpose (i.e. e_i== v)
+   * det(X'_a) = det(X) (1 + e_i.transpose * X_inverse (a - X.row(i)))
+   *               = (1 - (X_inverse.transpose() e_i).transpose X.row(i)) + (X_inverse.transpose() e_i).transpose * a
+   *               = 0 + phi.transpose * a (where phi == X_inverse.transpose() e_i -> essentially _X_inv at row i)
+   *
+   * ** for numerical stability det(X) is always 1 (hence the simplification in the above equation) and we maintain
+   * _log_determinant_factor which is the log of det(X). So we are accumulating det(X) in the logspace
+   */
+
+  // The size of U is K x d, where K is the total number of all actions
+  assert(static_cast<uint64_t>(U.cols()) == _d);
+  _X.setIdentity(_d, _d);
+  _X_inv.setIdentity(_d, _d);
+  _log_determinant_factor = 0;
+
+  float max_volume;
+  // Compute a basis contained in U.
+  for (uint64_t i = 0; i < _d; ++i)
+  {
+    Eigen::VectorXf phi = _X_inv.row(i);
+    max_volume = -1.0f;
+    uint64_t U_rid = 0;
+    find_action_to_maximize_volume(U, phi, max_volume, U_rid);
+
+    // best action is U_rid
+    rank_one_determinant_update(U, max_volume, U_rid, shrink_factors[U_rid], i);
+  }
+
+  const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
+  float X_volume = max_volume;
+
+  for (int iter = 0; iter < max_iterations; ++iter)
+  {
+    bool found_larger_volume = false;
+
+    // If replacing some row in _X results in larger volume, replace it with the row from U.
+    for (uint64_t i = 0; i < _d; ++i)
+    {
+      float max_volume = -1.0f;
+      uint64_t U_rid = 0;
+      Eigen::VectorXf phi = _X_inv.row(i);
+      find_action_to_maximize_volume(U, phi, max_volume, U_rid);
+      if (max_volume > _c * X_volume)
+      {
+        // best action is U_rid
+        rank_one_determinant_update(U, max_volume, U_rid, shrink_factors[U_rid], i);
+
+        X_volume = max_volume;
+        found_larger_volume = true;
+        break;
+      }
+    }
+
+    if (!found_larger_volume) { break; }
+  }
+
+  _spanner_bitvec.clear();
+  _spanner_bitvec.resize(U.rows(), false);
+  for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
+}
+
+void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d)
 {
   // Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
   // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
 
   // The size of U is K x d, where K is the total number of all actions.
   assert(static_cast<uint64_t>(U.cols()) == _d);
-  Eigen::MatrixXf X = Eigen::MatrixXf::Identity(_d, _d);
+  _X.setIdentity(_d, _d);
 
   // Compute a basis contained in U.
   for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
   {
-    uint64_t U_rid = find_max_volume(U, X_rid, X).second;
-    X.row(X_rid) = U.row(U_rid);
+    float max_volume = -1.0f;
+    uint64_t U_rid = 0;
+    find_max_volume(U, X_rid, _X, max_volume, U_rid);
+    _X.row(X_rid) = U.row(U_rid);
     _action_indices[X_rid] = U_rid;
   }
 
   // Transform the basis into C-approximate spanner.
   // According to the paper, the total number of iterations needed is O(d*log_c(d)).
   const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
-  float X_volume = std::abs(X.determinant());
+  float X_volume = std::abs(_X.determinant());
   for (int iter = 0; iter < max_iterations; ++iter)
   {
     bool found_larger_volume = false;
@@ -61,12 +178,12 @@ void spanner_state::compute_spanner(Eigen::MatrixXf& U, size_t _d)
     // If replacing some row in X results in larger volume, replace it with the row from U.
     for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
     {
-      const auto max_volume_and_row_id = find_max_volume(U, X_rid, X);
-      const float max_volume = max_volume_and_row_id.first;
+      float max_volume = -1.0f;
+      uint64_t U_rid = 0;
+      find_max_volume(U, X_rid, _X, max_volume, U_rid);
       if (max_volume > _c * X_volume)
       {
-        uint64_t U_rid = max_volume_and_row_id.second;
-        X.row(X_rid) = U.row(U_rid);
+        _X.row(X_rid) = U.row(U_rid);
         _action_indices[X_rid] = U_rid;
 
         X_volume = max_volume;

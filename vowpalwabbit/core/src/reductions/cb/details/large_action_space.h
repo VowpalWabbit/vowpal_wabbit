@@ -131,15 +131,49 @@ struct spanner_state
 {
 private:
   const float _c = 2;
+  Eigen::MatrixXf _X;
+  Eigen::MatrixXf _X_inv;
+  float _log_determinant_factor = 0.f;
+
+  void rank_one_determinant_update(
+      const Eigen::MatrixXf& U, float max_volume, uint64_t U_rid, float shrink_factor, uint64_t row_iteration);
+  void update_inverse(const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t row_iteration);
+  void scale_all(float max_volume, uint64_t num_examples);
 
 public:
   std::vector<bool> _spanner_bitvec;
   std::vector<uint64_t> _action_indices;
   spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
 
-  void compute_spanner(Eigen::MatrixXf& U, size_t _d);
-  static std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t x_row, Eigen::MatrixXf& X);
+  void compute_spanner_one_rank(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
+  void compute_spanner(const Eigen::MatrixXf& U, size_t _d);
 };
+
+inline void find_max_volume(
+    const Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X, float& max_volume, uint64_t& U_rid)
+{
+  // Finds the max volume by replacing row X[X_rid] with some row in U.
+  // Returns the max volume, and the row id of U used for replacing X[X_rid].
+
+  max_volume = -1.0f;
+  U_rid = 0;
+
+  const Eigen::RowVectorXf original_row = X.row(X_rid);
+
+  for (auto i = 0; i < U.rows(); ++i)
+  {
+    X.row(X_rid) = U.row(i);
+    const float volume = std::abs(X.determinant());
+    if (volume > max_volume)
+    {
+      max_volume = volume;
+      U_rid = i;
+    }
+  }
+  X.row(X_rid) = original_row;
+
+  assert(max_volume >= 0.0f);
+}
 
 template <typename randomized_svd_impl>
 struct cb_explore_adf_large_action_space
