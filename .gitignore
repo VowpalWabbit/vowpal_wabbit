@@ -153,3 +153,9 @@ vowpalwabbit/parser/flatbuffer/generated/example_generated.h
 test/flatbuffer/*.predict
 test/flatbuffer/*.stderr
 node_modules
+
+#VS Code
+.vscode/settings.json
+
+cmake-build-debug
+cmake-build-release

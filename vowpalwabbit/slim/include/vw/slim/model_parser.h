@@ -50,7 +50,7 @@ public:
 #endif
 
     // 0 length strings are not valid, need to contain at least \0
-    if (str_len == 0) return E_VW_PREDICT_ERR_INVALID_MODEL;
+    if (str_len == 0) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
     const char* data;
     RETURN_ON_FAIL(read(field_name, str_len, &data));
@@ -64,7 +64,7 @@ public:
 #endif
 
     // calculate checksum
-    if (compute_checksum && str_len > 0) _checksum = (uint32_t)VW::uniform_hash(data, str_len, _checksum);
+    if (compute_checksum && str_len > 0) { _checksum = (uint32_t)VW::uniform_hash(data, str_len, _checksum); }
 
     return S_VW_PREDICT_OK;
   }
@@ -85,7 +85,7 @@ public:
     // avoid alignment issues for 32/64bit types on e.g. Android/ARM
     memcpy(&val, data, sizeof(T));
 
-    if (compute_checksum) _checksum = (uint32_t)VW::uniform_hash(&val, sizeof(T), _checksum);
+    if (compute_checksum) { _checksum = (uint32_t)VW::uniform_hash(&val, sizeof(T), _checksum); }
 
 #ifdef MODEL_PARSER_DEBUG
     log << " '" << val << '\'' << std::endl;
@@ -109,7 +109,7 @@ public:
     {
       T idx;
       RETURN_ON_FAIL((read<T, false>("gd.weight.index", idx)));
-      if (idx > weight_length) return E_VW_PREDICT_ERR_WEIGHT_INDEX_OUT_OF_RANGE;
+      if (idx > weight_length) { return E_VW_PREDICT_ERR_WEIGHT_INDEX_OUT_OF_RANGE; }
 
       float& w = (*weights)[static_cast<size_t>(idx)];
       RETURN_ON_FAIL((read<float, false>("gd.weight.value", w)));

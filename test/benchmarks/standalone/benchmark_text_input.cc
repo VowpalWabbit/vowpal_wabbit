@@ -66,27 +66,6 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
   VW::finish(*vw);
 }
 
-#ifdef PRIVACY_ACTIVATION
-static void benchmark_cb_adf_learn_privacy_preserving(benchmark::State& state, int feature_count)
-{
-  auto vw = VW::initialize(
-      "--privacy_activation --cb_explore_adf --epsilon 0.1 --quiet -q ::", nullptr, false, nullptr, nullptr);
-  multi_ex examples;
-  examples.push_back(VW::read_example(*vw, std::string("shared tag1| s_1 s_2")));
-  examples.push_back(VW::read_example(*vw, get_x_string_fts(feature_count)));
-  examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
-  examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
-
-  for (auto _ : state)
-  {
-    vw->learn(examples);
-    benchmark::ClobberMemory();
-  }
-  vw->finish_example(examples);
-  VW::finish(*vw);
-}
-#endif
-
 static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature_string, std::string cmd = "")
 {
   auto vw = VW::initialize("--ccb_explore_adf --quiet" + cmd, nullptr, false, nullptr, nullptr);
@@ -224,9 +203,27 @@ static void benchmark_multi(
 {
   auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
   std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+
   for (auto _ : state)
   {
     for (multi_ex examples : examples_vec) { vw->learn(examples); }
+    benchmark::ClobberMemory();
+  }
+  for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
+  VW::finish(*vw);
+}
+
+static void benchmark_multi_predict(
+    benchmark::State& state, const std::vector<std::vector<std::string>>& examples_str, const std::string& cmd)
+{
+  auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
+  std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+
+  for (multi_ex examples : examples_vec) { vw->learn(examples); }
+
+  for (auto _ : state)
+  {
+    for (multi_ex examples : examples_vec) { vw->predict(examples); }
     benchmark::ClobberMemory();
   }
   for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
@@ -249,11 +246,6 @@ BENCHMARK_CAPTURE(benchmark_ccb_adf_learn, many_features_no_predic,
 
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, few_features, 2);
 BENCHMARK_CAPTURE(benchmark_cb_adf_learn, many_features, 120)->MinTime(15.0);
-
-#ifdef PRIVACY_ACTIVATION
-BENCHMARK_CAPTURE(benchmark_cb_adf_learn_privacy_preserving, few_features, 2);
-BENCHMARK_CAPTURE(benchmark_cb_adf_learn_privacy_preserving, many_features, 120);
-#endif
 
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces, gen_cb_examples(100, 7, 3, 6, 1, 4, 14, 2, false),
     "--cb_explore_adf --quiet")
@@ -285,3 +277,37 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
     "--ccb_explore_adf --quiet -q ::")
     ->MinTime(15.0);
+#ifdef BUILD_LARGE_ACTION_SPACE
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las, gen_cb_examples(1, 50, 20, 311, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_aatop, gen_cb_examples(1, 50, 20, 311, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --aatop --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_model_weight, gen_cb_examples(1, 50, 20, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --model_weight --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_onestep, gen_cb_examples(1, 50, 20, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --one_pass --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_plaincb, gen_cb_examples(1, 50, 20, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf -q :: --quiet")
+    ->MinTime(15.0);
+
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large, gen_cb_examples(1, 50, 50, 311, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_aatop, gen_cb_examples(1, 50, 50, 311, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --aatop --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_model_weight,
+    gen_cb_examples(1, 50, 50, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 2- --model_weight --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_onestep, gen_cb_examples(1, 50, 50, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 2- --one_pass --quiet")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_plaincb, gen_cb_examples(1, 50, 50, 300, 1, 1, 20, 10, false),
+    "--cb_explore_adf -q :: --quiet")
+    ->MinTime(15.0);
+#endif

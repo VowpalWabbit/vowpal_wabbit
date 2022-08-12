@@ -360,6 +360,9 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("cb_force_legacy")) { return nullptr; }
 
+  if (options.was_supplied("indexing"))
+  { THROW("--indexing is not compatible with contextual bandits, please remove this option") }
+
   data->_random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
@@ -379,7 +382,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   data->model_file_version = all.model_file_ver;
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
-  data->cbcs.scorer = all.scorer;
+  data->cbcs.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   void (*learn_ptr)(cb_explore&, single_learner&, VW::example&);
   void (*predict_ptr)(cb_explore&, single_learner&, VW::example&);

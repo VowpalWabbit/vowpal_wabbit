@@ -3118,7 +3118,8 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
                      " Note: a valid search_task needs to be supplied in addition for this to output.)"))
       .add(make_option("search_interpolation", interpolation_string)
                .keep()
-               .help("At what level should interpolation happen? [*data|policy]"))
+               .one_of({"data", "policy"})
+               .help("At what level should interpolation happen?"))
       .add(make_option("search_rollout", rollout_string)
                .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
                .help("How should rollouts be executed"))
@@ -3340,7 +3341,9 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   priv.active_csoaa = options.was_supplied("cs_active");
   priv.active_csoaa_verify = -1.;
   if (options.was_supplied("search_active_verify"))
-    if (!priv.active_csoaa) THROW("cannot use --search_active_verify without using --cs_active");
+  {
+    if (!priv.active_csoaa) { THROW("cannot use --search_active_verify without using --cs_active"); }
+  }
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 

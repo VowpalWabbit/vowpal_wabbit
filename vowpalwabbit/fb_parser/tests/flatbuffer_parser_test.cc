@@ -110,7 +110,6 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_audit)
   builder.FinishSizePrefixed(root);
 
   uint8_t* buf = builder.GetBufferPointer();
-  int size = builder.GetSize();
 
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all));
@@ -155,7 +154,6 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_no_audit)
   builder.FinishSizePrefixed(root);
 
   uint8_t* buf = builder.GetBufferPointer();
-  int size = builder.GetSize();
 
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all));

@@ -53,9 +53,8 @@
 #include <sstream>
 #include <tuple>
 #include <utility>
-
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_binary.h"
+#ifdef VW_BUILD_CSV
+#  include "vw/csv_parser/parse_example_csv.h"
 #endif
 
 using std::endl;
@@ -409,8 +408,9 @@ input_options parse_source(VW::workspace& all, options_i& options)
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("Data file will be interpreted as a flatbuffer file")
                .experimental());
-#ifdef BUILD_EXTERNAL_PARSER
-  VW::external::parser::set_parse_args(input_options, parsed_options);
+#ifdef VW_BUILD_CSV
+  parsed_options.csv_opts = VW::make_unique<VW::parsers::csv_parser_options>();
+  VW::parsers::csv_parser::set_parse_args(input_options, *parsed_options.csv_opts.get());
 #endif
 
   options.add_and_parse(input_options);
@@ -454,12 +454,16 @@ input_options parse_source(VW::workspace& all, options_i& options)
     *(all.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
+#ifdef VW_BUILD_CSV
+  VW::parsers::csv_parser::handle_parse_args(*parsed_options.csv_opts.get());
+#endif
+
   return parsed_options;
 }
 
 namespace VW
 {
-const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
+const char* are_features_compatible(const VW::workspace& vw1, const VW::workspace& vw2)
 {
   if (vw1.example_parser->hasher != vw2.example_parser->hasher) { return "hasher"; }
 
@@ -611,14 +615,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   option_group_definition feature_options("Feature");
   feature_options
-#ifdef PRIVACY_ACTIVATION
-      .add(make_option("privacy_activation", all.privacy_activation)
-               .help("turns on aggregated weight exporting when the unique feature tags cross "
-                     "`privacy_activation_threshold`"))
-      .add(make_option("privacy_activation_threshold", all.privacy_activation_threshold)
-               .help("takes effect when `privacy_activation` is turned on and is the number of unique tag hashes a "
-                     "weight needs to see before it is exported"))
-#endif
       .add(make_option("hash", hash_function)
                .default_value("strings")
                .keep()
@@ -643,7 +639,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                      "wildcard in S.")
                .keep())
       .add(make_option("bit_precision", new_bits).short_name("b").help("Number of bits in the feature table"))
-      .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
+      .add(make_option("noconstant", noconstant).keep().help("Don't add a constant feature"))
       .add(make_option("constant", all.initial_constant)
                .default_value(0.f)
                .short_name("C")
@@ -683,6 +679,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
       .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
+
   options.add_and_parse(feature_options);
 
   // feature manipulation
@@ -1196,10 +1193,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
         << loss_function);
   }
 
-  if (loss_function_accepts_quantile_tau)
-  {
-    all.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
-  }
+  if (loss_function_accepts_quantile_tau) { all.loss = get_loss_function(all, loss_function, quantile_loss_parameter); }
   else if (loss_function_accepts_expectile_q)
   {
     if (expectile_loss_parameter <= 0.0f || expectile_loss_parameter > 0.5f)
@@ -1407,11 +1401,10 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
 }
 
 std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_deleter_type> options,
-    trace_message_t trace_listener, void* trace_context, VW::io::logger_output_func_t logger_output_func = nullptr,
-    void* logger_output_func_context = nullptr)
+    trace_message_t trace_listener, void* trace_context, VW::io::logger* custom_logger)
 {
-  auto logger = logger_output_func != nullptr
-      ? VW::io::create_custom_sink_logger(logger_output_func_context, logger_output_func)
+  auto logger = custom_logger != nullptr
+      ? *custom_logger
       : (trace_listener != nullptr ? VW::io::create_custom_sink_logger_legacy(trace_context, trace_listener)
                                    : VW::io::create_default_logger());
 
@@ -1842,12 +1835,10 @@ VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_m
 
 std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, options_deleter_type> options,
     io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context,
-    VW::io::logger_output_func_t logger_output_func = nullptr, void* logger_output_func_context = nullptr,
-    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
+    VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   // Set up logger as early as possible
-  auto all =
-      parse_args(std::move(options), trace_listener, trace_context, logger_output_func, logger_output_func_context);
+  auto all = parse_args(std::move(options), trace_listener, trace_context, custom_logger);
 
   // if user doesn't pass in a model, read from options
   io_buf local_model;
@@ -1916,6 +1907,17 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     std::exit(0);
   }
 
+  if (all->options->was_supplied("automl") && all->options->was_supplied("aml_predict_only_model"))
+  {
+    std::string automl_predict_only_filename =
+        all->options->get_typed_option<std::string>("aml_predict_only_model").value();
+    if (automl_predict_only_filename.empty())
+    { THROW("error: --aml_predict_only_model has to be non-zero string representing filename to write"); }
+
+    finalize_regressor(*all, automl_predict_only_filename);
+    std::exit(0);
+  }
+
   print_enabled_reductions(*all, enabled_reductions);
 
   if (!all->quiet)
@@ -1937,8 +1939,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
 
 std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options,
     std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
-    void* driver_output_func_context, VW::io::logger_output_func_t logger_output_func, void* logger_output_func_context,
-    std::unique_ptr<VW::setup_base_i> learner_builder)
+    void* driver_output_func_context, VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   auto* released_options = options.release();
   std::unique_ptr<options_i, options_deleter_type> options_custom_deleter(
@@ -1952,8 +1953,7 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
     model->add_file(std::move(model_override_reader));
   }
   return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
-      driver_output_func, driver_output_func_context, logger_output_func, logger_output_func_context,
-      std::move(learner_builder));
+      driver_output_func, driver_output_func_context, custom_logger, std::move(learner_builder));
 }
 
 VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
@@ -1961,8 +1961,8 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
 
     std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
-  return initialize_internal(std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr,
-      nullptr, std::move(learner_builder))
+  return initialize_internal(
+      std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr, std::move(learner_builder))
       .release();
 }
 

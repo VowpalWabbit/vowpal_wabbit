@@ -1,5 +1,5 @@
 import vowpalwabbit
-import DistributionallyRobustUnitTestData as dro
+from distributionally_robust_data import OnlineCressieRead
 
 import collections
 import os
@@ -42,8 +42,8 @@ class Simulator:
         self.ocrl2 = None
 
         if has_automl:
-            self.ocrl = dro.OnlineDRO.OnlineCressieReadLB(alpha=0.05, tau=0.999)
-            self.ocrl2 = dro.OnlineDRO.OnlineCressieReadLB(alpha=0.05, tau=0.999)
+            self.ocrl = OnlineCressieRead(alpha=0.05, tau=0.999)
+            self.ocrl2 = OnlineCressieRead(alpha=0.05, tau=0.999)
 
     def get_cost(self, context, action):
         if context["user"] == "Tom":
@@ -251,7 +251,7 @@ def test_without_interaction():
 
 def test_automl_reduction(config=3, sim_saveload=False):
     # 10281881982--audit --invert_hash
-    args = f"--invert_hash readable.vw --automl {str(config)} --priority_type least_exclusion --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json --keep_configs --oracle_type rand"
+    args = f"--invert_hash readable.vw --automl {str(config)} --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --extra_metrics metrics.json --oracle_type rand"
     if sim_saveload:
         ctr = _test_helper_save_load(
             vw_arg=f"{args}", log_filename=f"custom_reduc_{str(config)}.txt"

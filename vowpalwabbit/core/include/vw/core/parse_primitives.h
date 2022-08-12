@@ -3,6 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/core/vw_string_view_fmt.h"
+
 #include "fast_pow10.h"
 #include "hashstring.h"
 #include "vw/common/future_compat.h"
@@ -20,7 +22,7 @@ std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool al
 
 inline const char* safe_index(const char* start, char v, const char* max)
 {
-  while (start != max && *start != v) start++;
+  while (start != max && *start != v) { start++; }
   return start;
 }
 
@@ -38,7 +40,7 @@ inline FORCE_INLINE float parseFloat(const char* p, size_t& end_idx, const char*
 
   if (!p || !*p) { return 0; }
   int s = 1;
-  while ((*p == ' ') && (endLine_is_null || p < endLine)) p++;
+  while ((*p == ' ') && (endLine_is_null || p < endLine)) { p++; }
 
   if (*p == '-')
   {
@@ -47,7 +49,7 @@ inline FORCE_INLINE float parseFloat(const char* p, size_t& end_idx, const char*
   }
 
   float acc = 0;
-  while (*p >= '0' && *p <= '9' && (endLine_is_null || p < endLine)) acc = acc * 10 + *p++ - '0';
+  while (*p >= '0' && *p <= '9' && (endLine_is_null || p < endLine)) { acc = acc * 10 + *p++ - '0'; }
 
   int num_dec = 0;
   if (*p == '.')
@@ -72,7 +74,7 @@ inline FORCE_INLINE float parseFloat(const char* p, size_t& end_idx, const char*
       exp_s = -1;
       p++;
     }
-    while (*p >= '0' && *p <= '9' && (endLine_is_null || p < endLine)) exp_acc = exp_acc * 10 + *p++ - '0';
+    while (*p >= '0' && *p <= '9' && (endLine_is_null || p < endLine)) { exp_acc = exp_acc * 10 + *p++ - '0'; }
     exp_acc *= exp_s;
   }
   if (*p == ' ' || *p == '\n' || *p == '\t' || p == endLine)  // easy case succeeded.

@@ -9,6 +9,10 @@ on:
   schedule:
     - cron: '26 11 * * 5'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze
@@ -30,7 +34,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-
+      with:
+        submodules: recursive
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:

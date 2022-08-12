@@ -35,29 +35,31 @@ struct freegrad;
 struct freegrad_update_data
 {
   freegrad* FG;
-  float update;
-  float ec_weight;
-  float predict;
-  float squared_norm_prediction;
-  float grad_dot_w;
-  float squared_norm_clipped_grad;
-  float sum_normalized_grad_norms;
-  float maximum_clipped_gradient_norm;
+  float update = 0.f;
+  float ec_weight = 0.f;
+  float predict = 0.f;
+  float squared_norm_prediction = 0.f;
+  float grad_dot_w = 0.f;
+  float squared_norm_clipped_grad = 0.f;
+  float sum_normalized_grad_norms = 0.f;
+  float maximum_clipped_gradient_norm = 0.f;
 };
 
 struct freegrad
 {
   VW::workspace* all;  // features, finalize, l1, l2,
-  float epsilon;
+  float epsilon = 0.f;
+  float lipschitz_const = 0.f;
   bool restart;
   bool project;
   bool adaptiveradius;
-  float radius;
+  float radius = 0.f;
   freegrad_update_data update_data;
   size_t no_win_counter;
   size_t early_stop_thres;
   uint32_t freegrad_size;
-  double total_weight;
+  double total_weight = 0.0;
+  double normalized_sum_norm_x = 0.0;
 };
 
 template <bool audit>
@@ -168,6 +170,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   float absG = std::fabs(G);
   float V = w[V_SUM];  // sum of squared gradients w.r.t. scalar feature x
   float epsilon = d.FG->epsilon;
+  float lipschitz_const = d.FG->lipschitz_const;
 
   // Computing the freegrad prediction again (Eq.(9) and Line 7 of Alg. 2 in paper)
   if (h1 > 0)
@@ -199,10 +202,16 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   fabs_tilde_g = std::fabs(tilde_gradient);
 
   // Updating the hint sequence
-  if (h1 == 0)
+  if (h1 == 0 && lipschitz_const == 0)
   {
     w[H1] = fabs_tilde_g;
     w[HT] = fabs_tilde_g;
+    w[V_SUM] += d.ec_weight * std::pow(fabs_tilde_g, 2.f);
+  }
+  else if (h1 == 0)
+  {
+    w[H1] = lipschitz_const;
+    w[HT] = lipschitz_const;
     w[V_SUM] += d.ec_weight * std::pow(fabs_tilde_g, 2.f);
   }
   else if (fabs_tilde_g > ht)
@@ -283,7 +292,10 @@ void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
-    { GD::save_load_online_state(*all, model_file, read, text, fg.total_weight, nullptr, fg.freegrad_size); }
+    {
+      GD::save_load_online_state(
+          *all, model_file, read, text, fg.total_weight, fg.normalized_sum_norm_x, nullptr, fg.freegrad_size);
+    }
     else
     {
       GD::save_load_regressor(*all, model_file, read, text);
@@ -314,6 +326,7 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   bool adaptiveradius = true;
   float radius;
   float fepsilon;
+  float flipschitz_const;
 
   option_group_definition new_options("[Reduction] FreeGrad");
   new_options.add(make_option("freegrad", freegrad_enabled).necessary().keep().help("Diagonal FreeGrad Algorithm"))
@@ -322,7 +335,10 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
                .help("Project the outputs to adapt to both the lipschitz and comparator norm"))
       .add(make_option("radius", radius)
                .help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used"))
-      .add(make_option("fepsilon", fepsilon).default_value(1.f).help("Initial wealth"));
+      .add(make_option("fepsilon", fepsilon).default_value(1.f).help("Initial wealth"))
+      .add(make_option("flipschitz_const", flipschitz_const)
+               .default_value(0.f)
+               .help("Upper bound on the norm of the gradients if known in advance"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -343,9 +359,10 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   fg_ptr->project = project;
   fg_ptr->adaptiveradius = adaptiveradius;
   fg_ptr->no_win_counter = 0;
-  fg_ptr->all->normalized_sum_norm_x = 0;
   fg_ptr->total_weight = 0;
+  fg_ptr->normalized_sum_norm_x = 0;
   fg_ptr->epsilon = fepsilon;
+  fg_ptr->lipschitz_const = flipschitz_const;
 
   const auto* algorithm_name = "FreeGrad";
 

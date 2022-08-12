@@ -11,7 +11,6 @@ add_executable(vw-unit-test.out
   cats_tree_test.cc
   cats_user_provided_pdf.cc
   cb_explore_adf_test.cc
-  cb_large_actions_test.cc
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
@@ -58,6 +57,10 @@ add_executable(vw-unit-test.out
   weights_test.cc
 )
 
+if(VW_BUILD_LARGE_ACTION_SPACE)
+  target_sources(vw-unit-test.out PRIVATE cb_large_actions_test.cc)
+endif()
+
 # Add the include directories from vw target for testing
 target_link_libraries(vw-unit-test.out PRIVATE vw_core RapidJSON Boost::unit_test_framework)
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
@@ -68,8 +71,14 @@ if (boost_test_target_type STREQUAL SHARED_LIBRARY)
   message(STATUS "Boost::unit_test_framework looks to be a shared library. Adding BOOST_TEST_DYN_LINK")
   target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
 elseif(boost_test_target_type STREQUAL UNKNOWN_LIBRARY)
-# If find_package is used then by default we're looking at a shared dependency unless Boost_USE_STATIC_LIBS was set.
-  if(NOT Boost_USE_STATIC_LIBS)
+  # Try inferring type if vcpkg is used
+  if (DEFINED VCPKG_TARGET_TRIPLET)
+    if (VCPKG_TARGET_TRIPLET EQUAL "x64-windows" OR VCPKG_TARGET_TRIPLET EQUAL "x86-windows" OR VCPKG_TARGET_TRIPLET EQUAL "arm64-osx-dynamic" OR VCPKG_TARGET_TRIPLET EQUAL "x64-osx-dynamic")
+      message(STATUS "Boost::unit_test_framework looks to be a shared library based on vcpkg triplet ${VCPKG_TARGET_TRIPLET}. Adding BOOST_TEST_DYN_LINK")
+      target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
+    endif()
+  # If find_package is used then by default we're looking at a shared dependency unless Boost_USE_STATIC_LIBS was set.
+  elseif(NOT Boost_USE_STATIC_LIBS)
     message(STATUS "Boost::unit_test_framework looks to be a shared library. Adding BOOST_TEST_DYN_LINK")
     target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
   endif()

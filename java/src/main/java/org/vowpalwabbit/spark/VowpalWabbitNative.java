@@ -2,6 +2,8 @@ package org.vowpalwabbit.spark;
 
 import common.Native;
 import java.io.Closeable;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Main wrapper for VowpalWabbit native implementation.
@@ -45,12 +47,28 @@ public class VowpalWabbitNative implements Closeable {
     public native Object learn(VowpalWabbitExample[] examples);
 
     /**
+     * Invoke multi-line learning. By default will interpret input as text format, pass `--dsjson` or `--json` to initialize to use DSJSON or JSON respectively.
+     *
+     * @param examplesString String representation of examples to learn from.
+     * @return the one-step ahead prediction.
+     */
+    public native Object learnFromString(String examplesString);
+
+    /**
      * Invoke multi-line prediction.
      *
      * @param examples the example to predict for.
      * @return the prediction.
      */
     public native Object predict(VowpalWabbitExample[] examples);
+
+    /**
+     * Invoke multi-line prediction. By default will interpret input as text format, pass `--dsjson` or `--json` to initialize to use DSJSON or JSON respectively.
+     *
+     * @param examplesString String representation of examples to learn from.
+     * @return the prediction.
+     */
+    public native Object predictFromString(String examplesString);
 
     /**
      * Perform remaining passes.
@@ -70,6 +88,8 @@ public class VowpalWabbitNative implements Closeable {
      * @return VW argument object.
      */
     public native VowpalWabbitArguments getArguments();
+
+    public native String getOutputPredictionType();
 
     public native VowpalWabbitPerformanceStatistics getPerformanceStatistics();
 
@@ -118,6 +138,10 @@ public class VowpalWabbitNative implements Closeable {
         this.nativePointer = initializeFromModel(args, model);
     }
 
+    private VowpalWabbitNative(long existingWorkspace) {
+        this.nativePointer = existingWorkspace;
+    }
+
     /**
      * Creates a new VW example associated with this this instance.
      *
@@ -136,6 +160,13 @@ public class VowpalWabbitNative implements Closeable {
     public VowpalWabbitExample createEmptyExample() {
         return new VowpalWabbitExample(this.nativePointer, true);
     }
+
+    /**
+     * Merge several models together and return the result. Experimental API.
+     * @param workspacePointers array of pointers to VW models.
+     * @return merged VW model.
+     */
+    public static native VowpalWabbitNative mergeModels(VowpalWabbitNative baseWorkspace, VowpalWabbitNative[] workspacePointers);
 
     /**
      * Frees the native resources.

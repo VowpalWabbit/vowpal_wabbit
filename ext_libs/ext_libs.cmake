@@ -105,8 +105,10 @@ if(BUILD_FLATBUFFERS)
   include(FlatbufferUtils)
 endif()
 
-add_library(eigen INTERFACE)
-target_include_directories(eigen SYSTEM INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-)
+if(VW_BUILD_LARGE_ACTION_SPACE)
+  add_library(eigen INTERFACE)
+  target_include_directories(eigen SYSTEM INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  )
+endif()

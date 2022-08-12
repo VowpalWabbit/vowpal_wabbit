@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
         with:
+          submodules: recursive
           ref: ${{ github.event.inputs.benchmarks_ref }}
       - name: Store benchmark related script(s)
         shell: bash
@@ -36,6 +37,7 @@ jobs:
 # checkout first ref
       - uses: actions/checkout@v1
         with:
+          submodules: recursive
           ref: ${{ github.event.inputs.base_ref }}
       - name: Remove existing benchmark module (in favour of master)
         shell: bash
@@ -82,6 +84,7 @@ jobs:
 # checkout second ref
       - uses: actions/checkout@v1
         with:
+          submodules: recursive
           ref: ${{ github.event.inputs.compare_ref }}
       - name: Download ${{ github.event.inputs.base_ref }} benchmark results
         uses: actions/download-artifact@v2

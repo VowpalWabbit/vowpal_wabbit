@@ -42,6 +42,16 @@ if(WIN32)
   endif()
 endif()
 
+option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
+if(BUILD_FLATBUFFERS)
+  list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
+endif()
+
+option(BUILD_TESTING "Build tests" ON)
+if(BUILD_TESTING)
+  list(APPEND VCPKG_MANIFEST_FEATURES "tests")
+endif()
+
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
@@ -56,6 +66,8 @@ message(STATUS "Using C++ standard: " ${VW_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD ${VW_CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 
 include(VowpalWabbitUtils)
 
@@ -103,9 +115,10 @@ option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead wil
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
 option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
+option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
-option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
-option(BUILD_PRIVACY_ACTIVATION "Enable privacy activation feature" OFF)
+option(VW_BUILD_CSV "Build csv parser" OFF)
+option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
@@ -122,16 +135,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
       message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
     endif()
-    cmake_minimum_required(VERSION 3.11)
-    include(FetchContent)
-    FetchContent_Declare(
-      googletest
-      URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-    )
-    # For Windows: Prevent overriding the parent project's compiler/linker settings
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
+    if(VW_GTEST_SYS_DEP)
+      find_package(GTest REQUIRED)
+    else()
+      cmake_minimum_required(VERSION 3.11)
+      include(FetchContent)
+      FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+      )
+      # For Windows: Prevent overriding the parent project's compiler/linker settings
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+      set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+      FetchContent_MakeAvailable(googletest)
+    endif()
   endif()
 endif()
 
@@ -199,29 +216,6 @@ endif()
 
 # This provides the variables such as CMAKE_INSTALL_LIBDIR for installation paths.
 include(GNUInstallDirs)
-
-# Ensure submodules are ready
-find_package(Git QUIET)
-if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
-  # Update submodules as needed
-  option(GIT_SUBMODULE "Check submodules during build" ON)
-  if(GIT_SUBMODULE)
-    message(STATUS "Submodule update")
-    # Check if an abritrary file in the submodules already exists. If it does
-    # then we assume the submodules are already up to date. This is to avoid
-    # taking the git lock aggressively whenever we configure. This can cause
-    # issues if VSCode with certain extensions has the workspace open at the
-    # same time as you interact with it on the command line.
-    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ext_libs/spdlog/README.md)
-      execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        RESULT_VARIABLE GIT_SUBMOD_RESULT)
-      if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-        message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
-      endif()
-    endif()
-  endif()
-endif()
 
 add_subdirectory(library)
 include(ext_libs/ext_libs.cmake)
@@ -301,7 +295,7 @@ if(VW_INSTALL)
 
   configure_package_config_file (
     cmake/VowpalWabbitConfig.cmake.in
-    ${CMAKE_BINARY_DIR}/VowpalWabbitConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/VowpalWabbitConfig.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/VowpalWabbit)
 
   install(

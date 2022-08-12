@@ -62,18 +62,6 @@ struct dictionary_info
 class AllReduce;
 enum class AllReduceType;
 
-#ifdef BUILD_EXTERNAL_PARSER
-// forward declarations
-namespace VW
-{
-namespace external
-{
-class parser;
-struct parser_options;
-}  // namespace external
-}  // namespace VW
-#endif
-
 namespace VW
 {
 struct default_reduction_stack_setup;
@@ -83,6 +71,11 @@ namespace flatbuffer
 {
 class parser;
 }
+
+#ifdef VW_BUILD_CSV
+class csv_parser;
+struct csv_parser_options;
+#endif
 }  // namespace parsers
 }  // namespace VW
 
@@ -126,7 +119,6 @@ public:
   bool chain_hash_json = false;
 
   VW::LEARNER::base_learner* l;         // the top level learner
-  VW::LEARNER::single_learner* scorer;  // a scoring function
   VW::LEARNER::base_learner*
       cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
@@ -155,20 +147,10 @@ public:
 
   uint32_t hash_seed;
 
-#ifdef PRIVACY_ACTIVATION
-  bool privacy_activation = false;
-  // this is coupled with the bitset size in array_parameters which needs to be determined at compile time
-  size_t feature_bitset_size = 32;
-  size_t privacy_activation_threshold = 10;
-#endif
-
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 
-#ifdef BUILD_EXTERNAL_PARSER
-  std::unique_ptr<VW::external::parser> external_parser;
-#endif
   // This field is experimental and subject to change.
   // Used to implement the external binary parser.
   std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
@@ -193,7 +175,6 @@ public:
   std::string id;
 
   VW::version_struct model_file_ver;
-  double normalized_sum_norm_x;
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
@@ -328,6 +309,9 @@ public:
 
   // hack to support cb model loading into ccb reduction
   bool is_ccb_input_model = false;
+
+  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
+  uint32_t indexing = 2;  // for 0 or 1 indexing
 
   explicit workspace(VW::io::logger logger);
   ~workspace();

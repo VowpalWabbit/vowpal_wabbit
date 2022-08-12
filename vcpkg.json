@@ -1,0 +1,23 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "vowpal-wabbit",
+  "version": "9.3.0",
+  "dependencies": [
+    "boost-math",
+    "flatbuffers",
+    "fmt",
+    "rapidjson",
+    "spdlog",
+    "zlib"
+  ],
+  "features": {
+    "tests": {
+      "description": "Build Tests",
+      "dependencies": ["gtest", "boost-test"]
+    },
+    "flatbuffers": {
+      "description": "Enable flatbuffers support",
+      "dependencies": ["flatbuffers"]
+    }
+  }
+}

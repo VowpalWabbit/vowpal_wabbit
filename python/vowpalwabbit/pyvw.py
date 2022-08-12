@@ -516,7 +516,15 @@ class Workspace(pylibvw.vw):
             return str_ex
 
         elif isinstance(str_ex, list):
-            if all([getattr(ex, "setup_done", None) for ex in str_ex]):
+            if all(
+                [
+                    isinstance(ex, Example) and getattr(ex, "setup_done", None)
+                    for ex in str_ex
+                ]
+            ):
+                str_ex: List[
+                    Example
+                ] = str_ex  # pytype: disable=annotation-type-mismatch
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):
@@ -1484,6 +1492,7 @@ class Example(pylibvw.example):
             Union[
                 str,
                 Dict[str, List[Union[Tuple[Union[str, int], float], Union[str, int]]]],
+                Dict[str, Dict[Union[str, int], float]],
                 Any,
                 pylibvw.example,
             ]
@@ -1504,8 +1513,7 @@ class Example(pylibvw.example):
                     .. deprecated:: 9.0.0
                         Using a callable object is no longer supported.
 
-                - If a dict, the keys are the namespace names and the values can either be an integer (already hashed) or a string (to be hashed) and may be paired with a value or not
-                (if not, the value is assumed to be 1.0).
+                - If a dict, the keys are the namespace names and the values are the namespace features. Namespace features can either be represented as a list or a dict. When using a list items are either keys (i.e., an int or string) in which case the value is assumed to be 1 or a key-value tuple. When using a dict the all features are represented as key-value pairs.
             labelType: Which label type this example contains. If None (or 0), the label type is inferred from the workspace configuration.
 
                 .. deprecated:: 9.0.0
@@ -1977,6 +1985,40 @@ class Example(pylibvw.example):
             PredictionType.NOPRED: self.get_nopred,
         }
         return switch_prediction_type[prediction_type]()
+
+
+def merge_models(base_model: Optional[Workspace], models: List[Workspace]) -> Workspace:
+    """Merge the models loaded into separate workspaces into a single workspace which can then be serialized to a model.
+
+    All of the given workspaces must use the exact same arguments, and only differ in training. `--preserve_performance_counters` should be used if models are loaded from disk and then given to this call.
+
+    Args:
+        base_model (Optional[Workspace]): Base model the other models were based on. None, if they are trained from scratch.
+        models (List[Workspace]): List of models to merge.
+
+    Returns:
+        Workspace: The merged workspace
+
+    Example:
+        >>> from vowpalwabbit import Workspace, merge_models
+        >>> model1 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model1.model') # doctest: +SKIP
+        >>> model2 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model2.model') # doctest: +SKIP
+        >>> merged_model = merge_models([model1, model2]) # doctest: +SKIP
+        >>> merged_model.save('merged.model') # doctest: +SKIP
+
+    .. note::
+        This is an experimental feature and may change in future releases.
+    """
+
+    # This needs to be promoted to the Workspace object defined in Python.
+    result = pylibvw._merge_models_impl(base_model, models)
+    result.__class__ = Workspace
+    result._log_wrapper = None
+    result.parser_ran = False
+    result.init = True
+    result.finished = False
+    result._log_fwd = None
+    return result
 
 
 ############################ DEPREECATED CLASSES ############################
