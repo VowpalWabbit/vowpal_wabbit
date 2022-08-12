@@ -78,19 +78,24 @@ void spanner_state::rank_one_determinant_update(
 void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
 {
   /**
+   * Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
+   * Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
+   *
+   * One rank determinant update approach:
+   * -------------------------------------
    * following Sherman–Morrison formula and matrix determinant lemma, updating the inverse and determinants in a
    * one-rank fashion
-   * X'_a <- replace row i of X with action a where det(X)=1
-   *      (keeping det(X) = 1 and adjusting with the _log_determinant_factor and shirnk factor)
+   * X'_a <- replace row i of X with action a where det(X)=1 **
    * X'_a = X + (a - X.row(i)) e_i.transpose = X + u v.transpose (i.e. e_i== v)
    * det(X'_a) = det(X) (1 + e_i.transpose * X_inverse (a - X.row(i)))
    *               = (1 - (X_inverse.transpose() e_i).transpose X.row(i)) + (X_inverse.transpose() e_i).transpose * a
    *               = 0 + phi.transpose * a (where phi == X_inverse.transpose() e_i -> essentially _X_inv at row i)
    *
-   * for numerical stability det(X) is always 1 (hence the simplification in the above equation) and we maintain
+   * ** for numerical stability det(X) is always 1 (hence the simplification in the above equation) and we maintain
    * _log_determinant_factor which is the log of det(X). So we are accumulating det(X) in the logspace
    */
 
+  // The size of U is K x d, where K is the total number of all actions
   assert(static_cast<uint64_t>(U.cols()) == _d);
   _X.setIdentity(_d, _d);
   _X_inv.setIdentity(_d, _d);
