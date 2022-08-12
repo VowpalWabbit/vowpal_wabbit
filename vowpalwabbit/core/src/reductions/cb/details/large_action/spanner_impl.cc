@@ -8,7 +8,6 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-
 void spanner_state::find_max_volume(
     const Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X, float& max_volume, uint64_t& U_rid)
 {

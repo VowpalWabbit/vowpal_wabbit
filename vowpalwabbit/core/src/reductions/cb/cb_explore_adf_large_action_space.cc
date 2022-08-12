@@ -26,7 +26,6 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-
 struct A_triplet_constructor
 {
 private:
@@ -52,8 +51,8 @@ public:
   }
 };
 
-bool _generate_A(VW::workspace* _all,
-    const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets, Eigen::SparseMatrix<float>& _A)
+bool _generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
+    Eigen::SparseMatrix<float>& _A)
 {
   uint64_t row_index = 0;
   uint64_t max_non_zero_col = 0;
@@ -171,7 +170,10 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
   while (it != preds.end())
   {
     if (!_spanner_state._spanner_bitvec[it->action]) { preds.erase(it); }
-    else { it++; }
+    else
+    {
+      it++;
+    }
   }
 }
 
@@ -274,7 +276,10 @@ void shrink_factor_config::calculate_shrink_factor(
       shrink_factors.push_back(std::sqrt(1 + max_actions + gamma / (4.0f * max_actions) * (preds[i].score - min_ck)));
     }
   }
-  else { shrink_factors.resize(preds.size(), 1.f); }
+  else
+  {
+    shrink_factors.resize(preds.size(), 1.f);
+  }
 }
 }  // namespace cb_explore_adf
 }  // namespace VW
