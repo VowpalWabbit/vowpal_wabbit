@@ -24,7 +24,6 @@ enum class implementation_type
 {
   vanilla_rand_svd,
   model_weight_rand_svd,
-  aatop,
   one_pass_svd
 };
 
@@ -41,7 +40,7 @@ public:
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
   bool _set_testing_components = false;
-  vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
+  vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -79,22 +78,6 @@ public:
   void _set_rank(uint64_t rank);
 };
 
-struct aatop_impl
-{
-private:
-  VW::workspace* _all;
-  std::vector<std::vector<float>> _aatop_action_ft_vectors;
-  std::vector<std::set<uint64_t>> _aatop_action_indexes;
-
-public:
-  aatop_impl(VW::workspace* all);
-  // the below matrixes are used only during unit testing and are not set otherwise
-  std::vector<Eigen::Triplet<float>> _triplets;
-  Eigen::MatrixXf AAtop;
-
-  bool run(const multi_ex& examples, const std::vector<float>& shrink_factors);
-};
-
 struct one_pass_svd_impl
 {
 private:
@@ -105,7 +88,7 @@ private:
 
 public:
   Eigen::MatrixXf AOmega;
-  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
+  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -132,6 +115,22 @@ struct spanner_state
 private:
   const float _c = 2;
   Eigen::MatrixXf _X;
+
+public:
+  std::vector<bool> _spanner_bitvec;
+  std::vector<uint64_t> _action_indices;
+  spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
+
+  void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
+  void find_max_volume(
+      const Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X, float& max_volume, uint64_t& U_rid);
+};
+
+struct one_rank_spanner_state
+{
+private:
+  const float _c = 2;
+  Eigen::MatrixXf _X;
   Eigen::MatrixXf _X_inv;
   float _log_determinant_factor = 0.f;
 
@@ -143,39 +142,28 @@ private:
 public:
   std::vector<bool> _spanner_bitvec;
   std::vector<uint64_t> _action_indices;
-  spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
-
-  void compute_spanner_one_rank(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
-  void compute_spanner(const Eigen::MatrixXf& U, size_t _d);
+  one_rank_spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
+  void find_max_volume(const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid);
+  void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
 };
 
-inline void find_max_volume(
-    const Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X, float& max_volume, uint64_t& U_rid)
+inline void find_action_to_maximize_volume(
+    const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid)
 {
-  // Finds the max volume by replacing row X[X_rid] with some row in U.
-  // Returns the max volume, and the row id of U used for replacing X[X_rid].
-
-  max_volume = -1.0f;
-  U_rid = 0;
-
-  const Eigen::RowVectorXf original_row = X.row(X_rid);
-
+  // find which action (which row of U) will provide the maximum phi * a volume
+  // that a will replace the current row in _X and provide the determinant with the maximum volume
   for (auto i = 0; i < U.rows(); ++i)
   {
-    X.row(X_rid) = U.row(i);
-    const float volume = std::abs(X.determinant());
-    if (volume > max_volume)
+    float vol = std::abs(U.row(i) * phi);
+    if (vol > max_volume)
     {
-      max_volume = volume;
+      max_volume = vol;
       U_rid = i;
     }
   }
-  X.row(X_rid) = original_row;
-
-  assert(max_volume >= 0.0f);
 }
 
-template <typename randomized_svd_impl>
+template <typename randomized_svd_impl, typename spanner_impl>
 struct cb_explore_adf_large_action_space
 {
 private:
@@ -186,7 +174,7 @@ private:
   implementation_type _impl_type;
 
 public:
-  spanner_state _spanner_state;
+  spanner_impl _spanner_state;
   shrink_factor_config _shrink_factor_config;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
@@ -206,8 +194,19 @@ public:
   void randomized_SVD(const multi_ex& examples);
 
   // the below methods are used only during unit testing and are not called otherwise
-  void _populate_all_testing_components();
-  void _set_rank(uint64_t rank);
+  void _populate_all_testing_components()
+  {
+    _set_testing_components = true;
+    _impl._set_testing_components = true;
+  }
+
+  void _set_rank(uint64_t rank)
+  {
+    _d = rank;
+    _impl._set_rank(rank);
+    _spanner_state._action_indices.resize(_d);
+  }
+
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::SparseMatrix<float> _A;
   Eigen::VectorXf _S;
@@ -217,6 +216,46 @@ private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
+};
+
+template <typename randomized_svd_impl, typename spanner_impl>
+struct cb_explore_adf_large_action_space_impl
+    : public cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>
+{
+  cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
+      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
+
+  ~cb_explore_adf_large_action_space_impl() = default;
+};
+
+template <typename spanner_impl>
+struct cb_explore_adf_large_action_space_impl<vanilla_rand_svd_impl, spanner_impl>
+    : public cb_explore_adf_large_action_space<vanilla_rand_svd_impl, spanner_impl>
+{
+  cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
+      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
+
+  ~cb_explore_adf_large_action_space_impl() = default;
+};
+
+template <typename spanner_impl>
+struct cb_explore_adf_large_action_space_impl<model_weight_rand_svd_impl, spanner_impl>
+    : public cb_explore_adf_large_action_space<model_weight_rand_svd_impl, spanner_impl>
+{
+  cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
+      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
+
+  ~cb_explore_adf_large_action_space_impl() = default;
+};
+
+template <typename spanner_impl>
+struct cb_explore_adf_large_action_space_impl<one_pass_svd_impl, spanner_impl>
+    : public cb_explore_adf_large_action_space<one_pass_svd_impl, spanner_impl>
+{
+  cb_explore_adf_large_action_space_impl(uint64_t d, float gamma_scale, float gamma_exponent, float c,
+      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
+
+  ~cb_explore_adf_large_action_space_impl() = default;
 };
 
 template <typename TripletType>

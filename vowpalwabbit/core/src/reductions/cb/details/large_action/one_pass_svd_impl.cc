@@ -90,7 +90,10 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
   }
 }
 
-one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed) : _all(all), _d(d), _seed(seed) {}
+one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t)
+    : _all(all), _d(d), _seed(seed)
+{
+}
 
 }  // namespace cb_explore_adf
 }  // namespace VW
