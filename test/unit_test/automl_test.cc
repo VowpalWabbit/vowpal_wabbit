@@ -416,3 +416,81 @@ BOOST_AUTO_TEST_CASE(automl_q_col_consistency)
 
   BOOST_CHECK_CLOSE(ctr_q_col.back(), ctr_aml.back(), FLOAT_TOL);
 }
+
+BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
+{
+  using namespace VW::reductions::automl;
+
+  const size_t num_iterations = 2;
+  callback_map test_hooks;
+  // const std::vector<uint64_t> swap_after = {500};
+  const size_t seed = 88;
+
+  test_hooks.emplace(0, [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&) {
+    const size_t CHAMP = 0;
+    VW::reductions::automl::automl<
+        interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>>>* aml =
+        aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
+
+    config_oracle<one_diff_impl>& co = aml->cm->_config_oracle;
+    auto rand_state = all.get_random_state();
+
+    std::map<namespace_index, uint64_t> ns_counter;
+    std::priority_queue<std::pair<float, uint64_t>> index_queue;
+    std::vector<exclusion_config> configs;
+    std::vector<std::pair<aml_estimator, VW::estimator_config>> estimators;
+
+    config_oracle<one_diff_impl> oracle(aml->cm->global_lease, co.calc_priority, index_queue, ns_counter, configs,
+        co._interaction_type, co._oracle_type, rand_state);
+
+    ns_counter['A'] = 1;
+    ns_counter['B'] = 1;
+
+    BOOST_CHECK_EQUAL(configs.size(), 0);
+    BOOST_CHECK_EQUAL(estimators.size(), 0);
+    interaction_config_manager<config_oracle<one_diff_impl>>::insert_qcolcol(
+        estimators, oracle, aml->cm->automl_significance_level, aml->cm->automl_estimator_decay);
+    BOOST_CHECK_EQUAL(configs.size(), 1);
+    BOOST_CHECK_EQUAL(estimators.size(), 1);
+    auto& champ_interactions = estimators[CHAMP].first.live_interactions;
+
+    BOOST_CHECK_EQUAL(champ_interactions.size(), 0);
+    gen_interactions(false, ns_counter, oracle._interaction_type, configs, estimators, 0);
+    BOOST_CHECK_EQUAL(champ_interactions.size(), 3);
+
+    std::vector<namespace_index> first = {'A', 'A'};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        champ_interactions[0].begin(), champ_interactions[0].end(), first.begin(), first.end());
+    std::vector<namespace_index> second = {'A', 'B'};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        champ_interactions[1].begin(), champ_interactions[1].end(), second.begin(), second.end());
+    std::vector<namespace_index> third = {'B', 'B'};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        champ_interactions[2].begin(), champ_interactions[2].end(), third.begin(), third.end());
+
+    BOOST_CHECK_EQUAL(configs.size(), 1);
+    oracle.do_work(estimators, CHAMP);
+    BOOST_CHECK_EQUAL(configs.size(), 4);
+
+    std::set<std::vector<namespace_index>> excl_0{};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_0.begin(), excl_0.end());
+    std::set<std::vector<namespace_index>> excl_1{{'A', 'A'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_1.begin(), excl_1.end());
+    std::set<std::vector<namespace_index>> excl_2{{'A', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_2.begin(), excl_2.end());
+    std::set<std::vector<namespace_index>> excl_3{{'B', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_3.begin(), excl_3.end());
+
+    return true;
+  });
+
+  auto ctr = simulator::_test_helper_hook(
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
+      "--random_seed 5 "
+      "--global_lease 500 --oracle_type one_diff --noconstant ",
+      test_hooks, num_iterations, seed);
+}
