@@ -2632,7 +2632,7 @@ void parse_neighbor_features(
     {
       logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview);
     }
-    int32_t enc = (posn << 24) | (ns & 0xFF);
+    int32_t enc = static_cast<int32_t>((static_cast<uint32_t>(posn) << 24) | (ns & 0xFF));
     neighbor_features.push_back(enc);
   }
 }
