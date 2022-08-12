@@ -145,8 +145,8 @@ public:
   std::vector<uint64_t> _action_indices;
   spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
 
-  void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
-  void compute_spanner1(const Eigen::MatrixXf& U, size_t _d);
+  void compute_spanner_one_rank(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
+  void compute_spanner(const Eigen::MatrixXf& U, size_t _d);
 };
 
 inline void find_max_volume(

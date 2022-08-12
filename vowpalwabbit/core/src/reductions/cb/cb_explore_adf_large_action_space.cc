@@ -105,8 +105,7 @@ void cb_explore_adf_large_action_space<impl_detail>::update_example_prediction(V
       return;
     }
 
-    _spanner_state.compute_spanner(U, _d, shrink_factors);
-    // _spanner_state.compute_spanner1(U, _d);
+    _spanner_state.compute_spanner_one_rank(U, _d, shrink_factors);
 
     assert(_spanner_state._spanner_bitvec.size() == preds.size());
   }
@@ -119,9 +118,11 @@ void cb_explore_adf_large_action_space<impl_detail>::update_example_prediction(V
   // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
   // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later
   // if the --full_predictions flag is supplied.
-  for (auto it = preds.begin(); it != preds.end(); it++)
+  auto it = preds.begin();
+  while (it != preds.end())
   {
-    if (!_spanner_state._spanner_bitvec[it->action]) { preds.erase(it--); }
+    if (!_spanner_state._spanner_bitvec[it->action]) { preds.erase(it); }
+    else { it++; }
   }
 }
 
