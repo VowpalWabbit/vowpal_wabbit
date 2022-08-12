@@ -90,8 +90,8 @@ void config_oracle<oracle_impl>::insert_config(std::set<std::vector<namespace_in
   ++valid_config_size;
 }
 
-void oracle_rand_impl::do_work(config_oracle<oracle_rand_impl>* co,
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+void oracle_rand_impl::do_work(
+    config_oracle<oracle_rand_impl>* co, estimator_vec_t& estimators, const uint64_t current_champ)
 {
   auto& champ_interactions = estimators[current_champ].first.live_interactions;
   for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
@@ -121,8 +121,7 @@ void oracle_rand_impl::do_work(config_oracle<oracle_rand_impl>* co,
     co->insert_config(std::move(new_exclusions));
   }
 }
-void one_diff_impl::do_work(config_oracle<one_diff_impl>* co,
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+void one_diff_impl::do_work(config_oracle<one_diff_impl>* co, estimator_vec_t& estimators, const uint64_t current_champ)
 {
   auto& champ_interactions = estimators[current_champ].first.live_interactions;
   // Add one exclusion (for each interaction)
@@ -162,8 +161,8 @@ void one_diff_impl::do_work(config_oracle<one_diff_impl>* co,
     co->insert_config(std::move(new_exclusions));
   }
 }
-void champdupe_impl::do_work(config_oracle<champdupe_impl>* co,
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+void champdupe_impl::do_work(
+    config_oracle<champdupe_impl>* co, estimator_vec_t& estimators, const uint64_t current_champ)
 {
   for (uint64_t i = 0; co->configs.size() <= 2; ++i)
   {
@@ -179,8 +178,7 @@ void champdupe_impl::do_work(config_oracle<champdupe_impl>* co,
 // of configs to generate per champ is hard-coded to 5 at the moment.
 // TODO: Add logic to avoid duplicate configs (could be very costly)
 template <typename oracle_impl>
-void config_oracle<oracle_impl>::do_work(
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+void config_oracle<oracle_impl>::do_work(estimator_vec_t& estimators, const uint64_t current_champ)
 {
   _impl.do_work(this, estimators, current_champ);
 }

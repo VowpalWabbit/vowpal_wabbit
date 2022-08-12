@@ -19,8 +19,7 @@ namespace automl
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
 void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
-    std::vector<exclusion_config>& configs, std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
-    uint64_t live_slot)
+    std::vector<exclusion_config>& configs, estimator_vec_t& estimators, uint64_t live_slot)
 {
   if (interaction_type == "quadratic")
   {

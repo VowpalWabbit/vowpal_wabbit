@@ -83,8 +83,7 @@ interaction_config_manager<config_oracle_impl>::interaction_config_manager(uint6
 
 template <typename config_oracle_impl>
 void interaction_config_manager<config_oracle_impl>::insert_qcolcol(
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, config_oracle_impl& config_oracle,
-    double sig_level, double decay)
+    estimator_vec_t& estimators, config_oracle_impl& config_oracle, double sig_level, double decay)
 {
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() == 0);
@@ -100,7 +99,7 @@ void interaction_config_manager<config_oracle_impl>::insert_qcolcol(
 
 template <typename config_oracle_impl>
 bool interaction_config_manager<config_oracle_impl>::swap_eligible_to_inactivate(
-    bool lb_trick, std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t live_slot)
+    bool lb_trick, estimator_vec_t& estimators, uint64_t live_slot)
 {
   const uint64_t current_champ = 0;
   for (uint64_t other_live_slot = 0; other_live_slot < estimators.size(); ++other_live_slot)
@@ -238,8 +237,7 @@ void interaction_config_manager<config_oracle_impl>::update_champ()
 
 template <typename config_oracle_impl>
 void interaction_config_manager<config_oracle_impl>::apply_new_champ_config(const uint64_t winning_challenger_slot,
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, std::vector<exclusion_config>& configs,
-    uint64_t priority_challengers, bool lb_trick)
+    estimator_vec_t& estimators, std::vector<exclusion_config>& configs, uint64_t priority_challengers, bool lb_trick)
 {
   const uint64_t old_champ_slot = 0;
 

@@ -46,6 +46,8 @@ struct aml_estimator : VW::estimator_config
   void persist(metric_sink&, const std::string&, bool, const std::string&);
 };
 
+using estimator_vec_t = std::vector<std::pair<aml_estimator, estimator_config>>;
+
 // all possible states of exclusion config
 enum class config_state
 {
@@ -105,7 +107,7 @@ struct config_oracle
       std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
       std::shared_ptr<VW::rand_state>& rand_state);
 
-  void do_work(std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void do_work(estimator_vec_t& estimators, const uint64_t current_champ);
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
   bool repopulate_index_queue();
   void insert_qcolcol();
@@ -115,18 +117,16 @@ struct oracle_rand_impl
 {
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void do_work(config_oracle<oracle_rand_impl>* config_oracle,
-      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void do_work(
+      config_oracle<oracle_rand_impl>* config_oracle, estimator_vec_t& estimators, const uint64_t current_champ);
 };
 struct one_diff_impl
 {
-  void do_work(config_oracle<one_diff_impl>* config_oracle,
-      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void do_work(config_oracle<one_diff_impl>* config_oracle, estimator_vec_t& estimators, const uint64_t current_champ);
 };
 struct champdupe_impl
 {
-  void do_work(config_oracle<champdupe_impl>* config_oracle,
-      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void do_work(config_oracle<champdupe_impl>* config_oracle, estimator_vec_t& estimators, const uint64_t current_champ);
 };
 
 template <typename config_oracle_impl>
@@ -166,7 +166,7 @@ struct interaction_config_manager : config_manager
   // Stores estimators of live configs, size will never exceed max_live_configs. Each pair will be of the form
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
-  std::vector<std::pair<aml_estimator, estimator_config>> estimators;
+  estimator_vec_t estimators;
 
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
@@ -182,22 +182,19 @@ struct interaction_config_manager : config_manager
   // Public Chacha functions
   void schedule();
   void update_champ();
-  static void apply_new_champ_config(const uint64_t winning_challenger_slot,
-      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, std::vector<exclusion_config>& configs,
-      uint64_t priority_challengers, bool lb_trick);
-  static void insert_qcolcol(std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
-      config_oracle_impl& config_oracle, double sig_level, double decay);
+  static void apply_new_champ_config(const uint64_t winning_challenger_slot, estimator_vec_t& estimators,
+      std::vector<exclusion_config>& configs, uint64_t priority_challengers, bool lb_trick);
+  static void insert_qcolcol(
+      estimator_vec_t& estimators, config_oracle_impl& config_oracle, double sig_level, double decay);
 
 private:
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
-  static bool swap_eligible_to_inactivate(
-      bool lb_trick, std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t);
+  static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t& estimators, uint64_t);
 };
 
 bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
 void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
-    std::vector<exclusion_config>& configs, std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
-    uint64_t live_slot);
+    std::vector<exclusion_config>& configs, estimator_vec_t& estimators, uint64_t live_slot);
 
 template <typename CMType>
 struct automl
