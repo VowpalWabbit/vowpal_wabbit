@@ -206,15 +206,32 @@ void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* 
   {
     auto feature_name = (ns->feature_names())->begin();
     auto feature_value = (ns->feature_values())->begin();
-    //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
-    for (;feature_value != (ns->feature_values())->end(); *feature_value++, *feature_name++)
+
+    if(ns->feature_hashes() != nullptr)
     {
-      uint64_t word_hash = all->example_parser->hasher(feature_name->c_str(), feature_name->size(), _c_hash);
-      fs.push_back(*feature_value, word_hash);
-      // if ((all->audit || all->hash_inv) && ns->name() != nullptr)
-      //Updated according to the audit case
-      if (ns->name() != nullptr)
-      { fs.space_names.push_back(audit_strings(ns->name()->c_str(), feature_name->c_str())); }
+      auto feature_hash = (ns->feature_hashes())->begin();
+      //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
+      for (;feature_value != (ns->feature_values())->end(); *feature_value++, *feature_name++, *feature_hash++)
+      {
+        fs.push_back(*feature_value, *feature_hash);
+        // if ((all->audit || all->hash_inv) && ns->name() != nullptr)
+        //Updated according to the audit case
+        if (ns->name() != nullptr)
+        { fs.space_names.push_back(audit_strings(ns->name()->c_str(), feature_name->c_str())); }
+      }
+    }
+    else
+    {
+      //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
+      for (;feature_value != (ns->feature_values())->end(); *feature_value++, *feature_name++)
+      {
+        uint64_t word_hash = all->example_parser->hasher(feature_name->c_str(), feature_name->size(), _c_hash);
+        fs.push_back(*feature_value, word_hash);
+        // if ((all->audit || all->hash_inv) && ns->name() != nullptr)
+        //Updated according to the audit case
+        if (ns->name() != nullptr)
+        { fs.space_names.push_back(audit_strings(ns->name()->c_str(), feature_name->c_str())); }
+      }
     }
   }
   else
