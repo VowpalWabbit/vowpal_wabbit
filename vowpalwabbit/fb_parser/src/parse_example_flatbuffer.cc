@@ -203,44 +203,44 @@ void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* 
   if (hash_found) { fs.start_ns_extent(hash); }
   
   auto feature_value_iter = (ns->feature_values())->begin();
-  auto feature_value_iter_end = (ns->feature_values())->end();
+  const auto feature_value_iter_end = (ns->feature_values())->end();
+  //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
 
   if(ns->feature_names() != nullptr)
   {
-    auto ns_name = ns->name();
-    auto feature_name = (ns->feature_names())->begin();
+    const auto ns_name = ns->name();
+    auto feature_name_iter = (ns->feature_names())->begin();
 
     if(ns->feature_hashes() != nullptr)
     {
       auto feature_hash_iter = (ns->feature_hashes())->begin();
       
-      //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
-      for (;feature_value_iter != feature_value_iter_end; feature_value_iter++, feature_hash_iter++)
+      for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
       {
         fs.push_back(*feature_value_iter, *feature_hash_iter);
         if (ns_name != nullptr)
         { 
-          fs.space_names.push_back(audit_strings(ns_name->c_str(), feature_name->c_str())); 
-          feature_name++;
+          fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); 
+          ++feature_name_iter;
         }
       }
     }
     else
     {
       //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
-      for (;feature_value_iter != feature_value_iter_end; feature_value_iter++, feature_name++)
+      for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_name_iter)
       {
-        uint64_t word_hash = all->example_parser->hasher(feature_name->c_str(), feature_name->size(), _c_hash);
+        const uint64_t word_hash = all->example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash);
         fs.push_back(*feature_value_iter, word_hash);
         if (ns_name != nullptr)
-        { fs.space_names.push_back(audit_strings(ns_name->c_str(), feature_name->c_str())); }
+        { fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); }
       }
     }
   }
   else
   {
     auto feature_hash_iter = (ns->feature_hashes())->begin();  
-    for (;feature_value_iter != feature_value_iter_end; feature_value_iter++, feature_hash_iter++)
+    for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
     {
       fs.push_back(*feature_value_iter, *feature_hash_iter);
     }
