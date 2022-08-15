@@ -281,9 +281,6 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examp
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las, gen_cb_examples(1, 50, 20, 311, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_aatop, gen_cb_examples(1, 50, 20, 311, 1, 1, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --aatop --quiet")
-    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_model_weight, gen_cb_examples(1, 50, 20, 300, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --model_weight --quiet")
     ->MinTime(15.0);
@@ -296,9 +293,6 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_plaincb, gen_cb_examples(1, 50
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large, gen_cb_examples(1, 50, 50, 311, 1, 1, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
-    ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_aatop, gen_cb_examples(1, 50, 50, 311, 1, 1, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --aatop --quiet")
     ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_model_weight,
     gen_cb_examples(1, 50, 50, 300, 1, 1, 20, 10, false),
