@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
 
   json_help_formatter formatter(std::move(doc));
   std::cout << formatter.format_help(vw->options->get_all_option_group_definitions()) << std::endl;
-  ;
+  
   delete vw;
 
   return 0;
