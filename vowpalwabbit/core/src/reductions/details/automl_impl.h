@@ -81,7 +81,7 @@ struct config_manager
 
   // Public Chacha functions
   void schedule();
-  void update_champ();
+  void check_for_new_champ();
 };
 
 using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
@@ -176,7 +176,7 @@ struct interaction_config_manager : config_manager
 
   // Public Chacha functions
   void schedule();
-  void update_champ();
+  void check_for_new_champ();
   static void apply_config_at_slot(estimator_vec_t& estimators, std::vector<exclusion_config>& configs,
       const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double decay,
       const uint64_t priority_challengers);

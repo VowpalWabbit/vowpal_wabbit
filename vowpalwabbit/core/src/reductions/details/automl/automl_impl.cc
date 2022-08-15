@@ -215,7 +215,7 @@ bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ)
 }
 
 template <typename config_oracle_impl>
-void interaction_config_manager<config_oracle_impl>::update_champ()
+void interaction_config_manager<config_oracle_impl>::check_for_new_champ()
 {
   bool champ_change = false;
   uint64_t old_champ_slot = current_champ;
@@ -372,7 +372,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
       }
       cm->schedule();
       offset_learn(base, ec, logged, labelled_action);
-      cm->update_champ();
+      cm->check_for_new_champ();
       break;
 
     default:
