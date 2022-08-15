@@ -460,7 +460,9 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     auto& champ_interactions = estimators[CHAMP].first.live_interactions;
 
     BOOST_CHECK_EQUAL(champ_interactions.size(), 0);
-    gen_interactions(false, ns_counter, oracle._interaction_type, configs, estimators, 0);
+    auto& exclusions = oracle.configs[estimators[0].first.config_index].exclusions;
+    auto& interactions = estimators[0].first.live_interactions;
+    gen_interactions_from_exclusions(false, ns_counter, oracle._interaction_type, exclusions, interactions);
     BOOST_CHECK_EQUAL(champ_interactions.size(), 3);
 
     const std::vector<namespace_index> first = {'A', 'A'};
@@ -474,7 +476,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
         champ_interactions[2].begin(), champ_interactions[2].end(), third.begin(), third.end());
 
     BOOST_CHECK_EQUAL(configs.size(), 1);
-    oracle.gen_exclusion_configs(estimators, CHAMP);
+    oracle.gen_exclusion_configs(estimators[CHAMP].first.live_interactions);
     BOOST_CHECK_EQUAL(configs.size(), 4);
     BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
@@ -498,7 +500,9 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
       interaction_config_manager<config_oracle<one_diff_impl>>::apply_config_at_slot(estimators, oracle.configs, i,
           interaction_config_manager<config_oracle<one_diff_impl>>::choose(oracle.index_queue),
           aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
-      gen_interactions(false, ns_counter, oracle._interaction_type, configs, estimators, i);
+      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index].exclusions;
+      auto& temp_interactions = estimators[i].first.live_interactions;
+      gen_interactions_from_exclusions(false, ns_counter, oracle._interaction_type, temp_exclusions, temp_interactions);
     }
     BOOST_CHECK_EQUAL(prio_queue.size(), 0);
     BOOST_CHECK_EQUAL(estimators.size(), 4);
