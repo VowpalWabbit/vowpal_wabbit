@@ -6,11 +6,11 @@
 
 #include "details/automl_impl.h"
 #include "vw/config/options.h"
-#include "vw/core/shared_data.h"
 
-// TODO: delete this two includes
+// TODO: delete this three includes
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/gd.h"
+#include "vw/core/shared_data.h"
 
 #include <cfloat>
 
