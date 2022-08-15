@@ -444,16 +444,19 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
         aml->cm->global_lease, co.calc_priority, ns_counter, co._interaction_type, co._oracle_type, rand_state);
 
     auto& configs = oracle.configs;
+    auto& prio_queue = oracle.index_queue;
 
     ns_counter['A'] = 1;
     ns_counter['B'] = 1;
 
     BOOST_CHECK_EQUAL(configs.size(), 0);
     BOOST_CHECK_EQUAL(estimators.size(), 0);
+    BOOST_CHECK_EQUAL(prio_queue.size(), 0);
     interaction_config_manager<config_oracle<one_diff_impl>>::insert_qcolcol(
         estimators, oracle, aml->cm->automl_significance_level, aml->cm->automl_estimator_decay);
     BOOST_CHECK_EQUAL(configs.size(), 1);
     BOOST_CHECK_EQUAL(estimators.size(), 1);
+    BOOST_CHECK_EQUAL(prio_queue.size(), 0);
     auto& champ_interactions = estimators[CHAMP].first.live_interactions;
 
     BOOST_CHECK_EQUAL(champ_interactions.size(), 0);
@@ -473,6 +476,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL(configs.size(), 1);
     oracle.do_work(estimators, CHAMP);
     BOOST_CHECK_EQUAL(configs.size(), 4);
+    BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
     std::set<std::vector<namespace_index>> excl_0{};
     BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -494,6 +498,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
       estimators.emplace_back(
           std::make_pair(aml_estimator(aml->cm->automl_significance_level, aml->cm->automl_estimator_decay),
               VW::estimator_config(aml->cm->automl_significance_level, aml->cm->automl_estimator_decay)));
+      // todo: pop from prio queue
       estimators[i].first.config_index = i;
       // mock correctly: use live, generate interactions
     }
