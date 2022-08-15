@@ -251,6 +251,8 @@ void shrink_factor_config::calculate_shrink_factor(
     shrink_factors.resize(preds.size(), 1.f);
   }
 }
+
+template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 
