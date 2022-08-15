@@ -170,8 +170,9 @@ void interaction_config_manager<config_oracle_impl>::schedule()
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      gen_interactions_from_exclusions(
-          _ccb_on, ns_counter, interaction_type, _config_oracle.configs, estimators, live_slot);
+      gen_interactions_from_exclusions(_ccb_on, ns_counter, interaction_type,
+          _config_oracle.configs[estimators[live_slot].first.config_index].exclusions,
+          estimators[live_slot].first.live_interactions);
     }
   }
 }
@@ -351,8 +352,9 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
       {
         for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
         {
-          gen_interactions_from_exclusions(
-              cm->_ccb_on, cm->ns_counter, cm->interaction_type, cm->_config_oracle.configs, cm->estimators, live_slot);
+          auto& exclusions = cm->_config_oracle.configs[cm->estimators[live_slot].first.config_index].exclusions;
+          auto& interactions = cm->estimators[live_slot].first.live_interactions;
+          gen_interactions_from_exclusions(cm->_ccb_on, cm->ns_counter, cm->interaction_type, exclusions, interactions);
         }
       }
       cm->_config_oracle.gen_exclusion_configs(cm->estimators[cm->current_champ].first.live_interactions);
@@ -367,8 +369,9 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
       {
         for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
         {
-          gen_interactions_from_exclusions(
-              cm->_ccb_on, cm->ns_counter, cm->interaction_type, cm->_config_oracle.configs, cm->estimators, live_slot);
+          auto& exclusions = cm->_config_oracle.configs[cm->estimators[live_slot].first.config_index].exclusions;
+          auto& interactions = cm->estimators[live_slot].first.live_interactions;
+          gen_interactions_from_exclusions(cm->_ccb_on, cm->ns_counter, cm->interaction_type, exclusions, interactions);
         }
       }
       cm->schedule();
