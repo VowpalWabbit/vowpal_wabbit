@@ -13,12 +13,15 @@
 
 #include <boost/test/unit_test.hpp>
 
-using internal_action_space = VW::cb_explore_adf::cb_explore_adf_base<
-    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::vanilla_rand_svd_impl>>;
-using internal_action_space_mw = VW::cb_explore_adf::cb_explore_adf_base<
-    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::model_weight_rand_svd_impl>>;
-using internal_action_space_op = VW::cb_explore_adf::cb_explore_adf_base<
-    VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::one_pass_svd_impl>>;
+using internal_action_space =
+    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
+        VW::cb_explore_adf::vanilla_rand_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
+using internal_action_space_mw =
+    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
+        VW::cb_explore_adf::model_weight_rand_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
+using internal_action_space_op =
+    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
+        VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
 BOOST_AUTO_TEST_SUITE(test_suite_las)
 
@@ -78,55 +81,6 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
             action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())), ft_value);
       }
     }
-
-    vw.finish_example(examples);
-  }
-  VW::finish(vw);
-}
-
-BOOST_AUTO_TEST_CASE(creation_of_AAtop)
-{
-  auto d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --squarecb --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
-      nullptr, false, nullptr, nullptr);
-
-  std::vector<std::string> e_r;
-  vw.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
-
-  VW::LEARNER::multi_learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-
-  BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
-  VW::cb_explore_adf::aatop_impl _aatop_impl(&vw);
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.2 3:0.3"));
-    examples.push_back(VW::read_example(vw, " | 2:0.1 3:0.2 4:0.3"));
-
-    vw.predict(examples);
-    auto& preds = examples[0]->pred.a_s;
-    action_space->explore._shrink_factor_config.calculate_shrink_factor(
-        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-
-    VW::cb_explore_adf::_generate_A(&vw, examples, _aatop_impl._triplets, action_space->explore._A);
-    _aatop_impl.run(examples, action_space->explore.shrink_factors);
-
-    Eigen::SparseMatrix<float> diag_M(examples.size(), examples.size());
-
-    for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
-    { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
-
-    Eigen::MatrixXf AAtop = diag_M * action_space->explore._A * action_space->explore._A.transpose() * diag_M;
-
-    BOOST_CHECK_EQUAL(AAtop.isApprox(_aatop_impl.AAtop), true);
 
     vw.finish_example(examples);
   }
@@ -704,7 +658,8 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 
 template <typename T>
 void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
-    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<T>>* action_space,
+    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<T,
+        VW::cb_explore_adf::one_rank_spanner_state>>* action_space,
     bool apply_diag_M, std::vector<Eigen::Triplet<float>> _triplets, uint64_t d)
 {
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
@@ -951,24 +906,33 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
           std::to_string(d) + " --quiet --random_seed 5",
       nullptr, false, nullptr, nullptr);
   uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
-  VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::model_weight_rand_svd_impl> largecb(
-      /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits,
-      VW::cb_explore_adf::implementation_type::model_weight_rand_svd);
+  VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::one_pass_svd_impl,
+      VW::cb_explore_adf::one_rank_spanner_state>
+      largecb(
+          /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits,
+          VW::cb_explore_adf::implementation_type::one_pass_svd);
   largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
 
   float max_volume;
   uint64_t U_rid;
-  VW::cb_explore_adf::find_max_volume(largecb.U, 0, X, max_volume, U_rid);
-  BOOST_CHECK_SMALL(max_volume - 30, FLOAT_TOL);
+
+  // volume is scaled with one rank spanner
+
+  Eigen::MatrixXf X_inv = X.inverse();
+  Eigen::VectorXf phi = X_inv.row(0);
+  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  BOOST_CHECK_SMALL(max_volume - 2.08333349f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 2);
 
-  VW::cb_explore_adf::find_max_volume(largecb.U, 1, X, max_volume, U_rid);
-  BOOST_CHECK_SMALL(max_volume - 27, FLOAT_TOL);
+  phi = X_inv.row(1);
+  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  BOOST_CHECK_SMALL(max_volume - 3.33333278f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 4);
 
-  VW::cb_explore_adf::find_max_volume(largecb.U, 2, X, max_volume, U_rid);
-  BOOST_CHECK_SMALL(max_volume - 24, FLOAT_TOL);
+  phi = X_inv.row(2);
+  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  BOOST_CHECK_SMALL(max_volume - 2.16666675f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 5);
 
   VW::finish(vw);
