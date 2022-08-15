@@ -109,7 +109,7 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   bytes += read_model_field(io, cm.per_live_model_state_uint64);
   for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot)
   {
-    gen_interactions(
+    gen_interactions_from_exclusions(
         cm._ccb_on, cm.ns_counter, cm.interaction_type, cm._config_oracle.configs, cm.estimators, live_slot);
   }
   return bytes;

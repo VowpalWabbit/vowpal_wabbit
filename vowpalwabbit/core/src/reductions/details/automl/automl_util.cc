@@ -18,8 +18,9 @@ namespace automl
 // from the corresponding live_slot. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
-    std::vector<exclusion_config>& configs, estimator_vec_t& estimators, uint64_t live_slot)
+void gen_interactions_from_exclusions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter,
+    std::string& interaction_type, std::vector<exclusion_config>& configs, estimator_vec_t& estimators,
+    uint64_t live_slot)
 {
   if (interaction_type == "quadratic")
   {
