@@ -27,13 +27,15 @@ constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 
 using interaction_vec_t = std::vector<std::vector<namespace_index>>;
 
-struct aml_estimator : VW::estimator_config
+template <typename estimator_impl>
+struct aml_estimator
 {
-  aml_estimator() : VW::estimator_config() {}
-  aml_estimator(double alpha, double tau) : VW::estimator_config(alpha, tau) {}
+  estimator_impl _estimator;
+  aml_estimator() : _estimator(estimator_impl()) {}
+  aml_estimator(double alpha, double tau) : _estimator(estimator_impl(alpha, tau)) {}
   aml_estimator(
-      VW::estimator_config sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
-      : VW::estimator_config(sc)
+      estimator_impl sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
+      : _estimator(sc)
   {
     this->config_index = config_index;
     this->eligible_to_inactivate = eligible_to_inactivate;
@@ -46,7 +48,9 @@ struct aml_estimator : VW::estimator_config
   void persist(metric_sink&, const std::string&, bool, const std::string&);
 };
 
-using estimator_vec_t = std::vector<std::pair<aml_estimator, estimator_config>>;
+template struct aml_estimator<VW::estimator_config>;
+using aml_estimator_cress = aml_estimator<VW::estimator_config>;
+using estimator_vec_t = std::vector<std::pair<aml_estimator_cress, estimator_config>>;
 
 // all possible states of exclusion config
 enum class config_state
@@ -130,7 +134,7 @@ struct champdupe_impl
       std::vector<exclusion_config>& configs);
 };
 
-template <typename config_oracle_impl>
+template <typename config_oracle_impl, typename estimator_impl>
 struct interaction_config_manager : config_manager
 {
   uint64_t total_champ_switches = 0;
@@ -165,6 +169,7 @@ struct interaction_config_manager : config_manager
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
   estimator_vec_t estimators;
+  std::vector<std::pair<aml_estimator<estimator_impl>, estimator_impl>> estimators_2;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, const std::string&,
       const std::string&, dense_parameters&,
@@ -197,7 +202,7 @@ void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespac
 void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const unsigned char ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
-bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
+bool better(bool lb_trick, aml_estimator_cress& challenger, estimator_config& champ);
 bool worse();
 
 template <typename CMType>
@@ -239,16 +244,18 @@ namespace model_utils
 template <typename CMType>
 size_t write_model_field(io_buf&, const VW::reductions::automl::automl<CMType>&, const std::string&, bool);
 size_t read_model_field(io_buf&, VW::reductions::automl::exclusion_config&);
-size_t read_model_field(io_buf&, VW::reductions::automl::aml_estimator&);
-template <typename config_oracle_impl>
-size_t read_model_field(io_buf&, VW::reductions::automl::interaction_config_manager<config_oracle_impl>&);
+size_t read_model_field(io_buf&, VW::reductions::automl::aml_estimator_cress&);
+template <typename config_oracle_impl, typename estimator_impl>
+size_t read_model_field(
+    io_buf&, VW::reductions::automl::interaction_config_manager<config_oracle_impl, estimator_impl>&);
 template <typename CMType>
 size_t read_model_field(io_buf&, VW::reductions::automl::automl<CMType>&);
 size_t write_model_field(io_buf&, const VW::reductions::automl::exclusion_config&, const std::string&, bool);
-size_t write_model_field(io_buf&, const VW::reductions::automl::aml_estimator&, const std::string&, bool);
-template <typename config_oracle_impl>
-size_t write_model_field(
-    io_buf&, const VW::reductions::automl::interaction_config_manager<config_oracle_impl>&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::reductions::automl::aml_estimator_cress&, const std::string&, bool);
+template <typename config_oracle_impl, typename estimator_impl>
+size_t write_model_field(io_buf&,
+    const VW::reductions::automl::interaction_config_manager<config_oracle_impl, estimator_impl>&, const std::string&,
+    bool);
 }  // namespace model_utils
 VW::string_view to_string(reductions::automl::automl_state state);
 VW::string_view to_string(reductions::automl::config_state state);
