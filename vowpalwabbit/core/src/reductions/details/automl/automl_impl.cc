@@ -309,7 +309,7 @@ void interaction_config_manager<config_oracle_impl>::apply_new_champ(config_orac
     estimators[1].second.reset_stats();
   }
 
-  config_oracle.do_work(estimators, old_champ_slot);
+  config_oracle.gen_exclusion_configs(estimators, old_champ_slot);
 }
 
 template <typename config_oracle_impl>
@@ -354,7 +354,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
               cm->_ccb_on, cm->ns_counter, cm->interaction_type, cm->_config_oracle.configs, cm->estimators, live_slot);
         }
       }
-      cm->_config_oracle.do_work(cm->estimators, cm->current_champ);
+      cm->_config_oracle.gen_exclusion_configs(cm->estimators, cm->current_champ);
       offset_learn(base, ec, logged, labelled_action);
       current_state = automl_state::Experimenting;
       break;

@@ -474,7 +474,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
         champ_interactions[2].begin(), champ_interactions[2].end(), third.begin(), third.end());
 
     BOOST_CHECK_EQUAL(configs.size(), 1);
-    oracle.do_work(estimators, CHAMP);
+    oracle.gen_exclusion_configs(estimators, CHAMP);
     BOOST_CHECK_EQUAL(configs.size(), 4);
     BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
