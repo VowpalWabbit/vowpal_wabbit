@@ -168,6 +168,7 @@ struct interaction_config_manager : config_manager
   // horizon and the champ has one horizon for each challenger
   estimator_vec_t estimators;
 
+  // TODO: this should live in oracle
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
@@ -182,11 +183,14 @@ struct interaction_config_manager : config_manager
   // Public Chacha functions
   void schedule();
   void update_champ();
-  static void apply_new_champ_config(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
-      estimator_vec_t& estimators, std::vector<exclusion_config>& configs, uint64_t priority_challengers,
-      bool lb_trick);
+  static void apply_config_at_slot(estimator_vec_t& estimators, std::vector<exclusion_config>& configs,
+      const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double decay,
+      const uint64_t priority_challengers);
+  static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
+      estimator_vec_t& estimators, std::vector<exclusion_config>& configs, const uint64_t priority_challengers,
+      const bool lb_trick);
   static void insert_qcolcol(
-      estimator_vec_t& estimators, config_oracle_impl& config_oracle, double sig_level, double decay);
+      estimator_vec_t& estimators, config_oracle_impl& config_oracle, const double sig_level, const double decay);
 
 private:
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);

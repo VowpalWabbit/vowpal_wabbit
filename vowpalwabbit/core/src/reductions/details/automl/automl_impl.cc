@@ -83,7 +83,7 @@ interaction_config_manager<config_oracle_impl>::interaction_config_manager(uint6
 
 template <typename config_oracle_impl>
 void interaction_config_manager<config_oracle_impl>::insert_qcolcol(
-    estimator_vec_t& estimators, config_oracle_impl& config_oracle, double sig_level, double decay)
+    estimator_vec_t& estimators, config_oracle_impl& config_oracle, const double sig_level, const double decay)
 {
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() == 0);
@@ -149,28 +149,20 @@ void interaction_config_manager<config_oracle_impl>::schedule()
           configs[index_queue.top().second].state == VW::reductions::automl::config_state::Removed)
       { index_queue.pop(); }
       if (index_queue.empty() && !_config_oracle.repopulate_index_queue()) { continue; }
-      // Allocate new estimator if we haven't reached maximum yet
-      if (need_new_estimator)
-      {
-        estimators.emplace_back(std::make_pair(aml_estimator(automl_significance_level, automl_estimator_decay),
-            estimator_config(automl_significance_level, automl_estimator_decay)));
-        if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
-      }
-      assert(estimators.size() > live_slot);
+
       // Only inactivate current config if lease is reached
       if (!need_new_estimator &&
           configs[estimators[live_slot].first.config_index].state == VW::reductions::automl::config_state::Live)
       { configs[estimators[live_slot].first.config_index].state = VW::reductions::automl::config_state::Inactive; }
-      // Set all features of new live config
-      estimators[live_slot].first.reset_stats(automl_significance_level, automl_estimator_decay);
-      estimators[live_slot].second.reset_stats(automl_significance_level, automl_estimator_decay);
-      uint64_t new_live_config_index = choose(index_queue);
-      estimators[live_slot].first.config_index = new_live_config_index;
-      configs[new_live_config_index].state = VW::reductions::automl::config_state::Live;
+
+      assert(live_slot < max_live_configs);
+      // fetch config from the queue, and apply it current live slot
+      apply_config_at_slot(estimators, configs, live_slot, choose(index_queue), automl_significance_level,
+          automl_estimator_decay, priority_challengers);
+      // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
       gen_interactions(_ccb_on, ns_counter, interaction_type, configs, estimators, live_slot);
-      // We may also want to 0 out weights here? Currently keep all same in live_slot position
     }
   }
 }
@@ -182,6 +174,30 @@ uint64_t interaction_config_manager<config_oracle_impl>::choose(
   uint64_t ret = index_queue.top().second;
   index_queue.pop();
   return ret;
+}
+
+template <typename config_oracle_impl>
+void interaction_config_manager<config_oracle_impl>::apply_config_at_slot(estimator_vec_t& estimators,
+    std::vector<exclusion_config>& configs, const uint64_t live_slot, const uint64_t config_index,
+    const double sig_level, const double decay, const uint64_t priority_challengers)
+{
+  // Allocate new estimator if we haven't reached maximum yet
+  if (estimators.size() <= live_slot)
+  {
+    estimators.emplace_back(std::make_pair(aml_estimator(sig_level, decay), estimator_config(sig_level, decay)));
+    if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
+  }
+  assert(estimators.size() > live_slot);
+
+  // Set all features of new live config
+  estimators[live_slot].first.reset_stats(sig_level, decay);
+  estimators[live_slot].second.reset_stats(sig_level, decay);
+
+  estimators[live_slot].first.config_index = config_index;
+  configs[config_index].state = VW::reductions::automl::config_state::Live;
+
+  // We may also want to 0 out weights here? Currently keep all same in live_slot position
+  // TODO: reset stats of gd, cb_adf, sd patch , to default.. what is default?
 }
 
 bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ)
@@ -231,15 +247,14 @@ void interaction_config_manager<config_oracle_impl>::update_champ()
     weights.move_offsets(winning_challenger_slot, old_champ_slot, wpp, true);
     if (winning_challenger_slot != 1) { weights.move_offsets(winning_challenger_slot, 1, wpp, false); }
 
-    apply_new_champ_config(
-        _config_oracle, winning_challenger_slot, estimators, configs, priority_challengers, _lb_trick);
+    apply_new_champ(_config_oracle, winning_challenger_slot, estimators, configs, priority_challengers, _lb_trick);
   }
 }
 
 template <typename config_oracle_impl>
-void interaction_config_manager<config_oracle_impl>::apply_new_champ_config(config_oracle_impl& config_oracle,
+void interaction_config_manager<config_oracle_impl>::apply_new_champ(config_oracle_impl& config_oracle,
     const uint64_t winning_challenger_slot, estimator_vec_t& estimators, std::vector<exclusion_config>& configs,
-    uint64_t priority_challengers, bool lb_trick)
+    const uint64_t priority_challengers, const bool lb_trick)
 {
   const uint64_t old_champ_slot = 0;
 
