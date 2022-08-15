@@ -184,9 +184,9 @@ struct interaction_config_manager : config_manager
       estimator_vec_t& estimators, const uint64_t priority_challengers, const bool lb_trick);
   static void insert_qcolcol(
       estimator_vec_t& estimators, config_oracle_impl& config_oracle, const double sig_level, const double decay);
+  static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 
 private:
-  static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
   static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t& estimators, uint64_t);
 };
 

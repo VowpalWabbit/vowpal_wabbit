@@ -463,13 +463,13 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     gen_interactions(false, ns_counter, oracle._interaction_type, configs, estimators, 0);
     BOOST_CHECK_EQUAL(champ_interactions.size(), 3);
 
-    std::vector<namespace_index> first = {'A', 'A'};
+    const std::vector<namespace_index> first = {'A', 'A'};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         champ_interactions[0].begin(), champ_interactions[0].end(), first.begin(), first.end());
-    std::vector<namespace_index> second = {'A', 'B'};
+    const std::vector<namespace_index> second = {'A', 'B'};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         champ_interactions[1].begin(), champ_interactions[1].end(), second.begin(), second.end());
-    std::vector<namespace_index> third = {'B', 'B'};
+    const std::vector<namespace_index> third = {'B', 'B'};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         champ_interactions[2].begin(), champ_interactions[2].end(), third.begin(), third.end());
 
@@ -478,16 +478,16 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL(configs.size(), 4);
     BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
-    std::set<std::vector<namespace_index>> excl_0{};
+    const std::set<std::vector<namespace_index>> excl_0{};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_0.begin(), excl_0.end());
-    std::set<std::vector<namespace_index>> excl_1{{'A', 'A'}};
+    const std::set<std::vector<namespace_index>> excl_1{{'A', 'A'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_1.begin(), excl_1.end());
-    std::set<std::vector<namespace_index>> excl_2{{'A', 'B'}};
+    const std::set<std::vector<namespace_index>> excl_2{{'A', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_2.begin(), excl_2.end());
-    std::set<std::vector<namespace_index>> excl_3{{'B', 'B'}};
+    const std::set<std::vector<namespace_index>> excl_3{{'B', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_3.begin(), excl_3.end());
 
@@ -495,15 +495,15 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     // add dummy evaluators to simulate that all configs are in play
     for (size_t i = 1; i < configs.size(); ++i)
     {
-      estimators.emplace_back(
-          std::make_pair(aml_estimator(aml->cm->automl_significance_level, aml->cm->automl_estimator_decay),
-              VW::estimator_config(aml->cm->automl_significance_level, aml->cm->automl_estimator_decay)));
-      // todo: pop from prio queue
-      estimators[i].first.config_index = i;
-      // mock correctly: use live, generate interactions
+      interaction_config_manager<config_oracle<one_diff_impl>>::apply_config_at_slot(estimators, oracle.configs, i,
+          interaction_config_manager<config_oracle<one_diff_impl>>::choose(oracle.index_queue),
+          aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
+      gen_interactions(false, ns_counter, oracle._interaction_type, configs, estimators, i);
     }
+    BOOST_CHECK_EQUAL(prio_queue.size(), 0);
     BOOST_CHECK_EQUAL(estimators.size(), 4);
 
+    // excl_2 is now champ
     interaction_config_manager<config_oracle<one_diff_impl>>::apply_new_champ(oracle, 2, estimators, 0, false);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -511,10 +511,18 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_0.begin(), excl_0.end());
 
-    BOOST_CHECK_EQUAL(oracle.valid_config_size, 2);
-    // only 2 are valid, but the previous configs are still in the configs vector
-    // this is some sort of informal pool of objects
+    BOOST_CHECK_EQUAL(oracle.valid_config_size, 4);
     BOOST_CHECK_EQUAL(configs.size(), 4);
+
+    const std::set<std::vector<namespace_index>> excl_4{{'A', 'A'}, {'A', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_4.begin(), excl_4.end());
+    const std::set<std::vector<namespace_index>> excl_5{{'A', 'B'}, {'B', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_5.begin(), excl_5.end());
+
+    // the previous two exclusion configs are now inside the priority queue
+    BOOST_CHECK_EQUAL(prio_queue.size(), 2);
 
     return true;
   });
