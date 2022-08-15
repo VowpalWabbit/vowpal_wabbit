@@ -71,20 +71,22 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::reductions::automl::aml_estimator_cress& amls)
+template <typename estimator_impl>
+size_t read_model_field(io_buf& io, VW::reductions::automl::aml_estimator<estimator_impl>& amls)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, reinterpret_cast<VW::estimator_config&>(amls));
+  bytes += read_model_field(io, reinterpret_cast<estimator_impl&>(amls));
   bytes += read_model_field(io, amls.config_index);
   bytes += read_model_field(io, amls.eligible_to_inactivate);
   return bytes;
 }
 
-size_t write_model_field(
-    io_buf& io, const VW::reductions::automl::aml_estimator_cress& amls, const std::string& upstream_name, bool text)
+template <typename estimator_impl>
+size_t write_model_field(io_buf& io, const VW::reductions::automl::aml_estimator<estimator_impl>& amls,
+    const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, reinterpret_cast<const VW::estimator_config&>(amls), upstream_name, text);
+  bytes += write_model_field(io, reinterpret_cast<const estimator_impl&>(amls), upstream_name, text);
   bytes += write_model_field(io, amls.config_index, upstream_name + "_index", text);
   bytes += write_model_field(io, amls.eligible_to_inactivate, upstream_name + "_eligible_to_inactivate", text);
   return bytes;

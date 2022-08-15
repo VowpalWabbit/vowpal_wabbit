@@ -94,7 +94,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_qcol
   assert(config_oracle.configs.size() >= 1);
 
   config_oracle.configs[0].state = VW::reductions::automl::config_state::Live;
-  estimators.emplace_back(std::make_pair(aml_estimator_cress(sig_level, decay), estimator_config(sig_level, decay)));
+  estimators.emplace_back(
+      std::make_pair(aml_estimator<estimator_impl>(sig_level, decay), estimator_config(sig_level, decay)));
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -212,7 +213,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_confi
   // TODO: reset stats of gd, cb_adf, sd patch , to default.. what is default?
 }
 
-bool better(bool lb_trick, aml_estimator_cress& challenger, estimator_config& champ)
+template <typename estimator_impl>
+bool better(bool lb_trick, aml_estimator<estimator_impl>& challenger, estimator_impl& champ)
 {
   return lb_trick ? challenger._estimator.lower_bound() > (1.f - champ.lower_bound())
                   : challenger._estimator.lower_bound() > champ.upper_bound();
