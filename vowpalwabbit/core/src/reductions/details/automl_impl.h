@@ -191,6 +191,11 @@ private:
 bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
 void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
     std::vector<exclusion_config>& configs, estimator_vec_t& estimators, uint64_t live_slot);
+void apply_config(example* ec, interaction_vec_t* live_interactions);
+bool is_allowed_to_remove(const unsigned char ns);
+void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
+bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
+bool worse();
 
 template <typename CMType>
 struct automl
@@ -216,12 +221,6 @@ struct automl
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
-
-void apply_config(example* ec, interaction_vec_t* live_interactions);
-bool is_allowed_to_remove(const unsigned char ns);
-void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
-bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
-bool worse();
 }  // namespace automl
 
 namespace util
