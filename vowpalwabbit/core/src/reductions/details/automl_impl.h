@@ -92,20 +92,19 @@ struct config_oracle
   std::string _interaction_type;
   const std::string _oracle_type;
 
-  // insert_config(..)
-  std::priority_queue<std::pair<float, uint64_t>>& index_queue;
+  // Maybe not needed with oracle, maps priority to config index, unused configs
+  std::priority_queue<std::pair<float, uint64_t>> index_queue;
+  // Stores all configs in consideration
+  std::vector<exclusion_config> configs;
   std::map<namespace_index, uint64_t>& ns_counter;
-  std::vector<exclusion_config>& configs;
 
   priority_func* calc_priority;
   const uint64_t global_lease;
   uint64_t valid_config_size = 0;
   oracle_impl _impl;
 
-  config_oracle(uint64_t global_lease, priority_func* calc_priority,
-      std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
-      std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
-      std::shared_ptr<VW::rand_state>& rand_state);
+  config_oracle(uint64_t global_lease, priority_func* calc_priority, std::map<namespace_index, uint64_t>& ns_counter,
+      const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state);
 
   void do_work(estimator_vec_t& estimators, const uint64_t current_champ);
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
@@ -160,17 +159,10 @@ struct interaction_config_manager : config_manager
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
 
-  // Stores all configs in consideration
-  std::vector<exclusion_config> configs;
-
   // Stores estimators of live configs, size will never exceed max_live_configs. Each pair will be of the form
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
   estimator_vec_t estimators;
-
-  // TODO: this should live in oracle
-  // Maybe not needed with oracle, maps priority to config index, unused configs
-  std::priority_queue<std::pair<float, uint64_t>> index_queue;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, const std::string&,
       const std::string&, dense_parameters&,
@@ -187,8 +179,7 @@ struct interaction_config_manager : config_manager
       const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double decay,
       const uint64_t priority_challengers);
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
-      estimator_vec_t& estimators, std::vector<exclusion_config>& configs, const uint64_t priority_challengers,
-      const bool lb_trick);
+      estimator_vec_t& estimators, const uint64_t priority_challengers, const bool lb_trick);
   static void insert_qcolcol(
       estimator_vec_t& estimators, config_oracle_impl& config_oracle, const double sig_level, const double decay);
 
