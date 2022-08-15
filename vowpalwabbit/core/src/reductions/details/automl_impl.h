@@ -50,7 +50,8 @@ struct aml_estimator
 
 template struct aml_estimator<VW::estimator_config>;
 
-using estimator_vec_t = std::vector<std::pair<aml_estimator<VW::estimator_config>, estimator_config>>;
+template <typename estimator_impl>
+using estimator_vec_t = std::vector<std::pair<aml_estimator<estimator_impl>, estimator_impl>>;
 
 // all possible states of exclusion config
 enum class config_state
@@ -168,7 +169,7 @@ struct interaction_config_manager : config_manager
   // Stores estimators of live configs, size will never exceed max_live_configs. Each pair will be of the form
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
-  std::vector<std::pair<aml_estimator<estimator_impl>, estimator_impl>> estimators;
+  estimator_vec_t<estimator_impl> estimators;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, const std::string&,
       const std::string&, dense_parameters&,
@@ -181,17 +182,17 @@ struct interaction_config_manager : config_manager
   // Public Chacha functions
   void schedule();
   void check_for_new_champ();
-  static void apply_config_at_slot(estimator_vec_t& estimators, std::vector<exclusion_config>& configs,
+  static void apply_config_at_slot(estimator_vec_t<estimator_impl>& estimators, std::vector<exclusion_config>& configs,
       const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double decay,
       const uint64_t priority_challengers);
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
-      estimator_vec_t& estimators, const uint64_t priority_challengers, const bool lb_trick);
-  static void insert_qcolcol(
-      estimator_vec_t& estimators, config_oracle_impl& config_oracle, const double sig_level, const double decay);
+      estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers, const bool lb_trick);
+  static void insert_qcolcol(estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle,
+      const double sig_level, const double decay);
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 
 private:
-  static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t& estimators, uint64_t);
+  static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);
 };
 
 bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);

@@ -83,7 +83,8 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_qcolcol(
-    estimator_vec_t& estimators, config_oracle_impl& config_oracle, const double sig_level, const double decay)
+    estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level,
+    const double decay)
 {
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() == 0);
@@ -100,7 +101,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_qcol
 
 template <typename config_oracle_impl, typename estimator_impl>
 bool interaction_config_manager<config_oracle_impl, estimator_impl>::swap_eligible_to_inactivate(
-    bool lb_trick, estimator_vec_t& estimators, uint64_t live_slot)
+    bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t live_slot)
 {
   const uint64_t current_champ = 0;
   for (uint64_t other_live_slot = 0; other_live_slot < estimators.size(); ++other_live_slot)
@@ -189,9 +190,9 @@ uint64_t interaction_config_manager<config_oracle_impl, estimator_impl>::choose(
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
-void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_config_at_slot(estimator_vec_t& estimators,
-    std::vector<exclusion_config>& configs, const uint64_t live_slot, const uint64_t config_index,
-    const double sig_level, const double decay, const uint64_t priority_challengers)
+void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_config_at_slot(
+    estimator_vec_t<estimator_impl>& estimators, std::vector<exclusion_config>& configs, const uint64_t live_slot,
+    const uint64_t config_index, const double sig_level, const double decay, const uint64_t priority_challengers)
 {
   // Allocate new estimator if we haven't reached maximum yet
   if (estimators.size() <= live_slot)
@@ -268,8 +269,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_champ(config_oracle_impl& config_oracle,
-    const uint64_t winning_challenger_slot, estimator_vec_t& estimators, const uint64_t priority_challengers,
-    const bool lb_trick)
+    const uint64_t winning_challenger_slot, estimator_vec_t<estimator_impl>& estimators,
+    const uint64_t priority_challengers, const bool lb_trick)
 {
   const uint64_t champ_slot = 0;
 
