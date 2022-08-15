@@ -78,17 +78,6 @@ enum class automl_state
   Experimenting
 };
 
-struct config_manager
-{
-  void persist(metric_sink&, bool);
-  // config managers own the underlaying weights so they need to know how to clear
-  void clear_non_champ_weights();
-
-  // Public Chacha functions
-  void schedule();
-  void check_for_new_champ();
-};
-
 using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
 
 template <typename oracle_impl>
@@ -133,6 +122,17 @@ struct champdupe_impl
 {
   void gen_exclusion_configs(config_oracle<champdupe_impl>* co, const interaction_vec_t& champ_interactions,
       std::vector<exclusion_config>& configs);
+};
+
+struct config_manager
+{
+  void persist(metric_sink&, bool);
+  // config managers own the underlaying weights so they need to know how to clear
+  void clear_non_champ_weights();
+
+  // Public Chacha functions
+  void schedule();
+  void check_for_new_champ();
 };
 
 template <typename config_oracle_impl, typename estimator_impl>
