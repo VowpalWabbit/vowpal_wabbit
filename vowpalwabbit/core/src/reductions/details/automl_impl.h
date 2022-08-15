@@ -106,7 +106,7 @@ struct config_oracle
   config_oracle(uint64_t global_lease, priority_func* calc_priority, std::map<namespace_index, uint64_t>& ns_counter,
       const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state);
 
-  void gen_exclusion_configs(estimator_vec_t& estimators, const uint64_t current_champ);
+  void gen_exclusion_configs(const interaction_vec_t& champ_interactions);
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
   bool repopulate_index_queue();
   void insert_qcolcol();
@@ -116,18 +116,18 @@ struct oracle_rand_impl
 {
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void gen_exclusion_configs(
-      config_oracle<oracle_rand_impl>* config_oracle, estimator_vec_t& estimators, const uint64_t current_champ);
+  void gen_exclusion_configs(config_oracle<oracle_rand_impl>* co, const interaction_vec_t& champ_interactions,
+      std::vector<exclusion_config>& configs);
 };
 struct one_diff_impl
 {
-  void gen_exclusion_configs(
-      config_oracle<one_diff_impl>* config_oracle, estimator_vec_t& estimators, const uint64_t current_champ);
+  void gen_exclusion_configs(config_oracle<one_diff_impl>* co, const interaction_vec_t& champ_interactions,
+      std::vector<exclusion_config>& configs);
 };
 struct champdupe_impl
 {
-  void gen_exclusion_configs(
-      config_oracle<champdupe_impl>* config_oracle, estimator_vec_t& estimators, const uint64_t current_champ);
+  void gen_exclusion_configs(config_oracle<champdupe_impl>* co, const interaction_vec_t& champ_interactions,
+      std::vector<exclusion_config>& configs);
 };
 
 template <typename config_oracle_impl>

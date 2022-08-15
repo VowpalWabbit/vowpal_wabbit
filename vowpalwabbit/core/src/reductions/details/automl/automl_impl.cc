@@ -265,12 +265,12 @@ void interaction_config_manager<config_oracle_impl>::apply_new_champ(config_orac
     const uint64_t winning_challenger_slot, estimator_vec_t& estimators, const uint64_t priority_challengers,
     const bool lb_trick)
 {
-  const uint64_t old_champ_slot = 0;
+  const uint64_t champ_slot = 0;
 
   while (!config_oracle.index_queue.empty()) { config_oracle.index_queue.pop(); };
 
   estimators[winning_challenger_slot].first.eligible_to_inactivate = false;
-  if (priority_challengers > 1) { estimators[old_champ_slot].first.eligible_to_inactivate = false; }
+  if (priority_challengers > 1) { estimators[champ_slot].first.eligible_to_inactivate = false; }
 
   auto winner_config_index = estimators[winning_challenger_slot].first.config_index;
   std::swap(config_oracle.configs[0], config_oracle.configs[winner_config_index]);
@@ -278,10 +278,10 @@ void interaction_config_manager<config_oracle_impl>::apply_new_champ(config_orac
   config_oracle.valid_config_size = 2;
 
   estimators[winning_challenger_slot].first.config_index = 0;
-  estimators[old_champ_slot].first.config_index = 1;
+  estimators[champ_slot].first.config_index = 1;
 
   auto champ_estimator = std::move(estimators[winning_challenger_slot]);
-  auto old_champ_estimator = std::move(estimators[old_champ_slot]);
+  auto old_champ_estimator = std::move(estimators[champ_slot]);
 
   estimators.clear();
 
@@ -309,7 +309,7 @@ void interaction_config_manager<config_oracle_impl>::apply_new_champ(config_orac
     estimators[1].second.reset_stats();
   }
 
-  config_oracle.gen_exclusion_configs(estimators, old_champ_slot);
+  config_oracle.gen_exclusion_configs(estimators[champ_slot].first.live_interactions);
 }
 
 template <typename config_oracle_impl>
@@ -354,7 +354,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
               cm->_ccb_on, cm->ns_counter, cm->interaction_type, cm->_config_oracle.configs, cm->estimators, live_slot);
         }
       }
-      cm->_config_oracle.gen_exclusion_configs(cm->estimators, cm->current_champ);
+      cm->_config_oracle.gen_exclusion_configs(cm->estimators[cm->current_champ].first.live_interactions);
       offset_learn(base, ec, logged, labelled_action);
       current_state = automl_state::Experimenting;
       break;
