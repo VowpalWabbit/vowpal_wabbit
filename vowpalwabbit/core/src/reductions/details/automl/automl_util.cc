@@ -100,7 +100,7 @@ bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& 
   return new_ns_seen;
 }
 
-bool is_allowed_to_remove(const unsigned char ns)
+bool is_allowed_to_remove(const namespace_index ns)
 {
   if (ns == ccb_slot_namespace || ns == ccb_id_namespace) { return false; }
   return true;

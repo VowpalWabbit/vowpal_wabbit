@@ -205,7 +205,7 @@ void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespac
     const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
     interaction_vec_t& interactions);
 void apply_config(example* ec, interaction_vec_t* live_interactions);
-bool is_allowed_to_remove(const unsigned char ns);
+bool is_allowed_to_remove(const namespace_index ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
 bool worse();
 
