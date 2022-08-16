@@ -76,13 +76,6 @@ struct exclusion_config
   exclusion_config(uint64_t lease = 10) : lease(lease) {}
 };
 
-// all possible states of automl
-enum class automl_state
-{
-  Collecting,
-  Experimenting
-};
-
 using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
 
 template <typename oracle_impl>
@@ -209,6 +202,13 @@ void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const namespace_index ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
 bool worse();
+
+// all possible states of automl
+enum class automl_state
+{
+  Collecting,
+  Experimenting
+};
 
 template <typename CMType>
 struct automl
