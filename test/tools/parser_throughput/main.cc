@@ -198,6 +198,7 @@ int main(int argc, char** argv)
       examples.clear();
       examples.push_back(&VW::get_unused_example(vw));
     }
+    VW::finish_example(*vw, *examples[0]);
 #else
     THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_BUILD_CSV=ON");
 #endif
