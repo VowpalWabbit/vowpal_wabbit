@@ -125,19 +125,8 @@ struct champdupe_impl
       std::vector<exclusion_config>& configs);
 };
 
-struct config_manager
-{
-  void persist(metric_sink&, bool);
-  // config managers own the underlaying weights so they need to know how to clear
-  void clear_non_champ_weights();
-
-  // Public Chacha functions
-  void schedule();
-  void check_for_new_champ();
-};
-
 template <typename config_oracle_impl, typename estimator_impl>
-struct interaction_config_manager : config_manager
+struct interaction_config_manager
 {
   uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
