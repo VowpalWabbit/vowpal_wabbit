@@ -352,7 +352,6 @@ template <typename CMType>
 void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;
-  bool new_ns_seen = false;
   switch (current_state)
   {
     // todo: collecting and experimenting can be folded into one
