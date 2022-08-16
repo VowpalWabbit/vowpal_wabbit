@@ -12,14 +12,11 @@ namespace automl
 {
 template <>
 config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
-    std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
-    std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
-    std::shared_ptr<VW::rand_state>& rand_state)
+    std::map<namespace_index, uint64_t>& ns_counter, const std::string& interaction_type,
+    const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
-    , index_queue(index_queue)
     , ns_counter(ns_counter)
-    , configs(configs)
     , calc_priority(calc_priority)
     , global_lease(global_lease)
     , _impl(oracle_rand_impl(std::move(rand_state)))
@@ -27,19 +24,24 @@ config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_f
 }
 template <typename oracle_impl>
 config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
-    std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
-    std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
-    std::shared_ptr<VW::rand_state>&)
+    std::map<namespace_index, uint64_t>& ns_counter, const std::string& interaction_type,
+    const std::string& oracle_type, std::shared_ptr<VW::rand_state>&)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
-    , index_queue(index_queue)
     , ns_counter(ns_counter)
-    , configs(configs)
     , calc_priority(calc_priority)
     , global_lease(global_lease)
     , _impl(oracle_impl())
 {
 }
+template <typename oracle_impl>
+void config_oracle<oracle_impl>::insert_qcolcol()
+{
+  assert(valid_config_size == 0);
+  configs.emplace_back(global_lease);
+  ++valid_config_size;
+}
+
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 template <typename oracle_impl>
@@ -82,15 +84,14 @@ void config_oracle<oracle_impl>::insert_config(std::set<std::vector<namespace_in
   ++valid_config_size;
 }
 
-void oracle_rand_impl::do_work(config_oracle<oracle_rand_impl>* co,
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+void oracle_rand_impl::gen_exclusion_configs(config_oracle<oracle_rand_impl>* co,
+    const interaction_vec_t& champ_interactions, std::vector<exclusion_config>& configs)
 {
-  auto& champ_interactions = estimators[current_champ].first.live_interactions;
+  const uint64_t champ_index = 0;
   for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
   {
     uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
-    std::set<std::vector<namespace_index>> new_exclusions(
-        co->configs[estimators[current_champ].first.config_index].exclusions);
+    std::set<std::vector<namespace_index>> new_exclusions(configs[champ_index].exclusions);
     if (co->_interaction_type == "quadratic")
     {
       namespace_index ns1 = champ_interactions[rand_ind][0];
@@ -113,15 +114,14 @@ void oracle_rand_impl::do_work(config_oracle<oracle_rand_impl>* co,
     co->insert_config(std::move(new_exclusions));
   }
 }
-void one_diff_impl::do_work(config_oracle<one_diff_impl>* co,
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+void one_diff_impl::gen_exclusion_configs(config_oracle<one_diff_impl>* co, const interaction_vec_t& champ_interactions,
+    std::vector<exclusion_config>& configs)
 {
-  auto& champ_interactions = estimators[current_champ].first.live_interactions;
+  const uint64_t champ_index = 0;
   // Add one exclusion (for each interaction)
   for (auto& interaction : champ_interactions)
   {
-    std::set<std::vector<namespace_index>> new_exclusions(
-        co->configs[estimators[current_champ].first.config_index].exclusions);
+    std::set<std::vector<namespace_index>> new_exclusions(configs[champ_index].exclusions);
     if (co->_interaction_type == "quadratic")
     {
       namespace_index ns1 = interaction[0];
@@ -147,22 +147,19 @@ void one_diff_impl::do_work(config_oracle<one_diff_impl>* co,
     co->insert_config(std::move(new_exclusions));
   }
   // Remove one exclusion (for each exclusion)
-  for (auto& ns_pair : co->configs[estimators[current_champ].first.config_index].exclusions)
+  for (auto& ns_pair : configs[champ_index].exclusions)
   {
-    auto new_exclusions = co->configs[estimators[current_champ].first.config_index].exclusions;
+    auto new_exclusions = configs[champ_index].exclusions;
     new_exclusions.erase(ns_pair);
     co->insert_config(std::move(new_exclusions));
   }
 }
-void champdupe_impl::do_work(config_oracle<champdupe_impl>* co,
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+void champdupe_impl::gen_exclusion_configs(
+    config_oracle<champdupe_impl>* co, const interaction_vec_t&, std::vector<exclusion_config>& configs)
 {
+  const uint64_t champ_index = 0;
   for (uint64_t i = 0; co->configs.size() <= 2; ++i)
-  {
-    co->insert_config(
-        std::set<std::vector<namespace_index>>(co->configs[estimators[current_champ].first.config_index].exclusions),
-        true);
-  }
+  { co->insert_config(std::set<std::vector<namespace_index>>(configs[champ_index].exclusions), true); }
 }
 
 // This will generate configs based on the current champ. These configs will be
@@ -171,10 +168,9 @@ void champdupe_impl::do_work(config_oracle<champdupe_impl>* co,
 // of configs to generate per champ is hard-coded to 5 at the moment.
 // TODO: Add logic to avoid duplicate configs (could be very costly)
 template <typename oracle_impl>
-void config_oracle<oracle_impl>::do_work(
-    std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ)
+void config_oracle<oracle_impl>::gen_exclusion_configs(const interaction_vec_t& champ_interactions)
 {
-  _impl.do_work(this, estimators, current_champ);
+  _impl.gen_exclusion_configs(this, champ_interactions, configs);
 }
 
 // This function is triggered when all sets of interactions generated by the oracle have been tried and

@@ -34,7 +34,7 @@ void interaction_config_manager<config_oracle_impl>::persist(metric_sink& metric
     estimators[live_slot].second.persist(metrics, "_sc_" + std::to_string(live_slot));
     if (verbose)
     {
-      auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
+      auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index].exclusions;
       metrics.set_string(
           "exclusionc_" + std::to_string(live_slot), VW::reductions::util::exclusions_to_string(exclusions));
     }
@@ -93,7 +93,7 @@ template <typename config_oracle_impl>
 size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_manager<config_oracle_impl>& cm)
 {
   cm.estimators.clear();
-  cm.configs.clear();
+  cm._config_oracle.configs.clear();
   cm.per_live_model_state_double.clear();
   cm.per_live_model_state_uint64.clear();
   size_t bytes = 0;
@@ -102,13 +102,18 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::interaction_config_m
   bytes += read_model_field(io, current_champ);
   bytes += read_model_field(io, cm._config_oracle.valid_config_size);
   bytes += read_model_field(io, cm.ns_counter);
-  bytes += read_model_field(io, cm.configs);
+  bytes += read_model_field(io, cm._config_oracle.configs);
   bytes += read_model_field(io, cm.estimators);
-  bytes += read_model_field(io, cm.index_queue);
+  bytes += read_model_field(io, cm._config_oracle.index_queue);
   bytes += read_model_field(io, cm.per_live_model_state_double);
   bytes += read_model_field(io, cm.per_live_model_state_uint64);
   for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot)
-  { gen_interactions(cm._ccb_on, cm.ns_counter, cm.interaction_type, cm.configs, cm.estimators, live_slot); }
+  {
+    auto& exclusions = cm._config_oracle.configs[cm.estimators[live_slot].first.config_index].exclusions;
+    auto& interactions = cm.estimators[live_slot].first.live_interactions;
+    reductions::automl::gen_interactions_from_exclusions(
+        cm._ccb_on, cm.ns_counter, cm.interaction_type, exclusions, interactions);
+  }
   return bytes;
 }
 
@@ -122,9 +127,9 @@ size_t write_model_field(io_buf& io, const VW::reductions::automl::interaction_c
   bytes += write_model_field(io, current_champ, upstream_name + "_champ", text);
   bytes += write_model_field(io, cm._config_oracle.valid_config_size, upstream_name + "_valid_config_size", text);
   bytes += write_model_field(io, cm.ns_counter, upstream_name + "_ns_counter", text);
-  bytes += write_model_field(io, cm.configs, upstream_name + "_configs", text);
+  bytes += write_model_field(io, cm._config_oracle.configs, upstream_name + "_configs", text);
   bytes += write_model_field(io, cm.estimators, upstream_name + "_estimators", text);
-  bytes += write_model_field(io, cm.index_queue, upstream_name + "_index_queue", text);
+  bytes += write_model_field(io, cm._config_oracle.index_queue, upstream_name + "_index_queue", text);
   bytes += write_model_field(io, cm.per_live_model_state_double, upstream_name + "_per_live_model_state_double", text);
   bytes += write_model_field(io, cm.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;

@@ -18,14 +18,12 @@ namespace automl
 // from the corresponding live_slot. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
-    std::vector<exclusion_config>& configs, std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
-    uint64_t live_slot)
+void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
+    const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
+    interaction_vec_t& interactions)
 {
   if (interaction_type == "quadratic")
   {
-    auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
-    auto& interactions = estimators[live_slot].first.live_interactions;
     if (!interactions.empty()) { interactions.clear(); }
     for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
     {
@@ -40,8 +38,6 @@ void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_count
   }
   else if (interaction_type == "cubic")
   {
-    auto& exclusions = configs[estimators[live_slot].first.config_index].exclusions;
-    auto& interactions = estimators[live_slot].first.live_interactions;
     if (!interactions.empty()) { interactions.clear(); }
     for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
     {
@@ -66,7 +62,6 @@ void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_count
   if (ccb_on)
   {
     std::vector<std::vector<extent_term>> empty;
-    auto& interactions = estimators[live_slot].first.live_interactions;
     ccb::insert_ccb_interactions(interactions, empty);
   }
 }

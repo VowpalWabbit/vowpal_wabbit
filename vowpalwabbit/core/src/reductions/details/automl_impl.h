@@ -46,6 +46,8 @@ struct aml_estimator : VW::estimator_config
   void persist(metric_sink&, const std::string&, bool, const std::string&);
 };
 
+using estimator_vec_t = std::vector<std::pair<aml_estimator, estimator_config>>;
+
 // all possible states of exclusion config
 enum class config_state
 {
@@ -79,7 +81,7 @@ struct config_manager
 
   // Public Chacha functions
   void schedule();
-  void update_champ();
+  void check_for_new_champ();
 };
 
 using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
@@ -90,42 +92,42 @@ struct config_oracle
   std::string _interaction_type;
   const std::string _oracle_type;
 
-  // insert_config(..)
-  std::priority_queue<std::pair<float, uint64_t>>& index_queue;
+  // Maybe not needed with oracle, maps priority to config index, unused configs
+  std::priority_queue<std::pair<float, uint64_t>> index_queue;
+  // Stores all configs in consideration
+  std::vector<exclusion_config> configs;
   std::map<namespace_index, uint64_t>& ns_counter;
-  std::vector<exclusion_config>& configs;
 
   priority_func* calc_priority;
   const uint64_t global_lease;
   uint64_t valid_config_size = 0;
   oracle_impl _impl;
 
-  config_oracle(uint64_t global_lease, priority_func* calc_priority,
-      std::priority_queue<std::pair<float, uint64_t>>& index_queue, std::map<namespace_index, uint64_t>& ns_counter,
-      std::vector<exclusion_config>& configs, const std::string& interaction_type, const std::string& oracle_type,
-      std::shared_ptr<VW::rand_state>& rand_state);
+  config_oracle(uint64_t global_lease, priority_func* calc_priority, std::map<namespace_index, uint64_t>& ns_counter,
+      const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state);
 
-  void do_work(std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void gen_exclusion_configs(const interaction_vec_t& champ_interactions);
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
   bool repopulate_index_queue();
+  void insert_qcolcol();
 };
 
 struct oracle_rand_impl
 {
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void do_work(config_oracle<oracle_rand_impl>* config_oracle,
-      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void gen_exclusion_configs(config_oracle<oracle_rand_impl>* co, const interaction_vec_t& champ_interactions,
+      std::vector<exclusion_config>& configs);
 };
 struct one_diff_impl
 {
-  void do_work(config_oracle<one_diff_impl>* config_oracle,
-      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void gen_exclusion_configs(config_oracle<one_diff_impl>* co, const interaction_vec_t& champ_interactions,
+      std::vector<exclusion_config>& configs);
 };
 struct champdupe_impl
 {
-  void do_work(config_oracle<champdupe_impl>* config_oracle,
-      std::vector<std::pair<aml_estimator, estimator_config>>& estimators, const uint64_t current_champ);
+  void gen_exclusion_configs(config_oracle<champdupe_impl>* co, const interaction_vec_t& champ_interactions,
+      std::vector<exclusion_config>& configs);
 };
 
 template <typename config_oracle_impl>
@@ -159,16 +161,10 @@ struct interaction_config_manager : config_manager
   // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
   std::map<namespace_index, uint64_t> ns_counter;
 
-  // Stores all configs in consideration
-  std::vector<exclusion_config> configs;
-
   // Stores estimators of live configs, size will never exceed max_live_configs. Each pair will be of the form
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
-  std::vector<std::pair<aml_estimator, estimator_config>> estimators;
-
-  // Maybe not needed with oracle, maps priority to config index, unused configs
-  std::priority_queue<std::pair<float, uint64_t>> index_queue;
+  estimator_vec_t estimators;
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, const std::string&,
       const std::string&, dense_parameters&,
@@ -180,18 +176,29 @@ struct interaction_config_manager : config_manager
 
   // Public Chacha functions
   void schedule();
-  void update_champ();
+  void check_for_new_champ();
+  static void apply_config_at_slot(estimator_vec_t& estimators, std::vector<exclusion_config>& configs,
+      const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double decay,
+      const uint64_t priority_challengers);
+  static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
+      estimator_vec_t& estimators, const uint64_t priority_challengers, const bool lb_trick);
+  static void insert_qcolcol(
+      estimator_vec_t& estimators, config_oracle_impl& config_oracle, const double sig_level, const double decay);
+  static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 
 private:
-  static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
-  static bool swap_eligible_to_inactivate(
-      bool lb_trick, std::vector<std::pair<aml_estimator, estimator_config>>& estimators, uint64_t);
+  static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t& estimators, uint64_t);
 };
 
 bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
-void gen_interactions(bool ccb_on, std::map<namespace_index, uint64_t>& ns_counter, std::string& interaction_type,
-    std::vector<exclusion_config>& configs, std::vector<std::pair<aml_estimator, estimator_config>>& estimators,
-    uint64_t live_slot);
+void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
+    const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
+    interaction_vec_t& interactions);
+void apply_config(example* ec, interaction_vec_t* live_interactions);
+bool is_allowed_to_remove(const unsigned char ns);
+void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
+bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
+bool worse();
 
 template <typename CMType>
 struct automl
@@ -217,12 +224,6 @@ struct automl
 private:
   ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
-
-void apply_config(example* ec, interaction_vec_t* live_interactions);
-bool is_allowed_to_remove(const unsigned char ns);
-void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
-bool better(bool lb_trick, aml_estimator& challenger, estimator_config& champ);
-bool worse();
 }  // namespace automl
 
 namespace util
