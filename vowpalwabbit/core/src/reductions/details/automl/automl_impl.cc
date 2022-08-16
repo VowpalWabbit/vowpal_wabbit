@@ -106,15 +106,15 @@ bool interaction_config_manager<config_oracle_impl, estimator_impl>::swap_eligib
   const uint64_t current_champ = 0;
   for (uint64_t other_live_slot = 0; other_live_slot < estimators.size(); ++other_live_slot)
   {
-    bool better = lb_trick ? estimators[live_slot].first._estimator.lower_bound() >
-            (1.f - estimators[other_live_slot].first._estimator.lower_bound())
-                           : estimators[live_slot].first._estimator.lower_bound() >
-            estimators[other_live_slot].first._estimator.upper_bound();
-    if (!estimators[other_live_slot].first.eligible_to_inactivate && other_live_slot != current_champ && better)
+    if (!estimators[other_live_slot].first.eligible_to_inactivate && other_live_slot != current_champ)
     {
-      estimators[live_slot].first.eligible_to_inactivate = false;
-      estimators[other_live_slot].first.eligible_to_inactivate = true;
-      return true;
+      if (aml_estimator<estimator_impl>::better(
+              lb_trick, estimators[live_slot].first._estimator, estimators[other_live_slot].first._estimator))
+      {
+        estimators[live_slot].first.eligible_to_inactivate = false;
+        estimators[other_live_slot].first.eligible_to_inactivate = true;
+        return true;
+      }
     }
   }
   return false;
@@ -214,13 +214,6 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_confi
   // TODO: reset stats of gd, cb_adf, sd patch , to default.. what is default?
 }
 
-template <typename estimator_impl>
-bool better(bool lb_trick, aml_estimator<estimator_impl>& challenger, estimator_impl& champ)
-{
-  return lb_trick ? challenger._estimator.lower_bound() > (1.f - champ.lower_bound())
-                  : challenger._estimator.lower_bound() > champ.upper_bound();
-}
-
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_new_champ()
 {
@@ -234,7 +227,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
   {
     if (live_slot == current_champ) { continue; }
     // If challenger is better ('better function from Chacha')
-    if (better(_lb_trick, estimators[live_slot].first, estimators[live_slot].second))
+    if (aml_estimator<estimator_impl>::better(
+            _lb_trick, estimators[live_slot].first._estimator, estimators[live_slot].second))
     {
       champ_change = true;
       winning_challenger_slot = live_slot;

@@ -46,6 +46,11 @@ struct aml_estimator
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
   void persist(metric_sink&, const std::string&, bool, const std::string&);
+  static bool better(bool lb_trick, estimator_impl& challenger, estimator_impl& champ)
+  {
+    return lb_trick ? challenger.lower_bound() > (1.f - champ.lower_bound())
+                    : challenger.lower_bound() > champ.upper_bound();
+  }
 };
 
 template struct aml_estimator<VW::estimator_config>;
@@ -202,8 +207,6 @@ void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespac
 void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const unsigned char ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
-template <typename estimator_impl>
-bool better(bool lb_trick, aml_estimator<estimator_impl>& challenger, estimator_impl& champ);
 bool worse();
 
 template <typename CMType>
