@@ -429,7 +429,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     std::vector<std::pair<aml_estimator<VW::estimator_config>, VW::estimator_config>> estimators;
 
     config_oracle<one_diff_impl> oracle(
-        aml->cm->global_lease, co.calc_priority, ns_counter, co._interaction_type, co._oracle_type, rand_state);
+        aml->cm->global_lease, co.calc_priority, co._interaction_type, co._oracle_type, rand_state);
 
     auto& configs = oracle.configs;
     auto& prio_queue = oracle.index_queue;
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
         champ_interactions[2].begin(), champ_interactions[2].end(), third.begin(), third.end());
 
     BOOST_CHECK_EQUAL(configs.size(), 1);
-    oracle.gen_exclusion_configs(estimators[CHAMP].first.live_interactions);
+    oracle.gen_exclusion_configs(estimators[CHAMP].first.live_interactions, ns_counter);
     BOOST_CHECK_EQUAL(configs.size(), 4);
     BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
@@ -499,7 +499,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
 
     // excl_2 is now champ
     interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_new_champ(
-        oracle, 2, estimators, 0, false);
+        oracle, 2, estimators, 0, false, ns_counter);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_2.begin(), excl_2.end());

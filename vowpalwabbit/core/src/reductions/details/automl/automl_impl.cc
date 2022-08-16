@@ -75,8 +75,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , wpp(wpp)
     , _lb_trick(lb_trick)
     , _ccb_on(ccb_on)
-    , _config_oracle(
-          config_oracle_impl(global_lease, calc_priority, ns_counter, interaction_type, oracle_type, rand_state))
+    , _config_oracle(config_oracle_impl(global_lease, calc_priority, interaction_type, oracle_type, rand_state))
 {
   insert_qcolcol(estimators, _config_oracle, automl_significance_level, automl_estimator_decay);
 }
@@ -155,7 +154,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
           _config_oracle.configs[_config_oracle.index_queue.top().second].state ==
               VW::reductions::automl::config_state::Removed)
       { _config_oracle.index_queue.pop(); }
-      if (_config_oracle.index_queue.empty() && !_config_oracle.repopulate_index_queue()) { continue; }
+      if (_config_oracle.index_queue.empty() && !_config_oracle.repopulate_index_queue(ns_counter)) { continue; }
 
       // Only inactivate current config if lease is reached
       if (!need_new_estimator &&
@@ -249,14 +248,14 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
     weights.move_offsets(winning_challenger_slot, old_champ_slot, wpp, true);
     if (winning_challenger_slot != 1) { weights.move_offsets(winning_challenger_slot, 1, wpp, false); }
 
-    apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, _lb_trick);
+    apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, _lb_trick, ns_counter);
   }
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_champ(config_oracle_impl& config_oracle,
     const uint64_t winning_challenger_slot, estimator_vec_t<estimator_impl>& estimators,
-    const uint64_t priority_challengers, const bool lb_trick)
+    const uint64_t priority_challengers, const bool lb_trick, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   const uint64_t champ_slot = 0;
 
@@ -303,7 +302,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
     estimators[1].second.reset_stats();
   }
 
-  config_oracle.gen_exclusion_configs(estimators[champ_slot].first.live_interactions);
+  config_oracle.gen_exclusion_configs(estimators[champ_slot].first.live_interactions, ns_counter);
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -357,7 +356,8 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
     // todo: collecting and experimenting can be folded into one
     case automl_state::Collecting:
       cm->process_example(ec);
-      cm->_config_oracle.gen_exclusion_configs(cm->estimators[cm->current_champ].first.live_interactions);
+      cm->_config_oracle.gen_exclusion_configs(
+          cm->estimators[cm->current_champ].first.live_interactions, cm->ns_counter);
       offset_learn(base, ec, logged, labelled_action);
       current_state = automl_state::Experimenting;
       break;
