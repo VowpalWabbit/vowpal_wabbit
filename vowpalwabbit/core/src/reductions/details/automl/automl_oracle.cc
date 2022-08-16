@@ -43,6 +43,14 @@ void config_oracle<oracle_impl>::insert_qcolcol()
   ++valid_config_size;
 }
 
+template <typename oracle_impl>
+uint64_t config_oracle<oracle_impl>::choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue)
+{
+  uint64_t ret = index_queue.top().second;
+  index_queue.pop();
+  return ret;
+}
+
 // This code is primarily borrowed from expand_quadratics_wildcard_interactions in
 // interactions.cc. It will generate interactions with -q :: and exclude namespaces
 // from the corresponding live_slot. This function can be swapped out depending on

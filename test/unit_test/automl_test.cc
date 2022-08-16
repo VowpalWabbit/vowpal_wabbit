@@ -487,8 +487,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     for (size_t i = 1; i < configs.size(); ++i)
     {
       interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_config_at_slot(estimators,
-          oracle.configs, i,
-          interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::choose(oracle.index_queue),
+          oracle.configs, i, config_oracle<one_diff_impl>::choose(oracle.index_queue),
           aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
       auto& temp_exclusions = oracle.configs[estimators[i].first.config_index].exclusions;
       auto& temp_interactions = estimators[i].first.live_interactions;

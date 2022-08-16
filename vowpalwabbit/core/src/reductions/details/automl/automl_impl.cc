@@ -168,8 +168,9 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
 
       assert(live_slot < max_live_configs);
       // fetch config from the queue, and apply it current live slot
-      apply_config_at_slot(estimators, _config_oracle.configs, live_slot, choose(_config_oracle.index_queue),
-          automl_significance_level, automl_estimator_decay, priority_challengers);
+      apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
+          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, automl_estimator_decay,
+          priority_challengers);
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
@@ -178,15 +179,6 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
           estimators[live_slot].first.live_interactions);
     }
   }
-}
-
-template <typename config_oracle_impl, typename estimator_impl>
-uint64_t interaction_config_manager<config_oracle_impl, estimator_impl>::choose(
-    std::priority_queue<std::pair<float, uint64_t>>& index_queue)
-{
-  uint64_t ret = index_queue.top().second;
-  index_queue.pop();
-  return ret;
 }
 
 template <typename config_oracle_impl, typename estimator_impl>

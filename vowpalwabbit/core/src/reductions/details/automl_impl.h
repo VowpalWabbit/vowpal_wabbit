@@ -105,6 +105,7 @@ struct config_oracle
   static void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
       const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
       interaction_vec_t& interactions);
+  static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 };
 
 struct oracle_rand_impl
@@ -180,7 +181,6 @@ struct interaction_config_manager
       estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers, const bool lb_trick);
   static void insert_qcolcol(estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle,
       const double sig_level, const double decay);
-  static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 
 private:
   static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);
