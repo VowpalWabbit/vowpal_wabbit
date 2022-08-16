@@ -4,7 +4,6 @@
 
 #include "../automl_impl.h"
 #include "vw/core/interactions.h"
-#include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
 
 namespace VW
@@ -13,59 +12,6 @@ namespace reductions
 {
 namespace automl
 {
-// This code is primarily borrowed from expand_quadratics_wildcard_interactions in
-// interactions.cc. It will generate interactions with -q :: and exclude namespaces
-// from the corresponding live_slot. This function can be swapped out depending on
-// preference of how to generate interactions from a given set of exclusions.
-// Transforms exclusions -> interactions expected by VW.
-void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
-    const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
-    interaction_vec_t& interactions)
-{
-  if (interaction_type == "quadratic")
-  {
-    if (!interactions.empty()) { interactions.clear(); }
-    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
-    {
-      auto idx1 = (*it).first;
-      for (auto jt = it; jt != ns_counter.end(); ++jt)
-      {
-        auto idx2 = (*jt).first;
-        std::vector<namespace_index> idx{idx1, idx2};
-        if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
-      }
-    }
-  }
-  else if (interaction_type == "cubic")
-  {
-    if (!interactions.empty()) { interactions.clear(); }
-    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
-    {
-      auto idx1 = (*it).first;
-      for (auto jt = it; jt != ns_counter.end(); ++jt)
-      {
-        auto idx2 = (*jt).first;
-        for (auto kt = jt; kt != ns_counter.end(); ++kt)
-        {
-          auto idx3 = (*kt).first;
-          std::vector<namespace_index> idx{idx1, idx2, idx3};
-          if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2, idx3}); }
-        }
-      }
-    }
-  }
-  else
-  {
-    THROW("Unknown interaction type.");
-  }
-
-  if (ccb_on)
-  {
-    std::vector<std::vector<extent_term>> empty;
-    ccb::insert_ccb_interactions(interactions, empty);
-  }
-}
-
 bool worse()
 {
   // Dummy return false

@@ -173,7 +173,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      gen_interactions_from_exclusions(_ccb_on, ns_counter, interaction_type,
+      config_oracle_impl::gen_interactions_from_exclusions(_ccb_on, ns_counter, interaction_type,
           _config_oracle.configs[estimators[live_slot].first.config_index].exclusions,
           estimators[live_slot].first.live_interactions);
     }
@@ -335,6 +335,23 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::do_learning
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 }
 
+template <typename config_oracle_impl, typename estimator_impl>
+void interaction_config_manager<config_oracle_impl, estimator_impl>::process_example(const multi_ex& ec)
+{
+  bool new_ns_seen = count_namespaces(ec, ns_counter);
+  // Regenerate interactions if new namespaces are seen
+  if (new_ns_seen)
+  {
+    for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
+    {
+      auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index].exclusions;
+      auto& interactions = estimators[live_slot].first.live_interactions;
+      config_oracle_impl::gen_interactions_from_exclusions(
+          _ccb_on, ns_counter, interaction_type, exclusions, interactions);
+    }
+  }
+}
+
 template struct interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimator_config>;
 template struct interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>;
 template struct interaction_config_manager<config_oracle<champdupe_impl>, VW::estimator_config>;
@@ -346,35 +363,16 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
   bool new_ns_seen = false;
   switch (current_state)
   {
+    // todo: collecting and experimenting can be folded into one
     case automl_state::Collecting:
-      new_ns_seen = count_namespaces(ec, cm->ns_counter);
-      // Regenerate interactions if new namespaces are seen
-      if (new_ns_seen)
-      {
-        for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
-        {
-          auto& exclusions = cm->_config_oracle.configs[cm->estimators[live_slot].first.config_index].exclusions;
-          auto& interactions = cm->estimators[live_slot].first.live_interactions;
-          gen_interactions_from_exclusions(cm->_ccb_on, cm->ns_counter, cm->interaction_type, exclusions, interactions);
-        }
-      }
+      cm->process_example(ec);
       cm->_config_oracle.gen_exclusion_configs(cm->estimators[cm->current_champ].first.live_interactions);
       offset_learn(base, ec, logged, labelled_action);
       current_state = automl_state::Experimenting;
       break;
 
     case automl_state::Experimenting:
-      new_ns_seen = count_namespaces(ec, cm->ns_counter);
-      // Regenerate interactions if new namespaces are seen
-      if (new_ns_seen)
-      {
-        for (uint64_t live_slot = 0; live_slot < cm->estimators.size(); ++live_slot)
-        {
-          auto& exclusions = cm->_config_oracle.configs[cm->estimators[live_slot].first.config_index].exclusions;
-          auto& interactions = cm->estimators[live_slot].first.live_interactions;
-          gen_interactions_from_exclusions(cm->_ccb_on, cm->ns_counter, cm->interaction_type, exclusions, interactions);
-        }
-      }
+      cm->process_example(ec);
       cm->schedule();
       offset_learn(base, ec, logged, labelled_action);
       cm->check_for_new_champ();

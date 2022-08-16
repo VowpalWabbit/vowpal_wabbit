@@ -109,6 +109,9 @@ struct config_oracle
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions, bool allow_dups = false);
   bool repopulate_index_queue();
   void insert_qcolcol();
+  static void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
+      const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
+      interaction_vec_t& interactions);
 };
 
 struct oracle_rand_impl
@@ -187,6 +190,7 @@ struct interaction_config_manager : config_manager
   // Public Chacha functions
   void schedule();
   void check_for_new_champ();
+  void process_example(const multi_ex& ec);
   static void apply_config_at_slot(estimator_vec_t<estimator_impl>& estimators, std::vector<exclusion_config>& configs,
       const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double decay,
       const uint64_t priority_challengers);
@@ -201,9 +205,6 @@ private:
 };
 
 bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
-void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
-    const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
-    interaction_vec_t& interactions);
 void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const namespace_index ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
