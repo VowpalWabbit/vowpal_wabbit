@@ -45,10 +45,10 @@ struct aml_estimator
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
   void persist(metric_sink&, const std::string&, bool, const std::string&);
-  static bool better(bool lb_trick, estimator_impl& challenger, estimator_impl& champ)
+  static bool better(bool lb_trick, estimator_impl& challenger, estimator_impl& other)
   {
-    return lb_trick ? challenger.lower_bound() > (1.f - champ.lower_bound())
-                    : challenger.lower_bound() > champ.upper_bound();
+    return lb_trick ? challenger.lower_bound() > (1.f - other.lower_bound())
+                    : challenger.lower_bound() > other.upper_bound();
   }
 };
 
