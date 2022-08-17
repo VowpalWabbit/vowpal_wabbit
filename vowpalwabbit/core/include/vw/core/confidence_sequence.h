@@ -5,8 +5,8 @@
 #pragma once
 
 #ifndef __APPLE__
-  #define __STDCPP_MATH_SPEC_FUNCS__ 201003L
-  #define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
+#  define __STDCPP_MATH_SPEC_FUNCS__ 201003L
+#  define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
 #endif
 
 #include "vw/core/io_buf.h"

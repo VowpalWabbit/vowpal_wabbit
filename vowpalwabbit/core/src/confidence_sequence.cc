@@ -161,11 +161,11 @@ double ConfidenceSequence::approxpolygammaone(double b)
 
 double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha)
 {
-  #ifndef __APPLE__
-    double zeta_s = std::riemann_zeta(s);
-  #else
-    double zeta_s = 10.584448464950803; // std::riemann_zeta(s) -- Assuming s=1.1 is constant
-  #endif
+#ifndef __APPLE__
+  double zeta_s = std::riemann_zeta(s);
+#else
+  double zeta_s = 10.584448464950803;  // std::riemann_zeta(s) -- Assuming s=1.1 is constant
+#endif
   v = std::max(v, 1.0);
   double gamma1 = (std::pow(eta, 0.25) + std::pow(eta, 0.25)) / std::sqrt(2.0);
   double gamma2 = (std::sqrt(eta) + 1.0) / 2.0;
