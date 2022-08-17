@@ -4,7 +4,6 @@
 #pragma once
 
 #include "vw/core/array_parameters_dense.h"
-#include "vw/core/estimator_config.h"
 #include "vw/core/learner.h"
 #include "vw/core/rand_state.h"
 
@@ -52,8 +51,6 @@ struct aml_estimator
                     : challenger.lower_bound() > champ.upper_bound();
   }
 };
-
-template struct aml_estimator<VW::estimator_config>;
 
 template <typename estimator_impl>
 using estimator_vec_t = std::vector<std::pair<aml_estimator<estimator_impl>, estimator_impl>>;

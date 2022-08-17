@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "../automl_impl.h"
+#include "vw/core/estimator_config.h"
 #include "vw/core/model_utils.h"
 
 namespace VW
@@ -23,6 +24,8 @@ void aml_estimator<estimator_impl>::persist(
         VW::reductions::util::interaction_vec_t_to_string(live_interactions, interaction_type));
   }
 }
+
+template struct aml_estimator<VW::estimator_config>;
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::persist(metric_sink& metrics, bool verbose)

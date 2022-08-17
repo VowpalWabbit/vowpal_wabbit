@@ -5,6 +5,7 @@
 #include "../automl_impl.h"
 
 #include "vw/common/vw_exception.h"
+#include "vw/core/estimator_config.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:

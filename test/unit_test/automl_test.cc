@@ -7,6 +7,7 @@
 #include "reductions/details/automl_impl.h"
 #include "simulator.h"
 #include "test_common.h"
+#include "vw/core/estimator_config.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/vw_fwd.h"
 
