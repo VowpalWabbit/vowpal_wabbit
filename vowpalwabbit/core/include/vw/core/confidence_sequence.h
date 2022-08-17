@@ -76,11 +76,11 @@ struct IntervalImpl
   IncrementalFsum sumwxhathigh;
   IncrementalFsum sumxhathighsq;
 
-  double reimann_zeta(double n, double z);
+  double reimann_zeta(double n = 0.0, double z = 0.0);
   double polygamma(double a, double b);
   double lb_new(double sumXt, double v, double eta, double s, double alpha);
-  IntervalImpl(double rmin, double rmax, bool adjust);
-  void addobs(double w, double r, double p_drop, double n_drop);
+  IntervalImpl(double rmin = 0.0, double rmax = 1.0, bool adjust = true);
+  void addobs(double w, double r, double p_drop = 0.0, double n_drop = -1.0);
   std::pair<double, double> getci(double alpha = DEFAULT_ALPHA);
 };
 }  // namespace confidence_sequence

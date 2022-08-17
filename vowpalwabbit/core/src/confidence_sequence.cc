@@ -14,7 +14,7 @@ namespace VW
 namespace confidence_sequence
 {
 // TODO: Include std::reimann_zeta function and figure out 2-arg version
-double IntervalImpl::reimann_zeta(double n = 0.0, double z = 0.0) { return 0.0; }
+double IntervalImpl::reimann_zeta(double n, double z) { return 0.0; }
 
 double IntervalImpl::polygamma(double n, double z)
 {
@@ -33,12 +33,12 @@ double IntervalImpl::lb_new(double sumXt, double v, double eta, double s, double
       0.0, (sumXt - std::sqrt(std::pow(gamma1, 2) * ll * v + std::pow(gamma2, 2) * std::pow(ll, 2)) - gamma2 * ll) / t);
 }
 
-IntervalImpl::IntervalImpl(double rmin = 0.0, double rmax = 1.0, bool adjust = true)
+IntervalImpl::IntervalImpl(double rmin, double rmax, bool adjust)
     : rmin(rmin), rmax(rmax), adjust(adjust)
 {
 }
 
-void IntervalImpl::addobs(double w, double r, double p_drop = 0.0, double n_drop = -1.0)
+void IntervalImpl::addobs(double w, double r, double p_drop, double n_drop)
 {
   assert(w >= 0.0);
   assert(0.0 <= p_drop && p_drop < 1.0);
