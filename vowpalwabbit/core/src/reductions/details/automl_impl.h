@@ -212,6 +212,7 @@ struct automl
       : cm(std::move(cm)), logger(logger), should_save_predict_only_model(predict_only_model)
   {
   }
+  void predict_champ(multi_learner& base, multi_ex& ec);
   // This fn gets called before learning any example
   void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
   // inner loop of learn driven by # MAX_CONFIGS

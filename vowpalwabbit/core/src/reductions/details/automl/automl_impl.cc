@@ -348,6 +348,28 @@ template struct interaction_config_manager<config_oracle<one_diff_impl>, VW::est
 template struct interaction_config_manager<config_oracle<champdupe_impl>, VW::estimator_config>;
 
 template <typename CMType>
+void automl<CMType>::predict_champ(multi_learner& base, multi_ex& ec)
+{
+  cm->process_example(ec);
+
+  VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
+  for (VW::example* ex : ec)
+  {
+    _UNUSED(ex);
+    assert(ex->interactions == incoming_interactions);
+  }
+
+  auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
+    for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
+  });
+
+  for (VW::example* ex : ec)
+  { VW::reductions::automl::apply_config(ex, &cm->estimators[cm->current_champ].first.live_interactions); }
+
+  base.predict(ec, cm->current_champ);
+}
+
+template <typename CMType>
 void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;

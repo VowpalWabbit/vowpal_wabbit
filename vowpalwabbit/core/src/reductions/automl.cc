@@ -23,24 +23,7 @@ namespace
 template <typename CMType, bool is_explore>
 void predict_automl(VW::reductions::automl::automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 {
-  VW::reductions::automl::interaction_vec_t* incoming_interactions = ec[0]->interactions;
-  for (VW::example* ex : ec)
-  {
-    _UNUSED(ex);
-    assert(ex->interactions == incoming_interactions);
-  }
-
-  // if (ec[0]->interactions != nullptr)
-  // { data.logger->out_info("pred: incoming interaction: {}", ::interaction_vec_t_to_string(*(ec[0]->interactions))); }
-  uint64_t champ_live_slot = data.cm->current_champ;
-  for (VW::example* ex : ec)
-  { VW::reductions::automl::apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
-
-  auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
-    for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
-  });
-
-  base.predict(ec, champ_live_slot);
+  data.predict_champ(base, ec);
 }
 
 // this is the registered learn function for this reduction
