@@ -121,8 +121,8 @@ struct Iterator
     return *this;
   }
 
-  bool operator==(const Iterator& rhs) { return current == rhs.current; };
-  bool operator!=(const Iterator& rhs) { return current != rhs.current; };
+  bool operator==(const Iterator& rhs) const { return current == rhs.current; };
+  bool operator<(const Iterator& rhs) const { return current < rhs.current; };
 
 private:
   size_t current;

@@ -219,7 +219,7 @@ void config_oracle<one_diff_impl>::gen_exclusion_configs(
   auto champ_excl = std::move(configs[0].exclusions);
   auto exclusion_it = champ_excl.begin();
 
-  for (auto it = _impl.begin(); it != _impl.end(champ_interactions, champ_excl); ++it)
+  for (auto it = _impl.begin(); it < _impl.end(champ_interactions, champ_excl); ++it)
   {
     auto copy_champ = champ_excl;
     _impl.gen_exclusion_config_at(_interaction_type, champ_interactions, *it, exclusion_it, copy_champ);
@@ -233,7 +233,7 @@ template <>
 void config_oracle<champdupe_impl>::gen_exclusion_configs(
     const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
 {
-  for (auto it = _impl.begin(); it != _impl.end(); ++it)
+  for (auto it = _impl.begin(); it < _impl.end(); ++it)
   {
     auto copy_champ = configs[0].exclusions;
     insert_config(std::move(copy_champ), ns_counter, true);
@@ -244,7 +244,7 @@ template <typename oracle_impl>
 void config_oracle<oracle_impl>::gen_exclusion_configs(
     const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
 {
-  for (auto it = _impl.begin(); it != _impl.end(); ++it)
+  for (auto it = _impl.begin(); it < _impl.end(); ++it)
   {
     auto copy_champ = configs[0].exclusions;
     _impl.gen_exclusion_config_at(_interaction_type, champ_interactions, *it, copy_champ);
