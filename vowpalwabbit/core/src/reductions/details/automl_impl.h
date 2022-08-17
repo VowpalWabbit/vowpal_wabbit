@@ -143,7 +143,7 @@ struct interaction_config_manager
   const bool _ccb_on;
   config_oracle_impl _config_oracle;
 
-  // TODO: delete all this, gd and cb_adf must respect ft_offset
+  // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
   std::vector<double> per_live_model_state_double;
   std::vector<uint64_t> per_live_model_state_uint64;
   double* _gd_normalized = nullptr;
@@ -152,7 +152,7 @@ struct interaction_config_manager
   uint64_t* _cb_adf_event_sum = nullptr;
   uint64_t* _cb_adf_action_sum = nullptr;
 
-  // Stores all namespaces currently seen -- Namespace switch could we use array, ask Jack
+  // Stores all namespaces currently seen
   std::map<namespace_index, uint64_t> ns_counter;
 
   // Stores estimators of live configs, size will never exceed max_live_configs. Each pair will be of the form
@@ -213,14 +213,9 @@ struct automl
   {
   }
   // This fn gets called before learning any example
-  // void one_step(multi_learner&, multi_ex&, CB::cb_class&, uint64_t);
-  // template <typename CMType>
   void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
   // inner loop of learn driven by # MAX_CONFIGS
   void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
-
-private:
-  ACTION_SCORE::action_scores buffer_a_s;  // a sequence of classes with scores.  Also used for probabilities.
 };
 }  // namespace automl
 
