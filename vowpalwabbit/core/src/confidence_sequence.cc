@@ -13,7 +13,7 @@ namespace VW
 {
 namespace confidence_sequence
 {
-double IntervalImpl::approxpolygammaone(double b)
+double ConfidenceSequence::approxpolygammaone(double b)
 {
   assert(b >= 1.0);
   if (b > 10.0)
@@ -33,25 +33,42 @@ double IntervalImpl::approxpolygammaone(double b)
   }
 }
 
-double IntervalImpl::lb_new(double sumXt, double v, double eta, double s, double alpha)
+double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha)
 {
   double zeta_s = std::riemann_zeta(s);
   v = std::max(v, 1.0);
   double gamma1 = (std::pow(eta, 0.25) + std::pow(eta, 0.25)) / std::sqrt(2.0);
   double gamma2 = (std::sqrt(eta) + 1.0) / 2.0;
   assert(((std::log(eta * v) / std::log(eta)) + 1.0 > 0.0) && (1.0 + (std::log(eta * v) / std::log(eta)) != 0.0));
-  double ll = s * std::log((std::log(eta * v) / std::log(eta)) + 1.0) + std::log(zeta_s / alpha);
+  double ll = s * std::log((std::log(eta * v) / std::log(eta)) + 1.0) + std::log(zeta_s / lb_alpha);
   return std::max(
       0.0, (sumXt - std::sqrt(std::pow(gamma1, 2) * ll * v + std::pow(gamma2, 2) * std::pow(ll, 2)) - gamma2 * ll) / t);
 }
 
-IntervalImpl::IntervalImpl(double rmin, double rmax, bool adjust) : rmin(rmin), rmax(rmax), adjust(adjust) {}
+ConfidenceSequence::ConfidenceSequence(double alpha, double rmin_init, double rmax_init, bool adjust)
+    : alpha(alpha), rmin_init(rmin_init), rmax_init(rmax_init), adjust(adjust)
+{
+  reset_stats();
+}
 
-void IntervalImpl::addobs(double w, double r, double p_drop, double n_drop)
+void ConfidenceSequence::persist(metric_sink& metrics, const std::string& suffix)
+{
+  metrics.set_uint("upcnt" + suffix, update_count);
+  metrics.set_float("lb" + suffix, lower_bound());
+  metrics.set_float("ub" + suffix, upper_bound());
+  metrics.set_float("w" + suffix, last_w);
+  metrics.set_float("r" + suffix, last_r);
+}
+
+void ConfidenceSequence::update(double w, double r, double p_drop, double n_drop)
 {
   assert(w >= 0.0);
   assert(0.0 <= p_drop && p_drop < 1.0);
   assert(n_drop == -1.0 || n_drop >= 0.0);  // -1.0 equivalent to None in Python code
+
+  ++update_count;
+  last_w = w;
+  last_r = r;
 
   if (!adjust) { r = std::min(rmax, std::max(rmin, r)); }
   else
@@ -104,21 +121,54 @@ void IntervalImpl::addobs(double w, double r, double p_drop, double n_drop)
   ++t;
 }
 
-std::pair<double, double> IntervalImpl::getci(double alpha)
+float ConfidenceSequence::lower_bound()
 {
-  if (t == 0 || rmin == rmax) { return std::make_pair(rmin, rmax); }
+  if (t == 0 || rmin == rmax) { return static_cast<float>(rmin); }
 
   double sumvlow = (sumwsqrsq - 2.0 * rmin * sumwsqr + std::pow(rmin, 2) * sumwsq) / std::pow(rmax - rmin, 2) -
       2.0 * (sumwrxhatlow - rmin * sumwxhatlow) / (rmax - rmin) + sumxhatlowsq;
   double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
-  double l = lb_new(sumXlow, sumvlow, eta, s, alpha / 2.0);
+  double l = lblogwealth(sumXlow, sumvlow, eta, s, alpha / 2.0);
+
+  return static_cast<float>(rmin + l * (rmax - rmin));
+}
+
+float ConfidenceSequence::upper_bound()
+{
+  if (t == 0 || rmin == rmax) { return static_cast<float>(rmax); }
 
   double sumvhigh = (sumwsqrsq - 2.0 * rmax * sumwsqr + std::pow(rmax, 2) * sumwsq) / std::pow(rmax - rmin, 2) +
       2.0 * (sumwrxhathigh - rmax * sumwxhathigh) / (rmax - rmin) + sumxhathighsq;
   double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
-  double u = 1.0 - lb_new(sumXhigh, sumvhigh, eta, s, alpha / 2.0);
+  double u = 1.0 - lblogwealth(sumXhigh, sumvhigh, eta, s, alpha / 2.0);
 
-  return std::make_pair(rmin + l * (rmax - rmin), rmin + u * (rmax - rmin));
+  return static_cast<float>(rmin + u * (rmax - rmin));
+}
+
+void ConfidenceSequence::reset_stats()
+{
+  rmin = rmin_init;
+  rmax = rmax_init;
+
+  eta = 1.1;
+  s = 1.1;
+  t = 0;
+
+  sumwsqrsq.partials.clear();
+  sumwsqr.partials.clear();
+  sumwsq.partials.clear();
+  sumwr.partials.clear();
+  sumw.partials.clear();
+  sumwrxhatlow.partials.clear();
+  sumwxhatlow.partials.clear();
+  sumxhatlowsq.partials.clear();
+  sumwrxhathigh.partials.clear();
+  sumwxhathigh.partials.clear();
+  sumxhathighsq.partials.clear();
+
+  update_count = 0;
+  last_w = 0.0;
+  last_r = 0.0;
 }
 }  // namespace confidence_sequence
 
@@ -139,14 +189,17 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::confidence_sequence::IntervalImpl& im)
+size_t read_model_field(io_buf& io, VW::confidence_sequence::ConfidenceSequence& im)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, im.eta);
-  bytes += read_model_field(io, im.s);
+  bytes += read_model_field(io, im.alpha);
+  bytes += read_model_field(io, im.rmin_init);
   bytes += read_model_field(io, im.rmin);
+  bytes += read_model_field(io, im.rmax_init);
   bytes += read_model_field(io, im.rmax);
   bytes += read_model_field(io, im.adjust);
+  bytes += read_model_field(io, im.eta);
+  bytes += read_model_field(io, im.s);
   bytes += read_model_field(io, im.t);
   bytes += read_model_field(io, im.sumwsqrsq);
   bytes += read_model_field(io, im.sumwsqr);
@@ -159,18 +212,24 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence::IntervalImpl& im)
   bytes += read_model_field(io, im.sumwrxhathigh);
   bytes += read_model_field(io, im.sumwxhathigh);
   bytes += read_model_field(io, im.sumxhathighsq);
+  bytes += read_model_field(io, im.update_count);
+  bytes += read_model_field(io, im.last_w);
+  bytes += read_model_field(io, im.last_r);
   return bytes;
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::confidence_sequence::IntervalImpl& im, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::confidence_sequence::ConfidenceSequence& im, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, im.eta, upstream_name + "_eta", text);
-  bytes += write_model_field(io, im.s, upstream_name + "_s", text);
+  bytes += write_model_field(io, im.alpha, upstream_name + "_alpha", text);
+  bytes += write_model_field(io, im.rmin_init, upstream_name + "_rmin_init", text);
   bytes += write_model_field(io, im.rmin, upstream_name + "_rmin", text);
+  bytes += write_model_field(io, im.rmax_init, upstream_name + "_rmax_init", text);
   bytes += write_model_field(io, im.rmax, upstream_name + "_rmax", text);
   bytes += write_model_field(io, im.adjust, upstream_name + "_adjust", text);
+  bytes += write_model_field(io, im.eta, upstream_name + "_eta", text);
+  bytes += write_model_field(io, im.s, upstream_name + "_s", text);
   bytes += write_model_field(io, im.t, upstream_name + "_t", text);
   bytes += write_model_field(io, im.sumwsqrsq, upstream_name + "_sumwsqrsq", text);
   bytes += write_model_field(io, im.sumwsqr, upstream_name + "_sumwsqr", text);
@@ -183,6 +242,9 @@ size_t write_model_field(
   bytes += write_model_field(io, im.sumwrxhathigh, upstream_name + "_sumwrxhathigh", text);
   bytes += write_model_field(io, im.sumwxhathigh, upstream_name + "_sumwxhathigh", text);
   bytes += write_model_field(io, im.sumxhathighsq, upstream_name + "_sumxhathighsq", text);
+  bytes += write_model_field(io, im.update_count, upstream_name + "_update_count", text);
+  bytes += write_model_field(io, im.last_w, upstream_name + "_last_w", text);
+  bytes += write_model_field(io, im.last_r, upstream_name + "_last_r", text);
   return bytes;
 }
 }  // namespace model_utils

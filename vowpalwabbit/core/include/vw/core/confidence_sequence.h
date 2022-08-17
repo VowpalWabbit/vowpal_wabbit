@@ -8,6 +8,7 @@
 #define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
 
 #include "vw/core/io_buf.h"
+#include "vw/core/metric_sink.h"
 
 #include <algorithm>
 
@@ -57,15 +58,18 @@ struct IncrementalFsum
   }
 };
 
-struct IntervalImpl
+struct ConfidenceSequence
 {
-  double eta = 1.1;
-  double s = 1.1;
-  double rmin = 0.0;
-  double rmax = 1.0;
-  bool adjust = true;
+  double alpha;
+  double rmin_init;
+  double rmin;
+  double rmax_init;
+  double rmax;
+  bool adjust;
 
-  int t = 0;
+  double eta;
+  double s;
+  int t;
 
   IncrementalFsum sumwsqrsq;
   IncrementalFsum sumwsqr;
@@ -79,11 +83,18 @@ struct IntervalImpl
   IncrementalFsum sumwxhathigh;
   IncrementalFsum sumxhathighsq;
 
+  uint64_t update_count;
+  double last_w;
+  double last_r;
+
+  ConfidenceSequence(double alpha = DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
   double approxpolygammaone(double b);
-  double lb_new(double sumXt, double v, double eta, double s, double alpha);
-  IntervalImpl(double rmin = 0.0, double rmax = 1.0, bool adjust = true);
-  void addobs(double w, double r, double p_drop = 0.0, double n_drop = -1.0);
-  std::pair<double, double> getci(double alpha = DEFAULT_ALPHA);
+  double lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha);
+  void persist(metric_sink&, const std::string&);
+  void update(double w, double r, double p_drop = 0.0, double n_drop = -1.0);
+  float lower_bound();
+  float upper_bound();
+  void reset_stats();
 };
 }  // namespace confidence_sequence
 
@@ -91,7 +102,7 @@ namespace model_utils
 {
 size_t read_model_field(io_buf&, VW::confidence_sequence::IncrementalFsum&);
 size_t write_model_field(io_buf&, const VW::confidence_sequence::IncrementalFsum&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::confidence_sequence::IntervalImpl&);
-size_t write_model_field(io_buf&, const VW::confidence_sequence::IntervalImpl&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::confidence_sequence::ConfidenceSequence&);
+size_t write_model_field(io_buf&, const VW::confidence_sequence::ConfidenceSequence&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
