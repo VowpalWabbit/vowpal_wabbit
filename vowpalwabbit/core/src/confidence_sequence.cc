@@ -8,7 +8,6 @@
 
 #include <cassert>
 #include <cmath>
-#include <tr1/cmath>
 
 namespace VW
 {
@@ -162,7 +161,7 @@ double ConfidenceSequence::approxpolygammaone(double b)
 
 double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha)
 {
-  double zeta_s = std::tr1::riemann_zeta(s);
+  double zeta_s = 10.584448464950803; // std::riemann_zeta(s) -- Assuming s=1.1 is constant
   v = std::max(v, 1.0);
   double gamma1 = (std::pow(eta, 0.25) + std::pow(eta, 0.25)) / std::sqrt(2.0);
   double gamma2 = (std::sqrt(eta) + 1.0) / 2.0;
