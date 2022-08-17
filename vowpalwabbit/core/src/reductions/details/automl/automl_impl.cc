@@ -95,7 +95,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_qcol
 
   config_oracle.configs[0].state = VW::reductions::automl::config_state::Live;
   estimators.emplace_back(
-      std::make_pair(aml_estimator<estimator_impl>(sig_level, decay), estimator_config(sig_level, decay)));
+      std::make_pair(aml_estimator<estimator_impl>(sig_level, decay), estimator_impl(sig_level, decay)));
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -189,7 +189,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_confi
   if (estimators.size() <= live_slot)
   {
     estimators.emplace_back(
-        std::make_pair(aml_estimator<estimator_config>(sig_level, decay), estimator_config(sig_level, decay)));
+        std::make_pair(aml_estimator<estimator_impl>(sig_level, decay), estimator_impl(sig_level, decay)));
     if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
   }
   assert(estimators.size() > live_slot);
@@ -292,7 +292,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
    * statistics, we don't want to alter the other state such as interactions and config_index.
    */
   estimators[1].first =
-      aml_estimator<estimator_config>(std::move(estimators[0].second), estimators[1].first.config_index,
+      aml_estimator<estimator_impl>(std::move(estimators[0].second), estimators[1].first.config_index,
           estimators[1].first.eligible_to_inactivate, estimators[1].first.live_interactions);
   estimators[1].second = estimators[0].first._estimator;
 
