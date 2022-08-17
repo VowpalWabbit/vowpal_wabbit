@@ -13,51 +13,10 @@ namespace VW
 {
 namespace confidence_sequence
 {
-double ConfidenceSequence::approxpolygammaone(double b)
-{
-  assert(b >= 1.0);
-  if (b > 10.0)
-  {
-    double z = 1.0 / b;
-    // Assuming[z > 0, FullSimplify@Series[PolyGamma[1, 1/z], { z, 0, 8 }]]
-    return z * (1.0 + z * (0.5 + z * (1.0 / 6.0 + std::pow(z, 2) * (-1.0 / 30.0 + std::pow(z, 2) * (1.0 / 42.0)))));
-  }
-  else
-  {
-    // MiniMaxApproximation[PolyGamma[1, z], { z, { 1, 10 }, 4, 4 }]
-    double numerator = 52.654073150313565 +
-        b * (176.21984028201697 + b * (230.4407865623894 + b * (232.30138091080408 + b * (0.00006342628796017858))));
-    double denominator =
-        1.0 + b * (-7.709336904239235 + b * (80.59885744577618 + b * (114.25915616534267 + b * (232.30352278139097))));
-    return numerator / denominator;
-  }
-}
-
-double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha)
-{
-  double zeta_s = std::riemann_zeta(s);
-  v = std::max(v, 1.0);
-  double gamma1 = (std::pow(eta, 0.25) + std::pow(eta, 0.25)) / std::sqrt(2.0);
-  double gamma2 = (std::sqrt(eta) + 1.0) / 2.0;
-  assert(((std::log(eta * v) / std::log(eta)) + 1.0 > 0.0) && (1.0 + (std::log(eta * v) / std::log(eta)) != 0.0));
-  double ll = s * std::log((std::log(eta * v) / std::log(eta)) + 1.0) + std::log(zeta_s / lb_alpha);
-  return std::max(
-      0.0, (sumXt - std::sqrt(std::pow(gamma1, 2) * ll * v + std::pow(gamma2, 2) * std::pow(ll, 2)) - gamma2 * ll) / t);
-}
-
 ConfidenceSequence::ConfidenceSequence(double alpha, double rmin_init, double rmax_init, bool adjust)
     : alpha(alpha), rmin_init(rmin_init), rmax_init(rmax_init), adjust(adjust)
 {
   reset_stats();
-}
-
-void ConfidenceSequence::persist(metric_sink& metrics, const std::string& suffix)
-{
-  metrics.set_uint("upcnt" + suffix, update_count);
-  metrics.set_float("lb" + suffix, lower_bound());
-  metrics.set_float("ub" + suffix, upper_bound());
-  metrics.set_float("w" + suffix, last_w);
-  metrics.set_float("r" + suffix, last_r);
 }
 
 void ConfidenceSequence::update(double w, double r, double p_drop, double n_drop)
@@ -121,28 +80,13 @@ void ConfidenceSequence::update(double w, double r, double p_drop, double n_drop
   ++t;
 }
 
-float ConfidenceSequence::lower_bound()
+void ConfidenceSequence::persist(metric_sink& metrics, const std::string& suffix)
 {
-  if (t == 0 || rmin == rmax) { return static_cast<float>(rmin); }
-
-  double sumvlow = (sumwsqrsq - 2.0 * rmin * sumwsqr + std::pow(rmin, 2) * sumwsq) / std::pow(rmax - rmin, 2) -
-      2.0 * (sumwrxhatlow - rmin * sumwxhatlow) / (rmax - rmin) + sumxhatlowsq;
-  double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
-  double l = lblogwealth(sumXlow, sumvlow, eta, s, alpha / 2.0);
-
-  return static_cast<float>(rmin + l * (rmax - rmin));
-}
-
-float ConfidenceSequence::upper_bound()
-{
-  if (t == 0 || rmin == rmax) { return static_cast<float>(rmax); }
-
-  double sumvhigh = (sumwsqrsq - 2.0 * rmax * sumwsqr + std::pow(rmax, 2) * sumwsq) / std::pow(rmax - rmin, 2) +
-      2.0 * (sumwrxhathigh - rmax * sumwxhathigh) / (rmax - rmin) + sumxhathighsq;
-  double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
-  double u = 1.0 - lblogwealth(sumXhigh, sumvhigh, eta, s, alpha / 2.0);
-
-  return static_cast<float>(rmin + u * (rmax - rmin));
+  metrics.set_uint("upcnt" + suffix, update_count);
+  metrics.set_float("lb" + suffix, lower_bound());
+  metrics.set_float("ub" + suffix, upper_bound());
+  metrics.set_float("w" + suffix, last_w);
+  metrics.set_float("r" + suffix, last_r);
 }
 
 void ConfidenceSequence::reset_stats()
@@ -169,6 +113,62 @@ void ConfidenceSequence::reset_stats()
   update_count = 0;
   last_w = 0.0;
   last_r = 0.0;
+}
+
+float ConfidenceSequence::lower_bound()
+{
+  if (t == 0 || rmin == rmax) { return static_cast<float>(rmin); }
+
+  double sumvlow = (sumwsqrsq - 2.0 * rmin * sumwsqr + std::pow(rmin, 2) * sumwsq) / std::pow(rmax - rmin, 2) -
+      2.0 * (sumwrxhatlow - rmin * sumwxhatlow) / (rmax - rmin) + sumxhatlowsq;
+  double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
+  double l = lblogwealth(sumXlow, sumvlow, eta, s, alpha / 2.0);
+
+  return static_cast<float>(rmin + l * (rmax - rmin));
+}
+
+float ConfidenceSequence::upper_bound()
+{
+  if (t == 0 || rmin == rmax) { return static_cast<float>(rmax); }
+
+  double sumvhigh = (sumwsqrsq - 2.0 * rmax * sumwsqr + std::pow(rmax, 2) * sumwsq) / std::pow(rmax - rmin, 2) +
+      2.0 * (sumwrxhathigh - rmax * sumwxhathigh) / (rmax - rmin) + sumxhathighsq;
+  double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
+  double u = 1.0 - lblogwealth(sumXhigh, sumvhigh, eta, s, alpha / 2.0);
+
+  return static_cast<float>(rmin + u * (rmax - rmin));
+}
+
+double ConfidenceSequence::approxpolygammaone(double b)
+{
+  assert(b >= 1.0);
+  if (b > 10.0)
+  {
+    double z = 1.0 / b;
+    // Assuming[z > 0, FullSimplify@Series[PolyGamma[1, 1/z], { z, 0, 8 }]]
+    return z * (1.0 + z * (0.5 + z * (1.0 / 6.0 + std::pow(z, 2) * (-1.0 / 30.0 + std::pow(z, 2) * (1.0 / 42.0)))));
+  }
+  else
+  {
+    // MiniMaxApproximation[PolyGamma[1, z], { z, { 1, 10 }, 4, 4 }]
+    double numerator = 52.654073150313565 +
+        b * (176.21984028201697 + b * (230.4407865623894 + b * (232.30138091080408 + b * (0.00006342628796017858))));
+    double denominator =
+        1.0 + b * (-7.709336904239235 + b * (80.59885744577618 + b * (114.25915616534267 + b * (232.30352278139097))));
+    return numerator / denominator;
+  }
+}
+
+double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha)
+{
+  double zeta_s = std::riemann_zeta(s);
+  v = std::max(v, 1.0);
+  double gamma1 = (std::pow(eta, 0.25) + std::pow(eta, 0.25)) / std::sqrt(2.0);
+  double gamma2 = (std::sqrt(eta) + 1.0) / 2.0;
+  assert(((std::log(eta * v) / std::log(eta)) + 1.0 > 0.0) && (1.0 + (std::log(eta * v) / std::log(eta)) != 0.0));
+  double ll = s * std::log((std::log(eta * v) / std::log(eta)) + 1.0) + std::log(zeta_s / lb_alpha);
+  return std::max(
+      0.0, (sumXt - std::sqrt(std::pow(gamma1, 2) * ll * v + std::pow(gamma2, 2) * std::pow(ll, 2)) - gamma2 * ll) / t);
 }
 }  // namespace confidence_sequence
 

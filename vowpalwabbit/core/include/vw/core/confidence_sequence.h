@@ -87,14 +87,17 @@ struct ConfidenceSequence
   double last_w;
   double last_r;
 
+public:
   ConfidenceSequence(double alpha = DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
-  double approxpolygammaone(double b);
-  double lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha);
-  void persist(metric_sink&, const std::string&);
   void update(double w, double r, double p_drop = 0.0, double n_drop = -1.0);
+  void persist(metric_sink&, const std::string&);
+  void reset_stats();
   float lower_bound();
   float upper_bound();
-  void reset_stats();
+
+private:
+  double approxpolygammaone(double b);
+  double lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha);
 };
 }  // namespace confidence_sequence
 
