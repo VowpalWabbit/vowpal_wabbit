@@ -94,7 +94,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_qcol
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() >= 1);
 
-  config_oracle.configs[0].state = VW::reductions::automl::config_state::Live;
+  config_oracle.configs[0].state = VW::reductions::automl::config_state::New;
   estimators.emplace_back(
       std::make_pair(aml_estimator<estimator_impl>(sig_level, decay), estimator_impl(sig_level, decay)));
 }
@@ -340,6 +340,12 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
       config_oracle_impl::gen_interactions_from_exclusions(
           _ccb_on, ns_counter, interaction_type, exclusions, interactions);
     }
+
+    if (_config_oracle.configs[current_champ].state == VW::reductions::automl::config_state::New)
+    {
+      _config_oracle.configs[current_champ].state = VW::reductions::automl::config_state::Live;
+      _config_oracle.gen_exclusion_configs(estimators[current_champ].first.live_interactions, ns_counter);
+    }
   }
 }
 
@@ -351,27 +357,10 @@ template <typename CMType>
 void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;
-  switch (current_state)
-  {
-    // todo: collecting and experimenting can be folded into one
-    case automl_state::Collecting:
-      cm->process_example(ec);
-      cm->_config_oracle.gen_exclusion_configs(
-          cm->estimators[cm->current_champ].first.live_interactions, cm->ns_counter);
-      offset_learn(base, ec, logged, labelled_action);
-      current_state = automl_state::Experimenting;
-      break;
-
-    case automl_state::Experimenting:
-      cm->process_example(ec);
-      cm->schedule();
-      offset_learn(base, ec, logged, labelled_action);
-      cm->check_for_new_champ();
-      break;
-
-    default:
-      break;
-  }
+  cm->process_example(ec);
+  cm->schedule();
+  offset_learn(base, ec, logged, labelled_action);
+  cm->check_for_new_champ();
 }
 
 template <typename CMType>

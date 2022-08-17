@@ -201,7 +201,7 @@ enum class automl_state
 template <typename CMType>
 struct automl
 {
-  automl_state current_state = automl_state::Collecting;
+  automl_state current_state = automl_state::Experimenting;
   std::unique_ptr<CMType> cm;
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
