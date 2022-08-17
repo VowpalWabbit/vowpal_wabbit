@@ -4,8 +4,9 @@
 
 #pragma once
 
-#include <algorithm>
 #include "vw/core/io_buf.h"
+
+#include <algorithm>
 
 constexpr float DEFAULT_ALPHA = 0.05f;
 
@@ -15,81 +16,72 @@ namespace confidence_sequence
 {
 struct IncrementalFsum
 {
-    std::vector<double> partials;
+  std::vector<double> partials;
 
-    IncrementalFsum operator+=(double x)
+  IncrementalFsum operator+=(double x)
+  {
+    int i = 0;
+    for (double y : this->partials)
     {
-        int i = 0;
-        for (double y : this->partials)
-        {
-            if (std::abs(x) < std::abs(y))
-            {
-                std::swap(x, y);
-            }
-            double hi = x + y;
-            double lo = y - (hi - x);
-            if (lo != 0.0)
-            {
-                this->partials[i] = lo;
-                ++i;
-            }
-            x = hi;
-        }
-        this->partials[i] = x;
-        this->partials.resize(i + 1);
-        return *this;
+      if (std::abs(x) < std::abs(y)) { std::swap(x, y); }
+      double hi = x + y;
+      double lo = y - (hi - x);
+      if (lo != 0.0)
+      {
+        this->partials[i] = lo;
+        ++i;
+      }
+      x = hi;
     }
+    this->partials[i] = x;
+    this->partials.resize(i + 1);
+    return *this;
+  }
 
-    IncrementalFsum operator+(IncrementalFsum const& other)
-    {
-        IncrementalFsum result;
-        result.partials = this->partials;
-        for (double y : other.partials)
-        {
-            result += y;
-        }
-        return result;
-    }
+  IncrementalFsum operator+(IncrementalFsum const& other)
+  {
+    IncrementalFsum result;
+    result.partials = this->partials;
+    for (double y : other.partials) { result += y; }
+    return result;
+  }
 
-    operator double() const
-    {
-        double result = 0.0;
-        for (double x : this->partials)
-        {
-            result += x;
-        }
-        return result;
-    }
+  operator double() const
+  {
+    double result = 0.0;
+    for (double x : this->partials) { result += x; }
+    return result;
+  }
 };
 
 struct IntervalImpl
 {
-    double eta = 1.1;
-    double s = 1.1;
-    double rmin = 0.0;
-    double rmax = 1.0;
-    bool adjust = true;
+  double eta = 1.1;
+  double s = 1.1;
+  double rmin = 0.0;
+  double rmax = 1.0;
+  bool adjust = true;
 
-    int t = 0;
+  int t = 0;
 
-    IncrementalFsum sumwsqrsq;
-    IncrementalFsum sumwsqr;
-    IncrementalFsum sumwsq;
-    IncrementalFsum sumwr;
-    IncrementalFsum sumw;
-    IncrementalFsum sumwrxhatlow;
-    IncrementalFsum sumwxhatlow;
-    IncrementalFsum sumxhatlowsq;
-    IncrementalFsum sumwrxhathigh;
-    IncrementalFsum sumwxhathigh;
-    IncrementalFsum sumxhathighsq;
+  IncrementalFsum sumwsqrsq;
+  IncrementalFsum sumwsqr;
+  IncrementalFsum sumwsq;
+  IncrementalFsum sumwr;
+  IncrementalFsum sumw;
+  IncrementalFsum sumwrxhatlow;
+  IncrementalFsum sumwxhatlow;
+  IncrementalFsum sumxhatlowsq;
+  IncrementalFsum sumwrxhathigh;
+  IncrementalFsum sumwxhathigh;
+  IncrementalFsum sumxhathighsq;
 
-    double reimann_zeta(double n, double z);
-    double polygamma(double a, double b);
-    double lb_new(double sumXt, double v, double eta, double s, double alpha);
-    IntervalImpl(double rmin, double rmax, bool adjust);
-    void addobs(double w, double r, double p_drop, double n_drop);
-    std::pair<double, double> getci(double alpha = DEFAULT_ALPHA);
+  double reimann_zeta(double n, double z);
+  double polygamma(double a, double b);
+  double lb_new(double sumXt, double v, double eta, double s, double alpha);
+  IntervalImpl(double rmin, double rmax, bool adjust);
+  void addobs(double w, double r, double p_drop, double n_drop);
+  std::pair<double, double> getci(double alpha = DEFAULT_ALPHA);
 };
 }  // namespace confidence_sequence
 
