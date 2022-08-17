@@ -134,7 +134,7 @@ template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normali
 inline void update_feature(float& update, float x, float& fw)
 {
   weight* w = &fw;
-  bool modify = x < FLT_MAX && x > -FLT_MAX && (feature_mask_off || fw != 0.);
+  bool modify = std::isfinite(x) && (feature_mask_off || fw != 0.);
   if (modify)
   {
     if VW_STD17_CONSTEXPR (spare != 0) { x *= w[spare]; }
