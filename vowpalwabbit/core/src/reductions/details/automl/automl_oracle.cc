@@ -148,7 +148,7 @@ void config_oracle<oracle_impl>::insert_config(
 // stored as 'exclusions.' The current design is to look at the interactions of
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
-void oracle_rand_impl::gen_exclusion_config_at(const std::string interaction_type,
+void oracle_rand_impl::gen_exclusion_config_at(const std::string& interaction_type,
     const interaction_vec_t& champ_interactions, const size_t, exclusion_set_t& new_exclusions)
 {
   uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
@@ -172,7 +172,7 @@ void oracle_rand_impl::gen_exclusion_config_at(const std::string interaction_typ
     THROW("Unknown interaction type.");
   }
 }
-void one_diff_impl::gen_exclusion_config_at(const std::string interaction_type,
+void one_diff_impl::gen_exclusion_config_at(const std::string& interaction_type,
     const interaction_vec_t& champ_interactions, const size_t num, exclusion_set_t::iterator& exclusion,
     exclusion_set_t& new_exclusions)
 {

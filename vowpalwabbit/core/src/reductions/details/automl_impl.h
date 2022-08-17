@@ -132,14 +132,14 @@ struct oracle_rand_impl
 {
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void gen_exclusion_config_at(const std::string interaction_type, const interaction_vec_t& champ_interactions,
+  void gen_exclusion_config_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
       const size_t num, exclusion_set_t& new_exclusions);
   Iterator begin() { return Iterator(); }
   Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
 };
 struct one_diff_impl
 {
-  void gen_exclusion_config_at(const std::string interaction_type, const interaction_vec_t& champ_interactions,
+  void gen_exclusion_config_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
       const size_t num, exclusion_set_t::iterator& exclusion, exclusion_set_t& new_exclusions);
   Iterator begin() { return Iterator(); }
   Iterator end(const interaction_vec_t& champ_interactions, const exclusion_set_t& champ_exclusions)
