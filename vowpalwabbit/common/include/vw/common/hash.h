@@ -59,7 +59,7 @@ VW_STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept
 static inline uint32_t getblock(const uint32_t* p, int i) noexcept
 {
   uint32_t block = 0;
-  memcpy(&block, p + i, sizeof(uint32_t));
+  memcpy(&block, &p[i], sizeof(uint32_t));
   return block;
 }
 
