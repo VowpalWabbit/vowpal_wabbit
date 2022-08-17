@@ -55,7 +55,7 @@ uint64_t config_oracle<oracle_impl>::choose(std::priority_queue<std::pair<float,
 template <typename oracle_impl>
 void config_oracle<oracle_impl>::gen_interactions_from_exclusions(const bool ccb_on,
     const std::map<namespace_index, uint64_t>& ns_counter, const std::string& interaction_type,
-    const std::set<std::vector<namespace_index>>& exclusions, interaction_vec_t& interactions)
+    const exclusion_set_t& exclusions, interaction_vec_t& interactions)
 {
   if (interaction_type == "quadratic")
   {
@@ -104,8 +104,8 @@ void config_oracle<oracle_impl>::gen_interactions_from_exclusions(const bool ccb
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 template <typename oracle_impl>
-void config_oracle<oracle_impl>::insert_config(std::set<std::vector<namespace_index>>&& new_exclusions,
-    const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups)
+void config_oracle<oracle_impl>::insert_config(
+    exclusion_set_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups)
 {
   // First check if config already exists
   if (!allow_dups)
@@ -144,46 +144,43 @@ void config_oracle<oracle_impl>::insert_config(std::set<std::vector<namespace_in
   ++valid_config_size;
 }
 
-void oracle_rand_impl::gen_exclusion_configs(config_oracle<oracle_rand_impl>* co,
-    const interaction_vec_t& champ_interactions, std::vector<exclusion_config>& configs,
-    const std::map<namespace_index, uint64_t>& ns_counter)
+// This will generate configs based on the current champ. These configs will be
+// stored as 'exclusions.' The current design is to look at the interactions of
+// the current champ and remove one interaction for each new config. The number
+// of configs to generate per champ is hard-coded to 5 at the moment.
+void oracle_rand_impl::gen_exclusion_config_at(const std::string interaction_type,
+    const interaction_vec_t& champ_interactions, const size_t, exclusion_set_t& new_exclusions)
 {
-  const uint64_t champ_index = 0;
-  for (uint64_t i = 0; i < CONFIGS_PER_CHAMP_CHANGE; ++i)
+  uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
+  if (interaction_type == "quadratic")
   {
-    uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
-    std::set<std::vector<namespace_index>> new_exclusions(configs[champ_index].exclusions);
-    if (co->_interaction_type == "quadratic")
-    {
-      namespace_index ns1 = champ_interactions[rand_ind][0];
-      namespace_index ns2 = champ_interactions[rand_ind][1];
-      std::vector<namespace_index> idx{ns1, ns2};
-      new_exclusions.insert(idx);
-    }
-    else if (co->_interaction_type == "cubic")
-    {
-      namespace_index ns1 = champ_interactions[rand_ind][0];
-      namespace_index ns2 = champ_interactions[rand_ind][1];
-      namespace_index ns3 = champ_interactions[rand_ind][2];
-      std::vector<namespace_index> idx{ns1, ns2, ns3};
-      new_exclusions.insert(idx);
-    }
-    else
-    {
-      THROW("Unknown interaction type.");
-    }
-    co->insert_config(std::move(new_exclusions), ns_counter);
+    namespace_index ns1 = champ_interactions[rand_ind][0];
+    namespace_index ns2 = champ_interactions[rand_ind][1];
+    std::vector<namespace_index> idx{ns1, ns2};
+    new_exclusions.insert(idx);
+  }
+  else if (interaction_type == "cubic")
+  {
+    namespace_index ns1 = champ_interactions[rand_ind][0];
+    namespace_index ns2 = champ_interactions[rand_ind][1];
+    namespace_index ns3 = champ_interactions[rand_ind][2];
+    std::vector<namespace_index> idx{ns1, ns2, ns3};
+    new_exclusions.insert(idx);
+  }
+  else
+  {
+    THROW("Unknown interaction type.");
   }
 }
-void one_diff_impl::gen_exclusion_configs(config_oracle<one_diff_impl>* co, const interaction_vec_t& champ_interactions,
-    std::vector<exclusion_config>& configs, const std::map<namespace_index, uint64_t>& ns_counter)
+void one_diff_impl::gen_exclusion_config_at(const std::string interaction_type,
+    const interaction_vec_t& champ_interactions, const size_t num, exclusion_set_t::iterator& exclusion,
+    exclusion_set_t& new_exclusions)
 {
-  const uint64_t champ_index = 0;
   // Add one exclusion (for each interaction)
-  for (auto& interaction : champ_interactions)
+  if (num < champ_interactions.size())
   {
-    std::set<std::vector<namespace_index>> new_exclusions(configs[champ_index].exclusions);
-    if (co->_interaction_type == "quadratic")
+    auto& interaction = champ_interactions[num];
+    if (interaction_type == "quadratic")
     {
       namespace_index ns1 = interaction[0];
       namespace_index ns2 = interaction[1];
@@ -193,7 +190,7 @@ void one_diff_impl::gen_exclusion_configs(config_oracle<one_diff_impl>* co, cons
         new_exclusions.insert(idx);
       }
     }
-    else if (co->_interaction_type == "cubic")
+    else if (interaction_type == "cubic")
     {
       namespace_index ns1 = interaction[0];
       namespace_index ns2 = interaction[1];
@@ -205,34 +202,54 @@ void one_diff_impl::gen_exclusion_configs(config_oracle<one_diff_impl>* co, cons
     {
       THROW("Unknown interaction type.");
     }
-    co->insert_config(std::move(new_exclusions), ns_counter);
   }
-  // Remove one exclusion (for each exclusion)
-  for (auto& ns_pair : configs[champ_index].exclusions)
+  else
   {
-    auto new_exclusions = configs[champ_index].exclusions;
-    new_exclusions.erase(ns_pair);
-    co->insert_config(std::move(new_exclusions), ns_counter);
+    // Remove one exclusion (for each exclusion)
+    new_exclusions.erase(*exclusion);
+    ++exclusion;
   }
-}
-void champdupe_impl::gen_exclusion_configs(config_oracle<champdupe_impl>* co, const interaction_vec_t&,
-    std::vector<exclusion_config>& configs, const std::map<namespace_index, uint64_t>& ns_counter)
-{
-  const uint64_t champ_index = 0;
-  for (uint64_t i = 0; co->configs.size() <= 2; ++i)
-  { co->insert_config(std::set<std::vector<namespace_index>>(configs[champ_index].exclusions), ns_counter, true); }
 }
 
-// This will generate configs based on the current champ. These configs will be
-// stored as 'exclusions.' The current design is to look at the interactions of
-// the current champ and remove one interaction for each new config. The number
-// of configs to generate per champ is hard-coded to 5 at the moment.
-// TODO: Add logic to avoid duplicate configs (could be very costly)
+template <>
+void config_oracle<one_diff_impl>::gen_exclusion_configs(
+    const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
+{
+  // we need this to stay constant bc insert might resize configs vector
+  auto champ_excl = std::move(configs[0].exclusions);
+  auto exclusion_it = champ_excl.begin();
+
+  for (auto it = _impl.begin(); it != _impl.end(champ_interactions, champ_excl); ++it)
+  {
+    auto copy_champ = champ_excl;
+    _impl.gen_exclusion_config_at(_interaction_type, champ_interactions, *it, exclusion_it, copy_champ);
+    insert_config(std::move(copy_champ), ns_counter);
+  }
+
+  configs[0].exclusions = std::move(champ_excl);
+}
+
+template <>
+void config_oracle<champdupe_impl>::gen_exclusion_configs(
+    const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
+{
+  for (auto it = _impl.begin(); it != _impl.end(); ++it)
+  {
+    auto copy_champ = configs[0].exclusions;
+    insert_config(std::move(copy_champ), ns_counter, true);
+  }
+}
+
 template <typename oracle_impl>
 void config_oracle<oracle_impl>::gen_exclusion_configs(
     const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
 {
-  _impl.gen_exclusion_configs(this, champ_interactions, configs, ns_counter);
+  for (auto it = _impl.begin(); it != _impl.end(); ++it)
+  {
+    auto copy_champ = configs[0].exclusions;
+    _impl.gen_exclusion_config_at(_interaction_type, champ_interactions, *it, copy_champ);
+    insert_config(std::move(copy_champ), ns_counter);
+  }
 }
 
 // This function is triggered when all sets of interactions generated by the oracle have been tried and

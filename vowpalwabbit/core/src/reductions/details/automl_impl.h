@@ -64,9 +64,11 @@ enum class config_state
   Removed
 };
 
+using exclusion_set_t = std::set<std::vector<namespace_index>>;
+
 struct exclusion_config
 {
-  std::set<std::vector<namespace_index>> exclusions;
+  exclusion_set_t exclusions;
   uint64_t lease;
   config_state state = VW::reductions::automl::config_state::New;
 
@@ -96,32 +98,59 @@ struct config_oracle
 
   void gen_exclusion_configs(
       const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
-  void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions,
-      const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
+  void insert_config(
+      exclusion_set_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_qcolcol();
   static void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
-      const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
-      interaction_vec_t& interactions);
+      const std::string& interaction_type, const exclusion_set_t& exclusions, interaction_vec_t& interactions);
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
+};
+
+struct Iterator
+{
+  using iterator_category = std::forward_iterator_tag;
+
+  Iterator(size_t start_value = 0) : current(start_value) {}
+
+  size_t operator*() const { return current; }
+
+  Iterator& operator++()
+  {
+    current++;
+    return *this;
+  }
+
+  bool operator==(const Iterator& rhs) { return current == rhs.current; };
+  bool operator!=(const Iterator& rhs) { return current != rhs.current; };
+
+private:
+  size_t current;
 };
 
 struct oracle_rand_impl
 {
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void gen_exclusion_configs(config_oracle<oracle_rand_impl>* co, const interaction_vec_t& champ_interactions,
-      std::vector<exclusion_config>& configs, const std::map<namespace_index, uint64_t>& ns_counter);
+  void gen_exclusion_config_at(const std::string interaction_type, const interaction_vec_t& champ_interactions,
+      const size_t num, exclusion_set_t& new_exclusions);
+  Iterator begin() { return Iterator(); }
+  Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
 };
 struct one_diff_impl
 {
-  void gen_exclusion_configs(config_oracle<one_diff_impl>* co, const interaction_vec_t& champ_interactions,
-      std::vector<exclusion_config>& configs, const std::map<namespace_index, uint64_t>& ns_counter);
+  void gen_exclusion_config_at(const std::string interaction_type, const interaction_vec_t& champ_interactions,
+      const size_t num, exclusion_set_t::iterator& exclusion, exclusion_set_t& new_exclusions);
+  Iterator begin() { return Iterator(); }
+  Iterator end(const interaction_vec_t& champ_interactions, const exclusion_set_t& champ_exclusions)
+  {
+    return Iterator(champ_interactions.size() + champ_exclusions.size());
+  }
 };
 struct champdupe_impl
 {
-  void gen_exclusion_configs(config_oracle<champdupe_impl>* co, const interaction_vec_t& champ_interactions,
-      std::vector<exclusion_config>& configs, const std::map<namespace_index, uint64_t>& ns_counter);
+  Iterator begin() { return Iterator(); }
+  Iterator end() { return Iterator(3); }
 };
 
 template <typename config_oracle_impl, typename estimator_impl>

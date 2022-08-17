@@ -520,6 +520,35 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     // the previous two exclusion configs are now inside the priority queue
     BOOST_CHECK_EQUAL(prio_queue.size(), 2);
 
+    // add dummy evaluators to simulate that all configs are in play
+    for (size_t i = 2; i < 4; ++i)
+    {
+      interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_config_at_slot(estimators,
+          oracle.configs, i, config_oracle<one_diff_impl>::choose(oracle.index_queue),
+          aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
+      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index].exclusions;
+      auto& temp_interactions = estimators[i].first.live_interactions;
+      config_oracle<one_diff_impl>::gen_interactions_from_exclusions(
+          false, ns_counter, oracle._interaction_type, temp_exclusions, temp_interactions);
+    }
+    BOOST_CHECK_EQUAL(prio_queue.size(), 0);
+
+    // excl_4 is now champ
+    interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_new_champ(
+        oracle, 3, estimators, 0, false, ns_counter);
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_4.begin(), excl_4.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_2.begin(), excl_2.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_1.begin(), excl_1.end());
+    const std::set<std::vector<namespace_index>> excl_6{{'A', 'A'}, {'A', 'B'}, {'B', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_6.begin(), excl_6.end());
+
+    BOOST_CHECK_EQUAL(prio_queue.size(), 2);
+
     return true;
   });
 
