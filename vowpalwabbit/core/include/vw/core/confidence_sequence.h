@@ -4,7 +4,7 @@
 
 #pragma once
 
-#ifndef __APPLE__
+#if !defined(__APPLE__) && !defined(_WIN32)
 #  define __STDCPP_MATH_SPEC_FUNCS__ 201003L
 #  define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
 #endif
