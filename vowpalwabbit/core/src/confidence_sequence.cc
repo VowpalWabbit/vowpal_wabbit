@@ -8,73 +8,38 @@ namespace VW
 {
 namespace confidence_sequence
 {
-    double incrementalfsum()
+    // TODO: Include std::reimann_zeta function and figure out 2-arg version
+    double IntervalImpl::reimann_zeta(double n = 0.0, double z = 0.0)
     {
         return 0.0;
     }
 
-    double IntervalImpl::loggamma(double a)
+    double IntervalImpl::polygamma(double n, double z)
     {
-        return 0;
+        return std::pow(-1, n + 1) * std::tgamma(n + 1) * reimann_zeta(n + 1, z);
     }
 
-    double IntervalImpl::gammainc(double a, double x)
+    double IntervalImpl::lb_new(double sumXt, double v, double eta, double s, double alpha)
     {
-        return 0;
+        double zeta_s = reimann_zeta(s);
+        v = std::max(v, 1.0);
+        double gamma1 = (std::pow(eta, 0.25) + std::pow(eta, 0.25)) / std::sqrt(2.0);
+        double gamma2 = (std::sqrt(eta) + 1.0) / 2.0;
+        assert(((std::log(eta * v) / std::log(eta)) + 1.0 > 0.0) && (1.0 + (std::log(eta * v) / std::log(eta)) != 0.0));
+        double ll = s * std::log((std::log(eta * v) / std::log(eta)) + 1.0) + std::log(zeta_s / alpha);
+        return std::max(0.0, (sumXt - std::sqrt(std::pow(gamma1, 2) * ll * v + std::pow(gamma2, 2) * std::pow(ll, 2)) - gamma2 * ll) / t);
     }
 
-    double IntervalImpl::loggammalowerinc(double a, double x)
-    {
-        return std::log(gammainc(a, x) + loggamma(a));
-    }
-
-    double IntervalImpl::logwealth(double s, double v, double rho)
-    {
-        assert(s + v + rho > 0);
-        assert(rho > 0);
-        return s + v + rho * std::log(rho) - (v + rho) * std::log(s + v + rho) + loggammalowerinc(v + rho, s + v + rho) - loggammalowerinc(rho, rho);
-    }
-
-    std::pair<bool, double> IntervalImpl::root_scalar(double sumXt, double v, double rho, double thres, double minmu, double maxmu)
-    {
-        return std::make_pair(false, 0.0);
-    }
-
-    double IntervalImpl::lblogwealth(double sumXt, double v, double rho, double alpha)
-    {
-        assert(0 < alpha && alpha < 1);
-        double thres = -std::log(alpha);
-
-        double minmu = 0.0;
-        double logwealthminmu = logwealth(sumXt, v, rho);
-
-        if (logwealthminmu <= thres)
-        {
-            return minmu;
-        }
-
-        double maxmu = std::min(1.0, sumXt / t);
-        double logwealthmaxmu = logwealth(sumXt - t * maxmu, v, rho);
-
-        if (logwealthmaxmu >= thres)
-        {
-            return maxmu;
-        }
-
-        std::pair<bool, double> res = root_scalar(sumXt, v, rho, thres, minmu, maxmu); 
-
-        assert (res.first);
-        return res.second;
-    }
-
-    IntervalImpl::IntervalImpl(double rmin = 0, double rmax = 1, bool adjust = true)
+    IntervalImpl::IntervalImpl(double rmin = 0.0, double rmax = 1.0, bool adjust = true)
         : rmin(rmin), rmax(rmax), adjust(adjust)
     {
     }
 
-    void IntervalImpl::add(double w, double r)
+    void IntervalImpl::addobs(double w, double r, double p_drop = 0.0, double n_drop = -1.0)
     {
-        assert(w >= 0);
+        assert(w >= 0.0);
+        assert(0.0 <= p_drop && p_drop < 1.0);
+        assert(n_drop == -1.0 || n_drop >= 0.0); // -1.0 equivalent to None in Python code
 
         if (!adjust)
         {
@@ -85,11 +50,38 @@ namespace confidence_sequence
             rmin = std::min(rmin, r);
             rmax = std::max(rmax, r);
         }
+
+        if (n_drop == -1.0)
+        {
+            n_drop = p_drop / (1 - p_drop);
+        }
+
+        double sumXlow = 0;
+        double Xhatlow = 0;
+        double sumXhigh = 0;
+        double Xhathigh = 0;
+
+        if (n_drop > 0.0)
+        {
+            sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
+            double alow = sumXlow + 0.5;
+            double blow = t + 1.0;
+            sumxhatlowsq += std::pow(alow, 2) * (polygamma(1, blow) - polygamma(1, blow + n_drop));
+            
+            sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
+            double ahigh = sumXhigh + 0.5;
+            double bhigh = t + 1.0;
+            sumxhathighsq += std::pow(ahigh, 2) * (polygamma(1, bhigh) - polygamma(1, bhigh + n_drop));
+            
+            t += n_drop;
+        }
         
-        double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
-        double Xhatlow = (sumXlow + 0.5) / (t + 1);
-        double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
-        double Xhathigh = (sumXhigh + 0.5) / (t + 1);
+        sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
+        Xhatlow = (sumXlow + 0.5) / (t + 1);
+        sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
+        Xhathigh = (sumXhigh + 0.5) / (t + 1);
+
+        w /= (1 - p_drop);
 
         sumwsqrsq += std::pow(w * r, 2);
         sumwsqr += std::pow(w, 2) * r;
@@ -103,23 +95,23 @@ namespace confidence_sequence
         sumwxhathigh += w * Xhathigh;
         sumxhathighsq += std::pow(Xhathigh, 2);
 
-        t++;
+        ++t;
     }
 
-    std::pair<double, double> IntervalImpl::get(double alpha)
+    std::pair<double, double> IntervalImpl::getci(double alpha)
     {
         if (t == 0 || rmin == rmax)
         {
-            return std::make_pair(0, 0); // Should return None?
+            return std::make_pair(rmin, rmax);
         }
 
         double sumvlow = (sumwsqrsq - 2 * rmin * sumwsqr + std::pow(rmin, 2) * sumwsq) / std::pow(rmax - rmin, 2) - 2 * (sumwrxhatlow - rmin * sumwxhatlow) / (rmax - rmin) + sumxhatlowsq;
         double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
-        double l = lblogwealth(sumXlow, sumvlow, rho, alpha / 2);
+        double l = lb_new(sumXlow, sumvlow, eta, s, alpha / 2);
 
         double sumvhigh = (sumwsqrsq - 2 * rmax * sumwsqr + std::pow(rmax, 2) * sumwsq) / std::pow(rmax - rmin, 2) + 2 * (sumwrxhathigh - rmax * sumwxhathigh) / (rmax - rmin) + sumxhathighsq;
         double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
-        double u = 1 - lblogwealth(sumXhigh, sumvhigh, rho, alpha / 2);
+        double u = 1 - lb_new(sumXhigh, sumvhigh, eta, s, alpha / 2);
 
         return std::make_pair(rmin + l * (rmax - rmin), rmin + u * (rmax - rmin));
     }
@@ -127,10 +119,25 @@ namespace confidence_sequence
 
 namespace model_utils
 {
+size_t read_model_field(io_buf& io, VW::confidence_sequence::IncrementalFsum& ifs)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, ifs.partials);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::confidence_sequence::IncrementalFsum& ifs, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, ifs.partials, upstream_name + "_partials", text);
+  return bytes;
+}
+
 size_t read_model_field(io_buf& io, VW::confidence_sequence::IntervalImpl& im)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, im.rho);
+  bytes += read_model_field(io, im.eta);
+  bytes += read_model_field(io, im.s);
   bytes += read_model_field(io, im.rmin);
   bytes += read_model_field(io, im.rmax);
   bytes += read_model_field(io, im.adjust);
@@ -152,7 +159,8 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence::IntervalImpl& im)
 size_t write_model_field(io_buf& io, const VW::confidence_sequence::IntervalImpl& im, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, im.rho, upstream_name + "_rho", text);
+  bytes += write_model_field(io, im.eta, upstream_name + "_eta", text);
+  bytes += write_model_field(io, im.s, upstream_name + "_s", text);
   bytes += write_model_field(io, im.rmin, upstream_name + "_rmin", text);
   bytes += write_model_field(io, im.rmax, upstream_name + "_rmax", text);
   bytes += write_model_field(io, im.adjust, upstream_name + "_adjust", text);
