@@ -348,7 +348,7 @@ if(VW_BUILD_LARGE_ACTION_SPACE)
     src/reductions/cb/details/large_action/model_weight_rand_svd_impl.cc
     src/reductions/cb/details/large_action/one_pass_svd_impl.cc
     src/reductions/cb/details/large_action/vanilla_rand_svd_impl.cc
-    src/reductions/cb/details/large_action/aatop_impl.cc
+    src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
     src/reductions/cb/details/large_action/spanner_impl.cc
     src/reductions/cb/cb_actions_mask.cc src/qr_decomposition.cc
   )
