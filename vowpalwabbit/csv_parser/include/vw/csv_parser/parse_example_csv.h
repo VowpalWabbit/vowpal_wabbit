@@ -10,6 +10,7 @@
 #include "vw/core/v_array.h"
 
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace VW
@@ -41,7 +42,7 @@ public:
   std::unordered_map<std::string, VW::v_array<size_t>> feature_list;
   std::unordered_map<std::string, float> ns_value;
 
-  explicit csv_parser(csv_parser_options options) : VW::details::input_parser("csv"), options(options) {}
+  explicit csv_parser(csv_parser_options options) : VW::details::input_parser("csv"), options(std::move(options)) {}
   virtual ~csv_parser() = default;
 
   static void set_parse_args(VW::config::option_group_definition& in_options, csv_parser_options& parsed_options);
