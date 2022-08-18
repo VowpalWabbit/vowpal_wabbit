@@ -44,6 +44,7 @@ BOOST_AUTO_TEST_CASE(confidence_sequence_test)
   float lb = cs.lower_bound();
   float ub = cs.upper_bound();
 
+  // Compare to confidence_sequence_test.py
   BOOST_CHECK_CLOSE(lb, 0.4215480f, CS_FLOAT_TOL);
   BOOST_CHECK_CLOSE(ub, 0.7907692f, CS_FLOAT_TOL);
 }
