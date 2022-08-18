@@ -104,7 +104,7 @@ void exclusion_config::apply_config_to_interactions(const bool ccb_on,
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 template <typename oracle_impl>
 void config_oracle<oracle_impl>::insert_config(
-    exclusion_set_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups)
+    set_ns_list_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups)
 {
   // First check if config already exists
   if (!allow_dups)
@@ -148,7 +148,7 @@ void config_oracle<oracle_impl>::insert_config(
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
 void oracle_rand_impl::gen_exclusion_config_at(const std::string& interaction_type,
-    const interaction_vec_t& champ_interactions, const size_t, exclusion_set_t& new_exclusions)
+    const interaction_vec_t& champ_interactions, const size_t, set_ns_list_t& new_exclusions)
 {
   uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
   if (interaction_type == "quadratic")
@@ -172,8 +172,8 @@ void oracle_rand_impl::gen_exclusion_config_at(const std::string& interaction_ty
   }
 }
 void one_diff_impl::gen_exclusion_config_at(const std::string& interaction_type,
-    const interaction_vec_t& champ_interactions, const size_t num, exclusion_set_t::iterator& exclusion,
-    exclusion_set_t& new_exclusions)
+    const interaction_vec_t& champ_interactions, const size_t num, set_ns_list_t::iterator& exclusion,
+    set_ns_list_t& new_exclusions)
 {
   // Add one exclusion (for each interaction)
   if (num < champ_interactions.size())

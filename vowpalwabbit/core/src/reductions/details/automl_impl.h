@@ -64,13 +64,13 @@ enum class config_state
   Removed
 };
 
-using exclusion_set_t = std::set<std::vector<VW::namespace_index>>;
+using set_ns_list_t = std::set<std::vector<VW::namespace_index>>;
 
 // todo: this struct can evolve to support not only exclusions, but also interactions
 // this will enable us to have an oracle create from q:: to zero, and from zero to q::
 struct exclusion_config
 {
-  exclusion_set_t exclusions;
+  set_ns_list_t exclusions;
   uint64_t lease;
   config_state state = VW::reductions::automl::config_state::New;
 
@@ -103,7 +103,7 @@ struct config_oracle
   void gen_exclusion_configs(
       const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_config(
-      exclusion_set_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
+      set_ns_list_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_qcolcol();
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
@@ -135,16 +135,16 @@ struct oracle_rand_impl
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
   void gen_exclusion_config_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, exclusion_set_t& new_exclusions);
+      const size_t num, set_ns_list_t& new_exclusions);
   Iterator begin() { return Iterator(); }
   Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
 };
 struct one_diff_impl
 {
   void gen_exclusion_config_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, exclusion_set_t::iterator& exclusion, exclusion_set_t& new_exclusions);
+      const size_t num, set_ns_list_t::iterator& exclusion, set_ns_list_t& new_exclusions);
   Iterator begin() { return Iterator(); }
-  Iterator end(const interaction_vec_t& champ_interactions, const exclusion_set_t& champ_exclusions)
+  Iterator end(const interaction_vec_t& champ_interactions, const set_ns_list_t& champ_exclusions)
   {
     return Iterator(champ_interactions.size() + champ_exclusions.size());
   }

@@ -468,16 +468,16 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL(configs.size(), 4);
     BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
-    const exclusion_set_t excl_0{};
+    const set_ns_list_t excl_0{};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_0.begin(), excl_0.end());
-    const exclusion_set_t excl_1{{'A', 'A'}};
+    const set_ns_list_t excl_1{{'A', 'A'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_1.begin(), excl_1.end());
-    const exclusion_set_t excl_2{{'A', 'B'}};
+    const set_ns_list_t excl_2{{'A', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_2.begin(), excl_2.end());
-    const exclusion_set_t excl_3{{'B', 'B'}};
+    const set_ns_list_t excl_3{{'B', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_3.begin(), excl_3.end());
 
@@ -508,10 +508,10 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL(oracle.valid_config_size, 4);
     BOOST_CHECK_EQUAL(configs.size(), 4);
 
-    const exclusion_set_t excl_4{{'A', 'A'}, {'A', 'B'}};
+    const set_ns_list_t excl_4{{'A', 'A'}, {'A', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_4.begin(), excl_4.end());
-    const exclusion_set_t excl_5{{'A', 'B'}, {'B', 'B'}};
+    const set_ns_list_t excl_5{{'A', 'B'}, {'B', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_5.begin(), excl_5.end());
 
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
         configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_2.begin(), excl_2.end());
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_1.begin(), excl_1.end());
-    const exclusion_set_t excl_6{{'A', 'A'}, {'A', 'B'}, {'B', 'B'}};
+    const set_ns_list_t excl_6{{'A', 'A'}, {'A', 'B'}, {'B', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_6.begin(), excl_6.end());
 
