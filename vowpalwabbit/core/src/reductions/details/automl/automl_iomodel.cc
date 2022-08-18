@@ -116,9 +116,9 @@ size_t read_model_field(
   bytes += read_model_field(io, cm.per_live_model_state_uint64);
   for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot)
   {
-    auto& exclusions = cm._config_oracle.configs[cm.estimators[live_slot].first.config_index].exclusions;
+    auto& exclusions = cm._config_oracle.configs[cm.estimators[live_slot].first.config_index];
     auto& interactions = cm.estimators[live_slot].first.live_interactions;
-    config_oracle_impl::gen_interactions_from_exclusions(
+    reductions::automl::exclusion_config::apply_config_to_interactions(
         cm._ccb_on, cm.ns_counter, cm.interaction_type, exclusions, interactions);
   }
   return bytes;

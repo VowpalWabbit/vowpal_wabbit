@@ -174,8 +174,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      config_oracle_impl::gen_interactions_from_exclusions(_ccb_on, ns_counter, interaction_type,
-          _config_oracle.configs[estimators[live_slot].first.config_index].exclusions,
+      exclusion_config::apply_config_to_interactions(_ccb_on, ns_counter, interaction_type,
+          _config_oracle.configs[estimators[live_slot].first.config_index],
           estimators[live_slot].first.live_interactions);
     }
   }
@@ -335,10 +335,9 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   {
     for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
     {
-      auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index].exclusions;
+      auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index];
       auto& interactions = estimators[live_slot].first.live_interactions;
-      config_oracle_impl::gen_interactions_from_exclusions(
-          _ccb_on, ns_counter, interaction_type, exclusions, interactions);
+      exclusion_config::apply_config_to_interactions(_ccb_on, ns_counter, interaction_type, exclusions, interactions);
     }
   }
 }

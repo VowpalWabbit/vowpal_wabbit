@@ -66,6 +66,8 @@ enum class config_state
 
 using exclusion_set_t = std::set<std::vector<namespace_index>>;
 
+// todo: this struct can evolve to support not only exclusions, but also interactions
+// this will enable us to have an oracle create from q:: to zero, and from zero to q::
 struct exclusion_config
 {
   exclusion_set_t exclusions;
@@ -73,6 +75,8 @@ struct exclusion_config
   config_state state = VW::reductions::automl::config_state::New;
 
   exclusion_config(uint64_t lease = 10) : lease(lease) {}
+  static void apply_config_to_interactions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
+      const std::string& interaction_type, const exclusion_config& config, interaction_vec_t& interactions);
 };
 
 using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
@@ -102,8 +106,6 @@ struct config_oracle
       exclusion_set_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_qcolcol();
-  static void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
-      const std::string& interaction_type, const exclusion_set_t& exclusions, interaction_vec_t& interactions);
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 };
 

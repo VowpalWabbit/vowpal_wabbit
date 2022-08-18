@@ -52,10 +52,9 @@ uint64_t config_oracle<oracle_impl>::choose(std::priority_queue<std::pair<float,
 // from the corresponding live_slot. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-template <typename oracle_impl>
-void config_oracle<oracle_impl>::gen_interactions_from_exclusions(const bool ccb_on,
+void exclusion_config::apply_config_to_interactions(const bool ccb_on,
     const std::map<namespace_index, uint64_t>& ns_counter, const std::string& interaction_type,
-    const exclusion_set_t& exclusions, interaction_vec_t& interactions)
+    const exclusion_config& config, interaction_vec_t& interactions)
 {
   if (interaction_type == "quadratic")
   {
@@ -67,7 +66,7 @@ void config_oracle<oracle_impl>::gen_interactions_from_exclusions(const bool ccb
       {
         auto idx2 = (*jt).first;
         std::vector<namespace_index> idx{idx1, idx2};
-        if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2}); }
+        if (config.exclusions.find(idx) == config.exclusions.end()) { interactions.push_back({idx1, idx2}); }
       }
     }
   }
@@ -84,7 +83,7 @@ void config_oracle<oracle_impl>::gen_interactions_from_exclusions(const bool ccb
         {
           auto idx3 = (*kt).first;
           std::vector<namespace_index> idx{idx1, idx2, idx3};
-          if (exclusions.find(idx) == exclusions.end()) { interactions.push_back({idx1, idx2, idx3}); }
+          if (config.exclusions.find(idx) == config.exclusions.end()) { interactions.push_back({idx1, idx2, idx3}); }
         }
       }
     }
