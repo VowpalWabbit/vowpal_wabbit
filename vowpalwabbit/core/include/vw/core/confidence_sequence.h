@@ -39,7 +39,7 @@ struct IncrementalFsum
       }
       x = hi;
     }
-    while (this->partials.size() <= i) { this->partials.push_back(0.0); }
+    while (this->partials.size() <= static_cast<size_t>(i)) { this->partials.push_back(0.0); }
     this->partials[i] = x;
     this->partials.resize(i + 1);
     return *this;
