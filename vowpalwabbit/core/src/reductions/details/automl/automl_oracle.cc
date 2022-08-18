@@ -52,9 +52,9 @@ uint64_t config_oracle<oracle_impl>::choose(std::priority_queue<std::pair<float,
 // from the corresponding live_slot. This function can be swapped out depending on
 // preference of how to generate interactions from a given set of exclusions.
 // Transforms exclusions -> interactions expected by VW.
-void exclusion_config::apply_config_to_interactions(const bool ccb_on,
+void ns_based_config::apply_config_to_interactions(const bool ccb_on,
     const std::map<namespace_index, uint64_t>& ns_counter, const std::string& interaction_type,
-    const exclusion_config& config, interaction_vec_t& interactions)
+    const ns_based_config& config, interaction_vec_t& interactions)
 {
   if (interaction_type == "quadratic")
   {
@@ -119,6 +119,7 @@ void config_oracle<oracle_impl>::insert_config(
           configs[valid_config_size].exclusions = std::move(configs[i].exclusions);
           configs[valid_config_size].lease = global_lease;
           configs[valid_config_size].state = VW::reductions::automl::config_state::New;
+          // TODO: do we have to push here to index_quue?
         }
       }
     }
@@ -138,6 +139,7 @@ void config_oracle<oracle_impl>::insert_config(
     configs.emplace_back(global_lease);
     configs[valid_config_size].exclusions = std::move(new_exclusions);
   }
+
   float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
   index_queue.push(std::make_pair(priority, valid_config_size));
   ++valid_config_size;
@@ -147,7 +149,7 @@ void config_oracle<oracle_impl>::insert_config(
 // stored as 'exclusions.' The current design is to look at the interactions of
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
-void oracle_rand_impl::gen_exclusion_config_at(const std::string& interaction_type,
+void oracle_rand_impl::gen_ns_groupings_at(const std::string& interaction_type,
     const interaction_vec_t& champ_interactions, const size_t, set_ns_list_t& new_exclusions)
 {
   uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
@@ -171,7 +173,7 @@ void oracle_rand_impl::gen_exclusion_config_at(const std::string& interaction_ty
     THROW("Unknown interaction type.");
   }
 }
-void one_diff_impl::gen_exclusion_config_at(const std::string& interaction_type,
+void one_diff_impl::gen_ns_groupings_at(const std::string& interaction_type,
     const interaction_vec_t& champ_interactions, const size_t num, set_ns_list_t::iterator& exclusion,
     set_ns_list_t& new_exclusions)
 {
@@ -211,7 +213,7 @@ void one_diff_impl::gen_exclusion_config_at(const std::string& interaction_type,
 }
 
 template <>
-void config_oracle<one_diff_impl>::gen_exclusion_configs(
+void config_oracle<one_diff_impl>::gen_configs(
     const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   // we need this to stay constant bc insert might resize configs vector
@@ -221,7 +223,7 @@ void config_oracle<one_diff_impl>::gen_exclusion_configs(
   for (auto it = _impl.begin(); it < _impl.end(champ_interactions, champ_excl); ++it)
   {
     auto copy_champ = champ_excl;
-    _impl.gen_exclusion_config_at(_interaction_type, champ_interactions, *it, exclusion_it, copy_champ);
+    _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, exclusion_it, copy_champ);
     insert_config(std::move(copy_champ), ns_counter);
   }
 
@@ -229,7 +231,7 @@ void config_oracle<one_diff_impl>::gen_exclusion_configs(
 }
 
 template <>
-void config_oracle<champdupe_impl>::gen_exclusion_configs(
+void config_oracle<champdupe_impl>::gen_configs(
     const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   for (auto it = _impl.begin(); it < _impl.end(); ++it)
@@ -240,13 +242,13 @@ void config_oracle<champdupe_impl>::gen_exclusion_configs(
 }
 
 template <typename oracle_impl>
-void config_oracle<oracle_impl>::gen_exclusion_configs(
+void config_oracle<oracle_impl>::gen_configs(
     const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   for (auto it = _impl.begin(); it < _impl.end(); ++it)
   {
     auto copy_champ = configs[0].exclusions;
-    _impl.gen_exclusion_config_at(_interaction_type, champ_interactions, *it, copy_champ);
+    _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, copy_champ);
     insert_config(std::move(copy_champ), ns_counter);
   }
 }

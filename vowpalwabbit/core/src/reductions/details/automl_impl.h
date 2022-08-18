@@ -64,22 +64,29 @@ enum class config_state
   Removed
 };
 
+enum class config_type
+{
+  Exclusion,
+  Interaction,
+};
+
 using set_ns_list_t = std::set<std::vector<VW::namespace_index>>;
 
 // todo: this struct can evolve to support not only exclusions, but also interactions
 // this will enable us to have an oracle create from q:: to zero, and from zero to q::
-struct exclusion_config
+struct ns_based_config
 {
   set_ns_list_t exclusions;
   uint64_t lease;
   config_state state = VW::reductions::automl::config_state::New;
+  config_type conf_type = VW::reductions::automl::config_type::Exclusion;
 
-  exclusion_config(uint64_t lease = 10) : lease(lease) {}
+  ns_based_config(uint64_t lease = 10) : lease(lease) {}
   static void apply_config_to_interactions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
-      const std::string& interaction_type, const exclusion_config& config, interaction_vec_t& interactions);
+      const std::string& interaction_type, const ns_based_config& config, interaction_vec_t& interactions);
 };
 
-using priority_func = float(const exclusion_config&, const std::map<namespace_index, uint64_t>&);
+using priority_func = float(const ns_based_config&, const std::map<namespace_index, uint64_t>&);
 
 template <typename oracle_impl>
 struct config_oracle
@@ -90,7 +97,7 @@ struct config_oracle
   // Maybe not needed with oracle, maps priority to config index, unused configs
   std::priority_queue<std::pair<float, uint64_t>> index_queue;
   // Stores all configs in consideration
-  std::vector<exclusion_config> configs;
+  std::vector<ns_based_config> configs;
 
   priority_func* calc_priority;
   const uint64_t global_lease;
@@ -100,8 +107,7 @@ struct config_oracle
   config_oracle(uint64_t global_lease, priority_func* calc_priority, const std::string& interaction_type,
       const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state);
 
-  void gen_exclusion_configs(
-      const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
+  void gen_configs(const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_config(
       set_ns_list_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
@@ -134,14 +140,14 @@ struct oracle_rand_impl
 {
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void gen_exclusion_config_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
+  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
       const size_t num, set_ns_list_t& new_exclusions);
   Iterator begin() { return Iterator(); }
   Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
 };
 struct one_diff_impl
 {
-  void gen_exclusion_config_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
+  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
       const size_t num, set_ns_list_t::iterator& exclusion, set_ns_list_t& new_exclusions);
   Iterator begin() { return Iterator(); }
   Iterator end(const interaction_vec_t& champ_interactions, const set_ns_list_t& champ_exclusions)
@@ -193,7 +199,7 @@ struct interaction_config_manager
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, const std::string&,
       const std::string&, dense_parameters&,
-      float (*)(const exclusion_config&, const std::map<namespace_index, uint64_t>&), double, double, VW::io::logger*,
+      float (*)(const ns_based_config&, const std::map<namespace_index, uint64_t>&), double, double, VW::io::logger*,
       uint32_t&, bool, bool);
 
   void do_learning(multi_learner&, multi_ex&, uint64_t);
@@ -203,7 +209,7 @@ struct interaction_config_manager
   void schedule();
   void check_for_new_champ();
   void process_example(const multi_ex& ec);
-  static void apply_config_at_slot(estimator_vec_t<estimator_impl>& estimators, std::vector<exclusion_config>& configs,
+  static void apply_config_at_slot(estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs,
       const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double decay,
       const uint64_t priority_challengers);
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
@@ -262,7 +268,7 @@ namespace model_utils
 {
 template <typename CMType>
 size_t write_model_field(io_buf&, const VW::reductions::automl::automl<CMType>&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::reductions::automl::exclusion_config&);
+size_t read_model_field(io_buf&, VW::reductions::automl::ns_based_config&);
 template <typename estimator_impl>
 size_t read_model_field(io_buf&, VW::reductions::automl::aml_estimator<estimator_impl>&);
 template <typename config_oracle_impl, typename estimator_impl>
@@ -270,7 +276,7 @@ size_t read_model_field(
     io_buf&, VW::reductions::automl::interaction_config_manager<config_oracle_impl, estimator_impl>&);
 template <typename CMType>
 size_t read_model_field(io_buf&, VW::reductions::automl::automl<CMType>&);
-size_t write_model_field(io_buf&, const VW::reductions::automl::exclusion_config&, const std::string&, bool);
+size_t write_model_field(io_buf&, const VW::reductions::automl::ns_based_config&, const std::string&, bool);
 template <typename estimator_impl>
 size_t write_model_field(
     io_buf&, const VW::reductions::automl::aml_estimator<estimator_impl>&, const std::string&, bool);

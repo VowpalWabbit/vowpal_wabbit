@@ -55,7 +55,7 @@ template struct interaction_config_manager<config_oracle<champdupe_impl>, VW::es
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::reductions::automl::exclusion_config& ec)
+size_t read_model_field(io_buf& io, VW::reductions::automl::ns_based_config& ec)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, ec.exclusions);
@@ -65,7 +65,7 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::exclusion_config& ec
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::reductions::automl::exclusion_config& ec, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::reductions::automl::ns_based_config& ec, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ec.exclusions, upstream_name + "_exclusions", text);
@@ -118,7 +118,7 @@ size_t read_model_field(
   {
     auto& exclusions = cm._config_oracle.configs[cm.estimators[live_slot].first.config_index];
     auto& interactions = cm.estimators[live_slot].first.live_interactions;
-    reductions::automl::exclusion_config::apply_config_to_interactions(
+    reductions::automl::ns_based_config::apply_config_to_interactions(
         cm._ccb_on, cm.ns_counter, cm.interaction_type, exclusions, interactions);
   }
   return bytes;

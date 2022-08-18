@@ -174,7 +174,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      exclusion_config::apply_config_to_interactions(_ccb_on, ns_counter, interaction_type,
+      ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, interaction_type,
           _config_oracle.configs[estimators[live_slot].first.config_index],
           estimators[live_slot].first.live_interactions);
     }
@@ -183,7 +183,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_config_at_slot(
-    estimator_vec_t<estimator_impl>& estimators, std::vector<exclusion_config>& configs, const uint64_t live_slot,
+    estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs, const uint64_t live_slot,
     const uint64_t config_index, const double sig_level, const double decay, const uint64_t priority_challengers)
 {
   // Allocate new estimator if we haven't reached maximum yet
@@ -302,7 +302,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
     estimators[1].second.reset_stats();
   }
 
-  config_oracle.gen_exclusion_configs(estimators[champ_slot].first.live_interactions, ns_counter);
+  config_oracle.gen_configs(estimators[champ_slot].first.live_interactions, ns_counter);
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -337,7 +337,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
     {
       auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index];
       auto& interactions = estimators[live_slot].first.live_interactions;
-      exclusion_config::apply_config_to_interactions(_ccb_on, ns_counter, interaction_type, exclusions, interactions);
+      ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, interaction_type, exclusions, interactions);
     }
   }
 }
@@ -355,8 +355,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
     // todo: collecting and experimenting can be folded into one
     case automl_state::Collecting:
       cm->process_example(ec);
-      cm->_config_oracle.gen_exclusion_configs(
-          cm->estimators[cm->current_champ].first.live_interactions, cm->ns_counter);
+      cm->_config_oracle.gen_configs(cm->estimators[cm->current_champ].first.live_interactions, cm->ns_counter);
       offset_learn(base, ec, logged, labelled_action);
       current_state = automl_state::Experimenting;
       break;
