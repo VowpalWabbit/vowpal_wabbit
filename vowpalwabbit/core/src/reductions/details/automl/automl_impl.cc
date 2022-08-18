@@ -78,18 +78,18 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , _ccb_on(ccb_on)
     , _config_oracle(config_oracle_impl(global_lease, calc_priority, interaction_type, oracle_type, rand_state))
 {
-  insert_qcolcol(estimators, _config_oracle, automl_significance_level, automl_estimator_decay);
+  insert_starting_configuration(estimators, _config_oracle, automl_significance_level, automl_estimator_decay);
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
-void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_qcolcol(
+void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_starting_configuration(
     estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level,
     const double decay)
 {
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() == 0);
 
-  config_oracle.insert_qcolcol();
+  config_oracle.insert_starting_configuration();
 
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() >= 1);

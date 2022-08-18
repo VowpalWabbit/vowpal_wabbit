@@ -99,7 +99,7 @@ struct config_oracle
   void insert_config(std::set<std::vector<namespace_index>>&& new_exclusions,
       const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
-  void insert_qcolcol();
+  void insert_starting_configuration();
   static void gen_interactions_from_exclusions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
       const std::string& interaction_type, const std::set<std::vector<namespace_index>>& exclusions,
       interaction_vec_t& interactions);
@@ -178,8 +178,8 @@ struct interaction_config_manager
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
       estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers, const bool lb_trick,
       const std::map<namespace_index, uint64_t>& ns_counter);
-  static void insert_qcolcol(estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle,
-      const double sig_level, const double decay);
+  static void insert_starting_configuration(estimator_vec_t<estimator_impl>& estimators,
+      config_oracle_impl& config_oracle, const double sig_level, const double decay);
 
 private:
   static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);
@@ -194,7 +194,6 @@ bool worse();
 // all possible states of automl
 enum class automl_state
 {
-  Collecting,
   Experimenting
 };
 

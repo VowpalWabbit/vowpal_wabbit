@@ -441,7 +441,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL(configs.size(), 0);
     BOOST_CHECK_EQUAL(estimators.size(), 0);
     BOOST_CHECK_EQUAL(prio_queue.size(), 0);
-    interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::insert_qcolcol(
+    interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::insert_starting_configuration(
         estimators, oracle, aml->cm->automl_significance_level, aml->cm->automl_estimator_decay);
     BOOST_CHECK_EQUAL(configs.size(), 1);
     BOOST_CHECK_EQUAL(estimators.size(), 1);
