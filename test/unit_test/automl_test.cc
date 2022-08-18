@@ -426,7 +426,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     config_oracle<one_diff_impl>& co = aml->cm->_config_oracle;
     auto rand_state = all.get_random_state();
 
-    std::map<namespace_index, uint64_t> ns_counter;
+    std::map<VW::namespace_index, uint64_t> ns_counter;
     std::vector<std::pair<aml_estimator<VW::estimator_config>, VW::estimator_config>> estimators;
 
     config_oracle<one_diff_impl> oracle(
@@ -449,37 +449,35 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     auto& champ_interactions = estimators[CHAMP].first.live_interactions;
 
     BOOST_CHECK_EQUAL(champ_interactions.size(), 0);
-    auto& exclusions = oracle.configs[estimators[0].first.config_index].exclusions;
+    auto& exclusions = oracle.configs[estimators[0].first.config_index];
     auto& interactions = estimators[0].first.live_interactions;
-    exclusion_config::gen_interactions_from_exclusions(
+    exclusion_config::apply_config_to_interactions(
         false, ns_counter, oracle._interaction_type, exclusions, interactions);
     BOOST_CHECK_EQUAL(champ_interactions.size(), 3);
 
-    const std::vector<namespace_index> first = {'A', 'A'};
+    const interaction_vec_t expected = {
+        {'A', 'A'},
+        {'A', 'B'},
+        {'B', 'B'},
+    };
     BOOST_CHECK_EQUAL_COLLECTIONS(
-        champ_interactions[0].begin(), champ_interactions[0].end(), first.begin(), first.end());
-    const std::vector<namespace_index> second = {'A', 'B'};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        champ_interactions[1].begin(), champ_interactions[1].end(), second.begin(), second.end());
-    const std::vector<namespace_index> third = {'B', 'B'};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        champ_interactions[2].begin(), champ_interactions[2].end(), third.begin(), third.end());
+        champ_interactions.begin(), champ_interactions.end(), expected.begin(), expected.end());
 
     BOOST_CHECK_EQUAL(configs.size(), 1);
     oracle.gen_exclusion_configs(estimators[CHAMP].first.live_interactions, ns_counter);
     BOOST_CHECK_EQUAL(configs.size(), 4);
     BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
-    const std::set<std::vector<namespace_index>> excl_0{};
+    const exclusion_set_t excl_0{};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_0.begin(), excl_0.end());
-    const std::set<std::vector<namespace_index>> excl_1{{'A', 'A'}};
+    const exclusion_set_t excl_1{{'A', 'A'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_1.begin(), excl_1.end());
-    const std::set<std::vector<namespace_index>> excl_2{{'A', 'B'}};
+    const exclusion_set_t excl_2{{'A', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_2.begin(), excl_2.end());
-    const std::set<std::vector<namespace_index>> excl_3{{'B', 'B'}};
+    const exclusion_set_t excl_3{{'B', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_3.begin(), excl_3.end());
 
@@ -490,9 +488,9 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
       interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_config_at_slot(estimators,
           oracle.configs, i, config_oracle<one_diff_impl>::choose(oracle.index_queue),
           aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
-      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index].exclusions;
+      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
       auto& temp_interactions = estimators[i].first.live_interactions;
-      exclusion_config::gen_interactions_from_exclusions(
+      exclusion_config::apply_config_to_interactions(
           false, ns_counter, oracle._interaction_type, temp_exclusions, temp_interactions);
     }
     BOOST_CHECK_EQUAL(prio_queue.size(), 0);
@@ -510,10 +508,10 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL(oracle.valid_config_size, 4);
     BOOST_CHECK_EQUAL(configs.size(), 4);
 
-    const std::set<std::vector<namespace_index>> excl_4{{'A', 'A'}, {'A', 'B'}};
+    const exclusion_set_t excl_4{{'A', 'A'}, {'A', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_4.begin(), excl_4.end());
-    const std::set<std::vector<namespace_index>> excl_5{{'A', 'B'}, {'B', 'B'}};
+    const exclusion_set_t excl_5{{'A', 'B'}, {'B', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_5.begin(), excl_5.end());
 
@@ -526,9 +524,9 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
       interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_config_at_slot(estimators,
           oracle.configs, i, config_oracle<one_diff_impl>::choose(oracle.index_queue),
           aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
-      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index].exclusions;
+      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
       auto& temp_interactions = estimators[i].first.live_interactions;
-      exclusion_config::gen_interactions_from_exclusions(
+      exclusion_config::apply_config_to_interactions(
           false, ns_counter, oracle._interaction_type, temp_exclusions, temp_interactions);
     }
     BOOST_CHECK_EQUAL(prio_queue.size(), 0);
@@ -543,7 +541,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
         configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_2.begin(), excl_2.end());
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_1.begin(), excl_1.end());
-    const std::set<std::vector<namespace_index>> excl_6{{'A', 'A'}, {'A', 'B'}, {'B', 'B'}};
+    const exclusion_set_t excl_6{{'A', 'A'}, {'A', 'B'}, {'B', 'B'}};
     BOOST_CHECK_EQUAL_COLLECTIONS(
         configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_6.begin(), excl_6.end());
 

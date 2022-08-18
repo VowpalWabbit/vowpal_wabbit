@@ -64,7 +64,7 @@ enum class config_state
   Removed
 };
 
-using exclusion_set_t = std::set<std::vector<namespace_index>>;
+using exclusion_set_t = std::set<std::vector<VW::namespace_index>>;
 
 // todo: this struct can evolve to support not only exclusions, but also interactions
 // this will enable us to have an oracle create from q:: to zero, and from zero to q::
