@@ -2,8 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "test_common.h"
 #include "vw/core/confidence_sequence.h"
+
+#include "test_common.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -38,10 +39,7 @@ BOOST_AUTO_TEST_CASE(confidence_sequence_test)
     rs.push_back(0.8);
   }
 
-  for (double r : rs)
-  {
-    cs.update(r, r);
-  }
+  for (double r : rs) { cs.update(r, r); }
 
   float lb = cs.lower_bound();
   float ub = cs.upper_bound();
