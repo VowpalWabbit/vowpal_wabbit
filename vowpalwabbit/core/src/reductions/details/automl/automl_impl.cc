@@ -343,7 +343,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
     if (_config_oracle.configs[current_champ].state == VW::reductions::automl::config_state::New)
     {
       _config_oracle.configs[current_champ].state = VW::reductions::automl::config_state::Live;
-      _config_oracle.gen_exclusion_configs(estimators[current_champ].first.live_interactions, ns_counter);
+      _config_oracle.gen_configs(estimators[current_champ].first.live_interactions, ns_counter);
     }
   }
 }

@@ -35,7 +35,7 @@ template <typename oracle_impl>
 void config_oracle<oracle_impl>::insert_starting_configuration()
 {
   assert(valid_config_size == 0);
-  configs.emplace_back(std::move(set_ns_list_t()), global_lease, config_type::Exclusion);
+  configs.emplace_back(set_ns_list_t(), global_lease, config_type::Exclusion);
   ++valid_config_size;
 }
 
