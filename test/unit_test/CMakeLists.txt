@@ -14,6 +14,7 @@ add_executable(vw-unit-test.out
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
+  confidence_sequence_test.cc
   continuous_actions_parser_test.cc
   custom_reduction_test.cc
   distributionally_robust_test.cc
