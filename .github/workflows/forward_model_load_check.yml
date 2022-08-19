@@ -55,12 +55,12 @@ jobs:
         shell: bash
         run: |
           pip install built_wheel/*.whl
-          python ./python/model_version_tests/generate/gen_models.py
+          python ./test/run_tests_model_gen_and_load.py --generate_models
       - name: Upload generated file
         uses: actions/upload-artifact@v2
         with:
           name: vw_generated_models
-          path: ./*.vw
+          path: $HOME/.vw_runtests_model_gen_working_dir
           if-no-files-found: error
   test-latest-model:
     name: Test latest model with previous release
@@ -74,9 +74,9 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: vw_generated_models
-          path: vw_generated_models
+          path: $HOME/.vw_runtests_model_gen_working_dir
       - name: Test loading model with latest release
         shell: bash
         run: |
           pip install pytest vowpalwabbit
-          python -m pytest ./python/model_version_tests/test
+          python -m pytest ./test/run_tests_model_gen_and_load.py
