@@ -44,9 +44,10 @@ def create_test_dir(
 ) -> None:
     for f in input_files:
         file_to_copy = None
-        search_paths = [test_ref_dir / f]
+        search_paths = [test_ref_dir]
 
         for search_path in search_paths:
+            search_path = search_path / f
             if search_path.exists() and not search_path.is_dir():
                 file_to_copy = search_path
                 break
