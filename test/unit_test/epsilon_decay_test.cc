@@ -41,8 +41,8 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_init)
 
 BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
 {
-  const size_t num_iterations = 6000;
-  const std::vector<uint64_t> swap_after = {5000};
+  const size_t num_iterations = 10000;
+  const std::vector<uint64_t> swap_after = {200, 500, 1000, 5000};
   const size_t seed = 100;
   const size_t deterministic_champ_switch = 5781;
   callback_map test_hooks;
@@ -79,7 +79,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
+      "--epsilon_decay --epsilon_decay_significance_level .9 --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }

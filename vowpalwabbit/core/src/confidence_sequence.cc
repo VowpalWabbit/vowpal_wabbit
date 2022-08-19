@@ -93,7 +93,6 @@ void ConfidenceSequence::reset_stats()
 {
   rmin = rmin_init;
   rmax = rmax_init;
-
   eta = 1.1;
   s = 1.1;
   t = 0;
@@ -115,7 +114,7 @@ void ConfidenceSequence::reset_stats()
   last_r = 0.0;
 }
 
-float ConfidenceSequence::lower_bound()
+float ConfidenceSequence::lower_bound() const
 {
   if (t == 0 || rmin == rmax) { return static_cast<float>(rmin); }
 
@@ -127,7 +126,7 @@ float ConfidenceSequence::lower_bound()
   return static_cast<float>(rmin + l * (rmax - rmin));
 }
 
-float ConfidenceSequence::upper_bound()
+float ConfidenceSequence::upper_bound() const
 {
   if (t == 0 || rmin == rmax) { return static_cast<float>(rmax); }
 
@@ -139,7 +138,7 @@ float ConfidenceSequence::upper_bound()
   return static_cast<float>(rmin + u * (rmax - rmin));
 }
 
-double ConfidenceSequence::approxpolygammaone(double b)
+double ConfidenceSequence::approxpolygammaone(double b) const
 {
   assert(b >= 1.0);
   if (b > 10.0)
@@ -159,7 +158,7 @@ double ConfidenceSequence::approxpolygammaone(double b)
   }
 }
 
-double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha)
+double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha) const
 {
 #if !defined(__APPLE__) && !defined(_WIN32)
   double zeta_s = std::riemann_zeta(s);

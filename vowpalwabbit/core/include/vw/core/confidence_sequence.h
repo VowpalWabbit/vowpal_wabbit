@@ -14,7 +14,7 @@
 
 #include <algorithm>
 
-constexpr float DEFAULT_ALPHA = 0.05f;
+constexpr float CS_DEFAULT_ALPHA = 0.05f;
 
 namespace VW
 {
@@ -64,11 +64,11 @@ struct ConfidenceSequence
 {
   double alpha;
   double rmin_init;
-  double rmin;
   double rmax_init;
-  double rmax;
   bool adjust;
 
+  double rmin;
+  double rmax;
   double eta;
   double s;
   int t;
@@ -90,16 +90,16 @@ struct ConfidenceSequence
   double last_r;
 
 public:
-  ConfidenceSequence(double alpha = DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
+  ConfidenceSequence(double alpha = CS_DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
   void update(double w, double r, double p_drop = 0.0, double n_drop = -1.0);
   void persist(metric_sink&, const std::string&);
   void reset_stats();
-  float lower_bound();
-  float upper_bound();
+  float lower_bound() const;
+  float upper_bound() const;
 
 private:
-  double approxpolygammaone(double b);
-  double lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha);
+  double approxpolygammaone(double b) const;
+  double lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha) const;
 };
 }  // namespace confidence_sequence
 

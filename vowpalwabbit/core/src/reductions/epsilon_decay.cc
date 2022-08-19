@@ -13,6 +13,11 @@
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
 
+// TODO: delete this three includes
+#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/reductions/gd.h"
+#include "vw/core/shared_data.h"
+
 #include <utility>
 
 using namespace VW::config;
@@ -48,7 +53,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     _estimator_configs.emplace_back();
     _estimator_configs.back().reserve(i + 1);
     for (uint64_t j = 0; j < i + 1; ++j)
-    { _estimator_configs.back().emplace_back(epsilon_decay_significance_level, epsilon_decay_estimator_decay); }
+    { _estimator_configs.back().emplace_back(epsilon_decay_significance_level); }
   }
 }
 
@@ -76,8 +81,18 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
     {
       if (!_constant_epsilon)
       { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(_estimator_configs[i][i].update_count); }
+      std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[i] * 3]);
+      std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[i] * 3 + 1]);
+      std::swap(*_sd_gravity, per_live_model_state_double[_weight_indices[i] * 3 + 2]);
+      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[_weight_indices[i] * 2]);
+      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[_weight_indices[i] * 2 + 1]);
       if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[i]); }
       base.learn(examples, _weight_indices[i]);
+      std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[i] * 3]);
+      std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[i] * 3 + 1]);
+      std::swap(*_sd_gravity, per_live_model_state_double[_weight_indices[i] * 3 + 2]);
+      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[_weight_indices[i] * 2]);
+      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[_weight_indices[i] * 2 + 1]);
       for (const auto& a_s : examples[0]->pred.a_s)
       {
         if (a_s.action == labelled_action)
@@ -145,8 +160,7 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
          estimator_ind < std::min(static_cast<int64_t>(_estimator_configs[model_ind].size()), swap_dist);
          ++estimator_ind)
     {
-      _estimator_configs[model_ind][estimator_ind].reset_stats(
-          _epsilon_decay_significance_level, _epsilon_decay_estimator_decay);
+      _estimator_configs[model_ind][estimator_ind].reset_stats();
     }
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], _wpp); }
@@ -168,6 +182,10 @@ void epsilon_decay_data::check_estimator_bounds()
   // the new champion.
   auto model_count = static_cast<int64_t>(_estimator_configs.size());
   auto final_model_idx = model_count - 1;
+  if (_estimator_configs[final_model_idx][final_model_idx].update_count % 1000 == 0)
+  {
+    int i = 0;
+  }
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
     bool better = _lb_trick
@@ -212,21 +230,6 @@ void epsilon_decay_data::check_horizon_bounds()
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_estimator& estimator)
-{
-  size_t bytes = 0;
-  bytes += read_model_field(io, reinterpret_cast<VW::estimator_config&>(estimator));
-  return bytes;
-}
-
-size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilon_decay_estimator& estimator,
-    const std::string& upstream_name, bool text)
-{
-  size_t bytes = 0;
-  bytes += write_model_field(io, reinterpret_cast<const VW::estimator_config&>(estimator), upstream_name, text);
-  return bytes;
-}
-
 size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay)
 {
   size_t bytes = 0;
@@ -374,6 +377,19 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
   auto* base_learner = stack_builder.setup_base_learner();
+
+  GD::gd& gd = *static_cast<GD::gd*>(
+      base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
+  auto& adf_data =
+      *static_cast<CB_ADF::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))->get_internal_type_erased_data_pointer_test_use_only());
+  data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
+  data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
+  data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
+  data->_gd_total_weight = &(gd.per_model_states[0].total_weight);
+  data->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
+  data->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
+  data->_sd_gravity = &(all.sd->gravity);
+
   if (base_learner->is_multiline())
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
