@@ -52,7 +52,7 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir):
         shutil.copy(str(file_to_copy), str(test_dest_file))
 
 
-def run_command_line(test_id, command, working_dir, color_enum=Color):
+def generate_model(test_id, command, working_dir, color_enum=Color):
     command = command + " --quiet "
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
     vw = vowpalwabbit.Workspace(command)
@@ -61,7 +61,7 @@ def run_command_line(test_id, command, working_dir, color_enum=Color):
     vw.finish()
 
 
-def load_models(test_id, command, working_dir, color_enum=Color):
+def load_model(test_id, command, working_dir, color_enum=Color):
     command = command + " --quiet "
     command = command + f" -i {working_dir}/model_{test_id}.vw "
 
@@ -131,7 +131,7 @@ def get_tests(working_dir, explicit_tests=None):
 def generate_all(tests, model_working_dir, color_enum=Color):
     os.chdir(model_working_dir.parent)
     for test in tests:
-        run_command_line(test.id, test.command_line, model_working_dir, color_enum)
+        generate_model(test.id, test.command_line, model_working_dir, color_enum)
 
     print(f"stored models in: {model_working_dir}")
 
@@ -144,7 +144,7 @@ def load_all(tests, model_working_dir, color_enum=Color):
         )
 
     for test in tests:
-        load_models(test.id, test.command_line, model_working_dir, color_enum)
+        load_model(test.id, test.command_line, model_working_dir, color_enum)
 
 
 # will be called when run with pytest
