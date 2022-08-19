@@ -90,7 +90,8 @@ struct ConfidenceSequence
   double last_r;
 
 public:
-  ConfidenceSequence(double alpha = CS_DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
+  ConfidenceSequence(
+      double alpha = CS_DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
   void update(double w, double r, double p_drop = 0.0, double n_drop = -1.0);
   void persist(metric_sink&, const std::string&);
   void reset_stats();

@@ -4,8 +4,8 @@
 #pragma once
 
 #include "vw/core/array_parameters.h"
-#include "vw/core/distributionally_robust.h"
 #include "vw/core/confidence_sequence.h"
+#include "vw/core/distributionally_robust.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/reductions_fwd.h"
 

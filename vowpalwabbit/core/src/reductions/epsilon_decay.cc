@@ -52,8 +52,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
   {
     _estimator_configs.emplace_back();
     _estimator_configs.back().reserve(i + 1);
-    for (uint64_t j = 0; j < i + 1; ++j)
-    { _estimator_configs.back().emplace_back(epsilon_decay_significance_level); }
+    for (uint64_t j = 0; j < i + 1; ++j) { _estimator_configs.back().emplace_back(epsilon_decay_significance_level); }
   }
 }
 
@@ -159,9 +158,7 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
     for (int64_t estimator_ind = 0;
          estimator_ind < std::min(static_cast<int64_t>(_estimator_configs[model_ind].size()), swap_dist);
          ++estimator_ind)
-    {
-      _estimator_configs[model_ind][estimator_ind].reset_stats();
-    }
+    { _estimator_configs[model_ind][estimator_ind].reset_stats(); }
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], _wpp); }
 }
@@ -182,10 +179,7 @@ void epsilon_decay_data::check_estimator_bounds()
   // the new champion.
   auto model_count = static_cast<int64_t>(_estimator_configs.size());
   auto final_model_idx = model_count - 1;
-  if (_estimator_configs[final_model_idx][final_model_idx].update_count % 1000 == 0)
-  {
-    int i = 0;
-  }
+  if (_estimator_configs[final_model_idx][final_model_idx].update_count % 1000 == 0) { int i = 0; }
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
     bool better = _lb_trick
@@ -380,8 +374,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   GD::gd& gd = *static_cast<GD::gd*>(
       base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
-  auto& adf_data =
-      *static_cast<CB_ADF::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))->get_internal_type_erased_data_pointer_test_use_only());
+  auto& adf_data = *static_cast<CB_ADF::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
+                                                     ->get_internal_type_erased_data_pointer_test_use_only());
   data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
   data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
