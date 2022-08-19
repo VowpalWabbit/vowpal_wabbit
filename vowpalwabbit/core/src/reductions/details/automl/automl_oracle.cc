@@ -35,7 +35,7 @@ template <typename oracle_impl>
 void config_oracle<oracle_impl>::insert_qcolcol()
 {
   assert(valid_config_size == 0);
-  configs.emplace_back(global_lease);
+  configs.emplace_back(std::move(set_ns_list_t()), global_lease, config_type::Exclusion);
   ++valid_config_size;
 }
 
@@ -56,41 +56,48 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
     const std::map<namespace_index, uint64_t>& ns_counter, const std::string& interaction_type,
     const ns_based_config& config, interaction_vec_t& interactions)
 {
-  if (interaction_type == "quadratic")
+  if (config.conf_type == config_type::Exclusion)
   {
-    if (!interactions.empty()) { interactions.clear(); }
-    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+    if (interaction_type == "quadratic")
     {
-      auto idx1 = (*it).first;
-      for (auto jt = it; jt != ns_counter.end(); ++jt)
+      if (!interactions.empty()) { interactions.clear(); }
+      for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
       {
-        auto idx2 = (*jt).first;
-        std::vector<namespace_index> idx{idx1, idx2};
-        if (config.exclusions.find(idx) == config.exclusions.end()) { interactions.push_back({idx1, idx2}); }
-      }
-    }
-  }
-  else if (interaction_type == "cubic")
-  {
-    if (!interactions.empty()) { interactions.clear(); }
-    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
-    {
-      auto idx1 = (*it).first;
-      for (auto jt = it; jt != ns_counter.end(); ++jt)
-      {
-        auto idx2 = (*jt).first;
-        for (auto kt = jt; kt != ns_counter.end(); ++kt)
+        auto idx1 = (*it).first;
+        for (auto jt = it; jt != ns_counter.end(); ++jt)
         {
-          auto idx3 = (*kt).first;
-          std::vector<namespace_index> idx{idx1, idx2, idx3};
-          if (config.exclusions.find(idx) == config.exclusions.end()) { interactions.push_back({idx1, idx2, idx3}); }
+          auto idx2 = (*jt).first;
+          std::vector<namespace_index> idx{idx1, idx2};
+          if (config.exclusions.find(idx) == config.exclusions.end()) { interactions.push_back({idx1, idx2}); }
         }
       }
     }
+    else if (interaction_type == "cubic")
+    {
+      if (!interactions.empty()) { interactions.clear(); }
+      for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+      {
+        auto idx1 = (*it).first;
+        for (auto jt = it; jt != ns_counter.end(); ++jt)
+        {
+          auto idx2 = (*jt).first;
+          for (auto kt = jt; kt != ns_counter.end(); ++kt)
+          {
+            auto idx3 = (*kt).first;
+            std::vector<namespace_index> idx{idx1, idx2, idx3};
+            if (config.exclusions.find(idx) == config.exclusions.end()) { interactions.push_back({idx1, idx2, idx3}); }
+          }
+        }
+      }
+    }
+    else
+    {
+      THROW("Unknown interaction type.");
+    }
   }
-  else
+  else if (config.conf_type == config_type::Interaction)
   {
-    THROW("Unknown interaction type.");
+    // copy set to vector
   }
 
   if (ccb_on)
@@ -116,9 +123,7 @@ void config_oracle<oracle_impl>::insert_config(
         if (i < valid_config_size) { return; }
         else
         {
-          configs[valid_config_size].exclusions = std::move(configs[i].exclusions);
-          configs[valid_config_size].lease = global_lease;
-          configs[valid_config_size].state = VW::reductions::automl::config_state::New;
+          configs[valid_config_size].reset(std::move(configs[i].exclusions), global_lease, config_type::Exclusion);
           // TODO: do we have to push here to index_quue?
         }
       }
@@ -129,15 +134,10 @@ void config_oracle<oracle_impl>::insert_config(
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
   // configs exist we'll generate a new one.
   if (valid_config_size < configs.size())
-  {
-    configs[valid_config_size].exclusions = std::move(new_exclusions);
-    configs[valid_config_size].lease = global_lease;
-    configs[valid_config_size].state = VW::reductions::automl::config_state::New;
-  }
+  { configs[valid_config_size].reset(std::move(new_exclusions), global_lease, config_type::Exclusion); }
   else
   {
-    configs.emplace_back(global_lease);
-    configs[valid_config_size].exclusions = std::move(new_exclusions);
+    configs.emplace_back(std::move(new_exclusions), global_lease, config_type::Exclusion);
   }
 
   float priority = (*calc_priority)(configs[valid_config_size], ns_counter);

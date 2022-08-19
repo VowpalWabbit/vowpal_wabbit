@@ -82,6 +82,18 @@ struct ns_based_config
   config_type conf_type = VW::reductions::automl::config_type::Exclusion;
 
   ns_based_config(uint64_t lease = 10) : lease(lease) {}
+  ns_based_config(set_ns_list_t&& ns_list, uint64_t lease, config_type conf_type)
+      : exclusions(std::move(ns_list)), lease(lease), conf_type(conf_type)
+  {
+    this->state = VW::reductions::automl::config_state::New;
+  }
+  void reset(set_ns_list_t&& ns_list, uint64_t lease, config_type conf_type)
+  {
+    this->exclusions = std::move(ns_list);
+    this->lease = lease;
+    this->state = VW::reductions::automl::config_state::New;
+    this->conf_type = conf_type;
+  }
   static void apply_config_to_interactions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
       const std::string& interaction_type, const ns_based_config& config, interaction_vec_t& interactions);
 };
