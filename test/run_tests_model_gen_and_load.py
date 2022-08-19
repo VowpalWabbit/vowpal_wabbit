@@ -72,7 +72,7 @@ def generate_model(
     test_id: int,
     command: str,
     working_dir: Path,
-    color_enum: Union[Color, NoColor] = Color,
+    color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
     command = command + " --quiet "
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
@@ -86,7 +86,7 @@ def load_model(
     test_id: int,
     command: str,
     working_dir: Path,
-    color_enum: Union[Color, NoColor] = Color,
+    color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
     command = command + " --quiet "
     model_file = str(working_dir / f"model_{test_id}.vw")
@@ -108,7 +108,9 @@ def load_model(
     vw.finish()
 
 
-def get_tests(working_dir: Path, explicit_tests: List[int] = None) -> List[int]:
+def get_tests(
+    working_dir: Path, explicit_tests: Optional[List[int]] = None
+) -> List[TestData]:
     test_ref_dir: Path = Path(__file__).resolve().parent
 
     test_spec_file: Path = test_ref_dir / default_test_file
@@ -119,11 +121,11 @@ def get_tests(working_dir: Path, explicit_tests: List[int] = None) -> List[int]:
     print(f"Tests read from file: {test_spec_path.resolve()}")
 
     tests = convert_to_test_data(
-        tests,
-        "",
-        "",
-        [],
-        "",
+        tests=tests,
+        vw_bin="",
+        spanning_tree_bin=None,
+        skipped_ids=[],
+        extra_vw_options="",
     )
     filtered_tests = []
     for test in tests:
@@ -164,7 +166,7 @@ def get_tests(working_dir: Path, explicit_tests: List[int] = None) -> List[int]:
 def generate_all(
     tests: List[TestData],
     model_working_dir: Path,
-    color_enum: Union[Color, NoColor] = Color,
+    color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
     os.chdir(model_working_dir.parent)
     for test in tests:
@@ -176,7 +178,7 @@ def generate_all(
 def load_all(
     tests: List[TestData],
     model_working_dir: Path,
-    color_enum: Union[Color, NoColor] = Color,
+    color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
     os.chdir(model_working_dir.parent)
     if len(os.listdir(model_working_dir)) != len(tests):
@@ -240,7 +242,6 @@ def main():
                 f"{color_enum.LIGHT_RED} --load_models specified along with --clear_working_dir. Loading models will not work without a directory of stored models. Exiting... {color_enum.ENDC}"
             )
             print(f"{color_enum.LIGHT_RED} Exiting... {color_enum.ENDC}")
-            return
         if os.path.isdir(temp_working_dir):
             shutil.rmtree(temp_working_dir)
 
@@ -249,17 +250,17 @@ def main():
         test_model_dir.mkdir(parents=True, exist_ok=True)
         tests = get_tests(temp_working_dir, args.test)
 
-    if args.generate_models:
-        generate_all(tests, test_model_dir, color_enum)
-    elif args.load_models:
-        load_all(tests, test_model_dir, color_enum)
-    elif args.generate_and_load:
-        generate_all(tests, test_model_dir, color_enum)
-        load_all(tests, test_model_dir, color_enum)
-    else:
-        print(
-            f"{color_enum.LIGHT_GREEN}Specify a run option, use --help for more info {color_enum.ENDC}"
-        )
+        if args.generate_models:
+            generate_all(tests, test_model_dir, color_enum)
+        elif args.load_models:
+            load_all(tests, test_model_dir, color_enum)
+        elif args.generate_and_load:
+            generate_all(tests, test_model_dir, color_enum)
+            load_all(tests, test_model_dir, color_enum)
+        else:
+            print(
+                f"{color_enum.LIGHT_GREEN}Specify a run option, use --help for more info {color_enum.ENDC}"
+            )
 
 
 if __name__ == "__main__":
