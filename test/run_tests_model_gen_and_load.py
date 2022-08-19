@@ -88,7 +88,8 @@ def load_model(
     color_enum: Union[Color, NoColor] = Color,
 ) -> None:
     command = command + " --quiet "
-    command = command + f" -i {working_dir}/model_{test_id}.vw "
+    model_file = str(working_dir / f"model_{test_id}.vw")
+    command = command + f" -i {model_file}"
 
     # link is changed in some reductions so it will clash with saved model
     if "--link" in command:
