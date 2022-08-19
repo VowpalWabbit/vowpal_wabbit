@@ -94,9 +94,11 @@ def load_model(
     # link is changed in some reductions so it will clash with saved model
     if "--link" in command:
         command = re.sub("--link [:a-zA-Z0-9_.\\-/]*", "", command)
+        command = re.sub("--link=[:a-zA-Z0-9_.\\-/]*", "", command)
     # random seed state is stored in the model so it will clash if passed again
     if "--random_seed" in command:
         command = re.sub("--random_seed [0-9]*", "", command)
+        command = re.sub("--random_seed=[0-9]*", "", command)
 
     print(
         f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {command}{color_enum.ENDC}"
@@ -135,8 +137,12 @@ def get_tests(working_dir: Path, explicit_tests: List[int] = None) -> List[int]:
             and not "--help" in test.command_line
         ):
             test.command_line = re.sub("-f [:a-zA-Z0-9_.\\-/]*", "", test.command_line)
+            test.command_line = re.sub("-f=[:a-zA-Z0-9_.\\-/]*", "", test.command_line)
             test.command_line = re.sub(
                 "--final_regressor [:a-zA-Z0-9_.\\-/]*", "", test.command_line
+            )
+            test.command_line = re.sub(
+                "--final_regressor=[:a-zA-Z0-9_.\\-/]*", "", test.command_line
             )
             test.command_line = test.command_line.replace("--onethread", "")
             filtered_tests.append(test)
