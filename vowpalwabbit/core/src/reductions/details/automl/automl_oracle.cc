@@ -32,7 +32,7 @@ config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* 
 {
 }
 template <typename oracle_impl>
-void config_oracle<oracle_impl>::insert_qcolcol()
+void config_oracle<oracle_impl>::insert_starting_configuration()
 {
   assert(valid_config_size == 0);
   configs.emplace_back(global_lease);
