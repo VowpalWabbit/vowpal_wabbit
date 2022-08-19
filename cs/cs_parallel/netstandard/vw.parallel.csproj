@@ -10,7 +10,6 @@
     <AssemblyName>VowpalWabbit.Parallel</AssemblyName>
     <RootNamespace>VW</RootNamespace>
     <HighEntropyVA>true</HighEntropyVA>
-    
   </PropertyGroup>
 
   <Import Project="$(PackagingIntegration)" Condition="Exists('$(PackagingIntegration)')" />

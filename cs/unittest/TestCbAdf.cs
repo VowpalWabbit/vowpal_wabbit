@@ -119,7 +119,11 @@ namespace cs_unittest
         [TestCategory("Vowpal Wabbit")]
         public void TestSharedModel()
         {
+#if NETCOREAPP3_0_OR_GREATER
             string cbadfModelFile = Path.Join("models", "cb_adf.model");
+#else
+            string cbadfModelFile = @"models\cb_adf.model";
+#endif
 
             var sampleData = CreateSampleCbAdfData();
 

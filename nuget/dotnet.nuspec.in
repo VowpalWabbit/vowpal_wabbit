@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <metadata>
-    <title>Vowpal Wabbit .NET Core</title>
+    <title>Vowpal Wabbit .NET</title>
     <id>@NUGET_PACKAGE_NAME@</id>
     <tags>vw vowpal wabbit langford ml machine learning</tags>
     <authors>John Langford et al</authors>
@@ -19,9 +19,15 @@
         <dependency id="System.Runtime.Caching" version="4.7.0" exclude="Build,Analyzers" />
         <dependency id="Microsoft.NETCore.Platforms" version="6.0.5" exclude="Build,Analyzers" />
       </group>
+      <group targetFramework=".NETFramework@VW_NET_FRAMEWORK_VERSION@">
+        <dependency id="Newtonsoft.Json" version="9.0.1" exclude="Build,Analyzers" />
+        <dependency id="System.Threading.Tasks.Dataflow" version="4.11.1" exclude="Build,Analyzers" />
+        <dependency id="System.Runtime.Caching" version="4.7.0" exclude="Build,Analyzers" />
+      </group>
     </dependencies>
   </metadata>
   <files>
+  	  <file src="lib\@VW_NET_FRAMEWORK_TFM@\*.dll" target="lib\@VW_NET_FRAMEWORK_TFM@" />
   	  <file src="ref\netstandard2.1\*.dll" target="ref\netstandard2.1" />
   	  <file src="runtime.json" target="" />
   </files>

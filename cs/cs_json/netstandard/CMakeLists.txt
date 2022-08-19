@@ -20,8 +20,13 @@ if (vw_DOTNET_USE_MSPROJECT)
 else()
   add_custom_target(VowpalWabbit.JSON ALL
     COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
-    COMMENT Building VowpalWabbit.JSON
+    COMMENT "Building VowpalWabbit.JSON"
     DEPENDS VowpalWabbit
+    SOURCES ${VW_NET_CS_JSON_SOURCES})
+  add_custom_target(VowpalWabbit.JSON.Ref ALL
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native>/ref -v m --nologo --no-dependencies /clp:NoSummary -property:ProduceOnlyReferenceAssembly=true
+    COMMENT "Building VowpalWabbit.JSON Reference Assembly"
+    DEPENDS VowpalWabbit.Ref VowpalWabbit.JSON
     SOURCES ${VW_NET_CS_JSON_SOURCES})
   set_property(TARGET VowpalWabbit.JSON APPEND PROPERTY ADDITIONAL_CLEAN_FILES "${CMAKE_CURRENT_LIST_DIR}/obj")
 endif()
@@ -34,9 +39,6 @@ install(
   DESTINATION "./runtimes/${NUGET_RUNTIME_ID}/lib/netstandard2.1"
 )
 install(
-  FILES
-    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.JSON.dll"
-    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.JSON.pdb"
-    "$<TARGET_FILE_DIR:vw.net.native>/VowpalWabbit.JSON.deps.json"
+  FILES "$<TARGET_FILE_DIR:vw.net.native>/ref/VowpalWabbit.JSON.dll"
   DESTINATION "./ref/netstandard2.1"
 )

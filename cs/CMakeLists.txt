@@ -2,18 +2,32 @@ IF(vw_BUILD_NET_CORE AND vw_BUILD_NET_FRAMEWORK)
   MESSAGE(FATAL_ERROR "Cannot build VW bindings for .NET Core and .NET Framework at the same time.")
 ENDIF()
 
-# Explicitly set the `PlatformTarget` for C# projects, since AnyCPU can result in
-# System.BadImageFormatException throws, when trying to load C++/CLI assemblies.
-IF(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
-  SET(CMAKE_CSharp_FLAGS "/platform:x64")
-ELSEIF(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
-    SET(CMAKE_CSharp_FLAGS "/platform:x86")
-ELSE()
-  MESSAGE(WARNING "Generator platform is set to '${CMAKE_GENERATOR_PLATFORM}', which is not supported by managed projects. Defaulting to 'AnyCPU'...")
-  SET(CMAKE_CSharp_FLAGS "/platform:AnyCPU")
-ENDIF()
+# Generate .nuspec files for creating Nuget packages
+set(NUGET_PACKAGE_NAME "VowpalWabbit")
+set(NUGET_PACKAGE_VERSION ${PACKAGE_VERSION})
+if(WIN32)
+  set(NUGET_RUNTIME_ID "win-x64")
+elseif(APPLE)
+  set(NUGET_RUNTIME_ID "osx-x64")
+else()
+  set(NUGET_RUNTIME_ID "linux-x64")
+endif()
 
+if(vw_BUILD_NET_FRAMEWORK)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/../nuget/dotnet.nuspec.in nuget/dotnet.nuspec @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/dotnet.nuspec DESTINATION ./)
+endif()
 
+if(vw_BUILD_NET_CORE)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/../nuget/dotnetcore.nuspec.in nuget/dotnetcore.nuspec @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/dotnetcore.nuspec DESTINATION ./)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/../nuget/dotnetcore_runtime.nuspec.in nuget/dotnetcore_runtime.nuspec @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/dotnetcore_runtime.nuspec DESTINATION ./)
+  configure_file(${CMAKE_CURRENT_LIST_DIR}/../nuget/runtime.json.in nuget/runtime.json @ONLY)
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/runtime.json DESTINATION ./)
+endif()
+
+# Add the appropriate subdirectories depending on if we're build Core or Framework
 IF (vw_BUILD_NET_CORE)
   message(STATUS "Building .NET Core Bindings")
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
@@ -35,6 +49,18 @@ IF (vw_BUILD_NET_CORE)
 
 ELSEIF (vw_BUILD_NET_FRAMEWORK)
   message(STATUS "Building .NET Framework Bindings")
+  enable_language(CSharp)
+
+  # Explicitly set the `PlatformTarget` for C# projects, since AnyCPU can result in
+  # System.BadImageFormatException throws, when trying to load C++/CLI assemblies.
+  IF(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
+    SET(CMAKE_CSharp_FLAGS "/platform:x64")
+  ELSEIF(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
+      SET(CMAKE_CSharp_FLAGS "/platform:x86")
+  ELSE()
+    MESSAGE(WARNING "Generator platform is set to '${CMAKE_GENERATOR_PLATFORM}', which is not supported by managed projects. Defaulting to 'AnyCPU'...")
+    SET(CMAKE_CSharp_FLAGS "/platform:AnyCPU")
+  ENDIF()
 
   # StrongName signing for VW assemblies - stage the keyfile, and set its location
   configure_file(vw_key.snk vw_key.snk COPYONLY)

@@ -16,33 +16,54 @@ namespace cs_unittest
         [TestCategory("Vowpal Wabbit/Model Loading")]
         public void TestLoadModelCorrupt()
         {
+#if NETCOREAPP3_0_OR_GREATER
             InternalTestModel(Path.Join("model-sets", "7.10.2_corrupted.model"), false);
+#else
+            InternalTestModel(@"model-sets\7.10.2_corrupted.model", false);
+#endif
         }
 
         [TestMethod]
         [TestCategory("Vowpal Wabbit/Model Loading")]
         public void TestLoadModel()
         {
+#if NETCOREAPP3_0_OR_GREATER
             InternalTestModel(Path.Join("model-sets", "8.0.0_ok.model"), true);
             InternalTestModel(Path.Join("model-sets", "8.0.1.test_named_ok.model"), true);
             InternalTestModel(Path.Join("model-sets", "8.0.1_rcv1_ok.model"), true);
             InternalTestModel(Path.Join("model-sets", "8.0.1_hash_ok.model"), true);
+#else
+            InternalTestModel(@"model-sets\8.0.0_ok.model", true);
+            InternalTestModel(@"model-sets\8.0.1.test_named_ok.model", true);
+            InternalTestModel(@"model-sets\8.0.1_rcv1_ok.model", true);
+            InternalTestModel(@"model-sets\8.0.1_hash_ok.model", true);
+#endif
         }
 
         [TestMethod]
         [TestCategory("Vowpal Wabbit/Model Loading")]
         public void TestLoadModelRandomCorrupt()
         {
+#if NETCOREAPP3_0_OR_GREATER
             InternalTestModelRandomCorrupt(Path.Join("model-sets", "8.0.1.test_named_ok.model"));
             //InternalTestModelRandomCorrupt(Path.Join("model-sets", "8.0.1_rcv1_ok.model"));
             //InternalTestModelRandomCorrupt(Path.Join("model-sets", "8.0.1_hash_ok.model"));
+#else
+            InternalTestModelRandomCorrupt(@"model-sets\8.0.1.test_named_ok.model");
+            //InternalTestModelRandomCorrupt(@"model-sets\8.0.1_rcv1_ok.model");
+            //InternalTestModelRandomCorrupt(@"model-sets\8.0.1_hash_ok.model");
+#endif
         }
 
         [TestMethod]
         [TestCategory("Vowpal Wabbit/Model Loading")]
         public void TestLoadModelInMemory()
         {
+#if NETCOREAPP3_0_OR_GREATER
             using (var vw = new VowpalWabbit("-i " + Path.Join("model-sets", "8.0.1_rcv1_ok.model")))
+#else
+            using (var vw = new VowpalWabbit("-i " + @"model-sets\8.0.1_rcv1_ok.model"))
+#endif
             {
                 var memStream = new MemoryStream();
                 vw.SaveModel(memStream);
