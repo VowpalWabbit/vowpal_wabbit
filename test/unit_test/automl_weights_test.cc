@@ -75,7 +75,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
   const float expected_w0 = 0.0259284f;
-  const float expected_w1 = 0.00836942f;
+  const float expected_w1 = 0.00720719;
   const float expected_w2 = -0.0374119f;
   const float ZERO = 0.f;
 
