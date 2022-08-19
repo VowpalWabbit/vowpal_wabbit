@@ -79,5 +79,5 @@ jobs:
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
-          pip install pytest vowpalwabbit
-          python -m pytest ./test/run_tests_model_gen_and_load.py
+          pip install vowpalwabbit
+          python ./test/run_tests_model_gen_and_load.py --load_models

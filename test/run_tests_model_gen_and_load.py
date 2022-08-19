@@ -147,17 +147,6 @@ def load_all(tests, model_working_dir, color_enum=Color):
         load_model(test.id, test.command_line, model_working_dir, color_enum)
 
 
-# will be called when run with pytest
-def test_all():
-    temp_working_dir = Path.home() / default_working_dir_name
-    test_model_dir = Path.home() / default_working_dir_name / "test_models"
-    temp_working_dir.mkdir(parents=True, exist_ok=True)
-    test_model_dir.mkdir(parents=True, exist_ok=True)
-
-    tests = get_tests(temp_working_dir)
-    load_all(tests, test_model_dir)
-
-
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
