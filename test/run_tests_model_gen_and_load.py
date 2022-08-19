@@ -5,9 +5,22 @@ import re
 import os
 import shutil
 import json
-from run_tests import convert_to_test_data, Color, NoColor
+from run_tests import convert_to_test_data, Color, NoColor, TestData
 import vowpalwabbit
 
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 """
 This script will use run_tests to capture all available tests to run
@@ -26,7 +39,9 @@ default_working_dir_name = ".vw_runtests_model_gen_working_dir"
 default_test_file = "core.vwtest.json"
 
 
-def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir):
+def create_test_dir(
+    test_id: int, input_files: List[str], test_base_dir: Path, test_ref_dir: Path
+) -> None:
     for f in input_files:
         file_to_copy = None
         search_paths = [test_ref_dir / f]
@@ -52,7 +67,12 @@ def create_test_dir(test_id, input_files, test_base_dir, test_ref_dir):
         shutil.copy(str(file_to_copy), str(test_dest_file))
 
 
-def generate_model(test_id, command, working_dir, color_enum=Color):
+def generate_model(
+    test_id: int,
+    command: str,
+    working_dir: Path,
+    color_enum: Union[Color, NoColor] = Color,
+) -> None:
     command = command + " --quiet "
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
     vw = vowpalwabbit.Workspace(command)
@@ -61,7 +81,12 @@ def generate_model(test_id, command, working_dir, color_enum=Color):
     vw.finish()
 
 
-def load_model(test_id, command, working_dir, color_enum=Color):
+def load_model(
+    test_id: int,
+    command: str,
+    working_dir: Path,
+    color_enum: Union[Color, NoColor] = Color,
+) -> None:
     command = command + " --quiet "
     command = command + f" -i {working_dir}/model_{test_id}.vw "
 
@@ -79,7 +104,7 @@ def load_model(test_id, command, working_dir, color_enum=Color):
     vw.finish()
 
 
-def get_tests(working_dir, explicit_tests=None):
+def get_tests(working_dir: Path, explicit_tests: List[int] = None) -> List[int]:
     test_ref_dir: Path = Path(__file__).resolve().parent
 
     test_spec_file: Path = test_ref_dir / default_test_file
@@ -128,7 +153,11 @@ def get_tests(working_dir, explicit_tests=None):
     return filtered_tests
 
 
-def generate_all(tests, model_working_dir, color_enum=Color):
+def generate_all(
+    tests: List[TestData],
+    model_working_dir: Path,
+    color_enum: Union[Color, NoColor] = Color,
+) -> None:
     os.chdir(model_working_dir.parent)
     for test in tests:
         generate_model(test.id, test.command_line, model_working_dir, color_enum)
@@ -136,7 +165,11 @@ def generate_all(tests, model_working_dir, color_enum=Color):
     print(f"stored models in: {model_working_dir}")
 
 
-def load_all(tests, model_working_dir, color_enum=Color):
+def load_all(
+    tests: List[TestData],
+    model_working_dir: Path,
+    color_enum: Union[Color, NoColor] = Color,
+) -> None:
     os.chdir(model_working_dir.parent)
     if len(os.listdir(model_working_dir)) != len(tests):
         print(
