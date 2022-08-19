@@ -16,6 +16,7 @@ set(vw_core_headers
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
   include/vw/core/compat.h
+  include/vw/core/confidence_sequence.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
@@ -196,6 +197,7 @@ set(vw_core_sources
   src/cb.cc
   src/ccb_label.cc
   src/ccb_reduction_features.cc
+  src/confidence_sequence.cc
   src/cost_sensitive.cc
   src/crossplat_compat.cc
   src/debug_print.cc
