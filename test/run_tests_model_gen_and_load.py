@@ -77,7 +77,7 @@ def generate_model(
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
     vw = vowpalwabbit.Workspace(command)
 
-    vw.save(f"{working_dir}/model_{test_id}.vw")
+    vw.save(str(working_dir / f"model_{test_id}.vw"))
     vw.finish()
 
 
