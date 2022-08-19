@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
   test_hooks.emplace(zero, [&zero](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     aml_test::aml_rand* aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
     BOOST_CHECK_EQUAL(aml->cm->total_learn_count, zero);
-    BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Collecting);
+    BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
   });
 
@@ -226,11 +226,11 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
     BOOST_CHECK_EQUAL(aml->cm->_config_oracle.configs[2].lease, 20);
     BOOST_CHECK_EQUAL(aml->cm->_config_oracle.configs[3].lease, 20);
     BOOST_CHECK_EQUAL(aml->cm->estimators[0].first._estimator.update_count, 0);
-    BOOST_CHECK_EQUAL(aml->cm->estimators[1].first._estimator.update_count, 14);
-    BOOST_CHECK_EQUAL(aml->cm->estimators[2].first._estimator.update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm->estimators[1].first._estimator.update_count, 15);
+    BOOST_CHECK_EQUAL(aml->cm->estimators[2].first._estimator.update_count, 5);
     BOOST_CHECK_EQUAL(aml->cm->estimators[0].second.update_count, 0);
-    BOOST_CHECK_EQUAL(aml->cm->estimators[1].second.update_count, 14);
-    BOOST_CHECK_EQUAL(aml->cm->estimators[2].second.update_count, 4);
+    BOOST_CHECK_EQUAL(aml->cm->estimators[1].second.update_count, 15);
+    BOOST_CHECK_EQUAL(aml->cm->estimators[2].second.update_count, 5);
     BOOST_CHECK_EQUAL(aml->cm->_config_oracle.index_queue.size(), 0);
     return true;
   });
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
     aml_test::check_config_states(aml);
     BOOST_CHECK_EQUAL(aml->cm->current_champ, 0);
     BOOST_CHECK_EQUAL(clear_champ_switch, aml->cm->total_learn_count);
-    BOOST_CHECK_EQUAL(aml->cm->estimators.size(), 2);
+    BOOST_CHECK_EQUAL(aml->cm->estimators.size(), 3);
     BOOST_CHECK_EQUAL(aml->cm->_config_oracle.valid_config_size, 4);
     BOOST_CHECK(aml->current_state == VW::reductions::automl::automl_state::Experimenting);
     return true;
@@ -381,9 +381,9 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
   test_hooks.emplace(clear_champ_switch + 1, [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&) {
     aml_test::aml_onediff* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
     BOOST_CHECK_EQUAL(aml->cm->estimators.size(), 3);
-    BOOST_CHECK_EQUAL(aml->cm->estimators[0].first.live_interactions.size(), 2);
-    BOOST_CHECK_EQUAL(aml->cm->estimators[1].first.live_interactions.size(), 3);
-    BOOST_CHECK_EQUAL(aml->cm->estimators[2].first.live_interactions.size(), 1);
+    BOOST_CHECK_EQUAL(aml->cm->estimators[0].first.live_interactions.size(), 3);
+    BOOST_CHECK_EQUAL(aml->cm->estimators[1].first.live_interactions.size(), 2);
+    BOOST_CHECK_EQUAL(aml->cm->estimators[2].first.live_interactions.size(), 2);
     return true;
   });
 
@@ -441,7 +441,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL(configs.size(), 0);
     BOOST_CHECK_EQUAL(estimators.size(), 0);
     BOOST_CHECK_EQUAL(prio_queue.size(), 0);
-    interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::insert_qcolcol(
+    interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::insert_starting_configuration(
         estimators, oracle, aml->cm->automl_significance_level, aml->cm->automl_estimator_decay);
     BOOST_CHECK_EQUAL(configs.size(), 1);
     BOOST_CHECK_EQUAL(estimators.size(), 1);

@@ -191,8 +191,6 @@ VW::string_view to_string(reductions::automl::automl_state state)
 {
   switch (state)
   {
-    case reductions::automl::automl_state::Collecting:
-      return "Collecting";
     case reductions::automl::automl_state::Experimenting:
       return "Experimenting";
   }

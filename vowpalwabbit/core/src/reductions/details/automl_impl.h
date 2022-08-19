@@ -123,7 +123,7 @@ struct config_oracle
   void insert_config(
       set_ns_list_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
-  void insert_qcolcol();
+  void insert_starting_configuration();
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 };
 
@@ -227,8 +227,8 @@ struct interaction_config_manager
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
       estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers, const bool lb_trick,
       const std::map<namespace_index, uint64_t>& ns_counter);
-  static void insert_qcolcol(estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle,
-      const double sig_level, const double decay);
+  static void insert_starting_configuration(estimator_vec_t<estimator_impl>& estimators,
+      config_oracle_impl& config_oracle, const double sig_level, const double decay);
 
 private:
   static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);
@@ -243,14 +243,13 @@ bool worse();
 // all possible states of automl
 enum class automl_state
 {
-  Collecting,
   Experimenting
 };
 
 template <typename CMType>
 struct automl
 {
-  automl_state current_state = automl_state::Collecting;
+  automl_state current_state = automl_state::Experimenting;
   std::unique_ptr<CMType> cm;
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
