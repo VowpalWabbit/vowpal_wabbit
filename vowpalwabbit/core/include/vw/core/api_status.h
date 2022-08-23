@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include <string>
 #include <sstream>
+#include <string>
 
 // TODO This file contains an experimental defintion of api_status - the design
 // of this will be updated once
@@ -63,9 +63,10 @@ private:
 };
 
 /**
-  * @brief Helper class used in report_error template funcstions to return status from API calls.
-  */
-struct status_builder {
+ * @brief Helper class used in report_error template funcstions to return status from API calls.
+ */
+struct status_builder
+{
   /**
    * @brief Construct a new status builder object
    *
@@ -106,7 +107,8 @@ private:
  * @param last value of last argument to report_error
  */
 template <typename Last>
-void report_error(std::ostringstream& os, const Last& last) {
+void report_error(std::ostringstream& os, const Last& last)
+{
   os << last;
 }
 
@@ -119,8 +121,9 @@ void report_error(std::ostringstream& os, const Last& last) {
  * @param first value of the first parameter to report_error
  * @param rest rest of the values to report error
  */
-template <typename First, typename ... Rest>
-void report_error(std::ostringstream& os, const First& first, const Rest& ... rest) {
+template <typename First, typename... Rest>
+void report_error(std::ostringstream& os, const First& first, const Rest&... rest)
+{
   os << first;
   report_error(os, rest...);
 }
@@ -134,17 +137,19 @@ void report_error(std::ostringstream& os, const First& first, const Rest& ... re
  * @param all Parameter list argument for the variadic template
  * @return int Error code that was passed in
  */
-template <typename ... All>
-int report_error(api_status* status, int scode, const All& ... all) {
-  if ( status != nullptr ) {
+template <typename... All>
+int report_error(api_status* status, int scode, const All&... all)
+{
+  if (status != nullptr)
+  {
     std::ostringstream os;
     report_error(os, all...);
     api_status::try_update(status, scode, os.str().c_str());
   }
   return scode;
 }
-} // namespace experimental
-} // namespace VW
+}  // namespace experimental
+}  // namespace VW
 
 /**
  * @brief left shift operator to serialize types into stringstream held in status_builder
@@ -152,13 +157,13 @@ int report_error(api_status* status, int scode, const All& ... all) {
  * @tparam T Type to serialize
  * @param sb Status builder that holds serialized error message
  * @param val Error code
- * @return reinforcement_learning::status_builder& Passed in status builder so left shift operators can be chained together.
+ * @return reinforcement_learning::status_builder& Passed in status builder so left shift operators can be chained
+ * together.
  */
 template <typename T>
-VW::experimental::status_builder& operator <<(VW::experimental::status_builder& sb, const T& val) {
-  if ( sb._status != nullptr ) {
-    sb._os << ", " << val;
-  }
+VW::experimental::status_builder& operator<<(VW::experimental::status_builder& sb, const T& val)
+{
+  if (sb._status != nullptr) { sb._os << ", " << val; }
   return sb;
 }
 
@@ -175,9 +180,7 @@ namespace experimental
  * @param sb status_builder that contains the serialized error string
  * @return int Error status
  */
-inline int report_error(status_builder& sb) {
-  return sb;
-}
+inline int report_error(status_builder& sb) { return sb; }
 
 /**
  * @brief report_error that takes the final paramter
@@ -188,7 +191,8 @@ inline int report_error(status_builder& sb) {
  * @return int Error status
  */
 template <typename Last>
-int report_error(status_builder& sb, const Last& last) {
+int report_error(status_builder& sb, const Last& last)
+{
   return sb << last;
 }
 
@@ -202,8 +206,9 @@ int report_error(status_builder& sb, const Last& last) {
  * @param rest Tail paramter value list
  * @return int Error status
  */
-template <typename First, typename ... Rest>
-int report_error(status_builder& sb, const First& first, const Rest& ... rest) {
+template <typename First, typename... Rest>
+int report_error(status_builder& sb, const First& first, const Rest&... rest)
+{
   sb << first;
   return report_error(sb, rest...);
 }
@@ -214,38 +219,44 @@ int report_error(status_builder& sb, const First& first, const Rest& ... rest) {
 /**
  * @brief Error reporting macro for just returning an error code.
  */
-#define RETURN_ERROR(status, code, ... ) do {                                                  \
-  if(status != nullptr) {                                                                      \
-    VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code);  \
-    sb << VW::experimental::error_code::code ## _s;                                            \
-    return report_error(sb);                                                                   \
-  }                                                                                            \
-  return VW::experimental::error_code::code;                                                   \
-} while(0);
+#  define RETURN_ERROR(status, code, ...)                                                         \
+    do                                                                                            \
+    {                                                                                             \
+      if (status != nullptr)                                                                      \
+      {                                                                                           \
+        VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code); \
+        sb << VW::experimental::error_code::code##_s;                                             \
+        return report_error(sb);                                                                  \
+      }                                                                                           \
+      return VW::experimental::error_code::code;                                                  \
+    } while (0);
 
-#endif // RETURN_ERROR
+#endif  // RETURN_ERROR
 
 #ifndef RETURN_ERROR_ARG
 /**
  * @brief Error reporting macro that takes a list of parameters
  */
-#define RETURN_ERROR_ARG(status, code, ... ) do {                                              \
-  if(status != nullptr) {                                                                      \
-    VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code);  \
-    sb << VW::experimental::error_code::code ## _s;                                            \
-    return report_error(sb, __VA_ARGS__ );                                                     \
-  }                                                                                            \
-  return VW::experimental::error_code::code;                                                   \
-} while(0);
+#  define RETURN_ERROR_ARG(status, code, ...)                                                     \
+    do                                                                                            \
+    {                                                                                             \
+      if (status != nullptr)                                                                      \
+      {                                                                                           \
+        VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code); \
+        sb << VW::experimental::error_code::code##_s;                                             \
+        return report_error(sb, __VA_ARGS__);                                                     \
+      }                                                                                           \
+      return VW::experimental::error_code::code;                                                  \
+    } while (0);
 
-#endif // RETURN_ERROR_ARG
+#endif  // RETURN_ERROR_ARG
 
 #ifndef RETURN_ERROR_LS
 /**
  * @brief Error reporting macro used with left shift operator
  */
-#define RETURN_ERROR_LS(status, code)                                                          \
-VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code);      \
-return sb << VW::experimental::error_code::code ## _s                                          \
+#  define RETURN_ERROR_LS(status, code)                                                       \
+    VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code); \
+    return sb << VW::experimental::error_code::code##_s
 
-#endif // RETURN_ERROR_LS
+#endif  // RETURN_ERROR_LS

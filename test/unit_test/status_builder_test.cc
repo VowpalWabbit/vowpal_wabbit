@@ -1,10 +1,10 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
-#include <boost/test/unit_test.hpp>
-
 #include "vw/core/api_status.h"
 #include "vw/core/error_constants.h"
+
+#include <boost/test/unit_test.hpp>
 
 namespace err = VW::experimental::error_code;
 using api_status = VW::experimental::api_status;

@@ -18,11 +18,7 @@ namespace reductions
 {
 struct active
 {
-  active(float active_c0, VW::workspace* all)
-      : active_c0(active_c0)
-      , _all(all)
-  {
-  }
+  active(float active_c0, VW::workspace* all) : active_c0(active_c0), _all(all) {}
 
   float active_c0;
   VW::workspace* _all = nullptr;

@@ -50,10 +50,7 @@ public:
   bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq);
 
   cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, VW::workspace* all)
-      : _no_predict(no_predict)
-      , _rank_all(rank_all)
-      , _clip_p(clip_p)
-      , _all(all)
+      : _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p), _all(all)
   {
     _gen_cs.cb_type = cb_type;
   }

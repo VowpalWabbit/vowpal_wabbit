@@ -34,26 +34,21 @@ void api_status::try_clear(api_status* status)
 }
 
 status_builder::status_builder(i_trace* trace, api_status* status, const int code)
-  : _code { code }, _status { status }, _trace {trace} {
-  if ( enable_logging() )
-    _os << "(ERR:" << _code << ")";
+    : _code{code}, _status{status}, _trace{trace}
+{
+  if (enable_logging()) _os << "(ERR:" << _code << ")";
 }
 
-status_builder::~status_builder() {
-  if (_status != nullptr) {
-    api_status::try_update(_status, _code, _os.str().c_str());
-  }
+status_builder::~status_builder()
+{
+  if (_status != nullptr) { api_status::try_update(_status, _code, _os.str().c_str()); }
   // if (_trace != nullptr ) {
   //   _trace->log(0, _os.str());
   // }
 }
 
-status_builder::operator int() const {
-  return _code;
-}
+status_builder::operator int() const { return _code; }
 
-bool status_builder::enable_logging() const {
-    return _status != nullptr || _trace != nullptr;
-  }
+bool status_builder::enable_logging() const { return _status != nullptr || _trace != nullptr; }
 }  // namespace experimental
 }  // namespace VW
