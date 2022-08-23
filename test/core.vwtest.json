@@ -304,7 +304,7 @@
   {
     "id": 24,
     "desc": "active-learning -- training",
-    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3",
+    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3 --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/active-simulation.t24.stderr",
       "stdout": "train-sets/ref/active-simulation.t24.stdout"
