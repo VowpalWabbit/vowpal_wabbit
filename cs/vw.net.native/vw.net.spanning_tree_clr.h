@@ -3,7 +3,8 @@
 #include "vw.net.native.h"
 #include "vw/spanning_tree/spanning_tree.h"
 
-extern "C" {
+extern "C"
+{
   API VW::SpanningTree* CreateSpanningTree();
   API void DeleteSpanningTree(VW::SpanningTree* tree);
 

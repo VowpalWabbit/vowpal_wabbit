@@ -9,17 +9,18 @@
 
 namespace vw_net_native
 {
-  typedef vw_net_native::v_iterator_context<namespace_index> namespace_enumerator;
-  
-  struct feature_enumerator
-  {
-    const features* feat;
-    features::const_iterator it;
-    namespace_index ns;
-  };
-}
+typedef vw_net_native::v_iterator_context<namespace_index> namespace_enumerator;
 
-extern "C" {
+struct feature_enumerator
+{
+  const features* feat;
+  features::const_iterator it;
+  namespace_index ns;
+};
+}  // namespace vw_net_native
+
+extern "C"
+{
   API example* CreateExample(vw_net_native::workspace_context* workspace);
   API void DeleteExample(example* example);
 
@@ -32,13 +33,15 @@ extern "C" {
   API void MakeLabelDefault(vw_net_native::workspace_context* workspace, example* example);
   API void UpdateExampleWeight(vw_net_native::workspace_context* workspace, example* example);
 
-  API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(vw_net_native::workspace_context* workspace, example* example);
+  API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(
+      vw_net_native::workspace_context* workspace, example* example);
   API void DeleteNamespaceEnumerator(vw_net_native::namespace_enumerator* it);
   API int NamespaceEnumeratorMoveNext(vw_net_native::namespace_enumerator* it);
   API void NamespaceEnumeratorReset(vw_net_native::namespace_enumerator* it);
   API namespace_index NamespaceEnumeratorGetNamespace(vw_net_native::namespace_enumerator* it);
 
-  API vw_net_native::feature_enumerator* CreateFeatureEnumerator(vw_net_native::workspace_context* workspace, example* example, namespace_index ns);
+  API vw_net_native::feature_enumerator* CreateFeatureEnumerator(
+      vw_net_native::workspace_context* workspace, example* example, namespace_index ns);
   API void DeleteFeatureEnumerator(vw_net_native::feature_enumerator* it);
   API int FeatureEnumeratorMoveNext(vw_net_native::feature_enumerator* it);
   API void FeatureEnumeratorReset(vw_net_native::feature_enumerator* it);
@@ -46,7 +49,9 @@ extern "C" {
   API float FeatureEnumeratorGetFeatureValue(vw_net_native::feature_enumerator* it);
   API feature_index FeatureEnumeratorGetFeatureIndex(vw_net_native::feature_enumerator* it);
 
-  API feature_index GetShiftedWeightIndex(vw_net_native::workspace_context* workspace, example* ex, feature_index weight_index_unshifted);
+  API feature_index GetShiftedWeightIndex(
+      vw_net_native::workspace_context* workspace, example* ex, feature_index weight_index_unshifted);
   API float GetWeight(vw_net_native::workspace_context* workspace, example* ex, feature_index weight_index_unshifted);
-  API float GetAuditWeight(vw_net_native::workspace_context* workspace, example* ex, feature_index weight_index_unshifted);
+  API float GetAuditWeight(
+      vw_net_native::workspace_context* workspace, example* ex, feature_index weight_index_unshifted);
 }

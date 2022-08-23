@@ -1,6 +1,7 @@
 #include "vw.net.example.h"
-#include "vw/core/parse_example.h"
+
 #include "vw/core/feature_group.h"
+#include "vw/core/parse_example.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
 
@@ -13,29 +14,20 @@ API example* CreateExample(vw_net_native::workspace_context* workspace)
   return ex;
 }
 
-API void DeleteExample(example* example)
-{
-  VW::dealloc_examples(example, 1);
-}
+API void DeleteExample(example* example) { VW::dealloc_examples(example, 1); }
 
 API int IsRingExample(vw_net_native::workspace_context* workspace, example* example)
 {
   return VW::is_ring_example(*workspace->vw, example);
 }
 
-API int IsExampleNewline(example* example)
-{
-  return VW::example_is_newline(*example) != 0;
-}
+API int IsExampleNewline(example* example) { return VW::example_is_newline(*example) != 0; }
 
 inline void format_indicies(example* a, std::stringstream& sstream)
 {
   for (auto ns : a->indices)
   {
-    if (ns == 0)
-    {
-      sstream << "NULL:0";
-    }
+    if (ns == 0) { sstream << "NULL:0"; }
     else
     {
       sstream << '\'' << static_cast<char>(ns) << "\':" << ns << ',';
@@ -47,8 +39,7 @@ char* FormatIndicies(example* a, example* b)
 {
   std::stringstream sstream;
 
-  sstream << "Namespace indicies differ: " << a->indices.size()
-          << " vs. " << b->indices.size() << ". this.indicies [";
+  sstream << "Namespace indicies differ: " << a->indices.size() << " vs. " << b->indices.size() << ". this.indicies [";
 
   format_indicies(a, sstream);
   sstream << "] other.indicies [";
@@ -58,14 +49,15 @@ char* FormatIndicies(example* a, example* b)
   return vw_net_native::stringstream_to_cstr(sstream);
 }
 
-inline void format_feature(vw_net_native::workspace_context* workspace, feature_value x, feature_index i, std::stringstream& sstream)
+inline void format_feature(
+    vw_net_native::workspace_context* workspace, feature_value x, feature_index i, std::stringstream& sstream)
 {
   feature_index masked_weight_index = i & workspace->vw->weights.mask();
-  sstream << "weight_index = " << masked_weight_index 
-          << '/' << i << ", x = " << x;
+  sstream << "weight_index = " << masked_weight_index << '/' << i << ", x = " << x;
 }
 
-inline void format_feature(vw_net_native::workspace_context* workspace, feature_value x1, feature_index i1, feature_value x2, feature_index i2, std::stringstream& sstream)
+inline void format_feature(vw_net_native::workspace_context* workspace, feature_value x1, feature_index i1,
+    feature_value x2, feature_index i2, std::stringstream& sstream)
 {
   sstream << "Feature differ: this(";
   format_feature(workspace, x1, i1, sstream);
@@ -90,36 +82,37 @@ char* compare_features(vw_net_native::workspace_context* workspace, features& fa
 {
   std::vector<size_t> fa_missing;
   for (size_t ia = 0, ib = 0; ia < fa.values.size(); ia++)
-  { 
+  {
     feature_index masked_weight_index = fa.indices[ia] & workspace->vw->weights.mask();
     feature_index other_masked_weight_index = fb.indices[ib] & workspace->vw->weights.mask();
 
     if (masked_weight_index == other_masked_weight_index && vw_net_native::FloatEqual(fa.values[ia], fb.values[ib]))
       ib++;
     else
-    { 
+    {
       // fallback to search
       size_t ib_old = ib;
       bool found = false;
       for (ib = 0; ib < fb.values.size(); ib++)
-      { auto other_masked_weight_index = fb.indices[ib] & workspace->vw->weights.mask();
+      {
+        auto other_masked_weight_index = fb.indices[ib] & workspace->vw->weights.mask();
         if (masked_weight_index == other_masked_weight_index)
-        { if (!vw_net_native::FloatEqual(fa.values[ia], fb.values[ib]))
-          { 
+        {
+          if (!vw_net_native::FloatEqual(fa.values[ia], fb.values[ib]))
+          {
             std::stringstream sstream;
             format_feature(workspace, fa.values[ia], fa.indices[ia], fb.values[ib], fb.indices[ib], sstream);
             return vw_net_native::stringstream_to_cstr(sstream);
           }
           else
-          { found = true;
+          {
+            found = true;
             break;
           }
         }
       }
 
-      if (!found)
-      { fa_missing.push_back(ia);
-      }
+      if (!found) { fa_missing.push_back(ia); }
 
       ib = ib_old + 1;
     }
@@ -128,36 +121,34 @@ char* compare_features(vw_net_native::workspace_context* workspace, features& fa
   if (!fa_missing.empty())
   {
     std::stringstream sstream;
-    sstream << "missing features in ns " << ns  
-            << "\'/\'" << static_cast<char>(ns) << "\': ";
+    sstream << "missing features in ns " << ns << "\'/\'" << static_cast<char>(ns) << "\': ";
 
     for (auto ia : fa_missing)
     {
-      sstream << "this.weight_index = " << (fa.indices[ia] & workspace->vw->weights.mask())
-              << ", x = " << fa.values[ia] << ", ";
+      sstream << "this.weight_index = " << (fa.indices[ia] & workspace->vw->weights.mask()) << ", x = " << fa.values[ia]
+              << ", ";
     }
 
     return vw_net_native::stringstream_to_cstr(sstream);
   }
-  
+
   return nullptr;
 }
 
 API char* ComputeDiffDescriptionExample(vw_net_native::workspace_context* workspace, example* a, example* b)
 {
-  if (a->indices.size() != b->indices.size())
-    return FormatIndicies(a, b);
+  if (a->indices.size() != b->indices.size()) return FormatIndicies(a, b);
 
-  for (auto i = a->indices.begin(), j = b->indices.begin();  (i != a->indices.end()) && (j != b->indices.end()); i++, j++)
+  for (auto i = a->indices.begin(), j = b->indices.begin(); (i != a->indices.end()) && (j != b->indices.end());
+       i++, j++)
   {
     if (*i != *j)
     {
       // fall back on search
       auto maybe_found = std::find(b->indices.begin(), b->indices.end(), *i);
-      if (maybe_found == b->indices.end())
-        return FormatIndicies(a, b);
+      if (maybe_found == b->indices.end()) return FormatIndicies(a, b);
     }
-  
+
     // compare features
     features& fa = a->feature_space[*i];
     features& fb = b->feature_space[*i];
@@ -165,31 +156,23 @@ API char* ComputeDiffDescriptionExample(vw_net_native::workspace_context* worksp
     if (fa.size() != fb.size())
     {
       std::stringstream sstream;
-      sstream << "Feature length differ " << fa.size() 
-              << " vs " << fb.size()
-              << "this(" << format_features(workspace, fa) 
-              << ") vs other(" << format_features(workspace, fb) 
-              << ')';
+      sstream << "Feature length differ " << fa.size() << " vs " << fb.size() << "this("
+              << format_features(workspace, fa) << ") vs other(" << format_features(workspace, fb) << ')';
 
       return vw_net_native::stringstream_to_cstr(sstream);
     }
 
     auto diff = compare_features(workspace, fa, fb, *i);
-    if (diff != nullptr)
-      return diff;
-    
+    if (diff != nullptr) return diff;
+
     diff = compare_features(workspace, fb, fa, *i);
-    if (diff != nullptr)
-      return diff;
+    if (diff != nullptr) return diff;
   }
 
   return nullptr;
 }
 
-API uint64_t GetExampleNumberOfFeatures(example* example)
-{ 
-  return example->num_features;
-}
+API uint64_t GetExampleNumberOfFeatures(example* example) { return example->num_features; }
 
 API void EmptyExampleData(vw_net_native::workspace_context* workspace, example* example)
 {
@@ -214,8 +197,8 @@ API void UpdateExampleWeight(vw_net_native::workspace_context* workspace, exampl
   example->weight = workspace->vw->example_parser->lbl_parser.get_weight(example->l, example->_reduction_features);
 }
 
-
-API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(vw_net_native::workspace_context* workspace, example* example)
+API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(
+    vw_net_native::workspace_context* workspace, example* example)
 {
   vw_net_native::namespace_enumerator* it = new vw_net_native::namespace_enumerator;
   it->v = &example->indices;
@@ -225,10 +208,7 @@ API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(vw_net_native
   return it;
 }
 
-API void DeleteNamespaceEnumerator(vw_net_native::namespace_enumerator* it)
-{
-  delete it;
-}
+API void DeleteNamespaceEnumerator(vw_net_native::namespace_enumerator* it) { delete it; }
 
 API int NamespaceEnumeratorMoveNext(vw_net_native::namespace_enumerator* it)
 {
@@ -236,17 +216,12 @@ API int NamespaceEnumeratorMoveNext(vw_net_native::namespace_enumerator* it)
   return it->it < it->v->cend();
 }
 
-API void NamespaceEnumeratorReset(vw_net_native::namespace_enumerator* it)
-{
-  it->it = it->v->cbegin() - 1;
-}
+API void NamespaceEnumeratorReset(vw_net_native::namespace_enumerator* it) { it->it = it->v->cbegin() - 1; }
 
-API namespace_index NamespaceEnumeratorGetNamespace(vw_net_native::namespace_enumerator* it)
-{
-  return *it->it;
-}
+API namespace_index NamespaceEnumeratorGetNamespace(vw_net_native::namespace_enumerator* it) { return *it->it; }
 
-API vw_net_native::feature_enumerator* CreateFeatureEnumerator(vw_net_native::workspace_context* workspace, example* example, namespace_index ns)
+API vw_net_native::feature_enumerator* CreateFeatureEnumerator(
+    vw_net_native::workspace_context* workspace, example* example, namespace_index ns)
 {
   vw_net_native::feature_enumerator* it = new vw_net_native::feature_enumerator;
   it->feat = &example->feature_space[ns];
@@ -257,21 +232,15 @@ API vw_net_native::feature_enumerator* CreateFeatureEnumerator(vw_net_native::wo
   return it;
 }
 
-API void DeleteFeatureEnumerator(vw_net_native::feature_enumerator* it)
-{
-  delete it;
-}
+API void DeleteFeatureEnumerator(vw_net_native::feature_enumerator* it) { delete it; }
 
 API int FeatureEnumeratorMoveNext(vw_net_native::feature_enumerator* it)
 {
-  it->it.operator++(); // Not sure why it does not like to compile without explicit reference to the operator.
+  it->it.operator++();  // Not sure why it does not like to compile without explicit reference to the operator.
   return it->it < it->feat->cend();
 }
 
-API void FeatureEnumeratorReset(vw_net_native::feature_enumerator* it)
-{
-  it->it = it->feat->cbegin() - 1;
-}
+API void FeatureEnumeratorReset(vw_net_native::feature_enumerator* it) { it->it = it->feat->cbegin() - 1; }
 
 API void FeatureEnumeratorGetFeature(vw_net_native::feature_enumerator* it, feature* feature)
 {
@@ -279,17 +248,12 @@ API void FeatureEnumeratorGetFeature(vw_net_native::feature_enumerator* it, feat
   feature->weight_index = it->it.index();
 }
 
-API float FeatureEnumeratorGetFeatureValue(vw_net_native::feature_enumerator* it)
-{
-  return it->it.value();
-}
+API float FeatureEnumeratorGetFeatureValue(vw_net_native::feature_enumerator* it) { return it->it.value(); }
 
-API feature_index FeatureEnumeratorGetFeatureIndex(vw_net_native::feature_enumerator* it)
-{
-  return it->it.index();
-}
+API feature_index FeatureEnumeratorGetFeatureIndex(vw_net_native::feature_enumerator* it) { return it->it.index(); }
 
-API feature_index GetShiftedWeightIndex(vw_net_native::workspace_context* workspace, example* example, feature_index feature_index)
+API feature_index GetShiftedWeightIndex(
+    vw_net_native::workspace_context* workspace, example* example, feature_index feature_index)
 {
   VW::workspace* vw = workspace->vw;
   return ((feature_index + example->ft_offset) >> vw->weights.stride_shift()) & vw->parse_mask;

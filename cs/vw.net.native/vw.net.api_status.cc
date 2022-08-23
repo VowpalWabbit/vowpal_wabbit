@@ -1,24 +1,12 @@
 #include "vw.net.api_status.h"
 
-API VW::experimental::api_status* CreateApiStatus()
-{
-    return new VW::experimental::api_status();
-}
+API VW::experimental::api_status* CreateApiStatus() { return new VW::experimental::api_status(); }
 
-API void DeleteApiStatus(VW::experimental::api_status* status)
-{
-    delete status;
-}
+API void DeleteApiStatus(VW::experimental::api_status* status) { delete status; }
 
-API const char* GetApiStatusErrorMessage(VW::experimental::api_status* status)
-{
-    return status->get_error_msg();
-}
+API const char* GetApiStatusErrorMessage(VW::experimental::api_status* status) { return status->get_error_msg(); }
 
-API int GetApiStatusErrorCode(VW::experimental::api_status* status)
-{
-    return status->get_error_code();
-}
+API int GetApiStatusErrorCode(VW::experimental::api_status* status) { return status->get_error_code(); }
 
 // API void UpdateApiStatusSafe(VW::experimental::api_status* status, int error_code, const char* message)
 // {

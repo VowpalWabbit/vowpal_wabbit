@@ -3,7 +3,8 @@
 #include "vw.net.native.h"
 #include "vw/core/vw.h"
 
-extern "C" {
+extern "C"
+{
   API multi_ex* CreateMultiEx();
   API void DeleteMultiEx(multi_ex* multi_ex);
 

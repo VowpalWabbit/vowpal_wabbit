@@ -14,7 +14,8 @@ API float SimpleLabelReadFromExample(example* ex, float& weight, float& initial)
   return label;
 }
 
-API void SimpleLabelUpdateExample(vw_net_native::workspace_context* workspace, example* ex, float label, float* maybe_weight, float* maybe_initial)
+API void SimpleLabelUpdateExample(
+    vw_net_native::workspace_context* workspace, example* ex, float label, float* maybe_weight, float* maybe_initial)
 {
   label_data* ld = &ex->l.simple;
   ld->label = label;
@@ -22,14 +23,14 @@ API void SimpleLabelUpdateExample(vw_net_native::workspace_context* workspace, e
   if (maybe_weight) ex->weight = *maybe_weight;
 
   if (maybe_initial)
-    {
-      auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
-      red_fts.initial = *maybe_initial;
-    }
+  {
+    auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    red_fts.initial = *maybe_initial;
+  }
 
-    VW::count_label(*workspace->vw->sd, ld->label);
+  VW::count_label(*workspace->vw->sd, ld->label);
 }
-  
+
 API CB::cb_class* CbLabelReadFromExampleDangerous(example* ex)
 {
   CB::label* ld = &ex->l.cb;
@@ -41,12 +42,13 @@ API void CbLabelUpdateExample(example* ex, const CB::cb_class* f)
 {
   CB::label* ld = &ex->l.cb;
 
-  // TODO: Should we be clearing the costs here? 
+  // TODO: Should we be clearing the costs here?
   // ld->costs.clear();
   if (f) ld->costs.push_back(*f);
 }
 
-API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::workspace_context* workspace, example* ex, const char* label, size_t label_len, VW::experimental::api_status* status)
+API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::workspace_context* workspace, example* ex,
+    const char* label, size_t label_len, VW::experimental::api_status* status)
 {
   std::string label_str(label, label_len);
 
@@ -59,15 +61,9 @@ API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::wo
   return VW::experimental::error_code::success;
 }
 
-API float SharedLabelGetCostConstant()
-{
-  return FLT_MAX;
-}
+API float SharedLabelGetCostConstant() { return FLT_MAX; }
 
-API uint32_t SharedLabelGetActionId()
-{
-  return (uint32_t)uniform_hash("shared", 6, 0);
-}
+API uint32_t SharedLabelGetActionId() { return (uint32_t)uniform_hash("shared", 6, 0); }
 
 API char* ComputeDiffDescriptionSimpleLabels(example* ex1, example* ex2)
 {
@@ -76,12 +72,9 @@ API char* ComputeDiffDescriptionSimpleLabels(example* ex1, example* ex2)
   auto ex1_initial = ex1->_reduction_features.template get<simple_label_reduction_features>().initial;
   auto ex2_initial = ex2->_reduction_features.template get<simple_label_reduction_features>().initial;
 
-  if ((vw_net_native::FloatEqual(ld1->label, ld2->label) &&
-        vw_net_native::FloatEqual(ex1_initial, ex2_initial) &&
-        vw_net_native::FloatEqual(ex1->weight, ex2->weight)))
-  {
-    return nullptr;
-  }
+  if ((vw_net_native::FloatEqual(ld1->label, ld2->label) && vw_net_native::FloatEqual(ex1_initial, ex2_initial) &&
+          vw_net_native::FloatEqual(ex1->weight, ex2->weight)))
+  { return nullptr; }
 
   std::stringstream sstream;
   sstream << "Label differ. label " << ld1->label << " vs " << ld2->label << ". initial" << ex1_initial << " vs "
@@ -132,4 +125,3 @@ API char* ComputeDiffDescriptionCbLabels(example* ex1, example* ex2)
 
   return nullptr;
 }
-
