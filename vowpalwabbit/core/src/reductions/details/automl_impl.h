@@ -182,7 +182,6 @@ struct interaction_config_manager
   const uint64_t global_lease;
   const uint64_t max_live_configs;
   uint64_t priority_challengers;
-  std::string interaction_type;  // candidate to be removed from here
   dense_parameters& weights;
   double automl_significance_level;
   double automl_estimator_decay;

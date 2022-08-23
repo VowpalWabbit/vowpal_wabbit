@@ -31,7 +31,7 @@ void check_interactions_match_exclusions(VW::reductions::automl::automl<
   {
     auto& exclusions = aml->cm->_config_oracle.configs[estimator.first.config_index].exclusions;
     auto& interactions = estimator.first.live_interactions;
-    auto& interaction_type = aml->cm->interaction_type;
+    auto& interaction_type = aml->cm->_config_oracle._interaction_type;
     // Check that no interaction can be found in exclusions
     for (const auto& interaction : interactions)
     {

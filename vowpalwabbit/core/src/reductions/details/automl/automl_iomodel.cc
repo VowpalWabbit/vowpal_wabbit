@@ -34,7 +34,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::persist(met
   metrics.set_uint("current_champ", current_champ);
   for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
   {
-    estimators[live_slot].first.persist(metrics, "_amls_" + std::to_string(live_slot), verbose, interaction_type);
+    estimators[live_slot].first.persist(
+        metrics, "_amls_" + std::to_string(live_slot), verbose, _config_oracle._interaction_type);
     estimators[live_slot].second.persist(metrics, "_sc_" + std::to_string(live_slot));
     if (verbose)
     {
@@ -119,7 +120,7 @@ size_t read_model_field(
     auto& exclusions = cm._config_oracle.configs[cm.estimators[live_slot].first.config_index];
     auto& interactions = cm.estimators[live_slot].first.live_interactions;
     reductions::automl::ns_based_config::apply_config_to_interactions(
-        cm._ccb_on, cm.ns_counter, cm.interaction_type, exclusions, interactions);
+        cm._ccb_on, cm.ns_counter, cm._config_oracle._interaction_type, exclusions, interactions);
   }
   return bytes;
 }

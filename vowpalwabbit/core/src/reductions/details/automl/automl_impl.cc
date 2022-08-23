@@ -68,7 +68,6 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
-    , interaction_type(interaction_type)
     , weights(weights)
     , automl_significance_level(automl_significance_level)
     , automl_estimator_decay(automl_estimator_decay)
@@ -174,7 +173,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, interaction_type,
+      ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, _config_oracle._interaction_type,
           _config_oracle.configs[estimators[live_slot].first.config_index],
           estimators[live_slot].first.live_interactions);
     }
@@ -337,7 +336,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
     {
       auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index];
       auto& interactions = estimators[live_slot].first.live_interactions;
-      ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, interaction_type, exclusions, interactions);
+      ns_based_config::apply_config_to_interactions(
+          _ccb_on, ns_counter, _config_oracle._interaction_type, exclusions, interactions);
     }
 
     if (_config_oracle.configs[current_champ].state == VW::reductions::automl::config_state::New)
