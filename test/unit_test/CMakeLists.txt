@@ -47,6 +47,7 @@ add_executable(vw-unit-test.out
   slates_parser_test.cc
   slates_test.cc
   stable_unique_test.cc
+  status_builder_test.cc
   tag_utils_test.cc
   test_common.cc
   test_common.h
