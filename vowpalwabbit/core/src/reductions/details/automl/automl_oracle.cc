@@ -97,7 +97,9 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
   }
   else if (config.conf_type == config_type::Interaction)
   {
-    // copy set to vector
+    if (!interactions.empty()) { interactions.clear(); }
+    interactions.reserve(config.exclusions.size());
+    interactions.assign(config.exclusions.begin(), config.exclusions.end());
   }
 
   if (ccb_on)

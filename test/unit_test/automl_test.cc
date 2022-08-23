@@ -556,3 +556,26 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
       "--global_lease 500 --oracle_type one_diff --noconstant ",
       test_hooks, num_iterations, seed);
 }
+
+BOOST_AUTO_TEST_CASE(exc_incl_unit_test)
+{
+  using namespace VW::reductions::automl;
+
+  std::map<VW::namespace_index, uint64_t> ns_counter{{'A', 5}, {'B', 4}, {'C', 3}};
+
+  interaction_vec_t interactions;
+
+  ns_based_config test_config_interaction(set_ns_list_t{{'A', 'A'}, {'A', 'B'}}, 4000, config_type::Interaction);
+  ns_based_config::apply_config_to_interactions(false, ns_counter, "", test_config_interaction, interactions);
+
+  const set_ns_list_t expected{{'A', 'A'}, {'A', 'B'}};
+  BOOST_CHECK_EQUAL(interactions.size(), 2);
+  BOOST_CHECK_EQUAL_COLLECTIONS(interactions.begin(), interactions.end(), expected.begin(), expected.end());
+
+  ns_based_config test_config_exclusion(set_ns_list_t{{'A', 'A'}, {'A', 'B'}}, 4000, config_type::Exclusion);
+  ns_based_config::apply_config_to_interactions(false, ns_counter, "quadratic", test_config_exclusion, interactions);
+
+  const set_ns_list_t expected2{{'A', 'C'}, {'B', 'B'}, {'B', 'C'}, {'C', 'C'}};
+  BOOST_CHECK_EQUAL(interactions.size(), 4);
+  BOOST_CHECK_EQUAL_COLLECTIONS(interactions.begin(), interactions.end(), expected2.begin(), expected2.end());
+}
