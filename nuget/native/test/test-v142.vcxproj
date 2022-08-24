@@ -83,7 +83,7 @@
     <ClCompile Include="main.cc" />
   </ItemGroup>
   <PropertyGroup>
-    <Version>$([System.IO.File]::ReadAllText($(ProjectDir)..\..\version.txt))</Version>
+    <Version>$([System.IO.File]::ReadAllText($(ProjectDir)..\..\..\version.txt))</Version>
   </PropertyGroup>
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(ProjectDir)packages\VowpalWabbitNative-v142-x64.$(Version)\build\vowpalwabbit.targets" Condition="Exists('$(ProjectDir)packages\VowpalWabbitNative-v142-x64.$(Version)\build\vowpalwabbit.targets')" />

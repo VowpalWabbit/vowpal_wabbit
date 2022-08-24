@@ -346,26 +346,26 @@ jobs:
       - name: Install package
         run: |
           set +e
-          cd nuget/dotnet/benchmark
+          cd nuget/dotnet/benchmarks
           dotnet add dotnet_benchmark.csproj package ${{matrix.package_name}} --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
           dotnet restore dotnet_benchmark.csproj --runtime win-x64
           exit 0
       - name: Build and run benchmarks
         run: |
-          cd nuget/dotnet/benchmark
+          cd nuget/dotnet/benchmarks
 
           # Build for both .NET Core and Framework
           dotnet build dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-restore --self-contained
           dotnet build dotnet_benchmark.csproj --framework net4.8 --runtime win-x64 --configuration Release --no-restore --self-contained
 
           # Run with .NET Core as host process
-          # Arguments to BenchmarkDotNet: --filter '*' --runtimes net6.0 net4.8
+          # Arguments after "--" are for BenchmarkDotNet
           dotnet run dotnet_benchmark.csproj--framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*' --runtimes net6.0 net4.8
       - name: Print benchmark results
         shell: bash
         run: |
-          cd nuget/dotnet/benchmark/BenchmarkDotNet.Artifacts/results
+          cd nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results
           for file in *-report-github.md; do
               benchmark="${file%-report-github.md}"
               echo "***** $benchmark *****"
