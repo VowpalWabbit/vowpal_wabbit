@@ -72,24 +72,22 @@ enum class config_type
 
 using set_ns_list_t = std::set<std::vector<VW::namespace_index>>;
 
-// todo: this struct can evolve to support not only exclusions, but also interactions
-// this will enable us to have an oracle create from q:: to zero, and from zero to q::
 struct ns_based_config
 {
-  set_ns_list_t exclusions;
+  set_ns_list_t elements;
   uint64_t lease;
   config_state state = VW::reductions::automl::config_state::New;
   config_type conf_type = VW::reductions::automl::config_type::Exclusion;
 
   ns_based_config(uint64_t lease = 10) : lease(lease) {}
   ns_based_config(set_ns_list_t&& ns_list, uint64_t lease, config_type conf_type)
-      : exclusions(std::move(ns_list)), lease(lease), conf_type(conf_type)
+      : elements(std::move(ns_list)), lease(lease), conf_type(conf_type)
   {
     this->state = VW::reductions::automl::config_state::New;
   }
   void reset(set_ns_list_t&& ns_list, uint64_t lease, config_type conf_type)
   {
-    this->exclusions = std::move(ns_list);
+    this->elements = std::move(ns_list);
     this->lease = lease;
     this->state = VW::reductions::automl::config_state::New;
     this->conf_type = conf_type;
@@ -121,7 +119,7 @@ struct config_oracle
 
   void gen_configs(const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_config(
-      set_ns_list_t&& new_exclusions, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
+      set_ns_list_t&& new_elements, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_starting_configuration();
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
@@ -153,14 +151,14 @@ struct oracle_rand_impl
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t& new_exclusions);
+      const size_t num, set_ns_list_t& new_elements);
   Iterator begin() { return Iterator(); }
   Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
 };
 struct one_diff_impl
 {
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t::iterator& exclusion, set_ns_list_t& new_exclusions);
+      const size_t num, set_ns_list_t::iterator& exclusion, set_ns_list_t& new_elements);
   Iterator begin() { return Iterator(); }
   Iterator end(const interaction_vec_t& champ_interactions, const set_ns_list_t& champ_exclusions)
   {
@@ -271,7 +269,7 @@ namespace util
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
 std::string interaction_vec_t_to_string(
     const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type);
-std::string exclusions_to_string(const std::set<std::vector<VW::namespace_index>>& exclusions);
+std::string elements_to_string(const automl::set_ns_list_t& elements);
 }  // namespace util
 }  // namespace reductions
 namespace model_utils

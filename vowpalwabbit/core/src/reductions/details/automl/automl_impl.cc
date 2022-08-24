@@ -334,10 +334,10 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   {
     for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
     {
-      auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index];
+      auto& curr_config = _config_oracle.configs[estimators[live_slot].first.config_index];
       auto& interactions = estimators[live_slot].first.live_interactions;
       ns_based_config::apply_config_to_interactions(
-          _ccb_on, ns_counter, _config_oracle._interaction_type, exclusions, interactions);
+          _ccb_on, ns_counter, _config_oracle._interaction_type, curr_config, interactions);
     }
 
     if (_config_oracle.configs[current_champ].state == VW::reductions::automl::config_state::New)

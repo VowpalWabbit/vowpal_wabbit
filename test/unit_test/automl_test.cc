@@ -29,7 +29,8 @@ void check_interactions_match_exclusions(VW::reductions::automl::automl<
 {
   for (const auto& estimator : aml->cm->estimators)
   {
-    auto& exclusions = aml->cm->_config_oracle.configs[estimator.first.config_index].exclusions;
+    BOOST_CHECK(aml->cm->_config_oracle.configs[estimator.first.config_index].conf_type == config_type::Exclusion);
+    auto& exclusions = aml->cm->_config_oracle.configs[estimator.first.config_index].elements;
     auto& interactions = estimator.first.live_interactions;
     auto& interaction_type = aml->cm->_config_oracle._interaction_type;
     // Check that no interaction can be found in exclusions
@@ -285,7 +286,7 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
     aml_test::aml_onediff* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
 
     auto champ_exclusions =
-        aml->cm->_config_oracle.configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].exclusions;
+        aml->cm->_config_oracle.configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].elements;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
     std::vector<VW::namespace_index> ans{'U', 'U'};
     BOOST_CHECK(champ_exclusions.find(ans) != champ_exclusions.end());
@@ -469,17 +470,13 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
     const set_ns_list_t excl_0{};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_0.begin(), excl_0.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[0].elements.begin(), configs[0].elements.end(), excl_0.begin(), excl_0.end());
     const set_ns_list_t excl_1{{'A', 'A'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_1.begin(), excl_1.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[1].elements.begin(), configs[1].elements.end(), excl_1.begin(), excl_1.end());
     const set_ns_list_t excl_2{{'A', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_2.begin(), excl_2.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[2].elements.begin(), configs[2].elements.end(), excl_2.begin(), excl_2.end());
     const set_ns_list_t excl_3{{'B', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_3.begin(), excl_3.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[3].elements.begin(), configs[3].elements.end(), excl_3.begin(), excl_3.end());
 
     BOOST_CHECK_EQUAL(estimators.size(), 1);
     // add dummy evaluators to simulate that all configs are in play
@@ -500,20 +497,16 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_new_champ(
         oracle, 2, estimators, 0, false, ns_counter);
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_2.begin(), excl_2.end());
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_0.begin(), excl_0.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[0].elements.begin(), configs[0].elements.end(), excl_2.begin(), excl_2.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[1].elements.begin(), configs[1].elements.end(), excl_0.begin(), excl_0.end());
 
     BOOST_CHECK_EQUAL(oracle.valid_config_size, 4);
     BOOST_CHECK_EQUAL(configs.size(), 4);
 
     const set_ns_list_t excl_4{{'A', 'A'}, {'A', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_4.begin(), excl_4.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[2].elements.begin(), configs[2].elements.end(), excl_4.begin(), excl_4.end());
     const set_ns_list_t excl_5{{'A', 'B'}, {'B', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_5.begin(), excl_5.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[3].elements.begin(), configs[3].elements.end(), excl_5.begin(), excl_5.end());
 
     // the previous two exclusion configs are now inside the priority queue
     BOOST_CHECK_EQUAL(prio_queue.size(), 2);
@@ -524,10 +517,10 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
       interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_config_at_slot(estimators,
           oracle.configs, i, config_oracle<one_diff_impl>::choose(oracle.index_queue),
           aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
-      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
+      auto& temp_config = oracle.configs[estimators[i].first.config_index];
       auto& temp_interactions = estimators[i].first.live_interactions;
       ns_based_config::apply_config_to_interactions(
-          false, ns_counter, oracle._interaction_type, temp_exclusions, temp_interactions);
+          false, ns_counter, oracle._interaction_type, temp_config, temp_interactions);
     }
     BOOST_CHECK_EQUAL(prio_queue.size(), 0);
 
@@ -535,15 +528,11 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_new_champ(
         oracle, 3, estimators, 0, false, ns_counter);
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_4.begin(), excl_4.end());
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_2.begin(), excl_2.end());
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_1.begin(), excl_1.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[0].elements.begin(), configs[0].elements.end(), excl_4.begin(), excl_4.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[1].elements.begin(), configs[1].elements.end(), excl_2.begin(), excl_2.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[3].elements.begin(), configs[3].elements.end(), excl_1.begin(), excl_1.end());
     const set_ns_list_t excl_6{{'A', 'A'}, {'A', 'B'}, {'B', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_6.begin(), excl_6.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[2].elements.begin(), configs[2].elements.end(), excl_6.begin(), excl_6.end());
 
     BOOST_CHECK_EQUAL(prio_queue.size(), 2);
 

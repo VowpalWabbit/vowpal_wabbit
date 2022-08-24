@@ -39,9 +39,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::persist(met
     estimators[live_slot].second.persist(metrics, "_sc_" + std::to_string(live_slot));
     if (verbose)
     {
-      auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index].exclusions;
-      metrics.set_string(
-          "exclusionc_" + std::to_string(live_slot), VW::reductions::util::exclusions_to_string(exclusions));
+      auto& elements = _config_oracle.configs[estimators[live_slot].first.config_index].elements;
+      metrics.set_string("exclusionc_" + std::to_string(live_slot), VW::reductions::util::elements_to_string(elements));
     }
   }
   metrics.set_uint("total_champ_switches", total_champ_switches);
@@ -59,19 +58,20 @@ namespace model_utils
 size_t read_model_field(io_buf& io, VW::reductions::automl::ns_based_config& ec)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, ec.exclusions);
+  bytes += read_model_field(io, ec.elements);
   bytes += read_model_field(io, ec.lease);
   bytes += read_model_field(io, ec.state);
   return bytes;
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::reductions::automl::ns_based_config& ec, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::reductions::automl::ns_based_config& config, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, ec.exclusions, upstream_name + "_exclusions", text);
-  bytes += write_model_field(io, ec.lease, upstream_name + "_lease", text);
-  bytes += write_model_field(io, ec.state, upstream_name + "_state", text);
+  assert(config.conf_type == reductions::automl::config_type::Exclusion);
+  bytes += write_model_field(io, config.elements, upstream_name + "_exclusions", text);
+  bytes += write_model_field(io, config.lease, upstream_name + "_lease", text);
+  bytes += write_model_field(io, config.state, upstream_name + "_state", text);
   return bytes;
 }
 
@@ -118,6 +118,8 @@ size_t read_model_field(
   for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot)
   {
     auto& exclusions = cm._config_oracle.configs[cm.estimators[live_slot].first.config_index];
+    assert(cm._config_oracle.configs[cm.estimators[live_slot].first.config_index].conf_type ==
+        reductions::automl::config_type::Exclusion);
     auto& interactions = cm.estimators[live_slot].first.live_interactions;
     reductions::automl::ns_based_config::apply_config_to_interactions(
         cm._ccb_on, cm.ns_counter, cm._config_oracle._interaction_type, exclusions, interactions);

@@ -112,7 +112,7 @@ float calc_priority_favor_popular_namespaces(
     const VW::reductions::automl::ns_based_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
 {
   float priority = 0.f;
-  for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(*ns_pair.begin()); }
+  for (const auto& ns_pair : config.elements) { priority -= ns_counter.at(*ns_pair.begin()); }
   return priority;
 }
 
