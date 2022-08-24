@@ -264,10 +264,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
   estimators[winning_challenger_slot].first.eligible_to_inactivate = false;
   if (priority_challengers > 1) { estimators[champ_slot].first.eligible_to_inactivate = false; }
 
-  auto winner_config_index = estimators[winning_challenger_slot].first.config_index;
-  std::swap(config_oracle.configs[0], config_oracle.configs[winner_config_index]);
-  if (winner_config_index != 1) { std::swap(config_oracle.configs[1], config_oracle.configs[winner_config_index]); }
-  config_oracle.valid_config_size = 2;
+  config_oracle.keep_best_two(estimators[winning_challenger_slot].first.config_index);
 
   estimators[winning_challenger_slot].first.config_index = 0;
   estimators[champ_slot].first.config_index = 1;

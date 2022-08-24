@@ -38,6 +38,13 @@ void config_oracle<oracle_impl>::insert_starting_configuration()
   configs.emplace_back(set_ns_list_t(), global_lease, config_type::Exclusion);
   ++valid_config_size;
 }
+template <typename oracle_impl>
+void config_oracle<oracle_impl>::keep_best_two(uint64_t winner_config_index)
+{
+  std::swap(configs[0], configs[winner_config_index]);
+  if (winner_config_index != 1) { std::swap(configs[1], configs[winner_config_index]); }
+  valid_config_size = 2;
+}
 
 template <typename oracle_impl>
 uint64_t config_oracle<oracle_impl>::choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue)
@@ -218,6 +225,7 @@ template <>
 void config_oracle<one_diff_impl>::gen_configs(
     const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
 {
+  assert(configs[0].conf_type == config_type::Exclusion);
   // we need this to stay constant bc insert might resize configs vector
   auto champ_excl = std::move(configs[0].elements);
   auto exclusion_it = champ_excl.begin();
@@ -236,6 +244,7 @@ template <>
 void config_oracle<champdupe_impl>::gen_configs(
     const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
 {
+  assert(configs[0].conf_type == config_type::Exclusion);
   for (auto it = _impl.begin(); it < _impl.end(); ++it)
   {
     auto copy_champ = configs[0].elements;
@@ -247,6 +256,7 @@ template <typename oracle_impl>
 void config_oracle<oracle_impl>::gen_configs(
     const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
 {
+  assert(configs[0].conf_type == config_type::Exclusion);
   for (auto it = _impl.begin(); it < _impl.end(); ++it)
   {
     auto copy_champ = configs[0].elements;

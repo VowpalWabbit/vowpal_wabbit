@@ -122,6 +122,7 @@ struct config_oracle
       set_ns_list_t&& new_elements, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_starting_configuration();
+  void keep_best_two(uint64_t winner_config_index);
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 };
 
