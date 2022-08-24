@@ -361,7 +361,7 @@ jobs:
 
           # Run with .NET Core as host process
           # Arguments after "--" are for BenchmarkDotNet
-          dotnet run dotnet_benchmark.csproj--framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*' --runtimes net6.0 net4.8
+          dotnet run dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*' --runtimes net6.0 net4.8
       - name: Print benchmark results
         shell: bash
         run: |
