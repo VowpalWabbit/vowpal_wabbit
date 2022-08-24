@@ -66,6 +66,18 @@ function(install_nuget_package package_name
 
 endfunction()
 
+function(find_nuget_lib package_name 
+                        package_version)
+  # find_path caches its output, so we need to treat each nuget_REFERENCE string as a unique key 
+  # mapping to an assembly (the full reference is necessary in case a package contains multiple assemblies, 
+  # which would require individually referencing all of them.)
+  find_file(nuget_${nuget_REFERENCE}_PATH "${package_name}.${package_version}"
+      HINTS "${CMAKE_BINARY_DIR}/packages"
+      PATH_SUFFIXES ${netfx_nuget_SUFFIXES}
+      REQUIRED
+      NO_DEFAULT_PATH)
+endfunction()
+
 # (Internal) A function to add a NuGet package to a target, given a nuget_reference
 function(target_add_nuget_shared target_name nuget_reference require_import)
   message(VERBOSE "For ${target_name} <== '${nuget_REFERENCE}'")

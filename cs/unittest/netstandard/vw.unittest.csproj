@@ -1,0 +1,94 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <BinaryOutputBase Condition="'$(BinaryOutputBase.Trim())'==''">$(SolutionDir).</BinaryOutputBase>
+    <OutputPath>$(BinaryOutputBase.Trim())\$(Platform)\$(Configuration)</OutputPath>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <NoWarn>CS3021</NoWarn>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AssemblyName>VW.Net.UnitTest</AssemblyName>
+    <RootNamespace>cs_unittest</RootNamespace>
+    <HighEntropyVA>true</HighEntropyVA>
+    
+  </PropertyGroup>
+
+  <Import Project="$(PackagingIntegration)" Condition="Exists('$(PackagingIntegration)')" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\common\netstandard\vw.common.csproj" />
+    <ProjectReference Include="..\..\vw.net\vw.net.core.csproj" />
+    <ProjectReference Include="..\..\cs\netstandard\vw.net.csproj" />
+    <ProjectReference Include="..\..\cs_json\netstandard\vw.json.csproj" />
+    <ProjectReference Include="..\..\cs_parallel\netstandard\vw.parallel.csproj" />
+    <ProjectReference Include="..\..\cs_console\netcoreapp\vw.console.csproj" />
+    <ProjectReference Include="..\..\testcommon\netstandard\vw.testcommon.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+
+    <!-- TODO: Are these still needed? -->
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.20.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.PerfCounterCollector" Version="2.20.0" />
+    
+    <PackageReference Include="System.ServiceModel.Primitives" Version="4.9.0" />
+
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="1.3.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="1.3.2" />
+
+    <PackageReference Include="Antlr4" Version="4.6.6" ReferenceOutputAssembly="false" />
+    <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+    <PackageReference Include="Antlr4.CodeGenerator" Version="4.6.6" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <Import Project="../../codegen/TextTemplate.targets" />
+  
+  <ItemGroup>
+    <TextTemplate Include="../TestMarshalNumeric.tt"></TextTemplate>
+
+    <Antlr4 Include="../VowpalWabbit.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <Listener>True</Listener>
+      <Visitor>False</Visitor>
+    </Antlr4>
+
+    <AdditionalFiles Include="../../../test/core.vwtest.json" />
+    <!-- <TextTemplate Include="../RunTests.tt"></TextTemplate> -->
+
+    <!-- <TextTransformAssemblyPath Include="C:\Users\jaalber\.nuget\packages\"></TextTransformAssemblyPath> -->
+  </ItemGroup>
+
+  <!-- <Target Name="OutputVars" BeforeTargets="Build">
+    <Message Importance="high" Text="INFO: PackagingIntegration = $(PackagingIntegration)" />
+    <Message Importance="high" Text="INFO: SignAssembly = $(SignAssembly)" />
+    <Message Importance="high" Text="INFO: DelaySign = $(DelaySign)" />
+    <Message Importance="high" Text="INFO: KeyFile = $(KeyFile)" />
+    <Message Importance="high" Text="INFO: AssemblyOriginatorKeyFile = $(AssemblyOriginatorKeyFile)" />
+    <Message Importance="high" Text="INFO: TextTransformerParams = @(TextTransformParameter)" />
+  </Target> -->
+
+  <ItemGroup>
+    <Compile Include="../*.cs" />
+  </ItemGroup>
+
+</Project>

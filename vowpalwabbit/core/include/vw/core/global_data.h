@@ -118,7 +118,7 @@ public:
 
   bool chain_hash_json = false;
 
-  VW::LEARNER::base_learner* l;         // the top level learner
+  VW::LEARNER::base_learner* l;  // the top level learner
   VW::LEARNER::base_learner*
       cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 

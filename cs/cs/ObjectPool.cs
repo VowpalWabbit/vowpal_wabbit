@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="ObjectPool.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -9,7 +9,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Threading;
 
 namespace VW
@@ -165,7 +165,8 @@ namespace VW
         /// <param name="pooledObject">The object to be returned.</param>
         internal void ReturnObject(PooledObject<TSource, TObject> pooledObject)
         {
-            Contract.Ensures(pooledObject != null);
+            if (pooledObject == null)
+                return;
 
             this.rwLockSlim.EnterUpgradeableReadLock();
             try

@@ -89,3 +89,7 @@ set_target_properties(VowpalWabbit.Core PROPERTIES
     VS_GLOBAL_ROOTNAMESPACE VowpalWabbit.Core
     VS_GLOBAL_CLRSupport "True"
 )
+
+install(TARGETS VowpalWabbit.Core
+  RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/${VW_NET_FRAMEWORK_TFM}"
+)
