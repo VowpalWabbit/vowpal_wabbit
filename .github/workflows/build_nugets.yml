@@ -53,14 +53,14 @@ jobs:
           cmake --install build --prefix ./nuget_staging --config Debug
           cmake --install build --prefix ./nuget_staging --config Release
       - if: ${{ matrix.arch_config.arch == 'x64' }}
-        run: cp nuget\vowpalwabbit-x64.targets nuget_staging\vowpalwabbit.targets
+        run: cp nuget\native\vowpalwabbit-x64.targets nuget_staging\vowpalwabbit.targets
       - name: Package
         shell: powershell
         id: generate-nuget
         run: |
-          cp build\nuget\vowpalwabbit.nuspec nuget_staging\vowpalwabbit.nuspec
+          cp build\nuget\native\vowpalwabbit.nuspec nuget_staging\vowpalwabbit.nuspec
           cd nuget_staging
-          ..\vowpalwabbit\.nuget\NuGet.exe pack .\vowpalwabbit.nuspec
+          nuget pack .\vowpalwabbit.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
       - name: Upload
@@ -96,12 +96,16 @@ jobs:
       - name: Test nuget
         run: |
           ls downloaded_nugets
-          .\vowpalwabbit\.nuget\NuGet.exe install -Source ${{ github.workspace }}\downloaded_nugets -OutputDirectory ${{ github.workspace }}\nuget\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}-x64
-          cd nuget\test
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Release;Platform=x64"
+          nuget install -Source ${{ github.workspace }}\downloaded_nugets -OutputDirectory ${{ github.workspace }}\nuget\native\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}-x64
+          cd nuget\native\test
+
+          echo "Testing debug build..."
           msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Debug;Platform=x64"
-          .\bin\x64\Release\test-${{ matrix.toolset }}.exe
           .\bin\x64\Debug\test-${{ matrix.toolset }}.exe
+
+          echo "Testing release build..."
+          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Release;Platform=x64"
+          .\bin\x64\Release\test-${{ matrix.toolset }}.exe
 
   build_nuget_dotnet:
     strategy:
@@ -168,7 +172,7 @@ jobs:
         run: cmake --install build --prefix ./nuget_staging
 
       # Create the combined package on Windows
-      - name: Package
+      - name: Package Combined
         if: ${{ startsWith(matrix.os, 'windows') }}
         shell: powershell
         id: generate-nuget
@@ -177,7 +181,7 @@ jobs:
           nuget pack dotnet.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
-      - name: Upload
+      - name: Upload Combined
         if: ${{ startsWith(matrix.os, 'windows') }}
         uses: actions/upload-artifact@v1
         with:
@@ -185,7 +189,7 @@ jobs:
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
 
       # Create the .NET Core runtime package, all platforms
-      - name: Package Runtime
+      - name: Package .NET Core Runtime
         shell: bash
         id: generate-runtime-nuget
         run: |
@@ -193,7 +197,7 @@ jobs:
           nuget pack dotnetcore_runtime.nuspec
           NugetFileName=(*runtime*.nupkg)
           echo "::set-output name=NugetFileName::${NugetFileName[0]}"
-      - name: Upload Runtime
+      - name: Upload .NET Core Runtime
         uses: actions/upload-artifact@v1
         with:
           name: ${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
@@ -242,14 +246,14 @@ jobs:
       - name: Install package
         run: |
           set +e
-          cd nuget/test
+          cd nuget/dotnet/test
           dotnet add dotnetcore_nuget_test.csproj package ${{matrix.package_name}} --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets"
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}}
           exit 0
       - name: Build and run test
         run: |
-          cd nuget/test
+          cd nuget/dotnet/test
           dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --output build --no-restore --self-contained
           ./build/dotnetcore_nuget_test
 
@@ -292,13 +296,84 @@ jobs:
       - name: Install package
         run: |
           set +e
-          cd nuget/test
+          cd nuget/dotnet/test
           dotnet add dotnetframework_nuget_test.csproj package ${{matrix.package_name}} --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnetframework_nuget_test.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
           dotnet restore dotnetframework_nuget_test.csproj --runtime win-x64
           exit 0
       - name: Build and run test
         run: |
-          cd nuget/test
+          cd nuget/dotnet/test
           dotnet build dotnetframework_nuget_test.csproj --runtime win-x64 --output build --no-restore --self-contained
           ./build/dotnetframework_nuget_test
+
+  benchmark_nuget:
+    needs: [build_nuget_dotnet]
+    strategy:
+      fail-fast: false
+      matrix:
+        package_name: ["VowpalWabbit"]
+    runs-on: "windows-latest"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - if: ${{ startsWith(matrix.config.os, 'windows') }}
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Get version of VW
+        id: fetch-vw-version
+        shell: bash
+        run: |
+          version=$(cat version.txt)
+          echo "::set-output name=VWVersion::$version"
+
+      # Download the previously built Nuget packages
+      - name: Clear nuget cache
+        run: dotnet nuget locals all --clear
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{matrix.package_name}}.${{steps.fetch-vw-version.outputs.VWVersion}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: ${{matrix.package_name}}.runtime.win-x64.${{steps.fetch-vw-version.outputs.VWVersion}}.nupkg
+          path: downloaded_nugets
+      - name: List downloaded packages
+        run: ls downloaded_nugets
+
+        # Some of these commands may generate an error message because we are installing packages from local source with remote dependencies
+        # The missing dependencies are installed in later steps
+      - name: Install package
+        run: |
+          set +e
+          cd nuget/dotnet/benchmark
+          dotnet add dotnet_benchmark.csproj package ${{matrix.package_name}} --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
+          dotnet restore dotnet_benchmark.csproj --runtime win-x64
+          exit 0
+      - name: Build and run benchmarks
+        run: |
+          cd nuget/dotnet/benchmark
+
+          # Build for both .NET Core and Framework
+          dotnet build dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-restore --self-contained
+          dotnet build dotnet_benchmark.csproj --framework net4.8 --runtime win-x64 --configuration Release --no-restore --self-contained
+
+          # Run with .NET Core as host process
+          # Arguments to BenchmarkDotNet: --filter '*' --runtimes net6.0 net4.8
+          dotnet run dotnet_benchmark.csproj--framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*' --runtimes net6.0 net4.8
+      - name: Print benchmark results
+        shell: bash
+        run: |
+          cd nuget/dotnet/benchmark/BenchmarkDotNet.Artifacts/results
+          for file in *-report-github.md; do
+              benchmark="${file%-report-github.md}"
+              echo "***** $benchmark *****"
+
+              # Remove lines not part of table (not between |...|)
+              # Remove markdown formatting **
+              # Remove first 3 columns of table
+              cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{3\}//'
+
+              echo ""
+          done
