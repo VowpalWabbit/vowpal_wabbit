@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 
 namespace VW.Reflection
@@ -56,7 +56,7 @@ namespace VW.Reflection
         /// <returns>If <paramref name="type"/> is an enumerable type the element type is returned, otherwise null.</returns>
         public static Type GetEnumerableElementType(Type type)
         {
-            Contract.Requires(type != null);
+            Debug.Assert(type != null);
 
             if (type.IsArray)
                 return type.GetElementType();
