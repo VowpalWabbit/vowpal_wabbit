@@ -29,6 +29,7 @@ jobs:
         - { language: "cpp", os: ubuntu-latest }
         - { language: "java", os: ubuntu-latest }
         - { language: "python", os: ubuntu-latest }
+        - { language: "csharp", os: ubuntu-latest }
         - { language: "csharp", os: windows-latest }
 
     steps:
@@ -36,6 +37,8 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: recursive
+    - uses: ilammy/msvc-dev-cmd@v1
+      if: ${{ startsWith(matrix.config.os, 'windows') }}
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
       with:
@@ -58,12 +61,15 @@ jobs:
         sudo apt install -y ninja-build
         cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_JAVA=On -DBUILD_TESTING=Off
         cmake --build build -t vw_jni
-    - uses: ilammy/msvc-dev-cmd@v1
-      if: matrix.config.language == 'csharp'
-    - name: Build CSharp
-      if: matrix.config.language == 'csharp'
+    - name: Build CSharp .NET Core
+      if: ${{ matrix.config.language == 'csharp' && startsWith(matrix.config.os, 'ubuntu') }}
       run: |
-        cmake -S . -B build -A "x64" -DBUILD_TESTING=Off -DBUILD_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_INSTALL=Off -Dvw_BUILD_NET_FRAMEWORK=On
+        cmake -S . -B build -G Ninja -Dvw_BUILD_NET_CORE=On -Dvw_DOTNET_USE_MSPROJECT=Off -DBUILD_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=Off -DBUILD_SHARED_LIBS=Off
+        cmake --build build --config Debug
+    - name: Build CSharp .NET Framework
+      if: ${{ matrix.config.language == 'csharp' && startsWith(matrix.config.os, 'windows') }}
+      run: |
+        cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -Dvw_BUILD_NET_FRAMEWORK=On -DBUILD_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=Off -DBUILD_SHARED_LIBS=Off
         cmake --build build --config Debug
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2

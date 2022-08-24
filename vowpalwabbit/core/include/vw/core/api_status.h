@@ -15,7 +15,7 @@ namespace VW
 {
 namespace experimental
 {
-typedef void i_trace;
+using i_trace = void;
 
 /**
  * @brief Report status of all API calls
