@@ -19,16 +19,17 @@ namespace
 {
 struct reduction_data
 {
-  shared_data* _sd;
-  VW::LEARNER::base_learner* _base;
+  VW::workspace* _all = nullptr;
+  VW::LEARNER::base_learner* _base = nullptr;
 
-  explicit reduction_data(shared_data* sd, VW::LEARNER::base_learner* base) : _sd(sd), _base(base) {}
+  explicit reduction_data(VW::workspace* all, VW::LEARNER::base_learner* base) : _all(all), _base(base) {}
 };
 
 template <bool is_learn>
 void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  VW::count_label(*data._sd, ec.l.simple.label);
+  shared_data* sd = data._all->sd;
+  VW::count_label(*sd, ec.l.simple.label);
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
   else
@@ -40,7 +41,8 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
 template <bool is_learn>
 void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq)
 {
-  for (const auto* ex : ec_seq) { VW::count_label(*data._sd, ex->l.simple.label); }
+  shared_data* sd = data._all->sd;
+  for (const auto* ex : ec_seq) { VW::count_label(*sd, ex->l.simple.label); }
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec_seq); }
   else
@@ -93,7 +95,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
   // constructed but it works because we aren't part of it
   if (base_label_type != label_type_t::simple) { return base; }
 
-  auto data = VW::make_unique<reduction_data>(all->sd, base);
+  auto data = VW::make_unique<reduction_data>(all, base);
   if (base->is_multiline())
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base),

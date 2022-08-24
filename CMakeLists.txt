@@ -38,7 +38,10 @@ if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
   message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
   if (vw_BUILD_NET_FRAMEWORK)
-    message(STATUS ".NET Framework Version: ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}")
+    string(REGEX MATCH "[0-9.]+" VW_NET_FRAMEWORK_VERSION ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION})
+    string(REPLACE "." "" VW_NET_FRAMEWORK_TFM ${VW_NET_FRAMEWORK_VERSION})
+    string(PREPEND VW_NET_FRAMEWORK_TFM "net")
+    message(STATUS ".NET Framework Version: ${VW_NET_FRAMEWORK_VERSION} (${VW_NET_FRAMEWORK_TFM})")
   endif()
 endif()
 
@@ -72,7 +75,8 @@ set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 include(VowpalWabbitUtils)
 
 if(MSVC)
-  # Do nothing as the default compile flags for MSVC are okay.
+  # Use C++ standard exception handling instead of MSVC default
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 else()
   # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
   # is O2 and Release is O3, override that here:
@@ -119,6 +123,8 @@ option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Inst
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(VW_BUILD_CSV "Build csv parser" OFF)
 option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
+option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
+option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
 option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
 
@@ -285,10 +291,9 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-if(vw_BUILD_NET_FRAMEWORK)
+if(vw_BUILD_NET_FRAMEWORK OR vw_BUILD_NET_CORE)
   add_subdirectory(cs)
 endif()
-
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)

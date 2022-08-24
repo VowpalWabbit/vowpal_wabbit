@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -32,7 +32,7 @@ namespace VW
         /// <param name="vw">The VW native instance.</param>
         protected VowpalWabbitExampleCollection(VowpalWabbit vw)
         {
-            Contract.Requires(vw != null);
+            Debug.Assert(vw != null);
             this.vw = vw;
         }
 

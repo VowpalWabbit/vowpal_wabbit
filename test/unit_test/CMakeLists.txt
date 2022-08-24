@@ -14,6 +14,7 @@ add_executable(vw-unit-test.out
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
+  confidence_sequence_test.cc
   continuous_actions_parser_test.cc
   custom_reduction_test.cc
   distributionally_robust_test.cc
@@ -46,6 +47,7 @@ add_executable(vw-unit-test.out
   slates_parser_test.cc
   slates_test.cc
   stable_unique_test.cc
+  status_builder_test.cc
   tag_utils_test.cc
   test_common.cc
   test_common.h
@@ -79,8 +81,13 @@ elseif(boost_test_target_type STREQUAL UNKNOWN_LIBRARY)
     endif()
   # If find_package is used then by default we're looking at a shared dependency unless Boost_USE_STATIC_LIBS was set.
   elseif(NOT Boost_USE_STATIC_LIBS)
-    message(STATUS "Boost::unit_test_framework looks to be a shared library. Adding BOOST_TEST_DYN_LINK")
-    target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
+    get_target_property(boost_test_path Boost::unit_test_framework LOCATION)
+    get_filename_component(boost_test_lib_ext ${boost_test_path} EXT)
+    if(NOT ${boost_test_lib_ext} IN_LIST STATIC_LIB_SUFFIXES)
+      message(STATUS "Found Boost::unit_test_framework library at: ${boost_test_path}")
+      message(STATUS "Looks like a shared library. Adding BOOST_TEST_DYN_LINK")
+      target_compile_definitions(vw-unit-test.out PRIVATE BOOST_TEST_DYN_LINK)
+    endif()
   endif()
 endif()
 

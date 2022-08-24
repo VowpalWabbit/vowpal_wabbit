@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="FeatureExpression.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -9,7 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
 using System.Reflection;
 using VW.Reflection;
@@ -69,8 +68,6 @@ namespace VW.Serializer
 
             if (valueExpressionFactory == null)
                 throw new ArgumentNullException("valueExpressionFactory");
-
-            Contract.EndContractBlock();
 
             if(featureType.IsGenericType &&
                featureType.GetGenericTypeDefinition() == typeof(Nullable<>))

@@ -9,7 +9,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using VW.Labels;
@@ -39,9 +39,9 @@ namespace VW.Serializer
         /// <param name="value">The actual feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, PreHashedFeature feature, bool value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             if (!value)
             {
@@ -64,9 +64,9 @@ namespace VW.Serializer
         /// <example>Gender = Male yields "GenderMale" in VW native string format.</example>
         public void MarshalEnumFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, EnumerizedFeature<T> feature, T value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             context.NamespaceBuilder.AddFeature(feature.FeatureHash(value), 1f);
 
@@ -86,9 +86,9 @@ namespace VW.Serializer
         /// </example>
         public void MarshalEnumerizeFeature<T>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, T value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             var stringValue = feature.Name + value.ToString();
             context.NamespaceBuilder.AddFeature(context.VW.HashFeature(stringValue, ns.NamespaceHash), 1f);
@@ -109,9 +109,9 @@ namespace VW.Serializer
         /// <example><paramref name="value"/> is "New York". Result is "New_York".</example>
         public void MarshalFeatureStringEscape(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             if (string.IsNullOrWhiteSpace(value))
                 return;
@@ -135,9 +135,9 @@ namespace VW.Serializer
         /// <example><paramref name="value"/> is "New York". <paramref name="feature"/> Name is "Location". Result is "LocationNew_York".</example>
         public void MarshalFeatureStringEscapeAndIncludeName(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, string value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             if (string.IsNullOrWhiteSpace(value))
                 return;
@@ -193,9 +193,9 @@ namespace VW.Serializer
         /// <param name="value">The actual feature value.</param>
         public void MarshalFeature<TKey, TValue>(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IEnumerable<KeyValuePair<TKey, TValue>> value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             if (value == null)
             {
@@ -233,9 +233,9 @@ namespace VW.Serializer
         /// <param name="value">The actual feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IDictionary value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             if (value == null)
             {
@@ -273,9 +273,9 @@ namespace VW.Serializer
         /// <param name="value">The actual feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IEnumerable<string> value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             if (value == null)
                 return;
@@ -299,9 +299,9 @@ namespace VW.Serializer
         /// <param name="value">The actual feature value.</param>
         public void MarshalFeature(VowpalWabbitMarshalContext context, Namespace ns, Feature feature, IVowpalWabbitSerializable value)
         {
-            Contract.Requires(context != null);
-            Contract.Requires(ns != null);
-            Contract.Requires(feature != null);
+            Debug.Assert(context != null);
+            Debug.Assert(ns != null);
+            Debug.Assert(feature != null);
 
             if (value == null)
                 return;
