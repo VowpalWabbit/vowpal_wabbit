@@ -18,5 +18,5 @@ if [ -s tidy_onlyerrors.txt ]; then
         exit 11
 else
         # The file is empty.
-        cat tidy_error.txt
+        cat tidy_out.txt
 fi
