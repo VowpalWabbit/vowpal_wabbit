@@ -58,13 +58,16 @@ ELSEIF (vw_BUILD_NET_FRAMEWORK)
   # Explicitly set the `PlatformTarget` for C# projects, since AnyCPU can result in
   # System.BadImageFormatException throws, when trying to load C++/CLI assemblies.
   IF(CMAKE_GENERATOR_PLATFORM STREQUAL "x64")
-    SET(CMAKE_CSharp_FLAGS "/platform:x64")
+    SET(CMAKE_CSharp_FLAGS "${CMAKE_CSharp_FLAGS} /platform:x64")
   ELSEIF(CMAKE_GENERATOR_PLATFORM STREQUAL "Win32")
-      SET(CMAKE_CSharp_FLAGS "/platform:x86")
+      SET(CMAKE_CSharp_FLAGS "${CMAKE_CSharp_FLAGS} /platform:x86")
   ELSE()
     MESSAGE(WARNING "Generator platform is set to '${CMAKE_GENERATOR_PLATFORM}', which is not supported by managed projects. Defaulting to 'AnyCPU'...")
-    SET(CMAKE_CSharp_FLAGS "/platform:AnyCPU")
+    SET(CMAKE_CSharp_FLAGS "${CMAKE_CSharp_FLAGS} /platform:AnyCPU")
   ENDIF()
+
+  # Needed for Github CodeQL scanning
+  SET(CMAKE_CSharp_FLAGS "${CMAKE_CSharp_FLAGS} /p:UseSharedCompilation=false")
 
   # StrongName signing for VW assemblies - stage the keyfile, and set its location
   configure_file(vw_key.snk vw_key.snk COPYONLY)

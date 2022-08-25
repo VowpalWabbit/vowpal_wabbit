@@ -133,6 +133,8 @@ if(VW_USE_ASAN)
   if(MSVC)
     add_compile_options(/fsanitize=address /GS- /wd5072)
     add_link_options(/InferASanLibs /incremental:no /debug)
+    # Workaround for MSVC ASan issue here: https://developercommunity.visualstudio.com/t/VS2022---Address-sanitizer-on-x86-Debug-/10116361
+    add_compile_definitions(_DISABLE_STRING_ANNOTATION)
   else()
     add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g3)
     add_link_options(-fsanitize=address -fno-omit-frame-pointer -g3)

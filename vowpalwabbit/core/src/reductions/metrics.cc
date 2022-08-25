@@ -14,6 +14,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/io/logger.h"
 
+#define RAPIDJSON_HAS_STDSTRING 1
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/writer.h>
 
@@ -68,23 +69,23 @@ struct json_metrics_writer : VW::metric_sink_visitor
   ~json_metrics_writer() override { _writer.EndObject(); }
   void int_metric(const std::string& key, uint64_t value) override
   {
-    _writer.Key(key.c_str());
+    _writer.Key(key);
     _writer.Uint64(value);
   }
   void float_metric(const std::string& key, float value) override
   {
-    _writer.Key(key.c_str());
+    _writer.Key(key);
     _writer.Double(static_cast<double>(value));
   }
   void string_metric(const std::string& key, const std::string& value) override
   {
-    _writer.Key(key.c_str());
+    _writer.Key(key);
 
     _writer.String(value.c_str());
   }
   void bool_metric(const std::string& key, bool value) override
   {
-    _writer.Key(key.c_str());
+    _writer.Key(key);
     _writer.Bool(value);
   }
 
