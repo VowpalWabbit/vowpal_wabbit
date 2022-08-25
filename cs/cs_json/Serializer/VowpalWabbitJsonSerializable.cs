@@ -55,6 +55,7 @@ namespace VW.Serializer
                 // marshal from JSON to VW
                 using (var reader = new JsonTextReader(new StringReader(sb.ToString())))
                 {
+                    reader.DateParseHandling = DateParseHandling.None;
                     jsonBuilder.Parse(reader, ctx, new Namespace(ctx.VW, feature.Name));
                 }
             }

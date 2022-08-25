@@ -171,9 +171,19 @@ set_target_properties(cs_unittest
 
 get_property(cs_unittest_RUNTIME_OUTPUT_DIRECTORY TARGET cs_unittest PROPERTY RUNTIME_OUTPUT_DIRECTORY)
 
+# C# tests expect files from top level test/ directory to be copied to the binary output directory
+add_custom_target(VW.Net.UnitTest.CopyTestFiles ALL
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/cs/unittest/json $<TARGET_FILE_DIR:cs_unittest>/test
+  COMMENT "Copying test files to C# binary directory..."
+)
+add_test(
+  NAME VW.Net.UnitTest.CopyTestFilesBeforeTest
+  COMMAND ${CMAKE_COMMAND} --build "${CMAKE_BINARY_DIR}" --target VW.Net.UnitTest.CopyTestFiles
+)
 add_test(
   NAME cs_unittest
     COMMAND
       ${VSTEST_COMMAND} $<TARGET_FILE:cs_unittest>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 )
+set_tests_properties(cs_unittest PROPERTIES DEPENDS VW.Net.UnitTest.CopyTestFilesBeforeTest)

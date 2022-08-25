@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="VowpalWabbitAsync.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -35,9 +35,7 @@ namespace VW
 
         internal VowpalWabbitAsync(VowpalWabbitThreadedLearning manager)
         {
-            Contract.Requires(manager != null);
-            Contract.Ensures(this.serializers != null);
-
+            Debug.Assert(manager != null);
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
@@ -45,6 +43,7 @@ namespace VW
             this.serializers = this.manager.VowpalWabbits
                 .Select(vw => serializer.Create(vw))
                 .ToArray();
+            Debug.Assert(this.serializers != null);
         }
 
         /// <summary>
@@ -58,8 +57,8 @@ namespace VW
         /// </remarks>
         public void Learn(TExample example, ILabel label = null)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(label != null);
+            Debug.Assert(example != null);
+            Debug.Assert(label != null);
 
             manager.Post(vw =>
             {
@@ -80,7 +79,7 @@ namespace VW
         /// </remarks>
         public void Predict(TExample example)
         {
-            Contract.Requires(example != null);
+            Debug.Assert(example != null);
 
             manager.Post(vw =>
             {
@@ -104,9 +103,9 @@ namespace VW
         /// </remarks>
         public Task<TPrediction> Learn<TPrediction>(TExample example, ILabel label, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(label != null);
-            Contract.Requires(predictionFactory != null);
+            Debug.Assert(example != null);
+            Debug.Assert(label != null);
+            Debug.Assert(predictionFactory != null);
 
             return manager.Post(vw =>
             {
@@ -129,8 +128,8 @@ namespace VW
         /// </remarks>
         public Task<TPrediction> Predict<TPrediction>(TExample example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(predictionFactory != null);
+            Debug.Assert(example != null);
+            Debug.Assert(predictionFactory != null);
 
             return manager.Post(vw =>
             {
@@ -205,10 +204,6 @@ namespace VW
             if (manager.Settings.ParallelOptions.MaxDegreeOfParallelism <= 0)
                 throw new ArgumentOutOfRangeException("MaxDegreeOfParallelism must be greater than zero.");
 
-            Contract.Ensures(this.serializers != null);
-            Contract.Ensures(this.actionDependentFeatureSerializers != null);
-            Contract.EndContractBlock();
-
             this.manager = manager;
 
             // create a serializer for each instance - maintaining separate example caches
@@ -231,6 +226,9 @@ namespace VW
             this.actionDependentFeatureSerializers = this.manager.VowpalWabbits
                 .Select(vw => adfSerializer.Create(vw))
                 .ToArray();
+
+            Debug.Assert(this.serializers != null);
+            Debug.Assert(this.actionDependentFeatureSerializers != null);
         }
 
         /// <summary>
@@ -242,10 +240,10 @@ namespace VW
         /// <param name="label">The label for the example to learn.</param>
         public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
+            Debug.Assert(index >= 0);
+            Debug.Assert(label != null);
 
             manager.Post(vw => VowpalWabbitMultiLine.Learn(
                 vw,
@@ -267,10 +265,10 @@ namespace VW
         /// <returns>The ranked prediction for the given examples.</returns>
         public Task<ActionDependentFeature<TActionDependentFeature>[]> LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
+            Debug.Assert(index >= 0);
+            Debug.Assert(label != null);
 
             return manager.Post(vw => VowpalWabbitMultiLine.LearnAndPredict(
                 vw,
