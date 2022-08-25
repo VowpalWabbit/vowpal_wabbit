@@ -44,7 +44,6 @@ jobs:
       with:
         languages: ${{ matrix.config.language }}
         config-file: ./.github/codeql/codeql-config.yml
-        debug: true
     - name: Autobuild Python
       if: matrix.config.language == 'python'
       uses: github/codeql-action/autobuild@v2
@@ -74,6 +73,6 @@ jobs:
       if: ${{ matrix.config.language == 'csharp' && startsWith(matrix.config.os, 'windows') }}
       run: |
         cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -Dvw_BUILD_NET_FRAMEWORK=On -DBUILD_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=Off -DBUILD_SHARED_LIBS=Off
-        cmake --build build --config Debug
+        cmake --build build --config Debug -- /p:UseSharedCompilation=false
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
