@@ -19,7 +19,7 @@ include(WindowsSetPath)
 
 vw_add_test_executable(
   FOR_LIB "c_wrapper"
-  SOURCES tests/vwdll_test.cc
+  SOURCES tests/vwdll_test.cc tests/main.cc
   EXTRA_DEPS vw_core
 )
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
