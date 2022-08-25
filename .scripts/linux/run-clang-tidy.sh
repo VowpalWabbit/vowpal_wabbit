@@ -13,10 +13,9 @@ run-clang-tidy -p build -quiet -header-filter=vw/* 1>tidy_out.txt 2>tidy_error.t
 grep -A 3 ": error" tidy_out.txt > tidy_onlyerrors.txt
 
 if [ -s tidy_onlyerrors.txt ]; then
-        # The file is not-empty.
+        # file has contents
         cat tidy_onlyerrors.txt
         exit 11
 else
-        # The file is empty.
         cat tidy_out.txt
 fi
