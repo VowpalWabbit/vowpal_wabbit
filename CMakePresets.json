@@ -61,7 +61,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": {
           "type": "STRING",
-          "value": "RelWithDebInfo"
+          "value": "Release"
         }
       }
     }
