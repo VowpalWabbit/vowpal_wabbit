@@ -366,7 +366,6 @@ jobs:
       - name: Print benchmark results
         shell: bash
         run: |
-          ls nuget/dotnet/benchmarks
           cd nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results
           for file in *-report-github.md; do
               benchmark="${file%-report-github.md}"
@@ -377,5 +376,5 @@ jobs:
               # Remove first 3 columns of table
               cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{3\}//'
 
-              echo ""
+              echo -e '\n'
           done
