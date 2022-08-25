@@ -57,9 +57,8 @@ jobs:
         if: ${{ startsWith(matrix.os, 'windows') && (success() || failure()) }}
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 67 --jobs 1
       - name: Run python test script - Unix
-        # temporarily skipping tests with heap use-after-free
         if: ${{ !startsWith(matrix.os, 'windows') && (success() || failure()) }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 61 152 220
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers
 
   test_ubsan_minimal:
   # To avoid running out of disk space, build only VW executables and Boost unit tests on Linux
@@ -91,6 +90,5 @@ jobs:
       - name: Run unit tests
         run: ./build/test/unit_test/vw-unit-test.out
       - name: Run python test script
-        # temporarily skipping tests with heap use-after-free
         if: ${{ success() || failure() }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 61 152 220
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers
