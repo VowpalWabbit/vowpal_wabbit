@@ -36,7 +36,7 @@ void api_status::try_clear(api_status* status)
 status_builder::status_builder(i_trace* trace, api_status* status, const int code)
     : _code{code}, _status{status}, _trace{trace}
 {
-  if (enable_logging()) _os << "(ERR:" << _code << ")";
+  if (enable_logging()) { _os << "(ERR:" << _code << ")"; }
 }
 
 status_builder::~status_builder()
