@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/vw_fwd.h"
 #include "vw/core/named_labels.h"
+#include "vw/core/vw_fwd.h"
 
 #include <cfloat>
 #include <cstdint>
