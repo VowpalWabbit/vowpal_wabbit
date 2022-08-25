@@ -4,6 +4,7 @@
 #pragma once
 
 #include "vw/core/vw_fwd.h"
+#include "vw/core/named_labels.h"
 
 #include <cfloat>
 #include <cstdint>
