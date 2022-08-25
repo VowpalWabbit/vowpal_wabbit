@@ -348,6 +348,7 @@ jobs:
           set +e
           cd nuget/dotnet/benchmarks
           dotnet add dotnet_benchmark.csproj package ${{matrix.package_name}} --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet add dotnet_benchmark.csproj package ${{matrix.package_name}}.runtime.win-x64 --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
           dotnet restore dotnet_benchmark.csproj --runtime win-x64
           exit 0
