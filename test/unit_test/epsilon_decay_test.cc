@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_init)
   float with_save = ctr.back();
 }
 
-// TODO: Current simulator cannot create champ changes with confidence sequence estimator 
+// TODO: Current simulator cannot create champ changes with confidence sequence estimator
 /*BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
 {
   const size_t num_iterations = 10000;
@@ -86,7 +86,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_init)
   BOOST_CHECK_GT(ctr.back(), 0.8f);
 }*/
 
-// TODO: Current simulator cannot create champ changes with confidence sequence estimator 
+// TODO: Current simulator cannot create champ changes with confidence sequence estimator
 /*BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change_with_min)
 {
   const size_t num_iterations = 6000;
