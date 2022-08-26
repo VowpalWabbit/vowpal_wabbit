@@ -2,6 +2,10 @@ IF(vw_BUILD_NET_CORE AND vw_BUILD_NET_FRAMEWORK)
   MESSAGE(FATAL_ERROR "Cannot build VW bindings for .NET Core and .NET Framework at the same time.")
 ENDIF()
 
+if(vw_BUILD_NET_FRAMEWORK AND NOT WIN32)
+  message(FATAL_ERROR ".NET Framework can only be built on Windows")
+endif()
+
 # Generate .nuspec files for creating Nuget packages
 set(NUGET_PACKAGE_NAME "VowpalWabbit")
 set(NUGET_PACKAGE_VERSION ${PACKAGE_VERSION})

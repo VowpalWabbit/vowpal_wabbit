@@ -619,7 +619,8 @@ struct MultiState : BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* StartObject(Context<audit>& ctx) override
+  // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
+  BaseState<audit>* NO_SANITIZE_UNDEFINED StartObject(Context<audit>& ctx) override
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
@@ -666,7 +667,8 @@ struct SlotsState : BaseState<audit>
     return this;
   }
 
-  BaseState<audit>* StartObject(Context<audit>& ctx) override
+  // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
+  BaseState<audit>* NO_SANITIZE_UNDEFINED StartObject(Context<audit>& ctx) override
   {
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
@@ -1006,7 +1008,8 @@ public:
     return this;
   }
 
-  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount) override
+  // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
+  BaseState<audit>* NO_SANITIZE_UNDEFINED EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount) override
   {
     BaseState<audit>* return_state = ctx.PopNamespace();
 

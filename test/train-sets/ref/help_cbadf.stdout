@@ -245,7 +245,8 @@ Weight Options:
     --cb_force_legacy                       Default to non-adf cb implementation (cb_algs) (type: bool, keep)
 [Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
     --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
-                                            features (type: str, keep, necessary)
+                                            features (type: str, choices {m, mc, multiline, multiline-classifier},
+                                            keep, necessary)
     --ldf_override arg                      Override singleline or multiline from csoaa_ldf or wap_ldf, eg
                                             if stored in file (type: str)
     --csoaa_rank                            Return actions sorted by score order (type: bool, keep)

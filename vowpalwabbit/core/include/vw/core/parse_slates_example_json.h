@@ -150,10 +150,11 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
   }
 }
 
+// NO_SANITIZE_UNDEFINED needed because example_factory function pointer may be typecasted
 template <bool audit>
-void parse_context(const Value& context, const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, VW::example_factory_t example_factory,
-    void* ex_factory_context, VW::multi_ex& slot_examples,
+void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_parser& lbl_parser,
+    hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::multi_ex& slot_examples,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   std::vector<Namespace<audit>> namespaces;

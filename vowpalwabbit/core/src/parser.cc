@@ -476,7 +476,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       shared_data* sd = static_cast<shared_data*>(
           mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
       new (sd) shared_data(*all.sd);
-      free(all.sd);
+      delete all.sd;
       all.sd = sd;
       all.example_parser->_shared_data = sd;
 

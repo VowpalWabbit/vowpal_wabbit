@@ -763,9 +763,11 @@ void update(gd& g, base_learner&, VW::example& ec)
   }
 }  // namespace GD
 
+// NO_SANITIZE_UNDEFINED needed in learn functions because
+// base_learner& base might be a reference created from nullptr
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-void learn(gd& g, base_learner& base, VW::example& ec)
+void NO_SANITIZE_UNDEFINED learn(gd& g, base_learner& base, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   assert(ec.l.simple.label != FLT_MAX);

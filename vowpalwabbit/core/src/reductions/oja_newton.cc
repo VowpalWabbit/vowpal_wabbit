@@ -410,7 +410,9 @@ void update_normalization(oja_n_update_data& data, float x, float& wref)
   w[NORM2] += x * x * data.g * data.g;
 }
 
-void learn(OjaNewton& ON, base_learner& base, VW::example& ec)
+// NO_SANITIZE_UNDEFINED needed in learn functions because
+// base_learner& base might be a reference created from nullptr
+void NO_SANITIZE_UNDEFINED learn(OjaNewton& ON, base_learner& base, VW::example& ec)
 {
   // predict
   predict(ON, base, ec);

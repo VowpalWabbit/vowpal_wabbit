@@ -1,0 +1,94 @@
+name: AddressSanitizer
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  test_with_sanitizers:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        preset: [vcpkg-asan-debug, vcpkg-ubsan-debug]
+        exclude:
+          # UBSan not supported by MSVC on Windows
+          - { os: windows-latest, preset: vcpkg-ubsan-debug }
+          # UBSan runs out of disk space on Linux
+          - { os: ubuntu-latest, preset: vcpkg-ubsan-debug }
+    runs-on: ${{ matrix.os }}
+    name: asan.${{ matrix.os }}.${{ matrix.preset }}
+    env:
+      UBSAN_OPTIONS: "print_stacktrace=1"
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Setup MSVC Developer Command Prompt
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        uses: ilammy/msvc-dev-cmd@v1
+      - uses: lukka/get-cmake@latest
+      - uses: lukka/run-vcpkg@main
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+      - uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
+          configurePreset: "${{ matrix.preset }}"
+      - name: Build
+        run: cmake --build build
+      - name: Run unit tests
+        run: |
+          cd build
+          ctest --verbose --output-on-failure
+      - name: Run python test script - Windows
+        # separate case needed for windows because of test 67
+        if: ${{ startsWith(matrix.os, 'windows') && (success() || failure()) }}
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 67 --jobs 1
+      - name: Run python test script - Unix
+        if: ${{ !startsWith(matrix.os, 'windows') && (success() || failure()) }}
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers
+
+  test_ubsan_minimal:
+  # To avoid running out of disk space, build only VW executables and Boost unit tests on Linux
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        preset: [vcpkg-ubsan-debug]
+    runs-on: ${{ matrix.os }}
+    name: asan.${{ matrix.os }}.${{ matrix.preset }}
+    env:
+      UBSAN_OPTIONS: "print_stacktrace=1"
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: lukka/get-cmake@latest
+      - uses: lukka/run-vcpkg@main
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+      - uses: lukka/run-cmake@v10
+        with:
+          cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
+          configurePreset: "${{ matrix.preset }}"
+      - name: Build
+        run: cmake --build build --target vw_cli_bin spanning_tree vw-unit-test.out
+      - name: Run unit tests
+        run: ./build/test/unit_test/vw-unit-test.out
+      - name: Run python test script
+        if: ${{ success() || failure() }}
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers
