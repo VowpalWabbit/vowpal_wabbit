@@ -12,8 +12,11 @@ PUSHD %~dp0..
 REM This is here to ensure that unless it is explicitly overriden we will generate a prerelease
 REM "internal-only" package.
 IF NOT DEFINED Version (
+    REM Run python script to generate version number
+    python3 "%vwRoot%\utl\version_number.py" > "%vwRoot%\version.txt"
     REM Read version in from version.txt
     SET /P Version=<%vwRoot%\version.txt
+    del /f "%vwRoot%\version.txt"
 )
 
 IF NOT DEFINED Tag (
