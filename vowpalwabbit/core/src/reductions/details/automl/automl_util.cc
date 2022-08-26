@@ -112,14 +112,14 @@ std::string interaction_vec_t_to_string(
   return ss.str();
 }
 
-std::string exclusions_to_string(const std::set<std::vector<VW::namespace_index>>& exclusions)
+std::string elements_to_string(const automl::set_ns_list_t& elements)
 {
   const char* const delim = ", ";
   std::stringstream ss;
-  size_t total = exclusions.size();
+  size_t total = elements.size();
   size_t count = 0;
   ss << "{";
-  for (auto const& x : exclusions)
+  for (auto const& x : elements)
   {
     ss << "[";
     if (!x.empty())
