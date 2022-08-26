@@ -1,7 +1,6 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Exporters;
 
 
 public class Program
@@ -14,7 +13,8 @@ public class VWBenchmarkConfig : ManualConfig
 {
     public VWBenchmarkConfig()
     {
-        this.WithOptions(ConfigOptions.DisableOptimizationsValidator);
+        AddExporter(PlainExporter.Default);
+        AddExporter(RPlotExporter.Default);
     }
 }
 

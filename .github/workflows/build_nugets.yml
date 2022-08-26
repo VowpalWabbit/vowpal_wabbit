@@ -366,15 +366,22 @@ jobs:
       - name: Print benchmark results
         shell: bash
         run: |
-          cd nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results
+          cd nuget/dotnet/benchmarks
+          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --info
+          echo -e '\n'
+
+          cd BenchmarkDotNet.Artifacts/results
           for file in *-report-github.md; do
-              benchmark="${file%-report-github.md}"
-              echo "***** $benchmark *****"
-
-              # Remove lines not part of table (not between |...|)
-              # Remove markdown formatting **
-              # Remove first 3 columns of table
-              cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{3\}//'
-
-              echo -e '\n'
+            benchmark="${file%-report-github.md}"
+            echo "***** $benchmark *****"
+            # Remove lines not part of table (not between |...|)
+            # Remove markdown formatting **
+            # Remove first 3 columns of table
+            cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{3\}//'
+            echo -e '\n'
           done
+      - name: Upload benchmark artifacts
+      - uses: actions/upload-artifact@v3
+        with:
+          name: benchmark_results
+          path: nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results/
