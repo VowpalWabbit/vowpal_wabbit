@@ -17,7 +17,7 @@ endif()
 list(APPEND VCPKG_FEATURE_FLAGS "versions")
 
 # Get version number
-execute_process(COMMAND "python3" "./utl/version_number.py" OUTPUT_VARIABLE PACKAGE_VERSION)
+execute_process(COMMAND "python3" "${CMAKE_CURRENT_LIST_DIR}/utl/version_number.py" OUTPUT_VARIABLE PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
@@ -55,6 +55,7 @@ if(BUILD_TESTING)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
 endif()
 
+# CMake project() does not support semantic versioning
 project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")

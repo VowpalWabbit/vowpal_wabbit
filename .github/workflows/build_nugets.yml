@@ -5,7 +5,6 @@ on:
     branches:
       - master
       - 'releases/**'
-      - '*'
   pull_request:
     branches:
       - '*'
@@ -152,15 +151,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
-    runs-on: ${{matrix.os}}
+        config:
+          - { os: "windows-latest", runtime_id: "win-x64" }
+          - { os: "ubuntu-latest", runtime_id: "linux-x64" }
+          - { os: "macos-latest", runtime_id: "osx-x64" }
+    runs-on: ${{matrix.config.os}}
     steps:
       # Setup for build
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
       - name: Setup MSVC Developer Command Prompt
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
@@ -201,10 +203,10 @@ jobs:
 
       # Build .NET Framework on Windows
       - name: Reset build directory
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: Remove-Item -Recurse -Force .\build
       - name: Configure .NET Framework
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: >
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64
           -Dvw_BUILD_NET_FRAMEWORK=On
@@ -218,15 +220,15 @@ jobs:
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
       - name: Build .NET Framework
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: cmake --build build --config Release
       - name: Install .NET Framework
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: cmake --install build --prefix ./nuget_staging
 
       # Create the combined package on Windows
       - name: Package
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: powershell
         id: generate-nuget
         run: |
@@ -235,7 +237,7 @@ jobs:
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
       - name: Upload
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: actions/upload-artifact@v1
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
