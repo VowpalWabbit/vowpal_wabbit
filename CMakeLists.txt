@@ -21,7 +21,7 @@ execute_process(COMMAND "python3" "./utl/version_number.py" OUTPUT_VARIABLE PACK
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
-string(REGEX REPLACE "[.-+]" ";" VW_VERSION_LIST ${PACKAGE_VERSION})
+string(REGEX REPLACE "[.+-]" ";" VW_VERSION_LIST ${PACKAGE_VERSION})
 list(GET VW_VERSION_LIST 0 VW_VERSION_MAJOR)
 list(GET VW_VERSION_LIST 1 VW_VERSION_MINOR)
 list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
@@ -55,7 +55,7 @@ if(BUILD_TESTING)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
 endif()
 
-project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
+project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
