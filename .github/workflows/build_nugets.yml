@@ -381,7 +381,7 @@ jobs:
             echo -e '\n'
           done
       - name: Upload benchmark artifacts
-      - uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3
         with:
           name: benchmark_results
           path: nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results/
