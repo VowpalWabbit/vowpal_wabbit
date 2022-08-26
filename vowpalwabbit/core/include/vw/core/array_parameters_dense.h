@@ -27,7 +27,7 @@ class dense_iterator
 private:
   T* _current;
   T* _begin;
-  uint32_t _stride;
+  uint64_t _stride;
   uint32_t _stride_shift;
 
 public:
@@ -38,7 +38,7 @@ public:
   using reference = T&;
 
   dense_iterator(T* current, T* begin, uint32_t stride_shift)
-      : _current(current), _begin(begin), _stride(1 << stride_shift), _stride_shift(stride_shift)
+      : _current(current), _begin(begin), _stride(static_cast<uint64_t>(1) << stride_shift), _stride_shift(stride_shift)
   {
   }
 
@@ -148,17 +148,23 @@ public:
   template <typename Lambda>
   void set_default(Lambda&& default_func)
   {
-    auto iter = begin();
-    for (size_t i = 0; iter != end(); ++iter, i += stride())
+    if (not_null())
     {
-      // Types are required to be weight* and uint64_t.
-      default_func(&(*iter), iter.index());
+      auto iter = begin();
+      for (size_t i = 0; iter != end(); ++iter, i += stride())
+      {
+        // Types are required to be weight* and uint64_t.
+        default_func(&(*iter), iter.index());
+      }
     }
   }
 
   void set_zero(size_t offset)
   {
-    for (iterator iter = begin(); iter != end(); ++iter) { (&(*iter))[offset] = 0; }
+    if (not_null())
+    {
+      for (iterator iter = begin(); iter != end(); ++iter) { (&(*iter))[offset] = 0; }
+    }
   }
 
   void move_offsets(const size_t from, const size_t to, const size_t params_per_problem, bool swap = false)
@@ -207,7 +213,7 @@ public:
 
   uint64_t seeded() const { return _seeded; }
 
-  uint32_t stride() const { return 1 << _stride_shift; }
+  uint64_t stride() const { return static_cast<uint64_t>(1) << _stride_shift; }
 
   uint32_t stride_shift() const { return _stride_shift; }
 
