@@ -29,9 +29,10 @@ void check_interactions_match_exclusions(VW::reductions::automl::automl<
 {
   for (const auto& estimator : aml->cm->estimators)
   {
-    auto& exclusions = aml->cm->_config_oracle.configs[estimator.first.config_index].exclusions;
+    BOOST_CHECK(aml->cm->_config_oracle.configs[estimator.first.config_index].conf_type == config_type::Exclusion);
+    auto& exclusions = aml->cm->_config_oracle.configs[estimator.first.config_index].elements;
     auto& interactions = estimator.first.live_interactions;
-    auto& interaction_type = aml->cm->interaction_type;
+    auto& interaction_type = aml->cm->_config_oracle._interaction_type;
     // Check that no interaction can be found in exclusions
     for (const auto& interaction : interactions)
     {
@@ -285,7 +286,7 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
     aml_test::aml_onediff* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
 
     auto champ_exclusions =
-        aml->cm->_config_oracle.configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].exclusions;
+        aml->cm->_config_oracle.configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].elements;
     BOOST_CHECK_EQUAL(champ_exclusions.size(), 1);
     std::vector<VW::namespace_index> ans{'U', 'U'};
     BOOST_CHECK(champ_exclusions.find(ans) != champ_exclusions.end());
@@ -449,39 +450,33 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     auto& champ_interactions = estimators[CHAMP].first.live_interactions;
 
     BOOST_CHECK_EQUAL(champ_interactions.size(), 0);
-    auto& exclusions = oracle.configs[estimators[0].first.config_index].exclusions;
+    auto& exclusions = oracle.configs[estimators[0].first.config_index];
     auto& interactions = estimators[0].first.live_interactions;
-    config_oracle<one_diff_impl>::gen_interactions_from_exclusions(
+    ns_based_config::apply_config_to_interactions(
         false, ns_counter, oracle._interaction_type, exclusions, interactions);
     BOOST_CHECK_EQUAL(champ_interactions.size(), 3);
 
-    const std::vector<VW::namespace_index> first = {'A', 'A'};
+    const interaction_vec_t expected = {
+        {'A', 'A'},
+        {'A', 'B'},
+        {'B', 'B'},
+    };
     BOOST_CHECK_EQUAL_COLLECTIONS(
-        champ_interactions[0].begin(), champ_interactions[0].end(), first.begin(), first.end());
-    const std::vector<VW::namespace_index> second = {'A', 'B'};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        champ_interactions[1].begin(), champ_interactions[1].end(), second.begin(), second.end());
-    const std::vector<VW::namespace_index> third = {'B', 'B'};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        champ_interactions[2].begin(), champ_interactions[2].end(), third.begin(), third.end());
+        champ_interactions.begin(), champ_interactions.end(), expected.begin(), expected.end());
 
     BOOST_CHECK_EQUAL(configs.size(), 1);
-    oracle.gen_exclusion_configs(estimators[CHAMP].first.live_interactions, ns_counter);
+    oracle.gen_configs(estimators[CHAMP].first.live_interactions, ns_counter);
     BOOST_CHECK_EQUAL(configs.size(), 4);
     BOOST_CHECK_EQUAL(prio_queue.size(), 3);
 
-    const std::set<std::vector<VW::namespace_index>> excl_0{};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_0.begin(), excl_0.end());
-    const std::set<std::vector<VW::namespace_index>> excl_1{{'A', 'A'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_1.begin(), excl_1.end());
-    const std::set<std::vector<VW::namespace_index>> excl_2{{'A', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_2.begin(), excl_2.end());
-    const std::set<std::vector<VW::namespace_index>> excl_3{{'B', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_3.begin(), excl_3.end());
+    const set_ns_list_t excl_0{};
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[0].elements.begin(), configs[0].elements.end(), excl_0.begin(), excl_0.end());
+    const set_ns_list_t excl_1{{'A', 'A'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[1].elements.begin(), configs[1].elements.end(), excl_1.begin(), excl_1.end());
+    const set_ns_list_t excl_2{{'A', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[2].elements.begin(), configs[2].elements.end(), excl_2.begin(), excl_2.end());
+    const set_ns_list_t excl_3{{'B', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[3].elements.begin(), configs[3].elements.end(), excl_3.begin(), excl_3.end());
 
     BOOST_CHECK_EQUAL(estimators.size(), 1);
     // add dummy evaluators to simulate that all configs are in play
@@ -490,9 +485,9 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
       interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_config_at_slot(estimators,
           oracle.configs, i, config_oracle<one_diff_impl>::choose(oracle.index_queue),
           aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
-      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index].exclusions;
+      auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
       auto& temp_interactions = estimators[i].first.live_interactions;
-      config_oracle<one_diff_impl>::gen_interactions_from_exclusions(
+      ns_based_config::apply_config_to_interactions(
           false, ns_counter, oracle._interaction_type, temp_exclusions, temp_interactions);
     }
     BOOST_CHECK_EQUAL(prio_queue.size(), 0);
@@ -502,22 +497,43 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_new_champ(
         oracle, 2, estimators, 0, false, ns_counter);
 
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[0].exclusions.begin(), configs[0].exclusions.end(), excl_2.begin(), excl_2.end());
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[1].exclusions.begin(), configs[1].exclusions.end(), excl_0.begin(), excl_0.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[0].elements.begin(), configs[0].elements.end(), excl_2.begin(), excl_2.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[1].elements.begin(), configs[1].elements.end(), excl_0.begin(), excl_0.end());
 
     BOOST_CHECK_EQUAL(oracle.valid_config_size, 4);
     BOOST_CHECK_EQUAL(configs.size(), 4);
 
-    const std::set<std::vector<VW::namespace_index>> excl_4{{'A', 'A'}, {'A', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[2].exclusions.begin(), configs[2].exclusions.end(), excl_4.begin(), excl_4.end());
-    const std::set<std::vector<VW::namespace_index>> excl_5{{'A', 'B'}, {'B', 'B'}};
-    BOOST_CHECK_EQUAL_COLLECTIONS(
-        configs[3].exclusions.begin(), configs[3].exclusions.end(), excl_5.begin(), excl_5.end());
+    const set_ns_list_t excl_4{{'A', 'A'}, {'A', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[2].elements.begin(), configs[2].elements.end(), excl_4.begin(), excl_4.end());
+    const set_ns_list_t excl_5{{'A', 'B'}, {'B', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[3].elements.begin(), configs[3].elements.end(), excl_5.begin(), excl_5.end());
 
     // the previous two exclusion configs are now inside the priority queue
+    BOOST_CHECK_EQUAL(prio_queue.size(), 2);
+
+    // add dummy evaluators to simulate that all configs are in play
+    for (size_t i = 2; i < 4; ++i)
+    {
+      interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_config_at_slot(estimators,
+          oracle.configs, i, config_oracle<one_diff_impl>::choose(oracle.index_queue),
+          aml->cm->automl_significance_level, aml->cm->automl_estimator_decay, 1);
+      auto& temp_config = oracle.configs[estimators[i].first.config_index];
+      auto& temp_interactions = estimators[i].first.live_interactions;
+      ns_based_config::apply_config_to_interactions(
+          false, ns_counter, oracle._interaction_type, temp_config, temp_interactions);
+    }
+    BOOST_CHECK_EQUAL(prio_queue.size(), 0);
+
+    // excl_4 is now champ
+    interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>::apply_new_champ(
+        oracle, 3, estimators, 0, false, ns_counter);
+
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[0].elements.begin(), configs[0].elements.end(), excl_4.begin(), excl_4.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[1].elements.begin(), configs[1].elements.end(), excl_2.begin(), excl_2.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[3].elements.begin(), configs[3].elements.end(), excl_1.begin(), excl_1.end());
+    const set_ns_list_t excl_6{{'A', 'A'}, {'A', 'B'}, {'B', 'B'}};
+    BOOST_CHECK_EQUAL_COLLECTIONS(configs[2].elements.begin(), configs[2].elements.end(), excl_6.begin(), excl_6.end());
+
     BOOST_CHECK_EQUAL(prio_queue.size(), 2);
 
     return true;
@@ -528,4 +544,27 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
       "--random_seed 5 "
       "--global_lease 500 --oracle_type one_diff --noconstant ",
       test_hooks, num_iterations, seed);
+}
+
+BOOST_AUTO_TEST_CASE(exc_incl_unit_test)
+{
+  using namespace VW::reductions::automl;
+
+  std::map<VW::namespace_index, uint64_t> ns_counter{{'A', 5}, {'B', 4}, {'C', 3}};
+
+  interaction_vec_t interactions;
+
+  ns_based_config test_config_interaction(set_ns_list_t{{'A', 'A'}, {'A', 'B'}}, 4000, config_type::Interaction);
+  ns_based_config::apply_config_to_interactions(false, ns_counter, "", test_config_interaction, interactions);
+
+  const set_ns_list_t expected{{'A', 'A'}, {'A', 'B'}};
+  BOOST_CHECK_EQUAL(interactions.size(), 2);
+  BOOST_CHECK_EQUAL_COLLECTIONS(interactions.begin(), interactions.end(), expected.begin(), expected.end());
+
+  ns_based_config test_config_exclusion(set_ns_list_t{{'A', 'A'}, {'A', 'B'}}, 4000, config_type::Exclusion);
+  ns_based_config::apply_config_to_interactions(false, ns_counter, "quadratic", test_config_exclusion, interactions);
+
+  const set_ns_list_t expected2{{'A', 'C'}, {'B', 'B'}, {'B', 'C'}, {'C', 'C'}};
+  BOOST_CHECK_EQUAL(interactions.size(), 4);
+  BOOST_CHECK_EQUAL_COLLECTIONS(interactions.begin(), interactions.end(), expected2.begin(), expected2.end());
 }
