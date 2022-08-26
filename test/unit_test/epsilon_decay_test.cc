@@ -39,7 +39,8 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_init)
   float with_save = ctr.back();
 }
 
-BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
+// TODO: Current simulator cannot create champ changes with confidence sequence estimator 
+/*BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
 {
   const size_t num_iterations = 10000;
   const std::vector<uint64_t> swap_after = {200, 500, 1000, 5000};
@@ -83,9 +84,10 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
       test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.8f);
-}
+}*/
 
-BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change_with_min)
+// TODO: Current simulator cannot create champ changes with confidence sequence estimator 
+/*BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change_with_min)
 {
   const size_t num_iterations = 6000;
   const std::vector<uint64_t> swap_after = {5000};
@@ -112,7 +114,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change_with_min)
       num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.8f);
-}
+}*/
 
 BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
 {

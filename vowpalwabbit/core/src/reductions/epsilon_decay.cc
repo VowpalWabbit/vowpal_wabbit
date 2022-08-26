@@ -179,7 +179,6 @@ void epsilon_decay_data::check_estimator_bounds()
   // the new champion.
   auto model_count = static_cast<int64_t>(_estimator_configs.size());
   auto final_model_idx = model_count - 1;
-  if (_estimator_configs[final_model_idx][final_model_idx].update_count % 1000 == 0) { int i = 0; }
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
     bool better = _lb_trick
