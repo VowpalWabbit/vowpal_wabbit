@@ -607,7 +607,7 @@ def find_vw_binary(
     vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "cli"]
 
     def is_vw_binary(file: Path) -> bool:
-        return file.name == "vw"
+        return file.name == "vw" or file.name == "vw.exe"
 
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
@@ -625,7 +625,7 @@ def find_spanning_tree_binary(
     ]
 
     def is_spanning_tree_binary(file: Path) -> bool:
-        return file.name == "spanning_tree"
+        return file.name == "spanning_tree" or file.name == "spanning_tree.exe"
 
     user_supplied_bin_path = (
         Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
@@ -647,7 +647,7 @@ def find_to_flatbuf_binary(
     ]
 
     def is_to_flatbuff_binary(file: Path) -> bool:
-        return file.name == "to_flatbuff"
+        return file.name == "to_flatbuff" or file.name == "to_flatbuff.exe"
 
     user_supplied_bin_path = (
         Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
