@@ -37,12 +37,13 @@ struct reduction_test_harness
     _learner_offset.emplace_back(ec.ft_offset);
   }
 
-  static void predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
+  // use NO_SANITIZE_UNDEFINED because reference base_learner& base may be bound to nullptr
+  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
+  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_learn(base, ec);
   };

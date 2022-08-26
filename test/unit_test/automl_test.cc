@@ -67,7 +67,7 @@ void check_config_states(VW::reductions::automl::automl<
   auto index_queue = aml->cm->_config_oracle.index_queue;
   while (!index_queue.empty())
   {
-    auto& config_index = index_queue.top().second;
+    auto config_index = index_queue.top().second;
     index_queue.pop();
     BOOST_CHECK(aml->cm->_config_oracle.configs[config_index].state != VW::reductions::automl::config_state::Live);
   }
