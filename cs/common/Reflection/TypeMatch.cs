@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 
 namespace VW.Reflection
@@ -27,8 +27,8 @@ namespace VW.Reflection
         internal TypeMatch(int distance, Type genericType, Type actualType)
             : this(distance)
         {
-            Contract.Requires(genericType != null);
-            Contract.Requires(actualType != null);
+            Debug.Assert(genericType != null);
+            Debug.Assert(actualType != null);
 
             this.GenericTypes = new Dictionary<Type, Type>
                 {
@@ -39,7 +39,7 @@ namespace VW.Reflection
         internal TypeMatch(int distance, IEnumerable<TypeMatch> typeMatches)
             : this(distance)
         {
-            Contract.Requires(typeMatches != null);
+            Debug.Assert(typeMatches != null);
 
             this.GenericTypes = typeMatches
                 .Where(tm => tm.GenericTypes != null)

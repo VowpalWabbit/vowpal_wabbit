@@ -9,6 +9,10 @@ on:
     branches:
       - '*'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build_macos:
     runs-on: ${{matrix.os}}
@@ -23,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: brew install cmake boost flatbuffers ninja
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_INSTALL=Off
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_BUILD_CSV=On -DVW_INSTALL=Off
       - name: Build
         run: cmake --build build --target all
       - name: Test

@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <BinaryOutputBase Condition="'$(BinaryOutputBase.Trim())'==''">$(SolutionDir).</BinaryOutputBase>
+    <OutputPath>$(BinaryOutputBase.Trim())\$(Platform)\$(Configuration)</OutputPath>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AssemblyName>VowpalWabbit.Core</AssemblyName>
+    <RootNamespace>VW</RootNamespace>
+    <HighEntropyVA>true</HighEntropyVA>
+  </PropertyGroup>
+
+  <Import Project="$(PackagingIntegration)" Condition="Exists('$(PackagingIntegration)')" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\common\netstandard\vw.common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
+  </ItemGroup>
+
+  <!-- <Import Project="..\common\codegen\TextTemplate.targets" />
+
+  <ItemGroup>
+    <TextTemplate Include="..\common\codegen\InternalsVisibleToTest.tt"></TextTemplate>
+  </ItemGroup> -->
+
+  <!-- <Target Name="OutputVars" BeforeTargets="Build">
+    <Message Importance="high" Text="INFO: PackagingIntegration = $(PackagingIntegration)" />
+    <Message Importance="high" Text="INFO: SignAssembly = $(SignAssembly)" />
+    <Message Importance="high" Text="INFO: DelaySign = $(DelaySign)" />
+    <Message Importance="high" Text="INFO: KeyFile = $(KeyFile)" />
+    <Message Importance="high" Text="INFO: AssemblyOriginatorKeyFile = $(AssemblyOriginatorKeyFile)" />
+    <Message Importance="high" Text="INFO: TextTransformerParams = @(TextTransformParameter)" />
+  </Target> -->
+
+</Project>

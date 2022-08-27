@@ -38,8 +38,21 @@ if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
   message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
   if (vw_BUILD_NET_FRAMEWORK)
-    message(STATUS ".NET Framework Version: ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}")
+    string(REGEX MATCH "[0-9.]+" VW_NET_FRAMEWORK_VERSION ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION})
+    string(REPLACE "." "" VW_NET_FRAMEWORK_TFM ${VW_NET_FRAMEWORK_VERSION})
+    string(PREPEND VW_NET_FRAMEWORK_TFM "net")
+    message(STATUS ".NET Framework Version: ${VW_NET_FRAMEWORK_VERSION} (${VW_NET_FRAMEWORK_TFM})")
   endif()
+endif()
+
+option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
+if(BUILD_FLATBUFFERS)
+  list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
+endif()
+
+option(BUILD_TESTING "Build tests" ON)
+if(BUILD_TESTING)
+  list(APPEND VCPKG_MANIFEST_FEATURES "tests")
 endif()
 
 project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
@@ -62,7 +75,8 @@ set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 include(VowpalWabbitUtils)
 
 if(MSVC)
-  # Do nothing as the default compile flags for MSVC are okay.
+  # Use C++ standard exception handling instead of MSVC default
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 else()
   # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
   # is O2 and Release is O3, override that here:
@@ -105,9 +119,37 @@ option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead wil
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
 option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
+option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
-option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
+option(VW_BUILD_CSV "Build csv parser" OFF)
 option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
+option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
+option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
+option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
+option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
+
+if(VW_USE_ASAN)
+  add_compile_definitions(VW_USE_ASAN)
+  if(MSVC)
+    add_compile_options(/fsanitize=address /GS- /wd5072)
+    add_link_options(/InferASanLibs /incremental:no /debug)
+    # Workaround for MSVC ASan issue here: https://developercommunity.visualstudio.com/t/VS2022---Address-sanitizer-on-x86-Debug-/10116361
+    add_compile_definitions(_DISABLE_STRING_ANNOTATION)
+  else()
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g3)
+    add_link_options(-fsanitize=address -fno-omit-frame-pointer -g3)
+  endif()
+endif()
+
+if(VW_USE_UBSAN)
+  add_compile_definitions(VW_USE_UBSAN)
+  if(MSVC)
+    message(FATAL_ERROR "UBSan not supported on MSVC")
+  else()
+    add_compile_options(-fsanitize=undefined -fno-sanitize-recover -fno-omit-frame-pointer -g3)
+    add_link_options(-fsanitize=undefined -fno-sanitize-recover -fno-omit-frame-pointer -g3)
+  endif()
+endif()
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
@@ -124,16 +166,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
       message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
     endif()
-    cmake_minimum_required(VERSION 3.11)
-    include(FetchContent)
-    FetchContent_Declare(
-      googletest
-      URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-    )
-    # For Windows: Prevent overriding the parent project's compiler/linker settings
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
+    if(VW_GTEST_SYS_DEP)
+      find_package(GTest REQUIRED)
+    else()
+      cmake_minimum_required(VERSION 3.11)
+      include(FetchContent)
+      FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+      )
+      # For Windows: Prevent overriding the parent project's compiler/linker settings
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+      set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+      FetchContent_MakeAvailable(googletest)
+    endif()
   endif()
 endif()
 
@@ -247,10 +293,9 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-if(vw_BUILD_NET_FRAMEWORK)
+if(vw_BUILD_NET_FRAMEWORK OR vw_BUILD_NET_CORE)
   add_subdirectory(cs)
 endif()
-
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)

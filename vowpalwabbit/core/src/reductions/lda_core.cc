@@ -738,7 +738,7 @@ struct initial_weights
   weight _initial_random;
   bool _random;
   uint32_t _lda;
-  uint32_t _stride;
+  uint64_t _stride;
 };
 
 void save_load(lda& l, io_buf& model_file, bool read, bool text)

@@ -4,6 +4,8 @@
 #pragma once
 // This is the interface for a learning algorithm
 
+#include "vw/core/global_data.h"
+
 #include <iostream>
 #include <memory>
 
@@ -125,6 +127,13 @@ struct finish_example_data
   fn print_example_f = nullptr;
 };
 
+using merge_with_all_fn = void (*)(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+    const std::vector<const VW::workspace*>& all_workspaces, const void* base_data,
+    const std::vector<const void*>& all_data, VW::workspace& output_workspace, void* output_data);
+// When the workspace reference is not needed this signature should definitely be used.
+using merge_fn = void (*)(const std::vector<float>& per_model_weighting, const void* base_data,
+    const std::vector<const void*>& all_data, void* output_data);
+
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
 inline void noop(void*) {}
@@ -241,6 +250,10 @@ private:
   label_type_t _input_label_type;
   bool _is_multiline;  // Is this a single-line or multi-line reduction?
 
+  // There should only only ever be either none, or one of these two set. Never both.
+  details::merge_with_all_fn _merge_with_all_fn;
+  details::merge_fn _merge_fn;
+
   std::shared_ptr<void> learner_data;
 
   learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
@@ -270,6 +283,12 @@ public:
 
   void* get_internal_type_erased_data_pointer_test_use_only() { return learner_data.get(); }
 
+  // For all functions here that invoke stored function pointers,
+  // NO_SANITIZE_UNDEFINED is needed because the function pointer's type may be
+  // cast to something different from the original function's signature.
+  // This will throw an error in UndefinedBehaviorSanitizer even when the
+  // function can be correctly called through the pointer.
+
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
@@ -278,7 +297,7 @@ public:
   /// multiple regressors/learners you can increment this value for each call.
   /// \returns While some reductions may fill the example::pred, this is not
   /// guaranteed and is undefined behavior if accessed.
-  inline void learn(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED learn(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -297,7 +316,7 @@ public:
   /// \returns The prediction calculated by this reduction be set on
   /// example::pred. If <code>E</code> is ::multi_ex then the prediction is set
   /// on the 0th item in the list.
-  inline void predict(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED predict(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -307,7 +326,8 @@ public:
     details::decrement_offset(ec, increment, i);
   }
 
-  inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
+  inline void NO_SANITIZE_UNDEFINED multipredict(
+      E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -342,7 +362,7 @@ public:
     }
   }
 
-  inline void update(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED update(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -352,7 +372,7 @@ public:
     details::decrement_offset(ec, increment, i);
   }
 
-  inline float sensitivity(example& ec, size_t i = 0)
+  inline float NO_SANITIZE_UNDEFINED sensitivity(example& ec, size_t i = 0)
   {
     details::increment_offset(ec, increment, i);
     debug_log_message(ec, "sensitivity");
@@ -362,7 +382,7 @@ public:
   }
 
   // called anytime saving or loading needs to happen. Autorecursive.
-  inline void save_load(io_buf& io, const bool read, const bool text)
+  inline void NO_SANITIZE_UNDEFINED save_load(io_buf& io, const bool read, const bool text)
   {
     try
     {
@@ -378,13 +398,13 @@ public:
   }
 
   // called when metrics is enabled.  Autorecursive.
-  void persist_metrics(metric_sink& metrics)
+  void NO_SANITIZE_UNDEFINED persist_metrics(metric_sink& metrics)
   {
     persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
     if (persist_metrics_fd.base) { persist_metrics_fd.base->persist_metrics(metrics); }
   }
 
-  inline void finish()
+  inline void NO_SANITIZE_UNDEFINED finish()
   {
     if (finisher_fd.data) { finisher_fd.func(finisher_fd.data); }
     if (finisher_fd.base)
@@ -394,30 +414,30 @@ public:
     }
   }
 
-  void end_pass()
+  void NO_SANITIZE_UNDEFINED end_pass()
   {
     end_pass_fd.func(end_pass_fd.data);
     if (end_pass_fd.base) { end_pass_fd.base->end_pass(); }
   }  // autorecursive
 
   // called after parsing of examples is complete.  Autorecursive.
-  void end_examples()
+  void NO_SANITIZE_UNDEFINED end_examples()
   {
     end_examples_fd.func(end_examples_fd.data);
     if (end_examples_fd.base) { end_examples_fd.base->end_examples(); }
   }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
-  void init_driver() { init_fd.func(init_fd.data); }
+  void NO_SANITIZE_UNDEFINED init_driver() { init_fd.func(init_fd.data); }
 
   // called after learn example for each example.  Explicitly not recursive.
-  inline void finish_example(VW::workspace& all, E& ec)
+  inline void NO_SANITIZE_UNDEFINED finish_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
   }
 
-  inline void print_example(VW::workspace& all, E& ec)
+  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "print_example");
 
@@ -444,6 +464,43 @@ public:
     }
   }
 
+  // This is effectively static implementing a trait for this learner type.
+  // NOT auto recursive
+  void NO_SANITIZE_UNDEFINED merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+      const std::vector<const VW::workspace*>& all_workspaces, const base_learner* base_workspaces_learner,
+      const std::vector<const base_learner*>& all_learners, VW::workspace& output_workspace,
+      base_learner* output_learner)
+  {
+    assert(per_model_weighting.size() == all_workspaces.size());
+    assert(per_model_weighting.size() == all_learners.size());
+
+#ifndef NDEBUG
+    // All learners should refer to the same learner 'type'
+    const auto& name = base_workspaces_learner->get_name();
+    for (const auto& learner : all_learners) { assert(learner->get_name() == name); }
+#endif
+
+    std::vector<const void*> all_data;
+    all_data.reserve(all_learners.size());
+    for (const auto& learner : all_learners) { all_data.push_back(learner->learner_data.get()); }
+
+    if (_merge_with_all_fn != nullptr)
+    {
+      _merge_with_all_fn(per_model_weighting, base_workspace, all_workspaces,
+          base_workspaces_learner->learner_data.get(), all_data, output_workspace, output_learner->learner_data.get());
+    }
+    else if (_merge_fn != nullptr)
+    {
+      _merge_fn(per_model_weighting, base_workspaces_learner->learner_data.get(), all_data,
+          output_learner->learner_data.get());
+    }
+    else
+    {
+      THROW("learner " << name << " does not support merging.");
+    }
+  }
+
+  VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_fn != nullptr) || (_merge_fn != nullptr); }
   VW_ATTR(nodiscard) prediction_type_t get_output_prediction_type() const { return _output_pred_type; }
   VW_ATTR(nodiscard) prediction_type_t get_input_prediction_type() const { return _input_pred_type; }
   VW_ATTR(nodiscard) label_type_t get_output_label_type() const { return _output_label_type; }
@@ -451,6 +508,10 @@ public:
   VW_ATTR(nodiscard) bool is_multiline() const { return _is_multiline; }
   VW_ATTR(nodiscard) const std::string& get_name() const { return name; }
   VW_ATTR(nodiscard) const base_learner* get_learn_base() const { return learn_fd.base; }
+  VW_ATTR(nodiscard) base_learner* get_learn_base() { return learn_fd.base; }
+  /// If true, this specific learner defines a save load function. If false, it simply forwards to a base
+  /// implementation.
+  VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return learn_fd.data == save_load_fd.data; }
 };
 
 template <class T, class E>
@@ -677,6 +738,9 @@ struct reduction_learner_builder
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
     this->_learner->learn_fd.multipredict_f = nullptr;
+    // Don't propagate merge functions
+    this->_learner->_merge_fn = nullptr;
+    this->_learner->_merge_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
@@ -695,6 +759,14 @@ struct reduction_learner_builder
   {
     this->_learner->weights = params_per_weight;
     this->_learner->increment = this->_learner->learn_fd.base->increment * this->_learner->weights;
+    return *this;
+  }
+
+  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_merge(
+      void (*merge_fn)(const std::vector<float>& per_model_weighting, const DataT& base_data,
+          const std::vector<const DataT*>& all_data, DataT& output_data))
+  {
+    this->_learner->_merge_fn = reinterpret_cast<details::merge_fn>(merge_fn);
     return *this;
   }
 
@@ -722,6 +794,10 @@ struct reduction_learner_builder
             this->_learner->learn_fd.base->get_name());
       }
     }
+
+    if (this->_learner->_merge_fn != nullptr && this->_learner->_merge_with_all_fn != nullptr)
+    { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
+
     return this->_learner;
   }
 };
@@ -747,6 +823,9 @@ struct reduction_no_data_learner_builder
     this->_learner->finisher_fd.data = this->_learner->learner_data.get();
     this->_learner->finisher_fd.base = make_base(*base);
     this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
+    // Don't propagate merge functions
+    this->_learner->_merge_fn = nullptr;
+    this->_learner->_merge_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     // By default, will produce what the base expects
@@ -810,7 +889,21 @@ struct base_learner_builder
     return *this;
   }
 
-  learner<DataT, ExampleT>* build() { return this->_learner; }
+  base_learner_builder<DataT, ExampleT>& set_merge_with_all(
+      void (*merge_with_all_fn)(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+          const std::vector<const VW::workspace*>& all_workspaces, const DataT& base_data,
+          const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data))
+  {
+    this->_learner->_merge_with_all_fn = reinterpret_cast<details::merge_with_all_fn>(merge_with_all_fn);
+    return *this;
+  }
+
+  learner<DataT, ExampleT>* build()
+  {
+    if (this->_learner->_merge_fn != nullptr && this->_learner->_merge_with_all_fn != nullptr)
+    { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
+    return this->_learner;
+  }
 };
 VW_WARNING_STATE_POP
 

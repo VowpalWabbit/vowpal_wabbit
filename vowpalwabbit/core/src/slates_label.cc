@@ -174,7 +174,6 @@ namespace model_utils
 size_t read_model_field(io_buf& io, VW::slates::label& slates)
 {
   // Since read_cached_features doesn't default the label we must do it here.
-  default_label(slates);
   size_t bytes = 0;
   bytes += read_model_field(io, slates.type);
   bytes += read_model_field(io, slates.weight);
