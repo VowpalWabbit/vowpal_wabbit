@@ -36,9 +36,9 @@ public:
   void set(float feature_value, uint64_t index)
   {
 #ifdef _MSC_VER
-    float val = __popcnt((index & _weights_mask) + _column_index + _seed) & 1 ? -1.f : 1.f;
+    float val = ((__popcnt((index & _weights_mask) + _column_index + _seed) & 1) << 1) - 1.f;
 #else
-    float val = __builtin_parity((index & _weights_mask) + _column_index + _seed) ? -1.f : 1.f;
+    float val = (__builtin_parity((index & _weights_mask) + _column_index + _seed) << 1) - 1.f;
 #endif
     _final_dot_product += feature_value * val;
   }
