@@ -1,6 +1,6 @@
+<?xml version="1.0"?>
 <!-- Nuspec file for combined .NET Core and Framework package -->
 <!-- VW_NUGET_PACKAGE_NAME and VW_NUGET_PACKAGE_VERSION should be defined in CMake command line -->
-<?xml version="1.0"?>
 <package>
   <metadata>
     <title>Vowpal Wabbit .NET</title>
