@@ -1,11 +1,13 @@
+<!-- Nuspec file for .NET Core package (without support for .NET Framework) -->
+<!-- VW_NUGET_PACKAGE_NAME and VW_NUGET_PACKAGE_VERSION should be defined in CMake command line -->
 <?xml version="1.0"?>
 <package>
   <metadata>
     <title>Vowpal Wabbit .NET Core</title>
-    <id>@NUGET_PACKAGE_NAME@</id>
+    <id>@VW_NUGET_PACKAGE_NAME@</id>
     <tags>vw vowpal wabbit langford ml machine learning</tags>
     <authors>John Langford et al</authors>
-    <version>@NUGET_PACKAGE_VERSION@</version>
+    <version>@VW_NUGET_PACKAGE_VERSION@</version>
     <projectUrl>https://github.com/VowpalWabbit/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
     <license type="expression">BSD-3-Clause</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

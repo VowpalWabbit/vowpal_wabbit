@@ -1,8 +1,10 @@
+<!-- Nuspec file for native C++ package -->
+<!-- VW_NUGET_PACKAGE_VERSION should be defined in CMake command line -->
 <?xml version="1.0" encoding="utf-8" ?>
 <package>
   <metadata>
     <id>VowpalWabbitNative-v@MSVC_TOOLSET_VERSION@-@NATIVE_NUGET_PLATFORM_TAG@</id>
-    <version>@PACKAGE_VERSION@</version>
+    <version>@VW_NUGET_PACKAGE_VERSION@</version>
     <title>Vowpal Wabbit Native</title>
     <authors>John Langford et al</authors>
     <license type="expression">BSD-3-Clause</license>

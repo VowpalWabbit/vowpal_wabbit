@@ -48,6 +48,7 @@ jobs:
           cmake -S . -B build
           -G "Visual Studio 16 2019" -A ${{ matrix.arch_config.generator_arch }}
           -T ${{ matrix.toolset }}
+          -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
           -DNATIVE_NUGET_PLATFORM_TAG="${{ matrix.arch_config.arch }}"
           -DBUILD_FLATBUFFERS=Off
           -DBUILD_TESTING=Off
@@ -187,6 +188,8 @@ jobs:
           cmake -S . -B build -G Ninja
           -Dvw_BUILD_NET_CORE=On
           -Dvw_DOTNET_USE_MSPROJECT=Off
+          -DVW_NUGET_PACKAGE_NAME=VowpalWabbit
+          -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
           -DBUILD_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
@@ -210,6 +213,8 @@ jobs:
         run: >
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64
           -Dvw_BUILD_NET_FRAMEWORK=On
+          -DVW_NUGET_PACKAGE_NAME=VowpalWabbit
+          -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
           -DBUILD_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
