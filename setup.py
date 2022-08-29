@@ -14,7 +14,6 @@ from setuptools.command.sdist import sdist as _sdist
 from setuptools.command.install_lib import install_lib as _install_lib
 from shutil import rmtree
 import multiprocessing
-import subprocess
 
 system = platform.system()
 version_info = sys.version_info
@@ -193,9 +192,9 @@ with open(os.path.join(pkg_path, "README.rst"), encoding="utf-8") as f:
     long_description = f.read()
 
 # Get the current version for the python package from the configure.ac file
-version = subprocess.check_output(
-    ["python3", os.path.join(here, "utl", "version_number.py")], text=True
-).strip()
+config_path = os.path.join(here, "version.txt")
+with open(config_path, encoding="utf-8") as f:
+    version = f.readline().strip()
 
 setup(
     name="vowpalwabbit",

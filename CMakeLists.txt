@@ -16,11 +16,13 @@ endif()
 # Right now this is done for the Python CIs.
 list(APPEND VCPKG_FEATURE_FLAGS "versions")
 
-# Get version number
-execute_process(COMMAND "python3" "${CMAKE_CURRENT_LIST_DIR}/utl/version_number.py" OUTPUT_VARIABLE PACKAGE_VERSION)
+# Read version into variable
+file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
+# version.txt may contain a SemVer of the form 1.2.3-xxx+xxx
+# Extract the first 3 numbers into CMake variables
 string(REGEX REPLACE "[.+-]" ";" VW_VERSION_LIST ${PACKAGE_VERSION})
 list(GET VW_VERSION_LIST 0 VW_VERSION_MAJOR)
 list(GET VW_VERSION_LIST 1 VW_VERSION_MINOR)
