@@ -68,7 +68,6 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
-    , interaction_type(interaction_type)
     , weights(weights)
     , automl_significance_level(automl_significance_level)
     , automl_estimator_decay(automl_estimator_decay)
@@ -174,8 +173,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
-      config_oracle_impl::gen_interactions_from_exclusions(_ccb_on, ns_counter, interaction_type,
-          _config_oracle.configs[estimators[live_slot].first.config_index].exclusions,
+      ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, _config_oracle._interaction_type,
+          _config_oracle.configs[estimators[live_slot].first.config_index],
           estimators[live_slot].first.live_interactions);
     }
   }
@@ -183,7 +182,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_config_at_slot(
-    estimator_vec_t<estimator_impl>& estimators, std::vector<exclusion_config>& configs, const uint64_t live_slot,
+    estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs, const uint64_t live_slot,
     const uint64_t config_index, const double sig_level, const double decay, const uint64_t priority_challengers)
 {
   // Allocate new estimator if we haven't reached maximum yet
@@ -265,10 +264,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
   estimators[winning_challenger_slot].first.eligible_to_inactivate = false;
   if (priority_challengers > 1) { estimators[champ_slot].first.eligible_to_inactivate = false; }
 
-  auto winner_config_index = estimators[winning_challenger_slot].first.config_index;
-  std::swap(config_oracle.configs[0], config_oracle.configs[winner_config_index]);
-  if (winner_config_index != 1) { std::swap(config_oracle.configs[1], config_oracle.configs[winner_config_index]); }
-  config_oracle.valid_config_size = 2;
+  config_oracle.keep_best_two(estimators[winning_challenger_slot].first.config_index);
 
   estimators[winning_challenger_slot].first.config_index = 0;
   estimators[champ_slot].first.config_index = 1;
@@ -302,7 +298,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
     estimators[1].second.reset_stats();
   }
 
-  config_oracle.gen_exclusion_configs(estimators[champ_slot].first.live_interactions, ns_counter);
+  config_oracle.gen_configs(estimators[champ_slot].first.live_interactions, ns_counter);
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -335,16 +331,16 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   {
     for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
     {
-      auto& exclusions = _config_oracle.configs[estimators[live_slot].first.config_index].exclusions;
+      auto& curr_config = _config_oracle.configs[estimators[live_slot].first.config_index];
       auto& interactions = estimators[live_slot].first.live_interactions;
-      config_oracle_impl::gen_interactions_from_exclusions(
-          _ccb_on, ns_counter, interaction_type, exclusions, interactions);
+      ns_based_config::apply_config_to_interactions(
+          _ccb_on, ns_counter, _config_oracle._interaction_type, curr_config, interactions);
     }
 
     if (_config_oracle.configs[current_champ].state == VW::reductions::automl::config_state::New)
     {
       _config_oracle.configs[current_champ].state = VW::reductions::automl::config_state::Live;
-      _config_oracle.gen_exclusion_configs(estimators[current_champ].first.live_interactions, ns_counter);
+      _config_oracle.gen_configs(estimators[current_champ].first.live_interactions, ns_counter);
     }
   }
 }
