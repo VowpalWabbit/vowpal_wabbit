@@ -154,24 +154,14 @@
     {
       "name": "vcpkg-debug",
       "configurePreset": "vcpkg-debug",
-      "output": {
-        "outputOnFailure": true
-      },
-      "execution": {
-        "noTestsAction": "error",
-        "stopOnFailure": true
-      }
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
+      "execution": { "noTestsAction": "error", "stopOnFailure": true }
     },
     {
       "name": "vcpkg-release",
       "configurePreset": "vcpkg-release",
-      "output": {
-        "outputOnFailure": true
-      },
-      "execution": {
-        "noTestsAction": "error",
-        "stopOnFailure": true
-      }
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
+      "execution": { "noTestsAction": "error", "stopOnFailure": true }
     }
   ]
 }
