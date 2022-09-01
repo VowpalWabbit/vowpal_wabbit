@@ -253,6 +253,8 @@ void shrink_factor_config::calculate_shrink_factor(
 }
 
 template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
+template struct cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
+template struct cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -299,7 +301,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool apply_shrink_factor = false;
   bool full_predictions = false;
   bool model_weight_impl = false;
-  bool use_one_pass_svd = false;
+  bool use_vanilla_impl = false;
   bool full_spanner = false;
 
   config::option_group_definition new_options(
@@ -310,7 +312,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("model_weight", model_weight_impl))
-      .add(make_option("one_pass", use_one_pass_svd))
+      .add(make_option("vanilla", use_vanilla_impl))
       .add(make_option("full_spanner", full_spanner))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
@@ -360,39 +362,23 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
-  auto impl_type = implementation_type::vanilla_rand_svd;
   if (model_weight_impl)
   {
+    auto impl_type = implementation_type::model_weight_rand_svd;
     if (full_spanner)
     {
-      impl_type = implementation_type::model_weight_rand_svd;
       return make_las_with_impl<model_weight_rand_svd_impl, spanner_state>(
           stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
     }
     else
     {
-      impl_type = implementation_type::model_weight_rand_svd;
       return make_las_with_impl<model_weight_rand_svd_impl, one_rank_spanner_state>(
           stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
     }
   }
-  else if (use_one_pass_svd)
+  else if (use_vanilla_impl)
   {
-    if (full_spanner)
-    {
-      impl_type = implementation_type::one_pass_svd;
-      return make_las_with_impl<one_pass_svd_impl, spanner_state>(
-          stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
-    }
-    else
-    {
-      impl_type = implementation_type::one_pass_svd;
-      return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(
-          stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
-    }
-  }
-  else
-  {
+    auto impl_type = implementation_type::vanilla_rand_svd;
     if (full_spanner)
     {
       return make_las_with_impl<vanilla_rand_svd_impl, spanner_state>(
@@ -401,6 +387,20 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     else
     {
       return make_las_with_impl<vanilla_rand_svd_impl, one_rank_spanner_state>(
+          stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
+    }
+  }
+  else
+  {
+    auto impl_type = implementation_type::one_pass_svd;
+    if (full_spanner)
+    {
+      return make_las_with_impl<one_pass_svd_impl, spanner_state>(
+          stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
+    }
+    else
+    {
+      return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(
           stack_builder, base, impl_type, all, with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor);
     }
   }

@@ -109,16 +109,16 @@ void save_load_aml(VW::reductions::automl::automl<CMType>& aml, io_buf& io, bool
 // be the config with the least exclusion. Note that all configs will run to lease
 // before priorities and lease are reset.
 float calc_priority_favor_popular_namespaces(
-    const VW::reductions::automl::exclusion_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
+    const VW::reductions::automl::ns_based_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
 {
   float priority = 0.f;
-  for (const auto& ns_pair : config.exclusions) { priority -= ns_counter.at(*ns_pair.begin()); }
+  for (const auto& ns_pair : config.elements) { priority -= ns_counter.at(*ns_pair.begin()); }
   return priority;
 }
 
 // Same as above, returns 0 (includes rest to remove unused variable warning)
 float calc_priority_empty(
-    const VW::reductions::automl::exclusion_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
+    const VW::reductions::automl::ns_based_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
 {
   _UNUSED(config);
   _UNUSED(ns_counter);
