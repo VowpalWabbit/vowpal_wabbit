@@ -7,8 +7,6 @@ if(vw_BUILD_NET_FRAMEWORK AND NOT WIN32)
 endif()
 
 # Generate .nuspec files for creating Nuget packages
-set(NUGET_PACKAGE_NAME "VowpalWabbit")
-set(NUGET_PACKAGE_VERSION ${PACKAGE_VERSION})
 if(WIN32)
   set(NUGET_RUNTIME_ID "win-x64")
 elseif(APPLE)

@@ -21,7 +21,9 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
-string(REPLACE "." ";" VW_VERSION_LIST ${PACKAGE_VERSION})
+# version.txt may contain a SemVer of the form 1.2.3-xxx+xxx
+# Extract the first 3 numbers into CMake variables
+string(REGEX REPLACE "[.+-]" ";" VW_VERSION_LIST ${PACKAGE_VERSION})
 list(GET VW_VERSION_LIST 0 VW_VERSION_MAJOR)
 list(GET VW_VERSION_LIST 1 VW_VERSION_MINOR)
 list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
@@ -55,7 +57,8 @@ if(BUILD_TESTING)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
 endif()
 
-project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
+# CMake project() does not support semantic versioning
+project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
