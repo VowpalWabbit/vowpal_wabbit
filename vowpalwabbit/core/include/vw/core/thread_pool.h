@@ -28,7 +28,6 @@ public:
   {
     std::lock_guard<std::mutex> lk(_mut);
     _queue.push(std::move(value));
-    _cv.notify_one();
   }
 
   bool try_pop(T& value)
@@ -49,7 +48,6 @@ public:
 private:
   mutable std::mutex _mut;
   std::queue<T> _queue;
-  std::condition_variable _cv;
 };
 
 class threads_joiner
