@@ -208,8 +208,8 @@ struct interaction_config_manager
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, const std::string&,
       const std::string&, dense_parameters&,
-      float (*)(const ns_based_config&, const std::map<namespace_index, uint64_t>&), double, VW::io::logger*,
-      uint32_t&, bool, bool);
+      float (*)(const ns_based_config&, const std::map<namespace_index, uint64_t>&), double, VW::io::logger*, uint32_t&,
+      bool, bool);
 
   void do_learning(multi_learner&, multi_ex&, uint64_t);
   void persist(metric_sink&, bool);
@@ -224,8 +224,8 @@ struct interaction_config_manager
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
       estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers, const bool lb_trick,
       const std::map<namespace_index, uint64_t>& ns_counter);
-  static void insert_starting_configuration(estimator_vec_t<estimator_impl>& estimators,
-      config_oracle_impl& config_oracle, const double sig_level);
+  static void insert_starting_configuration(
+      estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level);
 
 private:
   static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);

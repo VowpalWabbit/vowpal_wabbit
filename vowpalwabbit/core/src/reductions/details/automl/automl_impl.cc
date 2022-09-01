@@ -63,8 +63,8 @@ template <typename config_oracle_impl, typename estimator_impl>
 interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_config_manager(uint64_t global_lease,
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
-    priority_func* calc_priority, double automl_significance_level,
-    VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
+    priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp,
+    bool lb_trick, bool ccb_on)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -92,8 +92,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_star
   assert(config_oracle.configs.size() >= 1);
 
   config_oracle.configs[0].state = VW::reductions::automl::config_state::New;
-  estimators.emplace_back(
-      std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
+  estimators.emplace_back(std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -166,8 +165,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       assert(live_slot < max_live_configs);
       // fetch config from the queue, and apply it current live slot
       apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
-          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level,
-          priority_challengers);
+          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, priority_challengers);
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
@@ -186,8 +184,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_confi
   // Allocate new estimator if we haven't reached maximum yet
   if (estimators.size() <= live_slot)
   {
-    estimators.emplace_back(
-        std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
+    estimators.emplace_back(std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
     if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
   }
   assert(estimators.size() > live_slot);
@@ -343,7 +340,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   }
 }
 
-template struct interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence::ConfidenceSequence>;
+template struct interaction_config_manager<config_oracle<oracle_rand_impl>,
+    VW::confidence_sequence::ConfidenceSequence>;
 template struct interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence::ConfidenceSequence>;
 template struct interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence::ConfidenceSequence>;
 
@@ -405,9 +403,12 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   }
 }
 
-template struct automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence::ConfidenceSequence>>;
-template struct automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence::ConfidenceSequence>>;
-template struct automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence::ConfidenceSequence>>;
+template struct automl<
+    interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence::ConfidenceSequence>>;
+template struct automl<
+    interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence::ConfidenceSequence>>;
+template struct automl<
+    interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence::ConfidenceSequence>>;
 
 }  // namespace automl
 }  // namespace reductions
