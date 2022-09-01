@@ -73,6 +73,7 @@ set(vw_core_headers
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
   include/vw/core/queue.h
+  include/vw/core/thread_pool.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
   include/vw/core/reduction_features.h
