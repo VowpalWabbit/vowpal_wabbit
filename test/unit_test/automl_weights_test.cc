@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(num_iterations, weights_offset_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
       "--oracle_type rand --global_lease 10",
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
   test_hooks.emplace(num_iterations, all_weights_equal_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
+      "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
       "--oracle_type champdupe -b 8 --global_lease 10",
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
   callback_map test_hooks;
 
   std::string vw_arg =
-      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
+      "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 -b 18 "
       "--oracle_type one_diff --global_lease 10 ";
@@ -268,7 +268,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
       "--cb_explore_adf --quiet --epsilon 0.2 "
       "--random_seed 5 -b 18 ";
   std::string vw_automl_arg =
-      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces "
+      "--automl 4 --priority_type favor_popular_namespaces "
       "--oracle_type one_diff --global_lease 10 ";
   int seed = 10;
   size_t num_iterations = 2000;

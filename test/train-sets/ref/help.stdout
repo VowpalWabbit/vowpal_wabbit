@@ -260,8 +260,6 @@ Weight Options:
                                             str, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --automl_estimator_decay arg            Time constant for count decay (type: float, default: 1, keep,
-                                            experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
                                             (bonferroni correction) (type: bool, keep, experimental)
 [Reduction] Baseline Options:

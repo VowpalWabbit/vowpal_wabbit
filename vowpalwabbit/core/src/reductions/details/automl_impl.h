@@ -31,7 +31,7 @@ struct aml_estimator
 {
   estimator_impl _estimator;
   aml_estimator() : _estimator(estimator_impl()) {}
-  aml_estimator(double alpha, double tau) : _estimator(estimator_impl(alpha, tau)) {}
+  aml_estimator(double alpha) : _estimator(estimator_impl(alpha)) {}
   aml_estimator(
       estimator_impl sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
       : _estimator(sc)
@@ -183,7 +183,6 @@ struct interaction_config_manager
   uint64_t priority_challengers;
   dense_parameters& weights;
   double automl_significance_level;
-  double automl_estimator_decay;
   VW::io::logger* logger;
   uint32_t& wpp;
   const bool _lb_trick;
@@ -209,7 +208,7 @@ struct interaction_config_manager
 
   interaction_config_manager(uint64_t, uint64_t, std::shared_ptr<VW::rand_state>, uint64_t, const std::string&,
       const std::string&, dense_parameters&,
-      float (*)(const ns_based_config&, const std::map<namespace_index, uint64_t>&), double, double, VW::io::logger*,
+      float (*)(const ns_based_config&, const std::map<namespace_index, uint64_t>&), double, VW::io::logger*,
       uint32_t&, bool, bool);
 
   void do_learning(multi_learner&, multi_ex&, uint64_t);
@@ -220,13 +219,13 @@ struct interaction_config_manager
   void check_for_new_champ();
   void process_example(const multi_ex& ec);
   static void apply_config_at_slot(estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs,
-      const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double decay,
+      const uint64_t live_slot, const uint64_t config_index, const double sig_level,
       const uint64_t priority_challengers);
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
       estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers, const bool lb_trick,
       const std::map<namespace_index, uint64_t>& ns_counter);
   static void insert_starting_configuration(estimator_vec_t<estimator_impl>& estimators,
-      config_oracle_impl& config_oracle, const double sig_level, const double decay);
+      config_oracle_impl& config_oracle, const double sig_level);
 
 private:
   static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);

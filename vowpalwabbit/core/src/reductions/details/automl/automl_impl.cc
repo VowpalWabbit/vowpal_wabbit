@@ -5,7 +5,7 @@
 #include "../automl_impl.h"
 
 #include "vw/common/vw_exception.h"
-#include "vw/core/estimator_config.h"
+#include "vw/core/confidence_sequence.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -63,27 +63,25 @@ template <typename config_oracle_impl, typename estimator_impl>
 interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_config_manager(uint64_t global_lease,
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
-    priority_func* calc_priority, double automl_significance_level, double automl_estimator_decay,
+    priority_func* calc_priority, double automl_significance_level,
     VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
     , weights(weights)
     , automl_significance_level(automl_significance_level)
-    , automl_estimator_decay(automl_estimator_decay)
     , logger(logger)
     , wpp(wpp)
     , _lb_trick(lb_trick)
     , _ccb_on(ccb_on)
     , _config_oracle(config_oracle_impl(global_lease, calc_priority, interaction_type, oracle_type, rand_state))
 {
-  insert_starting_configuration(estimators, _config_oracle, automl_significance_level, automl_estimator_decay);
+  insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_starting_configuration(
-    estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level,
-    const double decay)
+    estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level)
 {
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() == 0);
@@ -95,7 +93,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_star
 
   config_oracle.configs[0].state = VW::reductions::automl::config_state::New;
   estimators.emplace_back(
-      std::make_pair(aml_estimator<estimator_impl>(sig_level, decay), estimator_impl(sig_level, decay)));
+      std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -168,7 +166,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       assert(live_slot < max_live_configs);
       // fetch config from the queue, and apply it current live slot
       apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
-          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, automl_estimator_decay,
+          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level,
           priority_challengers);
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
@@ -183,20 +181,20 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_config_at_slot(
     estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs, const uint64_t live_slot,
-    const uint64_t config_index, const double sig_level, const double decay, const uint64_t priority_challengers)
+    const uint64_t config_index, const double sig_level, const uint64_t priority_challengers)
 {
   // Allocate new estimator if we haven't reached maximum yet
   if (estimators.size() <= live_slot)
   {
     estimators.emplace_back(
-        std::make_pair(aml_estimator<estimator_impl>(sig_level, decay), estimator_impl(sig_level, decay)));
+        std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
     if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
   }
   assert(estimators.size() > live_slot);
 
   // Set all features of new live config
-  estimators[live_slot].first._estimator.reset_stats(sig_level, decay);
-  estimators[live_slot].second.reset_stats(sig_level, decay);
+  estimators[live_slot].first._estimator.reset_stats();
+  estimators[live_slot].second.reset_stats();
 
   estimators[live_slot].first.config_index = config_index;
   configs[config_index].state = VW::reductions::automl::config_state::Live;
@@ -345,9 +343,9 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   }
 }
 
-template struct interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimator_config>;
-template struct interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>;
-template struct interaction_config_manager<config_oracle<champdupe_impl>, VW::estimator_config>;
+template struct interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence::ConfidenceSequence>;
+template struct interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence::ConfidenceSequence>;
+template struct interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence::ConfidenceSequence>;
 
 template <typename CMType>
 void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
@@ -407,9 +405,9 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   }
 }
 
-template struct automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimator_config>>;
-template struct automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::estimator_config>>;
-template struct automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::estimator_config>>;
+template struct automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence::ConfidenceSequence>>;
+template struct automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence::ConfidenceSequence>>;
+template struct automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence::ConfidenceSequence>>;
 
 }  // namespace automl
 }  // namespace reductions
