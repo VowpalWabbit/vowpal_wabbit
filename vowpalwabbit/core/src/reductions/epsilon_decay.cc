@@ -145,7 +145,8 @@ void epsilon_decay_data::rebalance_greater_models(int64_t model_ind, int64_t swa
   {
     for (int64_t estimator_ind = model_ind + 1; estimator_ind >= swap_dist; --estimator_ind)
     {
-      conf_seq_estimators[curr_mod][estimator_ind] = std::move(conf_seq_estimators[curr_mod][estimator_ind - swap_dist]);
+      conf_seq_estimators[curr_mod][estimator_ind] =
+          std::move(conf_seq_estimators[curr_mod][estimator_ind - swap_dist]);
     }
   }
 }
