@@ -11,15 +11,13 @@
 
 namespace VW
 {
-namespace confidence_sequence
-{
-ConfidenceSequence::ConfidenceSequence(double alpha, double rmin_init, double rmax_init, bool adjust)
+confidence_sequence::confidence_sequence(double alpha, double rmin_init, double rmax_init, bool adjust)
     : alpha(alpha), rmin_init(rmin_init), rmax_init(rmax_init), adjust(adjust)
 {
   reset_stats();
 }
 
-void ConfidenceSequence::update(double w, double r, double p_drop, double n_drop)
+void confidence_sequence::update(double w, double r, double p_drop, double n_drop)
 {
   assert(w >= 0.0);
   assert(0.0 <= p_drop && p_drop < 1.0);
@@ -80,7 +78,7 @@ void ConfidenceSequence::update(double w, double r, double p_drop, double n_drop
   ++t;
 }
 
-void ConfidenceSequence::persist(metric_sink& metrics, const std::string& suffix)
+void confidence_sequence::persist(metric_sink& metrics, const std::string& suffix)
 {
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("lb" + suffix, lower_bound());
@@ -89,7 +87,7 @@ void ConfidenceSequence::persist(metric_sink& metrics, const std::string& suffix
   metrics.set_float("r" + suffix, last_r);
 }
 
-void ConfidenceSequence::reset_stats()
+void confidence_sequence::reset_stats()
 {
   rmin = rmin_init;
   rmax = rmax_init;
@@ -114,7 +112,7 @@ void ConfidenceSequence::reset_stats()
   last_r = 0.0;
 }
 
-float ConfidenceSequence::lower_bound() const
+float confidence_sequence::lower_bound() const
 {
   if (t == 0 || rmin == rmax) { return static_cast<float>(rmin); }
 
@@ -126,7 +124,7 @@ float ConfidenceSequence::lower_bound() const
   return static_cast<float>(rmin + l * (rmax - rmin));
 }
 
-float ConfidenceSequence::upper_bound() const
+float confidence_sequence::upper_bound() const
 {
   if (t == 0 || rmin == rmax) { return static_cast<float>(rmax); }
 
@@ -138,7 +136,7 @@ float ConfidenceSequence::upper_bound() const
   return static_cast<float>(rmin + u * (rmax - rmin));
 }
 
-double ConfidenceSequence::approxpolygammaone(double b) const
+double confidence_sequence::approxpolygammaone(double b) const
 {
   assert(b >= 1.0);
   if (b > 10.0)
@@ -158,7 +156,7 @@ double ConfidenceSequence::approxpolygammaone(double b) const
   }
 }
 
-double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha) const
+double confidence_sequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha) const
 {
 #if !defined(__APPLE__) && !defined(_WIN32)
   double zeta_s = std::riemann_zeta(s);
@@ -173,11 +171,10 @@ double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, doubl
   return std::max(
       0.0, (sumXt - std::sqrt(std::pow(gamma1, 2) * ll * v + std::pow(gamma2, 2) * std::pow(ll, 2)) - gamma2 * ll) / t);
 }
-}  // namespace confidence_sequence
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::confidence_sequence::IncrementalFsum& ifs)
+size_t read_model_field(io_buf& io, VW::incremental_f_sum& ifs)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, ifs.partials);
@@ -185,14 +182,14 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence::IncrementalFsum& if
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::confidence_sequence::IncrementalFsum& ifs, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::incremental_f_sum& ifs, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ifs.partials, upstream_name + "_partials", text);
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::confidence_sequence::ConfidenceSequence& im)
+size_t read_model_field(io_buf& io, VW::confidence_sequence& im)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, im.alpha);
@@ -222,7 +219,7 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence::ConfidenceSequence&
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::confidence_sequence::ConfidenceSequence& im, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::confidence_sequence& im, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, im.alpha, upstream_name + "_alpha", text);

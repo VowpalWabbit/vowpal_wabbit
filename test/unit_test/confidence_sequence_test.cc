@@ -13,7 +13,7 @@ constexpr float CS_FLOAT_TOL = 0.1f;
 
 BOOST_AUTO_TEST_CASE(incremental_fsum_test)
 {
-  VW::confidence_sequence::IncrementalFsum fsum;
+  VW::incremental_f_sum fsum;
   fsum += 1.0;
   fsum += 2.0;
   fsum += 3.0;
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(incremental_fsum_test)
 
 BOOST_AUTO_TEST_CASE(confidence_sequence_test)
 {
-  VW::confidence_sequence::ConfidenceSequence cs;
+  VW::confidence_sequence cs;
   std::vector<double> rs;
   for (int i = 0; i < 1000; ++i)
   {
