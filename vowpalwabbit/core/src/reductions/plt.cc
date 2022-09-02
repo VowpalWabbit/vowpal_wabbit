@@ -52,7 +52,7 @@ struct plt
   float threshold = 0.f;
   uint32_t top_k = 0;
   std::vector<VW::polyprediction> node_pred;  // for storing results of base.multipredict
-  std::vector<node> node_queue;                // container for queue used for both types of predictions
+  std::vector<node> node_queue;               // container for queue used for both types of predictions
   bool probabilities = false;
 
   // for measuring predictive performance
@@ -125,15 +125,14 @@ void learn(plt& p, single_learner& base, VW::example& ec)
         {
           uint32_t n_child = p.kary * n + i;
           if (n_child < p.t && p.positive_nodes.find(n_child) == p.positive_nodes.end())
-          { p.negative_nodes.insert(n_child); }
+          {
+            p.negative_nodes.insert(n_child);
+          }
         }
       }
     }
   }
-  else
-  {
-    p.negative_nodes.insert(0);
-  }
+  else { p.negative_nodes.insert(0); }
 
   ec.l.simple = {1.f};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
@@ -149,10 +148,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-inline float sigmoid(float x)
-{
-  return 1.0f / (1.0f + std::expf(-x));
-}
+inline float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-x)); }
 
 inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
 {
@@ -168,7 +164,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
 
-  if(p.probabilities) { pred.a_s.clear(); }
+  if (p.probabilities) { pred.a_s.clear(); }
   else { pred.multilabels.label_v.clear(); }
 
   // split labels into true and skip (those > max. label num)
@@ -176,10 +172,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   for (auto label : multilabels.label_v)
   {
     if (label < p.k) { p.true_labels.insert(label); }
-    else
-    {
-      p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
-    }
+    else { p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1); }
   }
 
   p.node_queue.clear();  // clear node queue
@@ -224,14 +217,14 @@ void predict(plt& p, single_learner& base, VW::example& ec)
     {
       uint32_t tp = 0;
       uint32_t pred_size = pred.multilabels.label_v.size();
-      if(p.probabilities) { pred_size = pred.a_s.size(); }
+      if (p.probabilities) { pred_size = pred.a_s.size(); }
 
-      for(int i = 0; i < pred_size; ++i)
+      for (uint32_t i = 0; i < pred_size; ++i)
       {
-          uint32_t pred_label;
-          if (p.probabilities) { pred_label = pred.a_s[i].action; }
-          else { pred_label = pred.multilabels.label_v[i]; }
-          if (p.true_labels.count(pred_label)) { ++tp; }
+        uint32_t pred_label;
+        if (p.probabilities) { pred_label = pred.a_s[i].action; }
+        else { pred_label = pred.multilabels.label_v[i]; }
+        if (p.true_labels.count(pred_label)) { ++tp; }
       }
       p.tp += tp;
       p.fp += static_cast<uint32_t>(pred_size) - tp;
@@ -306,7 +299,9 @@ void predict(plt& p, single_learner& base, VW::example& ec)
 
 void finish_example(VW::workspace& all, plt& p, VW::example& ec)
 {
-  if(p.probabilities) { /*ACTION_SCORE::output_example(all, ec);*/ }
+  if (p.probabilities)
+  { /*ACTION_SCORE::output_example(all, ec);*/
+  }
   else { MULTILABEL::output_example(all, ec); }
   VW::finish_example(all, ec);
 }
@@ -376,11 +371,12 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
                .help("Predict top-<k> labels instead of labels above threshold"))
       .add(make_option("probabilities", tree->probabilities).help("Predict probabilities for the predicted labels"));
 
-
-    if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (all.loss->get_type() != "logistic")
-  { THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type()); }
+  {
+    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type());
+  }
 
   tree->all = &all;
 
@@ -399,10 +395,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     if (!all.training)
     {
       if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
-      else
-      {
-        *(all.trace_message) << "threshold = " << tree->threshold << std::endl;
-      }
+      else { *(all.trace_message) << "threshold = " << tree->threshold << std::endl; }
     }
   }
 
@@ -422,19 +415,14 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     name_addition = " -top_k";
     pred_ptr = predict<false>;
   }
-  else
-  {
-    pred_ptr = predict<true>;
-  }
+  else { pred_ptr = predict<true>; }
 
   if (tree->probabilities)
   {
-      name_addition += " -prob";
-      pred_type = VW::prediction_type_t::action_probs;
+    name_addition += " -prob";
+    pred_type = VW::prediction_type_t::action_probs;
   }
-  else {
-      pred_type = VW::prediction_type_t::multilabels;
-  }
+  else { pred_type = VW::prediction_type_t::multilabels; }
 
   auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
       stack_builder.get_setupfn_name(plt_setup) + name_addition)
