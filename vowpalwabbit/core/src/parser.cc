@@ -920,7 +920,8 @@ void main_parse_loop(VW::workspace* all) { parse_dispatch(*all, thread_dispatch)
 
 namespace VW
 {
-example* get_example(parser* p) {
+example* get_example(parser* p)
+{
   example* ex = nullptr;
   p->ready_parsed_examples.try_pop(ex);
   return ex;
