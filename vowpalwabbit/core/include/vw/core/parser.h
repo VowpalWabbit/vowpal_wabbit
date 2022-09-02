@@ -64,7 +64,7 @@ struct parser
   std::vector<VW::string_view> words;
 
   VW::object_pool<VW::example> example_pool;
-  VW::ptr_queue<VW::example> ready_parsed_examples;
+  VW::thread_safe_queue<VW::example*> ready_parsed_examples;
 
   io_buf input;  // Input source(s)
 
