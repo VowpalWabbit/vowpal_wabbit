@@ -265,12 +265,10 @@ void model_weight_rand_svd_impl::_populate_from_model_weight_Y(const multi_ex& e
   Y.resize(max_non_zero_col + 1, _d);
   Y.setZero();
 
-  Y.setFromTriplets(triplets.begin(), triplets.end(),
-      [](const float& a, const float& b)
-      {
-        assert(a == b);
-        return b;
-      });
+  Y.setFromTriplets(triplets.begin(), triplets.end(), [](const float& a, const float& b) {
+    assert(a == b);
+    return b;
+  });
 }
 
 void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples)
