@@ -44,10 +44,8 @@ private:
       std::function<void()> task;
       if (!_task_queue.try_pop(task))
       { /*try pop retuned false, the queue is done and it is empty*/
-        break;
+        return;
       }
-
-      if (_done) { break; }
       task();
     }
   }
