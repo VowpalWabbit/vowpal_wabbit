@@ -265,10 +265,12 @@ void model_weight_rand_svd_impl::_populate_from_model_weight_Y(const multi_ex& e
   Y.resize(max_non_zero_col + 1, _d);
   Y.setZero();
 
-  Y.setFromTriplets(triplets.begin(), triplets.end(), [](const float& a, const float& b) {
-    assert(a == b);
-    return b;
-  });
+  Y.setFromTriplets(triplets.begin(), triplets.end(),
+      [](const float& a, const float& b)
+      {
+        assert(a == b);
+        return b;
+      });
 }
 
 void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples)
@@ -336,7 +338,8 @@ void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector
   }
 }
 
-model_weight_rand_svd_impl::model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size)
+model_weight_rand_svd_impl::model_weight_rand_svd_impl(
+    VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t)
     : _all(all), _d(d), _seed(seed), _internal_weights(total_size)
 {
 }

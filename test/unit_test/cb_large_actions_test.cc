@@ -89,12 +89,28 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 
 BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
 {
+
   auto d = 3;
   std::vector<VW::workspace*> vws;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+  
+  auto* vw_zero_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5",
       nullptr, false, nullptr, nullptr);
 
+
+  vws.push_back(vw_zero_threads);
+
+  auto* vw_2_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --thread_pool_size 2",
+      nullptr, false, nullptr, nullptr);
+
+  vws.push_back(vw_2_threads);
+
+  for (auto* vw_ptr : vws)
+{  
+    auto& vw = *vw_ptr;
+
+  
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -132,14 +148,33 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
   }
   VW::finish(vw);
 }
+}
 
 BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 {
-  auto d = 3;
+  
+    auto d = 3;
   std::vector<VW::workspace*> vws;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+  
+  auto* vw_zero_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5 --noconstant",
       nullptr, false, nullptr, nullptr);
+
+
+  vws.push_back(vw_zero_threads);
+
+  auto* vw_2_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --noconstant --thread_pool_size 2",
+      nullptr, false, nullptr, nullptr);
+
+  vws.push_back(vw_2_threads);
+
+  for (auto* vw_ptr : vws)
+{  
+    auto& vw = *vw_ptr;
+
+  
+  
 
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
@@ -188,6 +223,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
   }
   VW::finish(vw);
 }
+}
 
 BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 {
@@ -208,7 +244,7 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
-  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 50, 1 << vw.num_bits);
+  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 50, 1 << vw.num_bits, /*thread_pool_size*/ 0);
 
   {
     VW::multi_ex examples;
@@ -257,7 +293,7 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
-  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 50, 1 << vw.num_bits);
+  VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(&vw, d, 50, 1 << vw.num_bits, /*thread_pool_size*/ 0);
 
   {
     VW::multi_ex examples;
@@ -909,7 +945,7 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
   VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::one_pass_svd_impl,
       VW::cb_explore_adf::one_rank_spanner_state>
       largecb(
-          /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits,
+          /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits, /*thread_pool_size*/ 0,
           VW::cb_explore_adf::implementation_type::one_pass_svd);
   largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
