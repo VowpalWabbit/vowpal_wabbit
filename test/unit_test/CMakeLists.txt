@@ -53,7 +53,6 @@ add_executable(vw-unit-test.out
   test_common.h
   tokenize_test.cc
   text_utils_test.cc
-  thread_pool_test.cc
   tutorial_test.cc
   v_array_test.cc
   vw_versions_test.cc

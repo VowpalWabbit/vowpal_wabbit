@@ -424,5 +424,6 @@ vw_add_test_executable(
       tests/merge_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
+      tests/thread_pool_test.cc
       tests/main.cc
 )
