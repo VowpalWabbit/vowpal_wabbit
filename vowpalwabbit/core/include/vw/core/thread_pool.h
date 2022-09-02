@@ -95,7 +95,6 @@ public:
 
     // wrap into a shared pointer in order for the packaged task to be copiable
     auto task_ptr = std::make_shared<std::packaged_task<decltype(func(args...))()>>(f);
-    // make into a void function so that it is
     std::function<void()> wrapper_func = [task_ptr]() { (*task_ptr)(); };
 
     _task_queue.push(std::move(wrapper_func));
