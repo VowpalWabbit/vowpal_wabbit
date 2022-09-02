@@ -83,37 +83,6 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   _futures.clear();
 }
 
-void one_pass_svd_impl::generate_AOmega_ot(const multi_ex& examples, const std::vector<float>& shrink_factors)
-{
-  auto num_actions = examples[0]->pred.a_s.size();
-  auto p = std::min(num_actions, _d + 5);
-  AOmega.resize(num_actions, p);
-
-  uint64_t row_index = 0;
-  for (auto* ex : examples)
-  {
-    assert(!CB::ec_is_example_header(*ex));
-
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
-
-    for (uint64_t col = 0; col < p; ++col)
-    {
-      float final_dot_prod = 0.f;
-
-      AO_triplet_constructor tc(_all->weights.mask(), row_index, col, _seed, final_dot_prod);
-      GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-          _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-          (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
-          (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
-                                                      : *ex->extent_interactions),
-          _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
-
-      AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
-    }
-    row_index++;
-  }
-}
-
 void one_pass_svd_impl::_set_rank(uint64_t rank) { _d = rank; }
 
 void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,

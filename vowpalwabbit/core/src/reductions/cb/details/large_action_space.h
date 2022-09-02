@@ -95,7 +95,6 @@ public:
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
-  void generate_AOmega_ot(const multi_ex& examples, const std::vector<float>& shrink_factors);
   // for testing purposes only
   void _set_rank(uint64_t rank);
   bool _set_testing_components = false;
