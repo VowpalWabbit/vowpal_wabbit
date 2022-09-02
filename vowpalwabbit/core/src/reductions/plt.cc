@@ -51,8 +51,9 @@ struct plt
   // for prediction
   float threshold = 0.f;
   uint32_t top_k = 0;
-  std::vector<VW::polyprediction> node_preds;  // for storing results of base.multipredict
+  std::vector<VW::polyprediction> node_pred;  // for storing results of base.multipredict
   std::vector<node> node_queue;                // container for queue used for both types of predictions
+  bool probabilities = false;
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
@@ -86,7 +87,7 @@ inline void learn_node(plt& p, uint32_t n, single_learner& base, VW::example& ec
 void learn(plt& p, single_learner& base, VW::example& ec)
 {
   MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
-  MULTILABEL::labels preds = std::move(ec.pred.multilabels);
+  VW::polyprediction pred = std::move(ec.pred);
 
   double t = p.all->sd->t;
   double weighted_holdout_examples = p.all->sd->weighted_holdout_examples;
@@ -144,8 +145,13 @@ void learn(plt& p, single_learner& base, VW::example& ec)
   p.all->sd->t = t;
   p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
 
-  ec.pred.multilabels = std::move(preds);
+  ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
+}
+
+inline float sigmoid(float x)
+{
+  return 1.0f / (1.0f + std::expf(-x));
 }
 
 inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
@@ -153,15 +159,17 @@ inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
   ec.l.simple = {FLT_MAX};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   base.predict(ec, n);
-  return 1.0f / (1.0f + std::exp(-ec.partial_prediction));
+  return sigmoid(ec.partial_prediction);
 }
 
 template <bool threshold>
 void predict(plt& p, single_learner& base, VW::example& ec)
 {
   MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
-  MULTILABEL::labels preds = std::move(ec.pred.multilabels);
-  preds.label_v.clear();
+  VW::polyprediction pred = std::move(ec.pred);
+
+  if(p.probabilities) { pred.a_s.clear(); }
+  else { pred.multilabels.label_v.clear(); }
 
   // split labels into true and skip (those > max. label num)
   p.true_labels.clear();
@@ -193,32 +201,40 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       uint32_t n_child = p.kary * node.n + 1;
       ec.l.simple = {FLT_MAX};
       ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
-      base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
+      base.multipredict(ec, n_child, p.kary, p.node_pred.data(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
       {
-        float cp_child = node.p * (1.f / (1.f + std::exp(-p.node_preds[i].scalar)));
+        float cp_child = node.p * sigmoid(p.node_pred[i].scalar);
         if (cp_child > p.threshold)
         {
           if (n_child < p.ti) { p.node_queue.push_back({n_child, cp_child}); }
           else
           {
             uint32_t l = n_child - p.ti;
-            preds.label_v.push_back(l);
+            if (p.probabilities) { ec.pred.a_s.push_back({l, cp_child}); }
+            else { pred.multilabels.label_v.push_back(l); }
           }
         }
       }
     }
 
+    // calculate evaluation measures
     if (p.true_labels.size() > 0)
     {
       uint32_t tp = 0;
-      for (auto pred_label : preds.label_v)
+      uint32_t pred_size = pred.multilabels.label_v.size();
+      if(p.probabilities) { pred_size = pred.a_s.size(); }
+
+      for(int i = 0; i < pred_size; ++i)
       {
-        if (p.true_labels.count(pred_label)) { ++tp; }
+          uint32_t pred_label;
+          if (p.probabilities) { pred_label = pred.a_s[i].action; }
+          else { pred_label = pred.multilabels.label_v[i]; }
+          if (p.true_labels.count(pred_label)) { ++tp; }
       }
       p.tp += tp;
-      p.fp += static_cast<uint32_t>(preds.label_v.size()) - tp;
+      p.fp += static_cast<uint32_t>(pred_size) - tp;
       p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
       ++p.ec_count;
     }
@@ -242,11 +258,11 @@ void predict(plt& p, single_learner& base, VW::example& ec)
         ec.l.simple = {FLT_MAX};
         ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
 
-        base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
+        base.multipredict(ec, n_child, p.kary, p.node_pred.data(), false);
 
         for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
         {
-          float cp_child = node.p * (1.0f / (1.0f + std::exp(-p.node_preds[i].scalar)));
+          float cp_child = node.p * sigmoid(p.node_pred[i].scalar);
           p.node_queue.push_back({n_child, cp_child});
           std::push_heap(p.node_queue.begin(), p.node_queue.end());
         }
@@ -254,8 +270,16 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       else
       {
         uint32_t l = node.n - p.ti;
-        preds.label_v.push_back(l);
-        if (preds.label_v.size() >= p.top_k) { break; }
+        if (p.probabilities)
+        {
+          ec.pred.a_s.push_back({l, node.p});
+          if (pred.a_s.size() >= p.top_k) { break; }
+        }
+        else
+        {
+          pred.multilabels.label_v.push_back(l);
+          if (pred.multilabels.label_v.size() >= p.top_k) { break; }
+        }
       }
     }
 
@@ -264,7 +288,10 @@ void predict(plt& p, single_learner& base, VW::example& ec)
     {
       for (size_t i = 0; i < p.top_k; ++i)
       {
-        if (p.true_labels.count(preds.label_v[i])) { ++p.tp_at[i]; }
+        uint32_t pred_label;
+        if (p.probabilities) { pred_label = pred.a_s[i].action; }
+        else { pred_label = pred.multilabels.label_v[i]; }
+        if (p.true_labels.count(pred_label)) { ++p.tp_at[i]; }
       }
       ++p.ec_count;
       p.true_count += static_cast<uint32_t>(p.true_labels.size());
@@ -273,13 +300,14 @@ void predict(plt& p, single_learner& base, VW::example& ec)
 
   p.node_queue.clear();
 
-  ec.pred.multilabels = std::move(preds);
+  ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(VW::workspace& all, plt& /*p*/, VW::example& ec)
+void finish_example(VW::workspace& all, plt& p, VW::example& ec)
 {
-  MULTILABEL::output_example(all, ec);
+  if(p.probabilities) { /*ACTION_SCORE::output_example(all, ec);*/ }
+  else { MULTILABEL::output_example(all, ec); }
   VW::finish_example(all, ec);
 }
 
@@ -345,9 +373,11 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
                .help("Predict labels with conditional marginal probability greater than <thr> threshold"))
       .add(make_option("top_k", tree->top_k)
                .default_value(0)
-               .help("Predict top-<k> labels instead of labels above threshold"));
+               .help("Predict top-<k> labels instead of labels above threshold"))
+      .add(make_option("probabilities", tree->probabilities).help("Predict probabilities for the predicted labels"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+    if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (all.loss->get_type() != "logistic")
   { THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type()); }
@@ -379,28 +409,37 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   // resize VW::v_arrays
   tree->nodes_time.resize_but_with_stl_behavior(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
-  tree->node_preds.resize(tree->kary);
+  tree->node_pred.resize(tree->kary);
   if (tree->top_k > 0) { tree->tp_at.resize_but_with_stl_behavior(tree->top_k); }
 
   size_t ws = tree->t;
-  std::string name_addition;
+  std::string name_addition = "";
+  VW::prediction_type_t pred_type;
   void (*pred_ptr)(plt&, single_learner&, VW::example&);
 
   if (tree->top_k > 0)
   {
-    name_addition = "-top_k";
+    name_addition = " -top_k";
     pred_ptr = predict<false>;
   }
   else
   {
-    name_addition = "";
     pred_ptr = predict<true>;
+  }
+
+  if (tree->probabilities)
+  {
+      name_addition += " -prob";
+      pred_type = VW::prediction_type_t::action_probs;
+  }
+  else {
+      pred_type = VW::prediction_type_t::multilabels;
   }
 
   auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
       stack_builder.get_setupfn_name(plt_setup) + name_addition)
                 .set_params_per_weight(ws)
-                .set_output_prediction_type(VW::prediction_type_t::multilabels)
+                .set_output_prediction_type(pred_type)
                 .set_input_label_type(VW::label_type_t::multilabel)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(::finish_example)
