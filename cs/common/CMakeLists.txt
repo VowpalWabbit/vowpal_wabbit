@@ -51,3 +51,7 @@ set_target_properties(VowpalWabbit.Common PROPERTIES
     VS_GLOBAL_ROOTNAMESPACE VW
     VS_GLOBAL_DocumentationFile "VowpalWabbit.Common.xml"
 )
+
+install(TARGETS VowpalWabbit.Common
+  RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/${VW_NET_FRAMEWORK_TFM}"
+)

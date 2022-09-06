@@ -376,7 +376,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
 
   l = nullptr;
-  scorer = nullptr;
   cost_sensitive = nullptr;
   loss = nullptr;
   example_parser = nullptr;
@@ -473,6 +472,7 @@ workspace::~workspace()
   {
     l->finish();
     delete l;
+    l = nullptr;
   }
 
   // TODO: migrate all finalization into parser destructor
@@ -480,12 +480,18 @@ workspace::~workspace()
   {
     free_parser(*this);
     delete example_parser;
+    example_parser = nullptr;
   }
 
   const bool seeded = weights.seeded() > 0;
-  if (!seeded) { delete sd; }
+  if (!seeded)
+  {
+    delete sd;
+    sd = nullptr;
+  }
 
   delete all_reduce;
+  all_reduce = nullptr;
 }
 
 }  // namespace VW

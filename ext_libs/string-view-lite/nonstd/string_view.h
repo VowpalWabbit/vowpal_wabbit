@@ -318,7 +318,7 @@ using std::operator<<;
 // Providing char-type specializations for compare() and length() that
 // use compiler intrinsics can improve compile- and run-time performance.
 //
-// The challenge is in using the right combinations of builtin availablity
+// The challenge is in using the right combinations of builtin availability
 // and its constexpr-ness.
 //
 // | compiler | __builtin_memcmp (constexpr) | memcmp  (constexpr) |

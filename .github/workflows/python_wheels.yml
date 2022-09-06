@@ -14,6 +14,10 @@ on:
     branches:
       - '*'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   linux-python-build:
     name: manylinux.amd64.py${{ matrix.config.version}}.build
@@ -201,6 +205,7 @@ jobs:
             bash -exc 'apt-get update && \
             apt install software-properties-common -y && \
             add-apt-repository ppa:deadsnakes/ppa -y && \
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata && \
             apt install -y ${{ env.py }} && \
             apt install -y ${{ env.py }}-venv && \
             ${{ env.py }} -m venv .env && \
@@ -215,7 +220,7 @@ jobs:
             deactivate'
   macos-python-build:
     name: macos.amd64.py${{ matrix.config.version }}.build
-    runs-on: macos-10.15
+    runs-on: macos-11
     strategy:
       matrix:
         config:
@@ -247,7 +252,7 @@ jobs:
   macos-python-test:
     name: macos.amd64.py${{ matrix.version }}.test
     needs: macos-python-build
-    runs-on: macos-10.15
+    runs-on: macos-11
     strategy:
       matrix:
         version: [3.6, 3.7, 3.8, 3.9, "3.10"]

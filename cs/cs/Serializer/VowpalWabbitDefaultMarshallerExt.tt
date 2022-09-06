@@ -86,17 +86,18 @@ namespace VW.Serializer
                 return;
 
             ulong i = 0;
+            var currentFeatureCount = context.NamespaceBuilder.FeatureCount;
 
             // support anchor feature
             if (feature.AddAnchor)
             {
-                context.NamespaceBuilder.PreAllocate(value.Length + 1);
+                context.NamespaceBuilder.PreAllocate((int)currentFeatureCount + value.Length + 1);
 
                 context.NamespaceBuilder.AddFeature(ns.NamespaceHash, 1);
                 i++;
             }
             else
-                context.NamespaceBuilder.PreAllocate(value.Length);
+                context.NamespaceBuilder.PreAllocate((int)currentFeatureCount + value.Length);
 
             <# if (t == typeof(float)) { #>
 

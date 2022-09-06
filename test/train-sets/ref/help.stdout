@@ -120,6 +120,21 @@ Input Options:
                                             keep)
     --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
                                             experimental)
+    --csv                                   Data file will be interpreted as a CSV file (type: bool, experimental)
+    --csv_separator arg                     CSV Parser: Specify field separator in one character, " | : are
+                                            not allowed for reservation. (type: str, default: ,, experimental)
+    --csv_no_file_header                    CSV Parser: First line is NOT a header. By default, CSV files
+                                            are assumed to have a header with feature and/or namespaces names.
+                                            You MUST specify the header with --csv_header if you use this
+                                            option. (type: bool, default: false, experimental)
+    --csv_header arg                        CSV Parser: Override the CSV header by providing (namespace,
+                                            '|' and) feature name separated with ','. By default, CSV files
+                                            are assumed to have a header with feature and/or namespaces names
+                                            in the CSV first line. You can override it by specifying here.
+                                            Combined with --csv_no_file_header, we assume that there is no
+                                            header in the CSV file. (type: str, experimental)
+    --csv_ns_value arg                      CSV Parser: Scale the namespace values by specifying the float
+                                            ratio. e.g. --csv_ns_value=a:0.5,b:0.3,:8 (type: str, experimental)
 Logging Options:
     --quiet                                 Don't output diagnostics and progress updates. Supplying this
                                             implies --log_level off and --driver_output_off. Supplying this
@@ -241,6 +256,8 @@ Weight Options:
                                             bool, default: false, experimental)
     --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
                                             false, experimental)
+    --aml_predict_only_model arg            transform input automl model into predict only automl model (type:
+                                            str, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
     --automl_estimator_decay arg            Time constant for count decay (type: float, default: 1, keep,
@@ -520,7 +537,8 @@ Weight Options:
     --indexing arg                          Choose between 0 or 1-indexing (type: uint, choices {0, 1}, keep)
 [Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
     --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
-                                            features (type: str, keep, necessary)
+                                            features (type: str, choices {m, mc, multiline, multiline-classifier},
+                                            keep, necessary)
     --ldf_override arg                      Override singleline or multiline from csoaa_ldf or wap_ldf, eg
                                             if stored in file (type: str)
     --csoaa_rank                            Return actions sorted by score order (type: bool, keep)
@@ -545,7 +563,7 @@ Weight Options:
                                             0.05, keep, experimental)
     --epsilon_decay_estimator_decay arg     Time constant for count decay (type: float, default: 1, keep,
                                             experimental)
-    --log_champ_changes                     Log champ changes (type: bool, keep, experimental)
+    --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
     --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
                                             false, experimental)
@@ -603,6 +621,8 @@ Weight Options:
     --radius arg                            Radius of the l2-ball for the projection. If not supplied, an
                                             adaptive radius will be used (type: float)
     --fepsilon arg                          Initial wealth (type: float, default: 1)
+    --flipschitz_const arg                  Upper bound on the norm of the gradients if known in advance
+                                            (type: float, default: 0)
 [Reduction] Generate Interactions Options:
     --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
                                             For ex. this is a duplicate: '-q ab -q ba' and a lot more in
@@ -779,8 +799,8 @@ Weight Options:
     --search_metatask arg                   The search metatask (use "--search_metatask list" to get a list
                                             of available metatasks Note: a valid search_task needs to be
                                             supplied in addition for this to output.) (type: str, keep)
-    --search_interpolation arg              At what level should interpolation happen? [*data|policy] (type:
-                                            str, keep)
+    --search_interpolation arg              At what level should interpolation happen? (type: str, choices
+                                            {data, policy}, keep)
     --search_rollout arg                    How should rollouts be executed (type: str, choices {learn, mix,
                                             mix_per_roll, mix_per_state, none, oracle, policy, ref})
     --search_rollin arg                     How should past trajectories be generated (type: str, choices

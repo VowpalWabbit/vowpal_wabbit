@@ -79,15 +79,19 @@ private:
 
     _end = _begin + std::min(old_len, length);
     _end_array = _begin + length;
-    memset(_end, 0, (_end_array - _end) * sizeof(T));
+    memset(static_cast<void*>(_end), 0, (_end_array - _end) * sizeof(T));
   }
 
   // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
   void make_space_at(size_t idx, size_t width)
   {
-    _end += width;
-    if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
-    memmove(&_begin[idx + width], &_begin[idx], (size() - (idx + width)) * sizeof(T));
+    if (width > 0)
+    {
+      if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
+      memmove(&_begin[idx + width], &_begin[idx], (size() - idx) * sizeof(T));
+      memset(&_begin[idx], 0, width * sizeof(T));
+      _end += width;
+    }
   }
 
   void resize_no_initialize(size_t old_size, size_t length)

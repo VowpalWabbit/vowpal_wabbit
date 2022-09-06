@@ -279,8 +279,7 @@ function(vw_add_test_executable)
     target_link_libraries(${FULL_TEST_NAME} PUBLIC
       ${FULL_FOR_LIB_NAME}
       ${VW_TEST_EXTRA_DEPS}
-      gtest_main
-      gmock
+      GTest::gmock GTest::gtest
     )
     target_compile_definitions(${FULL_TEST_NAME} PRIVATE ${VW_TEST_COMPILE_DEFS})
     target_compile_options(${FULL_TEST_NAME} PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})

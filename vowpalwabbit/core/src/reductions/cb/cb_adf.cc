@@ -93,7 +93,7 @@ VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
 
 void cb_adf::learn_IPS(multi_learner& base, VW::multi_ex& examples)
 {
-  gen_cs_example_ips(examples, _cs_labels, logger, _clip_p);
+  gen_cs_example_ips(examples, _cs_labels, _all->logger, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
@@ -128,7 +128,7 @@ void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       chosen_action = i;
-      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability, logger);
+      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability, _all->logger);
 
       // Importance weights of examples cannot be negative.
       // So we use a trick: set |w| as weight, and use sign(w) as an offset in the regression target.
@@ -205,7 +205,7 @@ void cb_adf::learn_MTR(multi_learner& base, VW::multi_ex& examples)
 {
   if (PREDICT)  // first get the prediction to return
   {
-    gen_cs_example_ips(examples, _cs_labels, logger);
+    gen_cs_example_ips(examples, _cs_labels, _all->logger);
     cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
     std::swap(examples[0]->pred.a_s, _a_s);
   }
@@ -298,7 +298,7 @@ bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq
   bool holdout_example = labeled_example;
   for (auto const& i : ec_seq) { holdout_example &= i->test_only; }
 
-  _sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
+  _all->sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
   return labeled_example;
 }
 }  // namespace CB_ADF
@@ -409,6 +409,21 @@ void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
       model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
 }
 
+void cb_adf_merge(const std::vector<float>& /* per_model_weights */, const CB_ADF::cb_adf& base_data,
+    const std::vector<const CB_ADF::cb_adf*>& sources, CB_ADF::cb_adf& output_data)
+{
+  // Add in the source values relative to the base model.
+  for (const auto* source : sources)
+  {
+    output_data.get_gen_cs().event_sum += (source->get_gen_cs().event_sum - base_data.get_gen_cs().event_sum);
+    output_data.get_gen_cs().action_sum += (source->get_gen_cs().action_sum - base_data.get_gen_cs().action_sum);
+  }
+
+  // Add in the base model's component.
+  output_data.get_gen_cs().event_sum += base_data.get_gen_cs().event_sum;
+  output_data.get_gen_cs().action_sum += base_data.get_gen_cs().action_sum;
+}
+
 void learn(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
 
 void predict(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
@@ -492,8 +507,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld =
-      VW::make_unique<CB_ADF::cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict, all.logger);
+  auto ld = VW::make_unique<CB_ADF::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
 
   auto base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
@@ -510,9 +524,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
                 .set_finish_example(::finish_multiline_example)
                 .set_print_example(::update_and_output)
                 .set_save_load(::save_load)
+                .set_merge(::cb_adf_merge)
                 .build(&all.logger);
 
-  bare->set_scorer(all.scorer);
+  bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));
 
   return make_base(*l);
 }

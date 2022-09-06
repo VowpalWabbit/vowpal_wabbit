@@ -76,6 +76,10 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
+#ifdef VW_BUILD_CSV
+#  include "vw/csv_parser/parse_example_csv.h"
+#endif
+
 // OSX doesn't expects you to use IPPROTO_TCP instead of SOL_TCP
 #if !defined(SOL_TCP) && defined(IPPROTO_TCP)
 #  define SOL_TCP IPPROTO_TCP
@@ -472,7 +476,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       shared_data* sd = static_cast<shared_data*>(
           mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
       new (sd) shared_data(*all.sd);
-      free(all.sd);
+      delete all.sd;
       all.sd = sd;
       all.example_parser->_shared_data = sd;
 
@@ -616,6 +620,13 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       {
         all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
+      }
+#endif
+#ifdef VW_BUILD_CSV
+      else if (input_options.csv_opts && input_options.csv_opts->enabled)
+      {
+        all.custom_parser = VW::make_unique<VW::parsers::csv_parser>(*(input_options.csv_opts.get()));
+        all.example_parser->reader = VW::parsers::parse_csv_examples;
       }
 #endif
       else
@@ -902,14 +913,19 @@ void finish_example(VW::workspace& all, example& ec)
 
 void thread_dispatch(VW::workspace& all, const VW::multi_ex& examples)
 {
-  for (auto example : examples) { all.example_parser->ready_parsed_examples.push(example); }
+  for (auto* example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }
 
 void main_parse_loop(VW::workspace* all) { parse_dispatch(*all, thread_dispatch); }
 
 namespace VW
 {
-example* get_example(parser* p) { return p->ready_parsed_examples.pop(); }
+example* get_example(parser* p)
+{
+  example* ex = nullptr;
+  p->ready_parsed_examples.try_pop(ex);
+  return ex;
+}
 
 float get_topic_prediction(example* ec, size_t i) { return ec->pred.scalars[i]; }
 
@@ -969,9 +985,13 @@ void free_parser(VW::workspace& all)
 
   while (all.example_parser->ready_parsed_examples.size() > 0)
   {
-    auto* current = all.example_parser->ready_parsed_examples.pop();
-    // this function also handles examples that were not from the pool.
-    VW::finish_example(all, *current);
+    VW::example* current = nullptr;
+    all.example_parser->ready_parsed_examples.try_pop(current);
+    if (current != nullptr)
+    {
+      // this function also handles examples that were not from the pool.
+      VW::finish_example(all, *current);
+    }
   }
 
   // There should be no examples in flight at this point.

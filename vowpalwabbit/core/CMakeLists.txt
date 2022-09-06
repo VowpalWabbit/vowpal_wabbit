@@ -16,6 +16,7 @@ set(vw_core_headers
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
   include/vw/core/compat.h
+  include/vw/core/confidence_sequence.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
@@ -50,6 +51,7 @@ set(vw_core_headers
   include/vw/core/learner.h
   include/vw/core/loss_functions.h
   include/vw/core/memory.h
+  include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
   include/vw/core/multiclass.h
@@ -71,6 +73,7 @@ set(vw_core_headers
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
   include/vw/core/queue.h
+  include/vw/core/thread_pool.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
   include/vw/core/reduction_features.h
@@ -80,10 +83,7 @@ set(vw_core_headers
   include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h
   include/vw/core/reductions/autolink.h
-  include/vw/core/reductions/automl/automl.h
-  include/vw/core/reductions/automl/automl_impl.h
-  include/vw/core/reductions/automl/automl_iomodel.h
-  include/vw/core/reductions/automl/automl_util.h
+  include/vw/core/reductions/automl.h
   include/vw/core/reductions/baseline_challenger_cb.h
   include/vw/core/reductions/baseline.h
   include/vw/core/reductions/bfgs.h
@@ -198,6 +198,7 @@ set(vw_core_sources
   src/cb.cc
   src/ccb_label.cc
   src/ccb_reduction_features.cc
+  src/confidence_sequence.cc
   src/cost_sensitive.cc
   src/crossplat_compat.cc
   src/debug_print.cc
@@ -216,6 +217,7 @@ set(vw_core_sources
   src/label_type.cc
   src/learner.cc
   src/loss_functions.cc
+  src/merge.cc
   src/metric_sink.cc
   src/multiclass.cc
   src/multilabel.cc
@@ -236,7 +238,10 @@ set(vw_core_sources
   src/reductions/active.cc
   src/reductions/audit_regressor.cc
   src/reductions/autolink.cc
-  src/reductions/automl_impl.cc
+  src/reductions/details/automl/automl_impl.cc
+  src/reductions/details/automl/automl_oracle.cc
+  src/reductions/details/automl/automl_iomodel.cc
+  src/reductions/details/automl/automl_util.cc
   src/reductions/automl.cc
   src/reductions/baseline_challenger_cb.cc
   src/reductions/baseline.cc
@@ -343,6 +348,11 @@ if(VW_BUILD_LARGE_ACTION_SPACE)
   set(vw_core_sources
     ${vw_core_sources}
     src/reductions/cb/cb_explore_adf_large_action_space.cc
+    src/reductions/cb/details/large_action/model_weight_rand_svd_impl.cc
+    src/reductions/cb/details/large_action/one_pass_svd_impl.cc
+    src/reductions/cb/details/large_action/vanilla_rand_svd_impl.cc
+    src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
+    src/reductions/cb/details/large_action/spanner_impl.cc
     src/reductions/cb/cb_actions_mask.cc src/qr_decomposition.cc
   )
 endif()
@@ -364,6 +374,11 @@ vw_add_library(
 )
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
+
+if(VW_BUILD_CSV)
+  target_link_libraries(vw_core PRIVATE vw_csv_parser)
+  target_compile_definitions(vw_core PUBLIC VW_BUILD_CSV)
+endif()
 
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
@@ -404,5 +419,11 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "core"
-    SOURCES tests/cache_test.cc tests/parse_args_test.cc tests/save_load_test.cc
+    SOURCES
+      tests/cache_test.cc
+      tests/merge_test.cc
+      tests/parse_args_test.cc
+      tests/save_load_test.cc
+      tests/thread_pool_test.cc
+      tests/main.cc
 )

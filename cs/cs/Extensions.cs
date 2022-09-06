@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,8 +29,8 @@ namespace VW
         /// <returns>The subset of elements.</returns>
         public static T[] Subset<T>(this IEnumerable<T> source, int[] indices)
         {
-            Contract.Requires(source != null);
-            Contract.Requires(indices != null);
+            Debug.Assert(source != null);
+            Debug.Assert(indices != null);
 
             // re-shuffle
             var result = new T[indices.Length];
@@ -53,8 +53,8 @@ namespace VW
         /// <returns>The index of the first element to match or -1 if none matched.</returns>
         public static int IndexOf<T>(this IEnumerable<T> source, Predicate<T> predicate)
         {
-            Contract.Requires(source != null);
-            Contract.Requires(predicate != null);
+            Debug.Assert(source != null);
+            Debug.Assert(predicate != null);
 
             var i = 0;
             foreach (var t in source)

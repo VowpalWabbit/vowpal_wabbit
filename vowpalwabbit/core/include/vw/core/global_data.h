@@ -71,6 +71,11 @@ namespace flatbuffer
 {
 class parser;
 }
+
+#ifdef VW_BUILD_CSV
+class csv_parser;
+struct csv_parser_options;
+#endif
 }  // namespace parsers
 }  // namespace VW
 
@@ -113,8 +118,7 @@ public:
 
   bool chain_hash_json = false;
 
-  VW::LEARNER::base_learner* l;         // the top level learner
-  VW::LEARNER::single_learner* scorer;  // a scoring function
+  VW::LEARNER::base_learner* l;  // the top level learner
   VW::LEARNER::base_learner*
       cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 

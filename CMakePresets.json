@@ -1,0 +1,167 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 10,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        "BUILD_TESTING": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "RAPIDJSON_SYS_DEP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "FMT_SYS_DEP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "SPDLOG_SYS_DEP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "VW_BOOST_MATH_SYS_DEP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "VW_ZLIB_SYS_DEP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "VW_GTEST_SYS_DEP": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-debug",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-release",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-sanitizer-base",
+      "inherits": "default",
+      "cacheVariables": {
+        "USE_LATEST_STD": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "BUILD_FLATBUFFERS": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "VW_BUILD_CSV": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-asan-debug",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        },
+        "VW_USE_ASAN": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-asan-release",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
+        },
+        "VW_USE_ASAN": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-ubsan-debug",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        },
+        "VW_USE_UBSAN": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-ubsan-release",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
+        },
+        "VW_USE_UBSAN": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "vcpkg-debug",
+      "configurePreset": "vcpkg-debug"
+    },
+    {
+      "name": "vcpkg-release",
+      "configurePreset": "vcpkg-release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "vcpkg-debug",
+      "configurePreset": "vcpkg-debug",
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
+      "execution": { "noTestsAction": "error", "stopOnFailure": true }
+    },
+    {
+      "name": "vcpkg-release",
+      "configurePreset": "vcpkg-release",
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
+      "execution": { "noTestsAction": "error", "stopOnFailure": true }
+    }
+  ]
+}
