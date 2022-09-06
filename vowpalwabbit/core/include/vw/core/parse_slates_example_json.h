@@ -12,6 +12,14 @@ VW_WARNING_STATE_POP
 
 #include "json_utils.h"
 
+// If the Windows.h header has been included at some point then the GetObject breaks this file.
+// Workaround by undefing it for the content of this header.
+#ifdef GetObject
+#  pragma push_macro("GetObject")
+#  define VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF
+#  undef GetObject
+#endif
+
 using namespace rapidjson;
 
 inline float get_number(const rapidjson::Value& value)
@@ -329,3 +337,7 @@ void parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, cha
     }
   }
 }
+
+#ifdef VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF
+#  pragma pop_macro("GetObject")
+#endif
