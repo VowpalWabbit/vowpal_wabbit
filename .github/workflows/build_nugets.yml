@@ -384,8 +384,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: 'recursive'
-      - if: ${{ startsWith(matrix.config.os, 'windows') }}
-        uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@v1
 
       # Get version number
       - name: Update git tags
@@ -408,7 +407,7 @@ jobs:
           path: downloaded_nugets
       - uses: actions/download-artifact@v1
         with:
-          name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
+          name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -421,8 +420,8 @@ jobs:
           cd nuget/dotnet/benchmarks
           dotnet add dotnet_benchmark.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
-          dotnet restore dotnet_benchmark.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets"
-          dotnet restore dotnet_benchmark.csproj --runtime ${{matrix.config.runtime_id}}
+          dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
+          dotnet restore dotnet_benchmark.csproj --runtime win-x64
           exit 0
       - name: Build and run benchmarks
         run: |
