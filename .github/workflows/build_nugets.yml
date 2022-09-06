@@ -439,14 +439,16 @@ jobs:
           echo -e '\n'
 
           cd BenchmarkDotNet.Artifacts/results
+          echo "# .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
+
           for file in *-report-github.md; do
             benchmark="${file%-report-github.md}"
-            echo "***** $benchmark *****"
+            echo "## $benchmark" >> $GITHUB_STEP_SUMMARY
             # Remove lines not part of table (not between |...|)
             # Remove markdown formatting **
             # Remove first 3 columns of table
-            cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{3\}//'
-            echo -e '\n'
+            cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{3\}//' >> $GITHUB_STEP_SUMMARY
+            echo -e '\n' >> $GITHUB_STEP_SUMMARY
           done
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v3
