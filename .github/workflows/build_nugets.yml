@@ -379,8 +379,6 @@ jobs:
     needs: [build_nuget_dotnet]
     strategy:
       fail-fast: false
-      matrix:
-        package_name: ["VowpalWabbit"]
     runs-on: "windows-latest"
     steps:
       - uses: actions/checkout@v2
@@ -388,23 +386,29 @@ jobs:
           submodules: 'recursive'
       - if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
-      - name: Get version of VW
-        id: fetch-vw-version
+
+      # Get version number
+      - name: Update git tags
+        # Needed because actions/checkout performs a shallow checkout without tags
+        run: git fetch --unshallow --tags --recurse-submodules=no
+      - name: Get version number
+        id: get_version
         shell: bash
         run: |
-          version=$(cat version.txt)
-          echo "::set-output name=VWVersion::$version"
+          version=$(./utl/version_number.py)
+          echo "Generated version number: $version"
+          echo "::set-output name=version::$version"
 
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
       - uses: actions/download-artifact@v1
         with:
-          name: ${{matrix.package_name}}.${{steps.fetch-vw-version.outputs.VWVersion}}.nupkg
+          name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - uses: actions/download-artifact@v1
         with:
-          name: ${{matrix.package_name}}.runtime.win-x64.${{steps.fetch-vw-version.outputs.VWVersion}}.nupkg
+          name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -415,10 +419,10 @@ jobs:
         run: |
           set +e
           cd nuget/dotnet/benchmarks
-          dotnet add dotnet_benchmark.csproj package ${{matrix.package_name}} --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
-          dotnet add dotnet_benchmark.csproj package ${{matrix.package_name}}.runtime.win-x64 --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
-          dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
-          dotnet restore dotnet_benchmark.csproj --runtime win-x64
+          dotnet add dotnet_benchmark.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet restore dotnet_benchmark.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets"
+          dotnet restore dotnet_benchmark.csproj --runtime ${{matrix.config.runtime_id}}
           exit 0
       - name: Build and run benchmarks
         run: |
@@ -436,7 +440,6 @@ jobs:
         run: |
           cd nuget/dotnet/benchmarks
           dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --info
-          echo -e '\n'
 
           cd BenchmarkDotNet.Artifacts/results
           echo "# .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
