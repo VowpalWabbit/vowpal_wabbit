@@ -125,26 +125,20 @@ jobs:
         run: >
           nuget install
           -Source "${{ github.workspace }}\downloaded_nugets"
-          -OutputDirectory "${{ github.workspace }}\nuget\test\packages"
+          -OutputDirectory "${{ github.workspace }}\nuget\native\test\packages"
           -Version "${{ steps.get_version.outputs.version }}"
           -Verbosity detailed
           -NonInteractive
           VowpalWabbitNative-${{ matrix.toolset }}-x64
       - name: Rename package install directory to omit version number
         run: |
-          cd nuget\test\packages
+          cd nuget\native\test\packages
           mv * VowpalWabbitNative-${{ matrix.toolset }}-x64
 
       # Compile and run
       - name: Test nuget
         run: |
-<<<<<<< HEAD
-          ls downloaded_nugets
-          nuget install -Source ${{ github.workspace }}\downloaded_nugets -OutputDirectory ${{ github.workspace }}\nuget\native\test\packages\ VowpalWabbitNative-${{ matrix.toolset }}-x64
           cd nuget\native\test
-=======
-          cd nuget\test
->>>>>>> d12f384853937c6a0e77f01f9a03b5875eec9f49
 
           echo "Testing debug build..."
           msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Debug;Platform=x64"
@@ -238,13 +232,8 @@ jobs:
         run: cmake --install build --prefix ./nuget_staging
 
       # Create the combined package on Windows
-<<<<<<< HEAD
       - name: Package Combined
-        if: ${{ startsWith(matrix.os, 'windows') }}
-=======
-      - name: Package
         if: ${{ startsWith(matrix.config.os, 'windows') }}
->>>>>>> d12f384853937c6a0e77f01f9a03b5875eec9f49
         shell: powershell
         id: generate-nuget
         run: |
@@ -252,13 +241,8 @@ jobs:
           nuget pack dotnet.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
-<<<<<<< HEAD
       - name: Upload Combined
-        if: ${{ startsWith(matrix.os, 'windows') }}
-=======
-      - name: Upload
         if: ${{ startsWith(matrix.config.os, 'windows') }}
->>>>>>> d12f384853937c6a0e77f01f9a03b5875eec9f49
         uses: actions/upload-artifact@v1
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
@@ -327,13 +311,8 @@ jobs:
       - name: Install package
         run: |
           set +e
-<<<<<<< HEAD
           cd nuget/dotnet/test
-          dotnet add dotnetcore_nuget_test.csproj package ${{matrix.package_name}} --version ${{steps.fetch-vw-version.outputs.VWVersion}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
-=======
-          cd nuget/test
           dotnet add dotnetcore_nuget_test.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
->>>>>>> d12f384853937c6a0e77f01f9a03b5875eec9f49
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets"
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}}
           exit 0
