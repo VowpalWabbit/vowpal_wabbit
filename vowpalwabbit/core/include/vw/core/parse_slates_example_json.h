@@ -2,6 +2,16 @@
 
 #include "vw/common/future_compat.h"
 
+// If the Windows.h header has been included at some point then the GetObject breaks this file.
+// Workaround by undefing it for the content of this header.
+// We need to put it before the rapidjson header since we cannot assume rapidjson has its
+// fix in place or not.
+#ifdef GetObject
+#  pragma push_macro("GetObject")
+#  define VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF
+#  undef GetObject
+#endif
+
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.
 // https://github.com/Tencent/rapidjson/issues/1700
@@ -11,14 +21,6 @@ VW_WARNING_DISABLE_CLASS_MEMACCESS
 VW_WARNING_STATE_POP
 
 #include "json_utils.h"
-
-// If the Windows.h header has been included at some point then the GetObject breaks this file.
-// Workaround by undefing it for the content of this header.
-#ifdef GetObject
-#  pragma push_macro("GetObject")
-#  define VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF
-#  undef GetObject
-#endif
 
 using namespace rapidjson;
 
