@@ -316,8 +316,8 @@ jobs:
             echo "### $benchmark" >> $GITHUB_STEP_SUMMARY
             # Remove lines not part of table (not between |...|)
             # Remove markdown formatting **
-            # Remove first 3 columns of table
-            cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{3\}//' >> $GITHUB_STEP_SUMMARY
+            # Remove first 2 columns of table
+            cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{2\}//' >> $GITHUB_STEP_SUMMARY
             echo -e '\n' >> $GITHUB_STEP_SUMMARY
           done
       - name: Upload benchmark artifacts
