@@ -2,7 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
@@ -187,6 +187,10 @@ class VWOption:
 
 class SearchTask:
     """Search task class"""
+
+    # Declare types for optional variables to prevent pytype attribute-error
+    _setup: Optional[Callable]
+    _takedown: Optional[Callable]
 
     def __init__(self, vw, sch, num_actions):
         """
