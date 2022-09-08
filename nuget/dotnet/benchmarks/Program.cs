@@ -1,7 +1,8 @@
 ﻿using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Exporters;
-
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Environments;
 
 public class Program
 {
@@ -13,6 +14,8 @@ public class VWBenchmarkConfig : ManualConfig
 {
     public VWBenchmarkConfig()
     {
+        AddJob(Job.Default.WithId(".NET Core 6.0").WithRuntime(CoreRuntime.Core60));
+        AddJob(Job.Default.WithId(".NET Framework 4.8").WithRuntime(ClrRuntime.Net48));
         AddExporter(PlainExporter.Default);
         AddExporter(RPlotExporter.Default);
     }
