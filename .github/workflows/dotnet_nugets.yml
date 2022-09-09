@@ -251,6 +251,8 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
+      # Needed for generating benchmark plots
+      - uses: r-lib/actions/setup-r@v2
 
       # Get version number
       - name: Update git tags
