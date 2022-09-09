@@ -1,4 +1,4 @@
-name: Build Nugets
+name: .NET Nugets
 
 on:
   push:
@@ -14,140 +14,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_nuget_windows:
-    name: nuget.${{ matrix.toolset }}.${{ matrix.arch_config.arch }}
-    runs-on: ${{matrix.os}}
-    strategy:
-      matrix:
-        os: ["windows-2019"]
-        toolset: ["v141", "v142"]
-        arch_config:
-        - { arch: x64, generator_arch: x64}
-    steps:
-      # Get repository and setup dependencies
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
-      - uses: ilammy/msvc-dev-cmd@v1
-
-      # Get version number
-      - name: Update git tags
-        # Needed because actions/checkout performs a shallow checkout without tags
-        run: git fetch --unshallow --tags --recurse-submodules=no
-      - name: Get version number
-        id: get_version
-        shell: bash
-        run: |
-          version=$(./utl/version_number.py)
-          echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
-
-      # Compile code
-      - name: Configure
-        run: >
-          cmake -S . -B build
-          -G "Visual Studio 16 2019" -A ${{ matrix.arch_config.generator_arch }}
-          -T ${{ matrix.toolset }}
-          -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
-          -DNATIVE_NUGET_PLATFORM_TAG="${{ matrix.arch_config.arch }}"
-          -DBUILD_FLATBUFFERS=Off
-          -DBUILD_TESTING=Off
-          -DRAPIDJSON_SYS_DEP=Off
-          -DFMT_SYS_DEP=Off
-          -DSPDLOG_SYS_DEP=Off
-          -DVW_ZLIB_SYS_DEP=Off
-          -DVW_BOOST_MATH_SYS_DEP=Off
-          -DVW_BUILD_VW_C_WRAPPER=Off
-          -DVW_INSTALL=On
-      - name: Build and install
-        run: |
-          cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
-          cmake --build build --config Release -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
-
-          # Install debug first so that release overwrites the exe and nothing else
-          cmake --install build --prefix ./nuget_staging --config Debug
-          cmake --install build --prefix ./nuget_staging --config Release
-
-      # Create package
-      - if: ${{ matrix.arch_config.arch == 'x64' }}
-        run: cp nuget\vowpalwabbit-x64.targets nuget_staging\vowpalwabbit.targets
-      - name: Package
-        shell: powershell
-        id: generate-nuget
-        run: |
-          cp build\nuget\vowpalwabbit.nuspec nuget_staging\vowpalwabbit.nuspec
-          cd nuget_staging
-          nuget pack .\vowpalwabbit.nuspec
-          $NugetFileName = Get-ChildItem *.nupkg -name
-          echo "::set-output name=NugetFileName::$NugetFileName"
-      - name: Upload
-        uses: actions/upload-artifact@v1
-        with:
-          name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
-          path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
-
-  test_nuget_windows:
-    needs: [build_nuget_windows]
-    name: nuget-test.${{ matrix.toolset }}
-    runs-on: ${{matrix.os}}
-    strategy:
-      matrix:
-        os: ["windows-2019"]
-        toolset: ["v141", "v142"]
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
-      - uses: ilammy/msvc-dev-cmd@v1
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
-
-      # Get version number
-      - name: Update git tags
-        # Needed because actions/checkout performs a shallow checkout without tags
-        run: git fetch --unshallow --tags --recurse-submodules=no
-      - name: Get version number
-        id: get_version
-        shell: bash
-        run: |
-          version=$(./utl/version_number.py)
-          echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
-
-      # Download and install nuget
-      - uses: actions/download-artifact@v1
-        with:
-          name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
-          path: downloaded_nugets
-      - name: List downloaded files
-        run: ls downloaded_nugets
-      - name: Install nuget
-        run: >
-          nuget install
-          -Source "${{ github.workspace }}\downloaded_nugets"
-          -OutputDirectory "${{ github.workspace }}\nuget\test\packages"
-          -Version "${{ steps.get_version.outputs.version }}"
-          -Verbosity detailed
-          -NonInteractive
-          VowpalWabbitNative-${{ matrix.toolset }}-x64
-      - name: Rename package install directory to omit version number
-        run: |
-          cd nuget\test\packages
-          mv * VowpalWabbitNative-${{ matrix.toolset }}-x64
-
-      # Compile and run
-      - name: Test nuget
-        run: |
-          cd nuget\test
-
-          echo "Testing debug build..."
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Debug;Platform=x64"
-          .\bin\x64\Debug\test-${{ matrix.toolset }}.exe
-
-          echo "Testing release build..."
-          msbuild test-${{ matrix.toolset }}.vcxproj -t:rebuild "-property:Configuration=Release;Platform=x64"
-          .\bin\x64\Release\test-${{ matrix.toolset }}.exe
-
   build_nuget_dotnet:
     strategy:
       fail-fast: false
@@ -232,7 +98,7 @@ jobs:
         run: cmake --install build --prefix ./nuget_staging
 
       # Create the combined package on Windows
-      - name: Package
+      - name: Package Combined
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         shell: powershell
         id: generate-nuget
@@ -241,7 +107,7 @@ jobs:
           nuget pack dotnet.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "::set-output name=NugetFileName::$NugetFileName"
-      - name: Upload
+      - name: Upload Combined
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: actions/upload-artifact@v1
         with:
@@ -249,7 +115,7 @@ jobs:
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
 
       # Create the .NET Core runtime package, all platforms
-      - name: Package Runtime
+      - name: Package .NET Core Runtime
         shell: bash
         id: generate-runtime-nuget
         run: |
@@ -257,7 +123,7 @@ jobs:
           nuget pack dotnetcore_runtime.nuspec
           NugetFileName=(*runtime*.nupkg)
           echo "::set-output name=NugetFileName::${NugetFileName[0]}"
-      - name: Upload Runtime
+      - name: Upload .NET Core Runtime
         uses: actions/upload-artifact@v1
         with:
           name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
@@ -311,14 +177,14 @@ jobs:
       - name: Install package
         run: |
           set +e
-          cd nuget/test
+          cd nuget/dotnet/test
           dotnet add dotnetcore_nuget_test.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets"
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}}
           exit 0
       - name: Build and run test
         run: |
-          cd nuget/test
+          cd nuget/dotnet/test
           dotnet build dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --output build --no-restore --self-contained
           ./build/dotnetcore_nuget_test
 
@@ -364,13 +230,100 @@ jobs:
       - name: Install package
         run: |
           set +e
-          cd nuget/test
+          cd nuget/dotnet/test
           dotnet add dotnetframework_nuget_test.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnetframework_nuget_test.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
           dotnet restore dotnetframework_nuget_test.csproj --runtime win-x64
           exit 0
       - name: Build and run test
         run: |
-          cd nuget/test
+          cd nuget/dotnet/test
           dotnet build dotnetframework_nuget_test.csproj --runtime win-x64 --output build --no-restore --self-contained
           ./build/dotnetframework_nuget_test
+
+  benchmark_nuget:
+    needs: [build_nuget_dotnet]
+    strategy:
+      fail-fast: false
+    runs-on: "windows-latest"
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+      - uses: ilammy/msvc-dev-cmd@v1
+      # Needed for generating benchmark plots
+      - uses: r-lib/actions/setup-r@v2
+
+      # Get version number
+      - name: Update git tags
+        # Needed because actions/checkout performs a shallow checkout without tags
+        run: git fetch --unshallow --tags --recurse-submodules=no
+      - name: Get version number
+        id: get_version
+        shell: bash
+        run: |
+          version=$(./utl/version_number.py)
+          echo "Generated version number: $version"
+          echo "::set-output name=version::$version"
+
+      # Download the previously built Nuget packages
+      - name: Clear nuget cache
+        run: dotnet nuget locals all --clear
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - name: List downloaded packages
+        run: ls downloaded_nugets
+
+        # Some of these commands may generate an error message because we are installing packages from local source with remote dependencies
+        # The missing dependencies are installed in later steps
+      - name: Install package
+        run: |
+          set +e
+          cd nuget/dotnet/benchmarks
+          dotnet add dotnet_benchmark.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
+          dotnet restore dotnet_benchmark.csproj --runtime win-x64
+          exit 0
+      - name: Build and run benchmarks
+        run: |
+          cd nuget/dotnet/benchmarks
+
+          # Build for both .NET Core and Framework
+          dotnet build dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-restore --self-contained
+          dotnet build dotnet_benchmark.csproj --framework net4.8 --runtime win-x64 --configuration Release --no-restore --self-contained
+
+          # Run with .NET Core as host process
+          # Arguments after "--" are for BenchmarkDotNet
+          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*'
+      - name: Print benchmark results
+        shell: bash
+        run: |
+          cd nuget/dotnet/benchmarks
+          echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --info >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo -e '\n' >> $GITHUB_STEP_SUMMARY
+
+          cd BenchmarkDotNet.Artifacts/results
+          for file in *-report-github.md; do
+            benchmark="${file%-report-github.md}"
+            echo "### $benchmark" >> $GITHUB_STEP_SUMMARY
+            # Remove lines not part of table (not between |...|)
+            # Remove markdown formatting **
+            # Remove first 2 columns of table
+            cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{2\}//' >> $GITHUB_STEP_SUMMARY
+            echo -e '\n' >> $GITHUB_STEP_SUMMARY
+          done
+      - name: Upload benchmark artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark_results
+          path: nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results/
