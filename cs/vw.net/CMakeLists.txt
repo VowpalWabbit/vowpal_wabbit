@@ -26,12 +26,12 @@ if (vw_DOTNET_USE_MSPROJECT)
   message(STATUS "!!!! using msproject")
 else()
   add_custom_target(VowpalWabbit.Core
-    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> --configuration "$<IF:$<CONFIG:Debug>,Debug,Release>" -v m --nologo --no-dependencies /clp:NoSummary
     COMMENT "Building VowpalWabbit.Core"
     DEPENDS vw.net.native VowpalWabbit.Common
     SOURCES ${VW_NET_CORE_SOURCES})
   add_custom_target(VowpalWabbit.Core.Ref
-    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native>/ref -v m --nologo --no-dependencies /clp:NoSummary -property:ProduceOnlyReferenceAssembly=true
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native>/ref --configuration "$<IF:$<CONFIG:Debug>,Debug,Release>" -v m --nologo --no-dependencies /clp:NoSummary -property:ProduceOnlyReferenceAssembly=true
     COMMENT "Building VowpalWabbit.Core Reference Assembly"
     DEPENDS vw.net.native VowpalWabbit.Common.Ref VowpalWabbit.Core
     SOURCES ${VW_NET_CORE_SOURCES})

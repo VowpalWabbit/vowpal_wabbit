@@ -50,7 +50,7 @@ if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VW.Net.UnitTest ${CMAKE_CURRENT_SOURCE_DIR}/vw.unittest.csproj VowpalWabbit VowpalWabbit.JSON VowpalWabbit.Parallel console.net testcommon)
 else()
   add_custom_target(VW.Net.UnitTest ALL
-    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> --configuration "$<IF:$<CONFIG:Debug>,Debug,Release>" -v m --nologo --no-dependencies /clp:NoSummary
     COMMENT Building VW.Net.UnitTest
     DEPENDS VowpalWabbit VowpalWabbit.JSON VowpalWabbit.Parallel console.net testcommon
     SOURCES ${VW_NET_UNITTEST_SOURCES})
