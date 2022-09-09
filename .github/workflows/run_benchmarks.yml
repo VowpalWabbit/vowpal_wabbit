@@ -106,3 +106,10 @@ jobs:
       - name: Compare benchmarks
         shell: bash
         run: python3 tools/compare.py benchmarks master-benchmarks.json branch-benchmarks.json
+      - name: Compare and output to job summary
+        shell: bash
+        run: |
+          echo "Benchmark | Time | CPU | Time Old | Time New | CPU Old | CPU New" >> $GITHUB_STEP_SUMMARY
+          echo "--------- | ---- | --- | -------- | -------- | ------- | -------" >> $GITHUB_STEP_SUMMARY
+          python3 tools/compare.py --no-color benchmarks master-benchmarks.json branch-benchmarks.json > compare.txt
+          cat compare.txt | tail --lines=+4 | sed 's/\s\+/ | /g' >> $GITHUB_STEP_SUMMARY
