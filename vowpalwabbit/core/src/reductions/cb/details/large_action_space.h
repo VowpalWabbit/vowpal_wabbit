@@ -6,6 +6,7 @@
 #include "vw/core/action_score.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/rand48.h"
+#include "vw/core/thread_pool.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
 
@@ -24,7 +25,6 @@ enum class implementation_type
 {
   vanilla_rand_svd,
   model_weight_rand_svd,
-  aatop,
   one_pass_svd
 };
 
@@ -41,7 +41,7 @@ public:
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
   bool _set_testing_components = false;
-  vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
+  vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -65,7 +65,7 @@ public:
   Eigen::MatrixXf Z;
   bool _set_testing_components = false;
 
-  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size);
+  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
 
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
@@ -79,33 +79,19 @@ public:
   void _set_rank(uint64_t rank);
 };
 
-struct aatop_impl
-{
-private:
-  VW::workspace* _all;
-  std::vector<std::vector<float>> _aatop_action_ft_vectors;
-  std::vector<std::set<uint64_t>> _aatop_action_indexes;
-
-public:
-  aatop_impl(VW::workspace* all);
-  // the below matrixes are used only during unit testing and are not set otherwise
-  std::vector<Eigen::Triplet<float>> _triplets;
-  Eigen::MatrixXf AAtop;
-
-  bool run(const multi_ex& examples, const std::vector<float>& shrink_factors);
-};
-
 struct one_pass_svd_impl
 {
 private:
   VW::workspace* _all;
   uint64_t _d;
   uint64_t _seed;
+  thread_pool _thread_pool;
+  std::vector<std::future<void>> _futures;
   Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
 
 public:
   Eigen::MatrixXf AOmega;
-  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed);
+  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -131,17 +117,56 @@ struct spanner_state
 {
 private:
   const float _c = 2;
+  Eigen::MatrixXf _X;
 
 public:
   std::vector<bool> _spanner_bitvec;
   std::vector<uint64_t> _action_indices;
   spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
 
-  void compute_spanner(Eigen::MatrixXf& U, size_t _d);
-  static std::pair<float, uint64_t> find_max_volume(Eigen::MatrixXf& U, uint64_t x_row, Eigen::MatrixXf& X);
+  void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
+  void find_max_volume(
+      const Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X, float& max_volume, uint64_t& U_rid);
 };
 
-template <typename randomized_svd_impl>
+struct one_rank_spanner_state
+{
+private:
+  const float _c = 2;
+  Eigen::MatrixXf _X;
+  Eigen::MatrixXf _X_inv;
+  float _log_determinant_factor = 0.f;
+
+  void rank_one_determinant_update(
+      const Eigen::MatrixXf& U, float max_volume, uint64_t U_rid, float shrink_factor, uint64_t row_iteration);
+  void update_inverse(const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t row_iteration);
+  void scale_all(float max_volume, uint64_t num_examples);
+
+public:
+  std::vector<bool> _spanner_bitvec;
+  std::vector<uint64_t> _action_indices;
+  one_rank_spanner_state(float c, uint64_t d) : _c(c) { _action_indices.resize(d); };
+  void find_max_volume(const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid);
+  void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
+};
+
+inline void find_action_to_maximize_volume(
+    const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid)
+{
+  // find which action (which row of U) will provide the maximum phi * a volume
+  // that a will replace the current row in _X and provide the determinant with the maximum volume
+  for (auto i = 0; i < U.rows(); ++i)
+  {
+    float vol = std::abs(U.row(i) * phi);
+    if (vol > max_volume)
+    {
+      max_volume = vol;
+      U_rid = i;
+    }
+  }
+}
+
+template <typename randomized_svd_impl, typename spanner_impl>
 struct cb_explore_adf_large_action_space
 {
 private:
@@ -152,7 +177,7 @@ private:
   implementation_type _impl_type;
 
 public:
-  spanner_state _spanner_state;
+  spanner_impl _spanner_state;
   shrink_factor_config _shrink_factor_config;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
@@ -160,7 +185,8 @@ public:
   randomized_svd_impl _impl;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
+      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
+      implementation_type impl_type);
 
   ~cb_explore_adf_large_action_space() = default;
 
@@ -172,8 +198,19 @@ public:
   void randomized_SVD(const multi_ex& examples);
 
   // the below methods are used only during unit testing and are not called otherwise
-  void _populate_all_testing_components();
-  void _set_rank(uint64_t rank);
+  void _populate_all_testing_components()
+  {
+    _set_testing_components = true;
+    _impl._set_testing_components = true;
+  }
+
+  void _set_rank(uint64_t rank)
+  {
+    _d = rank;
+    _impl._set_rank(rank);
+    _spanner_state._action_indices.resize(_d);
+  }
+
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::SparseMatrix<float> _A;
   Eigen::VectorXf _S;

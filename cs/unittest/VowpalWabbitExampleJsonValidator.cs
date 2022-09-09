@@ -180,6 +180,18 @@ namespace cs_unittest
 
                             jsonExamples.AddRange(jsonExample.Examples);
 
+                            if (strExamples.Length != jsonExamples.Count)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"JSON input: {json}");
+                                System.Diagnostics.Debug.WriteLine("\nExpected:");
+                                foreach (var e in strExamples) {
+                                    System.Diagnostics.Debug.WriteLine(e.VowpalWabbitString);
+                                }
+                                System.Diagnostics.Debug.WriteLine("\nActual:");
+                                foreach (var e in jsonExamples) {
+                                    System.Diagnostics.Debug.WriteLine(e.VowpalWabbitString);
+                                }
+                            }
                             Assert.AreEqual(strExamples.Length, jsonExamples.Count);
                             if (enableNativeJsonValidation)
                                 Assert.AreEqual(strExamples.Length, jsonNativeExamples.Count);

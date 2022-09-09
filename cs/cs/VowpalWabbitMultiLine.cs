@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="VowpalWabbitMultiLine.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using VW.Labels;
@@ -171,10 +171,10 @@ namespace VW
             int? index = null,
             ILabel label = null)
         {
-            Contract.Requires(vw != null);
-            Contract.Requires(actionDependentFeatureSerializer != null);
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
+            Debug.Assert(vw != null);
+            Debug.Assert(actionDependentFeatureSerializer != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
 
             var examples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
             var validExamples = new List<VowpalWabbitExample>(actionDependentFeatures.Count + 1);
@@ -208,7 +208,7 @@ namespace VW
                 {
                     var adfExample = actionDependentFeatureSerializer.Serialize(actionDependentFeature,
                         index != null && i == index ? label : null);
-                    Contract.Assert(adfExample != null);
+                    Debug.Assert(adfExample != null);
 
                     examples.Add(adfExample);
 
@@ -260,12 +260,12 @@ namespace VW
             int index,
             ILabel label)
         {
-            Contract.Requires(vw != null);
-            Contract.Requires(actionDependentFeatureSerializer != null);
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
+            Debug.Assert(vw != null);
+            Debug.Assert(actionDependentFeatureSerializer != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
+            Debug.Assert(index >= 0);
+            Debug.Assert(label != null);
 
             Execute(
                 vw,
@@ -303,12 +303,12 @@ namespace VW
             int index,
             ILabel label)
         {
-            Contract.Requires(vw != null);
-            Contract.Requires(actionDependentFeatureSerializer != null);
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
+            Debug.Assert(vw != null);
+            Debug.Assert(actionDependentFeatureSerializer != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
+            Debug.Assert(index >= 0);
+            Debug.Assert(label != null);
 
             ActionDependentFeature<TActionDependentFeature>[] predictions = null;
 
@@ -354,10 +354,10 @@ namespace VW
             int? index = null,
             ILabel label = null)
         {
-            Contract.Requires(vw != null);
-            Contract.Requires(actionDependentFeatureSerializer != null);
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
+            Debug.Assert(vw != null);
+            Debug.Assert(actionDependentFeatureSerializer != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
 
             ActionDependentFeature<TActionDependentFeature>[] predictions = null;
 

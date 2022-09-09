@@ -39,7 +39,7 @@ public:
   using pointer = T*;
   using reference = T&;
 
-  sparse_iterator(weight_map::iterator& iter, uint32_t stride) : _iter(iter), _stride(stride) {}
+  sparse_iterator(weight_map::iterator& iter, uint64_t stride) : _iter(iter), _stride(stride) {}
 
   sparse_iterator& operator=(const sparse_iterator& other) = default;
   sparse_iterator(const sparse_iterator& other) = default;
@@ -101,12 +101,7 @@ public:
   }
 
   sparse_parameters()
-      : _map()
-      , _weight_mask(0)
-      , _stride_shift(0)
-      , _seeded(false)
-      , _delete(false)
-      , _default_func(nullptr)
+      : _map(), _weight_mask(0), _stride_shift(0), _seeded(false), _delete(false), _default_func(nullptr)
   {
   }
 
@@ -143,10 +138,7 @@ public:
     return const_iterator(i, stride());
   }
 
-  inline weight& operator[](size_t i)
-  {
-    return *(get_or_default_and_get(i));
-  }
+  inline weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
 
   inline const weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
 
@@ -185,7 +177,7 @@ public:
 
   uint64_t seeded() const { return _seeded; }
 
-  uint32_t stride() const { return 1 << _stride_shift; }
+  uint64_t stride() const { return static_cast<uint64_t>(1) << _stride_shift; }
 
   uint32_t stride_shift() const { return _stride_shift; }
 
@@ -248,7 +240,7 @@ public:
     }
   }
 
-  inline uint32_t stride() const
+  inline uint64_t stride() const
   {
     if (sparse) { return sparse_weights.stride(); }
     else

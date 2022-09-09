@@ -16,6 +16,7 @@ set(vw_core_headers
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
   include/vw/core/compat.h
+  include/vw/core/confidence_sequence.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
@@ -72,6 +73,7 @@ set(vw_core_headers
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
   include/vw/core/queue.h
+  include/vw/core/thread_pool.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
   include/vw/core/reduction_features.h
@@ -196,6 +198,7 @@ set(vw_core_sources
   src/cb.cc
   src/ccb_label.cc
   src/ccb_reduction_features.cc
+  src/confidence_sequence.cc
   src/cost_sensitive.cc
   src/crossplat_compat.cc
   src/debug_print.cc
@@ -348,7 +351,7 @@ if(VW_BUILD_LARGE_ACTION_SPACE)
     src/reductions/cb/details/large_action/model_weight_rand_svd_impl.cc
     src/reductions/cb/details/large_action/one_pass_svd_impl.cc
     src/reductions/cb/details/large_action/vanilla_rand_svd_impl.cc
-    src/reductions/cb/details/large_action/aatop_impl.cc
+    src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
     src/reductions/cb/details/large_action/spanner_impl.cc
     src/reductions/cb/cb_actions_mask.cc src/qr_decomposition.cc
   )
@@ -421,4 +424,6 @@ vw_add_test_executable(
       tests/merge_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
+      tests/thread_pool_test.cc
+      tests/main.cc
 )

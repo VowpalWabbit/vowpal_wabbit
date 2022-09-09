@@ -64,6 +64,80 @@
           "value": "Release"
         }
       }
+    },
+    {
+      "name": "vcpkg-sanitizer-base",
+      "inherits": "default",
+      "cacheVariables": {
+        "USE_LATEST_STD": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "BUILD_FLATBUFFERS": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "VW_BUILD_CSV": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-asan-debug",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        },
+        "VW_USE_ASAN": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-asan-release",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
+        },
+        "VW_USE_ASAN": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-ubsan-debug",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        },
+        "VW_USE_UBSAN": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
+    },
+    {
+      "name": "vcpkg-ubsan-release",
+      "inherits": "vcpkg-sanitizer-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": {
+          "type": "STRING",
+          "value": "Release"
+        },
+        "VW_USE_UBSAN": {
+          "type": "BOOL",
+          "value": "On"
+        }
+      }
     }
   ],
   "buildPresets": [
@@ -80,13 +154,13 @@
     {
       "name": "vcpkg-debug",
       "configurePreset": "vcpkg-debug",
-      "output": { "outputOnFailure": true },
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
       "execution": { "noTestsAction": "error", "stopOnFailure": true }
     },
     {
       "name": "vcpkg-release",
       "configurePreset": "vcpkg-release",
-      "output": { "outputOnFailure": true },
+      "output": { "outputOnFailure": true, "verbosity": "verbose" },
       "execution": { "noTestsAction": "error", "stopOnFailure": true }
     }
   ]

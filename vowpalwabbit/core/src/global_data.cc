@@ -472,6 +472,7 @@ workspace::~workspace()
   {
     l->finish();
     delete l;
+    l = nullptr;
   }
 
   // TODO: migrate all finalization into parser destructor
@@ -479,12 +480,18 @@ workspace::~workspace()
   {
     free_parser(*this);
     delete example_parser;
+    example_parser = nullptr;
   }
 
   const bool seeded = weights.seeded() > 0;
-  if (!seeded) { delete sd; }
+  if (!seeded)
+  {
+    delete sd;
+    sd = nullptr;
+  }
 
   delete all_reduce;
+  all_reduce = nullptr;
 }
 
 }  // namespace VW

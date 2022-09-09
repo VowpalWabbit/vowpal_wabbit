@@ -21,7 +21,9 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
-string(REPLACE "." ";" VW_VERSION_LIST ${PACKAGE_VERSION})
+# version.txt may contain a SemVer of the form 1.2.3-xxx+xxx
+# Extract the first 3 numbers into CMake variables
+string(REGEX REPLACE "[.+-]" ";" VW_VERSION_LIST ${PACKAGE_VERSION})
 list(GET VW_VERSION_LIST 0 VW_VERSION_MAJOR)
 list(GET VW_VERSION_LIST 1 VW_VERSION_MINOR)
 list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
@@ -38,7 +40,10 @@ if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
   message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
   if (vw_BUILD_NET_FRAMEWORK)
-    message(STATUS ".NET Framework Version: ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}")
+    string(REGEX MATCH "[0-9.]+" VW_NET_FRAMEWORK_VERSION ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION})
+    string(REPLACE "." "" VW_NET_FRAMEWORK_TFM ${VW_NET_FRAMEWORK_VERSION})
+    string(PREPEND VW_NET_FRAMEWORK_TFM "net")
+    message(STATUS ".NET Framework Version: ${VW_NET_FRAMEWORK_VERSION} (${VW_NET_FRAMEWORK_TFM})")
   endif()
 endif()
 
@@ -52,7 +57,8 @@ if(BUILD_TESTING)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
 endif()
 
-project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
+# CMake project() does not support semantic versioning
+project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
@@ -72,7 +78,8 @@ set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 include(VowpalWabbitUtils)
 
 if(MSVC)
-  # Do nothing as the default compile flags for MSVC are okay.
+  # Use C++ standard exception handling instead of MSVC default
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 else()
   # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
   # is O2 and Release is O3, override that here:
@@ -119,6 +126,33 @@ option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Inst
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(VW_BUILD_CSV "Build csv parser" OFF)
 option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
+option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
+option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
+option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
+option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
+
+if(VW_USE_ASAN)
+  add_compile_definitions(VW_USE_ASAN)
+  if(MSVC)
+    add_compile_options(/fsanitize=address /GS- /wd5072)
+    add_link_options(/InferASanLibs /incremental:no /debug)
+    # Workaround for MSVC ASan issue here: https://developercommunity.visualstudio.com/t/VS2022---Address-sanitizer-on-x86-Debug-/10116361
+    add_compile_definitions(_DISABLE_STRING_ANNOTATION)
+  else()
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g3)
+    add_link_options(-fsanitize=address -fno-omit-frame-pointer -g3)
+  endif()
+endif()
+
+if(VW_USE_UBSAN)
+  add_compile_definitions(VW_USE_UBSAN)
+  if(MSVC)
+    message(FATAL_ERROR "UBSan not supported on MSVC")
+  else()
+    add_compile_options(-fsanitize=undefined -fno-sanitize-recover -fno-omit-frame-pointer -g3)
+    add_link_options(-fsanitize=undefined -fno-sanitize-recover -fno-omit-frame-pointer -g3)
+  endif()
+endif()
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
@@ -262,10 +296,9 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-if(vw_BUILD_NET_FRAMEWORK)
+if(vw_BUILD_NET_FRAMEWORK OR vw_BUILD_NET_CORE)
   add_subdirectory(cs)
 endif()
-
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)

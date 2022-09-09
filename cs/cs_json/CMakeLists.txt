@@ -55,3 +55,7 @@ set_target_properties(VowpalWabbit.JSON
                VS_GLOBAL_ROOTNAMESPACE VW
                VS_GLOBAL_DocumentationFile "VowpalWabbit.JSON.xml"
 )
+
+install(TARGETS VowpalWabbit.JSON
+  RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/${VW_NET_FRAMEWORK_TFM}"
+)

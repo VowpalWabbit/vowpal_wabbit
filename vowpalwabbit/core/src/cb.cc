@@ -257,7 +257,6 @@ size_t write_model_field(io_buf& io, const CB::cb_class& cbc, const std::string&
 size_t read_model_field(io_buf& io, CB::label& cb)
 {
   size_t bytes = 0;
-  cb.costs.clear();
   bytes += read_model_field(io, cb.costs);
   bytes += read_model_field(io, cb.weight);
   return bytes;

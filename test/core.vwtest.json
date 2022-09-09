@@ -304,7 +304,7 @@
   {
     "id": 24,
     "desc": "active-learning -- training",
-    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3",
+    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3 --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/active-simulation.t24.stderr",
       "stdout": "train-sets/ref/active-simulation.t24.stdout"
@@ -5375,7 +5375,7 @@
   },
   {
     "id": 417,
-    "desc": "automl with cb_adf - transform to predict only model",
+    "desc": "automl with cb_adf - transform to predict only model SkipC# - Do not remove this - this test breaks test generation by requiring a dependency that is not supported",
     "vw_command": "--aml_predict_only_model automl_predict_only.model -i models/automl.model --readable_model automl_readable.txt",
     "diff_files": {
       "automl_readable.txt": "train-sets/ref/cbadf_automl_readable_predictonly.txt"

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!-- Nuspec file for .NET Core platform specific runtime package -->
+<!-- VW_NUGET_PACKAGE_NAME and VW_NUGET_PACKAGE_VERSION should be defined in CMake command line -->
+<package>
+  <metadata>
+    <id>@VW_NUGET_PACKAGE_NAME@.runtime.@NUGET_RUNTIME_ID@</id>
+    <title>@VW_NUGET_PACKAGE_NAME@.runtime.@NUGET_RUNTIME_ID@</title>
+    <authors>John Langford et al</authors>
+    <version>@VW_NUGET_PACKAGE_VERSION@</version>
+    <projectUrl>https://github.com/VowpalWabbit/vowpal_wabbit/wiki/C%23-Binding</projectUrl>
+    <license type="expression">BSD-3-Clause</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Platform specific runtime library for @VW_NUGET_PACKAGE_NAME@</description>
+    <copyright>Copyright (C) Microsoft Corp 2012-2022, Yahoo! Inc. 2007-2012, and many individual contributors. All rights reserved.</copyright>
+  </metadata>
+  <files>
+  	  <file src="runtimes\@NUGET_RUNTIME_ID@\lib\netstandard2.1\*.dll" target="runtimes\@NUGET_RUNTIME_ID@\lib\netstandard2.1\" />
+  	  <file src="runtimes\@NUGET_RUNTIME_ID@\native\*" target="runtimes\@NUGET_RUNTIME_ID@\native\" />
+  </files>
+</package>

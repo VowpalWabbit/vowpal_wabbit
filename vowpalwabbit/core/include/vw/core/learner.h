@@ -283,6 +283,12 @@ public:
 
   void* get_internal_type_erased_data_pointer_test_use_only() { return learner_data.get(); }
 
+  // For all functions here that invoke stored function pointers,
+  // NO_SANITIZE_UNDEFINED is needed because the function pointer's type may be
+  // cast to something different from the original function's signature.
+  // This will throw an error in UndefinedBehaviorSanitizer even when the
+  // function can be correctly called through the pointer.
+
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
@@ -291,7 +297,7 @@ public:
   /// multiple regressors/learners you can increment this value for each call.
   /// \returns While some reductions may fill the example::pred, this is not
   /// guaranteed and is undefined behavior if accessed.
-  inline void learn(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED learn(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -310,7 +316,7 @@ public:
   /// \returns The prediction calculated by this reduction be set on
   /// example::pred. If <code>E</code> is ::multi_ex then the prediction is set
   /// on the 0th item in the list.
-  inline void predict(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED predict(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -320,7 +326,8 @@ public:
     details::decrement_offset(ec, increment, i);
   }
 
-  inline void multipredict(E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
+  inline void NO_SANITIZE_UNDEFINED multipredict(
+      E& ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -355,7 +362,7 @@ public:
     }
   }
 
-  inline void update(E& ec, size_t i = 0)
+  inline void NO_SANITIZE_UNDEFINED update(E& ec, size_t i = 0)
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
@@ -365,7 +372,7 @@ public:
     details::decrement_offset(ec, increment, i);
   }
 
-  inline float sensitivity(example& ec, size_t i = 0)
+  inline float NO_SANITIZE_UNDEFINED sensitivity(example& ec, size_t i = 0)
   {
     details::increment_offset(ec, increment, i);
     debug_log_message(ec, "sensitivity");
@@ -375,7 +382,7 @@ public:
   }
 
   // called anytime saving or loading needs to happen. Autorecursive.
-  inline void save_load(io_buf& io, const bool read, const bool text)
+  inline void NO_SANITIZE_UNDEFINED save_load(io_buf& io, const bool read, const bool text)
   {
     try
     {
@@ -391,13 +398,13 @@ public:
   }
 
   // called when metrics is enabled.  Autorecursive.
-  void persist_metrics(metric_sink& metrics)
+  void NO_SANITIZE_UNDEFINED persist_metrics(metric_sink& metrics)
   {
     persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
     if (persist_metrics_fd.base) { persist_metrics_fd.base->persist_metrics(metrics); }
   }
 
-  inline void finish()
+  inline void NO_SANITIZE_UNDEFINED finish()
   {
     if (finisher_fd.data) { finisher_fd.func(finisher_fd.data); }
     if (finisher_fd.base)
@@ -407,30 +414,30 @@ public:
     }
   }
 
-  void end_pass()
+  void NO_SANITIZE_UNDEFINED end_pass()
   {
     end_pass_fd.func(end_pass_fd.data);
     if (end_pass_fd.base) { end_pass_fd.base->end_pass(); }
   }  // autorecursive
 
   // called after parsing of examples is complete.  Autorecursive.
-  void end_examples()
+  void NO_SANITIZE_UNDEFINED end_examples()
   {
     end_examples_fd.func(end_examples_fd.data);
     if (end_examples_fd.base) { end_examples_fd.base->end_examples(); }
   }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
-  void init_driver() { init_fd.func(init_fd.data); }
+  void NO_SANITIZE_UNDEFINED init_driver() { init_fd.func(init_fd.data); }
 
   // called after learn example for each example.  Explicitly not recursive.
-  inline void finish_example(VW::workspace& all, E& ec)
+  inline void NO_SANITIZE_UNDEFINED finish_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "finish_example");
     finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
   }
 
-  inline void print_example(VW::workspace& all, E& ec)
+  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "print_example");
 
@@ -459,7 +466,7 @@ public:
 
   // This is effectively static implementing a trait for this learner type.
   // NOT auto recursive
-  void merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
+  void NO_SANITIZE_UNDEFINED merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
       const std::vector<const VW::workspace*>& all_workspaces, const base_learner* base_workspaces_learner,
       const std::vector<const base_learner*>& all_learners, VW::workspace& output_workspace,
       base_learner* output_learner)

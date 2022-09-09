@@ -14,6 +14,6 @@ vw_add_library(
 
 vw_add_test_executable(
   FOR_LIB "csv_parser"
-  SOURCES "tests/csv_parser_test.cc"
+  SOURCES "tests/csv_parser_test.cc" "tests/main.cc"
   EXTRA_DEPS vw_core
 )

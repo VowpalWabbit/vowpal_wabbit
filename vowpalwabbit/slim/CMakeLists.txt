@@ -38,6 +38,7 @@ set(vw_slim_test_sources
   test/ut_explore.cc
   test/ut_opts.cc
   test/ut_util.cc
+  test/main.cc
 )
 
 vw_add_test_executable(
