@@ -545,8 +545,8 @@ Weight Options:
     --probabilities                         Predict probabilities of all classes (type: bool, keep)
 [Reduction] Cost Sensitive Weighted All-Pairs with Label Dependent Features Options:
     --wap_ldf arg                           Use weighted all-pairs multiclass learning with label dependent
-                                            features. Specify singleline or multiline. (type: str, keep,
-                                            necessary)
+                                            features. Specify singleline or multiline. (type: str, choices
+                                            {m, mc, multiline, multiline-classifier}, keep, necessary)
 [Reduction] Count label Options:
     --dont_output_best_constant             Don't track the best constant used in the output (type: bool)
 [Reduction] Debug Metrics Options:
