@@ -630,8 +630,6 @@ Weight Options:
                                             '-q ::'. (type: bool)
 [Reduction] Gradient Descent Matrix Factorization Options:
     --rank arg                              Rank for matrix factorization (type: uint, keep, necessary)
-    --bfgs                                  Option not supported by this reduction (type: bool)
-    --conjugate_gradient                    Option not supported by this reduction (type: bool)
 [Reduction] Gradient Descent Options:
     --sgd                                   Use regular stochastic gradient descent update (type: bool, keep)
     --adaptive                              Use adaptive, individual learning rates (type: bool, keep)
