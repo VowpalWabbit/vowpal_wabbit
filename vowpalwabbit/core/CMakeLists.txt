@@ -73,6 +73,7 @@ set(vw_core_headers
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
   include/vw/core/queue.h
+  include/vw/core/thread_pool.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
   include/vw/core/reduction_features.h
@@ -423,4 +424,6 @@ vw_add_test_executable(
       tests/merge_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
+      tests/thread_pool_test.cc
+      tests/main.cc
 )

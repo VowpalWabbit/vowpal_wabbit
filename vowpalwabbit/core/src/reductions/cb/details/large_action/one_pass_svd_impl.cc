@@ -36,9 +36,9 @@ public:
   void set(float feature_value, uint64_t index)
   {
 #ifdef _MSC_VER
-    float val = __popcnt((index & _weights_mask) + _column_index + _seed) & 1 ? -1.f : 1.f;
+    float val = ((__popcnt((index & _weights_mask) + _column_index + _seed) & 1) << 1) - 1.f;
 #else
-    float val = __builtin_parity((index & _weights_mask) + _column_index + _seed) ? -1.f : 1.f;
+    float val = (__builtin_parity((index & _weights_mask) + _column_index + _seed) << 1) - 1.f;
 #endif
     _final_dot_product += feature_value * val;
   }
@@ -50,11 +50,8 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   auto p = std::min(num_actions, _d + 5);
   AOmega.resize(num_actions, p);
 
-  uint64_t row_index = 0;
-  for (auto* ex : examples)
-  {
-    assert(!CB::ec_is_example_header(*ex));
-
+  auto calculate_aomega_row = [](uint64_t row_index, uint64_t p, VW::workspace* _all, uint64_t _seed, VW::example* ex,
+                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors) -> void {
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
     for (uint64_t col = 0; col < p; ++col)
@@ -62,6 +59,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
       float final_dot_prod = 0.f;
 
       AO_triplet_constructor tc(_all->weights.mask(), row_index, col, _seed, final_dot_prod);
+
       GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
           _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
@@ -71,8 +69,18 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
 
       AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
     }
+  };
+
+  uint64_t row_index = 0;
+  for (auto* ex : examples)
+  {
+    _futures.emplace_back(_thread_pool.submit(
+        calculate_aomega_row, row_index, p, _all, _seed, ex, std::ref(AOmega), std ::ref(shrink_factors)));
     row_index++;
   }
+
+  for (auto& ft : _futures) { ft.get(); }
+  _futures.clear();
 }
 
 void one_pass_svd_impl::_set_rank(uint64_t rank) { _d = rank; }
@@ -90,8 +98,8 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
   }
 }
 
-one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t)
-    : _all(all), _d(d), _seed(seed)
+one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size)
+    : _all(all), _d(d), _seed(seed), _thread_pool(thread_pool_size)
 {
 }
 

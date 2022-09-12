@@ -163,3 +163,6 @@ sdl/
 
 cmake-build-debug
 cmake-build-release
+
+# C# benchmark results
+BenchmarkDotNet.Artifacts

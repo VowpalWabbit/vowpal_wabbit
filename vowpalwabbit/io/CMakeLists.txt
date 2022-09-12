@@ -29,5 +29,5 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "io"
-    SOURCES tests/io_adapter_test.cc tests/ostream_test.cc
+    SOURCES tests/io_adapter_test.cc tests/ostream_test.cc tests/main.cc
 )

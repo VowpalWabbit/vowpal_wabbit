@@ -7,12 +7,12 @@ if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VowpalWabbit.Parallel ${CMAKE_CURRENT_SOURCE_DIR}/vw.parallel.csproj VowpalWabbit)
 else()
   add_custom_target(VowpalWabbit.Parallel ALL
-    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> --configuration "$<IF:$<CONFIG:Debug>,Debug,Release>" -v m --nologo --no-dependencies /clp:NoSummary
     COMMENT "Building VowpalWabbit.Parallel"
     DEPENDS VowpalWabbit
     SOURCES ${VW_NET_CS_PARALLEL_SOURCES})
   add_custom_target(VowpalWabbit.Parallel.Ref ALL
-    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native>/ref -v m --nologo --no-dependencies /clp:NoSummary -property:ProduceOnlyReferenceAssembly=true
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native>/ref --configuration "$<IF:$<CONFIG:Debug>,Debug,Release>" -v m --nologo --no-dependencies /clp:NoSummary -property:ProduceOnlyReferenceAssembly=true
     COMMENT "Building VowpalWabbit.Parallel Reference Assembly"
     DEPENDS VowpalWabbit.Ref VowpalWabbit.Parallel
     SOURCES ${VW_NET_CS_PARALLEL_SOURCES})
