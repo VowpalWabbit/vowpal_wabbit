@@ -349,9 +349,7 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
     THROW("normalized adaptive updates is not implemented for matrix factorization");
 
   if (options.was_supplied("bfgs") || options.was_supplied("conjugate_gradient"))
-  {
-    THROW("bfgs is not implemented for matrix factorization");
-  }
+  { THROW("bfgs is not implemented for matrix factorization"); }
 
   data->all = &all;
   data->no_win_counter = 0;
