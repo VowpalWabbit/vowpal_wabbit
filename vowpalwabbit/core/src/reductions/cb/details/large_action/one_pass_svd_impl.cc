@@ -55,8 +55,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   AOmega.resize(num_actions, p);
 
   auto calculate_aomega_row = [](uint64_t row_index, uint64_t p, VW::workspace* _all, uint64_t _seed, VW::example* ex,
-                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors) -> void
-  {
+                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors) -> void {
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
     for (uint64_t col = 0; col < p; ++col)
