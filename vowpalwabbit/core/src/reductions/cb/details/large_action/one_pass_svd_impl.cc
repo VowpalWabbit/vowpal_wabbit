@@ -47,12 +47,16 @@ public:
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   auto num_actions = examples[0]->pred.a_s.size();
-  // one pass SVD is going to be less accurate than two pass SVD so we need to over-sample a bit more
-  auto p = std::min(num_actions, _d + 10);
+  // one pass SVD is going to be less accurate than two pass SVD so we need to over-sample
+  // this constant factor should be enough, we need a higher probability that we get a fair coin flip in the Omega
+  // matrix
+  const uint64_t sampling_slack = 10;
+  auto p = std::min(num_actions, _d + sampling_slack);
   AOmega.resize(num_actions, p);
 
   auto calculate_aomega_row = [](uint64_t row_index, uint64_t p, VW::workspace* _all, uint64_t _seed, VW::example* ex,
-                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors) -> void {
+                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors) -> void
+  {
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
     for (uint64_t col = 0; col < p; ++col)
