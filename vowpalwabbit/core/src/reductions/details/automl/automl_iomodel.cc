@@ -70,6 +70,7 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::ns_based_config& ec)
   bytes += read_model_field(io, ec.elements);
   bytes += read_model_field(io, ec.lease);
   bytes += read_model_field(io, ec.state);
+  bytes += read_model_field(io, ec.conf_type);
   return bytes;
 }
 
@@ -77,10 +78,10 @@ size_t write_model_field(
     io_buf& io, const VW::reductions::automl::ns_based_config& config, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  assert(config.conf_type == reductions::automl::config_type::Exclusion);
   bytes += write_model_field(io, config.elements, upstream_name + "_exclusions", text);
   bytes += write_model_field(io, config.lease, upstream_name + "_lease", text);
   bytes += write_model_field(io, config.state, upstream_name + "_state", text);
+  bytes += write_model_field(io, config.conf_type, upstream_name + "_type", text);
   return bytes;
 }
 
@@ -127,8 +128,6 @@ size_t read_model_field(
   for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot)
   {
     auto& exclusions = cm._config_oracle.configs[cm.estimators[live_slot].first.config_index];
-    assert(cm._config_oracle.configs[cm.estimators[live_slot].first.config_index].conf_type ==
-        reductions::automl::config_type::Exclusion);
     auto& interactions = cm.estimators[live_slot].first.live_interactions;
     reductions::automl::ns_based_config::apply_config_to_interactions(
         cm._ccb_on, cm.ns_counter, cm._config_oracle._interaction_type, exclusions, interactions);
@@ -205,6 +204,20 @@ VW::string_view to_string(reductions::automl::automl_state state)
   {
     case reductions::automl::automl_state::Experimenting:
       return "Experimenting";
+  }
+
+  assert(false);
+  return "unknown";
+}
+
+VW::string_view to_string(reductions::automl::config_type conf_type)
+{
+  switch (conf_type)
+  {
+    case reductions::automl::config_type::Exclusion:
+      return "Exclusion";
+    case reductions::automl::config_type::Interaction:
+      return "Interaction";
   }
 
   assert(false);

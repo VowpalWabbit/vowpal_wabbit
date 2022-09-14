@@ -295,6 +295,7 @@ size_t write_model_field(io_buf&,
 }  // namespace model_utils
 VW::string_view to_string(reductions::automl::automl_state state);
 VW::string_view to_string(reductions::automl::config_state state);
+VW::string_view to_string(reductions::automl::config_type state);
 }  // namespace VW
 
 namespace fmt
@@ -312,6 +313,15 @@ template <>
 struct formatter<VW::reductions::automl::config_state> : formatter<std::string>
 {
   auto format(VW::reductions::automl::config_state c, format_context& ctx) -> decltype(ctx.out())
+  {
+    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
+  }
+};
+
+template <>
+struct formatter<VW::reductions::automl::config_type> : formatter<std::string>
+{
+  auto format(VW::reductions::automl::config_type c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }
