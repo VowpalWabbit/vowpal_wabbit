@@ -43,7 +43,9 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -103,7 +105,9 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -113,6 +117,34 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
     action_space->explore._populate_all_testing_components();
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
+
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12 a100:4 a200:33"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.8 a_2:0.32 a_3:0.15 a100:0.2 a200:0.2"));
+      // linear combination of the above two actions
+      // action_4 = action_2 + 2 * action_3
+      examples.push_back(VW::read_example(vw, "| a_1:2.1 a_2:1.29 a_3:0.42 a100:4.4 a200:33.4"));
+
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15 d1:0.2 d10: 0.2"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9 v1:0.99"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18:0.2"));
+
+      vw.predict(examples);
+
+      vw.finish_example(examples);
+    }
+
+    // After the decomposition, the linear combination in the representation of the action in U is maintained for the
+    // number of columns that have a non-close-to-zero singular value, and then the linear combination in the
+    // representation breaks
+    auto non_degenerate_singular_values = action_space->explore.number_of_non_degenerate_singular_values();
+    action_space->explore._set_rank(non_degenerate_singular_values);
 
     {
       VW::multi_ex examples;

@@ -117,7 +117,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -139,10 +141,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
 
       // Only d actions have non-zero scores.
       if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else
-      {
-        BOOST_CHECK_EQUAL(preds.size(), d);
-      }
+      else { BOOST_CHECK_EQUAL(preds.size(), d); }
       BOOST_CHECK_SMALL(preds[0].score - 0.693350017f, FLOAT_TOL);
       BOOST_CHECK_EQUAL(preds[0].action, 0);
 
@@ -221,7 +220,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -242,10 +243,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
       const auto& preds = examples[0]->pred.a_s;
       // Only d actions have non-zero scores.
       if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else
-      {
-        BOOST_CHECK_EQUAL(preds.size(), d);
-      }
+      else { BOOST_CHECK_EQUAL(preds.size(), d); }
 
       size_t num_actions_non_zeroed = d;
       float epsilon_ur = epsilon / num_actions_non_zeroed;
@@ -355,7 +353,9 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+  {
+    BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+  }
 
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -398,7 +398,9 @@ static std::vector<std::string> gen_cb_examples(
 
     action_ss << "| ";
     for (int action_feat = 0; action_feat < coordinates; ++action_feat)
-    { action_ss << "x" << action_feat << ":" << (drand48() * scale) << " "; }
+    {
+      action_ss << "x" << action_feat << ":" << (drand48() * scale) << " ";
+    }
 
     examples.push_back(action_ss.str());
   }
@@ -450,7 +452,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -474,10 +478,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
       for (auto a_s : preds)
       {
         if (a_s.action < K - d) { BOOST_CHECK_EQUAL(a_s.score, 0.f); }
-        else
-        {
-          BOOST_CHECK_NE(a_s.score, 0.f);
-        }
+        else { BOOST_CHECK_NE(a_s.score, 0.f); }
       }
 
       vw.finish_example(examples);
@@ -498,10 +499,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
       for (auto a_s : preds)
       {
         if (a_s.action < d) { BOOST_CHECK_NE(a_s.score, 0.f); }
-        else
-        {
-          BOOST_CHECK_EQUAL(a_s.score, 0.f);
-        }
+        else { BOOST_CHECK_EQUAL(a_s.score, 0.f); }
       }
 
       vw.finish_example(examples);
@@ -555,7 +553,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_same_actions)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -601,19 +601,18 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_same_actions)
 
 BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_of_other_actions)
 {
-  // 9 actions and I want spanner to reject the one that is a linear combination of the other two
   auto d = 8;
   std::vector<VW::workspace*> vws;
 
   auto* vw_squarecb =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
+              std::to_string(d) + " --quiet --random_seed 5 --noconstant ",
           nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_squarecb);
 
   auto* vw_egreedy = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+          std::to_string(d) + " --quiet --random_seed 5 --noconstant",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_egreedy);
@@ -621,6 +620,19 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_
   for (auto* vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
+    std::vector<std::string> e_r;
+    vw.l->get_enabled_reductions(e_r);
+    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
+
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+
+    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    BOOST_CHECK_EQUAL(action_space != nullptr, true);
+    action_space->explore._populate_all_testing_components();
 
     {
       VW::multi_ex examples;
@@ -643,17 +655,14 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_
       vw.finish_example(examples);
     }
 
-    std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
-    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    // we only really care to explore as many actions as there are non degenerate singular values
+    // after that actions aren't going to be diverse enough so the spanner will pick similar actions
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    // in this case one of the actions that is picked in the spanner is the linear combination of the two other actions,
+    // and those two actions do not get picked by the spanner
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
-    BOOST_CHECK_EQUAL(action_space != nullptr, true);
-    action_space->explore._populate_all_testing_components();
+    auto non_degenerate_singular_values = action_space->explore.number_of_non_degenerate_singular_values();
+    action_space->explore._set_rank(non_degenerate_singular_values);
 
     {
       VW::multi_ex examples;
@@ -680,12 +689,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_
       size_t encounters = 0;
       for (auto& a_s : preds)
       {
-        if (a_s.action == 1 && a_s.score != 0.f) { encounters++; }
-        if (a_s.action == 2 && a_s.score != 0.f) { encounters++; }
         if (a_s.action == 3 && a_s.score != 0.f) { encounters++; }
       }
 
-      BOOST_CHECK_EQUAL(encounters, 2);
+      BOOST_CHECK_EQUAL(encounters, 1);
 
       vw.finish_example(examples);
     }
