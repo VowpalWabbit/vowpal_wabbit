@@ -143,7 +143,7 @@ size_t cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::num
     float sum_of_sv = 0;
     for (auto& val : _S) { sum_of_sv += val; }
 
-    // how many singular values represent 99% of the total sum of the singular values  
+    // how many singular values represent 99% of the total sum of the singular values
     float current_sum_sv = 0;
     for (auto& val : _S)
     {
@@ -153,7 +153,6 @@ size_t cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::num
     }
   }
 }
-
 
 template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::update_example_prediction(
