@@ -690,7 +690,11 @@ BOOST_AUTO_TEST_CASE(check_spanner_with_actions_that_are_linear_combinations_of_
       {
         if (a_s.action == 1 && a_s.score != 0.f) { encounters++; }
         if (a_s.action == 2 && a_s.score != 0.f) { encounters++; }
-        if (a_s.action == 3 && a_s.score != 0.f) { encounters++; action_4_in_spanner = true;}
+        if (a_s.action == 3 && a_s.score != 0.f)
+        {
+          encounters++;
+          action_4_in_spanner = true;
+        }
       }
 
       BOOST_CHECK_EQUAL(encounters, 1);
