@@ -60,7 +60,7 @@ add_executable(vw-unit-test.out
 )
 
 if(VW_BUILD_LARGE_ACTION_SPACE)
-  target_sources(vw-unit-test.out PRIVATE cb_large_actions_test.cc cb_las_one_pass_svd_test.cc cb_las_spanner.cc)
+  target_sources(vw-unit-test.out PRIVATE cb_large_actions_test.cc cb_las_one_pass_svd_test.cc cb_las_spanner_test.cc)
 endif()
 
 # Add the include directories from vw target for testing
