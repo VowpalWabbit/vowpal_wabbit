@@ -11,7 +11,6 @@
 #include "vw/core/loss_functions.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label.h"
@@ -34,32 +33,6 @@ using namespace VW::math;
 
 namespace
 {
-class ftrl_update_data
-{
-public:
-  float update = 0.f;
-  float ftrl_alpha = 0.f;
-  float ftrl_beta = 0.f;
-  float l1_lambda = 0.f;
-  float l2_lambda = 0.f;
-  float predict = 0.f;
-  float normalized_squared_norm_x = 0.f;
-  float average_squared_norm_x = 0.f;
-};
-
-class ftrl
-{
-public:
-  VW::workspace* all = nullptr;  // features, finalize, l1, l2,
-  float ftrl_alpha = 0.f;
-  float ftrl_beta = 0.f;
-  ftrl_update_data data;
-  size_t no_win_counter = 0;
-  size_t early_stop_thres = 0;
-  uint32_t ftrl_size = 0;
-  std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
-};
-
 class uncertainty
 {
 public:

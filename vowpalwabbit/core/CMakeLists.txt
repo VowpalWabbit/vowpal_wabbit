@@ -482,6 +482,7 @@ vw_add_test_executable(
       tests/v_array_test.cc
       tests/vw_versions_test.cc
       tests/weights_test.cc
+      tests/igl_test.cc
 )
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)

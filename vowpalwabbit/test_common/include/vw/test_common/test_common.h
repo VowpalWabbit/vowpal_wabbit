@@ -9,6 +9,10 @@
 #include "vw/core/vw.h"
 #include "vw/json_parser/parse_example_json.h"
 
+#include "vw/core/multi_ex.h"
+#include "vw/core/json_utils.h"
+#include "vw/core/parse_example_json.h"
+
 #include <vector>
 
 namespace vwtest

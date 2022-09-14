@@ -32,6 +32,13 @@ public:
   bool store_shared_ex_in_reduction_features = false;
 };
 
+// TODO: remve this
+bool is_igl(VW::multi_ex& ec_seq) {
+  char feedback_ns = 'v';
+  auto ex = ec_seq.back();
+  return ex->indices.back() == feedback_ns;
+}
+
 template <bool is_learn>
 void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
@@ -46,9 +53,13 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
   {
     shared_example = ec_seq[0];
     ec_seq.erase(ec_seq.begin());
+
+    //TODO: Remove
+    size_t ec_seq_size = is_igl(ec_seq) ? ec_seq.size() - 1 : ec_seq.size();
     // merge sequences
-    for (auto& example : ec_seq)
+    for (size_t i = 0; i < ec_seq_size; i++)
     {
+      auto example = ec_seq[i];
       VW::details::append_example_namespaces_from_example(*example, *shared_example);
       if (store_shared_ex_in_reduction_features)
       {
@@ -68,8 +79,11 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
       {
         if (has_example_header)
         {
-          for (auto& example : ec_seq)
+          //TODO: Remove
+          size_t ec_seq_size = is_igl(ec_seq) ? ec_seq.size() - 1 : ec_seq.size();
+          for (size_t i = 0; i < ec_seq_size; i++)
           {
+            auto example = ec_seq[i];
             VW::details::truncate_example_namespaces_from_example(*example, *shared_example);
 
             if (store_shared_ex_in_reduction_features)

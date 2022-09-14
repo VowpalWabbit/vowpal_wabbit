@@ -3,7 +3,8 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/core/vw_fwd.h"
+#include "vw/core/reduction_stack.h"
+#include "vw/core/reductions/ftrl.h"
 
 #include <memory>
 
@@ -19,5 +20,6 @@ namespace reductions
  * @return VW::LEARNER::learner* learner if this reduction is active, nullptr otherwise
  */
 std::shared_ptr<VW::LEARNER::learner> interaction_ground_setup(VW::setup_base_i& stack_builder);
+void swap_ftrl(ftrl* source, ftrl* destination);
 }  // namespace reductions
 }  // namespace VW
