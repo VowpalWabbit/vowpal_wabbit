@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
       "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
-      "--oracle_type champdupe -b 8 --global_lease 10",
+      "--oracle_type champdupe -b 8 --global_lease 10 --extra_metrics champdupe.json --verbose_metrics",
       test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);

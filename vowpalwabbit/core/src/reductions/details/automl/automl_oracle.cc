@@ -38,6 +38,15 @@ void config_oracle<oracle_impl>::insert_starting_configuration()
   configs.emplace_back(set_ns_list_t(), global_lease, config_type::Exclusion);
   ++valid_config_size;
 }
+template <>
+void config_oracle<champdupe_impl>::keep_best_two(uint64_t winner_config_index)
+{
+  std::swap(configs[0], configs[winner_config_index]);
+  if (winner_config_index != 1) { std::swap(configs[1], configs[winner_config_index]); }
+
+  configs[2].state = config_state::Inactive;
+  assert(configs[0].conf_type == config_type::Exclusion);
+}
 template <typename oracle_impl>
 void config_oracle<oracle_impl>::keep_best_two(uint64_t winner_config_index)
 {
@@ -247,13 +256,17 @@ void config_oracle<champdupe_impl>::gen_configs(
 {
   assert(configs[0].conf_type == config_type::Exclusion);
   auto current = 0;
-  for (auto it = _impl.begin(); it < _impl.end(); ++it, ++current)
+  if (configs.size() == 1)
   {
-    auto copy_champ = configs[0].elements;
-    if (current % 2) { insert_config(std::move(copy_champ), ns_counter, config_type::Exclusion, true); }
-    else
+    for (auto it = _impl.begin(); it < _impl.end(); ++it, ++current)
     {
-      insert_config(std::move(copy_champ), ns_counter, config_type::Interaction, true);
+      auto copy_champ = configs[0].elements;
+      if (current % 2) { insert_config(std::move(copy_champ), ns_counter, config_type::Exclusion, true); }
+      else
+      {
+        set_ns_list_t empty;
+        insert_config(std::move(empty), ns_counter, config_type::Interaction, true);
+      }
     }
   }
 }
