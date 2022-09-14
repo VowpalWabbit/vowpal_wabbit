@@ -44,6 +44,13 @@ void VW::metric_sink::set_bool(const std::string& key, bool value, bool overwrit
   _keys.insert(key);
 }
 
+void VW::metric_sink::set_metric_sink(const std::string& key, VW::metric_sink value, bool overwrite)
+{
+  throw_if_not_overwrite_and_key_exists(key, overwrite);
+  _metric_sink_metrics[key] = value;
+  _keys.insert(key);
+}
+
 uint64_t VW::metric_sink::get_uint(const std::string& key) const
 {
   auto it = _int_metrics.find(key);
@@ -73,10 +80,19 @@ bool VW::metric_sink::get_bool(const std::string& key) const
   return it->second;
 }
 
+VW::metric_sink VW::metric_sink::get_metric_sink(const std::string& key) const
+{
+  auto it = _metric_sink_metrics.find(key);
+  if (it == _metric_sink_metrics.end())
+  { THROW("Key: " << key << " does not exist in bool metrics. Is the type correct?") }
+  return it->second;
+}
+
 void VW::metric_sink::visit(metric_sink_visitor& visitor) const
 {
   for (const auto& kv : _int_metrics) { visitor.int_metric(kv.first, kv.second); }
   for (const auto& kv : _float_metrics) { visitor.float_metric(kv.first, kv.second); }
   for (const auto& kv : _string_metrics) { visitor.string_metric(kv.first, kv.second); }
   for (const auto& kv : _bool_metrics) { visitor.bool_metric(kv.first, kv.second); }
+  for (const auto& kv : _metric_sink_metrics) { visitor.sink_metric(kv.first, kv.second); }
 }

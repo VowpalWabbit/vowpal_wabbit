@@ -34,14 +34,23 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::persist(met
   metrics.set_uint("current_champ", current_champ);
   for (uint64_t live_slot = 0; live_slot < estimators.size(); ++live_slot)
   {
+    auto live_slot_key = "estimator_" + std::to_string(live_slot);
+    VW::metric_sink nested_metrics;
+    VW::metric_sink self_metrics;
+    VW::metric_sink respective_champ_metrics;
+
     estimators[live_slot].first.persist(
-        metrics, "_amls_" + std::to_string(live_slot), verbose, _config_oracle._interaction_type);
-    estimators[live_slot].second.persist(metrics, "_sc_" + std::to_string(live_slot));
+        self_metrics, "_amls_" + std::to_string(live_slot), verbose, _config_oracle._interaction_type);
+    estimators[live_slot].second.persist(respective_champ_metrics, "_sc_" + std::to_string(live_slot));
     if (verbose)
     {
       auto& elements = _config_oracle.configs[estimators[live_slot].first.config_index].elements;
-      metrics.set_string("exclusionc_" + std::to_string(live_slot), VW::reductions::util::elements_to_string(elements));
+      nested_metrics.set_string(
+          "exclusionc_" + std::to_string(live_slot), VW::reductions::util::elements_to_string(elements));
     }
+    nested_metrics.set_metric_sink("self", std::move(self_metrics));
+    nested_metrics.set_metric_sink("sync_champ", std::move(respective_champ_metrics));
+    metrics.set_metric_sink(live_slot_key, std::move(nested_metrics));
   }
   metrics.set_uint("total_champ_switches", total_champ_switches);
 }
