@@ -141,11 +141,11 @@ size_t cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::num
   {
     // sum the singular values
     float sum_of_sv = 0;
-    for (auto& val : _S) { sum_of_sv += val; }
+    for (auto val : _S) { sum_of_sv += val; }
 
     // how many singular values represent 99% of the total sum of the singular values
     float current_sum_sv = 0;
-    for (auto& val : _S)
+    for (auto val : _S)
     {
       _non_degenerate_singular_values++;
       current_sum_sv += val;
