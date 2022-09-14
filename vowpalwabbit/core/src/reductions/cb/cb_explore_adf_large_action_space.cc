@@ -152,6 +152,8 @@ size_t cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::num
       if (current_sum_sv > 0.99f * sum_of_sv) { break; }
     }
   }
+
+  return _non_degenerate_singular_values;
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
