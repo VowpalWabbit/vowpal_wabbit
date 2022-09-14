@@ -599,7 +599,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_same_actions)
   }
 }
 
-BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_of_other_actions)
+BOOST_AUTO_TEST_CASE(check_spanner_with_actions_that_are_linear_combinations_of_other_actions)
 {
   auto d = 8;
   std::vector<VW::workspace*> vws;
@@ -685,12 +685,16 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_
       const auto& preds = examples[0]->pred.a_s;
 
       size_t encounters = 0;
+      bool action_4_in_spanner = false;
       for (auto& a_s : preds)
       {
-        if (a_s.action == 3 && a_s.score != 0.f) { encounters++; }
+        if (a_s.action == 1 && a_s.score != 0.f) { encounters++; }
+        if (a_s.action == 2 && a_s.score != 0.f) { encounters++; }
+        if (a_s.action == 3 && a_s.score != 0.f) { encounters++; action_4_in_spanner = true;}
       }
 
       BOOST_CHECK_EQUAL(encounters, 1);
+      BOOST_CHECK_EQUAL(action_4_in_spanner, true);
 
       vw.finish_example(examples);
     }
