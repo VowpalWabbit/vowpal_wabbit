@@ -196,7 +196,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
 BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
 {
   const size_t seed = 10;
-  const size_t num_iterations = 1744;
+  const size_t num_iterations = 1742;
   callback_map test_hooks;
 
   test_hooks.emplace(500, all_weights_equal_test);

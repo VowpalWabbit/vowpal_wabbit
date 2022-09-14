@@ -76,7 +76,7 @@ VW::string_view VW::metric_sink::get_string(const std::string& key) const
 bool VW::metric_sink::get_bool(const std::string& key) const
 {
   auto it = _bool_metrics.find(key);
-  if (it == _bool_metrics.end()) { THROW("Key: " << key << " does not exist in bool metrics. Is the type correct?") }
+  if (it == _bool_metrics.end()) { THROW("Key: " << key << " does not exist in sink metrics. Is the type correct?") }
   return it->second;
 }
 
