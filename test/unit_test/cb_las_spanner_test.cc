@@ -599,21 +599,20 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_same_actions)
   }
 }
 
-BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_of_other_actions)
+BOOST_AUTO_TEST_CASE(check_spanner_with_actions_that_are_linear_combinations_of_other_actions)
 {
-  // 9 actions and I want spanner to reject the one that is a linear combination of the other two
   auto d = 8;
   std::vector<VW::workspace*> vws;
 
   auto* vw_squarecb =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
+              std::to_string(d) + " --quiet --random_seed 5 --noconstant ",
           nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_squarecb);
 
   auto* vw_egreedy = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+          std::to_string(d) + " --quiet --random_seed 5 --noconstant",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_egreedy);
@@ -621,28 +620,6 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_
   for (auto* vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
-
-      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12 a100:4 a200:33"));
-      examples.push_back(VW::read_example(vw, "| a_1:0.8 a_2:0.32 a_3:0.15 a100:0.2 a200:0.2"));
-      // linear combination of the above two actions
-      // action_4 = action_2 + 2 * action_3
-      examples.push_back(VW::read_example(vw, "| a_1:2.1 a_2:1.29 a_3:0.42 a100:4.4 a200:33.4"));
-
-      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15 d1:0.2 d10: 0.2"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9 v1:0.99"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18:0.2"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -672,20 +649,56 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_actions_that_are_linear_combinations_
       examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
       examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18:0.2"));
 
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    // we only really care to explore as many actions as there are non degenerate singular values
+    // after that actions aren't going to be diverse enough so the spanner will pick similar actions
+
+    // in this case one of the actions that is picked in the spanner is the linear combination of the two other actions,
+    // and those two actions do not get picked by the spanner
+
+    auto non_degenerate_singular_values = action_space->explore.number_of_non_degenerate_singular_values();
+    action_space->explore._set_rank(non_degenerate_singular_values);
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
+
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12 a100:4 a200:33"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.8 a_2:0.32 a_3:0.15 a100:0.2 a200:0.2"));
+      // linear combination of the above two actions
+      // action_4 = action_2 + 2 * action_3
+      examples.push_back(VW::read_example(vw, "| a_1:2.1 a_2:1.29 a_3:0.42 a100:4.4 a200:33.4"));
+
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15 d1:0.2 d10: 0.2"));
+      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9 v1:0.99"));
+      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18:0.2"));
+
       vw.predict(examples);
 
       const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
 
       size_t encounters = 0;
+      bool action_4_in_spanner = false;
       for (auto& a_s : preds)
       {
         if (a_s.action == 1 && a_s.score != 0.f) { encounters++; }
         if (a_s.action == 2 && a_s.score != 0.f) { encounters++; }
-        if (a_s.action == 3 && a_s.score != 0.f) { encounters++; }
+        if (a_s.action == 3 && a_s.score != 0.f)
+        {
+          encounters++;
+          action_4_in_spanner = true;
+        }
       }
 
-      BOOST_CHECK_EQUAL(encounters, 2);
+      BOOST_CHECK_EQUAL(encounters, 1);
+      BOOST_CHECK_EQUAL(action_4_in_spanner, true);
 
       vw.finish_example(examples);
     }

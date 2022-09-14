@@ -175,6 +175,7 @@ private:
   uint64_t _seed;
   size_t _counter;
   implementation_type _impl_type;
+  size_t _non_degenerate_singular_values;
 
 public:
   spanner_impl _spanner_state;
@@ -196,6 +197,8 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
+
+  size_t number_of_non_degenerate_singular_values();
 
   // the below methods are used only during unit testing and are not called otherwise
   void _populate_all_testing_components()
