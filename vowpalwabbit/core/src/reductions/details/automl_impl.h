@@ -118,8 +118,8 @@ struct config_oracle
       const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state);
 
   void gen_configs(const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
-  void insert_config(
-      set_ns_list_t&& new_elements, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups = false);
+  void insert_config(set_ns_list_t&& new_elements, const std::map<namespace_index, uint64_t>& ns_counter,
+      VW::reductions::automl::config_type conf_type, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_starting_configuration();
   void keep_best_two(uint64_t winner_config_index);
@@ -169,7 +169,7 @@ struct one_diff_impl
 struct champdupe_impl
 {
   Iterator begin() { return Iterator(); }
-  Iterator end() { return Iterator(3); }
+  Iterator end() { return Iterator(2); }
 };
 
 template <typename config_oracle_impl, typename estimator_impl>

@@ -119,8 +119,9 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 template <typename oracle_impl>
-void config_oracle<oracle_impl>::insert_config(
-    set_ns_list_t&& new_elements, const std::map<namespace_index, uint64_t>& ns_counter, bool allow_dups)
+void config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
+    const std::map<namespace_index, uint64_t>& ns_counter, VW::reductions::automl::config_type conf_type,
+    bool allow_dups)
 {
   // First check if config already exists
   if (!allow_dups)
@@ -132,7 +133,7 @@ void config_oracle<oracle_impl>::insert_config(
         if (i < valid_config_size) { return; }
         else
         {
-          configs[valid_config_size].reset(std::move(configs[i].elements), global_lease, config_type::Exclusion);
+          configs[valid_config_size].reset(std::move(configs[i].elements), global_lease, conf_type);
           // TODO: do we have to push here to index_quue?
         }
       }
@@ -143,10 +144,10 @@ void config_oracle<oracle_impl>::insert_config(
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
   // configs exist we'll generate a new one.
   if (valid_config_size < configs.size())
-  { configs[valid_config_size].reset(std::move(new_elements), global_lease, config_type::Exclusion); }
+  { configs[valid_config_size].reset(std::move(new_elements), global_lease, conf_type); }
   else
   {
-    configs.emplace_back(std::move(new_elements), global_lease, config_type::Exclusion);
+    configs.emplace_back(std::move(new_elements), global_lease, conf_type);
   }
 
   float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
@@ -234,7 +235,7 @@ void config_oracle<one_diff_impl>::gen_configs(
   {
     auto copy_champ = champ_excl;
     _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, exclusion_it, copy_champ);
-    insert_config(std::move(copy_champ), ns_counter);
+    insert_config(std::move(copy_champ), ns_counter, config_type::Exclusion);
   }
 
   configs[0].elements = std::move(champ_excl);
@@ -245,10 +246,15 @@ void config_oracle<champdupe_impl>::gen_configs(
     const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   assert(configs[0].conf_type == config_type::Exclusion);
-  for (auto it = _impl.begin(); it < _impl.end(); ++it)
+  auto current = 0;
+  for (auto it = _impl.begin(); it < _impl.end(); ++it, ++current)
   {
     auto copy_champ = configs[0].elements;
-    insert_config(std::move(copy_champ), ns_counter, true);
+    if (current % 2) { insert_config(std::move(copy_champ), ns_counter, config_type::Exclusion, true); }
+    else
+    {
+      insert_config(std::move(copy_champ), ns_counter, config_type::Interaction, true);
+    }
   }
 }
 
@@ -261,7 +267,7 @@ void config_oracle<oracle_impl>::gen_configs(
   {
     auto copy_champ = configs[0].elements;
     _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, copy_champ);
-    insert_config(std::move(copy_champ), ns_counter);
+    insert_config(std::move(copy_champ), ns_counter, config_type::Exclusion);
   }
 }
 
