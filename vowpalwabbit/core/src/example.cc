@@ -80,7 +80,11 @@ void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylab
   dst->_reduction_features = src->_reduction_features;
 }
 
-void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
+void copy_example_label(example* dst, const example* src)
+{
+  dst->l = src->l;
+  dst->_reduction_features = src->_reduction_features;
+}
 
 void copy_example_metadata(example* dst, const example* src)
 {

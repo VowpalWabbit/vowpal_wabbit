@@ -348,7 +348,16 @@ struct OjaNewton
   }
 };
 
-void keep_example(VW::workspace& all, OjaNewton& /* ON */, VW::example& ec) { output_and_account_example(all, ec); }
+void output_and_clear_buffer_on_epoch_end(VW::workspace& all, OjaNewton& ON, VW::example& ec)
+{
+  output_and_account_example(all, ec);
+
+  if (ON.cnt == ON.epoch_size)
+  {
+    ON.cnt = 0;
+    for (int k = 0; k < ON.epoch_size; k++) { VW::finish_example(*ON.all, *ON.buffer[k]); }
+  }
+}
 
 void make_pred(oja_n_update_data& data, float x, float& wref)
 {
@@ -423,7 +432,17 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& ON, base_learner& base, VW::example&
 
   if (ON.normalize) { GD::foreach_feature<oja_n_update_data, update_normalization>(*ON.all, ec, data); }
 
-  ON.buffer[ON.cnt] = &ec;
+  // We cannot store this example because as soon as this function is over it is invalidated.
+  // We must therefore make a copy. However, if epoch_count is 1 we know its only used for the one call so we can safely
+  // stash.
+  VW::example* example_to_store = &ec;
+  if (ON.epoch_size > 1)
+  {
+    example_to_store = VW::new_unused_example(*ON.all);
+    VW::copy_example_data_with_label(example_to_store, &ec);
+    example_to_store->is_from_workspace_pool = true;
+  }
+  ON.buffer[ON.cnt] = example_to_store;
   ON.weight_buffer[ON.cnt++] = data.g / 2;
 
   if (ON.cnt == ON.epoch_size)
@@ -456,12 +475,6 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& ON, base_learner& base, VW::example&
 
   ON.update_b();
   ON.check();
-
-  if (ON.cnt == ON.epoch_size)
-  {
-    ON.cnt = 0;
-    for (int k = 0; k < ON.epoch_size; k++) { VW::finish_example(*ON.all, *ON.buffer[k]); }
-  }
 }
 
 void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
@@ -563,7 +576,7 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
       VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_params_per_weight(all.weights.stride())
                 .set_save_load(save_load)
-                .set_finish_example(keep_example)
+                .set_finish_example(output_and_clear_buffer_on_epoch_end)
                 .build();
 
   return make_base(*l);

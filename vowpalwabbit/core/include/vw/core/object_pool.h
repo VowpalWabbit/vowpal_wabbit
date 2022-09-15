@@ -36,13 +36,13 @@ struct no_lock_object_pool
   {
     if (m_pool.empty()) { return std::unique_ptr<T>(new T); }
 
-    auto obj = std::move(m_pool.top());
+    auto obj = std::move(m_pool.front());
     m_pool.pop();
     return obj;
   }
 
 private:
-  std::stack<std::unique_ptr<T>> m_pool;
+  std::queue<std::unique_ptr<T>> m_pool;
 };
 
 template <typename T>
