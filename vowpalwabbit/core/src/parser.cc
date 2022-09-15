@@ -900,7 +900,8 @@ void clean_example(VW::workspace& all, example& ec)
 void finish_example(VW::workspace& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
-  if ((ec.is_from_workspace_pool && !all.should_finish_return_pooled_examples) || !is_ring_example(all, &ec)) { return; }
+  if ((ec.is_from_workspace_pool && !all.should_finish_return_pooled_examples) || !is_ring_example(all, &ec))
+  { return; }
 
   clean_example(all, ec);
 
@@ -1003,8 +1004,5 @@ namespace VW
 {
 void end_parser(VW::workspace& all) { all.parse_thread.join(); }
 
-bool is_ring_example(const VW::workspace& /* all */, const example* ae)
-{
-  return ae->is_from_workspace_pool;
-}
+bool is_ring_example(const VW::workspace& /* all */, const example* ae) { return ae->is_from_workspace_pool; }
 }  // namespace VW

@@ -28,15 +28,9 @@ namespace VW
 template <typename T>
 struct no_lock_object_pool
 {
-  void return_object(T* obj)
-  {
-    m_pool.push(std::unique_ptr<T>(obj));
-  }
+  void return_object(T* obj) { m_pool.push(std::unique_ptr<T>(obj)); }
 
-  void return_object(std::unique_ptr<T> obj)
-  {
-    m_pool.push(std::move(obj));
-  }
+  void return_object(std::unique_ptr<T> obj) { m_pool.push(std::move(obj)); }
 
   std::unique_ptr<T> get_object()
   {
