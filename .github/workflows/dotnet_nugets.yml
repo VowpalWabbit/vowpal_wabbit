@@ -318,7 +318,7 @@ jobs:
         run: |
           cd test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results
           mv BenchmarkRun-joined-*.json BenchmarkRun-joined.json
-      - uses: benchmark-action/github-action-benchmark@v0
+      - uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: 'benchmarkdotnet'
           output-file-path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/BenchmarkRun-joined.json
