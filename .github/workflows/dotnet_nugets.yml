@@ -315,6 +315,8 @@ jobs:
           path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/
 
       # Generate output for github-action-benchmark
+      - name: Reset dotnet_benchmark.csproj
+        run: git restore test/benchmarks/dotnet/dotnet_benchmark.csproj
       - name: Rename output for github-action-benchmark
         shell: bash
         run: |
