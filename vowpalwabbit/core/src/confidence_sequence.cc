@@ -83,8 +83,8 @@ void confidence_sequence::persist(metric_sink& metrics, const std::string& suffi
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("lb" + suffix, lower_bound());
   metrics.set_float("ub" + suffix, upper_bound());
-  metrics.set_float("w" + suffix, last_w);
-  metrics.set_float("r" + suffix, last_r);
+  metrics.set_float("last_w" + suffix, last_w);
+  metrics.set_float("last_r" + suffix, last_r);
 }
 
 void confidence_sequence::reset_stats()
