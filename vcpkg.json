@@ -18,6 +18,10 @@
     "flatbuffers": {
       "description": "Enable flatbuffers support",
       "dependencies": ["flatbuffers"]
+    },
+    "benchmarks": {
+      "description": "Build Benchmarks",
+      "dependencies": ["benchmark"]
     }
   }
 }

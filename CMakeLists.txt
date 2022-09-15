@@ -274,6 +274,7 @@ endif()
 
 if(BUILD_BENCHMARKS)
   add_subdirectory(test/benchmarks)
+  list(APPEND VCPKG_MANIFEST_FEATURES "benchmarks")
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
