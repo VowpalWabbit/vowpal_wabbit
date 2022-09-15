@@ -471,7 +471,8 @@ Weight Options:
 [Reduction] Continuous Action Contextual Bandit using Zeroth-Order Optimization Options:
     --cbzo                                  Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order
                                             Optimization (type: bool, keep, necessary)
-    --policy arg                            Policy/Model to Learn (type: str, default: linear, keep)
+    --policy arg                            Policy/Model to Learn (type: str, default: linear, choices {constant,
+                                            linear}, keep)
     --radius arg                            Exploration Radius (type: float, default: 0.1, keep)
 [Reduction] Continuous Action Tree with Smoothing with Full Pdf Options:
     --cats_pdf arg                          Number of tree labels <k> for cats_pdf (type: int, keep, necessary)
@@ -545,8 +546,8 @@ Weight Options:
     --probabilities                         Predict probabilities of all classes (type: bool, keep)
 [Reduction] Cost Sensitive Weighted All-Pairs with Label Dependent Features Options:
     --wap_ldf arg                           Use weighted all-pairs multiclass learning with label dependent
-                                            features. Specify singleline or multiline. (type: str, keep,
-                                            necessary)
+                                            features. Specify singleline or multiline. (type: str, choices
+                                            {m, mc, multiline, multiline-classifier}, keep, necessary)
 [Reduction] Count label Options:
     --dont_output_best_constant             Don't track the best constant used in the output (type: bool)
 [Reduction] Debug Metrics Options:
@@ -629,8 +630,6 @@ Weight Options:
                                             '-q ::'. (type: bool)
 [Reduction] Gradient Descent Matrix Factorization Options:
     --rank arg                              Rank for matrix factorization (type: uint, keep, necessary)
-    --bfgs                                  Option not supported by this reduction (type: bool)
-    --conjugate_gradient                    Option not supported by this reduction (type: bool)
 [Reduction] Gradient Descent Options:
     --sgd                                   Use regular stochastic gradient descent update (type: bool, keep)
     --adaptive                              Use adaptive, individual learning rates (type: bool, keep)

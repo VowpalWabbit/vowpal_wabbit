@@ -655,6 +655,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
                               .keep()
                               .necessary()
+                              .one_of({"m", "multiline", "mc", "multiline-classifier"})
                               .help("Use weighted all-pairs multiclass learning with label dependent features. "
                                     "Specify singleline or multiline."));
 

@@ -358,7 +358,11 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order Optimization"))
-      .add(make_option("policy", policy_str).default_value("linear").keep().help("Policy/Model to Learn"))
+      .add(make_option("policy", policy_str)
+               .default_value("linear")
+               .one_of({"linear", "constant"})
+               .keep()
+               .help("Policy/Model to Learn"))
       .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
