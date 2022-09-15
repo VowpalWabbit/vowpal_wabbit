@@ -1,1 +1,0 @@
-find_program(VSTEST_COMMAND "vstest.console.exe" REQUIRED)

@@ -1,5 +1,0 @@
-name: "CodeQL config"
-paths-ignore:
-  - ext_libs/
-  - python/docs/
-  - demo/
