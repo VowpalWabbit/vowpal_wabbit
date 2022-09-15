@@ -47,7 +47,7 @@ void VW::metric_sink::set_bool(const std::string& key, bool value, bool overwrit
 void VW::metric_sink::set_metric_sink(const std::string& key, VW::metric_sink value, bool overwrite)
 {
   throw_if_not_overwrite_and_key_exists(key, overwrite);
-  _metric_sink_metrics[key] = value;
+  _metric_sink_metrics[key] = std::move(value);
   _keys.insert(key);
 }
 

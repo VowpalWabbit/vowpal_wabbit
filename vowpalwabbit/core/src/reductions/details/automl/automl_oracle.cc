@@ -45,7 +45,7 @@ void config_oracle<champdupe_impl>::keep_best_two(uint64_t winner_config_index)
   if (winner_config_index != 1) { std::swap(configs[1], configs[winner_config_index]); }
 
   configs[2].state = config_state::Inactive;
-  assert(configs[0].conf_type == config_type::Exclusion);
+  // assert(configs[0].conf_type == config_type::Exclusion);
 }
 template <typename oracle_impl>
 void config_oracle<oracle_impl>::keep_best_two(uint64_t winner_config_index)
@@ -254,10 +254,11 @@ template <>
 void config_oracle<champdupe_impl>::gen_configs(
     const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
 {
-  assert(configs[0].conf_type == config_type::Exclusion);
-  auto current = 0;
   if (configs.size() == 1)
   {
+    assert(configs[0].conf_type == config_type::Exclusion);
+
+    auto current = 0;
     for (auto it = _impl.begin(); it < _impl.end(); ++it, ++current)
     {
       auto copy_champ = configs[0].elements;
