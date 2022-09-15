@@ -93,8 +93,7 @@ bool got_sigterm;
 void handle_sigterm(int) { got_sigterm = true; }
 
 parser::parser(size_t example_queue_limit, bool strict_parse_)
-    : example_pool{example_queue_limit}
-    , ready_parsed_examples{example_queue_limit}
+    : ready_parsed_examples{example_queue_limit}
     , example_queue_limit{example_queue_limit}
     , num_examples_taken_from_pool(0)
     , num_setup_examples(0)
@@ -684,7 +683,8 @@ namespace VW
 VW::example& get_unused_example(VW::workspace* all)
 {
   parser* p = all->example_parser;
-  auto* ex = p->example_pool.get_object();
+  auto* ex = p->example_pool.get_object().release();
+  ex->is_from_workspace_pool = true;
   ex->example_counter = static_cast<size_t>(p->num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
@@ -888,6 +888,7 @@ void empty_example(VW::workspace& /*all*/, example& ec)
   ec.is_newline = false;
   ec._reduction_features.clear();
   ec.num_features_from_interactions = 0;
+  ec.is_from_workspace_pool = false;
 }
 
 void clean_example(VW::workspace& all, example& ec)
@@ -899,7 +900,7 @@ void clean_example(VW::workspace& all, example& ec)
 void finish_example(VW::workspace& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
-  if (!is_ring_example(all, &ec)) { return; }
+  if ((ec.is_from_workspace_pool && !all.should_finish_return_pooled_examples) || !is_ring_example(all, &ec)) { return; }
 
   clean_example(all, ec);
 
@@ -993,8 +994,8 @@ namespace VW
 {
 void end_parser(VW::workspace& all) { all.parse_thread.join(); }
 
-bool is_ring_example(const VW::workspace& all, const example* ae)
+bool is_ring_example(const VW::workspace& /* all */, const example* ae)
 {
-  return all.example_parser->example_pool.is_from_pool(ae);
+  return ae->is_from_workspace_pool;
 }
 }  // namespace VW

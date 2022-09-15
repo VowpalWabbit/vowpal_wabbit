@@ -313,6 +313,14 @@ public:
   // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
   uint32_t indexing = 2;  // for 0 or 1 indexing
 
+  // Existing default. This will change to false in a future release.
+  // This is not available in the CLI as it affects semantics of library usage.
+  // If this is true, then `finish_example` will return pooled examples to the
+  // pool.
+  // If this is false, `finish_example` does not return examples and it is up to
+  // the external caller to manage this;.
+  bool should_finish_return_pooled_examples = true;
+
   explicit workspace(VW::io::logger logger);
   ~workspace();
   std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }

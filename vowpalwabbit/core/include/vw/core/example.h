@@ -115,6 +115,7 @@ struct example : public example_predict  // core example datatype.
   bool end_pass = false;  // special example indicating end of pass.
   bool sorted = false;    // Are the features sorted or not?
   bool is_newline = false;
+  bool is_from_workspace_pool = false;
 
   size_t get_num_features() const noexcept { return num_features + num_features_from_interactions; }
 
