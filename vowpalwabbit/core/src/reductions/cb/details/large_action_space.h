@@ -6,6 +6,7 @@
 #include "vw/core/action_score.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/rand48.h"
+#include "vw/core/thread_pool.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
 
@@ -40,7 +41,7 @@ public:
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
   bool _set_testing_components = false;
-  vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size);
+  vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -64,7 +65,7 @@ public:
   Eigen::MatrixXf Z;
   bool _set_testing_components = false;
 
-  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size);
+  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
 
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
@@ -84,11 +85,13 @@ private:
   VW::workspace* _all;
   uint64_t _d;
   uint64_t _seed;
+  thread_pool _thread_pool;
+  std::vector<std::future<void>> _futures;
   Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
 
 public:
   Eigen::MatrixXf AOmega;
-  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size);
+  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -172,6 +175,7 @@ private:
   uint64_t _seed;
   size_t _counter;
   implementation_type _impl_type;
+  size_t _non_degenerate_singular_values;
 
 public:
   spanner_impl _spanner_state;
@@ -182,7 +186,8 @@ public:
   randomized_svd_impl _impl;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, implementation_type impl_type);
+      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
+      implementation_type impl_type);
 
   ~cb_explore_adf_large_action_space() = default;
 
@@ -192,6 +197,8 @@ public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
+
+  size_t number_of_non_degenerate_singular_values();
 
   // the below methods are used only during unit testing and are not called otherwise
   void _populate_all_testing_components()
