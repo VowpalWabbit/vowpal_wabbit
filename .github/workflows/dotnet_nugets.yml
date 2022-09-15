@@ -285,7 +285,7 @@ jobs:
       - name: Install package
         run: |
           set +e
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet
           dotnet add dotnet_benchmark.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
@@ -293,7 +293,7 @@ jobs:
           exit 0
       - name: Build and run benchmarks
         run: |
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet
 
           # Build for both .NET Core and Framework
           dotnet build dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-restore --self-contained
@@ -305,7 +305,7 @@ jobs:
       - name: Print benchmark results
         shell: bash
         run: |
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet
           echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --info >> $GITHUB_STEP_SUMMARY
@@ -326,4 +326,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: benchmark_results
-          path: nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results/
+          path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/
