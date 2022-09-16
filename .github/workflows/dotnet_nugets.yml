@@ -244,6 +244,9 @@ jobs:
   benchmark_nuget:
     needs: [build_nuget_dotnet]
     runs-on: "windows-latest"
+    permissions:
+      contents: write
+      deployments: write
     steps:
       - uses: actions/checkout@v2
         with:
