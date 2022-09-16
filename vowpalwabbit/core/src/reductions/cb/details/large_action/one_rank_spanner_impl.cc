@@ -8,7 +8,7 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-void one_rank_spanner_state::find_max_volume(
+void one_rankspanner_state::find_max_volume(
     const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid)
 {
   // find which action (which row of U) will provide the maximum phi * a volume
@@ -27,7 +27,7 @@ void one_rank_spanner_state::find_max_volume(
   }
 }
 
-void one_rank_spanner_state::update_inverse(const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t i)
+void one_rankspanner_state::update_inverse(const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t i)
 {
   /**
    * update the inverse after the replacement of the ith row of X with y
@@ -45,7 +45,7 @@ void one_rank_spanner_state::update_inverse(const Eigen::VectorXf& y, const Eige
   _X_inv -= (1.f / (1.f + vtopXinvu)) * (Xinvu * vtopXinv.transpose());
 }
 
-void one_rank_spanner_state::scale_all(float max_volume, uint64_t num_examples)
+void one_rankspanner_state::scale_all(float max_volume, uint64_t num_examples)
 {
   /**
    * Scale inverse and X using the log of det(X):
@@ -61,7 +61,7 @@ void one_rank_spanner_state::scale_all(float max_volume, uint64_t num_examples)
   _log_determinant_factor += thislogdet;
 }
 
-void one_rank_spanner_state::rank_one_determinant_update(
+void one_rankspanner_state::rank_one_determinant_update(
     const Eigen::MatrixXf& U, float max_volume, uint64_t U_rid, float shrink_factor, uint64_t i)
 {
   // this is the row from U that will replace the current row in X
@@ -78,7 +78,7 @@ void one_rank_spanner_state::rank_one_determinant_update(
   scale_all(max_volume, U.rows());
 }
 
-void one_rank_spanner_state::compute_spanner(
+void one_rankspanner_state::compute_spanner(
     const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
 {
   /**
@@ -150,11 +150,11 @@ void one_rank_spanner_state::compute_spanner(
   for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
 }
 
-bool one_rank_spanner_state::is_action_in_spanner(uint32_t action) { return _spanner_bitvec[action]; }
+bool one_rankspanner_state::is_action_in_spanner(uint32_t action) { return _spanner_bitvec[action]; }
 
-size_t one_rank_spanner_state::spanner_size() { return _spanner_bitvec.size(); }
+size_t one_rankspanner_state::spanner_size() { return _spanner_bitvec.size(); }
 
-void one_rank_spanner_state::_test_only_set_rank(uint64_t rank) { _action_indices.resize(rank); }
+void one_rankspanner_state::_test_only_set_rank(uint64_t rank) { _action_indices.resize(rank); }
 
 }  // namespace cb_explore_adf
 }  // namespace VW

@@ -15,7 +15,7 @@
 
 using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
-        VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
+        VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rankspanner_state>>;
 
 BOOST_AUTO_TEST_SUITE(test_suite_las_one_pass_svd)
 

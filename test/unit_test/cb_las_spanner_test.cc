@@ -15,7 +15,7 @@
 
 using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
-        VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
+        VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rankspanner_state>>;
 
 BOOST_AUTO_TEST_SUITE(test_suite_las_spanner)
 
@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
       nullptr, false, nullptr, nullptr);
   uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
   VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::one_pass_svd_impl,
-      VW::cb_explore_adf::one_rank_spanner_state>
+      VW::cb_explore_adf::one_rankspanner_state>
       largecb(
           /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits,
           /*thread_pool_size*/ 0, VW::cb_explore_adf::implementation_type::one_pass_svd);
@@ -41,17 +41,17 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
 
   Eigen::MatrixXf X_inv = X.inverse();
   Eigen::VectorXf phi = X_inv.row(0);
-  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  largecb.spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
   BOOST_CHECK_SMALL(max_volume - 2.08333349f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 2);
 
   phi = X_inv.row(1);
-  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  largecb.spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
   BOOST_CHECK_SMALL(max_volume - 3.33333278f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 4);
 
   phi = X_inv.row(2);
-  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  largecb.spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
   BOOST_CHECK_SMALL(max_volume - 2.16666675f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 5);
 

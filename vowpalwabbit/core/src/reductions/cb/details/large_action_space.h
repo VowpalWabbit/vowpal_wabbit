@@ -133,7 +133,7 @@ public:
   void _test_only_set_rank(uint64_t rank);
 };
 
-class one_rank_spanner_state
+class one_rankspanner_state
 {
 private:
   const float _c = 2;
@@ -149,7 +149,7 @@ private:
   void scale_all(float max_volume, uint64_t num_examples);
 
 public:
-  one_rank_spanner_state(float c, uint64_t d) : _c(c), _action_indices(d), _log_determinant_factor(0.f){};
+  one_rankspanner_state(float c, uint64_t d) : _c(c), _action_indices(d), _log_determinant_factor(0.f){};
   void find_max_volume(const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid);
   void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
   bool is_action_in_spanner(uint32_t action);
@@ -171,9 +171,9 @@ private:
   bool _set_testing_components = false;
 
 public:
-  spanner_impl _spanner_state;
-  shrink_factor_config _shrink_factor_config;
-  randomized_svd_impl _impl;
+  spanner_impl spanner_state;
+  shrink_factor_config shrink_fact_config;
+  randomized_svd_impl impl;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
   
@@ -201,14 +201,14 @@ public:
   void _populate_all_testing_components()
   {
     _set_testing_components = true;
-    _impl._set_testing_components = true;
+    impl._set_testing_components = true;
   }
 
   void _test_only_set_rank(uint64_t rank)
   {
     _d = rank;
-    _impl._test_only_set_rank(rank);
-    _spanner_state._test_only_set_rank(rank);
+    impl._test_only_set_rank(rank);
+    spanner_state._test_only_set_rank(rank);
   }
 
 private:
