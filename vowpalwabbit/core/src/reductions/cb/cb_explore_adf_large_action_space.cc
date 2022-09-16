@@ -51,7 +51,7 @@ public:
   }
 };
 
-bool _generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
+bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
     Eigen::SparseMatrix<float>& _A)
 {
   uint64_t row_index = 0;
@@ -177,7 +177,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
 
     _spanner_state.compute_spanner(U, _d, shrink_factors);
 
-    assert(_spanner_state._spanner_bitvec.size() == preds.size());
+    assert(_spanner_state.spanner_size() == preds.size());
   }
   else
   {
@@ -191,11 +191,8 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
   auto it = preds.begin();
   while (it != preds.end())
   {
-    if (!_spanner_state._spanner_bitvec[it->action]) { preds.erase(it); }
-    else
-    {
-      it++;
-    }
+    if (!_spanner_state.is_action_in_spanner(it->action)) { preds.erase(it); }
+    else { it++; }
   }
 }
 
@@ -245,13 +242,18 @@ cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint6
     float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
     size_t thread_pool_size, implementation_type impl_type)
     : _d(d)
-    , _spanner_state(c, d)
-    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
     , _all(all)
     , _counter(0)
     , _seed(seed)
     , _impl_type(impl_type)
+    , _spanner_state(c, d)
+    , _shrink_factor_config(gamma_scale, gamma_exponent, apply_shrink_factor)
     , _impl(all, d, _seed, total_size, thread_pool_size)
+{
+}
+
+shrink_factor_config::shrink_factor_config(float gamma_scale, float gamma_exponent, bool apply_shrink_factor)
+    : _gamma_scale(gamma_scale), _gamma_exponent(gamma_exponent), _apply_shrink_factor(apply_shrink_factor)
 {
 }
 
@@ -268,10 +270,7 @@ void shrink_factor_config::calculate_shrink_factor(
       shrink_factors.push_back(std::sqrt(1 + max_actions + gamma / (4.0f * max_actions) * (preds[i].score - min_ck)));
     }
   }
-  else
-  {
-    shrink_factors.resize(preds.size(), 1.f);
-  }
+  else { shrink_factors.resize(preds.size(), 1.f); }
 }
 
 template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;

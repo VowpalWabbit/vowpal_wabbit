@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 
     vw.predict(examples);
 
-    VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
+    VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
 
     auto num_actions = examples.size();
     BOOST_CHECK_EQUAL(num_actions, 1);
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
     uint64_t max_existing_column = 0;
     _model_weight_rand_svd_impl.generate_model_weight_Y(
         examples, max_existing_column, action_space->explore.shrink_factors);
-    _model_weight_rand_svd_impl._populate_from_model_weight_Y(examples);
+    _model_weight_rand_svd_impl._test_only_populate_from_model_weight_Y(examples);
 
     BOOST_CHECK_EQUAL(_model_weight_rand_svd_impl.Y.rows() > 0, true);
     BOOST_CHECK_EQUAL(_model_weight_rand_svd_impl.Y.cols(), d);
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
-      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
+      VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
 
       uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -453,7 +453,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 
       vw.predict(examples);
 
-      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
+      VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 
       action_space->explore._shrink_factor_config.calculate_shrink_factor(
           0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
+      VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore._impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore._impl.generate_B(examples, action_space->explore.shrink_factors);
       VW::cb_explore_adf::generate_Z(examples, action_space->explore._impl.Z, action_space->explore._impl.B, d, 50);
@@ -578,12 +578,12 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
         0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
     action_space->explore.randomized_SVD(examples);
 
-    VW::cb_explore_adf::_generate_A(&vw, examples, _triplets, action_space->explore._A);
+    VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
     {
       Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._A);
       auto rank = lu_decomp.rank();
       // for test set actual rank of A
-      action_space->explore._set_rank(rank);
+      action_space->explore._test_only_set_rank(rank);
       // should have a rank larger than 1 for the test
       BOOST_CHECK_GT(rank, 1);
     }

@@ -167,7 +167,7 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
   }
 }
 
-void vanilla_rand_svd_impl::_set_rank(uint64_t rank) { _d = rank; }
+void vanilla_rand_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }
 
 void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,
     Eigen::VectorXf& _S, Eigen::MatrixXf& _V)
@@ -176,7 +176,6 @@ void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<floa
   // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is
   // more natural to vw's example features representation
 
-  // TODO can Y be stored in the model? on some strided location ^^ ?
   // if the model is empty then can't create Y and there is nothing left to do
   if (!generate_Y(examples, shrink_factors) || Y.rows() < static_cast<Eigen::Index>(_d))
   {

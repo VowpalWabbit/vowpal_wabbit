@@ -140,7 +140,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     // number of columns that have a non-close-to-zero singular value, and then the linear combination in the
     // representation breaks
     auto non_degenerate_singular_values = action_space->explore.number_of_non_degenerate_singular_values();
-    action_space->explore._set_rank(non_degenerate_singular_values);
+    action_space->explore._test_only_set_rank(non_degenerate_singular_values);
 
     {
       VW::multi_ex examples;

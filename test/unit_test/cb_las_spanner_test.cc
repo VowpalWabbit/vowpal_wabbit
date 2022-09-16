@@ -660,7 +660,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_with_actions_that_are_linear_combinations_of_
     // and those two actions do not get picked by the spanner
 
     auto non_degenerate_singular_values = action_space->explore.number_of_non_degenerate_singular_values();
-    action_space->explore._set_rank(non_degenerate_singular_values);
+    action_space->explore._test_only_set_rank(non_degenerate_singular_values);
 
     {
       VW::multi_ex examples;
