@@ -279,9 +279,9 @@ void shrink_factor_config::calculate_shrink_factor(
   }
 }
 
-template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rankspanner_state>;
-template struct cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rankspanner_state>;
-template struct cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rankspanner_state>;
+template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
+template struct cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
+template struct cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -404,7 +404,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     }
     else
     {
-      return make_las_with_impl<model_weight_rand_svd_impl, one_rankspanner_state>(stack_builder, base, impl_type, all,
+      return make_las_with_impl<model_weight_rand_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
           with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
     }
   }
@@ -418,7 +418,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     }
     else
     {
-      return make_las_with_impl<vanilla_rand_svd_impl, one_rankspanner_state>(stack_builder, base, impl_type, all,
+      return make_las_with_impl<vanilla_rand_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
           with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
     }
   }
@@ -432,7 +432,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     }
     else
     {
-      return make_las_with_impl<one_pass_svd_impl, one_rankspanner_state>(stack_builder, base, impl_type, all,
+      return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
           with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
     }
   }

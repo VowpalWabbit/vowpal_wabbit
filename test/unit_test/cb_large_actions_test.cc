@@ -15,13 +15,13 @@
 
 using internal_action_space =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
-        VW::cb_explore_adf::vanilla_rand_svd_impl, VW::cb_explore_adf::one_rankspanner_state>>;
+        VW::cb_explore_adf::vanilla_rand_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 using internal_action_space_mw =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
-        VW::cb_explore_adf::model_weight_rand_svd_impl, VW::cb_explore_adf::one_rankspanner_state>>;
+        VW::cb_explore_adf::model_weight_rand_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
-        VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rankspanner_state>>;
+        VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
 BOOST_AUTO_TEST_SUITE(test_suite_las)
 
@@ -559,7 +559,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 template <typename T>
 void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<T,
-        VW::cb_explore_adf::one_rankspanner_state>>* action_space,
+        VW::cb_explore_adf::one_rank_spanner_state>>* action_space,
     bool apply_diag_M, std::vector<Eigen::Triplet<float>> _triplets, uint64_t d)
 {
   BOOST_CHECK_EQUAL(action_space != nullptr, true);

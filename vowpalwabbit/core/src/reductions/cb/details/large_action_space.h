@@ -133,7 +133,7 @@ public:
   void _test_only_set_rank(uint64_t rank);
 };
 
-class one_rankspanner_state
+class one_rank_spanner_state
 {
 private:
   const float _c = 2;
@@ -149,7 +149,7 @@ private:
   void scale_all(float max_volume, uint64_t num_examples);
 
 public:
-  one_rankspanner_state(float c, uint64_t d) : _c(c), _action_indices(d), _log_determinant_factor(0.f){};
+  one_rank_spanner_state(float c, uint64_t d) : _c(c), _action_indices(d), _log_determinant_factor(0.f){};
   void find_max_volume(const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid);
   void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
   bool is_action_in_spanner(uint32_t action);
