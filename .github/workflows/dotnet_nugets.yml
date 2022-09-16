@@ -307,7 +307,7 @@ jobs:
         run: |
           cd test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results
           echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
-          cat BenchmarkRun-joined-*.md >> $GITHUB_STEP_SUMMARY
+          cat BenchmarkRun-joined-*.md | sed 's/\*\*//g' >> $GITHUB_STEP_SUMMARY
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -317,15 +317,15 @@ jobs:
       # Generate output for github-action-benchmark
       - name: Reset dotnet_benchmark.csproj
         run: git restore test/benchmarks/dotnet/dotnet_benchmark.csproj
-      - name: Rename output for github-action-benchmark
+      - name: Filter only .NET Core output for github-action-benchmark
         shell: bash
         run: |
           cd test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results
-          mv BenchmarkRun-joined-*.json BenchmarkRun-joined.json
+          cat BenchmarkRun-joined-*.json | jq '.Benchmarks |= map(select(.DisplayInfo | contains(".NET Framework") | not))' > BenchmarkRun.json
       - uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: 'benchmarkdotnet'
-          output-file-path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/BenchmarkRun-joined.json
+          output-file-path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/BenchmarkRun.json
           fail-on-alert: true
           comment-on-alert: true
           auto-push: false
