@@ -176,7 +176,7 @@ public:
   randomized_svd_impl impl;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
-  
+
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::SparseMatrix<float> _A;
   Eigen::VectorXf _S;
