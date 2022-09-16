@@ -41,17 +41,17 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
 
   Eigen::MatrixXf X_inv = X.inverse();
   Eigen::VectorXf phi = X_inv.row(0);
-  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  largecb.spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
   BOOST_CHECK_SMALL(max_volume - 2.08333349f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 2);
 
   phi = X_inv.row(1);
-  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  largecb.spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
   BOOST_CHECK_SMALL(max_volume - 3.33333278f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 4);
 
   phi = X_inv.row(2);
-  largecb._spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
+  largecb.spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
   BOOST_CHECK_SMALL(max_volume - 2.16666675f, FLOAT_TOL);
   BOOST_CHECK_EQUAL(U_rid, 5);
 
@@ -660,7 +660,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_with_actions_that_are_linear_combinations_of_
     // and those two actions do not get picked by the spanner
 
     auto non_degenerate_singular_values = action_space->explore.number_of_non_degenerate_singular_values();
-    action_space->explore._set_rank(non_degenerate_singular_values);
+    action_space->explore._test_only_set_rank(non_degenerate_singular_values);
 
     {
       VW::multi_ex examples;

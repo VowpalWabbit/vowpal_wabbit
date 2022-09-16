@@ -226,7 +226,7 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
   }
 }
 
-void model_weight_rand_svd_impl::_populate_from_model_weight_Y(const multi_ex& examples)
+void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const multi_ex& examples)
 {
   std::vector<Eigen::Triplet<float>> triplets;
   uint64_t max_non_zero_col = 0;
@@ -304,7 +304,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
   }
 }
 
-void model_weight_rand_svd_impl::_set_rank(uint64_t rank) { _d = rank; }
+void model_weight_rand_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }
 
 void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors,
     Eigen::MatrixXf& U, Eigen::VectorXf& _S, Eigen::MatrixXf& _V)
@@ -316,7 +316,7 @@ void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector
     return;
   }
 
-  if (_set_testing_components) { _populate_from_model_weight_Y(examples); }
+  if (_set_testing_components) { _test_only_populate_from_model_weight_Y(examples); }
 
   generate_B_model_weight(examples, max_existing_column, shrink_factors);
   cleanup_model_weight_Y(examples);
