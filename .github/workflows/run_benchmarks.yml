@@ -42,6 +42,7 @@ jobs:
         with:
           tool: 'googlecpp'
           output-file-path: benchmark_results.json
+          alert-threshold: '150%'
           fail-on-alert: true
           comment-on-alert: true
           auto-push: false
