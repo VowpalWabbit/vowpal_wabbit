@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <BinaryOutputBase Condition="'$(BinaryOutputBase.Trim())'==''">$(SolutionDir).</BinaryOutputBase>
+    <OutputPath>$(BinaryOutputBase.Trim())\$(Platform)\$(Configuration)</OutputPath>
+    <Platforms>AnyCPU;x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AssemblyName>cs_testcommon</AssemblyName>
+    <RootNamespace>cs_testcommon</RootNamespace>
+    <HighEntropyVA>true</HighEntropyVA>
+  </PropertyGroup>
+
+  <Import Project="$(PackagingIntegration)" Condition="Exists('$(PackagingIntegration)')" />
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="9.0.1" GeneratePathProperty="true" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- <Import Project="..\common\codegen\TextTemplate.targets" />
+
+  <ItemGroup>
+    <TextTemplate Include="..\common\codegen\InternalsVisibleToTest.tt"></TextTemplate>
+  </ItemGroup>
+
+  <Target Name="OutputVars" BeforeTargets="Build">
+    <Message Importance="high" Text="INFO: PackagingIntegration = $(PackagingIntegration)" />
+    <Message Importance="high" Text="INFO: SignAssembly = $(SignAssembly)" />
+    <Message Importance="high" Text="INFO: DelaySign = $(DelaySign)" />
+    <Message Importance="high" Text="INFO: KeyFile = $(KeyFile)" />
+    <Message Importance="high" Text="INFO: AssemblyOriginatorKeyFile = $(AssemblyOriginatorKeyFile)" />
+    <Message Importance="high" Text="INFO: TextTransformerParams = @(TextTransformParameter)" />
+  </Target> -->
+
+  <ItemGroup>
+    <Compile Include="../*.cs" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+  </PropertyGroup>
+
+  <Target Name="GetDependencyTargetPaths">
+    <ItemGroup>
+      <TargetPathWithTargetPlatformMoniker Include="$(PKGNewtonsoft_Json)\lib\netstandard1.0\Newtonsoft.Json.dll" IncludeRuntimeDependency="false" />
+    </ItemGroup>
+  </Target>
+
+</Project>

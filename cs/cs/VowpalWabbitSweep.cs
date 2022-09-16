@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="VowpalWabbitSweep.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -9,7 +9,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,8 +45,6 @@ namespace VW
         {
             if (settings == null || settings.Count == 0)
                 throw new ArgumentException("settings");
-
-            Contract.EndContractBlock();
 
             // TODO: check that the sweeps are not across incompatible options.
             this.settings = settings;

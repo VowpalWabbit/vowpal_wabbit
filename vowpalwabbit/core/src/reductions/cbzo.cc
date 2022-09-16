@@ -216,8 +216,10 @@ void predict(cbzo& data, base_learner&, VW::example& ec)
   if (audit_or_hash_inv) { print_audit_features(*data.all, ec); }
 }
 
+// NO_SANITIZE_UNDEFINED needed in learn functions because
+// base_learner& base might be a reference created from nullptr
 template <uint8_t policy, bool feature_mask_off, bool audit_or_hash_inv>
-void learn(cbzo& data, base_learner& base, VW::example& ec)
+void NO_SANITIZE_UNDEFINED learn(cbzo& data, base_learner& base, VW::example& ec)
 {
   // update_weights() doesn't require predict() to be called. It is called
   // to respect --audit, --invert_hash, --predictions for train examples
@@ -356,7 +358,11 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order Optimization"))
-      .add(make_option("policy", policy_str).default_value("linear").keep().help("Policy/Model to Learn"))
+      .add(make_option("policy", policy_str)
+               .default_value("linear")
+               .one_of({"linear", "constant"})
+               .keep()
+               .help("Policy/Model to Learn"))
       .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }

@@ -2,6 +2,16 @@
 
 #include "vw/common/future_compat.h"
 
+// If the Windows.h header has been included at some point then the GetObject breaks this file.
+// Workaround by undefing it for the content of this header.
+// We need to put it before the rapidjson header since we cannot assume rapidjson has its
+// fix in place or not.
+#ifdef GetObject
+#  pragma push_macro("GetObject")
+#  define VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF
+#  undef GetObject
+#endif
+
 // RapidJson triggers this warning by memcpying non-trivially copyable type. Ignore it so that our warnings are not
 // polluted by it.
 // https://github.com/Tencent/rapidjson/issues/1700
@@ -150,10 +160,11 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
   }
 }
 
+// NO_SANITIZE_UNDEFINED needed because example_factory function pointer may be typecasted
 template <bool audit>
-void parse_context(const Value& context, const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, VW::example_factory_t example_factory,
-    void* ex_factory_context, VW::multi_ex& slot_examples,
+void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_parser& lbl_parser,
+    hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::multi_ex& slot_examples,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
   std::vector<Namespace<audit>> namespaces;
@@ -329,3 +340,7 @@ void parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, cha
     }
   }
 }
+
+#ifdef VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF
+#  pragma pop_macro("GetObject")
+#endif

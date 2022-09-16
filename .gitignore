@@ -154,8 +154,15 @@ test/flatbuffer/*.predict
 test/flatbuffer/*.stderr
 node_modules
 
+/.vs
+out/
+sdl/
+
 #VS Code
 .vscode/settings.json
 
 cmake-build-debug
 cmake-build-release
+
+# C# benchmark results
+BenchmarkDotNet.Artifacts

@@ -1,5 +1,5 @@
-Version 9.3.0
-Id
+Version 9.4.0
+Id 
 Min label:-1
 Max label:0
 bits:18
@@ -132,7 +132,7 @@ _automl_config_manager_estimators[0].second_lastw = 0
 _automl_config_manager_estimators[0].second_lastr = 0
 _automl_config_manager_estimators[1].first_chisq_alpha = 0.01666666753590107
 _automl_config_manager_estimators[1].first_chisq_tau = 1
-_automl_config_manager_estimators[1].first_chisq_n = 2
+_automl_config_manager_estimators[1].first_chisq_n = 3
 _automl_config_manager_estimators[1].first_chisq_sumw = 0
 _automl_config_manager_estimators[1].first_chisq_sumwsq = 0
 _automl_config_manager_estimators[1].first_chisq_sumwr = 0
@@ -143,14 +143,14 @@ _automl_config_manager_estimators[1].first_chisq_rmax = 1
 _automl_config_manager_estimators[1].first_chisq_wmin = 0
 _automl_config_manager_estimators[1].first_chisq_wmax = inf
 _automl_config_manager_estimators[1].first_ips = 0
-_automl_config_manager_estimators[1].first_count = 2
+_automl_config_manager_estimators[1].first_count = 3
 _automl_config_manager_estimators[1].first_lastw = 0
 _automl_config_manager_estimators[1].first_lastr = 1
 _automl_config_manager_estimators[1].first_index = 3
 _automl_config_manager_estimators[1].first_eligible_to_inactivate = false
 _automl_config_manager_estimators[1].second_chisq_alpha = 0.01666666753590107
 _automl_config_manager_estimators[1].second_chisq_tau = 1
-_automl_config_manager_estimators[1].second_chisq_n = 2
+_automl_config_manager_estimators[1].second_chisq_n = 3
 _automl_config_manager_estimators[1].second_chisq_sumw = 0
 _automl_config_manager_estimators[1].second_chisq_sumwsq = 0
 _automl_config_manager_estimators[1].second_chisq_sumwr = 0
@@ -161,12 +161,12 @@ _automl_config_manager_estimators[1].second_chisq_rmax = 1
 _automl_config_manager_estimators[1].second_chisq_wmin = 0
 _automl_config_manager_estimators[1].second_chisq_wmax = inf
 _automl_config_manager_estimators[1].second_ips = 0
-_automl_config_manager_estimators[1].second_count = 2
+_automl_config_manager_estimators[1].second_count = 3
 _automl_config_manager_estimators[1].second_lastw = 0
 _automl_config_manager_estimators[1].second_lastr = 1
 _automl_config_manager_estimators[2].first_chisq_alpha = 0.01666666753590107
 _automl_config_manager_estimators[2].first_chisq_tau = 1
-_automl_config_manager_estimators[2].first_chisq_n = 2
+_automl_config_manager_estimators[2].first_chisq_n = 3
 _automl_config_manager_estimators[2].first_chisq_sumw = 0
 _automl_config_manager_estimators[2].first_chisq_sumwsq = 0
 _automl_config_manager_estimators[2].first_chisq_sumwr = 0
@@ -177,14 +177,14 @@ _automl_config_manager_estimators[2].first_chisq_rmax = 1
 _automl_config_manager_estimators[2].first_chisq_wmin = 0
 _automl_config_manager_estimators[2].first_chisq_wmax = inf
 _automl_config_manager_estimators[2].first_ips = 0
-_automl_config_manager_estimators[2].first_count = 2
+_automl_config_manager_estimators[2].first_count = 3
 _automl_config_manager_estimators[2].first_lastw = 0
 _automl_config_manager_estimators[2].first_lastr = 1
 _automl_config_manager_estimators[2].first_index = 2
 _automl_config_manager_estimators[2].first_eligible_to_inactivate = true
 _automl_config_manager_estimators[2].second_chisq_alpha = 0.01666666753590107
 _automl_config_manager_estimators[2].second_chisq_tau = 1
-_automl_config_manager_estimators[2].second_chisq_n = 2
+_automl_config_manager_estimators[2].second_chisq_n = 3
 _automl_config_manager_estimators[2].second_chisq_sumw = 0
 _automl_config_manager_estimators[2].second_chisq_sumwsq = 0
 _automl_config_manager_estimators[2].second_chisq_sumwr = 0
@@ -195,7 +195,7 @@ _automl_config_manager_estimators[2].second_chisq_rmax = 1
 _automl_config_manager_estimators[2].second_chisq_wmin = 0
 _automl_config_manager_estimators[2].second_chisq_wmax = inf
 _automl_config_manager_estimators[2].second_ips = 0
-_automl_config_manager_estimators[2].second_count = 2
+_automl_config_manager_estimators[2].second_count = 3
 _automl_config_manager_estimators[2].second_lastw = 0
 _automl_config_manager_estimators[2].second_lastr = 1
 _automl_config_manager_index_queue.size() = 8
@@ -219,19 +219,19 @@ _automl_config_manager_per_live_model_state_double.size() = 9
 _automl_config_manager_per_live_model_state_double[0] = 98.98610879850912
 _automl_config_manager_per_live_model_state_double[1] = 0.30612243711948395
 _automl_config_manager_per_live_model_state_double[2] = 0
-_automl_config_manager_per_live_model_state_double[3] = 59.39374421118373
-_automl_config_manager_per_live_model_state_double[4] = 0.20408162474632263
+_automl_config_manager_per_live_model_state_double[3] = 89.19019081068564
+_automl_config_manager_per_live_model_state_double[4] = 0.30612243711948395
 _automl_config_manager_per_live_model_state_double[5] = 0
-_automl_config_manager_per_live_model_state_double[6] = 64.29170320509547
-_automl_config_manager_per_live_model_state_double[7] = 0.20408162474632263
+_automl_config_manager_per_live_model_state_double[6] = 96.53712930155325
+_automl_config_manager_per_live_model_state_double[7] = 0.30612243711948395
 _automl_config_manager_per_live_model_state_double[8] = 0
 _automl_config_manager_per_live_model_state_uint64.size() = 6
 _automl_config_manager_per_live_model_state_uint64[0] = 3
 _automl_config_manager_per_live_model_state_uint64[1] = 36
-_automl_config_manager_per_live_model_state_uint64[2] = 2
-_automl_config_manager_per_live_model_state_uint64[3] = 24
-_automl_config_manager_per_live_model_state_uint64[4] = 2
-_automl_config_manager_per_live_model_state_uint64[5] = 24
+_automl_config_manager_per_live_model_state_uint64[2] = 3
+_automl_config_manager_per_live_model_state_uint64[3] = 36
+_automl_config_manager_per_live_model_state_uint64[4] = 3
+_automl_config_manager_per_live_model_state_uint64[5] = 36
 event_sum 0
 action_sum 0
 :1

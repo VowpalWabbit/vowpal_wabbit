@@ -399,7 +399,8 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
   MultiExampleBuilder multi_ex_builder;
   ExampleBuilder ex_builder;
 
-  VW::example* ae = all.example_parser->ready_parsed_examples.pop();
+  VW::example* ae = nullptr;
+  all.example_parser->ready_parsed_examples.try_pop(ae);
 
   while (ae != nullptr && !ae->end_pass)
   {
@@ -504,7 +505,8 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         ex_builder.clear();
         _multi_ex_index++;
         _examples++;
-        ae = all.example_parser->ready_parsed_examples.pop();
+        ae = nullptr;
+        all.example_parser->ready_parsed_examples.try_pop(ae);
         continue;
       }
       else
@@ -522,7 +524,8 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
 
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
 
-    ae = all.example_parser->ready_parsed_examples.pop();
+    ae = nullptr;
+    all.example_parser->ready_parsed_examples.try_pop(ae);
   }
 
   if (collection && _collection_count > 0)

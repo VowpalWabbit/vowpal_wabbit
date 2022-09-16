@@ -224,6 +224,7 @@ private:
 
   inline FORCE_INLINE void parse_example()
   {
+    _all->example_parser->lbl_parser.default_label(_ae->l);
     if (!_parser->label_list.empty()) { parse_label(); }
     if (!_parser->tag_list.empty()) { parse_tag(); }
 
@@ -232,8 +233,6 @@ private:
 
   inline FORCE_INLINE void parse_label()
   {
-    _all->example_parser->lbl_parser.default_label(_ae->l);
-
     VW::string_view label_content = _csv_line[_parser->label_list[0]];
     if (_parser->options.csv_remove_outer_quotes) { remove_quotation_marks(label_content); }
 

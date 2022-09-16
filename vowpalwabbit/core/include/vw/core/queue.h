@@ -23,30 +23,30 @@
 namespace VW
 {
 template <typename T>
-class ptr_queue
+class thread_safe_queue
 {
 public:
-  ptr_queue(size_t max_size) : max_size(max_size) {}
+  thread_safe_queue(size_t max_size) : max_size(max_size) {}
 
-  T* pop()
+  bool try_pop(T& item)
   {
     std::unique_lock<std::mutex> lock(mut);
     while (object_queue.size() == 0 && !done) { is_not_empty.wait(lock); }
 
-    if (done && object_queue.size() == 0) { return nullptr; }
+    if (done && object_queue.size() == 0) { return false; }
 
-    auto item = object_queue.front();
+    item = std::move(object_queue.front());
     object_queue.pop();
 
     is_not_full.notify_all();
-    return item;
+    return true;
   }
 
-  void push(T* item)
+  void push(T item)
   {
     std::unique_lock<std::mutex> lock(mut);
     while (object_queue.size() == max_size) { is_not_full.wait(lock); }
-    object_queue.push(item);
+    object_queue.push(std::move(item));
 
     is_not_empty.notify_all();
   }
@@ -69,7 +69,7 @@ public:
 
 private:
   size_t max_size;
-  std::queue<T*> object_queue;
+  std::queue<T> object_queue;
   mutable std::mutex mut;
 
   volatile bool done = false;

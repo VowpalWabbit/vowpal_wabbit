@@ -56,7 +56,7 @@ inline int64_t zig_zag_decode(uint64_t n) { return (n >> 1) ^ -static_cast<int64
 
 inline uint64_t zig_zag_encode(int64_t n)
 {
-  uint64_t ret = (n << 1) ^ (n >> 63);
+  uint64_t ret = (static_cast<uint64_t>(n) << 1) ^ (n >> 63);
   return ret;
 }
 
@@ -129,11 +129,15 @@ size_t VW::details::read_cached_features(io_buf& input, features& feats, bool& s
 void VW::details::cache_tag(io_buf& cache, const VW::v_array<char>& tag)
 {
   char* write_head = nullptr;
-  cache.buf_write(write_head, sizeof(size_t) + tag.size());
-  *reinterpret_cast<size_t*>(write_head) = tag.size();
+  size_t tag_size = tag.size();
+  cache.buf_write(write_head, sizeof(size_t) + tag_size);
+  memcpy(write_head, &tag_size, sizeof(size_t));
   write_head += sizeof(size_t);
-  memcpy(write_head, tag.begin(), tag.size());
-  write_head += tag.size();
+  if (tag_size > 0)
+  {
+    memcpy(write_head, tag.begin(), tag_size);
+    write_head += tag_size;
+  }
   cache.set(write_head);
 }
 
@@ -178,7 +182,8 @@ void VW::details::cache_features(io_buf& cache, const features& feats, uint64_t 
   }
 
   cache.set(write_head);
-  *reinterpret_cast<size_t*>(storage_size_loc) = write_head - storage_size_loc - sizeof(size_t);
+  size_t storage_size = write_head - storage_size_loc - sizeof(size_t);
+  memcpy(storage_size_loc, &storage_size, sizeof(size_t));
 }
 
 void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parser& lbl_parser, uint64_t parse_mask,

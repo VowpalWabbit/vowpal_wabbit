@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -117,11 +116,19 @@ namespace VW.Serializer
         /// </summary>
         private readonly bool disableStringExampleGeneration;
 
+        // These work around an issue where for netstandard2.1 the IList type does not derive from IReadOnlyList.
         internal VowpalWabbitSingleExampleSerializerCompiler(Schema schema, IReadOnlyList<Type> featurizerTypes, bool disableStringExampleGeneration)
+        : this(schema, featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes), disableStringExampleGeneration)
+        {}
+
+        internal VowpalWabbitSingleExampleSerializerCompiler(Schema schema, IList<Type> featurizerTypes, bool disableStringExampleGeneration)
+        : this(schema, featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes), disableStringExampleGeneration)
+        {}
+
+        internal VowpalWabbitSingleExampleSerializerCompiler(Schema schema, List<Type> featurizerTypes, bool disableStringExampleGeneration)
         {
             if (schema == null || schema.Features.Count == 0)
                 throw new ArgumentException("schema");
-            Contract.EndContractBlock();
 
             this.schema = schema;
             this.disableStringExampleGeneration = disableStringExampleGeneration;
@@ -129,7 +136,7 @@ namespace VW.Serializer
             this.allFeatures = schema.Features.Select(f => new FeatureExpressionInternal { Source = f }).ToArray();
 
             // collect the types used for marshalling
-            this.marshallerTypes = featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes);
+            this.marshallerTypes = featurizerTypes == null ? new List<Type>() : featurizerTypes;
 
             // extract types from overrides defined on particular features
             var overrideFeaturizerTypes = schema.Features
@@ -157,7 +164,16 @@ namespace VW.Serializer
 
             this.CreateLambdas();
 
+#if !NETSTANDARD
             this.Func = (Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>)this.SourceExpression.CompileToFunc();
+#else
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                
+            }
+
+            this.Func = this.SourceExpression.Compile();
+#endif
         }
 
         internal bool DisableStringExampleGeneration { get { return this.disableStringExampleGeneration; } }

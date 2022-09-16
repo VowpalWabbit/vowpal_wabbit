@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -172,7 +172,7 @@ namespace cs_unittest
 
         internal static void AssertEqual(VowpalWabbitStdErrPerformanceStatistics expected, VowpalWabbitPerformanceStatistics actual)
         {
-            if (expected.TotalNumberOfFeatures != actual.TotalNumberOfFeatures)
+            if (expected.TotalNumberOfFeatures != null && expected.TotalNumberOfFeatures != actual.TotalNumberOfFeatures)
             {
                 Console.Error.WriteLine(
                     "Warning: total number of features differs. Expected: {0} vs. actual: {1}",

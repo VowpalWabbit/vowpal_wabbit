@@ -643,6 +643,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
       .add(make_option("csoaa_ldf", csoaa_ldf)
                .keep()
                .necessary()
+               .one_of({"m", "multiline", "mc", "multiline-classifier"})
                .help("Use one-against-all multiclass learning with label dependent features"))
       .add(make_option("ldf_override", ldf_override)
                .help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"))
@@ -654,6 +655,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
                               .keep()
                               .necessary()
+                              .one_of({"m", "multiline", "mc", "multiline-classifier"})
                               .help("Use weighted all-pairs multiclass learning with label dependent features. "
                                     "Specify singleline or multiline."));
 

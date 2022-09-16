@@ -633,7 +633,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
 
       priv.dat_new_feature_ec = &me;
       priv.dat_new_feature_value = 1.;
-      priv.dat_new_feature_idx = priv.neighbor_features[n_id] * 13748127;
+      priv.dat_new_feature_idx = static_cast<uint64_t>(priv.neighbor_features[n_id]) * static_cast<uint64_t>(13748127);
       priv.dat_new_feature_namespace = neighbor_namespace;
       if (priv.all->audit)
       {
@@ -2632,7 +2632,7 @@ void parse_neighbor_features(
     {
       logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview);
     }
-    int32_t enc = (posn << 24) | (ns & 0xFF);
+    int32_t enc = static_cast<int32_t>((static_cast<uint32_t>(posn) << 24) | (ns & 0xFF));
     neighbor_features.push_back(enc);
   }
 }
