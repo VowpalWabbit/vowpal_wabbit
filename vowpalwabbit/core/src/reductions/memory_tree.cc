@@ -44,9 +44,9 @@ void remove_at_index(std::vector<T>& array, uint32_t index)
   array.erase(array.begin() + index);
 }
 
-void copy_example_data(VW::example* dst, VW::example* src, bool oas = false)  // copy example data.
+void copy_example_data(VW::example* dst, VW::example* src, int oas = 0)  // copy example data.
 {
-  if (oas == false)
+  if (oas == 0)
   {
     dst->l = src->l;
     dst->l.multi.label = src->l.multi.label;
@@ -95,7 +95,7 @@ void diag_kronecker_prod_fs_test(
 
 int cmpfunc(const void* a, const void* b) { return *(char*)a - *(char*)b; }
 
-void diag_kronecker_product_test(VW::example& ec1, VW::example& ec2, VW::example& ec, bool oas = false)
+void diag_kronecker_product_test(VW::example& ec1, VW::example& ec2, VW::example& ec, int oas = 0)
 {
   // copy_example_data(&ec, &ec1, oas); //no_feat false, oas: true
   copy_example_data(&ec, &ec1, oas);
@@ -200,10 +200,10 @@ struct memory_tree
   size_t final_pass = 0;
 
   int top_K;         // commands:
-  bool oas = false;  // indicator for multi-label classification (oas = 1)
+  int oas = 0;  // indicator for multi-label classification (oas = 1)
   int dream_at_update = 0;
 
-  bool online = false;  // indicator for running CMT in online fashion
+  int online = 0;  // indicator for running CMT in online fashion
 
   float F1_score = 0.f;
   float hamming_loss = 0.f;
@@ -379,7 +379,7 @@ float train_node(memory_tree& b, single_learner& base, VW::example& ec, const ui
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
   MULTILABEL::labels preds;
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     mc = ec.l.multi;
     save_multi_pred = ec.pred.multiclass;
@@ -411,7 +411,7 @@ float train_node(memory_tree& b, single_learner& base, VW::example& ec, const ui
 
   base.predict(ec, b.nodes[cn].base_router);
   float save_binary_scalar = ec.pred.scalar;
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     ec.l.multi = mc;
     ec.pred.multiclass = save_multi_pred;
@@ -465,7 +465,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
     uint32_t save_multi_pred = 0;
     MULTILABEL::labels multilabels;
     MULTILABEL::labels preds;
-    if (b.oas == false)
+    if (b.oas == 0)
     {
       mc = b.examples[ec_pos]->l.multi;
       save_multi_pred = b.examples[ec_pos]->pred.multiclass;
@@ -494,7 +494,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       insert_descent(b.nodes[right_child], leaf_pred);  // fake descent. for update nr and nl
     }
 
-    if (b.oas == false)
+    if (b.oas == 0)
     {
       b.examples[ec_pos]->l.multi = mc;
       b.examples[ec_pos]->pred.multiclass = save_multi_pred;
@@ -676,7 +676,7 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
   MULTILABEL::labels preds;
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     mc = ec.l.multi;
     save_multi_pred = ec.pred.multiclass;
@@ -697,7 +697,7 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
     cn = newcn;
   }
 
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     ec.l.multi = mc;
     ec.pred.multiclass = save_multi_pred;
@@ -709,7 +709,7 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
   }
 
   int64_t closest_ec = 0;
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     closest_ec = pick_nearest(b, base, cn, ec);
     if (closest_ec != -1) { ec.pred.multiclass = b.examples[closest_ec]->l.multi.label; }
@@ -745,7 +745,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
   MULTILABEL::labels preds;
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     mc = ec.l.multi;
     save_multi_pred = ec.pred.multiclass;
@@ -764,7 +764,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
     cn = prediction < 0 ? b.nodes[cn].left : b.nodes[cn].right;
   }
 
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     ec.l.multi = mc;
     ec.pred.multiclass = save_multi_pred;
@@ -779,7 +779,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   int64_t closest_ec = 0;
   float reward = 0.f;
   closest_ec = pick_nearest(b, base, cn, ec);  // no randomness for picking example.
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     if ((closest_ec != -1) && (b.examples[closest_ec]->l.multi.label == ec.l.multi.label)) { reward = 1.f; }
   }
@@ -800,7 +800,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
     base.learn(*b.kprod_ec, b.max_routers);
   }
 
-  if (b.oas == true)
+  if (b.oas == 1)
   {
     train_one_against_some_at_leaf(b, base, cn, ec);  /// learn the inference procedure anyway
   }
@@ -843,7 +843,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
   MULTILABEL::labels preds;
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     mc = ec.l.multi;
     save_multi_pred = ec.pred.multiclass;
@@ -870,7 +870,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   }
   path.push_back(cn);  // push back the leaf
 
-  if (b.oas == false)
+  if (b.oas == 0)
   {
     ec.l.multi = mc;
     ec.pred.multiclass = save_multi_pred;
@@ -926,7 +926,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       MULTICLASS::label_t mc{0, 0};
       MULTILABEL::labels multilabels;
       MULTILABEL::labels preds;
-      if (b.oas == false) { mc = ec.l.multi; }
+      if (b.oas == 0) { mc = ec.l.multi; }
       else
       {
         multilabels = ec.l.multilabels;
@@ -946,7 +946,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
       base.learn(ec, b.nodes[cn].base_router);
 
-      if (b.oas == false) { ec.l.multi = mc; }
+      if (b.oas == 0) { ec.l.multi = mc; }
       else
       {
         ec.pred.multilabels = preds;
@@ -963,7 +963,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
             b, base, cn, ec, weight);  // randomly sample one example, query reward, and update leaf learner
       }
 
-      if (b.oas == true) { train_one_against_some_at_leaf(b, base, cn, ec); }
+      if (b.oas == 1) { train_one_against_some_at_leaf(b, base, cn, ec); }
     }
   }
 }
@@ -987,7 +987,7 @@ void insert_example(memory_tree& b, single_learner& base, const uint32_t& ec_arr
     cn = newcn;
   }
 
-  if (b.oas == true)
+  if (b.oas == 1)
   {  // if useing oas as inference procedure, we just train oas here, as it's independent of the memory
      // unit anyway'
     train_one_against_some_at_leaf(b, base, cn, *b.examples[ec_array_index]);
@@ -1042,7 +1042,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
 
     if (b.iter % 5000 == 0)
     {
-      if (b.oas == false)
+      if (b.oas == 0)
       {
         std::cout << "at iter " << b.iter << ", top(" << b.top_K << ") pred error: " << b.num_mistakes * 1. / b.iter
                   << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
@@ -1050,7 +1050,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
       }
       else
       {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << ", avg f1 score: " << b.F1_score * 1. / b.iter << std::endl;
       }
     }
 
@@ -1061,10 +1061,9 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
       VW::example* new_ec = VW::alloc_examples(1);
       copy_example_data(new_ec, &ec, b.oas);
       b.examples.push_back(new_ec);
-      if (b.online == true)
+      if (b.online == 1)
       {
-        update_rew(b, base, static_cast<uint32_t>(b.examples.size() - 1),
-            *b.examples[b.examples.size() - 1]);  // query and learn
+        update_rew(b, base, static_cast<uint32_t>(b.examples.size() - 1), *b.examples[b.examples.size() - 1]);  // query and learn
       }
 
       insert_example(b, base, static_cast<uint32_t>(b.examples.size() - 1));  // unsupervised learning.
@@ -1083,11 +1082,11 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
     b.iter++;
     if (b.iter % 5000 == 0)
     {
-      if (b.oas == false)
+      if (b.oas == 0)
       { std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl; }
       else
       {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << ", avg f1 score: " << b.F1_score * 1. / b.iter << std::endl;
       }
     }
   }
@@ -1103,7 +1102,7 @@ void end_pass(memory_tree& b)
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
+void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, int& oas)
 {  // deal with tag
    // deal with labels:
   writeit(ec->num_features, "num_features");
@@ -1111,7 +1110,7 @@ void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& te
   writeit(ec->weight, "example_weight");
   writeit(ec->loss, "loss");
   writeit(ec->ft_offset, "ft_offset");
-  if (oas == false)
+  if (oas == 0)
   {  // multi-class
     writeit(ec->l.multi.label, "multiclass_label");
     writeit(ec->l.multi.weight, "multiclass_weight");
@@ -1291,16 +1290,16 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
                          << "max_leaf_examples = " << tree->max_leaf_examples << " "
                          << "alpha = " << tree->alpha << " "
                          << "oas = " << tree->oas << " "
-                         << "online =" << tree->online << " " << std::endl;
+                         << "online = " << tree->online << " " << std::endl;
   }
 
   size_t num_learners;
   VW::prediction_type_t pred_type;
   VW::label_type_t label_type;
-  bool oas = tree->oas;
+  int oas = tree->oas;
 
   // multi-class classification
-  if (!oas)
+  if (oas == 0)
   {
     num_learners = tree->max_nodes + 1;
     all.example_parser->lbl_parser = MULTICLASS::mc_label;
@@ -1323,7 +1322,7 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_output_prediction_type(pred_type)
                .set_input_label_type(label_type);
 
-  if (!oas) { l.set_finish_example(MULTICLASS::finish_example<memory_tree&>); }
+  if (oas == 0) { l.set_finish_example(MULTICLASS::finish_example<memory_tree&>); }
 
   return make_base(*l.build());
 }

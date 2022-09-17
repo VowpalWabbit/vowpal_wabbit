@@ -119,6 +119,7 @@ set(vw_core_headers
   include/vw/core/reductions/cs_active.h
   include/vw/core/reductions/csoaa_ldf.h
   include/vw/core/reductions/csoaa.h
+  include/vw/core/reductions/eigen_memory_tree.h
   include/vw/core/reductions/ect.h
   include/vw/core/reductions/epsilon_decay.h
   include/vw/core/reductions/explore_eval.h
@@ -278,6 +279,7 @@ set(vw_core_sources
   src/reductions/cs_active.cc
   src/reductions/csoaa_ldf.cc
   src/reductions/csoaa.cc
+  src/reductions/eigen_memory_tree.cc
   src/reductions/ect.cc
   src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
