@@ -57,11 +57,11 @@ struct plt
 
   // for measuring predictive performance
   std::unordered_set<uint32_t> true_labels;
-  VW::v_array<uint32_t> tp_at;  // true positives at (for precision and recall at)
-  uint32_t tp = 0;
-  uint32_t fp = 0;
-  uint32_t fn = 0;
-  uint32_t true_count = 0;  // number of all true labels (for recall at)
+  VW::v_array<float> p_at;  // precision at
+  VW::v_array<float> r_at;  // recall at
+  uint32_t tp = 0;          // true positives
+  uint32_t fp = 0;          // false positives
+  uint32_t fn = 0;          // false negatives
   uint32_t ec_count = 0;    // number of examples
 
   plt()
@@ -70,18 +70,15 @@ struct plt
     fp = 0;
     fn = 0;
     ec_count = 0;
-    true_count = 0;
   }
 };
 
-inline void learn_node(plt& p, uint32_t n, single_learner& base, VW::example& ec)
+inline float learn_node(plt& p, uint32_t n, single_learner& base, VW::example& ec)
 {
-  if (!p.all->weights.adaptive)
-  {
-    p.all->sd->t = p.nodes_time[n];
-    p.nodes_time[n] += ec.weight;
-  }
+  p.all->sd->t = p.nodes_time[n];
+  p.nodes_time[n] += ec.weight;
   base.learn(ec, n);
+  return ec.loss;
 }
 
 void learn(plt& p, single_learner& base, VW::example& ec)
@@ -134,16 +131,18 @@ void learn(plt& p, single_learner& base, VW::example& ec)
   }
   else { p.negative_nodes.insert(0); }
 
+  float loss = 0;
   ec.l.simple = {1.f};
   ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
-  for (auto& n : p.positive_nodes) { learn_node(p, n, base, ec); }
+  for (auto& n : p.positive_nodes) { loss += learn_node(p, n, base, ec); }
 
   ec.l.simple.label = -1.f;
-  for (auto& n : p.negative_nodes) { learn_node(p, n, base, ec); }
+  for (auto& n : p.negative_nodes) { loss += learn_node(p, n, base, ec); }
 
   p.all->sd->t = t;
   p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
 
+  ec.loss = loss;
   ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
 }
@@ -276,21 +275,23 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       }
     }
 
-    // calculate p@
+    // calculate precision and recall at
     if (p.true_labels.size() > 0)
     {
+      float tp_at = 0;
       for (size_t i = 0; i < p.top_k; ++i)
       {
         uint32_t pred_label;
         if (p.probabilities) { pred_label = pred.a_s[i].action; }
         else { pred_label = pred.multilabels.label_v[i]; }
-        if (p.true_labels.count(pred_label)) { ++p.tp_at[i]; }
+        if (p.true_labels.count(pred_label)) { tp_at += 1; }
+        p.p_at[i] += tp_at / (i + 1);
+        p.r_at[i] += tp_at / p.true_labels.size();
       }
-      ++p.ec_count;
-      p.true_count += static_cast<uint32_t>(p.true_labels.size());
     }
   }
 
+  ++p.ec_count;
   p.node_queue.clear();
 
   ec.pred = std::move(pred);
@@ -314,13 +315,11 @@ void finish(plt& p)
     // top-k predictions
     if (p.top_k > 0)
     {
-      double correct = 0;
       for (size_t i = 0; i < p.top_k; ++i)
       {
-        correct += p.tp_at[i];
         // TODO: is this the correct logger?
-        *(p.all->trace_message) << "p@" << i + 1 << " = " << correct / (p.ec_count * (i + 1)) << std::endl;
-        *(p.all->trace_message) << "r@" << i + 1 << " = " << correct / p.true_count << std::endl;
+        *(p.all->trace_message) << "p@" << i + 1 << " = " << p.p_at[i] / p.ec_count << std::endl;
+        *(p.all->trace_message) << "r@" << i + 1 << " = " << p.r_at[i] / p.ec_count << std::endl;
       }
     }
 
@@ -336,20 +335,13 @@ void finish(plt& p)
 
 void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 {
+  std::stringstream msg;
   if (model_file.num_files() > 0)
   {
-    bool resume = p.all->save_resume;
-    std::stringstream msg;
-    msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
-
-    if (resume && !p.all->weights.adaptive)
+    for (size_t i = 0; i < p.t; ++i)
     {
-      for (size_t i = 0; i < p.t; ++i)
-      {
-        bin_text_read_write_fixed(
-            model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), read, msg, text);
-      }
+      bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), read, msg, text);
     }
   }
 }
@@ -372,6 +364,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
       .add(make_option("probabilities", tree->probabilities).help("Predict probabilities for the predicted labels"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
 
   if (all.loss->get_type() != "logistic")
   {
@@ -403,7 +396,11 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   tree->nodes_time.resize_but_with_stl_behavior(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_pred.resize(tree->kary);
-  if (tree->top_k > 0) { tree->tp_at.resize_but_with_stl_behavior(tree->top_k); }
+  if (tree->top_k > 0)
+  {
+    tree->p_at.resize_but_with_stl_behavior(tree->top_k);
+    tree->r_at.resize_but_with_stl_behavior(tree->top_k);
+  }
 
   size_t ws = tree->t;
   std::string name_addition = "";
@@ -429,7 +426,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(pred_type)
                 .set_input_label_type(VW::label_type_t::multilabel)
-                .set_learn_returns_prediction(true)
+                .set_learn_returns_prediction(false)
                 .set_finish_example(::finish_example)
                 .set_finish(::finish)
                 .set_save_load(save_load_tree)
