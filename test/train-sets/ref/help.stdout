@@ -251,7 +251,8 @@ Weight Options:
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
-                                            choices {champdupe, one_diff, rand}, keep, experimental)
+                                            choices {champdupe, one_diff, one_diff_inclusion, rand}, keep,
+                                            experimental)
     --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
                                             bool, default: false, experimental)
     --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
