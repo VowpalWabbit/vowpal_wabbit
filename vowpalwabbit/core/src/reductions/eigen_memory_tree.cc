@@ -42,10 +42,10 @@ float median(std::vector<float>& array)
   else { return array[size / 2]; }
 }
 
-float project(flat_example& ec, sparse_parameters& projector)
+float projection(VW::flat_example& ec, sparse_parameters& projector)
 {
   float projection = 0;
-
+  
   for (size_t idx1 = 0; idx1 < ec.fs.size(); idx1++)
   {
     projection += projector[ec.fs.indices[idx1]] * ec.fs.values[idx1];
@@ -53,165 +53,277 @@ float project(flat_example& ec, sparse_parameters& projector)
 
   return projection;
 }
-
-int compare(const void* a, const void* b) { return *(char*)a - *(char*)b; }
-
-void scorer_features(features& f1, features& f2, features& out_f)
-{
-  out_f.clear();
-  out_f.sum_feat_sq = 0;
-
-  size_t idx1 = 0;
-  size_t idx2 = 0;
-
-  while (idx1 < f1.size() || idx2 < f2.size())
-  {
-    float out_value = 0;
-    float f1_value = 0;
-    float f2_value = 0;
-
-    uint64_t out_index = 0;
-    uint64_t f1_index = f1.indices[idx1];
-    uint64_t f2_index = f2.indices[idx2];
-
-    if (f1_index <= f2_index || idx2 == f2.size())
-    {
-      out_index = f1_index;
-      f1_value = f1.values[idx1];
-      idx1++;
-    }
-
-    if (f2_index <= f1_index || idx1 == f1.size())
-    {
-      out_index = f2_index;
-      f2_value = f2.values[idx2];
-      idx2++;
-    }
-
-    // out_value = f1_value * f2_value;
-    out_value = abs(f1_value - f2_value);
-
-    if (out_value != 0)
-    {
-      out_f.push_back(out_value, out_index);
-      // out_f.sum_feat_sq += out_value * out_value; push_back on the line above already does this
-    }
-  }
-}
-
-void scorer_example(VW::flat_example& ec1, VW::flat_example& ec2, VW::example& out_example)
-{
-  out_example.total_sum_feat_sq = 0.0;
-  scorer_features(ec1.fs, ec2.fs, out_example.feature_space[0]);
-  out_example.total_sum_feat_sq = out_example.feature_space[0].sum_feat_sq;
-}
 ////////////////////////////end of helper/////////////////////////
 //////////////////////////////////////////////////////////////////
 
 ////////////////////////eigen_memory_tree///////////////////
 ////////////////////////////////////////////////////////////
+
+struct tree_example
+{
+  VW::flat_example* base;
+  VW::flat_example* full;
+
+  uint32_t label;
+
+  tree_example() {
+    base = new flat_example();
+    full = new flat_example();
+    label = 0;
+  }
+
+  tree_example(VW::workspace& all, example* ex)
+  {
+    label = ex->l.multi.label;
+
+    auto full_interactions = ex->interactions;
+    auto base_interactions = new std::vector<std::vector<namespace_index>>();
+
+    ex->interactions = base_interactions;
+    base = VW::flatten_sort_example(all, ex);
+
+    ex->interactions = full_interactions;
+    full = VW::flatten_sort_example(all, ex);
+  }
+};
+
+struct LRU
+{
+  typedef tree_example* K;
+  typedef std::list<K>::iterator V;
+
+  std::list<K> list;
+  std::unordered_map<K, V> map;
+
+  int max_size;
+
+public:
+  LRU(int max_size) { (*this).max_size = max_size; }
+
+  K bound(K item)
+  {
+    if (max_size == -1) { return nullptr; }
+
+    auto item_map_reference = map.find(item);
+
+    // item is not in map so we add it to our list
+    if (item_map_reference == map.end())
+    {
+      list.push_front(item);
+      map.emplace(std::pair<K, V>(item, list.begin()));
+    }
+    // item is in map already so we move it to the front of the line
+    else
+    {
+      auto item_list_reference = (*item_map_reference).second;
+      if (item_list_reference != list.begin())
+      {
+        list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference));
+      }
+    }
+
+    if (list.size() > max_size)
+    {
+      K last_value = list.back();
+      list.pop_back();
+      map.erase(last_value);
+      return last_value;
+    }
+    else { return nullptr; }
+  }
+};
+
 struct node
 {
-  int64_t parent;  // parent index
-  bool internal;   // (internal or leaf)
-  uint32_t depth;  // depth.
-  int64_t left;    // left child.
-  int64_t right;   // right child.
+  node* parent;  // parent node
+  bool internal; // (internal or leaf)
+  uint32_t depth;// depth.
+  node* left;    // left child.
+  node* right;   // right child.
 
-  std::vector<uint32_t> example_indexes;
+  std::vector<tree_example*> examples;
 
   double router_decision;
   sparse_parameters* router_weights = nullptr;
 
   node()  // construct:
   {
-    parent = -1;
-    internal = false;
+    parent = nullptr;
+    left = nullptr;
+    right = nullptr;
 
+    internal = false;
     depth = 0;
-    left = -1;
-    right = -1;
 
     router_decision = 0;
     router_weights = nullptr;
   }
-
-  float route(flat_example& ec)
-  {
-    return router_weights != nullptr ? project(ec, (*router_weights)) - router_decision : 0;
-  }
 };
 
-struct eigen_memory_tree
+struct tree
 {
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
 
-  std::vector<node> nodes;              // array of nodes.
-  std::vector<flat_example*> examples;  // array of example points
+  int iter; // how many times we've 'learned'
+  int depth;// how deep the tree is
+  int pass; // what pass we are on for the data
+  bool test_only; //indicates that learning should not occur
 
-  size_t max_nodes = 0;
-  size_t max_leaf_examples = 0;
-  size_t leaf_example_multiplier = 0;
+  int32_t tree_bound;  // how many memories before bounding the tree
+  int32_t leaf_split;  // how many memories before splitting a leaf node
+  int32_t scorer_type; // 1: random, 2: distance, 3: rank
 
-  int iter;
-  bool test_only;
-  int scorer_type;   // 1: random, 2: distance, 3: rank
+  example* scorer_ex = nullptr; //we create one of these which we re-use so we don't have to reallocate examples
 
-  uint32_t total_num_queries = 0;
+  clock_t begin; // for timing performance
+  float time;  // for timing performance
 
-  size_t max_depth;
-  size_t max_ex_in_leaf;
+  node* root;
+  LRU* bounder;
 
-  size_t current_pass = 0;
-
-  VW::example* scorer_ex = nullptr; //we create one of these which we re-use so we don't have to reallocate examples
-
-  eigen_memory_tree()
+  tree()
   {
     iter = 0;
-    max_depth = 0;
-    max_ex_in_leaf = 0;
+    pass = 0;
+    depth = 0;
     test_only = false;
+
+    tree_bound = -1;
+    leaf_split = 100;
     scorer_type = 3;
+
+    begin = clock();
+    time = 0;
+
+    root = nullptr;
+    bounder = nullptr;
   }
 
-  ~eigen_memory_tree()
+  void deallocate_node(node* n) {
+    if (!n) { return; }
+    for (auto e : n->examples)
+    {
+      VW::free_flatten_example(e->base);
+      VW::free_flatten_example(e->full);
+    }
+    deallocate_node(n->left);
+    deallocate_node(n->right);
+  }
+
+  ~tree()
   {
-    for (auto* ex : examples) { ::VW::free_flatten_example(ex); }
-    if (scorer_ex) { ::VW::dealloc_examples(scorer_ex, 1); }
-    for (auto& node : nodes) { delete node.router_weights; }
+    deallocate_node(root);
+    if (scorer_ex) { VW::dealloc_examples(scorer_ex, 1); }
   }
 };
 
-void init_tree(eigen_memory_tree& b)
+node* node_route(tree& b, single_learner& base, node& cn, tree_example& ec)
+{
+  return projection(*ec.base, *cn.router_weights) < cn.router_decision ? cn.left : cn.right;
+}
+
+void tree_init(tree& b)
 {
   b.iter = 0;
-  b.max_depth = 0;
-  b.scorer_type = 3;
+  b.depth= 0;
+  b.pass = 0;
 
-  b.nodes.push_back(node());
+  b.root = new node();
 
+  b.bounder = new LRU(b.tree_bound);
+
+  //we set this up for repeated use later in the scorer.
+  //we will populate this examples features over and over.
   b.scorer_ex = ::VW::alloc_examples(1);
   b.scorer_ex->interactions = new std::vector<std::vector<VW::namespace_index>>();
   b.scorer_ex->extent_interactions = new std::vector<std::vector<extent_term>>();
-
-  //we don't have features yet but we will later
   b.scorer_ex->indices.push_back(0);
   b.scorer_ex->num_features++;
+}
 
-  if (!b.all->quiet)
+node& tree_route(tree& b, single_learner& base, tree_example& ec)
+{
+  node* cn = b.root;
+  while (cn->internal) { cn = node_route(b, base, *cn, ec); }
+  return *cn;
+}
+
+void tree_bound(tree& b, single_learner& base, tree_example* ec)
+{
+  auto to_delete = b.bounder->bound(ec);
+
+  if (to_delete == nullptr) { return; }
+
+  node& cn = tree_route(b, base, *to_delete);
+
+  for (auto iter = cn.examples.begin(); iter != cn.examples.end(); iter++)
   {
-    std::cout << "tree initiazliation is done...." << std::endl
-              << "max nodes " << b.max_nodes << std::endl
-              << "tree size: " << b.nodes.size() << std::endl
-              << "current_pass: " << b.current_pass << std::endl;
+    if (*iter == to_delete)
+    {
+      cn.examples.erase(iter);
+      return;
+    }
   }
 }
 
-float initial(VW::example& ex) { return 1 - exp(-sqrt(ex.total_sum_feat_sq)); }
+float scorer_initial(example& ex) { return 1 - exp(-sqrt(ex.total_sum_feat_sq)); }
 
-float scorer_predict(eigen_memory_tree& b, single_learner& base, VW::flat_example& pred_ec, VW::flat_example& leaf_ec)
+void scorer_features(features& f1, features& f2, features& out_f)
+{
+  out_f.values.clear_noshrink();
+  out_f.indices.clear_noshrink();
+  out_f.sum_feat_sq = 0;
+
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+
+  uint64_t index = 0;
+  uint64_t f1_idx = 0;
+  uint64_t f2_idx = 0;
+
+  float f1_val = 0;
+  float f2_val = 0;
+
+  while (idx1 < f1.size() || idx2 < f2.size())
+  {
+    f1_idx = (idx1 == f1.size()) ? INT_MAX : f1.indices[idx1];
+    f2_idx = (idx2 == f2.size()) ? INT_MAX : f2.indices[idx2];
+
+    f1_val = 0;
+    f2_val = 0;
+
+    if (f1_idx <= f2_idx)
+    {
+      index = f1_idx;
+      f1_val = f1.values[idx1];
+      idx1++;
+    }
+
+    if (f2_idx <= f1_idx)
+    {
+      index = f2_idx;
+      f2_val = f2.values[idx2];
+      idx2++;
+    }
+
+    if (f1_val != f2_val)
+    {
+      float value = abs(f1_val - f2_val);
+      out_f.values.push_back(value);
+      out_f.indices.push_back(index);
+      out_f.sum_feat_sq += value * value;
+    }
+  }
+}
+
+void scorer_example(tree_example& ec1, tree_example& ec2, example& out_example)
+{
+  scorer_features(ec1.full->fs, ec2.full->fs, out_example.feature_space[0]);
+  out_example.total_sum_feat_sq = out_example.feature_space[0].sum_feat_sq;
+}
+
+float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_example& leaf_ec)
 {
   if (b.scorer_type == 1)  // random scorer
   {
@@ -231,15 +343,15 @@ float scorer_predict(eigen_memory_tree& b, single_learner& base, VW::flat_exampl
     if (b.scorer_ex->total_sum_feat_sq == 0) { return 0; }
 
     b.scorer_ex->l.simple.label = FLT_MAX;
-    b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = initial(*b.scorer_ex);
+    b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
 
     base.predict(*b.scorer_ex);
-    //std::cout << initial(*b.scorer_ex) << " " << b.scorer_ex->partial_prediction << " " << b.scorer_ex->pred.scalar << std::endl;
+
     return -b.scorer_ex->pred.scalar;
   }
 }
 
-void scorer_learn(eigen_memory_tree& b, single_learner& base, VW::flat_example& ec, float weight)
+void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, float weight)
 {
   // random and dist scorer has nothing to learsn
   if (b.scorer_type == 1 || b.scorer_type == 2) { return; }
@@ -248,57 +360,54 @@ void scorer_learn(eigen_memory_tree& b, single_learner& base, VW::flat_example& 
   {
     if (weight == 0) { return; }
 
-    uint64_t cn = 0;
-    while (b.nodes[cn].internal) { cn = b.nodes[cn].route(ec) < 0 ? b.nodes[cn].left : b.nodes[cn].right; }
-
-    if (b.nodes[cn].example_indexes.size() < 2) { return; }
+    if (cn.examples.size() < 2) { return; }
 
     // shuffle the examples to break ties randomly
-    std::random_shuffle(b.nodes[cn].example_indexes.begin(), b.nodes[cn].example_indexes.end());
+    std::random_shuffle(cn.examples.begin(), cn.examples.end());
 
     float score_value_1 = -FLT_MAX;
     float score_reward_1 = -FLT_MAX;
-    int score_index_1 = 0;
+    tree_example* score_ptr_1 = nullptr;
 
     float reward_value_1 = -FLT_MAX;
-    int reward_index_1 = 0;
+    tree_example* reward_ptr_1 = nullptr;
 
     float reward_value_2 = -FLT_MAX;
-    int reward_index_2 = 0;
+    tree_example* reward_ptr_2 = nullptr;
 
-    for (auto index : b.nodes[cn].example_indexes)
+    for (auto example: cn.examples)
     {
-      auto score = scorer_predict(b, base, ec, *b.examples[index]);
-      auto reward = (b.examples[index]->l.multi.label == ec.l.multi.label) ? 1.f : 0.f;
+      auto score = scorer_predict(b, base, ec, *example);
+      auto reward = (example->label == ec.label) ? 1.f : 0.f;
 
       if (score > score_value_1)
       {
         score_value_1 = score;
-        score_index_1 = index;
+        score_ptr_1 = example;
         score_reward_1 = reward;
       }
       if (reward > reward_value_1)
       {
         reward_value_2 = reward_value_1;
-        reward_index_2 = reward_index_1;
+        reward_ptr_2 = reward_ptr_1;
 
         reward_value_1 = reward;
-        reward_index_1 = index;
+        reward_ptr_1 = example;
       }
       else if (reward > reward_value_2)
       {
         reward_value_2 = reward;
-        reward_index_2 = index;
+        reward_ptr_2 = example;
       }
     }
 
     // get the index/reward for the example with the best score
-    auto preferred_index = score_index_1;
+    auto preferred_index = score_ptr_1;
     auto preferred_reward = score_reward_1;
 
     // get the index/reward for the best example without the best score
-    auto alternative_index = (reward_index_1 == score_index_1) ? reward_index_2 : reward_index_1;
-    auto alternative_reward = (reward_index_1 == score_index_1) ? reward_value_2 : reward_value_1;
+    auto alternative_index = (reward_ptr_1 == score_ptr_1) ? reward_ptr_2 : reward_ptr_1;
+    auto alternative_reward = (reward_ptr_1 == score_ptr_1) ? reward_value_2 : reward_value_1;
 
     // the better of the two options moves towards 0 while the other moves towards -1
     weight *= abs(preferred_reward - alternative_reward);
@@ -310,40 +419,38 @@ void scorer_learn(eigen_memory_tree& b, single_learner& base, VW::flat_example& 
 
     if (b._random_state->get_and_update_random() > .5)
     {
-      scorer_example(ec, *b.examples[preferred_index], *b.scorer_ex);
+      scorer_example(ec, *preferred_index, *b.scorer_ex);
       b.scorer_ex->pred.scalar = 0;
       b.scorer_ex->l.simple = {preferred_label};
       b.scorer_ex->weight = weight;
-      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = initial(*b.scorer_ex);
+      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
       base.learn(*b.scorer_ex);
       
-      scorer_example(ec, *b.examples[alternative_index], *b.scorer_ex);
+      scorer_example(ec, *alternative_index, *b.scorer_ex);
       b.scorer_ex->pred.scalar = 0;
       b.scorer_ex->l.simple = {alternative_label};
       b.scorer_ex->weight = weight;
-      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = initial(*b.scorer_ex);
+      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
       base.learn(*b.scorer_ex);
     }
     else
     {
-      b.scorer_ex->pred.scalar = 0;
-      scorer_example(ec, *b.examples[alternative_index], *b.scorer_ex);
+      scorer_example(ec, *alternative_index, *b.scorer_ex);
       b.scorer_ex->l.simple = {alternative_label};
       b.scorer_ex->weight = weight;
-      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = initial(*b.scorer_ex);
+      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
       base.learn(*b.scorer_ex);
 
-      b.scorer_ex->pred.scalar = 0;
-      scorer_example(ec, *b.examples[preferred_index], *b.scorer_ex);
+      scorer_example(ec, *preferred_index, *b.scorer_ex);
       b.scorer_ex->l.simple = {preferred_label};
       b.scorer_ex->weight = weight;
-      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = initial(*b.scorer_ex);
+      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
       base.learn(*b.scorer_ex);
     }
   }
 }
 
-void leaf_split(eigen_memory_tree& b, single_learner& base, const uint64_t cn)
+void node_split(tree& b, single_learner& base, node& cn)
 {
   VW::rand_state rand_state = *b._random_state;
   std::vector<float> projs;
@@ -356,17 +463,18 @@ void leaf_split(eigen_memory_tree& b, single_learner& base, const uint64_t cn)
   sparse_parameters* best_weights = new sparse_parameters(bits);
   sparse_parameters* new_weights = new sparse_parameters(bits);
 
+  (*new_weights).set_default([&rand_state](weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_gaussian(); });
+  (*best_weights).set_default([&rand_state](weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_gaussian(); });
+
   for (size_t perms = 0; perms < 90; perms++)
   {
     (*new_weights).set_zero(0);
-    (*new_weights)
-        .set_default([&rand_state](weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_gaussian(); });
 
     projs.clear();
 
-    for (size_t ec_id = 0; ec_id < b.nodes[cn].example_indexes.size(); ec_id++)
+    for (auto example: cn.examples)
     {
-      projs.push_back(project(*b.examples[b.nodes[cn].example_indexes[ec_id]], (*new_weights)));
+      projs.push_back(projection(*example->base, *new_weights));
     }
 
     float E = std::accumulate(projs.begin(), projs.end(), 0.0) / projs.size();
@@ -376,14 +484,14 @@ void leaf_split(eigen_memory_tree& b, single_learner& base, const uint64_t cn)
     if (new_variance > best_variance)
     {
       best_variance = new_variance;
-      std::swap(best_weights, new_weights);
+      std::swap(new_weights, best_weights);
       best_decision = median(projs);
     }
   }
 
   if (best_variance == 0)
   {
-    // std::cout << "warning: all examples in a leaf have identical features" << std::endl;
+    std::cout << "warning: all examples in a leaf have identical features" << std::endl;
     delete new_weights;
     delete best_weights;
   }
@@ -391,278 +499,273 @@ void leaf_split(eigen_memory_tree& b, single_learner& base, const uint64_t cn)
   {
     delete new_weights;
 
-    uint32_t left_i = static_cast<uint32_t>(b.nodes.size());
-    uint32_t right_i = left_i + 1;
+    auto left  = new node();
+    auto right = new node();
+    auto depth = cn.depth+1; 
 
-    b.nodes[cn].internal = true;
-    b.nodes[cn].left = left_i;
-    b.nodes[cn].right = right_i;
+    cn.internal = true;
+    cn.left = left;
+    cn.right = right;
 
-    b.nodes.push_back(node());
-    b.nodes.push_back(node());
+    left->depth = depth;
+    right->depth = depth;
+    left->parent = &cn;
+    right->parent = &cn;
 
-    b.nodes[left_i].depth = b.nodes[cn].depth + 1;
-    b.nodes[right_i].depth = b.nodes[cn].depth + 1;
-    b.nodes[left_i].parent = cn;
-    b.nodes[right_i].parent = cn;
-
-    if (b.nodes[cn].depth + 1 > b.max_depth)
+    if (depth > b.depth)
     {
-      b.max_depth = b.nodes[cn].depth + 1;
-      std::cout << "depth " << b.max_depth << std::endl;
+      b.depth = depth;
     }
 
-    (*best_weights).set_default([](weight* weights, uint64_t) { weights[0] = 0; });
-    b.nodes[cn].router_weights = best_weights;
-    b.nodes[cn].router_decision = best_decision;
+    (*best_weights).set_default(nullptr);
+    cn.router_weights = best_weights;
+    cn.router_decision = best_decision;
 
-    for (uint32_t ec_i : b.nodes[cn].example_indexes)
+    for (auto example : cn.examples)
     {
-      b.nodes[b.nodes[cn].route(*b.examples[ec_i]) < 0 ? left_i : right_i].example_indexes.push_back(ec_i);
+      node_route(b, base, cn, *example)->examples.push_back(example);
     }
-    b.nodes[cn].example_indexes.clear();
+    cn.examples.clear();
   }
 }
 
-int64_t leaf_pick(eigen_memory_tree& b, single_learner& base, const uint64_t cn, VW::flat_example& ec)
+void node_insert(tree& b, single_learner& base, node& cn, tree_example& ec)
 {
-  if (b.nodes[cn].example_indexes.size() == 0) { return -1; }
-
-  float max_score = -FLT_MAX;
-  std::vector<int> max_pos;
-
-  for (uint32_t i : b.nodes[cn].example_indexes)
+  for (auto example : cn.examples)
   {
-    float score = scorer_predict(b, base, ec, *b.examples[i]);
-
-    if (score > max_score)
-    {
-      max_score = score;
-      max_pos.clear();
-    }
-
-    if (score == max_score) { max_pos.push_back(i); }
+    scorer_example(ec, *example, *b.scorer_ex);
+    if (b.scorer_ex->total_sum_feat_sq == 0) { return; }
   }
 
-  // we multiply by *.9999 so that get_and_update_random is in [0,.9999]
-  return max_pos[static_cast<uint32_t>(b._random_state->get_and_update_random() * max_pos.size() * .9999)];
+  cn.examples.push_back(&ec);
+
+  if (cn.examples.size() >= b.leaf_split) { node_split(b, base, cn); }
 }
 
-void insert(eigen_memory_tree& b, single_learner& base, VW::flat_example& ec)
+tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& ec)
 {
-  uint64_t cn = 0;
-  while (b.nodes[cn].internal) { cn = b.nodes[cn].route(ec) < 0 ? b.nodes[cn].left : b.nodes[cn].right; }
+  if (cn.examples.size() == 0) { return nullptr; }
 
-  b.nodes[cn].example_indexes.push_back(static_cast<uint32_t>(b.examples.size()));
-  b.examples.push_back(&ec);
+  float best_score = -FLT_MAX;
+  std::vector<tree_example*> best_examples;
 
-  if ((b.nodes[cn].example_indexes.size() >= b.max_leaf_examples) && (b.nodes.size() + 2 <= b.max_nodes))
+  for (auto example: cn.examples)
   {
-    leaf_split(b, base, cn);
+    float score = scorer_predict(b, base, ec, *example);
+
+    if (score == best_score) {
+      best_examples.push_back(example);
+    }
+    else if (score > best_score)
+    {
+      best_score = score;
+      best_examples.clear();
+      best_examples.push_back(example);
+    }
   }
+
+  std::random_shuffle(best_examples.begin(), best_examples.end());
+  return best_examples.front();
 }
 
-void predict(eigen_memory_tree& b, single_learner& base, VW::example& ec)
+void predict(tree& b, single_learner& base, example& ec)
 {
-  // auto true_label = ec.l.multi;
-  // auto pred_label = ec.pred.multiclass;
+  tree_example ex(*b.all, &ec);
 
-  VW::flat_example& flat_ec = *VW::flatten_sort_example(*b.all, &ec);
+  node& cn = tree_route(b, base, ex);
+  auto closest_ec = node_pick(b, base, cn, ex);
 
-  uint64_t cn = 0;
-  while (b.nodes[cn].internal) { cn = b.nodes[cn].route(flat_ec) < 0 ? b.nodes[cn].left : b.nodes[cn].right; }
-
-  // ec.l.multi = true_label;
-  // ec.pred.multiclass = pred_label;
-
-  int64_t closest_ec = leaf_pick(b, base, cn, flat_ec);
-
-  ec.pred.multiclass = closest_ec != -1 ? b.examples[closest_ec]->l.multi.label : 0;
+  ec.pred.multiclass = (closest_ec != nullptr) ? closest_ec->label : 0;
   ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
+
+  tree_bound(b, base, closest_ec);
 }
 
-void learn(eigen_memory_tree& b, single_learner& base, VW::example& ec)
+void learn(tree& b, single_learner& base, example& ec)
 {
-  VW::flat_example& flat_ec = *VW::flatten_sort_example(*b.all, &ec);
+  tree_example& ex = *new tree_example(*b.all, &ec);
 
   b.iter++;
 
   if (b.test_only) { return; }
 
-  scorer_learn(b, base, flat_ec, ec.weight);
+  node& cn = tree_route(b, base, ex);
+  scorer_learn(b, base, cn, ex, ec.weight);
 
-  if (b.current_pass == 0) { insert(b, base, flat_ec); }
+  if (b.pass == 0) { node_insert(b, base, cn, ex); }
+
+  tree_bound(b, base, &ex);
 }
 
-void end_pass(eigen_memory_tree& b)
+void end_pass(tree& b)
 {
-  b.current_pass++;
-  std::cout << "##### Ending pass " << b.current_pass << " with " << b.examples.size() << " memories stored. "
-            << std::endl;
+  std::cout << "##### pass_time: " << static_cast<float>(clock() - b.begin) / CLOCKS_PER_SEC << std::endl;
+
+  b.time = 0;
+  b.begin = clock();
+
+  b.pass++;
 }
 /////////////////end of eigen_memory_tree///////////////////
 ////////////////////////////////////////////////////////////
 
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
-void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+void save_load_examples(tree& b, node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
-  writeit(cn.parent, "parent");
-  writeit(cn.internal, "internal");
-  writeit(cn.depth, "depth");
-  writeit(cn.left, "left");
-  writeit(cn.right, "right");
-  writeitvar(cn.example_indexes.size(), "leaf_n_examples", leaf_n_examples);
+  writeitvar(n.examples.size(), "n_examples", n_examples);
+
+  auto parser = b.all->example_parser->lbl_parser;
+  auto mask = b.all->parse_mask;
+
+  if (read) { for (uint32_t i = 0; i < n_examples; i++) { n.examples.push_back(new tree_example()); } }
+
+  for (auto e : n.examples) {
+    if (read) {
+      writeit(e->label, "example_label")
+      VW::model_utils::read_model_field(model_file, *e->base, parser);
+      VW::model_utils::read_model_field(model_file, *e->full, parser);
+    }
+    else {
+      writeit(e->label, "example_label");
+      VW::model_utils::write_model_field(model_file, *e->base, "_memory_base", false, parser, mask);
+      VW::model_utils::write_model_field(model_file, *e->full, "_memory_full", false, parser, mask);
+    }
+  }
+}
+
+void save_load_weights(tree& b, node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+{
+  if (!n.internal) { return; }
+
+  uint32_t router_dims = 0;
+  size_t router_length = 0;
+  uint32_t router_shift = 0;
+
+  if (n.router_weights != nullptr)
+  {
+    for (sparse_parameters::iterator i = n.router_weights->begin(); i != n.router_weights->end(); ++i)
+    {
+      if (*i != 0) { router_dims++; }
+    }
+    router_shift = n.router_weights->stride_shift();
+    router_length = (n.router_weights->mask() + 1) >> router_shift;
+  }
+
+  writeit(n.router_decision, "router_decision");
+  writeit(router_dims, "router_dims");
+  writeit(router_length, "router_length");
+  writeit(router_shift, "router_shift");
 
   if (read)
   {
-    cn.example_indexes.clear();
-    for (uint32_t k = 0; k < leaf_n_examples; k++) { cn.example_indexes.push_back(0); }
-  }
-  for (uint32_t k = 0; k < leaf_n_examples; k++) writeit(cn.example_indexes[k], "example_location");
-
-  if (cn.internal)
-  {
-    uint32_t router_dims = 0;
-    size_t router_length = 0;
-    uint32_t router_shift = 0;
-
-    if (cn.router_weights != nullptr)
+    n.router_weights = new sparse_parameters(router_length, router_shift);
+    for (int i = 0; i < router_dims; i++)
     {
-      for (sparse_parameters::iterator i = cn.router_weights->begin(); i != cn.router_weights->end(); ++i)
-      {
-        if (*i != 0) { router_dims++; }
-      }
-      router_shift = cn.router_weights->stride_shift();
-      router_length = (cn.router_weights->mask() + 1) >> router_shift;
+      uint64_t index = 0;
+      float value = 0;
+      writeit(index, "router_index");
+      writeit(value, "router_value");
+
+      (*n.router_weights)[index] = value;
     }
-
-    writeit(cn.router_decision, "router_decision");
-    writeit(router_dims, "router_dims");
-    writeit(router_length, "router_length");
-    writeit(router_shift, "router_shift");
-
-    if (read)
+  }
+  else
+  {
+    for (sparse_parameters::iterator i = n.router_weights->begin(); i != n.router_weights->end(); ++i)
     {
-      cn.router_weights = new sparse_parameters(router_length, router_shift);
-      for (int i = 0; i < router_dims; i++)
+      uint64_t index = i.index();
+      float value = (*i);
+      if (value != 0)
       {
-        uint64_t index = 0;
-        float value = 0;
         writeit(index, "router_index");
         writeit(value, "router_value");
-
-        (*cn.router_weights)[index] = value;
-      }
-    }
-    else
-    {
-      for (sparse_parameters::iterator i = cn.router_weights->begin(); i != cn.router_weights->end(); ++i)
-      {
-        uint64_t index = i.index();
-        float value = (*i);
-        if (value != 0)
-        {
-          writeit(index, "router_index");
-          writeit(value, "router_value");
-        }
       }
     }
   }
 }
 
-void save_load_tree(eigen_memory_tree& b, io_buf& model_file, bool read, bool text)
+node* save_load_node(tree& b, node* n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg) {
+
+  writeitvar(!read && !n, "is_null", is_null);
+  if (is_null) { return nullptr; }
+
+  if (!n) { n = new node(); }
+
+  writeit(n->depth, "depth");
+  writeit(n->internal, "internal");
+  writeit(n->router_decision, "decision");
+
+  save_load_examples(b, *n, model_file, read, text, msg);
+  save_load_weights(b, *n, model_file, read, text, msg);
+
+  n->left  = save_load_node(b, n->left, model_file, read, text, msg);
+  n->right = save_load_node(b, n->right, model_file, read, text, msg);
+
+  if (n->left) { n->left->parent = n; }
+  if (n->right) { n->right->parent = n; }
+
+  return n;
+}
+
+void save_load_tree(tree& b, io_buf& model_file, bool read, bool text)
 {
   std::stringstream msg;
   if (model_file.num_files() > 0)
   {
     if (read) { b.test_only = true; }
 
-    if (read)
-    {
-      uint32_t ss = 0;
-      writeit(ss, "stride_shift");
-      b.all->weights.stride_shift(ss);
-    }
-    else
-    {
-      uint32_t ss = b.all->weights.stride_shift();
-      writeit(ss, "stride_shift");
-    }
+    uint32_t ss = b.all->weights.stride_shift();
+    writeit(ss, "stride_shift");
 
-    writeit(b.max_nodes, "max_nodes");
-    writeit(b.leaf_example_multiplier, "leaf_example_multiplier") writeitvar(b.nodes.size(), "nodes", n_nodes);
+    //this could likely be faster with a stack, if it is every a problem
+    b.all->weights.stride_shift(ss);
+ 
+    writeit(b.tree_bound, "tree_bound");
+    writeit(b.leaf_split, "leaf_split");
+    writeit(b.scorer_type, "scorer_type");
 
-    if (read)
-    {
-      b.nodes.clear();
-      for (uint32_t i = 0; i < n_nodes; i++) { b.nodes.push_back(node()); }
-    }
-
-    // node
-    for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text, msg); }
-    // deal with examples:
-    writeitvar(b.examples.size(), "examples", n_examples);
-    for (uint32_t i = 0; i < n_examples; i++)
-    {
-      if (read)
-      {
-        flat_example fec;
-        VW::model_utils::read_model_field(model_file, fec, b.all->example_parser->lbl_parser);
-        b.examples.push_back(&fec);
-      }
-      else
-      {
-        VW::model_utils::write_model_field(
-            model_file, *b.examples[i], "_flat_example", false, b.all->example_parser->lbl_parser, b.all->parse_mask);
-      }
-    }
-    // std::cout<<"done loading...."<< std::endl;
+    b.root = save_load_node(b, b.root, model_file, read, text, msg);
+    if (!b.all->quiet) { std::cout << "done loading...." << std::endl; }
   }
 }
 /////////////////End of Save & Load/////////////////////////////////
 ////////////////////////////////////////////////////////////////////
-}  // namespace
+}
 
 base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto tree = VW::make_unique<eigen_memory_tree>();
-  uint64_t max_nodes;
-  uint64_t leaf_example_multiplier;
-  option_group_definition new_options("[Reduction] Eigen Memory Tree");
+  auto t = VW::make_unique<tree>();  
+  bool _;
 
-  // leaf_example_multiplier controls how many examples per leaf before splitting
+  option_group_definition new_options("[Reduction] Eigen Memory Tree");
   new_options
-      .add(make_option("eigen_memory_tree", max_nodes)
+      .add(make_option("eigen_memory_tree", _)
                .keep()
                .necessary()
-               .default_value(0)
-               .help("Make a memory tree with at most <n> nodes"))
-      .add(make_option("leaf_example_multiplier", leaf_example_multiplier)
-               .default_value(1)
-               .help("Multiplier on examples per leaf (default = log nodes)"));
+               .help("Make an eigen memory tree with at most <n> memories"))
+      .add(make_option("tree", t->tree_bound)
+               .keep()
+               .default_value(-1)
+               .help("Indicates the maximum number of memories the tree can have."))
+    .add(make_option("leaf", t->leaf_split)
+               .keep()
+               .default_value(100)
+               .help("Indicates the maximum number of memories a leaf can have."))
+    .add(make_option("scorer", t->scorer_type)
+               .keep()
+               .default_value(3)
+               .help("Indicates the type of scorer to use (1=random,2=distance,3=rank)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  tree->max_nodes = VW::cast_to_smaller_type<size_t>(max_nodes);
-  tree->leaf_example_multiplier = VW::cast_to_smaller_type<size_t>(leaf_example_multiplier);
-  tree->all = &all;
-  tree->_random_state = all.get_random_state();
-  tree->current_pass = 0;
+  t->all = &all;
+  t->_random_state = all.get_random_state();
 
-  tree->max_leaf_examples = static_cast<size_t>(tree->leaf_example_multiplier * (log(tree->max_nodes) / log(2)));
-
-  init_tree(*tree);
-
-  if (!all.quiet)
-  {
-    *(all.trace_message) << "eigen_memory_tree: "
-                         << "max_nodes = " << tree->max_nodes << " "
-                         << "max_leaf_examples = " << tree->max_leaf_examples << std::endl;
-  }
+  tree_init(*t);
 
   VW::prediction_type_t pred_type;
   VW::label_type_t label_type;
@@ -672,14 +775,14 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
   pred_type = VW::prediction_type_t::multiclass;
   label_type = VW::label_type_t::multiclass;
 
-  auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+  auto l = make_reduction_learner(std::move(t), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(eigen_memory_tree_setup))
                .set_end_pass(end_pass)
                .set_save_load(save_load_tree)
                .set_output_prediction_type(pred_type)
                .set_input_label_type(label_type);
 
-  l.set_finish_example(MULTICLASS::finish_example<eigen_memory_tree&>);
+  l.set_finish_example(MULTICLASS::finish_example<tree&>);
 
   return make_base(*l.build());
 }
