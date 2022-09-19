@@ -13,27 +13,25 @@ namespace automl
 {
 template <>
 config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
-    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
-    config_type conf_type)
+    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state, config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , calc_priority(calc_priority)
     , global_lease(global_lease)
     , _impl(oracle_rand_impl(std::move(rand_state)))
-    , _conf_type(conf_type)
 {
+  _conf_type = conf_type;
 }
 template <typename oracle_impl>
 config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
-    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
-    config_type conf_type)
+    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>&, config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , calc_priority(calc_priority)
     , global_lease(global_lease)
     , _impl(oracle_impl())
-    , _conf_type(conf_type)
 {
+  _conf_type = conf_type;
 }
 template <typename oracle_impl>
 void config_oracle<oracle_impl>::insert_starting_configuration()
@@ -189,7 +187,7 @@ void config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
 // the current champ and remove one interaction for each new config. The number
 // of configs to generate per champ is hard-coded to 5 at the moment.
 void oracle_rand_impl::gen_ns_groupings_at(const std::string& interaction_type,
-    const interaction_vec_t& champ_interactions, const size_t, set_ns_list_t& new_elements, config_type conf_type)
+    const interaction_vec_t& champ_interactions, const size_t, set_ns_list_t& new_elements, config_type)
 {
   uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
   if (interaction_type == "quadratic")
@@ -309,7 +307,7 @@ void one_diff_inclusion_impl::gen_ns_groupings_at(const std::string& interaction
 
 template <>
 void config_oracle<one_diff_inclusion_impl>::gen_configs(
-    const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
+    const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   // we need this to stay constant bc insert might resize configs vector
   auto champ_incl = std::move(configs[0].elements);
