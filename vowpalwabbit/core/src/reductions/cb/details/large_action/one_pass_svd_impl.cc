@@ -127,7 +127,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   _futures.clear();
 }
 
-void one_pass_svd_impl::_set_rank(uint64_t rank) { _d = rank; }
+void one_pass_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }
 
 void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,
     Eigen::VectorXf& _S, Eigen::MatrixXf& _V)

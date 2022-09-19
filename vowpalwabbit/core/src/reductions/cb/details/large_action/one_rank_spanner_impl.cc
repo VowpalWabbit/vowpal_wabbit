@@ -150,5 +150,11 @@ void one_rank_spanner_state::compute_spanner(
   for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
 }
 
+bool one_rank_spanner_state::is_action_in_spanner(uint32_t action) { return _spanner_bitvec[action]; }
+
+size_t one_rank_spanner_state::spanner_size() { return _spanner_bitvec.size(); }
+
+void one_rank_spanner_state::_test_only_set_rank(uint64_t rank) { _action_indices.resize(rank); }
+
 }  // namespace cb_explore_adf
 }  // namespace VW
