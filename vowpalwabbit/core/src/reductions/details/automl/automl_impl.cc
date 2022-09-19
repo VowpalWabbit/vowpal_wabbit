@@ -74,7 +74,8 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , wpp(wpp)
     , _lb_trick(lb_trick)
     , _ccb_on(ccb_on)
-    , _config_oracle(config_oracle_impl(global_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
+    , _config_oracle(
+          config_oracle_impl(global_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
 {
   insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
 }

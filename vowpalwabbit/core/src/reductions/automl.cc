@@ -37,8 +37,7 @@ void predict_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
     for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
   });
 
-  for (VW::example* ex : ec)
-  { apply_config(ex, &data.cm->estimators[data.cm->current_champ].first.live_interactions); }
+  for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[data.cm->current_champ].first.live_interactions); }
 
   base.predict(ec, data.cm->current_champ);
 }
@@ -78,8 +77,7 @@ void finish_example(VW::workspace& all, automl<CMType>& data, VW::multi_ex& ec)
   interaction_vec_t* incoming_interactions = ec[0]->interactions;
 
   uint64_t champ_live_slot = data.cm->current_champ;
-  for (VW::example* ex : ec)
-  { apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
+  for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
 
   {
     auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
@@ -118,8 +116,7 @@ float calc_priority_favor_popular_namespaces(
 }
 
 // Same as above, returns 0 (includes rest to remove unused variable warning)
-float calc_priority_empty(
-    const ns_based_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
+float calc_priority_empty(const ns_based_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
 {
   _UNUSED(config);
   _UNUSED(ns_counter);
@@ -149,12 +146,12 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
   }
 
   // Note that all.wpp will not be set correctly until after setup
-  assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe" || oracle_type == "one_diff_inclusion");
+  assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe" ||
+      oracle_type == "one_diff_inclusion");
   auto cm = VW::make_unique<config_manager_type>(global_lease, max_live_configs, all.get_random_state(),
       static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type, all.weights.dense_weights,
       calc_priority, automl_significance_level, &all.logger, all.wpp, lb_trick, ccb_on, conf_type);
-  auto data = VW::make_unique<automl<config_manager_type>>(
-      std::move(cm), &all.logger, predict_only_model);
+  auto data = VW::make_unique<automl<config_manager_type>>(std::move(cm), &all.logger, predict_only_model);
   data->debug_reverse_learning_order = reversed_learning_order;
   data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 3, 0.f);
   data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
@@ -314,40 +311,38 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   config_type conf_type = (oracle_type == "one_diff_inclusion") ? config_type::Interaction : config_type::Exclusion;
 
   if (conf_type == config_type::Interaction && oracle_type == "rand")
-  {
-    THROW("--config_type interaction cannot be used with --oracle_type rand");
-  }
+  { THROW("--config_type interaction cannot be used with --oracle_type rand"); }
 
   // only this has been tested
   if (base_learner->is_multiline())
   {
     if (oracle_type == "one_diff")
     {
-      return make_automl_with_impl<config_oracle<one_diff_impl>,
-          VW::confidence_sequence>(stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type,
-          global_lease, all, priority_challengers, interaction_type, priority_type, automl_significance_level, lb_trick,
-          ccb_on, predict_only_model, reversed_learning_order, conf_type);
+      return make_automl_with_impl<config_oracle<one_diff_impl>, VW::confidence_sequence>(stack_builder, base_learner,
+          max_live_configs, verbose_metrics, oracle_type, global_lease, all, priority_challengers, interaction_type,
+          priority_type, automl_significance_level, lb_trick, ccb_on, predict_only_model, reversed_learning_order,
+          conf_type);
     }
     else if (oracle_type == "rand")
     {
-      return make_automl_with_impl<config_oracle<oracle_rand_impl>,
-          VW::confidence_sequence>(stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type,
-          global_lease, all, priority_challengers, interaction_type, priority_type, automl_significance_level, lb_trick,
-          ccb_on, predict_only_model, reversed_learning_order, conf_type);
+      return make_automl_with_impl<config_oracle<oracle_rand_impl>, VW::confidence_sequence>(stack_builder,
+          base_learner, max_live_configs, verbose_metrics, oracle_type, global_lease, all, priority_challengers,
+          interaction_type, priority_type, automl_significance_level, lb_trick, ccb_on, predict_only_model,
+          reversed_learning_order, conf_type);
     }
     else if (oracle_type == "champdupe")
     {
-      return make_automl_with_impl<config_oracle<champdupe_impl>,
-          VW::confidence_sequence>(stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type,
-          global_lease, all, priority_challengers, interaction_type, priority_type, automl_significance_level, lb_trick,
-          ccb_on, predict_only_model, reversed_learning_order, conf_type);
+      return make_automl_with_impl<config_oracle<champdupe_impl>, VW::confidence_sequence>(stack_builder, base_learner,
+          max_live_configs, verbose_metrics, oracle_type, global_lease, all, priority_challengers, interaction_type,
+          priority_type, automl_significance_level, lb_trick, ccb_on, predict_only_model, reversed_learning_order,
+          conf_type);
     }
     else if (oracle_type == "one_diff_inclusion")
     {
-      return make_automl_with_impl<config_oracle<one_diff_inclusion_impl>,
-          VW::confidence_sequence>(stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type,
-          global_lease, all, priority_challengers, interaction_type, priority_type, automl_significance_level, lb_trick,
-          ccb_on, predict_only_model, reversed_learning_order, conf_type);
+      return make_automl_with_impl<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>(stack_builder,
+          base_learner, max_live_configs, verbose_metrics, oracle_type, global_lease, all, priority_challengers,
+          interaction_type, priority_type, automl_significance_level, lb_trick, ccb_on, predict_only_model,
+          reversed_learning_order, conf_type);
     }
   }
   else

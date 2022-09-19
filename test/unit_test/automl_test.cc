@@ -436,8 +436,8 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
     std::map<VW::namespace_index, uint64_t> ns_counter;
     std::vector<std::pair<aml_estimator<VW::confidence_sequence>, VW::confidence_sequence>> estimators;
 
-    config_oracle<one_diff_impl> oracle(
-        aml->cm->global_lease, co.calc_priority, co._interaction_type, co._oracle_type, rand_state, config_type::Exclusion);
+    config_oracle<one_diff_impl> oracle(aml->cm->global_lease, co.calc_priority, co._interaction_type, co._oracle_type,
+        rand_state, config_type::Exclusion);
 
     auto& configs = oracle.configs;
     auto& prio_queue = oracle.index_queue;

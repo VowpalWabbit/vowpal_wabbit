@@ -13,7 +13,8 @@ namespace automl
 {
 template <>
 config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
-    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state, config_type conf_type)
+    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
+    config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , calc_priority(calc_priority)
@@ -24,7 +25,8 @@ config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_f
 }
 template <typename oracle_impl>
 config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
-    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state, config_type conf_type)
+    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
+    config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , calc_priority(calc_priority)
@@ -65,7 +67,8 @@ uint64_t config_oracle<oracle_impl>::choose(std::priority_queue<std::pair<float,
   return ret;
 }
 
-interaction_vec_t ns_based_config::gen_quadratic_interactions(const std::map<namespace_index, uint64_t>& ns_counter, const set_ns_list_t& exclusions)
+interaction_vec_t ns_based_config::gen_quadratic_interactions(
+    const std::map<namespace_index, uint64_t>& ns_counter, const set_ns_list_t& exclusions)
 {
   interaction_vec_t interactions;
   for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
@@ -81,7 +84,8 @@ interaction_vec_t ns_based_config::gen_quadratic_interactions(const std::map<nam
   return interactions;
 }
 
-interaction_vec_t ns_based_config::gen_cubic_interactions(const std::map<namespace_index, uint64_t>& ns_counter, const set_ns_list_t& exclusions)
+interaction_vec_t ns_based_config::gen_cubic_interactions(
+    const std::map<namespace_index, uint64_t>& ns_counter, const set_ns_list_t& exclusions)
 {
   interaction_vec_t interactions;
   for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
@@ -268,7 +272,8 @@ void config_oracle<one_diff_impl>::gen_configs(
   configs[0].elements = std::move(champ_excl);
 }
 
-void one_diff_inclusion_impl::gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& all_interactions, const size_t num, set_ns_list_t& copy_champ)
+void one_diff_inclusion_impl::gen_ns_groupings_at(const std::string& interaction_type,
+    const interaction_vec_t& all_interactions, const size_t num, set_ns_list_t& copy_champ)
 {
   // Element does not exist, so add it
   if (copy_champ.find(all_interactions[num]) == copy_champ.end())
@@ -296,7 +301,7 @@ void one_diff_inclusion_impl::gen_ns_groupings_at(const std::string& interaction
       }
     }
   }
-  else // Element does exist, so remove it
+  else  // Element does exist, so remove it
   {
     copy_champ.erase(all_interactions[num]);
   }
@@ -308,7 +313,9 @@ void config_oracle<one_diff_inclusion_impl>::gen_configs(
 {
   // we need this to stay constant bc insert might resize configs vector
   auto champ_incl = std::move(configs[0].elements);
-  interaction_vec_t all_interactions = (_interaction_type == "quadratic") ? ns_based_config::gen_quadratic_interactions(ns_counter, {}) : ns_based_config::gen_cubic_interactions(ns_counter, {});
+  interaction_vec_t all_interactions = (_interaction_type == "quadratic")
+      ? ns_based_config::gen_quadratic_interactions(ns_counter, {})
+      : ns_based_config::gen_cubic_interactions(ns_counter, {});
 
   for (auto it = _impl.begin(); it < _impl.end(all_interactions); ++it)
   {

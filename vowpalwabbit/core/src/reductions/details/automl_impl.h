@@ -92,8 +92,10 @@ struct ns_based_config
     this->state = VW::reductions::automl::config_state::New;
     this->conf_type = conf_type;
   }
-  static interaction_vec_t gen_quadratic_interactions(const std::map<namespace_index, uint64_t>& ns_counter, const set_ns_list_t& exclusions);
-  static interaction_vec_t gen_cubic_interactions(const std::map<namespace_index, uint64_t>& ns_counter, const set_ns_list_t& exclusions);
+  static interaction_vec_t gen_quadratic_interactions(
+      const std::map<namespace_index, uint64_t>& ns_counter, const set_ns_list_t& exclusions);
+  static interaction_vec_t gen_cubic_interactions(
+      const std::map<namespace_index, uint64_t>& ns_counter, const set_ns_list_t& exclusions);
   static void apply_config_to_interactions(const bool ccb_on, const std::map<namespace_index, uint64_t>& ns_counter,
       const std::string& interaction_type, const ns_based_config& config, interaction_vec_t& interactions);
 };
@@ -177,12 +179,10 @@ struct champdupe_impl
 
 struct one_diff_inclusion_impl
 {
-  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions, const size_t num, set_ns_list_t& copy_champ);
+  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
+      const size_t num, set_ns_list_t& copy_champ);
   Iterator begin() { return Iterator(); }
-  Iterator end(const interaction_vec_t& all_interactions)
-  {
-    return Iterator(all_interactions.size());
-  }
+  Iterator end(const interaction_vec_t& all_interactions) { return Iterator(all_interactions.size()); }
 };
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -219,11 +219,11 @@ struct interaction_config_manager
   // horizon and the champ has one horizon for each challenger
   estimator_vec_t<estimator_impl> estimators;
 
-  interaction_config_manager(uint64_t global_lease,
-    uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
-    const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
-    priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp,
-    bool lb_trick, bool ccb_on, config_type conf_type);
+  interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
+      std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
+      const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
+      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on,
+      config_type conf_type);
 
   void do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
