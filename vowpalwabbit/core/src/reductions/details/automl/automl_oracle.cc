@@ -13,7 +13,8 @@ namespace automl
 {
 template <>
 config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
-    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state, config_type conf_type)
+    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
+    config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , calc_priority(calc_priority)
@@ -24,7 +25,8 @@ config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_f
 }
 template <typename oracle_impl>
 config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
-    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>&, config_type conf_type)
+    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>&,
+    config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , calc_priority(calc_priority)
