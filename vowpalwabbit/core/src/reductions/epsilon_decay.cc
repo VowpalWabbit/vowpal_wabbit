@@ -100,10 +100,11 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
         if (a_s.action == labelled_action)
         {
           float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          if (model_ind == model_count - 1) { w = 1; } // Set w = 1 for champ
+          if (model_ind == model_count - 1) { w = 1; }  // Set w = 1 for champ
           for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
           {
-            if (_lb_trick && model_ind == model_count - 1) { conf_seq_estimators[model_ind][estimator_ind].update(w, 1 - r); }
+            if (_lb_trick && model_ind == model_count - 1)
+            { conf_seq_estimators[model_ind][estimator_ind].update(w, 1 - r); }
             else
             {
               conf_seq_estimators[model_ind][estimator_ind].update(w, r);
