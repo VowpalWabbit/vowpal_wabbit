@@ -87,16 +87,32 @@ void validate_compatibility(const VW::workspace* base_workspace,
 }
 
 void merge_shared_data(
-    const shared_data& base, shared_data& destination, const std::vector<const shared_data*>& sources)
+    const shared_data& base, shared_data& destination, const std::vector<const shared_data*>& sources, bool is_delta)
 {
-  for (const auto* source : sources)
+  if (is_delta)
   {
-    destination.sum_loss += (source->sum_loss - base.sum_loss);
-    destination.weighted_labeled_examples += (source->weighted_labeled_examples - base.weighted_labeled_examples);
-    destination.weighted_labels += (source->weighted_labels - base.weighted_labels);
-    destination.weighted_unlabeled_examples += (source->weighted_unlabeled_examples - base.weighted_unlabeled_examples);
-    destination.example_number += (source->example_number - base.example_number);
-    destination.total_features += (source->total_features - base.total_features);
+    for (const auto* source : sources)
+    {
+      destination.sum_loss += source->sum_loss;
+      destination.weighted_labeled_examples += source->weighted_labeled_examples;
+      destination.weighted_labels += source->weighted_labels;
+      destination.weighted_unlabeled_examples += source->weighted_unlabeled_examples;
+      destination.example_number += source->example_number;
+      destination.total_features += source->total_features;
+    }
+  }
+  else
+  {
+    for (const auto* source : sources)
+    {
+      destination.sum_loss += (source->sum_loss - base.sum_loss);
+      destination.weighted_labeled_examples += (source->weighted_labeled_examples - base.weighted_labeled_examples);
+      destination.weighted_labels += (source->weighted_labels - base.weighted_labels);
+      destination.weighted_unlabeled_examples +=
+          (source->weighted_unlabeled_examples - base.weighted_unlabeled_examples);
+      destination.example_number += (source->example_number - base.example_number);
+      destination.total_features += (source->total_features - base.total_features);
+    }
   }
 
   destination.sum_loss += base.sum_loss;
@@ -138,7 +154,7 @@ namespace VW
 {
 // Experimental.
 std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
-    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
+    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger, bool is_delta)
 {
   validate_compatibility(base_workspace, workspaces_to_merge, logger);
 
@@ -212,7 +228,7 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
   for (const auto& model : workspaces_to_merge) { shared_datas.push_back(model->sd); }
 
   // Merge shared data too
-  merge_shared_data(*base_workspace_concrete->sd, *destination_workspace->sd, shared_datas);
+  merge_shared_data(*base_workspace_concrete->sd, *destination_workspace->sd, shared_datas, is_delta);
 
   return destination_workspace;
 }

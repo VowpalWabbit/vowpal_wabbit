@@ -23,5 +23,6 @@ namespace VW
  * @return std::unique_ptr<VW::workspace> Pointer to the resulting workspace.
  */
 std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
-    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger = nullptr);
+    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger = nullptr,
+    bool is_delta = false);
 }  // namespace VW
