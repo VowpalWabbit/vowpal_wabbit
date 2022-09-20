@@ -76,45 +76,50 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
     }
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     // Process each model, then update the upper/lower bounds for each model
-    for (int64_t i = 0; i < model_count; ++i)
+    for (int64_t model_ind = 0; model_ind < model_count; ++model_ind)
     {
       if (!_constant_epsilon)
-      { ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(conf_seq_estimators[i][i].update_count); }
-      std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[i] * 3]);
-      std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[i] * 3 + 1]);
-      std::swap(*_sd_gravity, per_live_model_state_double[_weight_indices[i] * 3 + 2]);
-      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[_weight_indices[i] * 2]);
-      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[_weight_indices[i] * 2 + 1]);
-      if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[i]); }
-      base.learn(examples, _weight_indices[i]);
-      std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[i] * 3]);
-      std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[i] * 3 + 1]);
-      std::swap(*_sd_gravity, per_live_model_state_double[_weight_indices[i] * 3 + 2]);
-      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[_weight_indices[i] * 2]);
-      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[_weight_indices[i] * 2 + 1]);
+      {
+        ep_fts.epsilon =
+            VW::reductions::epsilon_decay::decayed_epsilon(conf_seq_estimators[model_ind][model_ind].update_count);
+      }
+      std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[model_ind] * 3]);
+      std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[model_ind] * 3 + 1]);
+      std::swap(*_sd_gravity, per_live_model_state_double[_weight_indices[model_ind] * 3 + 2]);
+      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[_weight_indices[model_ind] * 2]);
+      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[_weight_indices[model_ind] * 2 + 1]);
+      if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[model_ind]); }
+      base.learn(examples, _weight_indices[model_ind]);
+      std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[model_ind] * 3]);
+      std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[model_ind] * 3 + 1]);
+      std::swap(*_sd_gravity, per_live_model_state_double[_weight_indices[model_ind] * 3 + 2]);
+      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[_weight_indices[model_ind] * 2]);
+      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[_weight_indices[model_ind] * 2 + 1]);
       for (const auto& a_s : examples[0]->pred.a_s)
       {
         if (a_s.action == labelled_action)
         {
-          const float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          for (int64_t j = 0; j <= i; ++j)
+          float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
+          if (model_ind == model_count - 1) { w = 1; } // Set w = 1 for champ
+          for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
           {
-            if (_lb_trick && i == model_count - 1) { conf_seq_estimators[i][j].update(w, 1 - r); }
+            if (_lb_trick && model_ind == model_count - 1) { conf_seq_estimators[model_ind][estimator_ind].update(w, 1 - r); }
             else
             {
-              conf_seq_estimators[i][j].update(w, r);
+              conf_seq_estimators[model_ind][estimator_ind].update(w, r);
             }
           }
           if (_epsilon_decay_audit_str != "")
           {
-            if (i == model_count - 1) { _audit_msg << "champ "; }
+            if (model_ind == model_count - 1) { _audit_msg << "champ "; }
             else
             {
-              _audit_msg << "challenger[" << (i + 1) << "] ";
+              _audit_msg << "challenger[" << (model_ind + 1) << "] ";
             }
-            _audit_msg << "update_count: " << conf_seq_estimators[i][i].update_count
-                       << " lb: " << conf_seq_estimators[i][i].lower_bound()
-                       << " ub: " << conf_seq_estimators[i][i].upper_bound() << " p_pred: " << a_s.score << "\n";
+            _audit_msg << "update_count: " << conf_seq_estimators[model_ind][model_ind].update_count
+                       << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
+                       << " ub: " << conf_seq_estimators[model_ind][model_ind].upper_bound() << " p_pred: " << a_s.score
+                       << "\n";
           }
           break;
         }
