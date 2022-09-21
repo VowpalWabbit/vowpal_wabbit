@@ -3,6 +3,9 @@ if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
 endif()
 
 add_executable(vw-unit-test.out
+  epsilon_decay_test.cc
+  automl_test.cc
+  automl_weights_test.cc)
   baseline_cb_test.cc
   cats_test.cc
   cats_tree_test.cc
@@ -95,7 +98,6 @@ if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 else()
-  target_sources(vw-unit-test.out PRIVATE epsilon_decay_test.cc automl_test.cc automl_weights_test.cc)
   add_test(
     NAME vw_unit_test
     COMMAND $<TARGET_FILE:vw-unit-test.out>
