@@ -5,7 +5,7 @@ endif()
 add_executable(vw-unit-test.out
   epsilon_decay_test.cc
   automl_test.cc
-  automl_weights_test.cc)
+  automl_weights_test.cc
   baseline_cb_test.cc
   cats_test.cc
   cats_tree_test.cc
