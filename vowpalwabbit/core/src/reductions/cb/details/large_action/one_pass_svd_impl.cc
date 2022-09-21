@@ -94,33 +94,44 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   auto p = std::min(num_actions, _d + sampling_slack);
   AOmega.resize(num_actions, p);
 
-  auto calculate_aomega_row = [](uint64_t row_index, uint64_t p, VW::workspace* _all, uint64_t _seed, VW::example* ex,
-                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors) -> void {
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
-
-    for (uint64_t col = 0; col < p; ++col)
+  auto calculate_aomega_row = [](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
+                                  uint64_t _seed, const multi_ex& examples, Eigen::MatrixXf& AOmega,
+                                  const std::vector<float>& shrink_factors) -> void
+  {
+    for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
-      float final_dot_prod = 0.f;
+      VW::example* ex = examples[row_index];
+      auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
-      AO_triplet_constructor tc(_all->weights.mask(), row_index, col, _seed, final_dot_prod);
+      for (uint64_t col = 0; col < p; ++col)
+      {
+        float final_dot_prod = 0.f;
 
-      GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-          _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-          (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
-          (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
-                                                      : *ex->extent_interactions),
-          _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+        AO_triplet_constructor tc(_all->weights.mask(), row_index, col, _seed, final_dot_prod);
 
-      AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
+        GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+
+        AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
+      }
     }
   };
 
-  uint64_t row_index = 0;
-  for (auto* ex : examples)
+  const size_t num_blocks = std::max(1UL, this->_thread_pool.size());
+  const size_t block_size = examples.size() / num_blocks;         // Evenly split the examples into blocks
+  const size_t num_larger_blocks = examples.size() % num_blocks;  // but some blocks may have one more row
+  for (size_t block_id = 0, block_begin = 0; block_begin < examples.size(); ++block_id)
   {
-    _futures.emplace_back(_thread_pool.submit(
-        calculate_aomega_row, row_index, p, _all, _seed, ex, std::ref(AOmega), std ::ref(shrink_factors)));
-    row_index++;
+    const size_t block_end = block_begin + block_size + (block_id < num_larger_blocks);
+
+    _futures.emplace_back(_thread_pool.submit(calculate_aomega_row, block_begin, block_end, p, _all, _seed,
+        std::ref(examples), std::ref(AOmega), std::ref(shrink_factors)));
+
+    block_begin = block_end;
   }
 
   for (auto& ft : _futures) { ft.get(); }
