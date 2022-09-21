@@ -81,6 +81,15 @@ void merge_weights_with_save_resume(size_t length,
     for (uint64_t i = 0; i < full_weights_size; i++) { weights[i] += this_source[i]; }
   }
 }
+
+template <typename WeightsT>
+void copy_weights(WeightsT& dest, const WeightsT& source, size_t length)
+{
+  for (size_t i = 0; i < length; i++)
+  {
+    dest.strided_index(i) = source.strided_index(i);
+  }
+}
 }  // namespace
 
 // todo:
@@ -262,6 +271,50 @@ void merge(const std::vector<float>& per_model_weighting, const VW::workspace& /
     // Add in the base value.
     output_data.per_model_states[i].normalized_sum_norm_x += base_data.per_model_states[i].normalized_sum_norm_x;
     output_data.per_model_states[i].total_weight += base_data.per_model_states[i].total_weight;
+  }
+}
+
+void add (const VW::workspace ws1, const GD::gd& data1, const VW::workspace& ws2, GD::gd& data2, VW::workspace& ws_out, GD::gd& data_out)
+{
+  const uint32_t length = 1 << ws_out.num_bits;
+  // When adding, output the weights from the model delta (2nd arugment to addition)
+  if (ws_out.weights.sparse)
+  {
+    copy_weights(ws_out.weights.sparse_weights, ws2.weights.sparse_weights, length);
+  }
+  else
+  {
+    copy_weights(ws_out.weights.dense_weights, ws2.weights.dense_weights, length);
+  }
+
+  for (size_t i = 0; i < data_out.per_model_states.size(); i++)
+  {
+    // normalized_sum_norm_x is additive
+    data_out.per_model_states[i].normalized_sum_norm_x = data1.per_model_states[i].normalized_sum_norm_x + data2.per_model_states[i].normalized_sum_norm_x;
+    // total_weight is additive
+    data_out.per_model_states[i].total_weight = data1.per_model_states[i].total_weight + data2.per_model_states[i].total_weight;
+  }
+}
+
+void subtract (const VW::workspace ws1, const GD::gd& data1, const VW::workspace& ws2, GD::gd& data2, VW::workspace& ws_out, GD::gd& data_out)
+{
+  const uint32_t length = 1 << ws_out.num_bits;
+  // When subtracting, output the weights from the newer model (1st arugment to subtraction)
+  if (ws_out.weights.sparse)
+  {
+    copy_weights(ws_out.weights.sparse_weights, ws1.weights.sparse_weights, length);
+  }
+  else
+  {
+    copy_weights(ws_out.weights.dense_weights, ws1.weights.dense_weights, length);
+  }
+
+  for (size_t i = 0; i < data_out.per_model_states.size(); i++)
+  {
+    // normalized_sum_norm_x is additive
+    data_out.per_model_states[i].normalized_sum_norm_x = data1.per_model_states[i].normalized_sum_norm_x - data2.per_model_states[i].normalized_sum_norm_x;
+    // total_weight is additive
+    data_out.per_model_states[i].total_weight = data1.per_model_states[i].total_weight - data2.per_model_states[i].total_weight;
   }
 }
 
@@ -1508,6 +1561,8 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
                                         .set_save_load(GD::save_load)
                                         .set_end_pass(GD::end_pass)
                                         .set_merge_with_all(GD::merge)
+                                        .set_add_with_all(GD::add)
+                                        .set_subtract_with_all(GD::subtract)
                                         .build();
   return make_base(*l);
 }

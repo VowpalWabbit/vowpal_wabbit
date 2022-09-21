@@ -5,8 +5,23 @@
 #include "vw/core/global_data.h"
 #include "vw/io/logger.h"
 
+#include <memory>
+
 namespace VW
 {
+
+struct model_delta
+{
+    // model_delta takes ownership of the workspace
+    explicit model_delta(workspace* ws) : _ws(ws) { }
+    explicit model_delta(std::unique_ptr<workspace> ws) : _ws(std::move(ws)) { }
+
+    explicit operator VW::workspace&() const { return *_ws; }
+
+private:
+    std::unique_ptr<workspace> _ws;
+};
+
 /**
  * Merge the differences of several workspaces into the given base workspace. This merges weights
  * and all training state. All given workspaces must be compatible with the base workspace, meaning they
@@ -25,4 +40,11 @@ namespace VW
 std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
     const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger = nullptr,
     bool is_delta = false);
+
+std::unique_ptr<VW::model_delta> merge_models(const VW::workspace* base_workspace,
+    const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger = nullptr);
 }  // namespace VW
+
+std::unique_ptr<VW::workspace> operator+(const VW::workspace& ws, const VW::model_delta& md);
+
+VW::model_delta operator-(const VW::workspace& ws1, const VW::workspace& ws2);

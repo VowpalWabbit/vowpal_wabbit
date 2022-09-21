@@ -436,6 +436,18 @@ void cb_adf_merge(const std::vector<float>& /* per_model_weights */, const CB_AD
   output_data.get_gen_cs().action_sum += base_data.get_gen_cs().action_sum;
 }
 
+void cb_adf_add(const CB_ADF::cb_adf& data1, const CB_ADF::cb_adf& data2, CB_ADF::cb_adf& data_out)
+{
+  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum + data2.get_gen_cs().event_sum;
+  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum + data2.get_gen_cs().action_sum;
+}
+
+void cb_adf_subtract(const CB_ADF::cb_adf& data1, const CB_ADF::cb_adf& data2, CB_ADF::cb_adf& data_out)
+{
+  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum - data2.get_gen_cs().event_sum;
+  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum - data2.get_gen_cs().action_sum;
+}
+
 void learn(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
 
 void predict(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
@@ -537,6 +549,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
                 .set_print_example(::update_and_output)
                 .set_save_load(::save_load)
                 .set_merge(::cb_adf_merge)
+                .set_add(::cb_adf_add)
+                .set_subtract(::cb_adf_subtract)
                 .build(&all.logger);
 
   bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));

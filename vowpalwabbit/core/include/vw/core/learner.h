@@ -133,6 +133,8 @@ using merge_with_all_fn = void (*)(const std::vector<float>& per_model_weighting
 // When the workspace reference is not needed this signature should definitely be used.
 using merge_fn = void (*)(const std::vector<float>& per_model_weighting, const void* base_data,
     const std::vector<const void*>& all_data, void* output_data, bool is_delta);
+using add_subtract_fn = void (*)(const void* data_1, const void* data_2, void* data_out);
+using add_subtract_with_all_fn = void (*)(const VW::workspace& ws1, const void* data1, const VW::workspace& ws2, const void* data2, VW::workspace& ws_out, void* data_out);
 
 inline void noop_save_load(void*, io_buf&, bool, bool) {}
 inline void noop_persist_metrics(void*, metric_sink&) {}
@@ -253,6 +255,10 @@ private:
   // There should only only ever be either none, or one of these two set. Never both.
   details::merge_with_all_fn _merge_with_all_fn;
   details::merge_fn _merge_fn;
+  details::add_subtract_fn _add_fn;
+  details::add_subtract_with_all_fn _add_with_all_fn;
+  details::add_subtract_fn _subtract_fn;
+  details::add_subtract_with_all_fn _subtract_with_all_fn;
 
   std::shared_ptr<void> learner_data;
 
@@ -501,7 +507,47 @@ public:
     }
   }
 
+  void NO_SANITIZE_UNDEFINED add(const VW::workspace& base_ws, const VW::workspace& delta_ws, const base_learner* base_l, const base_learner* delta_l, VW::workspace& output_ws, base_learner* output_l)
+  {
+    auto name = output_l->get_name();
+    assert(name == base_l->get_name());
+    assert(name == delta_l->get_name());
+    if (_add_with_all_fn != nullptr)
+    {
+      _add_with_all_fn(base_ws, base_l->learner_data.get(), delta_ws, delta_l->learner_data.get(), output_ws, output_l->learner_data.get());
+    }
+    else if (_add_fn != nullptr)
+    {
+      _add_fn(base_l->learner_data.get(), delta_l->learner_data.get(), output_l->learner_data.get());
+    }
+    else
+    {
+      THROW("learner " << name << " does not support adding a delta.");
+    }
+  }
+
+  void NO_SANITIZE_UNDEFINED subtract(const VW::workspace& ws1, const VW::workspace& ws2, const base_learner* l1, const base_learner* l2, VW::workspace& output_ws, base_learner* output_l)
+  {
+    auto name = output_l->get_name();
+    assert(name == l1->get_name());
+    assert(name == l2->get_name());
+    if (_subtract_with_all_fn != nullptr)
+    {
+      _subtract_with_all_fn(ws1, l1->learner_data.get(), ws2, l2->learner_data.get(), output_ws, output_l->learner_data.get());
+    }
+    else if (_subtract_fn != nullptr)
+    {
+      _subtract_fn(l1->learner_data.get(), l2->learner_data.get(), output_l->learner_data.get());
+    }
+    else
+    {
+      THROW("learner " << name << " does not support subtraction to generate a delta.");
+    }
+  }
+
   VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_fn != nullptr) || (_merge_fn != nullptr); }
+  VW_ATTR(nodiscard) bool has_add() const { return _add_fn != nullptr; }
+  VW_ATTR(nodiscard) bool has_subtract() const { return (_subtract_fn != nullptr); }
   VW_ATTR(nodiscard) prediction_type_t get_output_prediction_type() const { return _output_pred_type; }
   VW_ATTR(nodiscard) prediction_type_t get_input_prediction_type() const { return _input_pred_type; }
   VW_ATTR(nodiscard) label_type_t get_output_label_type() const { return _output_label_type; }
@@ -742,6 +788,10 @@ struct reduction_learner_builder
     // Don't propagate merge functions
     this->_learner->_merge_fn = nullptr;
     this->_learner->_merge_with_all_fn = nullptr;
+    this->_learner->_add_fn = nullptr;
+    this->_learner->_add_with_all_fn = nullptr;
+    this->_learner->_subtract_fn = nullptr;
+    this->_learner->_subtract_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
@@ -768,6 +818,20 @@ struct reduction_learner_builder
           const std::vector<const DataT*>& all_data, DataT& output_data, bool is_delta))
   {
     this->_learner->_merge_fn = reinterpret_cast<details::merge_fn>(merge_fn);
+    return *this;
+  }
+
+  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_add(
+      void (*add_fn)(const DataT& data1, const DataT& data2, DataT& data_out))
+  {
+    this->_learner->_add_fn = reinterpret_cast<details::add_subtract_fn>(add_fn);
+    return *this;
+  }
+
+  reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_subtract(
+      void (*subtract_fn)(const DataT& data1, const DataT& data2, DataT& data_out))
+  {
+    this->_learner->_subtract_fn = reinterpret_cast<details::add_subtract_fn>(subtract_fn);
     return *this;
   }
 
@@ -896,6 +960,20 @@ struct base_learner_builder
           const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data, bool is_delta))
   {
     this->_learner->_merge_with_all_fn = reinterpret_cast<details::merge_with_all_fn>(merge_with_all_fn);
+    return *this;
+  }
+
+  base_learner_builder<DataT, ExampleT>& set_add_with_all(
+      void (*add_with_all_fn)(const VW::workspace ws1, const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out))
+  {
+    this->_learner->_add_with_all_fn = reinterpret_cast<details::add_subtract_with_all_fn>(add_with_all_fn);
+    return *this;
+  }
+
+  base_learner_builder<DataT, ExampleT>& set_subtract_with_all(
+      void (*subtract_with_all_fn)(const VW::workspace ws1, const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out))
+  {
+    this->_learner->_subtract_with_all_fn = reinterpret_cast<details::add_subtract_with_all_fn>(subtract_with_all_fn);
     return *this;
   }
 
