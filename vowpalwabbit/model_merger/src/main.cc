@@ -47,7 +47,7 @@ void logger_output_func(void* void_context, VW::io::log_level level, const std::
   auto* context = static_cast<logger_context*>(void_context);
   auto newline_stripped_message = message;
   newline_stripped_message.erase(std::remove(newline_stripped_message.begin(), newline_stripped_message.end(), '\n'),
-      newline_stripped_message.cend());
+      newline_stripped_message.end());
   switch (level)
   {
     case VW::io::log_level::info:
