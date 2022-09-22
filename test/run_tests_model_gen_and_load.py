@@ -75,7 +75,7 @@ def generate_model(
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
-    vw = vowpalwabbit.Workspace(command, quiet = True)
+    vw = vowpalwabbit.Workspace(command, quiet=True)
 
     vw.save(str(working_dir / f"model_{test_id}.vw"))
     vw.finish()
@@ -104,7 +104,7 @@ def load_model(
     )
 
     try:
-        vw = vowpalwabbit.Workspace(command, quiet = True)
+        vw = vowpalwabbit.Workspace(command, quiet=True)
         vw.finish()
     except Exception as e:
         print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
@@ -132,12 +132,16 @@ def get_tests(
     )
     filtered_tests = []
     for test in tests:
-        vw = vowpalwabbit.Workspace(test.command_line, quiet = True)
+        vw = vowpalwabbit.Workspace(test.command_line, quiet=True)
         skip_cmd = False
         for groups in vw.get_config().values():
             for group in groups:
                 for opt in group[1]:
-                    if opt.value_supplied and (opt.experimental or opt.name == "bfgs" or (opt.name == "initial_regressor" and opt.value != [])):
+                    if opt.value_supplied and (
+                        opt.experimental
+                        or opt.name == "bfgs"
+                        or (opt.name == "initial_regressor" and opt.value != [])
+                    ):
                         skip_cmd = True
                         break
             if skip_cmd:
