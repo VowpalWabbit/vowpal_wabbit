@@ -51,19 +51,13 @@ struct AO_triplet_constructor
 {
 private:
   uint64_t _weights_mask;
-  uint64_t _row_index;
   uint64_t _column_index;
   uint64_t _seed;
   float& _final_dot_product;
 
 public:
-  AO_triplet_constructor(
-      uint64_t weights_mask, uint64_t row_index, uint64_t column_index, uint64_t seed, float& final_dot_product)
-      : _weights_mask(weights_mask)
-      , _row_index(row_index)
-      , _column_index(column_index)
-      , _seed(seed)
-      , _final_dot_product(final_dot_product)
+  AO_triplet_constructor(uint64_t weights_mask, uint64_t column_index, uint64_t seed, float& final_dot_product)
+      : _weights_mask(weights_mask), _column_index(column_index), _seed(seed), _final_dot_product(final_dot_product)
   {
   }
 
@@ -107,7 +101,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
       {
         float final_dot_prod = 0.f;
 
-        AO_triplet_constructor tc(_all->weights.mask(), row_index, col, _seed, final_dot_prod);
+        AO_triplet_constructor tc(_all->weights.mask(), col, _seed, final_dot_prod);
 
         GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
             _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
@@ -121,17 +115,21 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     }
   };
 
-  const size_t num_blocks = std::max(1UL, this->_thread_pool.size());
-  const size_t block_size = examples.size() / num_blocks;         // Evenly split the examples into blocks
-  const size_t num_larger_blocks = examples.size() % num_blocks;  // but some blocks may have one more row
-  for (size_t block_id = 0, block_begin = 0; block_begin < examples.size(); ++block_id)
+  if (_block_size == 0)
   {
-    const size_t block_end = block_begin + block_size + (block_id < num_larger_blocks);
+    // Compute block_size if not specified.
+    const size_t num_blocks = std::max(1UL, this->_thread_pool.size());
+    _block_size = examples.size() / num_blocks;  // Evenly split the examples into blocks
+  }
+  for (size_t row_index_begin = 0; row_index_begin < examples.size();)
+  {
+    size_t row_index_end = row_index_begin + _block_size;
+    if ((row_index_end + _block_size) > examples.size()) { row_index_end = examples.size(); }
 
-    _futures.emplace_back(_thread_pool.submit(calculate_aomega_row, block_begin, block_end, p, _all, _seed,
-        std::ref(examples), std::ref(AOmega), std::ref(shrink_factors)));
+    _futures.emplace_back(_thread_pool.submit(calculate_aomega_row, row_index_begin, row_index_end, p, _all, _seed,
+        std::cref(examples), std::ref(AOmega), std::cref(shrink_factors)));
 
-    block_begin = block_end;
+    row_index_begin = row_index_end;
   }
 
   for (auto& ft : _futures) { ft.get(); }
@@ -153,8 +151,9 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
   }
 }
 
-one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size)
-    : _all(all), _d(d), _seed(seed), _thread_pool(thread_pool_size)
+one_pass_svd_impl::one_pass_svd_impl(
+    VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size, size_t block_size)
+    : _all(all), _d(d), _seed(seed), _thread_pool(thread_pool_size), _block_size(block_size)
 {
 }
 
