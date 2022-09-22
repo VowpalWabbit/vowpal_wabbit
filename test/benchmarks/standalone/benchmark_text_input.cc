@@ -91,7 +91,7 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
 }
 
 static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples,  // Total number of multi_ex examples
-    size_t shared_feats_size,     // Number of possible shared features
+    size_t shared_feats_size,                                                      // Number of possible shared features
     size_t shared_feats_count,    // Number of shared features per multi_ex
     size_t actions_per_example,   // Number of actions in each multi_ex
     size_t feature_groups_size,   // Number of possible feature groups

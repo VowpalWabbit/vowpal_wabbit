@@ -41,7 +41,8 @@ public:
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
 
-  vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
+  vanilla_rand_svd_impl(
+      VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -65,7 +66,8 @@ public:
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
 
-  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
+  model_weight_rand_svd_impl(
+      VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
 
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);

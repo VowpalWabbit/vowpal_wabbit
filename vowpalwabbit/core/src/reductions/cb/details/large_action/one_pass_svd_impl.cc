@@ -90,8 +90,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
 
   auto calculate_aomega_row = [](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
                                   uint64_t _seed, const multi_ex& examples, Eigen::MatrixXf& AOmega,
-                                  const std::vector<float>& shrink_factors) -> void
-  {
+                                  const std::vector<float>& shrink_factors) -> void {
     for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
       VW::example* ex = examples[row_index];
