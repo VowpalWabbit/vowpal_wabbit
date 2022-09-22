@@ -74,9 +74,8 @@ def generate_model(
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
-    command = command + " --quiet "
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
-    vw = vowpalwabbit.Workspace(command)
+    vw = vowpalwabbit.Workspace(command, quiet = True)
 
     vw.save(str(working_dir / f"model_{test_id}.vw"))
     vw.finish()
@@ -88,7 +87,6 @@ def load_model(
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
-    command = command + " --quiet "
     model_file = str(working_dir / f"model_{test_id}.vw")
     command = command + f" -i {model_file}"
 
@@ -106,7 +104,7 @@ def load_model(
     )
 
     try:
-        vw = vowpalwabbit.Workspace(command)
+        vw = vowpalwabbit.Workspace(command, quiet = True)
         vw.finish()
     except Exception as e:
         print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
@@ -134,15 +132,24 @@ def get_tests(
     )
     filtered_tests = []
     for test in tests:
+        vw = vowpalwabbit.Workspace(test.command_line, quiet = True)
+        skip_cmd = False
+        for groups in vw.get_config().values():
+            for group in groups:
+                for opt in group[1]:
+                    if opt.value_supplied and (opt.experimental or opt.name == "bfgs" or (opt.name == "initial_regressor" and opt.value != [])):
+                        skip_cmd = True
+                        break
+            if skip_cmd:
+                break
+        vw.finish()
         if (
             not test.depends_on
             and not test.is_shell
             and not test.skip
-            and not " -i " in test.command_line
             and not "--no_stdin" in test.command_line
-            and not "bfgs" in test.command_line
-            and not "--flatbuffer" in test.command_line
             and not "--help" in test.command_line
+            and not skip_cmd
         ):
             test.command_line = re.sub("-f [:a-zA-Z0-9_.\\-/]*", "", test.command_line)
             test.command_line = re.sub("-f=[:a-zA-Z0-9_.\\-/]*", "", test.command_line)
