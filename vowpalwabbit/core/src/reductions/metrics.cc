@@ -87,6 +87,13 @@ struct json_metrics_writer : VW::metric_sink_visitor
     _writer.Key(key.c_str());
     _writer.Bool(value);
   }
+  void sink_metric(const std::string& key, const VW::metric_sink& value) override
+  {
+    _writer.Key(key.c_str());
+    _writer.StartObject();
+    value.visit(*this);
+    _writer.EndObject();
+  }
 
 private:
   Writer<FileWriteStream>& _writer;

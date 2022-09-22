@@ -169,7 +169,7 @@ set(vw_core_headers
   include/vw/core/reductions/svrg.h
   include/vw/core/reductions/topk.h
   include/vw/core/scope_exit.h
-  include/vw/core/estimator_config.h
+  include/vw/core/cressieread_estimator.h
   include/vw/core/shared_data.h
   include/vw/core/simple_label_parser.h
   include/vw/core/simple_label.h
@@ -326,7 +326,7 @@ set(vw_core_sources
   src/reductions/stagewise_poly.cc
   src/reductions/svrg.cc
   src/reductions/topk.cc
-  src/estimator_config.cc
+  src/cressieread_estimator.cc
   src/shared_data.cc
   src/simple_label_parser.cc
   src/simple_label.cc
