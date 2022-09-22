@@ -288,7 +288,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_onestep_max_threads,
     gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
@@ -309,7 +309,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_onestep_max_threads,
     gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
@@ -330,7 +330,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_1k_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_1k_onestep_max_threads,
     gen_cb_examples(1, 50, 10, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
@@ -351,7 +351,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_onestep_max_threads,
     gen_cb_examples(1, 50, 20, 300, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
@@ -372,7 +372,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_500_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_500_onestep_max_threads,
     gen_cb_examples(1, 50, 20, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
@@ -393,7 +393,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_1k_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_1k_onestep_max_threads,
     gen_cb_examples(1, 50, 20, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
@@ -414,7 +414,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_300_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_300_onestep_max_threads,
     gen_cb_examples(1, 50, 50, 300, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
@@ -435,7 +435,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_500_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_500_onestep_max_threads,
     gen_cb_examples(1, 50, 50, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
@@ -456,7 +456,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_1k_onestep,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_1k_onestep_max_threads,
     gen_cb_examples(1, 50, 50, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --block_size 1 --thread_pool_size " +
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
