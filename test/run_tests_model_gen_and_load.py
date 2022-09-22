@@ -112,7 +112,9 @@ def load_model(
 
 
 def get_tests(
-    working_dir: Path, explicit_tests: Optional[List[int]] = None
+    model_working_dir: Path,
+    working_dir: Path,
+    explicit_tests: Optional[List[int]] = None,
 ) -> List[TestData]:
     test_ref_dir: Path = Path(__file__).resolve().parent
 
@@ -132,28 +134,14 @@ def get_tests(
     )
     filtered_tests = []
     for test in tests:
-        vw = vowpalwabbit.Workspace(test.command_line, quiet=True)
-        skip_cmd = False
-        for groups in vw.get_config().values():
-            for group in groups:
-                for opt in group[1]:
-                    if opt.value_supplied and (
-                        opt.experimental
-                        or opt.name == "bfgs"
-                        or (opt.name == "initial_regressor" and opt.value != [])
-                    ):
-                        skip_cmd = True
-                        break
-            if skip_cmd:
-                break
-        vw.finish()
         if (
             not test.depends_on
             and not test.is_shell
             and not test.skip
+            and not "-i " in test.command_line
             and not "--no_stdin" in test.command_line
             and not "--help" in test.command_line
-            and not skip_cmd
+            and not "--flatbuffer" in test.command_line
         ):
             test.command_line = re.sub("-f [:a-zA-Z0-9_.\\-/]*", "", test.command_line)
             test.command_line = re.sub("-f=[:a-zA-Z0-9_.\\-/]*", "", test.command_line)
@@ -164,6 +152,25 @@ def get_tests(
                 "--final_regressor=[:a-zA-Z0-9_.\\-/]*", "", test.command_line
             )
             test.command_line = test.command_line.replace("--onethread", "")
+
+            # Check experimental and loadable reductions
+            os.chdir(model_working_dir.parent)
+            vw = vowpalwabbit.Workspace(test.command_line, quiet=True)
+            skip_cmd = False
+            for groups in vw.get_config().values():
+                for group in groups:
+                    for opt in group[1]:
+                        if opt.value_supplied and (
+                            opt.experimental or opt.name == "bfgs"
+                        ):
+                            skip_cmd = True
+                            break
+                if skip_cmd:
+                    break
+            vw.finish()
+            if skip_cmd:
+                continue
+
             filtered_tests.append(test)
 
     if explicit_tests:
@@ -264,7 +271,7 @@ def main():
     else:
         temp_working_dir.mkdir(parents=True, exist_ok=True)
         test_model_dir.mkdir(parents=True, exist_ok=True)
-        tests = get_tests(temp_working_dir, args.test)
+        tests = get_tests(test_model_dir, temp_working_dir, args.test)
 
         if args.generate_models:
             generate_all(tests, test_model_dir, color_enum)
