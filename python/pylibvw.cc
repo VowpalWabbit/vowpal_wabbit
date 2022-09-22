@@ -307,6 +307,13 @@ struct python_dict_writer : VW::metric_sink_visitor
   void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
   void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
   void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+  void sink_metric(const std::string& key, const VW::metric_sink& value)
+  {
+    py::dict nested;
+    auto nested_py = python_dict_writer(nested);
+    value.visit(nested_py);
+    _dest_dict[key] = nested;
+  }
 
 private:
   py::dict& _dest_dict;

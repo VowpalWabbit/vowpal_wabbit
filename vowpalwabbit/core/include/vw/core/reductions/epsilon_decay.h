@@ -4,8 +4,8 @@
 #pragma once
 
 #include "vw/core/array_parameters.h"
+#include "vw/core/confidence_sequence.h"
 #include "vw/core/distributionally_robust.h"
-#include "vw/core/estimator_config.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/reductions_fwd.h"
 
@@ -20,12 +20,7 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
 
 namespace epsilon_decay
 {
-struct epsilon_decay_estimator : estimator_config
-{
-  epsilon_decay_estimator() = default;
-  epsilon_decay_estimator(double alpha, double tau) : VW::estimator_config(alpha, tau) {}
-  float decayed_epsilon(uint64_t update_count);
-};
+float decayed_epsilon(uint64_t update_count);
 
 struct epsilon_decay_data
 {
@@ -40,7 +35,7 @@ struct epsilon_decay_data
   void check_estimator_bounds();
   void check_horizon_bounds();
 
-  std::vector<std::vector<epsilon_decay_estimator>> _estimator_configs;
+  std::vector<std::vector<VW::confidence_sequence>> conf_seq_estimators;
   std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;
   double _epsilon_decay_significance_level;  // Confidence interval
@@ -53,6 +48,15 @@ struct epsilon_decay_data
   uint32_t& _wpp;
   bool _lb_trick;
   uint64_t _min_champ_examples;
+
+  // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
+  std::vector<double> per_live_model_state_double;
+  std::vector<uint64_t> per_live_model_state_uint64;
+  double* _gd_normalized = nullptr;
+  double* _gd_total_weight = nullptr;
+  double* _sd_gravity = nullptr;
+  uint64_t* _cb_adf_event_sum = nullptr;
+  uint64_t* _cb_adf_action_sum = nullptr;
 };
 
 }  // namespace epsilon_decay
@@ -60,10 +64,7 @@ struct epsilon_decay_data
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_estimator&);
 size_t read_model_field(io_buf&, VW::reductions::epsilon_decay::epsilon_decay_data&);
-size_t write_model_field(
-    io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_estimator&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::epsilon_decay::epsilon_decay_data&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
