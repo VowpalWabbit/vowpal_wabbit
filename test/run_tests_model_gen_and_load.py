@@ -152,7 +152,12 @@ def get_tests(
                 "--final_regressor=[:a-zA-Z0-9_.\\-/]*", "", test.command_line
             )
             test.command_line = test.command_line.replace("--onethread", "")
-
+            create_test_dir(
+                test_id=test.id,
+                input_files=test.input_files,
+                test_base_dir=working_dir,
+                test_ref_dir=test_ref_dir,
+            )
             # Check experimental and loadable reductions
             os.chdir(model_working_dir.parent)
             vw = vowpalwabbit.Workspace(test.command_line, quiet=True)
@@ -176,13 +181,6 @@ def get_tests(
     if explicit_tests:
         filtered_tests = list(filter(lambda x: x.id in explicit_tests, filtered_tests))
 
-    for test in filtered_tests:
-        create_test_dir(
-            test_id=test.id,
-            input_files=test.input_files,
-            test_base_dir=working_dir,
-            test_ref_dir=test_ref_dir,
-        )
     return filtered_tests
 
 
