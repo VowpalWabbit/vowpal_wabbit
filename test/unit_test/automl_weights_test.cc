@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations)
   test_hooks.emplace(num_iterations, weights_offset_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
       "--oracle_type rand --global_lease 10",
@@ -180,8 +180,8 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
     if (current_offset == 0)
     {
       float* first_weight = &weights.first()[(prestride_index + 0) << weights.stride_shift()];
-      auto till = 3;  // instead of all.wpp, champdupe only uses 3 configs
-      for (uint32_t i = 1; i < till; ++i)
+      auto till = 1;  // instead of all.wpp, champdupe only uses 3 configs
+      for (uint32_t i = 1; i <= till; ++i)
       {
         float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];
         for (uint32_t j = 0; j < stride_size; ++j)
@@ -196,17 +196,17 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
 BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
 {
   const size_t seed = 10;
-  const size_t num_iterations = 2000;
+  const size_t num_iterations = 1742;
   callback_map test_hooks;
 
   test_hooks.emplace(500, all_weights_equal_test);
   test_hooks.emplace(num_iterations, all_weights_equal_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
+      "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
-      "--oracle_type champdupe -b 8 --global_lease 10",
+      "--oracle_type champdupe -b 8 --global_lease 10 --extra_metrics champdupe.json --verbose_metrics",
       test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
   callback_map test_hooks;
 
   std::string vw_arg =
-      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
+      "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 -b 18 "
       "--oracle_type one_diff --global_lease 10 ";
@@ -266,17 +266,19 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
 
   std::string vw_arg =
       "--cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 -b 18 ";
+      "--random_seed 5 ";
   std::string vw_automl_arg =
-      "--automl 4 --automl_estimator_decay .999 --priority_type favor_popular_namespaces "
+      "--automl 4 --priority_type favor_popular_namespaces "
       "--oracle_type one_diff --global_lease 10 ";
   int seed = 10;
-  size_t num_iterations = 2000;
+  // a switch happens around ~1756
+  size_t num_iterations = 1700;
   // this has to match with --automl 4 above
   size_t AUTOML_MODELS = 4;
 
-  auto* vw_qcolcol = VW::initialize(vw_arg + "--invert_hash without_automl.vw -q ::");
-  auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "--invert_hash with_automl.vw");
+  auto* vw_qcolcol = VW::initialize(vw_arg + "-b 18 --invert_hash without_automl.vw -q ::");
+  auto* vw_automl = VW::initialize(
+      vw_arg + vw_automl_arg + "-b 20 --invert_hash with_automl.vw --extra_metrics equaltest.json --verbose_metrics");
   simulator::cb_sim sim1(seed);
   simulator::cb_sim sim2(seed);
   auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
@@ -285,7 +287,8 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
   auto iter_1 = weights_qcolcol.begin();
-  auto iter_2 = weights_automl.begin();
+  auto q_col_col_offset = 0;  // q:: is runner-up and not champ (offset 0) if num_iterations > ~1750
+  auto iter_2 = weights_automl.begin() + q_col_col_offset;
 
   std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
   std::vector<std::tuple<float, float, float, float>> automl_champ_weights_vector;
@@ -301,11 +304,11 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
 
   std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
 
-  while (iter_2 != weights_automl.end())
+  while (iter_2 < weights_automl.end())
   {
     size_t prestride_index = iter_2.index() >> 2;
     size_t current_offset = prestride_index & (AUTOML_MODELS - 1);
-    BOOST_CHECK_EQUAL(current_offset, 0);
+    BOOST_CHECK_EQUAL(current_offset, q_col_col_offset);
     BOOST_CHECK_EQUAL(iter_2.index_without_stride() & AUTOML_MODELS - 1, current_offset);
 
     if (*iter_2 != 0.0f) { automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]); }
@@ -313,12 +316,12 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
     iter_2 += AUTOML_MODELS;
   }
 
+  VW::finish(*vw_qcolcol);
+  VW::finish(*vw_automl);
+
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
   BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 31);
   BOOST_CHECK_EQUAL(automl_champ_weights_vector.size(), 31);
   BOOST_CHECK(qcolcol_weights_vector == automl_champ_weights_vector);
   BOOST_CHECK(ctr1 == ctr2);
-
-  VW::finish(*vw_qcolcol);
-  VW::finish(*vw_automl);
 }

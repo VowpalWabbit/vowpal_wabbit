@@ -104,8 +104,13 @@ def load_model(
     print(
         f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {command}{color_enum.ENDC}"
     )
-    vw = vowpalwabbit.Workspace(command)
-    vw.finish()
+
+    try:
+        vw = vowpalwabbit.Workspace(command)
+        vw.finish()
+    except Exception as e:
+        print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
+        raise e
 
 
 def get_tests(

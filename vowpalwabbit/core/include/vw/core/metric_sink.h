@@ -12,6 +12,7 @@
 
 namespace VW
 {
+struct metric_sink;
 struct metric_sink_visitor
 {
   virtual ~metric_sink_visitor() = default;
@@ -19,6 +20,7 @@ struct metric_sink_visitor
   virtual void float_metric(const std::string& key, float value) = 0;
   virtual void string_metric(const std::string& key, const std::string& value) = 0;
   virtual void bool_metric(const std::string& key, bool value) = 0;
+  virtual void sink_metric(const std::string& key, const metric_sink& value) = 0;
 };
 
 struct metric_sink
@@ -27,11 +29,13 @@ struct metric_sink
   void set_float(const std::string& key, float value, bool overwrite = false);
   void set_string(const std::string& key, const std::string& value, bool overwrite = false);
   void set_bool(const std::string& key, bool value, bool overwrite = false);
+  void set_metric_sink(const std::string& key, metric_sink value, bool overwrite = false);
 
   uint64_t get_uint(const std::string& key) const;
   float get_float(const std::string& key) const;
   VW::string_view get_string(const std::string& key) const;
   bool get_bool(const std::string& key) const;
+  metric_sink get_metric_sink(const std::string& key) const;
 
   void visit(metric_sink_visitor& visitor) const;
 
@@ -42,5 +46,6 @@ private:
   std::map<std::string, float> _float_metrics;
   std::map<std::string, std::string> _string_metrics;
   std::map<std::string, bool> _bool_metrics;
+  std::map<std::string, metric_sink> _metric_sink_metrics;
 };
 }  // namespace VW
