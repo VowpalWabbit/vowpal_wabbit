@@ -79,5 +79,8 @@ jobs:
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
-          pip install vowpalwabbit
+          git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
+          cd vowpal_wabbit
+          python setup.py install
+          cd ..
           python ./test/run_tests_model_gen_and_load.py --load_models
