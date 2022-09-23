@@ -105,7 +105,7 @@ void one_rank_spanner_state::compute_spanner(
   _X_inv.setIdentity(_d, _d);
   _log_determinant_factor = 0;
 
-  float max_volume;
+  float max_volume = -1.f;
   // Compute a basis contained in U.
   for (uint64_t i = 0; i < _d; ++i)
   {
@@ -127,7 +127,7 @@ void one_rank_spanner_state::compute_spanner(
     // If replacing some row in _X results in larger volume, replace it with the row from U.
     for (uint64_t i = 0; i < _d; ++i)
     {
-      float max_volume;
+      float max_volume = -1.f;
       uint64_t U_rid;
       Eigen::VectorXf phi = _X_inv.row(i);
       find_max_volume(U, phi, max_volume, U_rid);

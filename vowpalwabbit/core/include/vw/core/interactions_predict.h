@@ -232,24 +232,34 @@ std::vector<features_range_t> inline generate_generic_char_combination(
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
     void (*audit_func)(DataT&, const VW::audit_strings*), class WeightsT>
 void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::const_audit_iterator& end,
-    const uint64_t offset, WeightsT& weights, feature_value ft_value, feature_index halfhash)
+    const uint64_t offset, WeightsT& weights, feature_value ft_value, feature_index halfhash, VW::generated_interactions::reduction_features& reduction_features)
 {
   if (audit)
   {
     for (; begin != end; ++begin)
     {
       audit_func(dat, begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit());
+      auto interacted_value = INTERACTION_VALUE(ft_value, begin.value());
+      auto interacted_index = (begin.index() ^ halfhash) + offset;
       call_FuncT<DataT, FuncT>(
-          dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
+          dat, weights, interacted_value, interacted_index);
       audit_func(dat, nullptr);
+
+      reduction_features.full_interacted_indices.push_back(interacted_index);
+      reduction_features.full_interacted_values.push_back(interacted_value);
     }
   }
   else
   {
     for (; begin != end; ++begin)
     {
+      auto interacted_value = INTERACTION_VALUE(ft_value, begin.value());
+      auto interacted_index = (begin.index() ^ halfhash) + offset;
       call_FuncT<DataT, FuncT>(
-          dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
+          dat, weights, interacted_value, interacted_index);
+
+      reduction_features.full_interacted_indices.push_back(interacted_index);
+      reduction_features.full_interacted_values.push_back(interacted_value);
     }
   }
 }
@@ -438,10 +448,14 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
     generate_interactions_object_cache& cache)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
+  auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+  red_features.full_interacted_indices.clear();
+  red_features.full_interacted_values.clear();
+
   // often used values
   const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
                                      feature_value value, feature_index index) {
-    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
+    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index, red_features);
   };
 
   const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(dat, audit_str); };

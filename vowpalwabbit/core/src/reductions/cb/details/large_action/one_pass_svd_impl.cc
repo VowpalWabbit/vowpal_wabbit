@@ -94,33 +94,63 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   auto p = std::min(num_actions, _d + sampling_slack);
   AOmega.resize(num_actions, p);
 
-  auto calculate_aomega_row = [](uint64_t row_index, uint64_t p, VW::workspace* _all, uint64_t _seed, VW::example* ex,
-                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors) -> void {
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
-
-    for (uint64_t col = 0; col < p; ++col)
+  auto calculate_aomega_row = [](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
+                                  uint64_t _seed, const VW::multi_ex& examples, Eigen::MatrixXf& AOmega,
+                                  const std::vector<float>& shrink_factors) -> void
+  {
+    for (uint64_t row_index = row_index_begin; row_index < row_index_end; row_index++)
     {
-      float final_dot_prod = 0.f;
+      auto* ex = examples[row_index];
+      auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
-      AO_triplet_constructor tc(_all->weights.mask(), row_index, col, _seed, final_dot_prod);
+      for (uint64_t col = 0; col < p; ++col)
+      {
+        float final_dot_prod = 0.f;
 
-      GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-          _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-          (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
-          (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
-                                                      : *ex->extent_interactions),
-          _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+        for (auto ns : ex->indices)
+        {
+          for (size_t fi = 0; fi < ex->feature_space[ns].indices.size(); fi++)
+          {
+            float val =
+                (__builtin_parity((ex->feature_space[ns].indices[fi] & _all->weights.mask()) + col + _seed) << 1) - 1.f;
+            final_dot_prod += ex->feature_space[ns].values[fi] * val;
+          }
+        }
 
-      AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
+        for (size_t fi = 0; fi < red_features.full_interacted_indices.size(); fi++)
+        {
+          float val =
+              (__builtin_parity((red_features.full_interacted_indices[fi] & _all->weights.mask()) + col + _seed) << 1) -
+              1.f;
+          final_dot_prod += red_features.full_interacted_values[fi] * val;
+        }
+
+        AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
+      }
+      red_features.full_interacted_indices.clear();
+      red_features.full_interacted_values.clear();
     }
   };
 
-  uint64_t row_index = 0;
-  for (auto* ex : examples)
+  const size_t num_blocks = std::max(1UL, this->_thread_pool.size());
+  const size_t block_size = (examples.size() / num_blocks) / 4;  // Evenly split the examples into blocks
+
+  uint64_t row_index_begin = 0;
+  uint64_t row_index_end = 0;
+  while (row_index_begin < examples.size())
   {
-    _futures.emplace_back(_thread_pool.submit(
-        calculate_aomega_row, row_index, p, _all, _seed, ex, std::ref(AOmega), std ::ref(shrink_factors)));
-    row_index++;
+    row_index_end = row_index_begin + block_size;
+    if ((row_index_end + block_size) >= static_cast<uint64_t>(examples.size()))
+    {
+      row_index_end = static_cast<uint64_t>(examples.size());
+    }
+    std::cout << row_index_begin << "," << row_index_end << std::endl;
+
+    _futures.emplace_back(_thread_pool.submit(calculate_aomega_row, row_index_begin, row_index_end, p, _all, _seed,
+        std::ref(examples), std::ref(AOmega), std::ref(shrink_factors)));
+
+    row_index_begin = row_index_end;
+    if (row_index_begin == examples.size()) { break; }
   }
 
   for (auto& ft : _futures) { ft.get(); }
