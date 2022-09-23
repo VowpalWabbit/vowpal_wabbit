@@ -70,9 +70,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: actions/setup-python@v1
         with:
-          python-version: '3.10' 
+          submodules: recursive
       - uses: actions/download-artifact@v1
         with:
           name: vw_generated_models
@@ -87,4 +86,4 @@ jobs:
           auditwheel repair wheel_last_commit/*whl -w audit_last_commit/
           /opt/python/cp310-cp310/bin/pip wheel install wheel_last_commit/*.whl
           cd ..
-          python ./test/run_tests_model_gen_and_load.py --load_models
+          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models
