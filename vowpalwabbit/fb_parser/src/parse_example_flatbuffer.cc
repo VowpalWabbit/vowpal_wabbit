@@ -10,6 +10,7 @@
 #include "vw/core/constant.h"
 #include "vw/core/global_data.h"
 #include "vw/core/parser.h"
+#include "vw/core/error_constants.h"
 
 #include <cfloat>
 #include <fstream>
@@ -144,7 +145,8 @@ void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
     ae->tag.insert(ae->tag.end(), tag.begin(), tag.end());
   }
 
-  for (const auto& ns : *(eg->namespaces())) { parse_namespaces(all, ae, ns); }
+  VW::experimental::api_status status;
+  for (const auto& ns : *(eg->namespaces())) { parse_namespaces(all, ae, ns, &status); }
 }
 
 void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg)
@@ -190,8 +192,12 @@ bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
   return false;
 }
 
-void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns)
+int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns, VW::experimental::api_status* status)
 {
+  // Clear previous errors if any
+  VW::experimental::api_status::try_clear(status);
+  if(ns == nullptr) { RETURN_ERROR_ARG(status, vw_exception, "namespace is null"); }
+  
   const namespace_index index = get_namespace_index(ns);
   uint64_t hash = 0;
   const auto hash_found = get_namespace_hash(all, ns, hash);
@@ -202,68 +208,67 @@ void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* 
 
   if (hash_found) { fs.start_ns_extent(hash); }
   
-  auto feature_value_iter = (ns->feature_values())->begin();
-  const auto feature_value_iter_end = (ns->feature_values())->end();
-  //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
-
-  if(ns->feature_names() != nullptr)
+  if(ns->feature_values() == nullptr) { RETURN_ERROR(status, vw_exception, "feature values table is null"); }
+  try
   {
-    const auto ns_name = ns->name();
-    auto feature_name_iter = (ns->feature_names())->begin();
+    auto feature_value_iter = (ns->feature_values())->begin();
+    const auto feature_value_iter_end = (ns->feature_values())->end();
 
-    if(ns->feature_hashes() != nullptr)
+    //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
+    if(ns->feature_names() != nullptr)
     {
-      auto feature_hash_iter = (ns->feature_hashes())->begin();
-      
-      for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
+      const auto ns_name = ns->name();
+      auto feature_name_iter = (ns->feature_names())->begin();
+
+      if(ns->feature_hashes() != nullptr)
       {
-        fs.push_back(*feature_value_iter, *feature_hash_iter);
-        if (ns_name != nullptr)
-        { 
-          fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); 
-          ++feature_name_iter;
+        auto feature_hash_iter = (ns->feature_hashes())->begin();
+        
+        for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
+        {
+          if(*feature_value_iter == NULL){ RETURN_ERROR(status, vw_exception, "feature values table has null feature value in it"); }
+          if(*feature_hash_iter == NULL) { RETURN_ERROR(status, vw_exception, "feature hashes table has null feature hash in it"); }
+          fs.push_back(*feature_value_iter, *feature_hash_iter);
+          if (ns_name != nullptr)
+          { 
+            if(*feature_name_iter == NULL) { RETURN_ERROR(status, vw_exception, "feature names table has null feature name in it"); }
+            fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); 
+            ++feature_name_iter;
+          }
+        }
+      }
+      else
+      {
+        //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
+        for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_name_iter)
+        {
+          const uint64_t word_hash = all->example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash);
+          fs.push_back(*feature_value_iter, word_hash);
+          if (ns_name != nullptr)
+          { fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); }
         }
       }
     }
     else
     {
-      //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
-      for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_name_iter)
+      if(ns->feature_hashes() == nullptr) { RETURN_ERROR(status, not_implemented, "feature hashes table cannot be null for the usecase with feature names null"); }
+      auto feature_hash_iter = (ns->feature_hashes())->begin();  
+      for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
       {
-        const uint64_t word_hash = all->example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash);
-        fs.push_back(*feature_value_iter, word_hash);
-        if (ns_name != nullptr)
-        { fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); }
+        fs.push_back(*feature_value_iter, *feature_hash_iter);
       }
     }
+
+    if (hash_found) { fs.end_ns_extent(); }
+
+    return VW::experimental::error_code::success;
   }
-  else
+  catch(...)
   {
-    auto feature_hash_iter = (ns->feature_hashes())->begin();  
-    for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
-    {
-      fs.push_back(*feature_value_iter, *feature_hash_iter);
-    }
+    // return VW::experimental::error_code::unknown_s;
+    RETURN_ERROR(status, native_exception, "Unknown unhandled exception");
   }
-
-  if (hash_found) { fs.end_ns_extent(); }
 }
-
-// Code in the original version according to the original schema. (Commented for reference)
-// void parser::parse_features(VW::workspace* all, features& fs, const Feature* feature, const flatbuffers::String* ns)
-// {
-//   if (flatbuffers::IsFieldPresent(feature, Feature::VT_NAME))
-//   {
-//     uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->size(), _c_hash);
-//     fs.push_back(feature->value(), word_hash);
-//     if ((all->audit || all->hash_inv) && ns != nullptr)
-//     { fs.space_names.push_back(audit_strings(ns->c_str(), feature->name()->c_str())); }
-//   }
-//   else
-//   {
-//     fs.push_back(feature->value(), feature->hash());
-//   }
-// }
 
 void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger)
 {
