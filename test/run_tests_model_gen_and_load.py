@@ -166,7 +166,8 @@ def get_tests(
                 for group in groups:
                     for opt in group[1]:
                         if opt.value_supplied and (
-                            opt.experimental or opt.name == "bfgs"
+                            (hasattr(opt, "experimental") and opt.experimental)
+                            or opt.name == "bfgs"
                         ):
                             skip_cmd = True
                             break
