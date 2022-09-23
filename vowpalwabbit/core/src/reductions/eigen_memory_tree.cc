@@ -42,16 +42,46 @@ float median(std::vector<float>& array)
   else { return array[size / 2]; }
 }
 
-float projection(VW::flat_example& ec, sparse_parameters& projector)
-{
-  float projection = 0;
-  
-  for (size_t idx1 = 0; idx1 < ec.fs.size(); idx1++)
-  {
-    projection += projector[ec.fs.indices[idx1]] * ec.fs.values[idx1];
-  }
+float variance(std::vector<float>& array) {
+  float E = std::accumulate(array.begin(), array.end(), 0.0) / array.size();
+  float E_2 = std::inner_product(array.begin(), array.end(), array.begin(), 0.0) / array.size();
+  return E_2 - E * E;
+}
 
-  return projection;
+void rng_init(sparse_parameters& weights, std::vector<VW::flat_example*> examples, std::shared_ptr<VW::rand_state> rng)
+{
+  for (auto ex: examples) {
+    for (auto f : ex->fs) {
+      weights[f.index()] = rng->get_and_update_random();
+    }
+  }
+}
+
+float inner(features& fs, sparse_parameters& weights)
+{
+  float inner = 0;
+  for (auto f : fs) { inner += weights[f.index()] * f.value(); }
+  return inner;
+}
+
+float inner(VW::flat_example& example, sparse_parameters& weights)
+{
+  return inner(example.fs, weights);
+}
+
+
+void scale(sparse_parameters& weights, float scalar) {
+  for (auto i = weights.begin(); i != weights.end(); ++i) {
+    weights[i.index()] = weights[i.index()] * scalar;
+  }
+}
+
+float norm(sparse_parameters& weights) {
+  float sum_weights_sq = 0;
+
+  for (auto w : weights) { sum_weights_sq += w * w; }
+
+  return sqrt(sum_weights_sq);
 }
 ////////////////////////////end of helper/////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -61,20 +91,23 @@ float projection(VW::flat_example& ec, sparse_parameters& projector)
 
 struct tree_example
 {
-  VW::flat_example* base;
-  VW::flat_example* full;
+  VW::flat_example* base; //base example only includes the base features without interaction flags
+  VW::flat_example* full; //full example includes the interactions that were passed in as flags
 
   uint32_t label;
+  uint32_t tag;
 
   tree_example() {
     base = new flat_example();
     full = new flat_example();
     label = 0;
+    tag = -1;
   }
 
   tree_example(VW::workspace& all, example* ex)
   {
     label = ex->l.multi.label;
+    tag = -1;
 
     auto full_interactions = ex->interactions;
     auto base_interactions = new std::vector<std::vector<namespace_index>>();
@@ -172,9 +205,10 @@ struct tree
 
   int32_t tree_bound;  // how many memories before bounding the tree
   int32_t leaf_split;  // how many memories before splitting a leaf node
-  int32_t scorer_type; // 1: random, 2: distance, 3: rank
+  int32_t scorer_type; // 1: random, 2: distance, 3: self-consistent rank, 4: not self-consistent rank
+  int32_t router_type;  // 1: random approximation, 2: oja method
 
-  example* scorer_ex = nullptr; //we create one of these which we re-use so we don't have to reallocate examples
+  example* ex = nullptr; //we create one of these which we re-use so we don't have to reallocate examples
 
   clock_t begin; // for timing performance
   float time;  // for timing performance
@@ -191,7 +225,9 @@ struct tree
 
     tree_bound = -1;
     leaf_split = 100;
+
     scorer_type = 3;
+    router_type = 2;
 
     begin = clock();
     time = 0;
@@ -214,13 +250,28 @@ struct tree
   ~tree()
   {
     deallocate_node(root);
-    if (scorer_ex) { VW::dealloc_examples(scorer_ex, 1); }
+    if (ex) { VW::dealloc_examples(ex, 1); }
   }
+};
+
+struct rng
+{
+  std::shared_ptr<VW::rand_state> state;
+
+  public:
+    rng(std::shared_ptr<VW::rand_state> state) {
+      this->state = state;
+    }
+
+    typedef size_t result_type;
+    static size_t min() { return 0; }
+    static size_t max() { return 1; }
+    size_t operator()() { return state->get_and_update_random(); }
 };
 
 node* node_route(tree& b, single_learner& base, node& cn, tree_example& ec)
 {
-  return projection(*ec.base, *cn.router_weights) < cn.router_decision ? cn.left : cn.right;
+  return inner(*ec.base, *cn.router_weights) < cn.router_decision ? cn.left : cn.right;
 }
 
 void tree_init(tree& b)
@@ -235,11 +286,13 @@ void tree_init(tree& b)
 
   //we set this up for repeated use later in the scorer.
   //we will populate this examples features over and over.
-  b.scorer_ex = ::VW::alloc_examples(1);
-  b.scorer_ex->interactions = new std::vector<std::vector<VW::namespace_index>>();
-  b.scorer_ex->extent_interactions = new std::vector<std::vector<extent_term>>();
-  b.scorer_ex->indices.push_back(0);
-  b.scorer_ex->num_features++;
+  b.ex = ::VW::alloc_examples(1);
+  for (int i = 0; i != 1; i++)
+  {
+    b.ex[i].interactions = new std::vector<std::vector<VW::namespace_index>>();
+    b.ex[i].extent_interactions = new std::vector<std::vector<extent_term>>();
+    b.ex[i].indices.push_back(0);
+  }
 }
 
 node& tree_route(tree& b, single_learner& base, tree_example& ec)
@@ -267,13 +320,24 @@ void tree_bound(tree& b, single_learner& base, tree_example* ec)
   }
 }
 
-float scorer_initial(example& ex) { return 1 - exp(-sqrt(ex.total_sum_feat_sq)); }
-
-void scorer_features(features& f1, features& f2, features& out_f)
+float scorer_initial(example& ex)
 {
-  out_f.values.clear_noshrink();
-  out_f.indices.clear_noshrink();
-  out_f.sum_feat_sq = 0;
+  return 1 - exp(-sqrt(ex.total_sum_feat_sq));
+}
+
+/// <summary>
+/// Calculate pairwise difference features for a scorer example
+/// </summary>
+/// <param name="f1">features from scorer example 1</param>
+/// <param name="f2">features from scorer eample 2</param>
+/// <param name="out">the features object calcuated features will be written to</param>
+/// <param name="feature_type"> 1 is absolute difference; 2 is difference</param>
+
+void scorer_features(features& f1, features& f2, features& out, int feature_type)
+{
+  out.values.clear_noshrink();
+  out.indices.clear_noshrink();
+  out.sum_feat_sq = 0;
 
   size_t idx1 = 0;
   size_t idx2 = 0;
@@ -309,45 +373,128 @@ void scorer_features(features& f1, features& f2, features& out_f)
 
     if (f1_val != f2_val)
     {
-      float value = abs(f1_val - f2_val);
-      out_f.values.push_back(value);
-      out_f.indices.push_back(index);
-      out_f.sum_feat_sq += value * value;
+
+      float value;
+      if (feature_type == 1) {
+        value = abs(f1_val - f2_val);
+      }
+      else if (feature_type == 2) {
+        value = f1_val - f2_val;
+      }
+
+      out.values.push_back(value);
+      out.indices.push_back(index);
+      out.sum_feat_sq += value * value;
     }
   }
 }
 
-void scorer_example(tree_example& ec1, tree_example& ec2, example& out_example)
+/// <summary>
+/// Initialize an example to be used either for learning or predicting with the scorer
+/// </summary>
+/// <param name="ec1">memory 1 to use for constructing the scorer example</param>
+/// <param name="ec2">memory 2 to use for constructing the scorer example</param>
+/// <param name="out">the examples object which we are initializing</param>
+/// <param name="example_type">The type of example to create. 1--self-consistent 2--polynomial</param>
+void scorer_example(tree&b, tree_example& ec1, tree_example& ec2, example& out, int example_type)
 {
-  scorer_features(ec1.full->fs, ec2.full->fs, out_example.feature_space[0]);
-  out_example.total_sum_feat_sq = out_example.feature_space[0].sum_feat_sq;
+  if (example_type == 1 || example_type == 2)
+  {
+    out.indices.clear();
+    out.indices.push_back('x');
+
+    out.interactions->clear();
+
+    out.feature_space['x'].clear();
+    out.feature_space['z'].clear();
+
+    scorer_features(ec1.full->fs, ec2.full->fs, out.feature_space['x'], 1);
+    out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
+    out.num_features = out.feature_space['x'].size();
+
+    out._reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(out);
+  }
+
+  if (example_type == 2) {
+
+    out.indices.clear();
+    out.indices.push_back('x');
+    out.indices.push_back('z');
+
+    out.interactions->clear();
+    out.interactions->push_back({'x','z'});
+
+    b.all->ignore_some_linear = true;
+    b.all->ignore_linear['x'] = true;
+    b.all->ignore_linear['z'] = true;
+
+    out.feature_space['x'].clear();
+    out.feature_space['z'].clear();
+
+    //when we receive ec1 and ec2 their features are indexed on top of eachother. In order
+    //to make sure VW recognizes the features from the two examples as separate features
+    //we apply a map of multiplying by 2 and then offseting by 1 on the second example.
+    for (auto f : ec1.full->fs) { out.feature_space['x'].push_back(f.value(), f.index()*2); }
+    for (auto f : ec2.full->fs) { out.feature_space['z'].push_back(f.value(), f.index()*2+1); }
+
+    out.total_sum_feat_sq = ec1.base->total_sum_feat_sq + ec2.base->total_sum_feat_sq;
+    out.num_features = ec1.base->num_features + ec2.base->num_features; 
+  }
+
+  //We cache metadata about model weights adjacent to them. For example if we have
+  //a model weight w[i] then we may also store information about our confidence in
+  //w[i] at w[i+1] and information about the scale of feature f[i] at w[i+2] and so on.
+  //This variable indicates how many such meta-data places we need to save in between actual weights.
+  uint64_t floats_per_feature_index = static_cast<uint64_t>(b.all->wpp) << b.all->weights.stride_shift();
+
+  //In both of the example_types above we construct our scorer_example from flat_examples. The VW routine
+  //which creates flat_examples removes the floats_per_feature_index from the when flattening. Therefore,
+  //we need to manually add it back to make sure our base learner doesn't overwrite our features/weights
+  //with metadata.
+  if (floats_per_feature_index != 1) {
+    for (features& fs : out)
+    {
+      for (auto& j : fs.indices) { j *= floats_per_feature_index; }
+    }
+  }
 }
 
 float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_example& leaf_ec)
 {
   if (b.scorer_type == 1)  // random scorer
   {
-    return -b._random_state->get_and_update_random();
+    return b._random_state->get_and_update_random();
   }
 
   if (b.scorer_type == 2)  // dist scorer
   {
-    scorer_example(pred_ec, leaf_ec, *b.scorer_ex);
-    return -b.scorer_ex->total_sum_feat_sq;
+    scorer_example(b, pred_ec, leaf_ec, *b.ex, 1);
+    return b.ex->total_sum_feat_sq;
   }
 
-  if (b.scorer_type == 3)  // rank scorer
+  if (b.scorer_type == 3 || b.scorer_type == 4)  // rank scorer
   {
-    scorer_example(pred_ec, leaf_ec, *b.scorer_ex);
+    int example_type = (b.scorer_type == 3) ? 1 : 2;
 
-    if (b.scorer_ex->total_sum_feat_sq == 0) { return 0; }
+    scorer_example(b, pred_ec, leaf_ec, *b.ex, example_type);
 
-    b.scorer_ex->l.simple.label = FLT_MAX;
-    b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
+    if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return 0; }
 
-    base.predict(*b.scorer_ex);
+    b.ex->l.simple = {FLT_MAX};
+    base.predict(*b.ex);
 
-    return -b.scorer_ex->pred.scalar;
+    return b.ex->pred.scalar;
+  }
+}
+
+void scorer_learn(tree& b, single_learner& base, example& ex, float label, float weight)
+{
+  if (ex.total_sum_feat_sq != 0)
+  {
+    ex.pred.scalar = 0;
+    ex.l.simple = {label};
+    ex.weight = weight;
+    base.learn(ex);
   }
 }
 
@@ -356,185 +503,228 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, flo
   // random and dist scorer has nothing to learsn
   if (b.scorer_type == 1 || b.scorer_type == 2) { return; }
 
-  if (b.scorer_type == 3)  // rank scorer should learn
+  if (b.scorer_type == 3 || b.scorer_type == 4)  // rank scorer
   {
+    int example_type = (b.scorer_type == 3) ? 1 : 2;
+
     if (weight == 0) { return; }
 
     if (cn.examples.size() < 2) { return; }
 
     // shuffle the examples to break ties randomly
-    std::random_shuffle(cn.examples.begin(), cn.examples.end());
+    //std::shuffle(cn.examples.begin(), cn.examples.end(), rng(b._random_state));
 
-    float score_value_1 = -FLT_MAX;
-    float score_reward_1 = -FLT_MAX;
-    tree_example* score_ptr_1 = nullptr;
+    float preferred_score = FLT_MAX;
+    float preferred_error = FLT_MAX;
+    tree_example* preferred_ex = nullptr;
 
-    float reward_value_1 = -FLT_MAX;
-    tree_example* reward_ptr_1 = nullptr;
+    float alternative_error = FLT_MAX;
+    tree_example* alternative_ex = nullptr;
 
-    float reward_value_2 = -FLT_MAX;
-    tree_example* reward_ptr_2 = nullptr;
-
-    for (auto example: cn.examples)
+    for (tree_example* example : cn.examples)
     {
-      auto score = scorer_predict(b, base, ec, *example);
-      auto reward = (example->label == ec.label) ? 1.f : 0.f;
+      float score = scorer_predict(b, base, ec, *example);
 
-      if (score > score_value_1)
+      if (score < preferred_score)
       {
-        score_value_1 = score;
-        score_ptr_1 = example;
-        score_reward_1 = reward;
-      }
-      if (reward > reward_value_1)
-      {
-        reward_value_2 = reward_value_1;
-        reward_ptr_2 = reward_ptr_1;
-
-        reward_value_1 = reward;
-        reward_ptr_1 = example;
-      }
-      else if (reward > reward_value_2)
-      {
-        reward_value_2 = reward;
-        reward_ptr_2 = example;
+        preferred_score = score;
+        preferred_ex = example;
+        preferred_error = (example->label == ec.label) ? 0.f : 1.f;
       }
     }
 
-    // get the index/reward for the example with the best score
-    auto preferred_index = score_ptr_1;
-    auto preferred_reward = score_reward_1;
+    for (tree_example* example : cn.examples)
+    {
+      if (example == preferred_ex) {
+        continue;
+      }
 
-    // get the index/reward for the best example without the best score
-    auto alternative_index = (reward_ptr_1 == score_ptr_1) ? reward_ptr_2 : reward_ptr_1;
-    auto alternative_reward = (reward_ptr_1 == score_ptr_1) ? reward_value_2 : reward_value_1;
+      float error = (example->label == ec.label) ? 0.f : 1.f;
+      if (error < alternative_error)
+      {
+        alternative_error = error;
+        alternative_ex = example;
+      }
+    }
 
     // the better of the two options moves towards 0 while the other moves towards -1
-    weight *= abs(preferred_reward - alternative_reward);
+    weight *= abs(preferred_error - alternative_error);
 
-    if (weight == 0) { return; }
-
-    auto preferred_label = preferred_reward > alternative_reward ? 0.f : 1.f;
-    auto alternative_label = alternative_reward > preferred_reward ? 0.f : 1.f;
-
-    if (b._random_state->get_and_update_random() > .5)
-    {
-      scorer_example(ec, *preferred_index, *b.scorer_ex);
-      b.scorer_ex->pred.scalar = 0;
-      b.scorer_ex->l.simple = {preferred_label};
-      b.scorer_ex->weight = weight;
-      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
-      base.learn(*b.scorer_ex);
-      
-      scorer_example(ec, *alternative_index, *b.scorer_ex);
-      b.scorer_ex->pred.scalar = 0;
-      b.scorer_ex->l.simple = {alternative_label};
-      b.scorer_ex->weight = weight;
-      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
-      base.learn(*b.scorer_ex);
+    if (alternative_ex == nullptr || preferred_ex == nullptr ) {
+      std::cout << "ERROR" << std::endl;
+      return;
     }
-    else
-    {
-      scorer_example(ec, *alternative_index, *b.scorer_ex);
-      b.scorer_ex->l.simple = {alternative_label};
-      b.scorer_ex->weight = weight;
-      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
-      base.learn(*b.scorer_ex);
 
-      scorer_example(ec, *preferred_index, *b.scorer_ex);
-      b.scorer_ex->l.simple = {preferred_label};
-      b.scorer_ex->weight = weight;
-      b.scorer_ex->_reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(*b.scorer_ex);
-      base.learn(*b.scorer_ex);
+    if (weight != 0)
+    {
+      if (b._random_state->get_and_update_random() < .5)
+      {
+        scorer_example(b, ec, *preferred_ex, b.ex[0], example_type);
+        scorer_learn(b, base, b.ex[0], int(preferred_error > alternative_error), weight);
+
+        scorer_example(b, ec, *alternative_ex, b.ex[0], example_type);
+        scorer_learn(b, base, b.ex[0], int(alternative_error > preferred_error), weight);
+      }
+      else
+      {
+        scorer_example(b, ec, *alternative_ex, b.ex[0], example_type);
+        scorer_learn(b, base, b.ex[0], int(alternative_error > preferred_error), weight);
+
+        scorer_example(b, ec, *preferred_ex, b.ex[0], example_type);
+        scorer_learn(b, base, b.ex[0], int(preferred_error > alternative_error), weight);
+      }
+
+      //doing the trick below doesn't work as well as the two separate updates. Why? It does seem to be faster.
+      //scorer_example(ec, *preferred_ex, b.ex[0]);
+      //scorer_example(ec, *alternative_ex, b.ex[1]);
+      //scorer_features(b.ex[0].feature_space[0], b.ex[1].feature_space[0], b.ex[2].feature_space[0], 2);
+
+      //b.ex[2].total_sum_feat_sq = b.ex[2].feature_space[0].sum_feat_sq;
+      //b.ex[2].num_features = b.ex[2].feature_space[0].size();
+
+      //float label = (preferred_reward < alternative_reward) ? 1.f : -1.f;
+      //float initial = scorer_initial(b.ex[0]) - scorer_initial(b.ex[1]);
+      //scorer_learn(b, base, b.ex[2], label, 1.5*weight, initial);
     }
   }
 }
 
 void node_split(tree& b, single_learner& base, node& cn)
 {
-  VW::rand_state rand_state = *b._random_state;
-  std::vector<float> projs;
-
   uint64_t bits = static_cast<uint64_t>(1) << (b.all->num_bits);
 
-  float best_variance = 0;
+  sparse_parameters* best_projector;
   float best_decision = 0;
+  float best_variance = 0;
 
-  sparse_parameters* best_weights = new sparse_parameters(bits);
-  sparse_parameters* new_weights = new sparse_parameters(bits);
+  std::vector<VW::flat_example*> examples;
+  for (auto example : cn.examples) { examples.push_back(example->base); }
 
-  (*new_weights).set_default([&rand_state](weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_gaussian(); });
-  (*best_weights).set_default([&rand_state](weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_gaussian(); });
-
-  for (size_t perms = 0; perms < 90; perms++)
+  if (b.router_type == 1)
   {
-    (*new_weights).set_zero(0);
+    std::vector<float> projs;
 
-    projs.clear();
+    sparse_parameters* best_weights = new sparse_parameters(bits);
+    sparse_parameters* new_weights = new sparse_parameters(bits);
 
-    for (auto example: cn.examples)
+    for (size_t perms = 0; perms < 90; perms++)
     {
-      projs.push_back(projection(*example->base, *new_weights));
+      rng_init(*new_weights, examples, b._random_state);
+      scale(*new_weights, 1 / norm(*new_weights));
+
+      projs.clear();
+      for (auto example : examples) { projs.push_back(inner(*example, *new_weights)); }
+      float new_variance = variance(projs);
+
+      if (new_variance > best_variance)
+      {
+        best_variance = new_variance;
+        std::swap(new_weights, best_weights);
+        best_decision = median(projs);
+      }
     }
 
-    float E = std::accumulate(projs.begin(), projs.end(), 0.0) / projs.size();
-    float E_2 = std::inner_product(projs.begin(), projs.end(), projs.begin(), 0.0) / projs.size();
-    float new_variance = E_2 - E * E;
-
-    if (new_variance > best_variance)
+    if (best_variance == 0)
     {
-      best_variance = new_variance;
-      std::swap(new_weights, best_weights);
-      best_decision = median(projs);
+      std::cout << "warning: all examples in a leaf have identical features" << std::endl;
+      delete new_weights;
+      delete best_weights;
+    }
+    else
+    {
+      delete new_weights;
+      best_projector = best_weights;
     }
   }
 
-  if (best_variance == 0)
+  else if (b.router_type == 2)
   {
-    std::cout << "warning: all examples in a leaf have identical features" << std::endl;
-    delete new_weights;
-    delete best_weights;
-  }
-  else
-  {
-    delete new_weights;
+    sparse_parameters* weights = new sparse_parameters(bits);
 
-    auto left  = new node();
-    auto right = new node();
-    auto depth = cn.depth+1; 
+    rng_init(*weights, examples, b._random_state);
+    scale(*weights, 1 / norm(*weights));
 
-    cn.internal = true;
-    cn.left = left;
-    cn.right = right;
+    float n_examples = examples.size();
 
-    left->depth = depth;
-    right->depth = depth;
-    left->parent = &cn;
-    right->parent = &cn;
+    std::unordered_map<int, float> mean_map;
+    for (auto ex:examples) { for (auto f:ex->fs) { mean_map[f.index()] += (1 / n_examples) * f.value(); } }
 
-    if (depth > b.depth)
-    {
-      b.depth = depth;
+    features feature_means;
+    for (auto map : mean_map) { feature_means.push_back(map.second, map.first); }
+
+    std::vector<features> centered_features;
+    for (int i = 0; i < n_examples; i++) {
+      features fs;
+      centered_features.push_back(fs);
+      scorer_features(examples[i]->fs, feature_means, centered_features[i], 2);
     }
 
-    (*best_weights).set_default(nullptr);
-    cn.router_weights = best_weights;
-    cn.router_decision = best_decision;
+    int n_epochs = 20; //the bigger the better the top eigen approximation wil
 
-    for (auto example : cn.examples)
-    {
-      node_route(b, base, cn, *example)->examples.push_back(example);
+    for (int i = 0; i < n_epochs; i++) {
+
+      // reseting n on each epoch gives
+      // projectors substantially closer
+      // to the true top eigen vector in
+      // experiments
+      float n = 1;
+      std::shuffle(centered_features.begin(), centered_features.end(), rng(b._random_state));
+
+      for (features fs : centered_features) {
+        // in notation closer to matrix multiplication this looks like:
+        // weights = weights + (1/n) * inner(outer(example->fs,example->fs), weights)
+        float scalar = (1/n)*inner(fs, *weights);
+        for (auto f : fs) { (*weights)[f.index()] += f.value()*scalar; }
+        scale(*weights, 1/norm(*weights));
+        n += 1;
+      } 
     }
-    cn.examples.clear();
+
+    std::vector<float> projs;
+    for (auto example : examples) { projs.push_back(inner(*example, *weights)); }
+
+    best_projector = weights;
+    best_decision = median(projs);
   }
+
+  else {
+    THROW("An unrecognized router type was provided.") 
+  }
+
+  auto left  = new node();
+  auto right = new node();
+  auto depth = cn.depth+1; 
+
+  cn.internal = true;
+  cn.left = left;
+  cn.right = right;
+
+  left->depth = depth;
+  right->depth = depth;
+  left->parent = &cn;
+  right->parent = &cn;
+
+  if (depth > b.depth)
+  {
+    b.depth = depth;
+  }
+
+  cn.router_weights = best_projector;
+  cn.router_decision = best_decision;
+
+  for (auto example : cn.examples)
+  {
+    node_route(b, base, cn, *example)->examples.push_back(example);
+  }
+  cn.examples.clear();
 }
 
 void node_insert(tree& b, single_learner& base, node& cn, tree_example& ec)
 {
   for (auto example : cn.examples)
   {
-    scorer_example(ec, *example, *b.scorer_ex);
-    if (b.scorer_ex->total_sum_feat_sq == 0) { return; }
+    scorer_example(b, ec, *example, b.ex[0], 1);
+    if (b.ex[0].total_sum_feat_sq == 0) { return; }
   }
 
   cn.examples.push_back(&ec);
@@ -546,7 +736,7 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
 {
   if (cn.examples.size() == 0) { return nullptr; }
 
-  float best_score = -FLT_MAX;
+  float best_score = FLT_MAX;
   std::vector<tree_example*> best_examples;
 
   for (auto example: cn.examples)
@@ -556,7 +746,7 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
     if (score == best_score) {
       best_examples.push_back(example);
     }
-    else if (score > best_score)
+    else if (score < best_score)
     {
       best_score = score;
       best_examples.clear();
@@ -564,12 +754,12 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
     }
   }
 
-  std::random_shuffle(best_examples.begin(), best_examples.end());
-  return best_examples.front();
+  return best_examples[static_cast<uint64_t>(b._random_state->get_and_update_random() * .999 * best_examples.size())];
 }
 
 void predict(tree& b, single_learner& base, example& ec)
 {
+  b.all->ignore_some_linear = false;
   tree_example ex(*b.all, &ec);
 
   node& cn = tree_route(b, base, ex);
@@ -583,7 +773,10 @@ void predict(tree& b, single_learner& base, example& ec)
 
 void learn(tree& b, single_learner& base, example& ec)
 {
+  b.all->ignore_some_linear = false;
   tree_example& ex = *new tree_example(*b.all, &ec);
+
+  ex.tag = b.iter;
 
   b.iter++;
 
@@ -758,7 +951,11 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
     .add(make_option("scorer", t->scorer_type)
                .keep()
                .default_value(3)
-               .help("Indicates the type of scorer to use (1=random,2=distance,3=rank)"));
+               .help("Indicates the type of scorer to use (1=random,2=distance,3=rank)"))
+      .add(make_option("router", t->router_type)
+               .keep()
+               .default_value(1)
+               .help("Indicates the type of router to use (1=guess and check,2=oja)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
