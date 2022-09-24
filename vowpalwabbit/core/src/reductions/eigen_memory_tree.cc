@@ -23,6 +23,7 @@
 #include <ctime>
 #include <memory>
 #include <sstream>
+#include <list>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
