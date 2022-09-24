@@ -291,14 +291,17 @@ void init_tree(memory_tree& b)
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
-  std::cout << "tree initiazliation is done...." << std::endl
-            << "max nodes " << b.max_nodes << std::endl
-            << "tree size: " << b.nodes.size() << std::endl
-            << "max number of unique labels: " << b.max_num_labels << std::endl
-            << "learn at leaf: " << b.learn_at_leaf << std::endl
-            << "num of dream operations per example: " << b.dream_repeats << std::endl
-            << "current_pass: " << b.current_pass << std::endl
-            << "oas: " << b.oas << std::endl;
+  if (!b.all->quiet)
+  {
+    std::cout << "tree initiazliation is done...." << std::endl
+              << "max nodes " << b.max_nodes << std::endl
+              << "tree size: " << b.nodes.size() << std::endl
+              << "max number of unique labels: " << b.max_num_labels << std::endl
+              << "learn at leaf: " << b.learn_at_leaf << std::endl
+              << "num of dream operations per example: " << b.dream_repeats << std::endl
+              << "current_pass: " << b.current_pass << std::endl
+              << "oas: " << b.oas << std::endl;
+  }
 }
 
 // rout based on the prediction
@@ -445,7 +448,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
   if (b.nodes[cn].depth + 1 > b.max_depth)
   {
     b.max_depth = b.nodes[cn].depth + 1;
-    std::cout << "depth " << b.max_depth << std::endl;
+    if (!b.all->quiet) { std::cout << "depth " << b.max_depth << std::endl; }
   }
 
   b.nodes[cn].left = left_child;
@@ -639,6 +642,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW
 
       if (score > max_score)
       {
+        b.examples[loc]->confidence = 1-exp(-score);
         max_score = score;
         max_pos = static_cast<int64_t>(loc);
       }
@@ -670,6 +674,7 @@ float F1_score_for_two_examples(VW::example& ec1, VW::example& ec2)
     return 2.f * (v1 * v2 / (v1 + v2));
   }
 }
+
 void predict(memory_tree& b, single_learner& base, VW::example& ec)
 {
   MULTICLASS::label_t mc{0, 0};
@@ -712,9 +717,13 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
   if (b.oas == 0)
   {
     closest_ec = pick_nearest(b, base, cn, ec);
-    if (closest_ec != -1) { ec.pred.multiclass = b.examples[closest_ec]->l.multi.label; }
+    if (closest_ec != -1) {
+      ec.confidence = b.examples[closest_ec]->confidence;
+      ec.pred.multiclass = b.examples[closest_ec]->l.multi.label;
+    }
     else
     {
+      ec.confidence = 0;
       ec.pred.multiclass = 0;
     }
 
@@ -723,6 +732,8 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
       ec.loss = ec.weight;
       b.num_mistakes++;
     }
+
+    
   }
   else
   {
@@ -1040,10 +1051,10 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
   {
     b.iter++;
 
-    if (b.iter % 5000 == 0)
+    if (b.iter % 5000 == 0 && !b.all->quiet)
     {
       if (b.oas == 0)
-      {
+      { 
         std::cout << "at iter " << b.iter << ", top(" << b.top_K << ") pred error: " << b.num_mistakes * 1. / b.iter
                   << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
                   << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
@@ -1080,7 +1091,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
   else if (b.test_mode == true)
   {
     b.iter++;
-    if (b.iter % 5000 == 0)
+    if (b.iter % 5000 == 0 && !b.all->quiet)
     {
       if (b.oas == 0)
       { std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl; }
@@ -1095,8 +1106,10 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
 void end_pass(memory_tree& b)
 {
   b.current_pass++;
-  std::cout << "######### Current Pass: " << b.current_pass
-            << ", with number of memories strored so far: " << b.examples.size() << std::endl;
+  if (!b.all->quiet)
+  {
+    std::cout << "##### Pass: " << b.current_pass << ", with " << b.examples.size() << " memories." << std::endl;
+  }
 }
 
 ///////////////////Save & Load//////////////////////////////////////

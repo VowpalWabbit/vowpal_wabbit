@@ -96,10 +96,12 @@ struct tree_example
 
   uint32_t label;
   uint32_t tag;
+  float score;
 
   tree_example() {
     base = new flat_example();
     full = new flat_example();
+    score = 0;
     label = 0;
     tag = -1;
   }
@@ -639,6 +641,10 @@ void node_split(tree& b, single_learner& base, node& cn)
 
   else if (b.router_type == 2)
   {
+    //I still feel like there is a bug in the Oja method below.
+    //I've looked for it for over a day now and I can't find any
+    //problems, it just doesn't seem to be converging as fast as
+    //I expect based on comparisons to other implementations.
     sparse_parameters* weights = new sparse_parameters(bits);
 
     rng_init(*weights, examples, b._random_state);
@@ -664,9 +670,9 @@ void node_split(tree& b, single_learner& base, node& cn)
     for (int i = 0; i < n_epochs; i++) {
 
       // reseting n on each epoch gives
-      // projectors substantially closer
-      // to the true top eigen vector in
-      // experiments
+      // projectors that are substantially
+      // closer to the true top eigen vector
+      // in experiments
       float n = 1;
       std::shuffle(centered_features.begin(), centered_features.end(), rng(b._random_state));
 
@@ -741,14 +747,14 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
 
   for (auto example: cn.examples)
   {
-    float score = scorer_predict(b, base, ec, *example);
+    example->score = scorer_predict(b, base, ec, *example);
 
-    if (score == best_score) {
+    if (example->score == best_score) {
       best_examples.push_back(example);
     }
-    else if (score < best_score)
+    else if (example->score < best_score)
     {
-      best_score = score;
+      best_score = example->score;
       best_examples.clear();
       best_examples.push_back(example);
     }
@@ -765,6 +771,7 @@ void predict(tree& b, single_learner& base, example& ec)
   node& cn = tree_route(b, base, ex);
   auto closest_ec = node_pick(b, base, cn, ex);
 
+  ec.confidence = (closest_ec != nullptr) ? (1-exp(-closest_ec->score)): 0;
   ec.pred.multiclass = (closest_ec != nullptr) ? closest_ec->label : 0;
   ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
 
