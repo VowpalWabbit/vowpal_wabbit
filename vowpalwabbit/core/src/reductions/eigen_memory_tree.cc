@@ -413,6 +413,16 @@ void scorer_example(tree&b, tree_example& ec1, tree_example& ec2, example& out, 
     out.feature_space['z'].clear();
 
     scorer_features(ec1.full->fs, ec2.full->fs, out.feature_space['x'], 1);
+
+    std::cout << "#";
+    for (auto f : ec1.full->fs) { std::cout << f.value() << " "; }
+    std::cout << std::endl;
+
+    std::cout << "##";
+    for (auto f : out.feature_space['x']) { std::cout << f.value() << " "; }
+    std::cout << std::endl;
+
+
     out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
     out.num_features = out.feature_space['x'].size();
 
@@ -481,11 +491,6 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_
     int example_type = (b.scorer_type == 3) ? 1 : 2;
 
     scorer_example(b, pred_ec, leaf_ec, *b.ex, example_type);
-
-    std::cout << "#";
-    for (auto f : b.ex->feature_space['x']) { std::cout << f.value() << " "; }
-    std::cout << std::endl;
-
 
     if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return 0; }
 
