@@ -339,10 +339,6 @@ float scorer_initial(example& ex)
 
 void scorer_features(features& f1, features& f2, features& out, int feature_type)
 {
-  std::cout << "#";
-  for (auto f : f1) { std::cout << f.value() << " "; }
-  std::cout << std::endl;
-
   out.values.clear_noshrink();
   out.indices.clear_noshrink();
   out.sum_feat_sq = 0;
@@ -354,16 +350,16 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
   uint64_t f1_idx = 0;
   uint64_t f2_idx = 0;
 
-  float f1_val = 0;
-  float f2_val = 0;
+  float f1_val = 0.f;
+  float f2_val = 0.f;
 
   while (idx1 < f1.size() || idx2 < f2.size())
   {
     f1_idx = (idx1 == f1.size()) ? INT_MAX : f1.indices[idx1];
     f2_idx = (idx2 == f2.size()) ? INT_MAX : f2.indices[idx2];
 
-    f1_val = 0;
-    f2_val = 0;
+    f1_val = 0.f;
+    f2_val = 0.f;
 
     if (f1_idx <= f2_idx)
     {
@@ -485,6 +481,11 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_
     int example_type = (b.scorer_type == 3) ? 1 : 2;
 
     scorer_example(b, pred_ec, leaf_ec, *b.ex, example_type);
+
+    std::cout << "#";
+    for (auto f : b.ex->feature_space['x']) { std::cout << f.value() << " "; }
+    std::cout << std::endl;
+
 
     if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return 0; }
 
