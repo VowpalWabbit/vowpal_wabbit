@@ -142,9 +142,6 @@ def get_tests(
             and not "--no_stdin" in test.command_line
             and not "--help" in test.command_line
             and not "--flatbuffer" in test.command_line
-            and not "--automl" in test.command_line  # TODO: Handle with experimental
-            and not "--epsilon_decay"
-            in test.command_line  # TODO: Handle with experimental
         ):
             test.command_line = re.sub("-f [:a-zA-Z0-9_.\\-/]*", "", test.command_line)
             test.command_line = re.sub("-f=[:a-zA-Z0-9_.\\-/]*", "", test.command_line)
@@ -169,10 +166,7 @@ def get_tests(
                 for group in groups:
                     for opt in group[1]:
                         if opt.value_supplied and (
-                            (
-                                hasattr(opt, "experimental") and opt.experimental
-                            )  # TODO: Update at new version
-                            or opt.name == "bfgs"
+                            opt.experimental or opt.name == "bfgs"
                         ):
                             skip_cmd = True
                             break
