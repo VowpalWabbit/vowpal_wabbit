@@ -481,7 +481,9 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_
 
     scorer_example(b, pred_ec, leaf_ec, *b.ex, example_type);
 
-    for (auto f : b.ex->feature_space[0]) { std::cout << "#" << f.index() << " " << f.value() << std::endl; }
+    std::cout << "#";
+    for (auto f : b.ex->feature_space['x']) { std::cout << f.value() << " "; }
+    std::cout << std::endl;
 
     if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return 0; }
 
