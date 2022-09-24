@@ -379,7 +379,7 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
     {
       float value;
       if (feature_type == 1) {
-        value = abs(f1_val - f2_val);
+        value = f1_val - f2_val;
       }
       else if (feature_type == 2) {
         value = f1_val - f2_val;
