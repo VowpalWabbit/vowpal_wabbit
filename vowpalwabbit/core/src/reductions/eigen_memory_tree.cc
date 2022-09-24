@@ -111,12 +111,17 @@ struct tree_example
   {
     label = ex->l.multi.label;
     tag = -1;
+    score = 0;
 
     auto full_interactions = ex->interactions;
     auto base_interactions = new std::vector<std::vector<namespace_index>>();
 
     ex->interactions = base_interactions;
     base = VW::flatten_sort_example(all, ex);
+
+    std::cout << "#";
+    for (auto f : base->fs) { std::cout << f.value() << " "; }
+    std::cout << std::endl;
 
     ex->interactions = full_interactions;
     full = VW::flatten_sort_example(all, ex);
@@ -385,8 +390,6 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
         value = f1_val - f2_val;
       }
 
-      std::cout << "+" << value << std::endl;
-
       out.values.push_back(value);
       out.indices.push_back(index);
       out.sum_feat_sq += value * value;
@@ -482,10 +485,6 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_
     int example_type = (b.scorer_type == 3) ? 1 : 2;
 
     scorer_example(b, pred_ec, leaf_ec, *b.ex, example_type);
-
-    std::cout << "#";
-    for (auto f : b.ex->feature_space['x']) { std::cout << f.value() << " "; }
-    std::cout << std::endl;
 
     if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return 0; }
 
