@@ -24,6 +24,7 @@
 #include <memory>
 #include <sstream>
 #include <list>
+#include <climits>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
