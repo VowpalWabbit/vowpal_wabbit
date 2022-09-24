@@ -119,10 +119,6 @@ struct tree_example
     ex->interactions = base_interactions;
     base = VW::flatten_sort_example(all, ex);
 
-    std::cout << "#";
-    for (auto f : base->fs) { std::cout << f.value() << " "; }
-    std::cout << std::endl;
-
     ex->interactions = full_interactions;
     full = VW::flatten_sort_example(all, ex);
   }
@@ -343,6 +339,10 @@ float scorer_initial(example& ex)
 
 void scorer_features(features& f1, features& f2, features& out, int feature_type)
 {
+  std::cout << "#";
+  for (auto f : f1) { std::cout << f.value() << " "; }
+  std::cout << std::endl;
+
   out.values.clear_noshrink();
   out.indices.clear_noshrink();
   out.sum_feat_sq = 0;
