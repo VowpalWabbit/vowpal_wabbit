@@ -377,7 +377,6 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
 
     if (f1_val != f2_val)
     {
-
       float value;
       if (feature_type == 1) {
         value = abs(f1_val - f2_val);
@@ -385,6 +384,8 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
       else if (feature_type == 2) {
         value = f1_val - f2_val;
       }
+
+      std::cout << f1_val << " " << f2_val << " " << value << std::endl;
 
       out.values.push_back(value);
       out.indices.push_back(index);
