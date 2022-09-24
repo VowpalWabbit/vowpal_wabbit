@@ -385,6 +385,8 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
         value = f1_val - f2_val;
       }
 
+      std::cout << "+" << value << std::endl;
+
       out.values.push_back(value);
       out.indices.push_back(index);
       out.sum_feat_sq += value * value;
