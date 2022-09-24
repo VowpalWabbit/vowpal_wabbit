@@ -71,7 +71,6 @@ float inner(VW::flat_example& example, sparse_parameters& weights)
   return inner(example.fs, weights);
 }
 
-
 void scale(sparse_parameters& weights, float scalar) {
   for (auto i = weights.begin(); i != weights.end(); ++i) {
     weights[i.index()] = weights[i.index()] * scalar;
@@ -482,6 +481,8 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_
 
     scorer_example(b, pred_ec, leaf_ec, *b.ex, example_type);
 
+    for (auto f : b.ex->feature_space[0]) { std::cout << "#" << f.index() << " " << f.value() << std::endl; }
+
     if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return 0; }
 
     b.ex->l.simple = {FLT_MAX};
@@ -762,6 +763,7 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
     }
   }
 
+  //std::shuffle(best_examples.begin(), best_examples.end(), rng(b._random_state))
   return best_examples[static_cast<uint64_t>(b._random_state->get_and_update_random() * .999 * best_examples.size())];
 }
 
@@ -772,6 +774,8 @@ void predict(tree& b, single_learner& base, example& ec)
 
   node& cn = tree_route(b, base, ex);
   auto closest_ec = node_pick(b, base, cn, ex);
+
+  if (closest_ec != nullptr) { std::cout << "*" << closest_ec->score << std::endl; }
 
   ec.confidence = (closest_ec != nullptr) ? (1-exp(-closest_ec->score)): 0;
   ec.pred.multiclass = (closest_ec != nullptr) ? closest_ec->label : 0;
