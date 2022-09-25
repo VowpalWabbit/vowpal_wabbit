@@ -50,6 +50,8 @@ float variance(std::vector<float>& array) {
   return E_2 - E * E;
 }
 
+float my_abs(float value) { return (value < 0) ? -value : value; }
+
 void rng_init(sparse_parameters& weights, std::vector<VW::flat_example*> examples, std::shared_ptr<VW::rand_state> rng)
 {
   for (auto ex: examples) {
@@ -336,7 +338,6 @@ float scorer_initial(example& ex)
 /// <param name="f2">features from scorer eample 2</param>
 /// <param name="out">the features object calcuated features will be written to</param>
 /// <param name="feature_type"> 1 is absolute difference; 2 is difference</param>
-
 void scorer_features(features& f1, features& f2, features& out, int feature_type)
 {
   out.values.clear_noshrink();
@@ -379,13 +380,13 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
     {
       float value;
       if (feature_type == 1) {
-        value = f1_val - f2_val;
+        value = my_abs(f1_val - f2_val);
       }
       else if (feature_type == 2) {
         value = f1_val - f2_val;
       }
 
-      std::cout << f1_val << " " << f2_val << " " << value << std::endl;
+      std::cout << f1_val << " " << f2_val << " " << my_abs(f1_val - f2_val) << " " << abs(f1_val - f2_val) << std::endl;
 
       out.values.push_back(value);
       out.indices.push_back(index);
@@ -563,7 +564,7 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, flo
     }
 
     // the better of the two options moves towards 0 while the other moves towards -1
-    weight *= abs(preferred_error - alternative_error);
+    weight *= my_abs(preferred_error - alternative_error);
 
     if (alternative_ex == nullptr || preferred_ex == nullptr ) {
       std::cout << "ERROR" << std::endl;
