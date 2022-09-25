@@ -520,7 +520,7 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, flo
     if (cn.examples.size() < 2) { return; }
 
     // shuffle the examples to break ties randomly
-    //std::shuffle(cn.examples.begin(), cn.examples.end(), rng(b._random_state));
+    std::shuffle(cn.examples.begin(), cn.examples.end(), rng(b._random_state));
 
     float preferred_score = FLT_MAX;
     float preferred_error = FLT_MAX;
@@ -766,8 +766,8 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
     }
   }
 
-  //std::shuffle(best_examples.begin(), best_examples.end(), rng(b._random_state))
-  return best_examples[static_cast<uint64_t>(b._random_state->get_and_update_random() * .999 * best_examples.size())];
+  std::shuffle(best_examples.begin(), best_examples.end(), rng(b._random_state));
+  return best_examples[0];
 }
 
 void predict(tree& b, single_learner& base, example& ec)
