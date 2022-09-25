@@ -50,6 +50,9 @@ float variance(std::vector<float>& array) {
   return E_2 - E * E;
 }
 
+/// <summary>
+/// DO NOT USE abs() UNLESS YOU WANT TO SPEND A DAY DEBUGGING WEIRD BUGS ON REMOTE SERVERS
+/// </summary>
 float my_abs(float value) { return (value < 0) ? -value : value; }
 
 void rng_init(sparse_parameters& weights, std::vector<VW::flat_example*> examples, std::shared_ptr<VW::rand_state> rng)
@@ -385,8 +388,6 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
       else if (feature_type == 2) {
         value = f1_val - f2_val;
       }
-
-      std::cout << f1_val << " " << f2_val << " " << my_abs(f1_val - f2_val) << " " << abs(f1_val - f2_val) << std::endl;
 
       out.values.push_back(value);
       out.indices.push_back(index);
