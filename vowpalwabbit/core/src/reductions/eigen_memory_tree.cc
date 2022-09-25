@@ -417,15 +417,6 @@ void scorer_example(tree&b, tree_example& ec1, tree_example& ec2, example& out, 
 
     scorer_features(ec1.full->fs, ec2.full->fs, out.feature_space['x'], 1);
 
-    std::cout << "#";
-    for (auto f : ec1.full->fs) { std::cout << f.value() << " "; }
-    std::cout << std::endl;
-
-    std::cout << "##";
-    for (auto f : out.feature_space['x']) { std::cout << f.value() << " "; }
-    std::cout << std::endl;
-
-
     out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
     out.num_features = out.feature_space['x'].size();
 
@@ -786,8 +777,6 @@ void predict(tree& b, single_learner& base, example& ec)
 
   node& cn = tree_route(b, base, ex);
   auto closest_ec = node_pick(b, base, cn, ex);
-
-  if (closest_ec != nullptr) { std::cout << "*" << closest_ec->score << std::endl; }
 
   ec.confidence = (closest_ec != nullptr) ? (1-exp(-closest_ec->score)): 0;
   ec.pred.multiclass = (closest_ec != nullptr) ? closest_ec->label : 0;
