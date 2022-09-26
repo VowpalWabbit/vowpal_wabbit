@@ -32,7 +32,7 @@ std::string get_keep_command_line(const VW::workspace& workspace)
 void validate_compatibility(const VW::workspace* base_workspace,
     const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
 {
-  if (workspaces_to_merge.size() < 2) { THROW("Must specify at least two model files to merge."); }
+  if (workspaces_to_merge.empty()) { THROW("Must specify at least two model files to merge."); }
 
   const auto& ref_model = base_workspace != nullptr ? *base_workspace : *workspaces_to_merge[0];
   for (const auto& model : workspaces_to_merge)
@@ -230,6 +230,18 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
   merge_shared_data(*base_workspace_concrete->sd, *destination_workspace->sd, shared_datas, is_delta);
 
   return destination_workspace;
+}
+
+VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger)
+{
+  std::vector<const VW::workspace*> deltas_to_workspaces;
+  deltas_to_workspaces.reserve(deltas_to_merge.size());
+  for (const auto delta_ptr : deltas_to_merge)
+  {
+    deltas_to_workspaces.push_back(&static_cast<const VW::workspace&>(*delta_ptr));
+  }
+  auto merged_ws = merge_models(nullptr, deltas_to_workspaces, logger, true);
+  return VW::model_delta(std::move(merged_ws));
 }
 
 }  // namespace VW

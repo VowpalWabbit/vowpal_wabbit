@@ -546,8 +546,8 @@ public:
   }
 
   VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_fn != nullptr) || (_merge_fn != nullptr); }
-  VW_ATTR(nodiscard) bool has_add() const { return _add_fn != nullptr; }
-  VW_ATTR(nodiscard) bool has_subtract() const { return (_subtract_fn != nullptr); }
+  VW_ATTR(nodiscard) bool has_add() const { return (_add_with_all_fn != nullptr) || (_add_fn != nullptr); }
+  VW_ATTR(nodiscard) bool has_subtract() const { return (_subtract_with_all_fn != nullptr) || (_subtract_fn != nullptr); }
   VW_ATTR(nodiscard) prediction_type_t get_output_prediction_type() const { return _output_pred_type; }
   VW_ATTR(nodiscard) prediction_type_t get_input_prediction_type() const { return _input_pred_type; }
   VW_ATTR(nodiscard) label_type_t get_output_label_type() const { return _output_label_type; }

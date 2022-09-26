@@ -35,6 +35,67 @@ TEST(merge_tests, merge_simple_model)
   EXPECT_FLOAT_EQ(result->sd->weighted_labeled_examples, 2.f);
 }
 
+TEST(merge_tests, merge_simple_model_delta)
+{
+  auto options_strings = std::vector<std::string>{"--quiet"};
+  auto vw_base = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(options_strings));
+  auto vw1 = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(options_strings));
+  auto vw2 = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(options_strings));
+
+  // instead of copying base model, we train all models on the same base example
+  {
+    auto* ex = VW::read_example(*vw_base, "1 | x y z");
+    VW::setup_example(*vw_base, ex);
+    vw_base->learn(*ex);
+    vw_base->finish_example(*ex);
+  }
+  {
+    auto* ex = VW::read_example(*vw1, "1 | x y z");
+    VW::setup_example(*vw1, ex);
+    vw1->learn(*ex);
+    vw1->finish_example(*ex);
+  }
+  {
+    auto* ex = VW::read_example(*vw2, "1 | x y z");
+    VW::setup_example(*vw2, ex);
+    vw2->learn(*ex);
+    vw2->finish_example(*ex);
+  }
+
+  // train models 1 and 2 on different examples
+  auto* ex1 = VW::read_example(*vw1, "1 | a b");
+  VW::setup_example(*vw1, ex1);
+  vw1->learn(*ex1);
+  vw1->finish_example(*ex1);
+
+  auto* ex2 = VW::read_example(*vw2, "1 | c d");
+  VW::setup_example(*vw2, ex2);
+  vw2->learn(*ex2);
+  vw2->finish_example(*ex2);
+
+  EXPECT_FLOAT_EQ(vw_base->sd->weighted_labeled_examples, 1.f);
+  EXPECT_FLOAT_EQ(vw1->sd->weighted_labeled_examples, 2.f);
+  EXPECT_FLOAT_EQ(vw2->sd->weighted_labeled_examples, 2.f);
+
+  // Take model deltas and merge them
+  auto delta1 = *vw1 - *vw_base;
+  auto delta2 = *vw2 - *vw_base;
+  std::vector<const VW::model_delta*> deltas {&delta1, &delta2};
+  auto deltas_merged = VW::merge_deltas(deltas);
+  auto result_delta_merge = *vw_base + deltas_merged;
+
+  EXPECT_FLOAT_EQ(static_cast<VW::workspace&>(delta1).sd->weighted_labeled_examples, 1.f);
+  EXPECT_FLOAT_EQ(static_cast<VW::workspace&>(delta2).sd->weighted_labeled_examples, 1.f);
+  EXPECT_FLOAT_EQ(static_cast<VW::workspace&>(deltas_merged).sd->weighted_labeled_examples, 2.f);
+  EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, 3.f);
+
+  // Merge workspaces directly, this should produce same results
+  std::vector<const VW::workspace*> workspaces {vw1.get(), vw2.get()};
+  auto result_model_merge = VW::merge_models(vw_base.get(), workspaces);
+
+  EXPECT_FLOAT_EQ(result_model_merge->sd->weighted_labeled_examples, 3.f);
+}
+
 TEST(merge_tests, merge_cb_model)
 {
   auto options_strings = std::vector<std::string>{"--quiet", "--cb_explore_adf"};
