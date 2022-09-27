@@ -29,7 +29,10 @@ namespace reductions
 {
 namespace epsilon_decay
 {
-float decayed_epsilon(float init_ep, uint64_t update_count) { return init_ep * static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
+float decayed_epsilon(float init_ep, uint64_t update_count)
+{
+  return init_ep * static_cast<float>(std::pow(update_count + 1, -1.f / 3.f));
+}
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
@@ -81,8 +84,8 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
     {
       if (!_constant_epsilon)
       {
-        ep_fts.epsilon =
-            VW::reductions::epsilon_decay::decayed_epsilon(init_ep, conf_seq_estimators[model_ind][model_ind].update_count);
+        ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(
+            init_ep, conf_seq_estimators[model_ind][model_ind].update_count);
       }
       std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[model_ind] * 3]);
       std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[model_ind] * 3 + 1]);
@@ -261,7 +264,8 @@ void predict(
   {
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     const auto& active_estimator = data.conf_seq_estimators[final_model_idx][final_model_idx];
-    ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(data._initial_epsilon, active_estimator.update_count);
+    ep_fts.epsilon =
+        VW::reductions::epsilon_decay::decayed_epsilon(data._initial_epsilon, active_estimator.update_count);
   }
   base.predict(examples, data._weight_indices[final_model_idx]);
 }
