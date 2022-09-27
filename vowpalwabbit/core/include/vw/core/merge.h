@@ -9,19 +9,22 @@
 
 namespace VW
 {
-
 struct model_delta
 {
-    // model_delta takes ownership of the workspace
-    explicit model_delta(VW::workspace* ws) : _ws(ws) { }
-    explicit model_delta(std::unique_ptr<VW::workspace>&& ws) : _ws(std::move(ws)) { }
+  // model_delta takes ownership of the workspace
+  explicit model_delta(VW::workspace* ws) : _ws(ws) {}
+  explicit model_delta(std::unique_ptr<VW::workspace>&& ws) : _ws(std::move(ws)) {}
 
-    // retrieve a raw pointer to the underlying VW::workspace
-    // unsafe, only for use in implementation of model merging and its corresponding unit tests
-    VW::workspace* unsafe_get_workspace_ptr() const { return _ws.get(); }
+  // retrieve a raw pointer to the underlying VW::workspace
+  // unsafe, only for use in implementation of model merging and its corresponding unit tests
+  VW::workspace* unsafe_get_workspace_ptr() const { return _ws.get(); }
+
+  // release ownership of the pointer to the underlying VW::workspace, and return it
+  // unsafe, only for use in implementation of model merging and its corresponding unit tests
+  VW::workspace* unsafe_release_workspace_ptr() { return _ws.release(); }
 
 private:
-    std::unique_ptr<VW::workspace> _ws;
+  std::unique_ptr<VW::workspace> _ws;
 };
 
 /**
@@ -54,7 +57,8 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
  * @param logger Optional logger to be used for logging during function and is given to the resulting workspace
  * @return std::unique_ptr<VW::workspace> Pointer to the resulting workspace.
  */
-VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger = nullptr);
+VW::model_delta merge_deltas(
+    const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger = nullptr);
 }  // namespace VW
 
 std::unique_ptr<VW::workspace> operator+(const VW::workspace& ws, const VW::model_delta& md);

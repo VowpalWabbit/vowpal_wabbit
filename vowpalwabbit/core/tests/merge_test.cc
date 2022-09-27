@@ -80,7 +80,7 @@ TEST(merge_tests, merge_simple_model_delta)
   // Take model deltas and merge them
   auto delta1 = *vw1 - *vw_base;
   auto delta2 = *vw2 - *vw_base;
-  std::vector<const VW::model_delta*> deltas {&delta1, &delta2};
+  std::vector<const VW::model_delta*> deltas{&delta1, &delta2};
   auto deltas_merged = VW::merge_deltas(deltas);
   auto result_delta_merge = *vw_base + deltas_merged;
 
@@ -90,7 +90,7 @@ TEST(merge_tests, merge_simple_model_delta)
   EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, 3.f);
 
   // Merge workspaces directly, this should produce same results
-  std::vector<const VW::workspace*> workspaces {vw1.get(), vw2.get()};
+  std::vector<const VW::workspace*> workspaces{vw1.get(), vw2.get()};
   auto result_model_merge = VW::merge_models(vw_base.get(), workspaces);
 
   EXPECT_FLOAT_EQ(result_model_merge->sd->weighted_labeled_examples, 3.f);
