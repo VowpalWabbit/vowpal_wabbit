@@ -67,6 +67,14 @@ uint64_t hash_file_contents(VW::io::reader* f)
   while (true)
   {
     ssize_t n = f->read(buf, 1024);
+#ifdef _WIN32
+    char* rem_buf;
+    if ((rem_buf = std::remove(std::begin(buf), std::end(buf), '\r')) == nullptr)
+    {
+      THROW("error: invalid buffer");
+    }
+    n -= 1024 - (rem_buf - buf);
+#endif
     if (n <= 0) { break; }
     for (ssize_t i = 0; i < n; i++)
     {
@@ -140,7 +148,11 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
 
   if (!all.quiet)
   {
-    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << file_name << "', hash=" << std::hex << fd_hash
+    std::string out_file_name = file_name;
+#ifdef _WIN32
+    std::replace(out_file_name.begin(), out_file_name.end(), '\\', '/');
+#endif
+    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << out_file_name << "', hash=" << std::hex << fd_hash
                          << std::dec << endl;
   }
 
