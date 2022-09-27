@@ -147,9 +147,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   if (!all.quiet)
   {
     std::string out_file_name = file_name;
-#ifdef _WIN32
     std::replace(out_file_name.begin(), out_file_name.end(), '\\', '/');
-#endif
     *(all.trace_message) << "scanned dictionary '" << s << "' from '" << out_file_name << "', hash=" << std::hex
                          << fd_hash << std::dec << endl;
   }
