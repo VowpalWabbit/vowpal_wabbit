@@ -210,7 +210,7 @@ void end_pass(gd& g)
 
 void merge(const std::vector<float>& per_model_weighting, const VW::workspace& /* base_workspace */,
     const std::vector<const VW::workspace*>& all_workspaces, const GD::gd& base_data,
-    const std::vector<GD::gd*>& all_data, VW::workspace& output_workspace, GD::gd& output_data, bool is_delta)
+    const std::vector<GD::gd*>& all_data, VW::workspace& output_workspace, GD::gd& output_data)
 {
   const uint32_t length = 1 << output_workspace.num_bits;
 
@@ -244,37 +244,24 @@ void merge(const std::vector<float>& per_model_weighting, const VW::workspace& /
 
   for (size_t i = 0; i < output_data.per_model_states.size(); i++)
   {
-    if (is_delta)
+    for (const auto* source_data_obj : all_data)
     {
-      for (const auto* source_data_obj : all_data)
-      {
-        // normalized_sum_norm_x is additive
-        output_data.per_model_states[i].normalized_sum_norm_x +=
-            source_data_obj->per_model_states[i].normalized_sum_norm_x;
-        // total_weight is additive
-        output_data.per_model_states[i].total_weight += source_data_obj->per_model_states[i].total_weight;
-      }
+      // normalized_sum_norm_x is additive
+      output_data.per_model_states[i].normalized_sum_norm_x +=
+          (source_data_obj->per_model_states[i].normalized_sum_norm_x -
+              base_data.per_model_states[i].normalized_sum_norm_x);
+      // total_weight is additive
+      output_data.per_model_states[i].total_weight +=
+          (source_data_obj->per_model_states[i].total_weight - base_data.per_model_states[i].total_weight);
     }
-    else
-    {
-      for (const auto* source_data_obj : all_data)
-      {
-        // normalized_sum_norm_x is additive
-        output_data.per_model_states[i].normalized_sum_norm_x +=
-            (source_data_obj->per_model_states[i].normalized_sum_norm_x -
-                base_data.per_model_states[i].normalized_sum_norm_x);
-        // total_weight is additive
-        output_data.per_model_states[i].total_weight +=
-            (source_data_obj->per_model_states[i].total_weight - base_data.per_model_states[i].total_weight);
-      }
-    }
+
     // Add in the base value.
     output_data.per_model_states[i].normalized_sum_norm_x += base_data.per_model_states[i].normalized_sum_norm_x;
     output_data.per_model_states[i].total_weight += base_data.per_model_states[i].total_weight;
   }
 }
 
-void add (const VW::workspace ws1, const GD::gd& data1, const VW::workspace& ws2, GD::gd& data2, VW::workspace& ws_out, GD::gd& data_out)
+void add (const VW::workspace /* ws1 */, const GD::gd& data1, const VW::workspace& ws2, GD::gd& data2, VW::workspace& ws_out, GD::gd& data_out)
 {
   const uint32_t length = 1 << ws_out.num_bits;
   // When adding, output the weights from the model delta (2nd arugment to addition)
@@ -296,7 +283,7 @@ void add (const VW::workspace ws1, const GD::gd& data1, const VW::workspace& ws2
   }
 }
 
-void subtract (const VW::workspace ws1, const GD::gd& data1, const VW::workspace& ws2, GD::gd& data2, VW::workspace& ws_out, GD::gd& data_out)
+void subtract (const VW::workspace ws1, const GD::gd& data1, const VW::workspace& /* ws2 */, GD::gd& data2, VW::workspace& ws_out, GD::gd& data_out)
 {
   const uint32_t length = 1 << ws_out.num_bits;
   // When subtracting, output the weights from the newer model (1st arugment to subtraction)

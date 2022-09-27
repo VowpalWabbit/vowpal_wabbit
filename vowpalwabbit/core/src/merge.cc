@@ -87,32 +87,17 @@ void validate_compatibility(const VW::workspace* base_workspace,
 }
 
 void merge_shared_data(
-    const shared_data& base, shared_data& destination, const std::vector<const shared_data*>& sources, bool is_delta)
+    const shared_data& base, shared_data& destination, const std::vector<const shared_data*>& sources)
 {
-  if (is_delta)
+  for (const auto* source : sources)
   {
-    for (const auto* source : sources)
-    {
-      destination.sum_loss += source->sum_loss;
-      destination.weighted_labeled_examples += source->weighted_labeled_examples;
-      destination.weighted_labels += source->weighted_labels;
-      destination.weighted_unlabeled_examples += source->weighted_unlabeled_examples;
-      destination.example_number += source->example_number;
-      destination.total_features += source->total_features;
-    }
-  }
-  else
-  {
-    for (const auto* source : sources)
-    {
-      destination.sum_loss += (source->sum_loss - base.sum_loss);
-      destination.weighted_labeled_examples += (source->weighted_labeled_examples - base.weighted_labeled_examples);
-      destination.weighted_labels += (source->weighted_labels - base.weighted_labels);
-      destination.weighted_unlabeled_examples +=
-          (source->weighted_unlabeled_examples - base.weighted_unlabeled_examples);
-      destination.example_number += (source->example_number - base.example_number);
-      destination.total_features += (source->total_features - base.total_features);
-    }
+    destination.sum_loss += (source->sum_loss - base.sum_loss);
+    destination.weighted_labeled_examples += (source->weighted_labeled_examples - base.weighted_labeled_examples);
+    destination.weighted_labels += (source->weighted_labels - base.weighted_labels);
+    destination.weighted_unlabeled_examples +=
+        (source->weighted_unlabeled_examples - base.weighted_unlabeled_examples);
+    destination.example_number += (source->example_number - base.example_number);
+    destination.total_features += (source->total_features - base.total_features);
   }
 
   destination.sum_loss += base.sum_loss;
@@ -154,7 +139,7 @@ namespace VW
 {
 // Experimental.
 std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
-    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger, bool is_delta)
+    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
 {
   validate_compatibility(base_workspace, workspaces_to_merge, logger);
 
@@ -227,7 +212,7 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
   for (const auto& model : workspaces_to_merge) { shared_datas.push_back(model->sd); }
 
   // Merge shared data too
-  merge_shared_data(*base_workspace_concrete->sd, *destination_workspace->sd, shared_datas, is_delta);
+  merge_shared_data(*base_workspace_concrete->sd, *destination_workspace->sd, shared_datas);
 
   return destination_workspace;
 }
@@ -238,9 +223,9 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   deltas_to_workspaces.reserve(deltas_to_merge.size());
   for (const auto delta_ptr : deltas_to_merge)
   {
-    deltas_to_workspaces.push_back(&static_cast<const VW::workspace&>(*delta_ptr));
+    deltas_to_workspaces.push_back(delta_ptr->unsafe_get_workspace_ptr());
   }
-  auto merged_ws = merge_models(nullptr, deltas_to_workspaces, logger, true);
+  auto merged_ws = merge_models(nullptr, deltas_to_workspaces, logger);
   return VW::model_delta(std::move(merged_ws));
 }
 
@@ -248,8 +233,8 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
 
 std::unique_ptr<VW::workspace> operator+(const VW::workspace& base, const VW::model_delta& md)
 {
-  const auto& delta = static_cast<VW::workspace&>(md);
-  validate_compatibility(&base, std::vector<const VW::workspace*>{&delta}, nullptr);
+  const VW::workspace* delta = md.unsafe_get_workspace_ptr();
+  validate_compatibility(&base, std::vector<const VW::workspace*>{delta}, nullptr);
   auto dest_command_line = VW::split_command_line(get_keep_command_line(base));
   dest_command_line.emplace_back("--quiet");
   dest_command_line.emplace_back("--preserve_performance_counters");
@@ -264,9 +249,9 @@ std::unique_ptr<VW::workspace> operator+(const VW::workspace& base, const VW::mo
     {
       auto learner_name = target_learner->get_name();
       const LEARNER::base_learner* base_learner = base.l->get_learner_by_name_prefix(learner_name);
-      const LEARNER::base_learner* delta_learner = delta.l->get_learner_by_name_prefix(learner_name);
+      const LEARNER::base_learner* delta_learner = delta->l->get_learner_by_name_prefix(learner_name);
 
-      target_learner->add(base, delta, base_learner, delta_learner, *destination_workspace, target_learner);
+      target_learner->add(base, *delta, base_learner, delta_learner, *destination_workspace, target_learner);
     }
     // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
     // not going to work.
@@ -283,12 +268,12 @@ std::unique_ptr<VW::workspace> operator+(const VW::workspace& base, const VW::mo
 
   // Add shared data
   auto& output_sd = *destination_workspace->sd;
-  output_sd.sum_loss = base.sd->sum_loss + delta.sd->sum_loss;
-  output_sd.weighted_labeled_examples = base.sd->weighted_labeled_examples + delta.sd->weighted_labeled_examples;
-  output_sd.weighted_labels = base.sd->weighted_labels + delta.sd->weighted_labels;
-  output_sd.weighted_unlabeled_examples = base.sd->weighted_unlabeled_examples + delta.sd->weighted_unlabeled_examples;
-  output_sd.example_number = base.sd->example_number + delta.sd->example_number;
-  output_sd.total_features = base.sd->total_features + delta.sd->total_features;
+  output_sd.sum_loss = base.sd->sum_loss + delta->sd->sum_loss;
+  output_sd.weighted_labeled_examples = base.sd->weighted_labeled_examples + delta->sd->weighted_labeled_examples;
+  output_sd.weighted_labels = base.sd->weighted_labels + delta->sd->weighted_labels;
+  output_sd.weighted_unlabeled_examples = base.sd->weighted_unlabeled_examples + delta->sd->weighted_unlabeled_examples;
+  output_sd.example_number = base.sd->example_number + delta->sd->example_number;
+  output_sd.total_features = base.sd->total_features + delta->sd->total_features;
 
   return destination_workspace;
 }

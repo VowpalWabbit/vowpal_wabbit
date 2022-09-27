@@ -84,9 +84,9 @@ TEST(merge_tests, merge_simple_model_delta)
   auto deltas_merged = VW::merge_deltas(deltas);
   auto result_delta_merge = *vw_base + deltas_merged;
 
-  EXPECT_FLOAT_EQ(static_cast<VW::workspace&>(delta1).sd->weighted_labeled_examples, 1.f);
-  EXPECT_FLOAT_EQ(static_cast<VW::workspace&>(delta2).sd->weighted_labeled_examples, 1.f);
-  EXPECT_FLOAT_EQ(static_cast<VW::workspace&>(deltas_merged).sd->weighted_labeled_examples, 2.f);
+  EXPECT_FLOAT_EQ(delta1.unsafe_get_workspace_ptr()->sd->weighted_labeled_examples, 1.f);
+  EXPECT_FLOAT_EQ(delta2.unsafe_get_workspace_ptr()->sd->weighted_labeled_examples, 1.f);
+  EXPECT_FLOAT_EQ(deltas_merged.unsafe_get_workspace_ptr()->sd->weighted_labeled_examples, 2.f);
   EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, 3.f);
 
   // Merge workspaces directly, this should produce same results

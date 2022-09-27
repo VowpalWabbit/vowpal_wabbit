@@ -129,10 +129,10 @@ struct finish_example_data
 
 using merge_with_all_fn = void (*)(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
     const std::vector<const VW::workspace*>& all_workspaces, const void* base_data,
-    const std::vector<const void*>& all_data, VW::workspace& output_workspace, void* output_data, bool is_delta);
+    const std::vector<const void*>& all_data, VW::workspace& output_workspace, void* output_data);
 // When the workspace reference is not needed this signature should definitely be used.
 using merge_fn = void (*)(const std::vector<float>& per_model_weighting, const void* base_data,
-    const std::vector<const void*>& all_data, void* output_data, bool is_delta);
+    const std::vector<const void*>& all_data, void* output_data);
 using add_subtract_fn = void (*)(const void* data_1, const void* data_2, void* data_out);
 using add_subtract_with_all_fn = void (*)(const VW::workspace& ws1, const void* data1, const VW::workspace& ws2, const void* data2, VW::workspace& ws_out, void* data_out);
 
@@ -475,7 +475,7 @@ public:
   void NO_SANITIZE_UNDEFINED merge(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
       const std::vector<const VW::workspace*>& all_workspaces, const base_learner* base_workspaces_learner,
       const std::vector<const base_learner*>& all_learners, VW::workspace& output_workspace,
-      base_learner* output_learner, bool is_delta = false)
+      base_learner* output_learner)
   {
     assert(per_model_weighting.size() == all_workspaces.size());
     assert(per_model_weighting.size() == all_learners.size());
@@ -493,13 +493,12 @@ public:
     if (_merge_with_all_fn != nullptr)
     {
       _merge_with_all_fn(per_model_weighting, base_workspace, all_workspaces,
-          base_workspaces_learner->learner_data.get(), all_data, output_workspace, output_learner->learner_data.get(),
-          is_delta);
+          base_workspaces_learner->learner_data.get(), all_data, output_workspace, output_learner->learner_data.get());
     }
     else if (_merge_fn != nullptr)
     {
       _merge_fn(per_model_weighting, base_workspaces_learner->learner_data.get(), all_data,
-          output_learner->learner_data.get(), is_delta);
+          output_learner->learner_data.get());
     }
     else
     {
@@ -815,7 +814,7 @@ struct reduction_learner_builder
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_merge(
       void (*merge_fn)(const std::vector<float>& per_model_weighting, const DataT& base_data,
-          const std::vector<const DataT*>& all_data, DataT& output_data, bool is_delta))
+          const std::vector<const DataT*>& all_data, DataT& output_data))
   {
     this->_learner->_merge_fn = reinterpret_cast<details::merge_fn>(merge_fn);
     return *this;
@@ -957,7 +956,7 @@ struct base_learner_builder
   base_learner_builder<DataT, ExampleT>& set_merge_with_all(
       void (*merge_with_all_fn)(const std::vector<float>& per_model_weighting, const VW::workspace& base_workspace,
           const std::vector<const VW::workspace*>& all_workspaces, const DataT& base_data,
-          const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data, bool is_delta))
+          const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data))
   {
     this->_learner->_merge_with_all_fn = reinterpret_cast<details::merge_with_all_fn>(merge_with_all_fn);
     return *this;
