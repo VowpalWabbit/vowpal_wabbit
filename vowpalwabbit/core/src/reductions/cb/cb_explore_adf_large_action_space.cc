@@ -243,7 +243,7 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
 template <typename T, typename S>
 cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
-    size_t thread_pool_size, implementation_type impl_type)
+    size_t thread_pool_size, size_t block_size, implementation_type impl_type)
     : _d(d)
     , _all(all)
     , _counter(0)
@@ -251,7 +251,7 @@ cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint6
     , _impl_type(impl_type)
     , spanner_state(c, d)
     , shrink_fact_config(gamma_scale, gamma_exponent, apply_shrink_factor)
-    , impl(all, d, _seed, total_size, thread_pool_size)
+    , impl(all, d, _seed, total_size, thread_pool_size, block_size)
 {
 }
 
@@ -288,7 +288,7 @@ template struct cb_explore_adf_large_action_space<model_weight_rand_svd_impl, on
 template <typename T, typename S>
 VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::multi_learner* base,
     implementation_type& impl_type, VW::workspace& all, bool with_metrics, uint64_t d, float gamma_scale,
-    float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size)
+    float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size, size_t block_size)
 {
   using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space<T, S>>;
 
@@ -297,7 +297,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
   uint64_t seed = all.get_random_state()->get_current_state() * 10.f;
 
   auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all,
-      seed, 1 << all.num_bits, thread_pool_size, impl_type);
+      seed, 1 << all.num_bits, thread_pool_size, block_size, impl_type);
 
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
@@ -331,6 +331,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool use_vanilla_impl = false;
   bool full_spanner = false;
   size_t thread_pool_size = 0;
+  size_t block_size = 0;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
@@ -346,6 +347,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .default_value(0)
                .help("number of threads in the thread pool that will be used when running with one pass svd "
                      "implementation (default svd implementation option)"))
+      .add(make_option("block_size", block_size)
+               .default_value(0)
+               .help("number of actions in a block to be scheduled for multithreading when using one pass svd "
+                     "implementation (by default, block_size = num_actions / thread_pool_size)"))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
@@ -400,12 +405,12 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     if (full_spanner)
     {
       return make_las_with_impl<model_weight_rand_svd_impl, spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
+          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
     }
     else
     {
       return make_las_with_impl<model_weight_rand_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
+          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
     }
   }
   else if (use_vanilla_impl)
@@ -414,12 +419,12 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     if (full_spanner)
     {
       return make_las_with_impl<vanilla_rand_svd_impl, spanner_state>(stack_builder, base, impl_type, all, with_metrics,
-          d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
+          d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
     }
     else
     {
       return make_las_with_impl<vanilla_rand_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
+          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
     }
   }
   else
@@ -428,12 +433,12 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     if (full_spanner)
     {
       return make_las_with_impl<one_pass_svd_impl, spanner_state>(stack_builder, base, impl_type, all, with_metrics, d,
-          gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
+          gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
     }
     else
     {
       return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size);
+          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
     }
   }
 }
