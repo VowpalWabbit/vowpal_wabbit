@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   python-build:
-    name: Build latest python wheel
+    name: Build previous master python wheel
     container:
       image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
           name: test_manylinux_amd64_3.10
           path: audit_output/
   generate-latest-model:
-    name: Generate model using latest artifact
+    name: Generate model using previous python wheel
     needs: python-build
     runs-on: ubuntu-latest
     steps:
@@ -66,7 +66,7 @@ jobs:
           path: ~/.vw_runtests_model_gen_working_dir/test_models/*
           if-no-files-found: error
   test-latest-model:
-    name: Test latest model with current master
+    name: Test previous master model with newest wheel
     container:
       image: vowpalwabbit/manylinux2010-build:latest
     needs: generate-latest-model
