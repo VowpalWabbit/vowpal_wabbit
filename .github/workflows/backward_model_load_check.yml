@@ -39,7 +39,7 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: test_manylinux_amd64_3.10
-          path: audit_output/
+          path: audit_last_commit/
   generate-latest-model:
     name: Generate model using previous python wheel
     needs: python-build
