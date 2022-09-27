@@ -166,10 +166,8 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
     float threshold = action_probability / data.known_cost.probability;
 
     if (!data.fixed_multiplier) { data.multiplier = std::min(data.multiplier, 1 / threshold); }
-    else
-    {
-      threshold *= data.multiplier;
-    }
+
+    threshold *= data.multiplier;
 
     if (threshold > 1. + 1e-6) { data.violations++; }
 
