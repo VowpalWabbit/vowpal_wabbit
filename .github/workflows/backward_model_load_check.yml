@@ -87,7 +87,3 @@ jobs:
           auditwheel repair wheel_output/*whl -w audit_output/
           /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_output/*.whl
           /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models
-
-
-          
-          
