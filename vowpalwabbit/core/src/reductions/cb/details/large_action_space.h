@@ -41,7 +41,8 @@ public:
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
 
-  vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
+  vanilla_rand_svd_impl(
+      VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -65,7 +66,8 @@ public:
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
 
-  model_weight_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
+  model_weight_rand_svd_impl(
+      VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
 
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
@@ -87,12 +89,14 @@ private:
   uint64_t _d;
   uint64_t _seed;
   thread_pool _thread_pool;
+  size_t _block_size;
   std::vector<std::future<void>> _futures;
   Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
 
 public:
   Eigen::MatrixXf AOmega;
-  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size);
+  one_pass_svd_impl(
+      VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
       Eigen::MatrixXf& _V);
   void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -184,7 +188,7 @@ public:
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
       bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
-      implementation_type impl_type);
+      size_t block_size, implementation_type impl_type);
 
   ~cb_explore_adf_large_action_space() = default;
 
