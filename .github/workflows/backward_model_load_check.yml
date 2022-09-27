@@ -1,7 +1,7 @@
-name: Forward Model checks
+name: Backward Model checks
 
-# This file is for checking that models generated from newer VW code do not cause crashes when loaded into older VW code
-# Generate a model using latest wheel and load the same model using the latest vw master branch
+# This file is for checking that models generated from the current VW master do not cause crashes when loaded into newer VW code
+# Generate a model using the latest vw master branch and load the same model using the latest wheel
 
 on:
   push:
@@ -30,8 +30,11 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
-          auditwheel repair wheel_output/*whl -w audit_output/
+          git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
+          cd vowpal_wabbit
+          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          cd ..
+          auditwheel repair vowpal_wabbit/wheel_last_commit/*whl -w audit_last_commit/
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
@@ -80,10 +83,11 @@ jobs:
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
-          git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
-          cd vowpal_wabbit
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
-          auditwheel repair wheel_last_commit/*whl -w audit_last_commit/
-          /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_last_commit/*.whl
-          cd ..
+          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          auditwheel repair wheel_output/*whl -w audit_output/
+          /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_output/*.whl
           /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models
+
+
+          
+          
