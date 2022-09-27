@@ -63,14 +63,15 @@ using namespace VW::config;
 uint64_t hash_file_contents(VW::io::reader* f)
 {
   uint64_t v = 5289374183516789128;
-  char buf[1024];
+  const uint64_t max_buf = 1024;
+  char buf[max_buf];
   while (true)
   {
-    ssize_t n = f->read(buf, 1024);
+    ssize_t n = f->read(buf, max_buf);
 #ifdef _WIN32
     char* rem_buf;
     if ((rem_buf = std::remove(std::begin(buf), std::end(buf), '\r')) == nullptr) { THROW("error: invalid buffer"); }
-    n -= 1024 - (rem_buf - buf);
+    n -= (max_buf - std::distance(std::begin(buf), rem_buf));
 #endif
     if (n <= 0) { break; }
     for (ssize_t i = 0; i < n; i++)
