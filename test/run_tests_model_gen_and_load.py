@@ -68,7 +68,7 @@ def create_test_dir(
         shutil.copy(str(file_to_copy), str(test_dest_file))
 
 
-def generate_model(
+def generate_model_and_weights(
     test_id: int,
     command: str,
     working_dir: Path,
@@ -76,7 +76,13 @@ def generate_model(
 ) -> None:
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
     vw = vowpalwabbit.Workspace(command, quiet=True)
-
+    weights_dir = working_dir / "../weights-sets"
+    weights_dir.mkdir(parents=True, exist_ok=True)
+    with open(weights_dir / f"../weights-sets/weights_{test_id}.json", "w") as weights_file:
+        try:
+            weights_file.write(vw.json_weights())
+        except:
+            print(f"{color_enum.LIGHT_PURPLE}id: {test_id}Weights could not be loaded as base learner is not GD")
     vw.save(str(working_dir / f"model_{test_id}.vw"))
     vw.finish()
 
@@ -88,23 +94,29 @@ def load_model(
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
     model_file = str(working_dir / f"model_{test_id}.vw")
-    command = command + f" -i {model_file}"
+    load_command = f" -i {model_file}"
 
-    # link is changed in some reductions so it will clash with saved model
-    if "--link" in command:
-        command = re.sub("--link [:a-zA-Z0-9_.\\-/]*", "", command)
-        command = re.sub("--link=[:a-zA-Z0-9_.\\-/]*", "", command)
-    # random seed state is stored in the model so it will clash if passed again
-    if "--random_seed" in command:
-        command = re.sub("--random_seed [0-9]*", "", command)
-        command = re.sub("--random_seed=[0-9]*", "", command)
+    # Some options must be manually kept when loading a model
+    keep_commands = ["--simulation", "--eval", "--compete", "--cbify_reg", "--sparse_weights"]
+    for k in keep_commands:
+        if k in command:
+            load_command += f" {k}"
 
     print(
-        f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {command}{color_enum.ENDC}"
+        f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {load_command}{color_enum.ENDC}"
     )
 
     try:
-        vw = vowpalwabbit.Workspace(command, quiet=True)
+        vw = vowpalwabbit.Workspace(load_command, quiet=True)
+        try:
+            new_weights = json.loads(vw.json_weights())
+        except:
+            print(f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is not GD")
+            return
+        weights_dir = working_dir / "../weights-sets"
+        weight_file = str(weights_dir / f"weights_{test_id}.json")
+        old_weights = json.load(open(weight_file))
+        assert new_weights == old_weights
         vw.finish()
     except Exception as e:
         print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
@@ -191,7 +203,7 @@ def generate_all(
 ) -> None:
     os.chdir(model_working_dir.parent)
     for test in tests:
-        generate_model(test.id, test.command_line, model_working_dir, color_enum)
+        generate_model_and_weights(test.id, test.command_line, model_working_dir, color_enum)
 
     print(f"stored models in: {model_working_dir}")
 
