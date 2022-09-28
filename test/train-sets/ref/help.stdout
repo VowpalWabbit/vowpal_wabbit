@@ -211,13 +211,13 @@ Weight Options:
     --random_weights                        Make initial weights random (type: bool)
     --normal_weights                        Make initial weights normal (type: bool)
     --truncated_normal_weights              Make initial weights truncated normal (type: bool)
-    --sparse_weights                        Use a sparse datastructure for weights (type: bool)
+    --sparse_weights                        Use a sparse datastructure for weights (type: bool, keep)
     --input_feature_regularizer arg         Per feature regularization input file (type: str)
 [Reduction]  Importance Weight Classes Options:
     --classweight args...                   Importance weight multiplier for class (type: list[str], necessary)
 [Reduction] Active Learning Options:
     --active                                Enable active learning (type: bool, keep, necessary)
-    --simulation                            Active learning simulation mode (type: bool)
+    --simulation                            Active learning simulation mode (type: bool, keep)
     --mellowness arg                        Active learning mellowness parameter c_0. Default 8 (type: float,
                                             default: 8, keep)
 [Reduction] Active Learning with Cover Options:
@@ -316,7 +316,7 @@ Weight Options:
     --cbify_cs                              Consume cost-sensitive classification examples instead of multiclass
                                             (type: bool)
     --cbify_reg                             Consume regression examples instead of multiclass and cost sensitive
-                                            (type: bool)
+                                            (type: bool, keep)
     --cats arg                              Continuous action tree with smoothing (type: uint, default: 0,
                                             keep)
     --cb_discrete                           Discretizes continuous space and adds cb_explore as option (type:
@@ -700,7 +700,7 @@ Weight Options:
                                             necessary)
     --initial_denominator arg               Initial denominator (type: float, default: 1)
     --initial_numerator arg                 Initial numerator (type: float, default: 0.5)
-    --compete                               Enable competition with marginal features (type: bool)
+    --compete                               Enable competition with marginal features (type: bool, keep)
     --update_before_learn                   Update marginal values before learning (type: bool)
     --unweighted_marginals                  Ignore importance weights when computing marginals (type: bool)
     --decay arg                             Decay multiplier per event (1e-3 for example) (type: float, default:

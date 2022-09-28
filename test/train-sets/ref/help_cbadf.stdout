@@ -211,7 +211,7 @@ Weight Options:
     --random_weights                        Make initial weights random (type: bool)
     --normal_weights                        Make initial weights normal (type: bool)
     --truncated_normal_weights              Make initial weights truncated normal (type: bool)
-    --sparse_weights                        Use a sparse datastructure for weights (type: bool)
+    --sparse_weights                        Use a sparse datastructure for weights (type: bool, keep)
     --input_feature_regularizer arg         Per feature regularization input file (type: str)
 [Reduction] Contextual Bandit with Action Dependent Features Options:
     --cb_adf                                Do Contextual Bandit learning with multiline action dependent
