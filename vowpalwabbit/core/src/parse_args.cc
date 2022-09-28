@@ -63,10 +63,16 @@ using namespace VW::config;
 uint64_t hash_file_contents(VW::io::reader* f)
 {
   uint64_t v = 5289374183516789128;
-  char buf[1024];
+  const uint64_t max_buf = 1024;
+  char buf[max_buf];
   while (true)
   {
-    ssize_t n = f->read(buf, 1024);
+    ssize_t n = f->read(buf, max_buf);
+#ifdef _WIN32
+    char* rem_buf;
+    if ((rem_buf = std::remove(std::begin(buf), std::end(buf), '\r')) == nullptr) { THROW("error: invalid buffer"); }
+    n -= (max_buf - std::distance(std::begin(buf), rem_buf));
+#endif
     if (n <= 0) { break; }
     for (ssize_t i = 0; i < n; i++)
     {
@@ -140,8 +146,10 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
 
   if (!all.quiet)
   {
-    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << file_name << "', hash=" << std::hex << fd_hash
-                         << std::dec << endl;
+    std::string out_file_name = file_name;
+    std::replace(out_file_name.begin(), out_file_name.end(), '\\', '/');
+    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << out_file_name << "', hash=" << std::hex
+                         << fd_hash << std::dec << endl;
   }
 
   // see if we've already read this dictionary

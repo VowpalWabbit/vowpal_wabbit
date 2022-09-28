@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
   VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(
-      &vw, d, 50, 1 << vw.num_bits, /*thread_pool_size*/ 0);
+      &vw, d, 50, 1 << vw.num_bits, /*thread_pool_size*/ 0, /*block_size*/ 0);
 
   {
     VW::multi_ex examples;
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
   VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(
-      &vw, d, 50, 1 << vw.num_bits, /*thread_pool_size*/ 0);
+      &vw, d, 50, 1 << vw.num_bits, /*thread_pool_size*/ 0, /*block_size*/ 0);
 
   {
     VW::multi_ex examples;
