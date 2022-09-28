@@ -262,11 +262,11 @@ struct automl
 {
   automl_state current_state = automl_state::Experimenting;
   std::unique_ptr<CMType> cm;
-  std::ofstream log_file;
   VW::io::logger* logger;
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   bool debug_reverse_learning_order = false;
   const bool should_save_predict_only_model;
+  std::ofstream log_file;
 
   automl(std::unique_ptr<CMType> cm, VW::io::logger* logger, bool predict_only_model)
       : cm(std::move(cm))
