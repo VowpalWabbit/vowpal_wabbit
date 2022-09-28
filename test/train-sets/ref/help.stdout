@@ -28,7 +28,7 @@ Example Options:
                                             This will lead to smaller cache sizes (type: bool)
     --loss_function arg                     Specify the loss function to be used, uses squared by default
                                             (type: str, default: squared, choices {classic, expectile, hinge,
-                                            logistic, poisson, quantile, squared})
+                                            logistic, poisson, quantile, squared}, keep)
     --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
                                             (type: float, default: 0.5)
     --expectile_q arg                       Parameter q associated with Expectile loss (required). Must be
@@ -80,7 +80,7 @@ Feature Options:
     --dictionary args...                    Read a dictionary for additional features (arg either 'x:file'
                                             or just 'file') (type: list[str], keep)
     --dictionary_path args...               Look in this directory for dictionaries; defaults to current
-                                            directory or env{PATH} (type: list[str])
+                                            directory or env{PATH} (type: list[str], keep)
     --interactions args...                  Create feature interactions of any level between namespaces (type:
                                             list[str], keep)
     --experimental_full_name_interactions args...
@@ -211,13 +211,13 @@ Weight Options:
     --random_weights                        Make initial weights random (type: bool)
     --normal_weights                        Make initial weights normal (type: bool)
     --truncated_normal_weights              Make initial weights truncated normal (type: bool)
-    --sparse_weights                        Use a sparse datastructure for weights (type: bool, keep)
+    --sparse_weights                        Use a sparse datastructure for weights (type: bool)
     --input_feature_regularizer arg         Per feature regularization input file (type: str)
 [Reduction]  Importance Weight Classes Options:
     --classweight args...                   Importance weight multiplier for class (type: list[str], necessary)
 [Reduction] Active Learning Options:
     --active                                Enable active learning (type: bool, keep, necessary)
-    --simulation                            Active learning simulation mode (type: bool, keep)
+    --simulation                            Active learning simulation mode (type: bool)
     --mellowness arg                        Active learning mellowness parameter c_0. Default 8 (type: float,
                                             default: 8, keep)
 [Reduction] Active Learning with Cover Options:
@@ -314,7 +314,7 @@ Weight Options:
     --cbify arg                             Convert multiclass on <k> classes into a contextual bandit problem
                                             (type: uint, keep, necessary)
     --cbify_cs                              Consume cost-sensitive classification examples instead of multiclass
-                                            (type: bool)
+                                            (type: bool, keep)
     --cbify_reg                             Consume regression examples instead of multiclass and cost sensitive
                                             (type: bool, keep)
     --cats arg                              Continuous action tree with smoothing (type: uint, default: 0,
@@ -443,7 +443,7 @@ Weight Options:
                                             necessary)
     --cb_type arg                           Contextual bandit method to use (type: str, default: dr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
-    --eval                                  Evaluate a policy rather than optimizing (type: bool, keep)
+    --eval                                  Evaluate a policy rather than optimizing (type: bool)
     --cb_force_legacy                       Default to non-adf cb implementation (cb_to_cb_adf) (type: bool,
                                             keep)
 [Reduction] Contextual Bandit with Action Dependent Features Options:
@@ -519,7 +519,7 @@ Weight Options:
 [Reduction] Cost Sensitive Active Learning Options:
     --cs_active arg                         Cost-sensitive active learning with <k> costs (type: uint, keep,
                                             necessary)
-    --simulation                            Cost-sensitive active learning simulation mode (type: bool, keep)
+    --simulation                            Cost-sensitive active learning simulation mode (type: bool)
     --baseline                              Cost-sensitive active learning baseline (type: bool)
     --domination arg                        Cost-sensitive active learning use domination (type: int, default:
                                             1)

@@ -671,6 +671,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .keep()
                .help("Read a dictionary for additional features (arg either 'x:file' or just 'file')"))
       .add(make_option("dictionary_path", dictionary_path)
+               .keep()
                .help("Look in this directory for dictionaries; defaults to current directory or env{PATH}"))
       .add(make_option("interactions", interactions)
                .keep()
@@ -1110,6 +1111,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
                .help("Turn this on to disregard order in which features have been defined. This will lead to smaller "
                      "cache sizes"))
       .add(make_option("loss_function", loss_function)
+               .keep()
                .default_value("squared")
                .one_of({"squared", "classic", "hinge", "logistic", "quantile", "expectile", "poisson"})
                .help("Specify the loss function to be used, uses squared by default"))
@@ -1543,7 +1545,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
       .add(make_option("random_weights", all->random_weights).help("Make initial weights random"))
       .add(make_option("normal_weights", all->normal_weights).help("Make initial weights normal"))
       .add(make_option("truncated_normal_weights", all->tnormal_weights).help("Make initial weights truncated normal"))
-      .add(make_option("sparse_weights", all->weights.sparse).keep().help("Use a sparse datastructure for weights"))
+      .add(make_option("sparse_weights", all->weights.sparse).help("Use a sparse datastructure for weights"))
       .add(make_option("input_feature_regularizer", all->per_feature_regularizer_input)
                .help("Per feature regularization input file"));
   all->options->add_and_parse(weight_args);

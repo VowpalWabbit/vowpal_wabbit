@@ -179,7 +179,7 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   float active_c0;
   option_group_definition new_options("[Reduction] Active Learning");
   new_options.add(make_option("active", active_option).keep().necessary().help("Enable active learning"))
-      .add(make_option("simulation", simulation).keep().help("Active learning simulation mode"))
+      .add(make_option("simulation", simulation).help("Active learning simulation mode"))
       .add(make_option("mellowness", active_c0)
                .keep()
                .default_value(8.f)

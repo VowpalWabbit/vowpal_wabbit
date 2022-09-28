@@ -28,7 +28,7 @@ Example Options:
                                             This will lead to smaller cache sizes (type: bool)
     --loss_function arg                     Specify the loss function to be used, uses squared by default
                                             (type: str, default: squared, choices {classic, expectile, hinge,
-                                            logistic, poisson, quantile, squared})
+                                            logistic, poisson, quantile, squared}, keep)
     --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
                                             (type: float, default: 0.5)
     --expectile_q arg                       Parameter q associated with Expectile loss (required). Must be
@@ -80,7 +80,7 @@ Feature Options:
     --dictionary args...                    Read a dictionary for additional features (arg either 'x:file'
                                             or just 'file') (type: list[str], keep)
     --dictionary_path args...               Look in this directory for dictionaries; defaults to current
-                                            directory or env{PATH} (type: list[str])
+                                            directory or env{PATH} (type: list[str], keep)
     --interactions args...                  Create feature interactions of any level between namespaces (type:
                                             list[str], keep)
     --experimental_full_name_interactions args...
@@ -211,7 +211,7 @@ Weight Options:
     --random_weights                        Make initial weights random (type: bool)
     --normal_weights                        Make initial weights normal (type: bool)
     --truncated_normal_weights              Make initial weights truncated normal (type: bool)
-    --sparse_weights                        Use a sparse datastructure for weights (type: bool, keep)
+    --sparse_weights                        Use a sparse datastructure for weights (type: bool)
     --input_feature_regularizer arg         Per feature regularization input file (type: str)
 [Reduction] Contextual Bandit with Action Dependent Features Options:
     --cb_adf                                Do Contextual Bandit learning with multiline action dependent
