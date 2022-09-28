@@ -402,9 +402,9 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
       cm->estimators[live_slot].second.update(1, r);
     }
     auto& curr = cm->estimators[live_slot];
-    logger->err_info("{0},{1},{2},{3},{4},{5},{6}", cm->total_learn_count, live_slot, cm->total_champ_switches,
-        curr.first._estimator.lower_bound(), curr.first._estimator.upper_bound(), curr.second.lower_bound(),
-        curr.second.upper_bound());
+    log_file << cm->total_learn_count << "," << live_slot << "," << cm->total_champ_switches << ","
+             << curr.first._estimator.lower_bound() << "," << curr.first._estimator.upper_bound() << ","
+             << curr.second.lower_bound() << "," << curr.second.upper_bound() << std::endl;
   }
 }
 
