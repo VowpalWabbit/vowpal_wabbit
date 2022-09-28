@@ -85,7 +85,7 @@ def generate_model_and_weights(
             weights_file.write(vw.json_weights())
         except:
             print(
-                f"{color_enum.LIGHT_PURPLE}id: {test_id}Weights could not be loaded as base learner is not GD"
+                f"{color_enum.LIGHT_PURPLE}Weights could not be loaded as base learner is not GD"
             )
     vw.save(str(working_dir / f"model_{test_id}.vw"))
     vw.finish()
@@ -111,6 +111,17 @@ def load_model(
     for k in keep_commands:
         if k in command:
             load_command += f" {k}"
+
+    # Some options with one arg must be manually kept
+    keep_arg_commands = [
+        "--dictionary_path",
+        "--loss_function",
+    ]
+    for k in keep_arg_commands:
+        cmd_split = command.split(" ")
+        for i, v in enumerate(cmd_split):
+            if v == k:
+                load_command += f" {v} {cmd_split[i + 1]}"
 
     print(
         f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {load_command}{color_enum.ENDC}"
