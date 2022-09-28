@@ -80,7 +80,7 @@ Feature Options:
     --dictionary args...                    Read a dictionary for additional features (arg either 'x:file'
                                             or just 'file') (type: list[str], keep)
     --dictionary_path args...               Look in this directory for dictionaries; defaults to current
-                                            directory or env{PATH} (type: list[str], keep)
+                                            directory or env{PATH} (type: list[str])
     --interactions args...                  Create feature interactions of any level between namespaces (type:
                                             list[str], keep)
     --experimental_full_name_interactions args...

@@ -671,7 +671,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .keep()
                .help("Read a dictionary for additional features (arg either 'x:file' or just 'file')"))
       .add(make_option("dictionary_path", dictionary_path)
-               .keep()
                .help("Look in this directory for dictionaries; defaults to current directory or env{PATH}"))
       .add(make_option("interactions", interactions)
                .keep()
