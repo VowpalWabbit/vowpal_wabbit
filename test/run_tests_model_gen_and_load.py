@@ -78,11 +78,15 @@ def generate_model_and_weights(
     vw = vowpalwabbit.Workspace(command, quiet=True)
     weights_dir = working_dir / "../weights-sets"
     weights_dir.mkdir(parents=True, exist_ok=True)
-    with open(weights_dir / f"../weights-sets/weights_{test_id}.json", "w") as weights_file:
+    with open(
+        weights_dir / f"../weights-sets/weights_{test_id}.json", "w"
+    ) as weights_file:
         try:
             weights_file.write(vw.json_weights())
         except:
-            print(f"{color_enum.LIGHT_PURPLE}id: {test_id}Weights could not be loaded as base learner is not GD")
+            print(
+                f"{color_enum.LIGHT_PURPLE}id: {test_id}Weights could not be loaded as base learner is not GD"
+            )
     vw.save(str(working_dir / f"model_{test_id}.vw"))
     vw.finish()
 
@@ -97,7 +101,13 @@ def load_model(
     load_command = f" -i {model_file}"
 
     # Some options must be manually kept when loading a model
-    keep_commands = ["--simulation", "--eval", "--compete", "--cbify_reg", "--sparse_weights"]
+    keep_commands = [
+        "--simulation",
+        "--eval",
+        "--compete",
+        "--cbify_reg",
+        "--sparse_weights",
+    ]
     for k in keep_commands:
         if k in command:
             load_command += f" {k}"
@@ -111,7 +121,9 @@ def load_model(
         try:
             new_weights = json.loads(vw.json_weights())
         except:
-            print(f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is not GD")
+            print(
+                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is not GD"
+            )
             return
         weights_dir = working_dir / "../weights-sets"
         weight_file = str(weights_dir / f"weights_{test_id}.json")
@@ -203,7 +215,9 @@ def generate_all(
 ) -> None:
     os.chdir(model_working_dir.parent)
     for test in tests:
-        generate_model_and_weights(test.id, test.command_line, model_working_dir, color_enum)
+        generate_model_and_weights(
+            test.id, test.command_line, model_working_dir, color_enum
+        )
 
     print(f"stored models in: {model_working_dir}")
 
