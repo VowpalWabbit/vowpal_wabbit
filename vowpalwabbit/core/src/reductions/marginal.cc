@@ -404,7 +404,7 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
       .add(make_option("marginal", marginal).keep().necessary().help("Substitute marginal label estimates for ids"))
       .add(make_option("initial_denominator", initial_denominator).default_value(1.f).help("Initial denominator"))
       .add(make_option("initial_numerator", initial_numerator).default_value(0.5f).help("Initial numerator"))
-      .add(make_option("compete", compete).help("Enable competition with marginal features"))
+      .add(make_option("compete", compete).keep().help("Enable competition with marginal features"))
       .add(make_option("update_before_learn", update_before_learn).help("Update marginal values before learning"))
       .add(make_option("unweighted_marginals", unweighted_marginals)
                .help("Ignore importance weights when computing marginals"))

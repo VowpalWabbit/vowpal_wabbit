@@ -1543,7 +1543,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
       .add(make_option("random_weights", all->random_weights).help("Make initial weights random"))
       .add(make_option("normal_weights", all->normal_weights).help("Make initial weights normal"))
       .add(make_option("truncated_normal_weights", all->tnormal_weights).help("Make initial weights truncated normal"))
-      .add(make_option("sparse_weights", all->weights.sparse).help("Use a sparse datastructure for weights"))
+      .add(make_option("sparse_weights", all->weights.sparse).keep().help("Use a sparse datastructure for weights"))
       .add(make_option("input_feature_regularizer", all->per_feature_regularizer_input)
                .help("Per feature regularization input file"));
   all->options->add_and_parse(weight_args);
