@@ -76,11 +76,9 @@ def generate_model_and_weights(
 ) -> None:
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
     vw = vowpalwabbit.Workspace(command, quiet=True)
-    weights_dir = working_dir / "../weights-sets"
+    weights_dir = working_dir / "../test_weights"
     weights_dir.mkdir(parents=True, exist_ok=True)
-    with open(
-        weights_dir / f"../weights-sets/weights_{test_id}.json", "w"
-    ) as weights_file:
+    with open(weights_dir / f"weights_{test_id}.json", "w") as weights_file:
         try:
             weights_file.write(vw.json_weights())
         except:
@@ -136,7 +134,8 @@ def load_model(
                 f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is not GD"
             )
             return
-        weights_dir = working_dir / "../weights-sets"
+        weights_dir = working_dir / "../test_weights"
+        weights_dir.mkdir(parents=True, exist_ok=True)
         weight_file = str(weights_dir / f"weights_{test_id}.json")
         old_weights = json.load(open(weight_file))
         assert new_weights == old_weights
