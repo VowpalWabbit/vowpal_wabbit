@@ -74,9 +74,8 @@ def generate_model(
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
-    command = command + " --quiet "
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
-    vw = vowpalwabbit.Workspace(command)
+    vw = vowpalwabbit.Workspace(command, quiet=True)
 
     vw.save(str(working_dir / f"model_{test_id}.vw"))
     vw.finish()
@@ -88,7 +87,6 @@ def load_model(
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
-    command = command + " --quiet "
     model_file = str(working_dir / f"model_{test_id}.vw")
     command = command + f" -i {model_file}"
 
@@ -106,7 +104,7 @@ def load_model(
     )
 
     try:
-        vw = vowpalwabbit.Workspace(command)
+        vw = vowpalwabbit.Workspace(command, quiet=True)
         vw.finish()
     except Exception as e:
         print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
@@ -114,7 +112,9 @@ def load_model(
 
 
 def get_tests(
-    working_dir: Path, explicit_tests: Optional[List[int]] = None
+    model_working_dir: Path,
+    working_dir: Path,
+    explicit_tests: Optional[List[int]] = None,
 ) -> List[TestData]:
     test_ref_dir: Path = Path(__file__).resolve().parent
 
@@ -138,11 +138,10 @@ def get_tests(
             not test.depends_on
             and not test.is_shell
             and not test.skip
-            and not " -i " in test.command_line
+            and not "-i " in test.command_line
             and not "--no_stdin" in test.command_line
-            and not "bfgs" in test.command_line
-            and not "--flatbuffer" in test.command_line
             and not "--help" in test.command_line
+            and not "--flatbuffer" in test.command_line
         ):
             test.command_line = re.sub("-f [:a-zA-Z0-9_.\\-/]*", "", test.command_line)
             test.command_line = re.sub("-f=[:a-zA-Z0-9_.\\-/]*", "", test.command_line)
@@ -153,18 +152,35 @@ def get_tests(
                 "--final_regressor=[:a-zA-Z0-9_.\\-/]*", "", test.command_line
             )
             test.command_line = test.command_line.replace("--onethread", "")
+            create_test_dir(
+                test_id=test.id,
+                input_files=test.input_files,
+                test_base_dir=working_dir,
+                test_ref_dir=test_ref_dir,
+            )
+            # Check experimental and loadable reductions
+            os.chdir(model_working_dir.parent)
+            vw = vowpalwabbit.Workspace(test.command_line, quiet=True)
+            skip_cmd = False
+            for groups in vw.get_config().values():
+                for group in groups:
+                    for opt in group[1]:
+                        if opt.value_supplied and (
+                            opt.experimental or opt.name == "bfgs"
+                        ):
+                            skip_cmd = True
+                            break
+                if skip_cmd:
+                    break
+            vw.finish()
+            if skip_cmd:
+                continue
+
             filtered_tests.append(test)
 
     if explicit_tests:
         filtered_tests = list(filter(lambda x: x.id in explicit_tests, filtered_tests))
 
-    for test in filtered_tests:
-        create_test_dir(
-            test_id=test.id,
-            input_files=test.input_files,
-            test_base_dir=working_dir,
-            test_ref_dir=test_ref_dir,
-        )
     return filtered_tests
 
 
@@ -253,7 +269,7 @@ def main():
     else:
         temp_working_dir.mkdir(parents=True, exist_ok=True)
         test_model_dir.mkdir(parents=True, exist_ok=True)
-        tests = get_tests(temp_working_dir, args.test)
+        tests = get_tests(test_model_dir, temp_working_dir, args.test)
 
         if args.generate_models:
             generate_all(tests, test_model_dir, color_enum)
