@@ -20,14 +20,14 @@ VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
 
 namespace epsilon_decay
 {
-float decayed_epsilon(uint64_t update_count);
+float decayed_epsilon(float init_ep, uint64_t update_count);
 
 struct epsilon_decay_data
 {
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
       double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
-      bool constant_epsilon, uint32_t& wpp, bool lb_trick, uint64_t _min_champ_examples);
-  void update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+      bool constant_epsilon, uint32_t& wpp, bool lb_trick, uint64_t _min_champ_examples, float initial_epsilon);
+  void update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
   void clear_weights_and_estimators(int64_t swap_dist, int64_t model_count);
@@ -48,6 +48,7 @@ struct epsilon_decay_data
   uint32_t& _wpp;
   bool _lb_trick;
   uint64_t _min_champ_examples;
+  float _initial_epsilon;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
   std::vector<double> per_live_model_state_double;

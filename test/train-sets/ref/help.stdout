@@ -571,6 +571,7 @@ Weight Options:
                                             (bonferroni correction) (type: bool, keep, experimental)
     --min_champ_examples arg                Minimum number of examples for any challenger to become champion
                                             (type: uint, default: 0, keep, experimental)
+    --initial_epsilon arg                   Initial epsilon value (type: float, default: 1, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
