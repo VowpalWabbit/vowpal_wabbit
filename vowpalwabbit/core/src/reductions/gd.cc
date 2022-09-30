@@ -252,7 +252,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
   }
 }
 
-void add(const VW::workspace /* ws1 */, const GD::gd& data1, const VW::workspace& ws2, GD::gd& data2,
+void add(const VW::workspace& /* ws1 */, const GD::gd& data1, const VW::workspace& ws2, GD::gd& data2,
     VW::workspace& ws_out, GD::gd& data_out)
 {
   const size_t length = static_cast<size_t>(1) << ws_out.num_bits;
@@ -274,7 +274,7 @@ void add(const VW::workspace /* ws1 */, const GD::gd& data1, const VW::workspace
   }
 }
 
-void subtract(const VW::workspace ws1, const GD::gd& data1, const VW::workspace& /* ws2 */, GD::gd& data2,
+void subtract(const VW::workspace& ws1, const GD::gd& data1, const VW::workspace& /* ws2 */, GD::gd& data2,
     VW::workspace& ws_out, GD::gd& data_out)
 {
   const size_t length = static_cast<size_t>(1) << ws_out.num_bits;
