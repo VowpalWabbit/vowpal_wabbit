@@ -52,7 +52,7 @@ void merge_weights_simple(size_t length, const std::vector<std::reference_wrappe
   for (size_t i = 0; i < source.size(); i++)
   {
     const auto& this_source = source[i].get();
-    for (uint64_t j = 0; j < length; j++)
+    for (size_t j = 0; j < length; j++)
     { weights.strided_index(j) += (this_source.strided_index(j) * per_model_weighting[i]); }
   }
 }
@@ -66,7 +66,7 @@ void merge_weights_with_save_resume(size_t length,
   for (const auto& model : source)
   {
     const auto& this_model = model.get();
-    for (uint64_t i = 0; i < length; i++) { adaptive_totals[i] += (&(this_model[i << weights.stride_shift()]))[1]; }
+    for (size_t i = 0; i < length; i++) { adaptive_totals[i] += (&(this_model[i << weights.stride_shift()]))[1]; }
   }
 
   for (size_t i = 0; i < source.size(); i++)
@@ -85,7 +85,8 @@ void merge_weights_with_save_resume(size_t length,
 template <typename WeightsT>
 void copy_weights(WeightsT& dest, const WeightsT& source, size_t length)
 {
-  for (size_t i = 0; i < length; i++) { dest.strided_index(i) = source.strided_index(i); }
+  const size_t full_weights_size = length << dest.stride_shift();
+  for (size_t i = 0; i < full_weights_size; i++) { dest[i] = source[i]; }
 }
 }  // namespace
 
@@ -208,7 +209,7 @@ void end_pass(gd& g)
 void merge(const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
     const std::vector<GD::gd*>& all_data, VW::workspace& output_workspace, GD::gd& output_data)
 {
-  const uint32_t length = 1 << output_workspace.num_bits;
+  const size_t length = static_cast<size_t>(1) << output_workspace.num_bits;
 
   // Weight aggregation is based on same method as allreduce.
   if (output_workspace.weights.sparse)
@@ -254,7 +255,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
 void add(const VW::workspace /* ws1 */, const GD::gd& data1, const VW::workspace& ws2, GD::gd& data2,
     VW::workspace& ws_out, GD::gd& data_out)
 {
-  const uint32_t length = 1 << ws_out.num_bits;
+  const size_t length = static_cast<size_t>(1) << ws_out.num_bits;
   // When adding, output the weights from the model delta (2nd arugment to addition)
   if (ws_out.weights.sparse) { copy_weights(ws_out.weights.sparse_weights, ws2.weights.sparse_weights, length); }
   else
@@ -276,7 +277,7 @@ void add(const VW::workspace /* ws1 */, const GD::gd& data1, const VW::workspace
 void subtract(const VW::workspace ws1, const GD::gd& data1, const VW::workspace& /* ws2 */, GD::gd& data2,
     VW::workspace& ws_out, GD::gd& data_out)
 {
-  const uint32_t length = 1 << ws_out.num_bits;
+  const size_t length = static_cast<size_t>(1) << ws_out.num_bits;
   // When subtracting, output the weights from the newer model (1st arugment to subtraction)
   if (ws_out.weights.sparse) { copy_weights(ws_out.weights.sparse_weights, ws1.weights.sparse_weights, length); }
   else
