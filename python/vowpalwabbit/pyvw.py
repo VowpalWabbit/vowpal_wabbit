@@ -110,6 +110,7 @@ class VWOption:
         value_supplied,
         default_value,
         default_value_supplied,
+        experimental,
     ):
         self._name = name
         self._help_str = help_str
@@ -121,6 +122,7 @@ class VWOption:
         self._value_supplied = value_supplied
         self._default_value = default_value
         self._default_value_supplied = default_value_supplied
+        self._experimental = experimental
 
     @property
     def name(self):
@@ -157,6 +159,10 @@ class VWOption:
     @property
     def default_value_supplied(self):
         return self._default_value_supplied
+
+    @property
+    def experimental(self):
+        return self._experimental
 
     @property
     def value(self):
