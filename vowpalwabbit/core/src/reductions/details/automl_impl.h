@@ -218,6 +218,7 @@ struct interaction_config_manager
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
   estimator_vec_t<estimator_impl> estimators;
+  std::ofstream champ_log_file;
 
   interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
@@ -287,7 +288,7 @@ namespace util
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
 std::string interaction_vec_t_to_string(
     const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type);
-std::string elements_to_string(const automl::set_ns_list_t& elements);
+std::string elements_to_string(const automl::set_ns_list_t& elements, const char* const delim = ", ");
 }  // namespace util
 }  // namespace reductions
 namespace model_utils

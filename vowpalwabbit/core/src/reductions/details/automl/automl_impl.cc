@@ -76,6 +76,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , _ccb_on(ccb_on)
     , _config_oracle(
           config_oracle_impl(global_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
+    , champ_log_file("champ_change.csv")
 {
   insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
 }
@@ -167,6 +168,12 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // fetch config from the queue, and apply it current live slot
       apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
           config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, priority_challengers);
+      champ_log_file << "APPLY_CONFIG," << total_learn_count << "," << live_slot << ","
+                     << to_string(_config_oracle._conf_type) << ","
+                     << util::elements_to_string(
+                            _config_oracle.configs[estimators[live_slot].first.config_index].elements, " ")
+                     << std::endl;
+
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
@@ -245,6 +252,9 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
     if (winning_challenger_slot != 1) { weights.move_offsets(winning_challenger_slot, 1, wpp, false); }
 
     apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, _lb_trick, ns_counter);
+    champ_log_file << "CHAMP_SWITCH," << total_learn_count << "," << total_champ_switches << ","
+                   << to_string(_config_oracle._conf_type) << ","
+                   << util::elements_to_string(_config_oracle.configs[0].elements, " ") << std::endl;
   }
 }
 
