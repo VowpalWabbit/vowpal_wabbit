@@ -82,8 +82,10 @@ TEST(merge_tests, merge_simple_model)
   const auto& vw1_weights = vw1->weights.dense_weights;
   const auto& vw2_weights = vw2->weights.dense_weights;
   const auto& result_weights = result->weights.dense_weights;
-  for (size_t i = 0; i < length; i++) {
-    EXPECT_FLOAT_EQ(result_weights.strided_index(i), 0.5 * (vw1_weights.strided_index(i) + vw2_weights.strided_index(i)));
+  for (size_t i = 0; i < length; i++)
+  {
+    EXPECT_FLOAT_EQ(
+        result_weights.strided_index(i), 0.5 * (vw1_weights.strided_index(i) + vw2_weights.strided_index(i)));
   }
 }
 
