@@ -52,7 +52,7 @@ TEST(merge_tests, add_subtract_model_delta)
 
 TEST(merge_tests, merge_simple_model)
 {
-  auto options_strings = std::vector<std::string>{"--quiet"};
+  auto options_strings = std::vector<std::string>{"--quiet", "--sgd"};
   auto vw1 = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(options_strings));
   auto vw2 = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(options_strings));
 
@@ -69,9 +69,22 @@ TEST(merge_tests, merge_simple_model)
   std::vector<const VW::workspace*> workspaces = {vw1.get(), vw2.get()};
   auto result = VW::merge_models(nullptr, workspaces);
 
+  // check that shared data got merged
   EXPECT_FLOAT_EQ(vw1->sd->weighted_labeled_examples, 1.f);
   EXPECT_FLOAT_EQ(vw2->sd->weighted_labeled_examples, 1.f);
   EXPECT_FLOAT_EQ(result->sd->weighted_labeled_examples, 2.f);
+
+  // check that weight values got merged
+  EXPECT_FALSE(result->weights.sparse);
+  EXPECT_EQ(result->num_bits, vw1->num_bits);
+  EXPECT_EQ(result->num_bits, vw2->num_bits);
+  const size_t length = static_cast<size_t>(1) << result->num_bits;
+  const auto& vw1_weights = vw1->weights.dense_weights;
+  const auto& vw2_weights = vw2->weights.dense_weights;
+  const auto& result_weights = result->weights.dense_weights;
+  for (size_t i = 0; i < length; i++) {
+    EXPECT_FLOAT_EQ(result_weights.strided_index(i), 0.5 * (vw1_weights.strided_index(i) + vw2_weights.strided_index(i)));
+  }
 }
 
 TEST(merge_tests, merge_simple_model_delta)
