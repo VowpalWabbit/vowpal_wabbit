@@ -25,7 +25,8 @@ namespace flatbuffer
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
   VW::experimental::api_status api_status;
-  return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples));
+  int return_code;
+  return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples, return_code));
 }
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
