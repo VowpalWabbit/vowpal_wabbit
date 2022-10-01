@@ -24,6 +24,7 @@ namespace flatbuffer
 {
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
+  VW::experimental::api_status api_status;
   return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples));
 }
 
@@ -54,14 +55,15 @@ bool parser::parse(io_buf& buf, uint8_t* buffer_pointer)
   return true;
 }
 
-void parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples)
+int parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples, VW::experimental::api_status* status)
 {
   // new example/multi example object to process from collection
   if (_data->example_obj_as_ExampleCollection()->is_multiline())
   {
     _active_multi_ex = true;
     _multi_example_object = _data->example_obj_as_ExampleCollection()->multi_examples()->Get(_example_index);
-    parse_multi_example(all, examples[0], _multi_example_object);
+    int return_multi_example = parse_multi_example(all, examples[0], _multi_example_object);
+    if (return_multi_example != 0) return return_multi_example;
     // read from active collection
     _example_index++;
     if (_example_index == _data->example_obj_as_ExampleCollection()->multi_examples()->size())
@@ -73,7 +75,8 @@ void parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples)
   else
   {
     const auto ex = _data->example_obj_as_ExampleCollection()->examples()->Get(_example_index);
-    parse_example(all, examples[0], ex);
+    int return_example = parse_example(all, examples[0], ex);
+    if (return_example != 0) return return_example;
     _example_index++;
     if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->size())
     {
@@ -81,32 +84,37 @@ void parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples)
       _active_collection = false;
     }
   }
+  return VW::experimental::error_code::success;
 }
 
-bool parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer)
+bool parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, int& return_code, uint8_t* buffer_pointer, VW::experimental::api_status* status)
 {
   if (_active_multi_ex)
   {
-    parse_multi_example(all, examples[0], _multi_example_object);
+    return_code = parse_multi_example(all, examples[0], _multi_example_object, status);
     return true;
   }
 
   if (_active_collection)
   {
-    process_collection_item(all, examples);
+    return_code = process_collection_item(all, examples, status);
     return true;
   }
   else
   {
     // new object to be read from file
-    if (!parse(buf, buffer_pointer)) { return false; }
+    if (!parse(buf, buffer_pointer)) 
+    { 
+      return_code = VW::experimental::error_code::fb_parser_failed_to_parse;
+      return false; 
+    }
 
     switch (_data->example_obj_type())
     {
       case VW::parsers::flatbuffer::ExampleType_Example:
       {
         const auto example = _data->example_obj_as_Example();
-        parse_example(all, examples[0], example);
+        return_code = parse_example(all, examples[0], example);
         return true;
       }
       break;
@@ -114,14 +122,14 @@ bool parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examp
       {
         _multi_example_object = _data->example_obj_as_MultiExample();
         _active_multi_ex = true;
-        parse_multi_example(all, examples[0], _multi_example_object);
+        return_code = parse_multi_example(all, examples[0], _multi_example_object);
         return true;
       }
       break;
       case VW::parsers::flatbuffer::ExampleType_ExampleCollection:
       {
         _active_collection = true;
-        process_collection_item(all, examples);
+        return_code = process_collection_item(all, examples);
         return true;
       }
       break;
@@ -129,15 +137,17 @@ bool parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examp
       default:
         break;
     }
+    return_code = VW::experimental::error_code::fb_parser_unknown_example_type;
     return false;
   }
 }
 
-void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
+int parser::parse_example(VW::workspace* all, example* ae, const Example* eg, VW::experimental::api_status* status)
 {
   all->example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
-  parse_flat_label(all->sd, ae, eg, all->logger);
+  int return_flat_label = parse_flat_label(all->sd, ae, eg, all->logger);
+  if (return_flat_label != 0) return return_flat_label;
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
   {
@@ -145,11 +155,17 @@ void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
     ae->tag.insert(ae->tag.end(), tag.begin(), tag.end());
   }
 
-  VW::experimental::api_status status;
-  for (const auto& ns : *(eg->namespaces())) { parse_namespaces(all, ae, ns, &status); }
+  // VW::experimental::api_status status;
+  int return_namespace;
+  for (const auto& ns : *(eg->namespaces())) 
+  { 
+    int return_error_code_namespace = parse_namespaces(all, ae, ns, nullptr); 
+    if(return_error_code_namespace != 0) return return_error_code_namespace;
+  }
+  return VW::experimental::error_code::success;
 }
 
-void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg)
+int parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg, VW::experimental::api_status* status)
 {
   all->example_parser->lbl_parser.default_label(ae->l);
   if (_multi_ex_index >= eg->examples()->size())
@@ -159,46 +175,53 @@ void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExa
     _multi_ex_index = 0;
     _active_multi_ex = false;
     _multi_example_object = nullptr;
-    return;
+    return VW::experimental::error_code::success;
   }
 
-  parse_example(all, ae, eg->examples()->Get(_multi_ex_index));
+  int return_error_code_example = parse_example(all, ae, eg->examples()->Get(_multi_ex_index));
+  if (return_error_code_example != 0) return return_error_code_example;
   _multi_ex_index++;
+  return VW::experimental::error_code::success;
 }
 
-namespace_index get_namespace_index(const Namespace* ns)
+int get_namespace_index(const Namespace* ns, namespace_index& ni, VW::experimental::api_status* status)
 {
-  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)) { return static_cast<uint8_t>(ns->name()->c_str()[0]); }
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)) 
+  { 
+    ni = static_cast<uint8_t>(ns->name()->c_str()[0]); 
+    return VW::experimental::error_code::success;
+  }
   else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
   {
-    return ns->hash();
+    ni = ns->hash();
+    return VW::experimental::error_code::success;
   }
-
-  THROW("Either name or hash field must be specified to get the namespace index.");
+  
+  RETURN_ERROR(status, vw_exception, "Either name or hash field must be specified to get the namespace index.");
 }
 
 bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
 {
-  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
-  {
-    hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
-    return true;
-  }
-  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))
+  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))
   {
     hash = ns->full_hash();
     return true;
   }
+  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
+  {
+    hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    return true;
+  }
+  
   return false;
 }
 
 int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns, VW::experimental::api_status* status)
 {
-  // Clear previous errors if any
-  VW::experimental::api_status::try_clear(status);
-  if(ns == nullptr) { RETURN_ERROR_ARG(status, vw_exception, "namespace is null"); }
-  
-  const namespace_index index = get_namespace_index(ns);
+  if (!flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)) { RETURN_ERROR(status, fb_parser_namespace_missing, "namespace is missing"); }
+  // if(ns == nullptr) { RETURN_ERROR(status, fb_parser_namespace_missing, "namespace is null"); }
+  namespace_index index;
+  if(get_namespace_index(ns, index, status) != 0) { RETURN_ERROR(status, vw_exception, "could not get namespace index"); }
   uint64_t hash = 0;
   const auto hash_found = get_namespace_hash(all, ns, hash);
   if (hash_found) { _c_hash = hash; }
@@ -208,69 +231,62 @@ int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* n
 
   if (hash_found) { fs.start_ns_extent(hash); }
   
-  if(ns->feature_values() == nullptr) { RETURN_ERROR(status, vw_exception, "feature values table is null"); }
-  try
+  if(!flatbuffers::IsFieldPresent(ns, Namespace::VT_FEATURE_VALUES)) { RETURN_ERROR(status, fb_parser_feature_values_missing, "feature values table is null"); }
+  // if(ns->feature_values() == nullptr) { RETURN_ERROR(status, fb_parser_feature_values_missing, "feature values table is null"); }
+
+  auto feature_value_iter = (ns->feature_values())->begin();
+  const auto feature_value_iter_end = (ns->feature_values())->end();
+
+  //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
+  if(flatbuffers::IsFieldPresent(ns, Namespace::VT_FEATURE_NAMES))
+  // if(ns->feature_names() != nullptr)
   {
-    auto feature_value_iter = (ns->feature_values())->begin();
-    const auto feature_value_iter_end = (ns->feature_values())->end();
-
-    //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
-    if(ns->feature_names() != nullptr)
+    const auto ns_name = ns->name();
+    auto feature_name_iter = (ns->feature_names())->begin();
+    if(flatbuffers::IsFieldPresent(ns, Namespace::VT_FEATURE_HASHES))
+    // if(ns->feature_hashes() != nullptr)
     {
-      const auto ns_name = ns->name();
-      auto feature_name_iter = (ns->feature_names())->begin();
-
-      if(ns->feature_hashes() != nullptr)
+      auto feature_hash_iter = (ns->feature_hashes())->begin();
+      
+      for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
       {
-        auto feature_hash_iter = (ns->feature_hashes())->begin();
-        
-        for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
-        {
-          if(*feature_value_iter == NULL){ RETURN_ERROR(status, vw_exception, "feature values table has null feature value in it"); }
-          if(*feature_hash_iter == NULL) { RETURN_ERROR(status, vw_exception, "feature hashes table has null feature hash in it"); }
-          fs.push_back(*feature_value_iter, *feature_hash_iter);
-          if (ns_name != nullptr)
-          { 
-            if(*feature_name_iter == NULL) { RETURN_ERROR(status, vw_exception, "feature names table has null feature name in it"); }
-            fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); 
-            ++feature_name_iter;
-          }
-        }
-      }
-      else
-      {
-        //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
-        for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_name_iter)
-        {
-          const uint64_t word_hash = all->example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash);
-          fs.push_back(*feature_value_iter, word_hash);
-          if (ns_name != nullptr)
-          { fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); }
+        fs.push_back(*feature_value_iter, *feature_hash_iter);
+        if (ns_name != nullptr)
+        { 
+          fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); 
+          ++feature_name_iter;
         }
       }
     }
     else
     {
-      if(ns->feature_hashes() == nullptr) { RETURN_ERROR(status, not_implemented, "feature hashes table cannot be null for the usecase with feature names null"); }
-      auto feature_hash_iter = (ns->feature_hashes())->begin();  
-      for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
+      //assuming the usecase that if feature names would exist, they would exist for all features in the namespace
+      for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_name_iter)
       {
-        fs.push_back(*feature_value_iter, *feature_hash_iter);
+        const uint64_t word_hash = all->example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash);
+        fs.push_back(*feature_value_iter, word_hash);
+        if (ns_name != nullptr)
+        { fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); }
       }
     }
-
-    if (hash_found) { fs.end_ns_extent(); }
-
-    return VW::experimental::error_code::success;
   }
-  catch(...)
+  else
   {
-    // return VW::experimental::error_code::unknown_s;
-    RETURN_ERROR(status, native_exception, "Unknown unhandled exception");
+    if(!flatbuffers::IsFieldPresent(ns, Namespace::VT_FEATURE_HASHES)) { RETURN_ERROR(status, fb_parser_feature_hashes_names_missing, "feature hashes table cannot be null for the usecase with feature names null"); }
+    // if(ns->feature_hashes() == nullptr) { RETURN_ERROR(status, fb_parser_feature_hashes_names_missing, "feature hashes table cannot be null for the usecase with feature names null"); }
+    auto feature_hash_iter = (ns->feature_hashes())->begin();  
+    for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
+    {
+      fs.push_back(*feature_value_iter, *feature_hash_iter);
+    }
   }
+
+  if (hash_found) { fs.end_ns_extent(); }
+
+  return VW::experimental::error_code::success;
 }
 
-void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger)
+int parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger, VW::experimental::api_status* status)
 {
   switch (eg->label_type())
   {
@@ -319,8 +335,7 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, V
     case Label_Slates_Label:
     {
       auto slates_label = static_cast<const Slates_Label*>(eg->label());
-      parse_slates_label(&(ae->l), slates_label);
-      break;
+      return parse_slates_label(&(ae->l), slates_label, nullptr);
     }
     case Label_ContinuousLabel:
     {
@@ -331,8 +346,9 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, V
     case Label_NONE:
       break;
     default:
-      THROW("Label type in Flatbuffer not understood");
+      RETURN_ERROR(status, not_implemented, "Label type in Flatbuffer not understood"); 
   }
+  return VW::experimental::error_code::success;
 }
 
 }  // namespace flatbuffer

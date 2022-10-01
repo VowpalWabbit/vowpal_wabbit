@@ -11,6 +11,7 @@
 #include "vw/core/named_labels.h"
 #include "vw/core/slates_label.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
+#include "vw/core/error_constants.h"
 
 #include <cfloat>
 #include <fstream>
@@ -131,7 +132,7 @@ void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
   for (auto const& lab : *(label->labels())) l->multilabels.label_v.push_back(lab);
 }
 
-void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
+int parser::parse_slates_label(polylabel* l, const Slates_Label* label, VW::experimental::api_status* status)
 {
   l->slates.weight = label->weight();
   if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_shared)
@@ -155,8 +156,9 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
   }
   else
   {
-    THROW("Example type not understood")
+    RETURN_ERROR(status, not_implemented, "Example type not understood");
   }
+  return VW::experimental::error_code::success;
 }
 
 void parser::parse_continuous_action_label(polylabel* l, const VW::parsers::flatbuffer::ContinuousLabel* label)
