@@ -51,6 +51,7 @@ private:
   int parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg, VW::experimental::api_status* status=nullptr);
   int parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns, VW::experimental::api_status* status=nullptr);
   int parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger, VW::experimental::api_status* status=nullptr);
+  int get_namespace_index(const Namespace* ns, namespace_index& ni, VW::experimental::api_status* status=nullptr);
 
   void parse_simple_label(shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label);
   void parse_cb_label(polylabel* l, const CBLabel* label);

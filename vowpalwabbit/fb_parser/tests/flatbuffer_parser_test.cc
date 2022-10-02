@@ -219,7 +219,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
 TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_error_code)
 {
   //Testcase where user would provide feature names and feature values (no feature hashes)
-  auto all = VW::initialize("--no_stdin --quiet --flatbuffer --audit", nullptr, false, nullptr, nullptr);
+  auto all = VW::initialize("--no_stdin --quiet --flatbuffer --api_status --audit", nullptr, false, nullptr, nullptr);
 
   flatbuffers::FlatBufferBuilder builder;
 
