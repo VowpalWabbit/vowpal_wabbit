@@ -31,7 +31,7 @@ class parser
 public:
   parser() = default;
   const VW::parsers::flatbuffer::ExampleRoot* data();
-  bool parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, int& return_code, uint8_t* buffer_pointer = nullptr, VW::experimental::api_status* status=nullptr);
+  int parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer = nullptr, VW::experimental::api_status* status=nullptr);
 
 private:
   const VW::parsers::flatbuffer::ExampleRoot* _data;
