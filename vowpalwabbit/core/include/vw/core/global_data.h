@@ -180,6 +180,7 @@ public:
   // error reporting
   std::shared_ptr<trace_message_wrapper> trace_message_wrapper_context;
   std::unique_ptr<std::ostream> trace_message;
+  bool api_status = false;
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;
 

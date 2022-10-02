@@ -407,6 +407,9 @@ input_options parse_source(VW::workspace& all, options_i& options)
                      "hashed as A^B^C."))
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("Data file will be interpreted as a flatbuffer file")
+               .experimental())
+      .add(make_option("api_status", all.api_status)
+               .help("api_status object will not be set to nullptr which will show detailed error information")
                .experimental());
 #ifdef VW_BUILD_CSV
   parsed_options.csv_opts = VW::make_unique<VW::parsers::csv_parser_options>();
