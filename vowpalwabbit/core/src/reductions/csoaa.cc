@@ -198,7 +198,7 @@ std::unique_ptr<csoaa> get_csoaa_config(VW::setup_base_i& stack_builder)
 
   c->pred = calloc_or_throw<VW::polyprediction>(c->num_classes);
   all.example_parser->lbl_parser = cs_label;
-  return std::move(c);
+  return c;
 }
 }  // namespace
 
