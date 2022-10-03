@@ -1334,7 +1334,7 @@
   {
     "id": 102,
     "desc": "active cover (predict)",
-    "vw_command": "-i models/active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict",
+    "vw_command": "--loss_function logistic -i models/active_cover.model -t -d test-sets/rcv1_small_test.data -p active_cover.predict",
     "diff_files": {
       "stderr": "test-sets/ref/active_cover.stderr",
       "active_cover.predict": "pred-sets/ref/active_cover.predict",
