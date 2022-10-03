@@ -324,9 +324,9 @@ Weight Options:
     --min_value arg                         Minimum continuous value (type: float, keep)
     --max_value arg                         Maximum continuous value (type: float, keep)
     --loss_option arg                       Loss options for regression - 0:squared, 1:absolute, 2:0/1 (type:
-                                            int, default: 0)
+                                            int, default: 0, choices {0, 1, 2})
     --loss_report arg                       Loss report option - 0:normalized, 1:denormalized (type: int,
-                                            default: 0)
+                                            default: 0, choices {0, 1})
     --loss_01_ratio arg                     Ratio of zero loss for 0/1 loss (type: float, default: 0.1)
     --loss0 arg                             Loss for correct label (type: float, default: 0)
     --loss1 arg                             Loss for incorrect label (type: float, default: 1)

@@ -192,8 +192,6 @@ jobs:
 
   test_nuget_dotnetframework:
     needs: [build_nuget_dotnet]
-    strategy:
-      fail-fast: false
     runs-on: "windows-latest"
     steps:
       - uses: actions/checkout@v2
@@ -245,9 +243,10 @@ jobs:
 
   benchmark_nuget:
     needs: [build_nuget_dotnet]
-    strategy:
-      fail-fast: false
     runs-on: "windows-latest"
+    permissions:
+      contents: write
+      deployments: write
     steps:
       - uses: actions/checkout@v2
         with:
@@ -287,7 +286,7 @@ jobs:
       - name: Install package
         run: |
           set +e
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet
           dotnet add dotnet_benchmark.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
@@ -295,7 +294,7 @@ jobs:
           exit 0
       - name: Build and run benchmarks
         run: |
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet
 
           # Build for both .NET Core and Framework
           dotnet build dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-restore --self-contained
@@ -303,29 +302,38 @@ jobs:
 
           # Run with .NET Core as host process
           # Arguments after "--" are for BenchmarkDotNet
-          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*'
+          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*' --join
+
+      # Generate output for Github workflow artifacts
       - name: Print benchmark results
         shell: bash
         run: |
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results
           echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --info >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo -e '\n' >> $GITHUB_STEP_SUMMARY
-
-          cd BenchmarkDotNet.Artifacts/results
-          for file in *-report-github.md; do
-            benchmark="${file%-report-github.md}"
-            echo "### $benchmark" >> $GITHUB_STEP_SUMMARY
-            # Remove lines not part of table (not between |...|)
-            # Remove markdown formatting **
-            # Remove first 2 columns of table
-            cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{2\}//' >> $GITHUB_STEP_SUMMARY
-            echo -e '\n' >> $GITHUB_STEP_SUMMARY
-          done
+          cat BenchmarkRun-joined-*.md | sed 's/\*\*//g' >> $GITHUB_STEP_SUMMARY
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v3
         with:
           name: benchmark_results
-          path: nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results/
+          path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/
+
+      # Generate output for github-action-benchmark
+      - name: Reset dotnet_benchmark.csproj
+        run: git restore test/benchmarks/dotnet/dotnet_benchmark.csproj
+      - name: Filter only .NET Core output for github-action-benchmark
+        shell: bash
+        run: |
+          cd test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results
+          cat BenchmarkRun-joined-*.json | jq '.Benchmarks |= map(select(.DisplayInfo | contains(".NET Framework") | not))' > BenchmarkRun.json
+      - uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'benchmarkdotnet'
+          output-file-path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/BenchmarkRun.json
+          alert-threshold: '150%'
+          fail-on-alert: true
+          comment-on-alert: true
+          auto-push: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push results to gh-pages branch
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        run: git push 'https://VowpalWabbit:${{ secrets.GITHUB_TOKEN }}@github.com/VowpalWabbit/vowpal_wabbit.git' gh-pages:gh-pages
