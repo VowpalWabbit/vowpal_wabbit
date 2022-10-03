@@ -179,9 +179,8 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
 }
 
 void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { COST_SENSITIVE::finish_example(all, ec); }
-}  // namespace
 
-base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
+std::unique_ptr<csoaa> get_csoaa_config(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -198,6 +197,15 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
   c->search = options.was_supplied("search");
 
   c->pred = calloc_or_throw<VW::polyprediction>(c->num_classes);
+  all.example_parser->lbl_parser = cs_label;
+  return std::move(c);
+}
+}  // namespace
+
+base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
+{
+  auto c = get_csoaa_config(stack_builder);
+  if (c == nullptr) { return nullptr; }
   size_t ws = c->num_classes;
   auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
@@ -209,7 +217,7 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(::finish_example)
                 .build();
 
-  all.example_parser->lbl_parser = cs_label;
+  VW::workspace& all = *stack_builder.get_all_pointer();
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
