@@ -180,34 +180,52 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
 
 void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { COST_SENSITIVE::finish_example(all, ec); }
 
-std::unique_ptr<csoaa> get_csoaa_config(VW::setup_base_i& stack_builder)
+struct csoaa_options_instance_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto c = VW::make_unique<csoaa>(all.logger, all.indexing);
+  uint32_t num_classes = 0;
+  uint32_t indexing = 2;
+  bool search = false;
+
+  csoaa_options_instance_v1() = default; 
+};
+
+std::unique_ptr<csoaa_options_instance_v1> get_csoaa_options_instance(options_i& options)
+{
+  auto csoaa_opts = VW::make_unique<csoaa_options_instance_v1>();
   option_group_definition new_options("[Reduction] Cost Sensitive One Against All");
   new_options
-      .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
-      .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
+      .add(make_option("csoaa", csoaa_opts->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
+      .add(make_option("indexing",csoaa_opts->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("probabilities"))
   { THROW("csoaa does not support probabilities flag, please use oaa or multilabel_oaa"); }
-  c->search = options.was_supplied("search");
+  csoaa_opts->search = options.was_supplied("search");
+  return csoaa_opts;
+}
 
-  c->pred = calloc_or_throw<VW::polyprediction>(c->num_classes);
-  all.example_parser->lbl_parser = cs_label;
-  return c;
+std::unique_ptr<csoaa> apply_csoaa_opts(std::unique_ptr<csoaa_options_instance_v1> csoaa_opts, VW::workspace& all)
+{
+  all.indexing = csoaa_opts->indexing;
+  auto csoaa_data = VW::make_unique<csoaa>(all.logger, all.indexing);
+  csoaa_data->num_classes = csoaa_opts->num_classes;
+  csoaa_data->search = csoaa_opts->search;
+  csoaa_data->pred = calloc_or_throw<VW::polyprediction>(csoaa_data->num_classes);
+  return csoaa_data;
 }
 }  // namespace
 
 base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
 {
-  auto c = get_csoaa_config(stack_builder);
-  if (c == nullptr) { return nullptr; }
-  size_t ws = c->num_classes;
-  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
+  options_i& options = *stack_builder.get_options();
+  auto csoaa_opts = get_csoaa_options_instance(options);
+  if (csoaa_opts == nullptr) { return nullptr; }
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto csoaa_data = apply_csoaa_opts(std::move(csoaa_opts), all);
+
+  size_t ws = csoaa_data->num_classes;
+  auto* l = make_reduction_learner(std::move(csoaa_data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
                 .set_learn_returns_prediction(
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
@@ -217,7 +235,7 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(::finish_example)
                 .build();
 
-  VW::workspace& all = *stack_builder.get_all_pointer();
+  all.example_parser->lbl_parser = cs_label;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }
