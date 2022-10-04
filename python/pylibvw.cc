@@ -404,7 +404,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lCONDITIONAL_CONTEXTUAL_BANDIT:
       return &CCB::ccb_label_parser;
     case lSLATES:
-      return &VW::slates::slates_label_parser;
+      return &VW::slates_label_parser;
     case lCONTINUOUS:
       return &VW::cb_continuous::the_label_parser;
     case lCONTEXTUAL_BANDIT_EVAL:
@@ -440,7 +440,7 @@ size_t my_get_label_type(VW::workspace* all)
   {
     return lCONDITIONAL_CONTEXTUAL_BANDIT;
   }
-  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label)
+  else if (lp->parse_label == VW::slates_label_parser.parse_label)
   {
     return lSLATES;
   }
@@ -1026,11 +1026,11 @@ size_t ex_get_slates_type(example_ptr ec)
 {
   switch (ec->l.slates.type)
   {
-    case VW::slates::example_type::shared:
+    case VW::SlatesExampleType::SHARED:
       return tSHARED;
-    case VW::slates::example_type::action:
+    case VW::SlatesExampleType::ACTION:
       return tACTION;
-    case VW::slates::example_type::slot:
+    case VW::SlatesExampleType::SLOT:
       return tSLOT;
     default:
       return tUNSET;

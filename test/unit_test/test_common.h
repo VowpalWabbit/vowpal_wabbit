@@ -65,7 +65,7 @@ inline std::ostream& operator<<(std::ostream& os, const namespace_extent& extent
 
 namespace std
 {
-inline std::ostream& operator<<(std::ostream& os, VW::slates::example_type ex_type)
+inline std::ostream& operator<<(std::ostream& os, VW::SlatesExampleType ex_type)
 {
   os << VW::to_string(ex_type);
   return os;

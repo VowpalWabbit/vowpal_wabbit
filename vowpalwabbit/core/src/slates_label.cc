@@ -17,15 +17,13 @@
 
 namespace VW
 {
-namespace slates
-{
-void default_label(slates::label& v);
+void default_label(SlatesLabel& v);
 
-float weight(const slates::label& ld) { return ld.weight; }
+float weight(const SlatesLabel& ld) { return ld.weight; }
 
-void default_label(slates::label& ld) { ld.reset_to_default(); }
+void default_label(SlatesLabel& ld) { ld.reset_to_default(); }
 
-bool test_label(const slates::label& ld) { return ld.labeled == false; }
+bool test_label(const SlatesLabel& ld) { return ld.labeled == false; }
 
 // Slates labels come in three types, shared, action and slot with the following structure:
 // slates shared [global_cost]
@@ -35,7 +33,7 @@ bool test_label(const slates::label& ld) { return ld.labeled == false; }
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
 
-void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+void parse_label(SlatesLabel& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
     VW::io::logger& logger)
 {
   ld.weight = 1;
@@ -58,7 +56,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     {
       THROW("Slates shared labels must be of the form: slates shared [global_cost]");
     }
-    ld.type = example_type::shared;
+    ld.type = SlatesExampleType::SHARED;
   }
   else if (type == ACTION_TYPE)
   {
@@ -69,7 +67,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
     { THROW("Slot id seems to be malformed"); }
 
-    ld.type = example_type::action;
+    ld.type = SlatesExampleType::ACTION;
   }
   else if (type == SLOT_TYPE)
   {
@@ -110,7 +108,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
           "Slates shared labels must be of the form: slates slot "
           "[chosen_action_id:probability[,action_id:probability...]]");
     }
-    ld.type = example_type::slot;
+    ld.type = SlatesExampleType::SLOT;
   }
   else
   {
@@ -140,29 +138,28 @@ label_parser slates_label_parser = {
     // label type
     label_type_t::slates};
 
-}  // namespace slates
 }  // namespace VW
 
-VW::string_view VW::to_string(VW::slates::example_type ex_type)
+VW::string_view VW::to_string(VW::SlatesExampleType ex_type)
 {
 #define CASE(type) \
   case type:       \
     return #type;
 
-  using namespace VW::slates;
+  using namespace VW;
   switch (ex_type)
   {
-    CASE(example_type::unset)
-    CASE(example_type::shared)
-    CASE(example_type::action)
-    CASE(example_type::slot)
+    CASE(SlatesExampleType::UNSET)
+    CASE(SlatesExampleType::SHARED)
+    CASE(SlatesExampleType::ACTION)
+    CASE(SlatesExampleType::SLOT)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`
   // The following is required by the compiler, otherwise it things control can reach the end of this function without
   // returning.
   assert(false);
-  return "unknown example_type enum";
+  return "unknown SlatesExampleType enum";
 
 #undef CASE
 }
@@ -171,7 +168,7 @@ namespace VW
 {
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::slates::label& slates)
+size_t read_model_field(io_buf& io, VW::SlatesLabel& slates)
 {
   // Since read_cached_features doesn't default the label we must do it here.
   size_t bytes = 0;
@@ -184,7 +181,7 @@ size_t read_model_field(io_buf& io, VW::slates::label& slates)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::slates::label& slates, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::SlatesLabel& slates, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, slates.type, upstream_name + "_type", text);

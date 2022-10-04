@@ -24,14 +24,14 @@
 using namespace VW::config;
 
 template <bool is_learn>
-void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::SlatesData::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   _stashed_labels.clear();
   _stashed_labels.reserve(examples.size());
   for (auto& example : examples) { _stashed_labels.push_back(std::move(example->l.slates)); }
 
   const size_t num_slots = std::count_if(examples.begin(), examples.end(),
-      [](const example* example) { return example->l.slates.type == VW::slates::example_type::slot; });
+      [](const example* example) { return example->l.slates.type == VW::SlatesExampleType::SLOT; });
 
   float global_cost = 0.f;
   bool global_cost_found = false;
@@ -43,7 +43,7 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
     CCB::label ccb_label;
     CCB::default_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
-    if (slates_label.type == slates::example_type::shared)
+    if (slates_label.type == SlatesExampleType::SHARED)
     {
       ccb_label.type = CCB::example_type::shared;
       if (slates_label.labeled)
@@ -52,14 +52,14 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
         global_cost = slates_label.cost;
       }
     }
-    else if (slates_label.type == slates::example_type::action)
+    else if (slates_label.type == SlatesExampleType::ACTION)
     {
       if (slates_label.slot_id >= num_slots) { THROW("slot_id cannot be larger than or equal to the number of slots"); }
       ccb_label.type = CCB::example_type::action;
       slot_action_pools[slates_label.slot_id].push_back(action_index);
       action_index++;
     }
-    else if (slates_label.type == slates::example_type::slot)
+    else if (slates_label.type == SlatesExampleType::SLOT)
     {
       ccb_label.type = CCB::example_type::slot;
       ccb_label.explicit_included_actions.clear();
@@ -101,12 +101,12 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   _stashed_labels.clear();
 }
 
-void VW::reductions::slates_data::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::SlatesData::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   learn_or_predict<true>(base, examples);
 }
 
-void VW::reductions::slates_data::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::SlatesData::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
   learn_or_predict<false>(base, examples);
 }
@@ -161,7 +161,7 @@ float get_estimate(
   return cost * p_over_ps;
 }
 
-void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/, const VW::multi_ex& ec_seq)
+void output_example(VW::workspace& all, const VW::reductions::SlatesData& /*c*/, const VW::multi_ex& ec_seq)
 {
   VW::multi_ex slots;
   size_t num_features = 0;
@@ -174,7 +174,7 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   {
     num_features += ec->get_num_features();
 
-    if (ec->l.slates.type == VW::slates::example_type::slot)
+    if (ec->l.slates.type == VW::SlatesExampleType::SLOT)
     {
       slots.push_back(ec);
       if (is_labelled)
@@ -206,7 +206,7 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   VW::print_update_slates(all, slots, predictions, num_features);
 }
 
-void finish_multiline_example(VW::workspace& all, VW::reductions::slates_data& data, VW::multi_ex& ec_seq)
+void finish_multiline_example(VW::workspace& all, VW::reductions::SlatesData& data, VW::multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -220,7 +220,7 @@ void finish_multiline_example(VW::workspace& all, VW::reductions::slates_data& d
 }
 
 template <bool is_learn>
-void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(VW::reductions::SlatesData& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   if (is_learn) { data.learn(base, examples); }
   else
@@ -234,7 +234,7 @@ VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<slates_data>();
+  auto data = VW::make_unique<SlatesData>();
   bool slates_option = false;
   option_group_definition new_options("[Reduction] Slates");
   new_options.add(make_option("slates", slates_option).keep().necessary().help("Enable slates reduction"));
@@ -248,7 +248,7 @@ VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_
   }
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::slates::slates_label_parser;
+  all.example_parser->lbl_parser = VW::slates_label_parser;
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(slates_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)

@@ -383,14 +383,14 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
   auto examples = parse_json(*slates_vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
-  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::SlatesExampleType::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::SlatesExampleType::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::SlatesExampleType::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::SlatesExampleType::ACTION);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::SlatesExampleType::ACTION);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::SlatesExampleType::ACTION);
+  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::SlatesExampleType::SLOT);
+  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::SlatesExampleType::SLOT);
 
   const auto& label0 = examples[0]->l.slates;
   BOOST_CHECK_EQUAL(label0.labeled, false);
@@ -794,11 +794,11 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
 
   // check slates
-  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::SlatesExampleType::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::SlatesExampleType::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::SlatesExampleType::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::SlatesExampleType::SLOT);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::SlatesExampleType::SLOT);
 
   BOOST_CHECK_EQUAL(examples[1]->l.slates.slot_id, 0);
   BOOST_CHECK_EQUAL(examples[2]->l.slates.slot_id, 1);

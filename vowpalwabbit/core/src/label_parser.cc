@@ -41,7 +41,7 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
       return CCB::ccb_label_parser;
 
     case VW::label_type_t::slates:
-      return VW::slates::slates_label_parser;
+      return VW::slates_label_parser;
 
     case VW::label_type_t::nolabel:
       return no_label::no_label_parser;

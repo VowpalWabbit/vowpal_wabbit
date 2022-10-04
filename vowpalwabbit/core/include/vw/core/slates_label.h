@@ -12,20 +12,18 @@
 
 namespace VW
 {
-namespace slates
+enum class SlatesExampleType : uint8_t
 {
-enum class example_type : uint8_t
-{
-  unset = 0,
-  shared = 1,
-  action = 2,
-  slot = 3
+  UNSET = 0,
+  SHARED = 1,
+  ACTION = 2,
+  SLOT = 3
 };
 
-struct label
+struct SlatesLabel
 {
   // General data
-  example_type type;
+  SlatesExampleType type;
   float weight;
   // Because these labels provide both structural information as well as a
   // label, this field will only be true is there is a label attached (label in
@@ -43,11 +41,11 @@ struct label
   // Only valid if labeled
   ACTION_SCORE::action_scores probabilities;
 
-  label() { reset_to_default(); }
+  SlatesLabel() { reset_to_default(); }
 
   void reset_to_default()
   {
-    type = example_type::unset;
+    type = SlatesExampleType::UNSET;
     weight = 1.f;
     labeled = false;
     cost = 0.f;
@@ -56,28 +54,27 @@ struct label
   }
 };
 
-void default_label(VW::slates::label& v);
-void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
-    VW::io::logger& logger);
+void slates_default_label(VW::SlatesLabel& v);
+void slates_parse_label(SlatesLabel& ld, VW::label_parser_reuse_mem& reuse_mem,
+    const std::vector<VW::string_view>& words, VW::io::logger& logger);
 
 extern VW::label_parser slates_label_parser;
-}  // namespace slates
 
-VW::string_view to_string(VW::slates::example_type);
+VW::string_view to_string(VW::SlatesExampleType);
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::slates::label&);
-size_t write_model_field(io_buf&, const VW::slates::label&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::SlatesLabel&);
+size_t write_model_field(io_buf&, const VW::SlatesLabel&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
 
 namespace fmt
 {
 template <>
-struct formatter<VW::slates::example_type> : formatter<std::string>
+struct formatter<VW::SlatesExampleType> : formatter<std::string>
 {
-  auto format(VW::slates::example_type c, format_context& ctx) -> decltype(ctx.out())
+  auto format(VW::SlatesExampleType c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }

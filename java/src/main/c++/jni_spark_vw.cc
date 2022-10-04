@@ -761,7 +761,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlates
   {
     auto* ld = &ex->l.slates;
     ld->reset_to_default();
-    ld->type = VW::slates::example_type::shared;
+    ld->type = VW::SlatesExampleType::SHARED;
     ld->cost = cost;
   }
   catch (...)
@@ -779,7 +779,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlates
   {
     auto* ld = &ex->l.slates;
     ld->reset_to_default();
-    ld->type = VW::slates::example_type::action;
+    ld->type = VW::SlatesExampleType::ACTION;
     ld->slot_id = slot_id;
   }
   catch (...)
@@ -806,7 +806,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlates
 
     auto* ld = &ex->l.slates;
     ld->reset_to_default();
-    ld->type = VW::slates::example_type::slot;
+    ld->type = VW::SlatesExampleType::SLOT;
 
     CriticalArrayGuard actionsGuard(env, actions);
     float* actions0 = (float*)actionsGuard.data();
