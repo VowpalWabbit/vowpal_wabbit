@@ -31,8 +31,8 @@ bool test_label(const SlatesLabel& ld) { return ld.labeled == false; }
 // For a more complete description of the grammar, including examples see:
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Slates
 
-void slates_parse_label(SlatesLabel& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
-    VW::io::logger& logger)
+void slates_parse_label(SlatesLabel& ld, VW::label_parser_reuse_mem& reuse_mem,
+    const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   ld.weight = 1;
 
