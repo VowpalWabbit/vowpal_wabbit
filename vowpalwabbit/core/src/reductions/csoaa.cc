@@ -186,7 +186,7 @@ struct csoaa_options_instance_v1
   uint32_t indexing = 2;
   bool search = false;
 
-  csoaa_options_instance_v1() = default; 
+  csoaa_options_instance_v1() = default;
 };
 
 std::unique_ptr<csoaa_options_instance_v1> get_csoaa_options_instance(options_i& options)
@@ -194,8 +194,11 @@ std::unique_ptr<csoaa_options_instance_v1> get_csoaa_options_instance(options_i&
   auto csoaa_opts = VW::make_unique<csoaa_options_instance_v1>();
   option_group_definition new_options("[Reduction] Cost Sensitive One Against All");
   new_options
-      .add(make_option("csoaa", csoaa_opts->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
-      .add(make_option("indexing",csoaa_opts->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
+      .add(make_option("csoaa", csoaa_opts->num_classes)
+               .keep()
+               .necessary()
+               .help("One-against-all multiclass with <k> costs"))
+      .add(make_option("indexing", csoaa_opts->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
