@@ -8,6 +8,9 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/vw_fwd.h"
 
+#include <fmt/core.h>
+#include <fmt/format.h>
+
 #include <cstdint>
 
 namespace VW

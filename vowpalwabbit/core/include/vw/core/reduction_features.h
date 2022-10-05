@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "ccb_reduction_features.h"
-#include "continuous_actions_reduction_features.h"
-#include "epsilon_reduction_features.h"
-#include "generated_interactions_reduction_features.h"
-#include "simple_label.h"
 #include "vw/common/future_compat.h"
+#include "vw/core/ccb_reduction_features.h"
+#include "vw/core/continuous_actions_reduction_features.h"
+#include "vw/core/epsilon_reduction_features.h"
+#include "vw/core/generated_interactions_reduction_features.h"
+#include "vw/core/simple_label.h"
 
 /*
  * class reduction_features

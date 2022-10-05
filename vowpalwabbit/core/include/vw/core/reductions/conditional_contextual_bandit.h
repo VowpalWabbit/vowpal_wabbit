@@ -6,10 +6,6 @@
 
 #include "vw/core/vw_fwd.h"
 
-#include <cstdint>
-#include <string>
-#include <vector>
-
 namespace VW
 {
 namespace reductions

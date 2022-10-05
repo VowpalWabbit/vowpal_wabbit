@@ -3,7 +3,7 @@
 #include "simulator.h"
 #include "test_common.h"
 #include "vw/core/metric_sink.h"
-#include "vw/core/reductions_fwd.h"
+#include "vw/core/setup_base.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
