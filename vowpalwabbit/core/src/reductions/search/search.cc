@@ -12,6 +12,7 @@
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/rand48.h"
+#include "vw/core/rand_state.h"
 #include "vw/core/reductions/active.h"
 #include "vw/core/reductions/csoaa.h"
 #include "vw/core/reductions/gd.h"  // for GD::foreach_feature

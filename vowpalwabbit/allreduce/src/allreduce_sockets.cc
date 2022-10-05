@@ -35,7 +35,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <sys/timeb.h>
 
 // port is already in network order
-socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::io::logger& logger)
+socket_t VW::AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::io::logger& logger)
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1) THROWERRNO("socket");
@@ -76,7 +76,7 @@ socket_t AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::i
   return sock;
 }
 
-socket_t AllReduceSockets::getsock(VW::io::logger& logger)
+socket_t VW::AllReduceSockets::getsock(VW::io::logger& logger)
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
 #ifdef _WIN32
@@ -102,7 +102,7 @@ socket_t AllReduceSockets::getsock(VW::io::logger& logger)
   return sock;
 }
 
-void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
+void VW::AllReduceSockets::all_reduce_init(VW::io::logger& logger)
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -110,21 +110,21 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
 
-  struct hostent* master = gethostbyname(span_server.c_str());
+  struct hostent* master = gethostbyname(_span_server.c_str());
 
-  if (master == nullptr) THROWERRNO("gethostbyname(" << span_server << ")");
+  if (master == nullptr) THROWERRNO("gethostbyname(" << _span_server << ")");
 
-  socks.current_master = span_server;
+  _socks.current_master = _span_server;
 
   uint32_t master_ip = *(reinterpret_cast<uint32_t*>(master->h_addr));
 
-  socket_t master_sock = sock_connect(master_ip, htons(static_cast<u_short>(port)), logger);
-  if (send(master_sock, reinterpret_cast<const char*>(&unique_id), sizeof(unique_id), 0) <
-      static_cast<int>(sizeof(unique_id)))
-  { THROW("Write unique_id=" << unique_id << " to span server failed"); }
+  socket_t master_sock = sock_connect(master_ip, htons(static_cast<u_short>(_port)), logger);
+  if (send(master_sock, reinterpret_cast<const char*>(&_unique_id), sizeof(_unique_id), 0) <
+      static_cast<int>(sizeof(_unique_id)))
+  { THROW("Write unique_id=" << _unique_id << " to span server failed"); }
   else
   {
-    logger.err_info("wrote unique_id={}", unique_id);
+    logger.err_info("wrote unique_id={}", _unique_id);
   }
   if (send(master_sock, reinterpret_cast<const char*>(&total), sizeof(total), 0) < static_cast<int>(sizeof(total)))
   { THROW("Write total=" << total << " to span server failed"); }
@@ -229,14 +229,14 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
 
   CLOSESOCK(master_sock);
 
-  if (parent_ip != static_cast<uint32_t>(-1)) { socks.parent = sock_connect(parent_ip, parent_port, logger); }
+  if (parent_ip != static_cast<uint32_t>(-1)) { _socks.parent = sock_connect(parent_ip, parent_port, logger); }
   else
   {
-    socks.parent = static_cast<socket_t>(-1);
+    _socks.parent = static_cast<socket_t>(-1);
   }
 
-  socks.children[0] = static_cast<socket_t>(-1);
-  socks.children[1] = static_cast<socket_t>(-1);
+  _socks.children[0] = static_cast<socket_t>(-1);
+  _socks.children[1] = static_cast<socket_t>(-1);
   for (int i = 0; i < kid_count; i++)
   {
     sockaddr_in child_address;
@@ -253,25 +253,25 @@ void AllReduceSockets::all_reduce_init(VW::io::logger& logger)
     // char servInfo[NI_MAXSERV];
     // getnameinfo((sockaddr *) &child_address, sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV,
     // NI_NUMERICSERV); cerr << "connected to " << hostname << ':' << ntohs(port) << endl;
-    socks.children[i] = f;
+    _socks.children[i] = f;
   }
 
   if (kid_count > 0) { CLOSESOCK(sock); }
 }
 
-void AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos)
+void VW::AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos)
 {
-  size_t my_bufsize = std::min(ar_buf_size, (parent_read_pos - children_sent_pos));
+  size_t my_bufsize = std::min(details::AR_BUF_SIZE, (parent_read_pos - children_sent_pos));
 
   if (my_bufsize > 0)
   {
     // going to pass up this chunk of data to the children
-    if (socks.children[0] != -1 &&
-        send(socks.children[0], buffer + children_sent_pos, static_cast<int>(my_bufsize), 0) <
+    if (_socks.children[0] != -1 &&
+        send(_socks.children[0], buffer + children_sent_pos, static_cast<int>(my_bufsize), 0) <
             static_cast<int>(my_bufsize))
     { THROW("Write to left child failed"); }
-    if (socks.children[1] != -1 &&
-        send(socks.children[1], buffer + children_sent_pos, static_cast<int>(my_bufsize), 0) <
+    if (_socks.children[1] != -1 &&
+        send(_socks.children[1], buffer + children_sent_pos, static_cast<int>(my_bufsize), 0) <
             static_cast<int>(my_bufsize))
     { THROW("Write to right child failed"); }
 
@@ -279,28 +279,28 @@ void AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, siz
   }
 }
 
-void AllReduceSockets::broadcast(char* buffer, const size_t n)
+void VW::AllReduceSockets::broadcast(char* buffer, const size_t n)
 {
   size_t parent_read_pos = 0;    // First unread float from parent
   size_t children_sent_pos = 0;  // First unsent float to children
   // parent_sent_pos <= left_read_pos
   // parent_sent_pos <= right_read_pos
 
-  if (socks.parent == -1) { parent_read_pos = n; }
-  if (socks.children[0] == -1 && socks.children[1] == -1) { children_sent_pos = n; }
+  if (_socks.parent == -1) { parent_read_pos = n; }
+  if (_socks.children[0] == -1 && _socks.children[1] == -1) { children_sent_pos = n; }
 
   while (parent_read_pos < n || children_sent_pos < n)
   {
     pass_down(buffer, parent_read_pos, children_sent_pos);
     if (parent_read_pos >= n && children_sent_pos >= n) { break; }
 
-    if (socks.parent != -1)
+    if (_socks.parent != -1)
     {
       // there is data to be read from the parent
       if (parent_read_pos == n) THROW("There is no data to be read from the parent");
 
-      size_t count = std::min(ar_buf_size, n - parent_read_pos);
-      int read_size = recv(socks.parent, buffer + parent_read_pos, static_cast<int>(count), 0);
+      size_t count = std::min(details::AR_BUF_SIZE, n - parent_read_pos);
+      int read_size = recv(_socks.parent, buffer + parent_read_pos, static_cast<int>(count), 0);
       if (read_size == -1) { THROW("recv from parent: " << VW::strerror_to_string(errno)); }
       parent_read_pos += read_size;
     }
