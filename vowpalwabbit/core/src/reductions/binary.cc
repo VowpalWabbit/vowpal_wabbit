@@ -9,6 +9,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
+#include "vw/io/logger.h"
 
 #include <cfloat>
 #include <cmath>
@@ -16,8 +17,6 @@
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::binary
-
-#include "vw/io/logger.h"
 
 using namespace VW::config;
 using namespace VW::reductions;

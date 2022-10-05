@@ -8,31 +8,31 @@ Implementation by Miro Dudik.
  */
 #include "vw/core/reductions/bfgs.h"
 
-#include "vw/core/learner.h"
-#include "vw/core/setup_base.h"
-
-#include <cfloat>
-#include <cmath>
-#include <fstream>
-#ifndef _WIN32
-#  include <netdb.h>
-#endif
 #include "vw/common/vw_exception.h"
 #include "vw/core/accumulate.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/reductions/gd.h"
+#include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 
 #include <sys/timeb.h>
 
 #include <cassert>
+#include <cfloat>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <fstream>
+
+#ifndef _WIN32
+#  include <netdb.h>
+#endif
 
 using namespace VW::LEARNER;
 using namespace VW::config;

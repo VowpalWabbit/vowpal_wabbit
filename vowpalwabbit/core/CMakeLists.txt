@@ -80,7 +80,6 @@ set(vw_core_headers
   include/vw/core/rand48.h
   include/vw/core/reduction_features.h
   include/vw/core/reduction_stack.h
-  include/vw/core/reductions_fwd.h
   include/vw/core/reductions/active_cover.h
   include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h

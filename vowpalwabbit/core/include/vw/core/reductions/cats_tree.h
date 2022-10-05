@@ -3,9 +3,10 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/config/options.h"
-#include "vw/core/error_reporting.h"
-#include "vw/core/learner.h"
+
+#include "vw/common/hash.h"
+#include "vw/core/cb.h"
+#include "vw/core/vw_fwd.h"
 
 #include <vector>
 namespace VW
