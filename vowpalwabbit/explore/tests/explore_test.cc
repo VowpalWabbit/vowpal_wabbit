@@ -4,6 +4,7 @@
 
 #include "vw/explore/explore.h"
 
+#include "vw/core/prob_dist_cont.h"
 #include "vw/core/reductions/cb/cb_explore_pdf.h"
 
 #include <gmock/gmock.h>
@@ -321,7 +322,7 @@ TEST(explore_tests, sampling)
 
     histogram[chosen_index]++;
   }
-  for (auto& d : histogram) d /= rep;
+  for (auto& d : histogram) { d /= rep; }
 
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-2f), histogram));
 }

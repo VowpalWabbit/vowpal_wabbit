@@ -3,14 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/array_parameters.h"
 #include "vw/core/confidence_sequence.h"
-#include "vw/core/distributionally_robust.h"
-#include "vw/core/io_buf.h"
-#include "vw/core/reductions_fwd.h"
-
-#include <algorithm>
-#include <numeric>
+#include "vw/core/vw_fwd.h"
 
 namespace VW
 {

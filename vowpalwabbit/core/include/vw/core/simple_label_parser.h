@@ -3,12 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "simple_label.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/simple_label.h"
+#include "vw/core/vw_fwd.h"
 
 extern VW::label_parser simple_label_parser;
 
-class io_buf;
 namespace VW
 {
 namespace model_utils

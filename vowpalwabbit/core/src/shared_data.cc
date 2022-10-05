@@ -16,6 +16,9 @@
 #include <climits>
 #include <iomanip>
 
+shared_data::shared_data() = default;
+shared_data::~shared_data() = default;
+
 shared_data::shared_data(const shared_data& other)
 {
   queries = other.queries;

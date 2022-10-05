@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "generic_range.h"
 #include "vw/common/future_compat.h"
+#include "vw/core/generic_range.h"
 #include "vw/core/v_array.h"
 
 #include <algorithm>
