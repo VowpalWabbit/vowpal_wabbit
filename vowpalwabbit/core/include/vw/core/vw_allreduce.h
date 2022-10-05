@@ -10,6 +10,10 @@
 
 #include <cstddef>
 
+namespace VW
+{
+namespace details
+{
 template <class T, void (*f)(T&, const T&)>
 void all_reduce(VW::workspace& all, T* buffer, const size_t n)
 {
@@ -31,3 +35,5 @@ void all_reduce(VW::workspace& all, T* buffer, const size_t n)
     }
   }
 }
+}  // namespace details
+}  // namespace VW
