@@ -1,7 +1,8 @@
 #include "data.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "vw/core/array_parameters.h"
+#include "vw/core/array_parameters_dense.h"
+#include "vw/core/array_parameters_sparse.h"
 #include "vw/slim/example_predict_builder.h"
 
 #include <stdlib.h>
