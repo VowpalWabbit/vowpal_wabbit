@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/offset_tree.h"
 
+#include "vw/config/options.h"
 #include "vw/core/action_score.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"

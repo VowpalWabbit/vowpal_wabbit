@@ -5,7 +5,6 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -13,6 +12,7 @@
 // forward declarations
 class io_buf;
 class parameters;
+class dense_parameters;
 struct features;
 struct shared_data;
 struct parser;
@@ -25,17 +25,19 @@ struct v_array;
 template <class T>
 struct v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>::type>;
 
-struct label_parser;
+class loss_function;
+class named_labels;
+class reduction_features;
 struct example;
+struct kskip_ngram_transformer;
+struct label_parser;
+struct polylabel;
+struct rand_state;
+struct setup_base_i;
+struct workspace;
+
 using multi_ex = std::vector<example*>;
 using namespace_index = unsigned char;
-struct workspace;
-struct setup_base_i;
-struct kskip_ngram_transformer;
-struct rand_state;
-class named_labels;
-struct setup_base_i;
-class loss_function;
 
 namespace LEARNER
 {
@@ -56,10 +58,6 @@ namespace io
 struct logger;
 struct reader;
 struct writer;
-
-enum class log_level;
-using logger_output_func_t = void (*)(void*, VW::io::log_level, const std::string&);
-
 }  // namespace io
 
 namespace details

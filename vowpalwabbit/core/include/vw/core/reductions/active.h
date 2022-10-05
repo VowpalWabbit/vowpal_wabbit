@@ -4,13 +4,8 @@
 
 #pragma once
 
-#include "vw/core/rand_state.h"
-#include "vw/core/shared_data.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
-
-#include <memory>
-#include <utility>
 
 namespace VW
 {
