@@ -46,7 +46,10 @@ struct shared_data;
 namespace VW
 {
 struct workspace;
-}
+
+class AllReduce;
+enum class AllReduceType;
+}  // namespace VW
 
 using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
 
@@ -56,9 +59,6 @@ struct dictionary_info
   uint64_t file_hash;
   std::shared_ptr<feature_dict> dict;
 };
-
-class AllReduce;
-enum class AllReduceType;
 
 namespace VW
 {
