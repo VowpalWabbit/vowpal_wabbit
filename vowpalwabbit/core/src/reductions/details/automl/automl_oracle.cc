@@ -23,6 +23,18 @@ config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_f
 {
   _conf_type = conf_type;
 }
+template <>
+config_oracle<one_diff_inclusion_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
+    const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
+    config_type conf_type)
+    : _interaction_type(interaction_type)
+    , _oracle_type(oracle_type)
+    , calc_priority(calc_priority)
+    , global_lease(global_lease)
+    , _impl(one_diff_inclusion_impl(std::move(rand_state)))
+{
+  _conf_type = conf_type;
+}
 template <typename oracle_impl>
 config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
     const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>&,
@@ -144,7 +156,43 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
     ccb::insert_ccb_interactions(interactions, empty);
   }
 }
+template <>
+void config_oracle<one_diff_inclusion_impl>::insert_config(set_ns_list_t&& new_elements,
+    const std::map<namespace_index, uint64_t>& ns_counter, VW::reductions::automl::config_type conf_type,
+    bool allow_dups)
+{
+  // First check if config already exists
+  if (!allow_dups)
+  {
+    for (size_t i = 0; i < configs.size(); ++i)
+    {
+      if (configs[i].elements == new_elements)
+      {
+        if (i < valid_config_size) { return; }
+        else
+        {
+          configs[valid_config_size].reset(std::move(configs[i].elements), global_lease, conf_type);
+          // TODO: do we have to push here to index_quue?
+        }
+      }
+    }
+  }
 
+  // Note that configs are never actually cleared, but valid_config_size is set to 0 instead to denote that
+  // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
+  // configs exist we'll generate a new one.
+  if (valid_config_size < configs.size())
+  { configs[valid_config_size].reset(std::move(new_elements), global_lease, conf_type); }
+  else
+  {
+    configs.emplace_back(std::move(new_elements), global_lease, conf_type);
+  }
+
+  float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
+  if (priority == 0.0f) { priority = _impl.random_state->get_and_update_random(); }
+  index_queue.push(std::make_pair(priority, valid_config_size));
+  ++valid_config_size;
+}
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
 // Handles creating new config with exclusions or overwriting stale configs to avoid reallocation.
 template <typename oracle_impl>

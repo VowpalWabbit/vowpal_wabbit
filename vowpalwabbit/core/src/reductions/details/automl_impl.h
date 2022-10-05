@@ -179,6 +179,8 @@ struct champdupe_impl
 
 struct one_diff_inclusion_impl
 {
+  std::shared_ptr<VW::rand_state> random_state;
+  one_diff_inclusion_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
       const size_t num, set_ns_list_t& copy_champ);
   Iterator begin() { return Iterator(); }
