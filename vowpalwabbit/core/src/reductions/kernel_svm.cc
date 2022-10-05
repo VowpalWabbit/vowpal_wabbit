@@ -523,7 +523,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
   sizes[all.all_reduce->node] = b->unflushed_bytes_count();
-  all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
+  VW::details::all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
   size_t prev_sum = 0, total_sum = 0;
   for (size_t i = 0; i < all.all_reduce->total; i++)
@@ -538,7 +538,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     size_t bytes_copied = b->copy_to(queries + prev_sum, total_sum - prev_sum);
     if (bytes_copied < b->unflushed_bytes_count()) THROW("kernel_svm: Failed to alloc enough space.");
 
-    all_reduce<char, copy_char>(all, queries, total_sum);
+    VW::details::all_reduce<char, copy_char>(all, queries, total_sum);
     b->replace_buffer(queries, total_sum);
 
     size_t num_read = 0;

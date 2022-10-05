@@ -17,13 +17,13 @@
 #  include <mutex>
 #endif
 
-#include "hashstring.h"
-#include "object_pool.h"
-#include "queue.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/example.h"
+#include "vw/core/hashstring.h"
 #include "vw/core/io_buf.h"
+#include "vw/core/object_pool.h"
+#include "vw/core/queue.h"
 #include "vw/core/vw_fwd.h"
 
 #include <atomic>

@@ -63,7 +63,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: vw_generated_models
-          path: ~/.vw_runtests_model_gen_working_dir/test_models/*
+          path: ~/.vw_runtests_model_gen_working_dir/*
           if-no-files-found: error
   test-latest-model:
     name: Test previous master model with newest wheel
@@ -78,7 +78,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: vw_generated_models
-          path: .vw_runtests_model_gen_working_dir/test_models
+          path: .vw_runtests_model_gen_working_dir
       - name: Test loading model with current master
         shell: bash
         run: |

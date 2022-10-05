@@ -5,6 +5,7 @@
 #include "vw/core/reductions/epsilon_decay.h"
 
 #include "vw/config/options.h"
+#include "vw/core/distributionally_robust.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
@@ -29,12 +30,15 @@ namespace reductions
 {
 namespace epsilon_decay
 {
-float decayed_epsilon(uint64_t update_count) { return static_cast<float>(std::pow(update_count + 1, -1.f / 3.f)); }
+float decayed_epsilon(float init_ep, uint64_t update_count)
+{
+  return init_ep * static_cast<float>(std::pow(update_count + 1, -1.f / 3.f));
+}
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, bool lb_trick,
-    uint64_t min_champ_examples)
+    uint64_t min_champ_examples, float initial_epsilon)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -44,6 +48,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _wpp(wpp)
     , _lb_trick(lb_trick)
     , _min_champ_examples(min_champ_examples)
+    , _initial_epsilon(initial_epsilon)
 {
   _weight_indices.resize(model_count);
   conf_seq_estimators.reserve(model_count);
@@ -56,7 +61,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
   }
 }
 
-void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   auto model_count = static_cast<int64_t>(conf_seq_estimators.size());
   CB::cb_class logged{};
@@ -80,8 +85,8 @@ void epsilon_decay_data::update_weights(VW::LEARNER::multi_learner& base, VW::mu
     {
       if (!_constant_epsilon)
       {
-        ep_fts.epsilon =
-            VW::reductions::epsilon_decay::decayed_epsilon(conf_seq_estimators[model_ind][model_ind].update_count);
+        ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(
+            init_ep, conf_seq_estimators[model_ind][model_ind].update_count);
       }
       std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[model_ind] * 3]);
       std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[model_ind] * 3 + 1]);
@@ -260,7 +265,8 @@ void predict(
   {
     auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     const auto& active_estimator = data.conf_seq_estimators[final_model_idx][final_model_idx];
-    ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(active_estimator.update_count);
+    ep_fts.epsilon =
+        VW::reductions::epsilon_decay::decayed_epsilon(data._initial_epsilon, active_estimator.update_count);
   }
   base.predict(examples, data._weight_indices[final_model_idx]);
 }
@@ -268,7 +274,7 @@ void predict(
 void learn(
     VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
-  data.update_weights(base, examples);
+  data.update_weights(data._initial_epsilon, base, examples);
   data.check_estimator_bounds();
   data.check_horizon_bounds();
 }
@@ -314,6 +320,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   bool _lb_trick = false;
   bool _fixed_significance_level = false;
   uint64_t _min_champ_examples;
+  float _initial_epsilon;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -362,6 +369,11 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .default_value(0)
                .keep()
                .help("Minimum number of examples for any challenger to become champion")
+               .experimental())
+      .add(make_option("initial_epsilon", _initial_epsilon)
+               .default_value(1.0)
+               .keep()
+               .help("Initial epsilon value")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -372,7 +384,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope,
       _epsilon_decay_significance_level, _epsilon_decay_estimator_decay, all.weights.dense_weights,
-      _epsilon_decay_audit_str, _constant_epsilon, all.wpp, _lb_trick, _min_champ_examples);
+      _epsilon_decay_audit_str, _constant_epsilon, all.wpp, _lb_trick, _min_champ_examples, _initial_epsilon);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

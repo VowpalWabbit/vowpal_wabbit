@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Exporters;
+using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Environments;
 
@@ -18,6 +19,6 @@ public class VWBenchmarkConfig : ManualConfig
         AddJob(Job.Default.WithId(".NET Framework 4.8").WithRuntime(ClrRuntime.Net48));
         AddExporter(PlainExporter.Default);
         AddExporter(RPlotExporter.Default);
+        AddExporter(JsonExporter.FullCompressed);
     }
 }
-

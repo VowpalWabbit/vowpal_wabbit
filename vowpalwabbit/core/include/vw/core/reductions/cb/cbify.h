@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/core/feature_group.h"
+
 #include "vw/core/vw_fwd.h"
 
 class parameters;

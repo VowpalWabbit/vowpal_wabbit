@@ -8,6 +8,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/model_utils.h"
+#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"

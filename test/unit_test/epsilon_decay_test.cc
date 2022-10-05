@@ -3,7 +3,7 @@
 #include "simulator.h"
 #include "test_common.h"
 #include "vw/core/metric_sink.h"
-#include "vw/core/reductions_fwd.h"
+#include "vw/core/setup_base.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -252,7 +252,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, false, 0);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, false, 0, 1.f);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, false, 0);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, false, 0, 1.f);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;

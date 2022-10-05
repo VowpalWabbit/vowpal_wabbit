@@ -4,10 +4,8 @@
 
 #pragma once
 
-#include <algorithm>
 #include <limits>
 #include <string>
-#include <tuple>
 
 constexpr float BASELINE_DEFAULT_TAU = 0.999f;
 constexpr float CRESSEREAD_DEFAULT_TAU = 1.0f;
