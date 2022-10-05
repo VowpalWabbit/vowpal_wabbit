@@ -6,6 +6,8 @@
 
 #include "vw/core/vw_fwd.h"
 
+#include <string>
+
 namespace VW
 {
 namespace reductions
