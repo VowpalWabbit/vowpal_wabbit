@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "vw/common/future_compat.h"
 #include "vw/core/action_score.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/vw_fwd.h"
@@ -61,6 +62,11 @@ void slates_parse_label(SlatesLabel& ld, VW::label_parser_reuse_mem& reuse_mem,
 extern VW::label_parser slates_label_parser;
 
 VW::string_view to_string(VW::SlatesExampleType);
+
+namespace slates
+{
+using label VW_DEPRECATED("VW::slates::label renamed to VW::SlatesLabel") = VW::SlatesLabel;
+}
 
 namespace model_utils
 {
