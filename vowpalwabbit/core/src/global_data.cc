@@ -323,7 +323,7 @@ std::string workspace::dump_weights_to_json_experimental()
   while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
   if (current->get_name() == "ksvm")
   {
-    THROW("dump_weights_to_json is not currently only supported for KSVM base learner. The current base learner is "
+    THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
         << current->get_name());
   }
   if (dump_json_weights_include_feature_names && !hash_inv)
