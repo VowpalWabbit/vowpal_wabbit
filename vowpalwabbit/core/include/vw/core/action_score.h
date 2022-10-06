@@ -19,6 +19,15 @@ struct action_score
   float score;
 };
 
+constexpr inline bool operator<(const ACTION_SCORE::action_score& left, const ACTION_SCORE::action_score& right)
+{
+  return (left.score == right.score) ? left.action < right.action : left.score < right.score;
+}
+constexpr inline bool operator>(const ACTION_SCORE::action_score& left, const ACTION_SCORE::action_score& right)
+{
+  return (left.score == right.score) ? left.action > right.action : left.score > right.score;
+}
+
 using action_scores = VW::v_array<action_score>;
 
 class score_iterator
@@ -65,17 +74,6 @@ std::ostream& operator<<(std::ostream& os, const action_score& a_s);
 
 namespace VW
 {
-constexpr inline bool action_score_compare_lt(
-    const ACTION_SCORE::action_score& left, const ACTION_SCORE::action_score& right)
-{
-  return (left.score == right.score) ? left.action < right.action : left.score < right.score;
-}
-constexpr inline bool action_score_compare_gt(
-    const ACTION_SCORE::action_score& left, const ACTION_SCORE::action_score& right)
-{
-  return (left.score == right.score) ? left.action > right.action : left.score > right.score;
-}
-
 std::string to_string(
     const ACTION_SCORE::action_scores& action_scores_or_probs, int decimal_precision = DEFAULT_FLOAT_PRECISION);
 
