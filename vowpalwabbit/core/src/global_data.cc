@@ -321,15 +321,17 @@ std::string workspace::dump_weights_to_json_experimental()
   // This could be extended to other base learners reasonably. Since this is new and experimental though keep the scope
   // small.
   while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
-  if (current->get_name() != "gd")
+  if (current->get_name() != "gd" && current->get_name() != "ftrl")
   {
-    THROW("dump_weights_to_json is currently only supported for GD base learners. The current base learner is "
+    THROW("dump_weights_to_json is currently only supported for GD or FTRL base learners. The current base learner is "
         << current->get_name());
   }
   if (dump_json_weights_include_feature_names && !hash_inv)
   { THROW("hash_inv == true is required to dump weights to json including feature names"); }
   if (dump_json_weights_include_extra_online_state && !save_resume)
   { THROW("save_resume == true is required to dump weights to json including feature names"); }
+  if (dump_json_weights_include_extra_online_state && current->get_name() != "gd")
+  { THROW("including extra online state is only allowed with GD as base learner"); }
 
   return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
                               dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)
