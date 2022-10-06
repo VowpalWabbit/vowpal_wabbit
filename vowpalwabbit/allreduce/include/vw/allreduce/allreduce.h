@@ -68,12 +68,12 @@ namespace VW
 namespace details
 {
 constexpr size_t AR_BUF_SIZE = 1 << 16;
-struct NodeSocks
+struct node_socks
 {
   std::string current_master;
   socket_t parent;
   socket_t children[2];
-  ~NodeSocks()
+  ~node_socks()
   {
     if (current_master != "")
     {
@@ -82,7 +82,7 @@ struct NodeSocks
       if (children[1] != -1) { CLOSESOCK(this->children[1]); }
     }
   }
-  NodeSocks() { current_master = ""; }
+  node_socks() { current_master = ""; }
 };
 
 template <class T, void (*f)(T&, const T&)>
@@ -93,28 +93,28 @@ void addbufs(T* buf1, const T* buf2, const size_t n)
 
 }  // namespace details
 
-enum class AllReduceType
+enum class all_reduce_type
 {
-  Socket,
-  Thread
+  SOCKET,
+  THREAD
 };
 
-class AllReduce
+class all_reduce
 {
 public:
   const size_t total;  // total number of nodes
   const size_t node;   // node id number
   bool quiet;
 
-  AllReduce(size_t ptotal, const size_t pnode, bool pquiet = false) : total(ptotal), node(pnode), quiet(pquiet)
+  all_reduce(size_t ptotal, const size_t pnode, bool pquiet = false) : total(ptotal), node(pnode), quiet(pquiet)
   {
     assert(node < total);
   }
 
-  virtual ~AllReduce() = default;
+  virtual ~all_reduce() = default;
 };
 
-class AllReduceSync
+class all_reduce_sync
 {
 private:
   std::mutex _mutex;
@@ -130,8 +130,8 @@ private:
   bool _run;
 
 public:
-  AllReduceSync(size_t total);
-  ~AllReduceSync();
+  all_reduce_sync(size_t total);
+  ~all_reduce_sync();
 
   void wait_for_synchronization();
 
@@ -144,18 +144,18 @@ public:
   void** buffers;
 };
 
-class AllReduceThreads : public AllReduce
+class all_reduce_threads : public all_reduce
 {
 private:
-  AllReduceSync* _sync;
+  all_reduce_sync* _sync;
   bool _sync_owner;
 
 public:
-  AllReduceThreads(AllReduceThreads* root, size_t ptotal, size_t pnode, bool quiet = false);
+  all_reduce_threads(all_reduce_threads* root, size_t ptotal, size_t pnode, bool quiet = false);
 
-  AllReduceThreads(size_t ptotal, size_t pnode, bool quiet = false);
+  all_reduce_threads(size_t ptotal, size_t pnode, bool quiet = false);
 
-  virtual ~AllReduceThreads();
+  virtual ~all_reduce_threads();
 
   template <class T, void (*f)(T&, const T&)>
   void all_reduce(T* buffer, const size_t n)
@@ -200,10 +200,10 @@ public:
   }
 };
 
-class AllReduceSockets : public AllReduce
+class all_reduce_sockets : public all_reduce
 {
 private:
-  details::NodeSocks _socks;
+  details::node_socks _socks;
   std::string _span_server;
   int _port;
   size_t _unique_id;  // unique id for each node in the network, id == 0 means extra io.
@@ -303,13 +303,13 @@ private:
   socket_t getsock(VW::io::logger& logger);
 
 public:
-  AllReduceSockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
+  all_reduce_sockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
       const size_t pnode, bool pquiet)
-      : AllReduce(ptotal, pnode, pquiet), _span_server(std::move(pspan_server)), _port(pport), _unique_id(punique_id)
+      : VW::all_reduce(ptotal, pnode, pquiet), _span_server(std::move(pspan_server)), _port(pport), _unique_id(punique_id)
   {
   }
 
-  ~AllReduceSockets() override = default;
+  ~all_reduce_sockets() override = default;
 
   template <class T, void (*f)(T&, const T&)>
   void all_reduce(T* buffer, const size_t n, VW::io::logger& logger)
@@ -323,9 +323,9 @@ public:
 }  // namespace VW
 
 using AllReduceType VW_DEPRECATED(
-    "AllReduceType was moved into VW namespace. Use VW::AllReduceType") = VW::AllReduceType;
-using AllReduce VW_DEPRECATED("AllReduce was moved into VW namespace. Use VW::AllReduce") = VW::AllReduce;
+    "AllReduceType was moved into VW namespace. Use VW::all_reduce_type") = VW::all_reduce_type;
+using AllReduce VW_DEPRECATED("AllReduce was moved into VW namespace. Use VW::all_reduce") = VW::all_reduce;
 using AllReduceSockets VW_DEPRECATED(
-    "AllReduceSockets was moved into VW namespace. Use VW::AllReduceSockets") = VW::AllReduceSockets;
+    "all_reduce_sockets was moved into VW namespace. Use VW::all_reduce_sockets") = VW::all_reduce_sockets;
 using AllReduceThreads VW_DEPRECATED(
-    "AllReduceThreads was moved into VW namespace. Use VW::AllReduceThreads") = VW::AllReduceThreads;
+    "all_reduce_threads was moved into VW namespace. Use VW::all_reduce_threads") = VW::all_reduce_threads;

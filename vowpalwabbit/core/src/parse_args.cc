@@ -1575,8 +1575,8 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
 
   if (all->options->was_supplied("span_server"))
   {
-    all->all_reduce_type = VW::AllReduceType::Socket;
-    all->all_reduce = new VW::AllReduceSockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
+    all->all_reduce_type = VW::all_reduce_type::SOCKET;
+    all->all_reduce = new VW::all_reduce_sockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
         VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
         VW::cast_to_smaller_type<size_t>(node_arg), all->quiet);
   }
