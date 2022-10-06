@@ -56,9 +56,8 @@ struct cb_dro_data
         // cb_explore_adf => want maximum probability
         // cb_adf => first action is a greedy action
 
-        const auto maxit = is_explore
-            ? std::max_element(action_scores.begin(), action_scores.end(), VW::action_score_compare_lt)
-            : action_scores.begin();
+        const auto maxit =
+            is_explore ? std::max_element(action_scores.begin(), action_scores.end()) : action_scores.begin();
         const uint32_t chosen_action = maxit->action;
 
         const float w = logged.probability > 0 ? 1 / logged.probability : 0;

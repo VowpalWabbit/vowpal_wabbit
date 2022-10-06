@@ -266,7 +266,7 @@ void shrink_factor_config::calculate_shrink_factor(
   if (_apply_shrink_factor)
   {
     shrink_factors.clear();
-    float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    float min_ck = std::min_element(preds.begin(), preds.end())->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
     {
