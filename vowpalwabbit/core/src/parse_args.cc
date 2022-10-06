@@ -60,27 +60,26 @@
 using std::endl;
 using namespace VW::config;
 
-uint64_t hash_file_contents(VW::io::reader* f)
+uint64_t hash_file_contents(VW::io::reader* file_reader)
 {
-  uint64_t v = 5289374183516789128;
-  const uint64_t max_buf = 1024;
-  char buf[max_buf];
+  uint64_t hash = 5289374183516789128;
+  const uint64_t BUFFER_SIZE = 1024;
+  char buf[BUFFER_SIZE];
   while (true)
   {
-    ssize_t n = f->read(buf, max_buf);
-#ifdef _WIN32
-    char* rem_buf;
-    if ((rem_buf = std::remove(std::begin(buf), std::end(buf), '\r')) == nullptr) { THROW("error: invalid buffer"); }
-    n -= (max_buf - std::distance(std::begin(buf), rem_buf));
-#endif
-    if (n <= 0) { break; }
-    for (ssize_t i = 0; i < n; i++)
+    ssize_t bytes_read = file_reader->read(buf, BUFFER_SIZE);
+    if (bytes_read <= 0) { break; }
+    for (ssize_t i = 0; i < bytes_read; i++)
     {
-      v *= 341789041;
-      v += static_cast<uint64_t>(buf[i]);
+      if (buf[i] == '\r')
+      {
+        continue;
+      }
+      hash *= 341789041;
+      hash += static_cast<uint64_t>(buf[i]);
     }
   }
-  return v;
+  return hash;
 }
 
 bool directory_exists(const std::string& path)
