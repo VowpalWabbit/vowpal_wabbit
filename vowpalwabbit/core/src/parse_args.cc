@@ -71,10 +71,7 @@ uint64_t hash_file_contents(VW::io::reader* file_reader)
     if (bytes_read <= 0) { break; }
     for (ssize_t i = 0; i < bytes_read; i++)
     {
-      if (buf[i] == '\r')
-      {
-        continue;
-      }
+      if (buf[i] == '\r') { continue; }
       hash *= 341789041;
       hash += static_cast<uint64_t>(buf[i]);
     }
