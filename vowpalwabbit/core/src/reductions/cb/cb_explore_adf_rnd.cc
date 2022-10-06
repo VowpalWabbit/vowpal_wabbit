@@ -13,6 +13,7 @@
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
+#include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"

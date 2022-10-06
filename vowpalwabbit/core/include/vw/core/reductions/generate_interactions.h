@@ -3,8 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/core/example_predict.h"
-#include "vw/core/interactions.h"
+
 #include "vw/core/vw_fwd.h"
 
 #include <set>

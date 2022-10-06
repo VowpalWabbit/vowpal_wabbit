@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "vw/core/learner.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw_fwd.h"
 

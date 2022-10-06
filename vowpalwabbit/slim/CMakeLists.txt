@@ -5,6 +5,8 @@ set(VW_SLIM_SOURCES
   src/vw_slim_predict.cc
   ../core/src/feature_group.cc
   ../core/src/example_predict.cc
+  ../core/src/array_parameters_dense.cc
+  ../core/src/array_parameters_sparse.cc
   ../core/src/interactions.cc
 )
 

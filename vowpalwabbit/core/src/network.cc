@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
+#include "vw/core/network.h"
+
 #ifdef _WIN32
 #  define NOMINMAX
 #  define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -26,7 +29,7 @@
 #include <stdexcept>
 #include <string>
 
-int open_socket(const char* host, VW::io::logger& logger)
+int VW::details::open_socket(const char* host, VW::io::logger& logger)
 {
 #ifdef _WIN32
   const char* colon = strchr(host, ':');

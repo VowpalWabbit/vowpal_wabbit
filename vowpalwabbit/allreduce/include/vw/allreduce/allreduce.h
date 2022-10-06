@@ -114,12 +114,6 @@ public:
   virtual ~AllReduce() = default;
 };
 
-struct Data
-{
-  void* buffer;
-  size_t length;
-};
-
 class AllReduceSync
 {
 private:

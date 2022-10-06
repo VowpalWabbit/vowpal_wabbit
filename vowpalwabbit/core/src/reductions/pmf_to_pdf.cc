@@ -4,6 +4,8 @@
 
 #include "vw/core/reductions/pmf_to_pdf.h"
 
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options.h"
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/guard.h"

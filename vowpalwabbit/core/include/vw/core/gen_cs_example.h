@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "reductions/cb/cb_algs.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/vw.h"
 
