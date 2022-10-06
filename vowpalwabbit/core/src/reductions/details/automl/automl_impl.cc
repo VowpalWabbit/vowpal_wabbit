@@ -77,6 +77,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , _config_oracle(
           config_oracle_impl(global_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
     , champ_log_file("champ_change.csv")
+    , inputlabel_log_file("input_labels.csv")
 {
   insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
 }
@@ -378,6 +379,9 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
 
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
+
+  cm->inputlabel_log_file << cm->total_learn_count << "," << logged.action << "," << logged.probability << "," << w
+                          << "," << r << std::endl;
 
   int64_t live_slot = 0;
   int64_t current_champ = static_cast<int64_t>(cm->current_champ);

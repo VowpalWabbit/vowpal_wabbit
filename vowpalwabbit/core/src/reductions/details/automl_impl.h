@@ -221,6 +221,7 @@ struct interaction_config_manager
   // horizon and the champ has one horizon for each challenger
   estimator_vec_t<estimator_impl> estimators;
   std::ofstream champ_log_file;
+  std::ofstream inputlabel_log_file;
 
   interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
