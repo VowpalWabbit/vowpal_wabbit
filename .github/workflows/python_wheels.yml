@@ -141,10 +141,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.7", base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/ }
         - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
-        - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
-        - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -211,62 +208,3 @@ jobs:
             python --version && \
             python -m pytest ./python/tests/ && \
             deactivate'
-  macos-python-build:
-    name: macos.amd64.py${{ matrix.config.version }}.build
-    runs-on: macos-11
-    strategy:
-      matrix:
-        config:
-        - { version: 3.6, include_dir_name: python3.6m/}
-        - { version: 3.7, include_dir_name: python3.7m/}
-        - { version: 3.8, include_dir_name: python3.8/}
-        - { version: 3.9, include_dir_name: python3.9/}
-        - { version: "3.10", include_dir_name: python3.10/}
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.config.version }}
-      - name: Build wheel
-        shell: bash -l {0}
-        run: |
-          conda info
-          conda install python=${{ matrix.config.version }} wheel zlib boost py-boost flatbuffers
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" --verbose
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v1
-        with:
-          name: macos_amd64_${{ matrix.config.version }}
-          path: wheel_output/
-  macos-python-test:
-    name: macos.amd64.py${{ matrix.version }}.test
-    needs: macos-python-build
-    runs-on: macos-11
-    strategy:
-      matrix:
-        version: [3.6, 3.7, 3.8, 3.9, "3.10"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.version }}
-      - uses: actions/download-artifact@v1
-        with:
-          name: macos_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Test wheel
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install pytest twine
-          pip install built_wheel/*.whl
-          twine check built_wheel/*.whl
-          python -m pytest ./python/tests/
-          python ./python/tests/run_doctest.py
