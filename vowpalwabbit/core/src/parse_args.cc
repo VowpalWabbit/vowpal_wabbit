@@ -324,7 +324,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   if (help)
   {
     all.quiet = true;
-    all.logger.set_level(VW::io::log_level::OFF);
+    all.logger.set_level(VW::io::log_level::OFF_LEVEL);
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
     // results in the ostream not outputting anything.

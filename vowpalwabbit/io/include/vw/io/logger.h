@@ -47,15 +47,16 @@ enum class output_location
 
 output_location get_output_location(const std::string& name);
 
+// There are global macros defined which conflict without the _LEVEL suffix.
 enum class log_level
 {
-  TRACE = spdlog::level::trace,
-  DEBUG = spdlog::level::debug,
-  INFO = spdlog::level::info,
-  WARN = spdlog::level::warn,
-  ERROR = spdlog::level::err,
-  CRITICAL = spdlog::level::critical,
-  OFF = spdlog::level::off
+  TRACE_LEVEL = spdlog::level::trace,
+  DEBUG_LEVEL = spdlog::level::debug,
+  INFO_LEVEL = spdlog::level::info,
+  WARN_LEVEL = spdlog::level::warn,
+  ERROR_LEVEL = spdlog::level::err,
+  CRITICAL_LEVEL = spdlog::level::critical,
+  OFF_LEVEL = spdlog::level::off
 };
 
 log_level get_log_level(const std::string& level);

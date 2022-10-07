@@ -40,13 +40,13 @@ output_location get_output_location(const std::string& name)
 
 log_level get_log_level(const std::string& level)
 {
-  if (level == "trace") { return log_level::TRACE; }
-  if (level == "debug") { return log_level::DEBUG; }
-  if (level == "info") { return log_level::INFO; }
-  if (level == "warn") { return log_level::WARN; }
-  if (level == "error") { return log_level::ERROR; }
-  if (level == "critical") { return log_level::CRITICAL; }
-  if (level == "off") { return log_level::OFF; }
+  if (level == "trace") { return log_level::TRACE_LEVEL; }
+  if (level == "debug") { return log_level::DEBUG_LEVEL; }
+  if (level == "info") { return log_level::INFO_LEVEL; }
+  if (level == "warn") { return log_level::WARN_LEVEL; }
+  if (level == "error") { return log_level::ERROR_LEVEL; }
+  if (level == "critical") { return log_level::CRITICAL_LEVEL; }
+  if (level == "off") { return log_level::OFF_LEVEL; }
   THROW("invalid log level: " << level);
 }
 

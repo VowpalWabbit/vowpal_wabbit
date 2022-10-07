@@ -50,19 +50,19 @@ void logger_output_func(void* void_context, VW::io::log_level level, const std::
       newline_stripped_message.end());
   switch (level)
   {
-    case VW::io::log_level::INFO:
+    case VW::io::log_level::INFO_LEVEL:
       context->logger.info("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::WARN:
+    case VW::io::log_level::WARN_LEVEL:
       context->logger.warn("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::ERROR:
+    case VW::io::log_level::ERROR_LEVEL:
       context->logger.error("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::CRITICAL:
+    case VW::io::log_level::CRITICAL_LEVEL:
       context->logger.critical("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::OFF:
+    case VW::io::log_level::OFF_LEVEL:
       break;
     default:
       THROW("Unsupported log level");
