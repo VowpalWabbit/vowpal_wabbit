@@ -48,64 +48,64 @@ template <typename T>
 struct option_builder
 {
   template <typename... Args>
-  option_builder(Args&&... args) : m_option_obj(std::forward<Args>(args)...)
+  option_builder(Args&&... args) : _option_obj(std::forward<Args>(args)...)
   {
   }
 
   option_builder& default_value(const typename T::value_type& value)
   {
-    m_option_obj.set_default_value(value);
+    _option_obj.set_default_value(value);
     return *this;
   }
 
   option_builder& short_name(const std::string& short_name)
   {
     if (short_name.size() != 1) { THROW("short_name must be a single character but got: " << short_name); }
-    m_option_obj.m_short_name = short_name;
+    _option_obj.m_short_name = short_name;
     return *this;
   }
 
   option_builder& short_name(char short_name)
   {
-    m_option_obj.m_short_name = std::string(1, short_name);
+    _option_obj.m_short_name = std::string(1, short_name);
     return *this;
   }
 
   option_builder& help(const std::string& help)
   {
-    m_option_obj.m_help = help;
+    _option_obj.m_help = help;
     return *this;
   }
 
   /// Hides the option from help output.
   option_builder& hidden(bool hidden = true)
   {
-    m_option_obj.m_hidden_from_help = hidden;
+    _option_obj.m_hidden_from_help = hidden;
     return *this;
   }
 
   /// Marks this as an experimental option.
   option_builder& experimental(bool experimental = true)
   {
-    m_option_obj.m_experimental = experimental;
+    _option_obj.m_experimental = experimental;
     return *this;
   }
 
   option_builder& keep(bool keep = true)
   {
-    m_option_obj.m_keep = keep;
+    _option_obj.m_keep = keep;
     return *this;
   }
 
   option_builder& necessary(bool necessary = true)
   {
-    m_option_obj.m_necessary = necessary;
+    _option_obj.m_necessary = necessary;
     return *this;
   }
 
   option_builder& one_of(std::set<typename T::value_type> args)
   {
-    m_option_obj.set_one_of(args);
+    _option_obj.set_one_of(args);
     return *this;
   }
 
@@ -113,17 +113,17 @@ struct option_builder
   {
     if (details::is_vector<typename T::value_type>::value)
     { THROW("allow_override can only apply to scalar option types.") }
-    m_option_obj.m_allow_override = allow_override;
+    _option_obj.m_allow_override = allow_override;
     return *this;
   }
 
   static std::shared_ptr<base_option> finalize(option_builder&& option)
   {
-    return std::make_shared<T>(std::move(option.m_option_obj));
+    return std::make_shared<T>(std::move(option._option_obj));
   }
 
 private:
-  T m_option_obj;
+  T _option_obj;
 };
 
 template <typename T>
