@@ -142,14 +142,6 @@ std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_insta
 
   options.add_and_parse(new_options);
 
-  if (cb_to_cb_adf_opts->cb_to_cbadf_supplied)
-  {
-    all.logger.out_warn(
-        "The flag --cb_to_cbadf has no effect and should not be supplied. The cb_to_cbadf reduction is automatically "
-        "enabled if cb, cb_explore or cbify are used. The cb_to_cbadf reduction can be force disabled with "
-        "--cb_force_legacy. This flag will be removed in a future release but not the functionality.");
-  }
-
   if (options.was_supplied("eval")) { return nullptr; }
 
   // ANY model created with older version should default to --cb_force_legacy
@@ -219,6 +211,14 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto cb_to_cb_adf_opts = get_cb_to_cb_adf_options_instance(all, options);
   if (cb_to_cb_adf_opts == nullptr) { return nullptr; }
+
+  if (cb_to_cb_adf_opts->cb_to_cbadf_supplied)
+  {
+    all.logger.out_warn(
+        "The flag --cb_to_cbadf has no effect and should not be supplied. The cb_to_cbadf reduction is automatically "
+        "enabled if cb, cb_explore or cbify are used. The cb_to_cbadf reduction can be force disabled with "
+        "--cb_force_legacy. This flag will be removed in a future release but not the functionality.");
+  }
 
   if (cb_to_cb_adf_opts->override_cbify)
   {
