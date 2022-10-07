@@ -53,7 +53,7 @@ constexpr float constexpr_negative_int_pow10_with_offset(uint8_t exponent, uint8
 }
 
 template <std::size_t... Integers>
-class index_sequence
+struct index_sequence
 {
 };
 

@@ -6,7 +6,7 @@
 
 #include "vw/core/vw_fwd.h"
 
-class parameters;
+struct parameters;
 struct namespace_interactions;
 
 namespace VW

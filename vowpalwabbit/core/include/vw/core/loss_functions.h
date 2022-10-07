@@ -12,9 +12,8 @@ namespace VW
 {
 // Information on how to implement a custom loss function in Loss functions · VowpalWabbit/vowpal_wabbit Wiki
 // https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Loss-functions#how-to-write-my-own-loss-function
-class loss_function
+struct loss_function
 {
-public:
   // Identifies the type of the implementing loss function, matches the name used in get_loss_function.
   virtual std::string get_type() const = 0;
   virtual float get_parameter() const { return 0.f; }

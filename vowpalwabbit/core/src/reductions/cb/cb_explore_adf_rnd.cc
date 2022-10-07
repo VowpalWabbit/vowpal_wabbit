@@ -39,6 +39,22 @@ namespace
 {
 struct cb_explore_adf_rnd
 {
+  cb_explore_adf_rnd(
+      float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, VW::workspace* _all)
+      : epsilon(_epsilon)
+      , alpha(_alpha)
+      , sqrtinvlambda(std::sqrt(_invlambda))
+      , numrnd(_numrnd)
+      , increment(_increment)
+      , all(_all)
+  {
+  }
+  ~cb_explore_adf_rnd() = default;
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+
 private:
   float epsilon;
   float alpha;
@@ -71,23 +87,6 @@ private:
   void restore_labels(VW::multi_ex&);
   template <bool>
   void base_learn_or_predict(multi_learner&, VW::multi_ex&, uint32_t);
-
-public:
-  cb_explore_adf_rnd(
-      float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, VW::workspace* _all)
-      : epsilon(_epsilon)
-      , alpha(_alpha)
-      , sqrtinvlambda(std::sqrt(_invlambda))
-      , numrnd(_numrnd)
-      , increment(_increment)
-      , all(_all)
-  {
-  }
-  ~cb_explore_adf_rnd() = default;
-
-  // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 };
 
 void cb_explore_adf_rnd::zero_bonuses(VW::multi_ex& examples) { bonuses.assign(examples.size(), 0.f); }

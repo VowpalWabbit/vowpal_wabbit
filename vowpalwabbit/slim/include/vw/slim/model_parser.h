@@ -17,16 +17,8 @@
 
 namespace vw_slim
 {
-class model_parser
+struct model_parser
 {
-#ifdef MODEL_PARSER_DEBUG
-  const char* _model_begin;
-#endif
-  const char* _model;
-  const char* _model_end;
-  uint32_t _checksum;
-
-public:
   model_parser(const char* model, size_t length);
 
   int read(const char* field_name, size_t field_length, const char** ret);
@@ -141,5 +133,13 @@ public:
 
     return S_VW_PREDICT_OK;
   }
+
+private:
+#ifdef MODEL_PARSER_DEBUG
+  const char* _model_begin;
+#endif
+  const char* _model;
+  const char* _model_end;
+  uint32_t _checksum;
 };
 }  // namespace vw_slim

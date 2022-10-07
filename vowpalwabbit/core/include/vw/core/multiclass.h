@@ -5,7 +5,7 @@
 
 #include "vw/core/label_parser.h"
 
-class io_buf;
+struct io_buf;
 namespace VW
 {
 struct example;

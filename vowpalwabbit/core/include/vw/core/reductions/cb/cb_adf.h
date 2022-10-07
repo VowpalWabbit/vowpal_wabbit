@@ -25,25 +25,6 @@ VW::example* test_adf_sequence(const VW::multi_ex& ec_seq);
 CB::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 struct cb_adf
 {
-private:
-  std::vector<CB::label> _cb_labels;
-  COST_SENSITIVE::label _cs_labels;
-  std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
-
-  VW::action_scores _a_s;              // temporary storage for mtr and sm
-  VW::action_scores _a_s_mtr_cs;       // temporary storage for mtr cost sensitive example
-  VW::action_scores _prob_s;           // temporary storage for sm; stores softmax values
-  VW::v_array<uint32_t> _backup_nf;    // temporary storage for sm; backup for numFeatures in examples
-  VW::v_array<float> _backup_weights;  // temporary storage for sm; backup for weights in examples
-
-  uint64_t _offset = 0;
-  const bool _no_predict;
-  const bool _rank_all;
-  const float _clip_p;
-
-  VW::workspace* _all = nullptr;
-
-public:
   GEN_CS::cb_to_cs_adf _gen_cs;
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
   void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
@@ -80,5 +61,23 @@ private:
   void learn_SM(LEARNER::multi_learner& base, VW::multi_ex& examples);
   template <bool predict>
   void learn_MTR(LEARNER::multi_learner& base, VW::multi_ex& examples);
+
+private:
+  std::vector<CB::label> _cb_labels;
+  COST_SENSITIVE::label _cs_labels;
+  std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
+
+  VW::action_scores _a_s;              // temporary storage for mtr and sm
+  VW::action_scores _a_s_mtr_cs;       // temporary storage for mtr cost sensitive example
+  VW::action_scores _prob_s;           // temporary storage for sm; stores softmax values
+  VW::v_array<uint32_t> _backup_nf;    // temporary storage for sm; backup for numFeatures in examples
+  VW::v_array<float> _backup_weights;  // temporary storage for sm; backup for weights in examples
+
+  uint64_t _offset = 0;
+  const bool _no_predict;
+  const bool _rank_all;
+  const float _clip_p;
+
+  VW::workspace* _all = nullptr;
 };
 }  // namespace CB_ADF

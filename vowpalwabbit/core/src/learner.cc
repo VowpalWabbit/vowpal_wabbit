@@ -74,9 +74,8 @@ void drain_examples(VW::workspace& all)
 // single_instance_context / multi_instance_context - classes incapsulating single/multiinstance example processing
 // get_master - returns main vw instance for owner's example manipulations (i.e. finish)
 // process<process_impl> - call process_impl for all vw instances
-class single_instance_context
+struct single_instance_context
 {
-public:
   single_instance_context(VW::workspace& all) : _all(all) {}
 
   VW::workspace& get_master() const { return _all; }
@@ -91,9 +90,8 @@ private:
   VW::workspace& _all;
 };
 
-class multi_instance_context
+struct multi_instance_context
 {
-public:
   multi_instance_context(const std::vector<VW::workspace*>& all) : _all(all) {}
 
   VW::workspace& get_master() const { return *_all.front(); }
@@ -112,9 +110,8 @@ private:
 // single_example_handler / multi_example_handler - consumer classes with on_example handle method, incapsulating
 // creation of example / multi_ex and passing it to context.process
 template <typename context_type>
-class single_example_handler
+struct single_example_handler
 {
-public:
   single_example_handler(const context_type& context) : _context(context) {}
 
   void on_example(example* ec)
@@ -144,41 +141,8 @@ private:
 };
 
 template <typename context_type>
-class multi_example_handler
+struct multi_example_handler
 {
-private:
-  bool complete_multi_ex(example* ec)
-  {
-    auto& master = _context.get_master();
-    const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
-    const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
-
-    if (!is_newline && !ec->end_pass) { ec_seq.push_back(ec); }
-    // A terminating example can occur when there have been no featureful examples
-    // collected. In this case, do not trigger a learn.
-    return (is_newline || ec->end_pass) && !ec_seq.empty();
-  }
-
-  bool try_complete_multi_ex(example* ec)
-  {
-    if (ec->indices.size() > 1)
-    {  // 1+ nonconstant feature. (most common case first)
-      return complete_multi_ex(ec);
-      // Explicitly do not process the end-of-pass examples here: It needs to be done
-      // after learning on the collected multi_ex
-    }
-    else if (is_save_cmd(ec))
-    {
-      _context.template process<example, save>(*ec);
-    }
-    else
-    {
-      return complete_multi_ex(ec);
-    }
-    return false;
-  }
-
-public:
   multi_example_handler(const context_type context) : _context(context) {}
   ~multi_example_handler() = default;
 
@@ -216,15 +180,45 @@ public:
   }
 
 private:
+  bool complete_multi_ex(example* ec)
+  {
+    auto& master = _context.get_master();
+    const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
+    const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
+
+    if (!is_newline && !ec->end_pass) { ec_seq.push_back(ec); }
+    // A terminating example can occur when there have been no featureful examples
+    // collected. In this case, do not trigger a learn.
+    return (is_newline || ec->end_pass) && !ec_seq.empty();
+  }
+
+  bool try_complete_multi_ex(example* ec)
+  {
+    if (ec->indices.size() > 1)
+    {  // 1+ nonconstant feature. (most common case first)
+      return complete_multi_ex(ec);
+      // Explicitly do not process the end-of-pass examples here: It needs to be done
+      // after learning on the collected multi_ex
+    }
+    else if (is_save_cmd(ec))
+    {
+      _context.template process<example, save>(*ec);
+    }
+    else
+    {
+      return complete_multi_ex(ec);
+    }
+    return false;
+  }
+
   context_type _context;
   multi_ex ec_seq;
 };
 
 // ready_examples_queue / custom_examples_queue - adapters for connecting example handler to parser produce-consume loop
 // for single- and multi-threaded scenarios
-class ready_examples_queue
+struct ready_examples_queue
 {
-public:
   ready_examples_queue(VW::workspace& master) : _master(master) {}
 
   example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
@@ -233,9 +227,8 @@ private:
   VW::workspace& _master;
 };
 
-class custom_examples_queue
+struct custom_examples_queue
 {
-public:
   void reset_examples(const VW::multi_ex* examples)
   {
     assert(examples != nullptr);

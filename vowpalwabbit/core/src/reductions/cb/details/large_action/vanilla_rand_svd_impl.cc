@@ -13,17 +13,6 @@ namespace cb_explore_adf
 {
 struct Y_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _row_index;
-  uint64_t _column_index;
-  uint64_t _seed;
-  std::vector<Eigen::Triplet<float>>& _triplets;
-  uint64_t& _max_col;
-  std::set<uint64_t>& _non_zero_rows;
-  const std::vector<float>& _shrink_factors;
-
-public:
   Y_triplet_constructor(uint64_t weights_mask, uint64_t row_index, uint64_t column_index, uint64_t seed,
       std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col, std::set<uint64_t>& non_zero_rows,
       const std::vector<float>& shrink_factors)
@@ -50,17 +39,20 @@ public:
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _row_index;
+  uint64_t _column_index;
+  uint64_t _seed;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t& _max_col;
+  std::set<uint64_t>& _non_zero_rows;
+  const std::vector<float>& _shrink_factors;
 };
 
 struct B_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _column_index;
-  Eigen::SparseMatrix<float>& _Y;
-  float& _final_dot_product;
-
-public:
   B_triplet_constructor(
       uint64_t weights_mask, uint64_t column_index, Eigen::SparseMatrix<float>& Y, float& final_dot_product)
       : _weights_mask(weights_mask), _column_index(column_index), _Y(Y), _final_dot_product(final_dot_product)
@@ -72,6 +64,12 @@ public:
     if (feature_value == 0.f) { return; }
     _final_dot_product += feature_value * _Y.coeffRef((index & _weights_mask), _column_index);
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _column_index;
+  Eigen::SparseMatrix<float>& _Y;
+  float& _final_dot_product;
 };
 
 bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors)

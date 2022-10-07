@@ -52,9 +52,8 @@ enum class lda_math_mode : int
   USE_FAST_APPROX
 };
 
-class index_feature
+struct index_feature
 {
-public:
   uint32_t document;
   feature f;
   bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }

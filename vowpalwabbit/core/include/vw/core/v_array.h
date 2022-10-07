@@ -39,82 +39,6 @@ struct v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>:
 {
   static_assert(sizeof(T) > 0, "The sizeof v_array's element type T cannot be 0.");
 
-private:
-  static constexpr size_t ERASE_POINT = ~((1u << 10u) - 1u);
-
-  template <typename S, typename std::enable_if<std::is_trivially_destructible<S>::value, bool>::type = true>
-  static void destruct_item(S*)
-  {
-    // If S is trivially destructive nothing needs to be done.
-  }
-
-  template <typename S, typename std::enable_if<!std::is_trivially_destructible<S>::value, bool>::type = true>
-  static void destruct_item(S* ptr)
-  {
-    ptr->~S();
-  }
-
-  void delete_v_array()
-  {
-    if (_begin != nullptr)
-    {
-      for (iterator item = _begin; item != _end; ++item) { destruct_item(item); }
-      free(_begin);
-    }
-    _begin = nullptr;
-    _end = nullptr;
-    _end_array = nullptr;
-    _erase_count = 0;
-  }
-
-  void reserve_nocheck(size_t length)
-  {
-    if (capacity() == length || length == 0) { return; }
-    const size_t old_len = size();
-
-    T* temp = static_cast<T*>(std::realloc(_begin, sizeof(T) * length));
-    if (temp == nullptr)
-    { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
-    _begin = temp;
-
-    _end = _begin + std::min(old_len, length);
-    _end_array = _begin + length;
-    memset(static_cast<void*>(_end), 0, (_end_array - _end) * sizeof(T));
-  }
-
-  // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
-  void make_space_at(size_t idx, size_t width)
-  {
-    if (width > 0)
-    {
-      if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
-      memmove(&_begin[idx + width], &_begin[idx], (size() - idx) * sizeof(T));
-      memset(&_begin[idx], 0, width * sizeof(T));
-      _end += width;
-    }
-  }
-
-  void resize_no_initialize(size_t old_size, size_t length)
-  {
-    // if new length is smaller than current size destroy the excess elements
-    for (auto idx = length; idx < old_size; ++idx) { destruct_item(&_begin[idx]); }
-    reserve(length);
-    _end = _begin + length;
-  }
-
-  void copy_into_this(const v_array<T>& src)
-  {
-    clear();
-    resize_no_initialize(size(), src.size());
-    std::copy(src.begin(), src.end(), begin());
-  }
-
-  T* _begin;
-  T* _end;
-  T* _end_array;
-  size_t _erase_count;
-
-public:
   using value_type = T;
   using reference = value_type&;
   using const_reference = const value_type&;
@@ -384,6 +308,81 @@ public:
     os << " ]";
     return os;
   }
+
+private:
+  static constexpr size_t ERASE_POINT = ~((1u << 10u) - 1u);
+
+  template <typename S, typename std::enable_if<std::is_trivially_destructible<S>::value, bool>::type = true>
+  static void destruct_item(S*)
+  {
+    // If S is trivially destructive nothing needs to be done.
+  }
+
+  template <typename S, typename std::enable_if<!std::is_trivially_destructible<S>::value, bool>::type = true>
+  static void destruct_item(S* ptr)
+  {
+    ptr->~S();
+  }
+
+  void delete_v_array()
+  {
+    if (_begin != nullptr)
+    {
+      for (iterator item = _begin; item != _end; ++item) { destruct_item(item); }
+      free(_begin);
+    }
+    _begin = nullptr;
+    _end = nullptr;
+    _end_array = nullptr;
+    _erase_count = 0;
+  }
+
+  void reserve_nocheck(size_t length)
+  {
+    if (capacity() == length || length == 0) { return; }
+    const size_t old_len = size();
+
+    T* temp = static_cast<T*>(std::realloc(_begin, sizeof(T) * length));
+    if (temp == nullptr)
+    { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
+    _begin = temp;
+
+    _end = _begin + std::min(old_len, length);
+    _end_array = _begin + length;
+    memset(static_cast<void*>(_end), 0, (_end_array - _end) * sizeof(T));
+  }
+
+  // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
+  void make_space_at(size_t idx, size_t width)
+  {
+    if (width > 0)
+    {
+      if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
+      memmove(&_begin[idx + width], &_begin[idx], (size() - idx) * sizeof(T));
+      memset(&_begin[idx], 0, width * sizeof(T));
+      _end += width;
+    }
+  }
+
+  void resize_no_initialize(size_t old_size, size_t length)
+  {
+    // if new length is smaller than current size destroy the excess elements
+    for (auto idx = length; idx < old_size; ++idx) { destruct_item(&_begin[idx]); }
+    reserve(length);
+    _end = _begin + length;
+  }
+
+  void copy_into_this(const v_array<T>& src)
+  {
+    clear();
+    resize_no_initialize(size(), src.size());
+    std::copy(src.begin(), src.end(), begin());
+  }
+
+  T* _begin;
+  T* _end;
+  T* _end_array;
+  size_t _erase_count;
 };
 
 }  // namespace VW
