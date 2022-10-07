@@ -152,8 +152,8 @@ VW_DEPRECATED("CCB::default_label renamed to VW::default_ccb_label. CCB::default
 inline void default_label(VW::ccb_label& ld) { VW::default_ccb_label(ld); }
 
 VW_DEPRECATED("CCB::parse_label renamed to VW::parse_ccb_label. CCB::parse_label will be removed in VW 10.")
-inline void parse_label(
-    VW::ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+inline void parse_label(VW::ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem,
+    const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   VW::parse_ccb_label(ld, reuse_mem, words, logger);
 }
