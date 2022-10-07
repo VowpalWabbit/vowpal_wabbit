@@ -85,7 +85,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   // this constant factor should be enough, we need a higher probability that we get a fair coin flip in the Omega
   // matrix
   const uint64_t sampling_slack = 10;
-  auto p = std::min(num_actions, _d + sampling_slack);
+  auto p = std::min(num_actions, static_cast<size_t>(_d + sampling_slack));
   AOmega.resize(num_actions, p);
 
   auto calculate_aomega_row = [](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
