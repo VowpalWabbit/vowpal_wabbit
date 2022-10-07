@@ -80,7 +80,7 @@ struct cb_sample_data
 
       // Sampling is done after the base learner has generated a pdf.
       auto result = exploration::sample_after_normalizing(
-          seed, ACTION_SCORE::begin_scores(action_scores), ACTION_SCORE::end_scores(action_scores), chosen_action);
+          seed, VW::begin_scores(action_scores), VW::end_scores(action_scores), chosen_action);
       assert(result == S_EXPLORATION_OK);
       _UNUSED(result);
 
@@ -97,7 +97,7 @@ struct cb_sample_data
     _UNUSED(result);
   }
 
-  static std::string cb_decision_to_string(const ACTION_SCORE::action_scores& action_scores)
+  static std::string cb_decision_to_string(const VW::action_scores& action_scores)
   {
     std::ostringstream ostrm;
     if (action_scores.empty()) { return ""; }

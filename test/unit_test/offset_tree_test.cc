@@ -35,8 +35,8 @@ struct reduction_test_harness
   {
     ec.pred.a_s.clear();
     const auto curr_pred = _predictions[_curr_idx++];
-    ec.pred.a_s.push_back(ACTION_SCORE::action_score{0, curr_pred.first});
-    ec.pred.a_s.push_back(ACTION_SCORE::action_score{1, curr_pred.second});
+    ec.pred.a_s.push_back(VW::action_score{0, curr_pred.first});
+    ec.pred.a_s.push_back(VW::action_score{1, curr_pred.second});
   }
 
   void test_learn(base_learner& base, VW::example& ec)

@@ -954,7 +954,7 @@ uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 
 float get_action_score(example* ec, size_t i)
 {
-  ACTION_SCORE::action_scores scores = ec->pred.a_s;
+  VW::action_scores scores = ec->pred.a_s;
 
   if (i < scores.size()) { return scores[i].score; }
   else

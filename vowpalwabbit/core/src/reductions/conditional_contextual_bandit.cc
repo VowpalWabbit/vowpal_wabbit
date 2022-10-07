@@ -79,7 +79,7 @@ struct ccb_data
   bool no_pred = false;
 
   VW::vector_pool<CB::cb_class> cb_label_pool;
-  VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
+  VW::v_array_pool<VW::action_score> action_score_pool;
 
   VW::version_struct model_file_version;
   // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.

@@ -767,11 +767,10 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
   BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
 
   const auto& label6 = examples[6]->l.slates;
-  check_collections_with_float_tolerance(
-      label6.probabilities, std::vector<ACTION_SCORE::action_score>{{1, 0.8f}}, FLOAT_TOL);
+  check_collections_with_float_tolerance(label6.probabilities, std::vector<VW::action_score>{{1, 0.8f}}, FLOAT_TOL);
   const auto& label7 = examples[7]->l.slates;
   check_collections_with_float_tolerance(
-      label7.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.6f}, {1, 0.4f}}, FLOAT_TOL);
+      label7.probabilities, std::vector<VW::action_score>{{0, 0.6f}, {1, 0.4f}}, FLOAT_TOL);
 
   // Check values in DecisionServiceInteraction
   BOOST_CHECK_EQUAL(ds_interaction.eventId, "test_id");

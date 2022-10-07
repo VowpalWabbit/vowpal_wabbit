@@ -62,8 +62,7 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
     parse_slates_label("slates slot 0:0.2", label);
     BOOST_CHECK_EQUAL(label.type, VW::slates::example_type::slot);
     BOOST_CHECK_EQUAL(label.labeled, true);
-    check_collections_with_float_tolerance(
-        label.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.2f}}, FLOAT_TOL);
+    check_collections_with_float_tolerance(label.probabilities, std::vector<VW::action_score>{{0, 0.2f}}, FLOAT_TOL);
   }
 
   {
@@ -72,7 +71,7 @@ BOOST_AUTO_TEST_CASE(slates_parse_label)
     BOOST_CHECK_EQUAL(label.type, VW::slates::example_type::slot);
     BOOST_CHECK_EQUAL(label.labeled, true);
     check_collections_with_float_tolerance(
-        label.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.5f}, {1, 0.3f}, {2, 0.2f}}, FLOAT_TOL);
+        label.probabilities, std::vector<VW::action_score>{{0, 0.5f}, {1, 0.3f}, {2, 0.2f}}, FLOAT_TOL);
   }
 
   {
@@ -173,7 +172,7 @@ BOOST_AUTO_TEST_CASE(slates_cache_slot_label)
   BOOST_CHECK_EQUAL(uncached_label.type, VW::slates::example_type::slot);
   BOOST_CHECK_EQUAL(uncached_label.labeled, true);
   check_collections_with_float_tolerance(
-      uncached_label.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
+      uncached_label.probabilities, std::vector<VW::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
 }
 
 BOOST_AUTO_TEST_CASE(slates_copy_label)
@@ -187,5 +186,5 @@ BOOST_AUTO_TEST_CASE(slates_copy_label)
   BOOST_CHECK_EQUAL(copied_to.type, VW::slates::example_type::slot);
   BOOST_CHECK_EQUAL(copied_to.labeled, true);
   check_collections_with_float_tolerance(
-      copied_to.probabilities, std::vector<ACTION_SCORE::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
+      copied_to.probabilities, std::vector<VW::action_score>{{0, 0.5}, {1, 0.25}, {2, 0.25}}, FLOAT_TOL);
 }
