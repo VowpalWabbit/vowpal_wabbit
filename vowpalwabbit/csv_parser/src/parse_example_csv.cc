@@ -96,9 +96,8 @@ void csv_parser::handle_parse_args(csv_parser_options& parsed_options)
   }
 }
 
-class CSV_parser
+struct CSV_parser
 {
-public:
   CSV_parser(VW::workspace* all, VW::example* ae, VW::string_view csv_line, VW::parsers::csv_parser* parser)
       : _parser(parser), _all(all), _ae(ae)
   {

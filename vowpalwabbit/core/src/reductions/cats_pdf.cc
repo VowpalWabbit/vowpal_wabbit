@@ -92,9 +92,8 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, VW::example& ec)
 
 ///////////////////////////////////////////////////
 // BEGIN: functions to output progress
-class reduction_output
+struct reduction_output
 {
-public:
   static void report_progress(VW::workspace& all, const cats_pdf&, const VW::example& ec);
   static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
       const VW::continuous_actions::probability_density_function& prediction);

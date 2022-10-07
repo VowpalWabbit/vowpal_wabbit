@@ -29,13 +29,6 @@ namespace
 {
 struct cb_explore_adf_first
 {
-private:
-  size_t _tau;
-  float _epsilon;
-
-  VW::version_struct _model_file_version;
-
-public:
   cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version);
   ~cb_explore_adf_first() = default;
 
@@ -45,6 +38,10 @@ public:
   void save_load(io_buf& io, bool read, bool text);
 
 private:
+  size_t _tau;
+  float _epsilon;
+
+  VW::version_struct _model_file_version;
   template <bool is_learn>
   void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
 };

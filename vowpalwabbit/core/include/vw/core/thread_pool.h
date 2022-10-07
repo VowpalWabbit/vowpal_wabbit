@@ -18,9 +18,8 @@
 
 namespace VW
 {
-class threads_joiner
+struct threads_joiner
 {
-public:
   explicit threads_joiner(std::vector<std::thread>& threads) : _threads{threads} {}
   ~threads_joiner()
   {
@@ -34,28 +33,8 @@ private:
   std::vector<std::thread>& _threads;
 };
 
-class thread_pool
+struct thread_pool
 {
-private:
-  void worker()
-  {
-    while (!_done)
-    {
-      std::function<void()> task;
-      if (!_task_queue.try_pop(task))
-      { /*try pop returned false, the queue is done and it is empty*/
-        return;
-      }
-      task();
-    }
-  }
-
-  std::atomic_bool _done;
-  VW::thread_safe_queue<std::function<void()>> _task_queue;
-  std::vector<std::thread> _threads;
-  threads_joiner _joiner;
-
-public:
   // Initializes a thread pool with num_threads threads.
   explicit thread_pool(size_t num_threads)
       : _done{false}, _task_queue{std::numeric_limits<size_t>::max()}, _joiner{_threads}
@@ -101,5 +80,24 @@ public:
 
   // returns the number of worker threads in the pool.
   size_t size() const { return _threads.size(); }
+
+private:
+  void worker()
+  {
+    while (!_done)
+    {
+      std::function<void()> task;
+      if (!_task_queue.try_pop(task))
+      { /*try pop returned false, the queue is done and it is empty*/
+        return;
+      }
+      task();
+    }
+  }
+
+  std::atomic_bool _done;
+  VW::thread_safe_queue<std::function<void()>> _task_queue;
+  std::vector<std::thread> _threads;
+  threads_joiner _joiner;
 };
 }  // namespace VW

@@ -29,9 +29,8 @@ extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE
 
 struct search;
 
-class BaseTask
+struct BaseTask
 {
-public:
   BaseTask(search* _sch, VW::multi_ex& _ec) : sch(_sch), ec(_ec)
   {
     _foreach_action = nullptr;
@@ -254,9 +253,8 @@ struct search_metatask
 
 // to make calls to "predict" (and "predictLDF") cleaner when you
 // want to use crazy combinations of arguments
-class predictor
+struct predictor
 {
-public:
   predictor(search& sch, ptag my_tag);
 
   // tell the predictor what to use as input. a single example input

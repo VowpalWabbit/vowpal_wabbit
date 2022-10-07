@@ -30,9 +30,8 @@ struct csv_parser_options
 
 int parse_csv_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 
-class csv_parser : public VW::details::input_parser
+struct csv_parser : public VW::details::input_parser
 {
-public:
   std::vector<std::string> header_fn;
   std::vector<std::string> header_ns;
   size_t line_num = 0;

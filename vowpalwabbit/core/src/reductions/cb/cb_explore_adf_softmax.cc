@@ -23,11 +23,6 @@ namespace
 {
 struct cb_explore_adf_softmax
 {
-private:
-  float _epsilon;
-  float _lambda;
-
-public:
   cb_explore_adf_softmax(float epsilon, float lambda);
   ~cb_explore_adf_softmax() = default;
 
@@ -39,6 +34,8 @@ public:
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
+  float _epsilon;
+  float _lambda;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };

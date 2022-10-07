@@ -24,11 +24,6 @@ namespace
 {
 struct cb_explore_adf_greedy
 {
-private:
-  float _epsilon;
-  bool _first_only;
-
-public:
   cb_explore_adf_greedy(float epsilon, bool first_only);
   ~cb_explore_adf_greedy() = default;
 
@@ -40,6 +35,8 @@ public:
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
+  float _epsilon;
+  bool _first_only;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
