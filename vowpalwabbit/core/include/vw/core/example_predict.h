@@ -28,7 +28,7 @@ struct example_predict
     bool operator==(const iterator& rhs) const;
     bool operator!=(const iterator& rhs) const;
 
-private:
+  private:
     features* _feature_space;
     VW::v_array<namespace_index>::iterator _index;
   };
