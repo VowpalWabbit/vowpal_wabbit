@@ -31,8 +31,8 @@ void logger::log_summary()
 
 output_location get_output_location(const std::string& name)
 {
-  if (name == "stdout") { return output_location::OUT; }
-  if (name == "stderr") { return output_location::ERR; }
+  if (name == "stdout") { return output_location::STDOUT; }
+  if (name == "stderr") { return output_location::STDERR; }
   if (name == "compat") { return output_location::COMPAT; }
 
   THROW("invalid output location: " << name);
