@@ -21,7 +21,6 @@
 
 using namespace VW::LEARNER;
 using namespace exploration;
-using namespace ACTION_SCORE;
 
 using namespace VW::config;
 
@@ -122,7 +121,7 @@ struct cbify
 {
   CB::label cb_label;
   uint64_t app_seed = 0;
-  action_scores a_s;
+  VW::action_scores a_s;
   cbify_reg regression_data;
   // used as the seed
   size_t example_counter = 0;
@@ -137,7 +136,7 @@ struct cbify
   // for ldf inputs
   std::vector<std::vector<COST_SENSITIVE::wclass>> cs_costs;
   std::vector<std::vector<CB::cb_class>> cb_costs;
-  std::vector<ACTION_SCORE::action_scores> cb_as;
+  std::vector<VW::action_scores> cb_as;
 };
 
 float loss(const cbify& data, uint32_t label, uint32_t final_prediction)

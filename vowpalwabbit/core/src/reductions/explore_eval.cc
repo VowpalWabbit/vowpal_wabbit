@@ -66,7 +66,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
   size_t num_features = 0;
 
   float loss = 0.;
-  ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
+  VW::action_scores preds = (*ec_seq)[0]->pred.a_s;
   VW::label_type_t label_type = all.example_parser->lbl_parser.label_type;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
@@ -94,7 +94,8 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto& sink : all.final_prediction_sink) { print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
@@ -155,7 +156,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
   data.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
   if (label_example != nullptr && is_learn)
   {
-    ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
+    VW::action_scores& a_s = ec_seq[0]->pred.a_s;
 
     float action_probability = 0;
     for (size_t i = 0; i < a_s.size(); i++)

@@ -261,7 +261,7 @@ shrink_factor_config::shrink_factor_config(float gamma_scale, float gamma_expone
 }
 
 void shrink_factor_config::calculate_shrink_factor(
-    size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors)
+    size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors)
 {
   if (_apply_shrink_factor)
   {

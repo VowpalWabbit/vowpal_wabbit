@@ -69,7 +69,7 @@ struct baseline_challenger_data
   {
   }
 
-  static int get_chosen_action(const ACTION_SCORE::action_scores& action_scores) { return action_scores[0].action; }
+  static int get_chosen_action(const VW::action_scores& action_scores) { return action_scores[0].action; }
 
   template <bool is_learn>
   inline void learn_or_predict(multi_learner& base, multi_ex& examples)

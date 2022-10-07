@@ -18,7 +18,7 @@
 constexpr float FLOAT_TOL = 0.0001f;
 
 inline void compare(float l, float r, float tol) { BOOST_CHECK_CLOSE(l, r, tol); }
-inline void compare(const ACTION_SCORE::action_score& l, const ACTION_SCORE::action_score& r, float float_tolerance)
+inline void compare(const VW::action_score& l, const VW::action_score& r, float float_tolerance)
 {
   BOOST_CHECK_EQUAL(l.action, r.action);
   BOOST_CHECK_CLOSE(l.score, r.score, float_tolerance);

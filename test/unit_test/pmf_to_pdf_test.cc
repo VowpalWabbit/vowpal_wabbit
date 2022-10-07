@@ -27,7 +27,7 @@ struct reduction_test_harness
   {
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
-    { ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second}); }
+    { ec.pred.a_s.push_back(VW::action_score{_predictions[i].first, _predictions[i].second}); }
   }
 
   void test_learn(base_learner& base, VW::example& ec)

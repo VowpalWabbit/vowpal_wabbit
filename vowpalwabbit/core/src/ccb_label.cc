@@ -50,7 +50,7 @@ void default_label(label& ld)
 
 bool test_label(const CCB::label& ld) { return ld.outcome == nullptr; }
 
-ACTION_SCORE::action_score convert_to_score(
+VW::action_score convert_to_score(
     const VW::string_view& action_id_str, const VW::string_view& probability_str, VW::io::logger& logger)
 {
   auto action_id = static_cast<uint32_t>(int_of_string(action_id_str, logger));
@@ -153,9 +153,7 @@ void parse_label(
     if ((ld.outcome != nullptr) && ld.outcome->probabilities.size() > 1)
     {
       float total_pred = std::accumulate(ld.outcome->probabilities.begin(), ld.outcome->probabilities.end(), 0.f,
-          [](float result_so_far, ACTION_SCORE::action_score action_pred) {
-            return result_so_far + action_pred.score;
-          });
+          [](float result_so_far, VW::action_score action_pred) { return result_so_far + action_pred.score; });
 
       // TODO do a proper comparison here.
       if (!VW::math::are_same(total_pred, 1.f))
