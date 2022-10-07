@@ -227,36 +227,33 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
         model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
-}  // namespace
 
-base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
+struct mwt_options_instance_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto c = VW::make_unique<mwt>();
   std::string s;
   bool exclude_eval = false;
+  uint32_t num_classes;
+  bool learn;
+};
+
+std::unique_ptr<mwt_options_instance_v1> get_mwt_options_instance(VW::workspace&, options_i& options)
+{
+  auto mwt_opts = VW::make_unique<mwt_options_instance_v1>();
   option_group_definition new_options("[Reduction] Multiworld Testing");
-  new_options.add(make_option("multiworld_test", s).keep().necessary().help("Evaluate features as a policies"))
-      .add(make_option("learn", c->num_classes).help("Do Contextual Bandit learning on <n> classes"))
-      .add(make_option("exclude_eval", exclude_eval).help("Discard mwt policy features before learning"));
+  new_options.add(make_option("multiworld_test", mwt_opts->s).keep().necessary().help("Evaluate features as a policies"))
+      .add(make_option("learn", mwt_opts->num_classes).help("Do Contextual Bandit learning on <n> classes"))
+      .add(make_option("exclude_eval", mwt_opts->exclude_eval).help("Discard mwt policy features before learning"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  for (char i : s) { c->namespaces[static_cast<unsigned char>(i)] = true; }
-  c->all = &all;
-
-  c->evals.resize(all.length(), policy_data{});
-
   bool cb_added = false;
-  if (c->num_classes > 0)
+  if (mwt_opts->num_classes > 0)
   {
-    c->learn = true;
+    mwt_opts->learn = true;
 
     if (!options.was_supplied("cb"))
     {
       std::stringstream ss;
-      ss << c->num_classes;
+      ss << mwt_opts->num_classes;
       options.insert("cb", ss.str());
       cb_added = true;
     }
@@ -267,14 +264,33 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
     // default to legacy cb implementation
     options.insert("cb_force_legacy", "");
   }
+  return mwt_opts;
+}
+
+}  // namespace
+
+base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto mwt_opts = get_mwt_options_instance(all, options);
+  if (mwt_opts == nullptr) { return nullptr; }
+  auto mwt_data = VW::make_unique<mwt>();
+  mwt_data->num_classes = mwt_opts->num_classes;
+  mwt_data->learn = mwt_opts->learn;
+
+  for (char i : mwt_opts->s) { mwt_data->namespaces[static_cast<unsigned char>(i)] = true; }
+  mwt_data->all = &all;
+
+  mwt_data->evals.resize(all.length(), policy_data{});
 
   std::string name_addition;
   void (*learn_ptr)(mwt&, single_learner&, VW::example&);
   void (*pred_ptr)(mwt&, single_learner&, VW::example&);
 
-  if (c->learn)
+  if (mwt_data->learn)
   {
-    if (exclude_eval)
+    if (mwt_opts->exclude_eval)
     {
       name_addition = "-no_eval";
       learn_ptr = predict_or_learn<true, true, true>;
@@ -294,7 +310,7 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_or_learn<false, false, false>;
   }
 
-  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
+  auto* l = make_reduction_learner(std::move(mwt_data), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::scalars)
