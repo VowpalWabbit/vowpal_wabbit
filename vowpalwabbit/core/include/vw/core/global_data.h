@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/allreduce/allreduce.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/array_parameters.h"
@@ -47,8 +48,8 @@ namespace VW
 {
 struct workspace;
 
-class AllReduce;
-enum class AllReduceType;
+class all_reduce_base;
+enum class all_reduce_type;
 }  // namespace VW
 
 using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
@@ -111,8 +112,8 @@ public:
   parser* example_parser;
   std::thread parse_thread;
 
-  AllReduceType all_reduce_type;
-  AllReduce* all_reduce;
+  all_reduce_type selected_all_reduce_type;
+  all_reduce_base* all_reduce;
 
   bool chain_hash_json = false;
 
