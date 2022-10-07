@@ -25,7 +25,7 @@ namespace flatbuffer
 void parser::parse_simple_label(
     shared_data* /*sd*/, polylabel* l, reduction_features* red_features, const SimpleLabel* label)
 {
-  auto& simple_red_features = red_features->template get<simple_label_reduction_features>();
+  auto& simple_red_features = red_features->template get<VW::simple_label_reduction_features>();
   l->simple.label = label->label();
   simple_red_features.weight = label->weight();
   simple_red_features.initial = label->initial();

@@ -221,25 +221,25 @@ public:
 
   virtual void ReadFromExample(example* ex)
   {
-    label_data* ld = &ex->l.simple;
+    auto* ld = &ex->l.simple;
 
     m_label = ld->label;
 
-    const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    const auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
     m_weight = red_fts.weight;
     m_initial = red_fts.initial;
   }
 
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
-    label_data* ld = &ex->l.simple;
+    auto* ld = &ex->l.simple;
     ld->label = m_label;
 
     if (m_weight.HasValue) ex->weight = m_weight.Value;
 
     if (m_initial.HasValue)
     {
-      auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       red_fts.initial = m_initial.Value;
     }
 

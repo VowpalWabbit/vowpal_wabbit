@@ -85,7 +85,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
   // Check vw example
   EXPECT_EQ(examples.size(), 1);
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 0.f);
-  const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
+  const auto& red_features = examples[0]->_reduction_features.template get<VW::simple_label_reduction_features>();
   EXPECT_FLOAT_EQ(red_features.weight, 1.f);
 
   EXPECT_EQ(examples[0]->indices[0], constant_namespace);
@@ -129,7 +129,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
   // check vw example
   EXPECT_EQ(examples.size(), 1);
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 0.f);
-  const auto& red_features = examples[0]->_reduction_features.template get<simple_label_reduction_features>();
+  const auto& red_features = examples[0]->_reduction_features.template get<VW::simple_label_reduction_features>();
   EXPECT_FLOAT_EQ(red_features.weight, 1.f);
 
   EXPECT_EQ(examples[0]->indices[0], constant_namespace);

@@ -6,6 +6,7 @@
 
 #include "test_common.h"
 #include "vw/core/cb_label_parser.h"
+#include "vw/core/simple_label.h"
 
 #include <boost/test/unit_test.hpp>
 
@@ -18,6 +19,12 @@ std::ostream& operator<<(std::ostream& os, const VW::reductions::cats::tree_node
 {
   os << "{" << node.id << "," << node.left_id << "," << node.right_id << ", " << node.parent_id << ", " << node.depth
      << ", " << (node.is_leaf ? "true" : "false") << "}";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const VW::simple_label& label)
+{
+  os << label.label;
   return os;
 }
 }  // namespace std
@@ -49,7 +56,7 @@ struct reduction_test_harness
   };
 
   vector<float> _predictions;
-  vector<label_data> _labels;
+  vector<VW::simple_label> _labels;
   vector<float> _weights;
   vector<uint64_t> _learner_offset;
   int _curr_idx;
@@ -94,20 +101,20 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   delete test_base;
 }
 
-bool operator!=(const label_data& lhs, const label_data& rhs) { return !(lhs.label == rhs.label); }
+bool operator!=(const VW::simple_label& lhs, const VW::simple_label& rhs) { return !(lhs.label == rhs.label); }
 
-bool operator!=(const simple_label_reduction_features& lhs, const simple_label_reduction_features& rhs)
+bool operator!=(const VW::simple_label_reduction_features& lhs, const VW::simple_label_reduction_features& rhs)
 {
   return !(lhs.weight == rhs.weight && lhs.initial == rhs.initial);
 }
 
-std::ostream& operator<<(std::ostream& o, label_data const& lbl)
+std::ostream& operator<<(std::ostream& o, VW::simple_label const& lbl)
 {
   o << "{l=" << lbl.label << "}";
   return o;
 }
 
-std::ostream& operator<<(std::ostream& o, simple_label_reduction_features const& red_fts)
+std::ostream& operator<<(std::ostream& o, VW::simple_label_reduction_features const& red_fts)
 {
   o << "{w=" << red_fts.weight << ", i=" << red_fts.initial << "}";
   return o;
@@ -130,7 +137,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}, {1}};
+  vector<VW::simple_label> expected_labels = {{-1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -164,7 +171,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}};
+  vector<VW::simple_label> expected_labels = {{-1}};
   vector<float> expected_weights = {3.5f / 0.5f};
   BOOST_CHECK_EQUAL_COLLECTIONS(
       pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
@@ -199,7 +206,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}, {1}};
+  vector<VW::simple_label> expected_labels = {{-1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -234,7 +241,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}, {1}, {1}, {1}};
+  vector<VW::simple_label> expected_labels = {{-1}, {1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -269,7 +276,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {
+  vector<VW::simple_label> expected_labels = {
       {1},
       {1},
       {1},
@@ -308,7 +315,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}, {1}, {-1}};
+  vector<VW::simple_label> expected_labels = {{-1}, {1}, {-1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -343,7 +350,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{1}, {-1}, {1}, {1}};
+  vector<VW::simple_label> expected_labels = {{1}, {-1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -378,7 +385,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {};
+  vector<VW::simple_label> expected_labels = {};
   vector<float> expected_weights = {};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -413,7 +420,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{1}, {1}, {1}};
+  vector<VW::simple_label> expected_labels = {{1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
@@ -448,7 +455,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {
+  vector<VW::simple_label> expected_labels = {
       {1},
       {1},
       {1},

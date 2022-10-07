@@ -208,7 +208,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW:
   VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << VW::debug::simple_label_to_string(ec)
              << VW::debug::features_to_string(ec) << std::endl;
 
-  label_data regression_label = ec.l.simple;
+  VW::simple_label regression_label = ec.l.simple;
   data.cb_label.costs.clear();
   ec.l.cb = data.cb_label;
   ec.pred.a_s = std::move(data.a_s);
@@ -277,7 +277,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, VW::example&
 
   // Save simple label from the example just in case base.predict changes the label.
   // Technically it should not.
-  const label_data regression_label = ec.l.simple;
+  const VW::simple_label regression_label = ec.l.simple;
 
   // Clear the prediction before getting a prediction from base
   ec.pred.pdf_value = {0.f, 0.f};
@@ -591,7 +591,7 @@ void output_example_regression_discrete(VW::workspace& all, cbify& data, VW::exa
 {
   // data contains the cb vector, which store among other things, loss
   // ec contains a simple label type
-  label_data& ld = ec.l.simple;
+  VW::simple_label& ld = ec.l.simple;
   const auto& cb_costs = data.cb_label.costs;
 
   // Track the max cost and report it at the end
@@ -605,14 +605,14 @@ void output_example_regression_discrete(VW::workspace& all, cbify& data, VW::exa
 
   if (ld.label != FLT_MAX) { all.sd->weighted_labels += static_cast<double>(cb_costs[0].action) * ec.weight; }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 void output_example_regression(VW::workspace& all, cbify& data, VW::example& ec)
 {
   // data contains the cb_cont vector, which store among other things, loss
   // ec contains a simple label type
-  label_data& ld = ec.l.simple;
+  VW::simple_label& ld = ec.l.simple;
   const auto& cb_cont_costs = data.regression_data.cb_cont_label.costs;
 
   // Track the max cost and report it at the end
@@ -626,7 +626,7 @@ void output_example_regression(VW::workspace& all, cbify& data, VW::example& ec)
 
   if (ld.label != FLT_MAX) { all.sd->weighted_labels += static_cast<double>(cb_cont_costs[0].action) * ec.weight; }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 void output_cb_reg_predictions(

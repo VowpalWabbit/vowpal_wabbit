@@ -75,7 +75,7 @@ void confidence_print_result(
 
 void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
@@ -86,7 +86,7 @@ void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
   for (const auto& sink : all.final_prediction_sink)
   { confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, all.logger); }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 void return_confidence_example(VW::workspace& all, confidence& /* c */, VW::example& ec)

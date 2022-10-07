@@ -97,12 +97,12 @@ void print_result(VW::io::writer* file_descriptor,
 
 void output_example(VW::workspace& all, const VW::example& ec)
 {
-  const label_data& ld = ec.l.simple;
+  const auto& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX) { all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight; }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 template <bool is_learn>

@@ -83,7 +83,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     }
     VW::copy_example_metadata(&data.ec, &ec);
     base.predict(data.ec);
-    auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = data.ec.pred.scalar;
     base.predict(ec);
   }
@@ -124,7 +124,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     }
 
     // regress residual
-    auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = data.ec.pred.scalar;
     base.learn(ec);
 
@@ -154,7 +154,7 @@ float sensitivity(baseline_data& data, base_learner& base, VW::example& ec)
 
   // sensitivity of residual
   as_singleline(&base)->predict(data.ec);
-  auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   simple_red_features.initial = data.ec.pred.scalar;
   const float sens = base.sensitivity(ec);
   return baseline_sens + sens;

@@ -136,7 +136,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
-  n.outputweight._reduction_features.template get<simple_label_reduction_features>().initial = 0.f;
+  n.outputweight._reduction_features.template get<VW::simple_label_reduction_features>().initial = 0.f;
 
   n.finished_setup = true;
 }
@@ -157,7 +157,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
     auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
-    label_data ld = ec.l.simple;
+    VW::simple_label ld = ec.l.simple;
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
@@ -306,8 +306,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     {
       n.output_layer.ft_offset = ec.ft_offset;
       n.output_layer.l.simple = ec.l.simple;
-      n.output_layer._reduction_features.template get<simple_label_reduction_features>().initial =
-          ec._reduction_features.template get<simple_label_reduction_features>().initial;
+      n.output_layer._reduction_features.template get<VW::simple_label_reduction_features>().initial =
+          ec._reduction_features.template get<VW::simple_label_reduction_features>().initial;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn) { base.learn(n.output_layer, n.k); }
@@ -423,7 +423,7 @@ void finish_example(VW::workspace& all, nn&, VW::example& ec)
 {
   std::unique_ptr<VW::io::writer> temp(nullptr);
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
-  return_simple_example(all, nullptr, ec);
+  VW::details::return_simple_example(all, nullptr, ec);
 }
 }  // namespace
 
