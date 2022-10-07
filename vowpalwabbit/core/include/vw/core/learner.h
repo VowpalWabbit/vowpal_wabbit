@@ -227,6 +227,20 @@ bool ec_is_example_header(example const& ec, label_type_t label_type);
 template <class T, class E>
 struct learner
 {
+private:
+  /// \private
+  void debug_log_message(example& ec, const std::string& msg)
+  {
+    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
+  }
+
+  /// \private
+  void debug_log_message(multi_ex& ec, const std::string& msg)
+  {
+    VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
+  }
+
+public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
 
@@ -552,18 +566,6 @@ private:
   std::shared_ptr<void> learner_data;
 
   learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
-
-  /// \private
-  void debug_log_message(example& ec, const std::string& msg)
-  {
-    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
-  }
-
-  /// \private
-  void debug_log_message(multi_ex& ec, const std::string& msg)
-  {
-    VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
-  }
 };
 
 template <class T, class E>
