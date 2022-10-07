@@ -91,7 +91,7 @@ public:
       , m_option_group_dic(options.get_collection_of_options())
       , m_py_opt_class(py_class)
   {
-    default_group_name = options.m_default_tint;
+    default_group_name = options.DEFAULT_TINT;
     m_visitor_output_var = nullptr;
   }
 
