@@ -230,8 +230,8 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   auto label_type = cb_algs_opts->eval ? VW::label_type_t::cb_eval : VW::label_type_t::cb;
   auto finish_ex = cb_algs_opts->eval ? eval_finish_example : ::finish_example;
 
-  auto* l = make_reduction_learner(
-      std::move(cb_algs_data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(cb_algs_data), base, learn_ptr, predict_ptr,
+      stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
                 .set_input_label_type(label_type)
                 .set_output_label_type(VW::label_type_t::cs)
                 .set_input_prediction_type(VW::prediction_type_t::multiclass)

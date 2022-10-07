@@ -364,7 +364,8 @@ std::unique_ptr<cb_explore_options_instance_v1> get_cb_explore_options_instance(
       .add(make_option("nounif", cb_explore_opts->nounif)
                .keep()
                .help("Do not explore uniformly on zero-probability actions in cover"))
-      .add(make_option("psi", cb_explore_opts->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"));
+      .add(
+          make_option("psi", cb_explore_opts->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -400,7 +401,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   auto cb_explore_data = VW::make_unique<cb_explore>(all.logger);
   cb_explore_data->cbcs.num_actions = cb_explore_opts->num_actions;
   cb_explore_data->tau = cb_explore_opts->tau;
-  cb_explore_data->epsilon= cb_explore_opts->epsilon;
+  cb_explore_data->epsilon = cb_explore_opts->epsilon;
   cb_explore_data->bag_size = cb_explore_opts->bag_size;
   cb_explore_data->cover_size = cb_explore_opts->cover_size;
   cb_explore_data->nounif = cb_explore_opts->nounif;
@@ -409,7 +410,8 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   cb_explore_data->_random_state = all.get_random_state();
   uint32_t num_actions = cb_explore_data->cbcs.num_actions;
 
-  if (cb_explore_data->epsilon < 0.0 || cb_explore_data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+  if (cb_explore_data->epsilon < 0.0 || cb_explore_data->epsilon > 1.0)
+  { THROW("The value of epsilon must be in [0,1]"); }
 
   cb_explore_data->cbcs.cb_type = VW::cb_type_t::dr;
   cb_explore_data->model_file_version = all.model_file_ver;
@@ -435,7 +437,8 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
       cb_explore_data->epsilon_decay = true;
     }
     cb_explore_data->cs = reinterpret_cast<learner<cb_explore, VW::example>*>(as_singleline(all.cost_sensitive));
-    for (uint32_t j = 0; j < num_actions; j++) { cb_explore_data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
+    for (uint32_t j = 0; j < num_actions; j++)
+    { cb_explore_data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
     cb_explore_data->cover_probs.resize_but_with_stl_behavior(num_actions);
     cb_explore_data->preds.reserve(cb_explore_data->cover_size);
     learn_ptr = predict_or_learn_cover<true>;
@@ -464,8 +467,8 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
     params_per_weight = 1;
     name_addition = "-greedy";
   }
-  auto* l = make_reduction_learner(
-      std::move(cb_explore_data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(cb_explore_data), base, learn_ptr, predict_ptr,
+      stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
                 .set_input_label_type(VW::label_type_t::cb)
                 .set_output_label_type(VW::label_type_t::cb)
                 .set_input_prediction_type(VW::prediction_type_t::multiclass)

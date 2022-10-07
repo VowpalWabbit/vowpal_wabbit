@@ -240,7 +240,8 @@ std::unique_ptr<mwt_options_instance_v1> get_mwt_options_instance(VW::workspace&
 {
   auto mwt_opts = VW::make_unique<mwt_options_instance_v1>();
   option_group_definition new_options("[Reduction] Multiworld Testing");
-  new_options.add(make_option("multiworld_test", mwt_opts->s).keep().necessary().help("Evaluate features as a policies"))
+  new_options
+      .add(make_option("multiworld_test", mwt_opts->s).keep().necessary().help("Evaluate features as a policies"))
       .add(make_option("learn", mwt_opts->num_classes).help("Do Contextual Bandit learning on <n> classes"))
       .add(make_option("exclude_eval", mwt_opts->exclude_eval).help("Discard mwt policy features before learning"));
 
@@ -310,8 +311,8 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_or_learn<false, false, false>;
   }
 
-  auto* l = make_reduction_learner(std::move(mwt_data), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
-      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(mwt_data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
+      pred_ptr, stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::scalars)
                 .set_input_label_type(VW::label_type_t::cb)

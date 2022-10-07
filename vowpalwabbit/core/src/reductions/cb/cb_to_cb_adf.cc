@@ -117,7 +117,8 @@ struct cb_to_cb_adf_options_instance_v1
   bool override_cb;
 };
 
-std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_instance(VW::workspace& all, options_i& options)
+std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_instance(
+    VW::workspace& all, options_i& options)
 {
   auto cb_to_cb_adf_opts = VW::make_unique<cb_to_cb_adf_options_instance_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit: cb -> cb_adf");
@@ -126,12 +127,18 @@ std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_insta
                .help("Flag is unused and has no effect. It should not be passed. The cb_to_cbadf reduction is "
                      "automatically enabled if cb, cb_explore or cbify are used. This flag will be removed in a future "
                      "release but not the functionality."))
-      .add(make_option("cb", cb_to_cb_adf_opts->num_actions).keep().help("Maps cb_adf to cb. Disable with cb_force_legacy"))
+      .add(make_option("cb", cb_to_cb_adf_opts->num_actions)
+               .keep()
+               .help("Maps cb_adf to cb. Disable with cb_force_legacy"))
       .add(make_option("cb_explore", cb_to_cb_adf_opts->cbx_num_actions)
                .keep()
                .help("Translate cb explore to cb_explore_adf. Disable with cb_force_legacy"))
-      .add(make_option("cbify", cb_to_cb_adf_opts->cbi_num_actions).keep().help("Translate cbify to cb_adf. Disable with cb_force_legacy"))
-      .add(make_option("cb_force_legacy", cb_to_cb_adf_opts->force_legacy).keep().help("Default to non-adf cb implementation (cb_algs)"));
+      .add(make_option("cbify", cb_to_cb_adf_opts->cbi_num_actions)
+               .keep()
+               .help("Translate cbify to cb_adf. Disable with cb_force_legacy"))
+      .add(make_option("cb_force_legacy", cb_to_cb_adf_opts->force_legacy)
+               .keep()
+               .help("Default to non-adf cb implementation (cb_algs)"));
 
   options.add_and_parse(new_options);
 
@@ -147,7 +154,9 @@ std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_insta
 
   // ANY model created with older version should default to --cb_force_legacy
   if (all.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
-  { cb_to_cb_adf_opts->compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF); }
+  {
+    cb_to_cb_adf_opts->compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF);
+  }
 
   // not compatible with adf
   if (options.was_supplied("cbify_reg")) { cb_to_cb_adf_opts->compat_old_cb = true; }
@@ -177,10 +186,7 @@ std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_insta
   // if cb_explore_adf is being specified this is a noop
   if (cb_to_cb_adf_opts->override_cbify && options.was_supplied("cb_explore_adf")) { return nullptr; }
 
-  if (cb_to_cb_adf_opts->override_cbify)
-  {
-    options.insert("cb_explore_adf", "");
-  }
+  if (cb_to_cb_adf_opts->override_cbify) { options.insert("cb_explore_adf", ""); }
 
   // user specified "cb_explore" but we're not using an old model file
   if (cb_to_cb_adf_opts->override_cb_explore)
@@ -228,7 +234,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
 
   if (cb_to_cb_adf_opts->num_actions <= 0) { THROW("cb num actions must be positive"); }
 
-  data->adf_data.init_adf_data(cb_to_cb_adf_opts->num_actions, base->increment, all.interactions, all.extent_interactions);
+  data->adf_data.init_adf_data(
+      cb_to_cb_adf_opts->num_actions, base->increment, all.interactions, all.extent_interactions);
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
   all.example_parser->emptylines_separate_examples = false;

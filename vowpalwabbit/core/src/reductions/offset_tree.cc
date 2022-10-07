@@ -270,7 +270,8 @@ std::unique_ptr<offset_tree_options_instance_v1> get_offset_tree_options_instanc
   auto offset_tree_opts = VW::make_unique<offset_tree_options_instance_v1>();
   option_group_definition new_options("[Reduction] Offset Tree");
 
-  new_options.add(make_option("ot", offset_tree_opts->num_actions).keep().necessary().help("Offset tree with <k> labels"));
+  new_options.add(
+      make_option("ot", offset_tree_opts->num_actions).keep().necessary().help("Offset tree with <k> labels"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -290,15 +291,15 @@ VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& s
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto offset_tree_opts = get_offset_tree_options_instance(all, options);
   if (offset_tree_opts == nullptr) { return nullptr; }
-  
+
   auto offset_tree_data = VW::make_unique<VW::reductions::offset_tree::offset_tree>(offset_tree_opts->num_actions);
   offset_tree_data->init();
 
   base_learner* base = stack_builder.setup_base_learner();
   size_t ws = offset_tree_data->learner_count();
 
-  auto* l = make_reduction_learner(
-      std::move(offset_tree_data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(offset_tree_setup))
+  auto* l = make_reduction_learner(std::move(offset_tree_data), as_singleline(base), learn, predict,
+      stack_builder.get_setupfn_name(offset_tree_setup))
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(prediction_type_t::action_probs)
                 .set_input_label_type(label_type_t::cb)
