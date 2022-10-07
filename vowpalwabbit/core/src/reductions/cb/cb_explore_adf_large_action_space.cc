@@ -330,8 +330,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool model_weight_impl = false;
   bool use_vanilla_impl = false;
   bool full_spanner = false;
-  size_t thread_pool_size = 0;
-  size_t block_size = 0;
+  uint64_t thread_pool_size = 0;
+  uint64_t block_size = 0;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
