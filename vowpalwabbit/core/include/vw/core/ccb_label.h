@@ -149,11 +149,11 @@ using conditional_contextual_bandit_outcome VW_DEPRECATED(
 using label VW_DEPRECATED("CCB::label renamed to VW::ccb_label. CCB::label will be removed in VW 10.") = VW::ccb_label;
 
 VW_DEPRECATED("CCB::default_label renamed to VW::default_ccb_label. CCB::default_label will be removed in VW 10.")
-inline void default_label(CCB::label& ld) { VW::default_ccb_label(ld); }
+inline void default_label(VW::ccb_label& ld) { VW::default_ccb_label(ld); }
 
 VW_DEPRECATED("CCB::parse_label renamed to VW::parse_ccb_label. CCB::parse_label will be removed in VW 10.")
 inline void parse_label(
-    label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    VW::ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   VW::parse_ccb_label(ld, reuse_mem, words, logger);
 }
