@@ -328,7 +328,8 @@ public:
 using AllReduceType VW_DEPRECATED(
     "AllReduceType was moved into VW namespace. Use VW::all_reduce_type") = VW::all_reduce_type;
 using AllReduce VW_DEPRECATED("AllReduce was moved into VW namespace. Use VW::all_reduce_base") = VW::all_reduce_base;
-using AllReduceSync VW_DEPRECATED("AllReduceSync was moved into VW namespace. Use VW::all_reduce_sync") = VW::all_reduce_sync;
+using AllReduceSync VW_DEPRECATED(
+    "AllReduceSync was moved into VW namespace. Use VW::all_reduce_sync") = VW::all_reduce_sync;
 using AllReduceSockets VW_DEPRECATED(
     "all_reduce_sockets was moved into VW namespace. Use VW::all_reduce_sockets") = VW::all_reduce_sockets;
 using AllReduceThreads VW_DEPRECATED(
