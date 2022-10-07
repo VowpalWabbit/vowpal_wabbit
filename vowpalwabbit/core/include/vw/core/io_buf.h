@@ -42,66 +42,8 @@
 ** This is done to avoid reallocating arrays as much as possible.
 */
 
-class io_buf
+struct io_buf
 {
-  // io_buf requires a grow only variant of v_array where it has access to the internals.
-  // It sets the begin, end and endarray members often and does not need the complexity
-  // of a generic container type, hence why a thin object is defined here.
-  struct internal_buffer
-  {
-    char* _begin = nullptr;
-    char* _end = nullptr;
-    char* _end_array = nullptr;
-
-    ~internal_buffer() { std::free(_begin); }
-
-    void realloc(size_t new_capacity)
-    {
-      // This specific internal buffer should only ever grow.
-      assert(new_capacity >= capacity());
-      const auto old_size = size();
-      char* temp = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
-      if (temp == nullptr)
-      {
-        // _begin still needs to be freed but the destructor will do it.
-        THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
-      }
-      _begin = temp;
-      _end = _begin + old_size;
-      _end_array = _begin + new_capacity;
-      memset(_end, 0, sizeof(char) * (_end_array - _end));
-    }
-
-    void shift_to_front(char* head_ptr)
-    {
-      assert(_end >= head_ptr);
-      const size_t space_left = _end - head_ptr;
-      // Only call memmove if we are within the bounds of the loaded buffer.
-      // Also, this ensures we don't memmove when head_ptr == _end_array which
-      // would be undefined behavior.
-      if (head_ptr >= _begin && head_ptr < _end) { std::memmove(_begin, head_ptr, space_left); }
-      _end = _begin + space_left;
-    }
-
-    size_t capacity() const { return _end_array - _begin; }
-    size_t size() const { return _end - _begin; }
-  };
-
-  // used to check-sum i/o files for corruption detection
-  bool _verify_hash = false;
-  uint32_t _hash = 0;
-  static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
-
-  internal_buffer _buffer;
-  char* head = nullptr;
-
-  // file descriptor currently being used.
-  size_t _current = 0;
-
-  std::vector<std::unique_ptr<VW::io::reader>> input_files;
-  std::vector<std::unique_ptr<VW::io::writer>> output_files;
-
-public:
   io_buf()
   {
     _buffer.realloc(INITIAL_BUFF_SIZE);
@@ -301,6 +243,64 @@ public:
   size_t copy_to(void* dst, size_t max_size);
   void replace_buffer(char* buf, size_t capacity);
   char* buffer_start() { return _buffer._begin; }  // This should be replaced with slicing.
+
+private:
+  // io_buf requires a grow only variant of v_array where it has access to the internals.
+  // It sets the begin, end and endarray members often and does not need the complexity
+  // of a generic container type, hence why a thin object is defined here.
+  struct internal_buffer
+  {
+    char* _begin = nullptr;
+    char* _end = nullptr;
+    char* _end_array = nullptr;
+
+    ~internal_buffer() { std::free(_begin); }
+
+    void realloc(size_t new_capacity)
+    {
+      // This specific internal buffer should only ever grow.
+      assert(new_capacity >= capacity());
+      const auto old_size = size();
+      char* temp = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
+      if (temp == nullptr)
+      {
+        // _begin still needs to be freed but the destructor will do it.
+        THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
+      }
+      _begin = temp;
+      _end = _begin + old_size;
+      _end_array = _begin + new_capacity;
+      memset(_end, 0, sizeof(char) * (_end_array - _end));
+    }
+
+    void shift_to_front(char* head_ptr)
+    {
+      assert(_end >= head_ptr);
+      const size_t space_left = _end - head_ptr;
+      // Only call memmove if we are within the bounds of the loaded buffer.
+      // Also, this ensures we don't memmove when head_ptr == _end_array which
+      // would be undefined behavior.
+      if (head_ptr >= _begin && head_ptr < _end) { std::memmove(_begin, head_ptr, space_left); }
+      _end = _begin + space_left;
+    }
+
+    size_t capacity() const { return _end_array - _begin; }
+    size_t size() const { return _end - _begin; }
+  };
+
+  // used to check-sum i/o files for corruption detection
+  bool _verify_hash = false;
+  uint32_t _hash = 0;
+  static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
+
+  internal_buffer _buffer;
+  char* head = nullptr;
+
+  // file descriptor currently being used.
+  size_t _current = 0;
+
+  std::vector<std::unique_ptr<VW::io::reader>> input_files;
+  std::vector<std::unique_ptr<VW::io::writer>> output_files;
 };
 
 inline size_t bin_read(io_buf& i, char* data, size_t len)

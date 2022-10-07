@@ -371,11 +371,6 @@ std::vector<std::vector<extent_term>> compile_extent_interactions(
 
 struct interactions_generator
 {
-private:
-  std::set<VW::namespace_index> all_seen_namespaces;
-  std::set<extent_term> all_seen_extents;
-
-public:
   std::vector<std::vector<VW::namespace_index>> generated_interactions;
   std::vector<std::vector<extent_term>> generated_extent_interactions;
   bool store_in_reduction_features = false;
@@ -439,6 +434,10 @@ public:
       }
     }
   }
+
+private:
+  std::set<VW::namespace_index> all_seen_namespaces;
+  std::set<extent_term> all_seen_extents;
 };
 
 }  // namespace INTERACTIONS

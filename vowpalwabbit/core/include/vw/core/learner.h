@@ -227,57 +227,6 @@ bool ec_is_example_header(example const& ec, label_type_t label_type);
 template <class T, class E>
 struct learner
 {
-private:
-  template <class FluentBuilderT, class DataT, class ExampleT, class BaseLearnerT>
-  friend struct common_learner_builder;
-  template <class DataT, class ExampleT>
-  friend struct base_learner_builder;
-  template <class DataT, class ExampleT, class BaseLearnerT>
-  friend struct reduction_learner_builder;
-  template <class ExampleT, class BaseLearnerT>
-  friend struct reduction_no_data_learner_builder;
-
-  details::func_data init_fd;
-  details::learn_data learn_fd;
-  details::sensitivity_data sensitivity_fd;
-  details::finish_example_data finish_example_fd;
-  details::save_load_data save_load_fd;
-  details::func_data end_pass_fd;
-  details::func_data end_examples_fd;
-  details::save_metric_data persist_metrics_fd;
-  details::func_data finisher_fd;
-  std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
-  prediction_type_t _output_pred_type;
-  prediction_type_t _input_pred_type;
-  label_type_t _output_label_type;
-  label_type_t _input_label_type;
-  bool _is_multiline;  // Is this a single-line or multi-line reduction?
-
-  // There should only only ever be either none, or one of these two set. Never both.
-  details::merge_with_all_fn _merge_with_all_fn;
-  details::merge_fn _merge_fn;
-  details::add_subtract_fn _add_fn;
-  details::add_subtract_with_all_fn _add_with_all_fn;
-  details::add_subtract_fn _subtract_fn;
-  details::add_subtract_with_all_fn _subtract_with_all_fn;
-
-  std::shared_ptr<void> learner_data;
-
-  learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
-
-  /// \private
-  void debug_log_message(example& ec, const std::string& msg)
-  {
-    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
-  }
-
-  /// \private
-  void debug_log_message(multi_ex& ec, const std::string& msg)
-  {
-    VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
-  }
-
-public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
 
@@ -565,6 +514,56 @@ public:
   /// If true, this specific learner defines a save load function. If false, it simply forwards to a base
   /// implementation.
   VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return learn_fd.data == save_load_fd.data; }
+
+private:
+  template <class FluentBuilderT, class DataT, class ExampleT, class BaseLearnerT>
+  friend struct common_learner_builder;
+  template <class DataT, class ExampleT>
+  friend struct base_learner_builder;
+  template <class DataT, class ExampleT, class BaseLearnerT>
+  friend struct reduction_learner_builder;
+  template <class ExampleT, class BaseLearnerT>
+  friend struct reduction_no_data_learner_builder;
+
+  details::func_data init_fd;
+  details::learn_data learn_fd;
+  details::sensitivity_data sensitivity_fd;
+  details::finish_example_data finish_example_fd;
+  details::save_load_data save_load_fd;
+  details::func_data end_pass_fd;
+  details::func_data end_examples_fd;
+  details::save_metric_data persist_metrics_fd;
+  details::func_data finisher_fd;
+  std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
+  prediction_type_t _output_pred_type;
+  prediction_type_t _input_pred_type;
+  label_type_t _output_label_type;
+  label_type_t _input_label_type;
+  bool _is_multiline;  // Is this a single-line or multi-line reduction?
+
+  // There should only only ever be either none, or one of these two set. Never both.
+  details::merge_with_all_fn _merge_with_all_fn;
+  details::merge_fn _merge_fn;
+  details::add_subtract_fn _add_fn;
+  details::add_subtract_with_all_fn _add_with_all_fn;
+  details::add_subtract_fn _subtract_fn;
+  details::add_subtract_with_all_fn _subtract_with_all_fn;
+
+  std::shared_ptr<void> learner_data;
+
+  learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
+
+  /// \private
+  void debug_log_message(example& ec, const std::string& msg)
+  {
+    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
+  }
+
+  /// \private
+  void debug_log_message(multi_ex& ec, const std::string& msg)
+  {
+    VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
+  }
 };
 
 template <class T, class E>

@@ -7,13 +7,13 @@
 #include "vw/core/v_array.h"
 #include "vw/fb_parser/generated/example_generated.h"
 
-class io_buf;
+struct io_buf;
 namespace VW
 {
 struct workspace;
 struct example;
 struct polylabel;
-class reduction_features;
+struct reduction_features;
 }  // namespace VW
 
 namespace VW
@@ -24,9 +24,8 @@ namespace flatbuffer
 {
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 
-class parser
+struct parser
 {
-public:
   parser() = default;
   const VW::parsers::flatbuffer::ExampleRoot* data();
   bool parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer = nullptr);

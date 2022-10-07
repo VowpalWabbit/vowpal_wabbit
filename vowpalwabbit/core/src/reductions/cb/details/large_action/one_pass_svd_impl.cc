@@ -49,13 +49,6 @@ namespace cb_explore_adf
 
 struct AO_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _column_index;
-  uint64_t _seed;
-  float& _final_dot_product;
-
-public:
   AO_triplet_constructor(uint64_t weights_mask, uint64_t column_index, uint64_t seed, float& final_dot_product)
       : _weights_mask(weights_mask), _column_index(column_index), _seed(seed), _final_dot_product(final_dot_product)
   {
@@ -76,6 +69,12 @@ public:
 #endif
     _final_dot_product += feature_value * val;
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _column_index;
+  uint64_t _seed;
+  float& _final_dot_product;
 };
 
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)

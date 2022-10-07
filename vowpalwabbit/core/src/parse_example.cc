@@ -55,9 +55,8 @@ int read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples
 }
 
 template <bool audit>
-class TC_parser
+struct TC_parser
 {
-public:
   VW::string_view _line;
   size_t _read_idx;
   float _cur_channel_v;

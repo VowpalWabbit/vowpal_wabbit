@@ -36,6 +36,22 @@ namespace
 {
 struct cb_explore_adf_regcb
 {
+  cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost,
+      VW::version_struct model_file_version);
+  ~cb_explore_adf_regcb() = default;
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(multi_learner& base, VW::multi_ex& examples) { predict_impl(base, examples); }
+  void learn(multi_learner& base, VW::multi_ex& examples) { learn_impl(base, examples); }
+  void save_load(io_buf& io, bool read, bool text);
+
+private:
+  void predict_impl(multi_learner& base, VW::multi_ex& examples);
+  void learn_impl(multi_learner& base, VW::multi_ex& examples);
+
+  void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
+  float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
+
 private:
   size_t _counter;
   bool _regcbopt;  // use optimistic variant of RegCB
@@ -52,23 +68,6 @@ private:
   // for backing up cb example data when computing sensitivities
   std::vector<VW::action_scores> _ex_as;
   std::vector<std::vector<CB::cb_class>> _ex_costs;
-
-public:
-  cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost,
-      VW::version_struct model_file_version);
-  ~cb_explore_adf_regcb() = default;
-
-  // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples) { predict_impl(base, examples); }
-  void learn(multi_learner& base, VW::multi_ex& examples) { learn_impl(base, examples); }
-  void save_load(io_buf& io, bool read, bool text);
-
-private:
-  void predict_impl(multi_learner& base, VW::multi_ex& examples);
-  void learn_impl(multi_learner& base, VW::multi_ex& examples);
-
-  void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
-  float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
 cb_explore_adf_regcb::cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost,
