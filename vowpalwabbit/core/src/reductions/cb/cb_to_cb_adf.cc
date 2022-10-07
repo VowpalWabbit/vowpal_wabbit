@@ -118,7 +118,7 @@ struct cb_to_cb_adf_options_instance_v1
 };
 
 std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_instance(
-    VW::workspace& all, options_i& options)
+    const VW::workspace& all, options_i& options)
 {
   auto cb_to_cb_adf_opts = VW::make_unique<cb_to_cb_adf_options_instance_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit: cb -> cb_adf");

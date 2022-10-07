@@ -344,7 +344,8 @@ struct cb_explore_options_instance_v1
   bool first_supplied;
 };
 
-std::unique_ptr<cb_explore_options_instance_v1> get_cb_explore_options_instance(VW::workspace&, options_i& options)
+std::unique_ptr<cb_explore_options_instance_v1> get_cb_explore_options_instance(
+    const VW::workspace&, options_i& options)
 {
   auto cb_explore_opts = VW::make_unique<cb_explore_options_instance_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit Exploration");

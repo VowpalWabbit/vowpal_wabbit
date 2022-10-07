@@ -143,7 +143,7 @@ struct cb_algs_options_instance_v1
   bool force_legacy = true;
 };
 
-std::unique_ptr<cb_algs_options_instance_v1> get_cb_algs_options_instance(VW::workspace&, options_i& options)
+std::unique_ptr<cb_algs_options_instance_v1> get_cb_algs_options_instance(const VW::workspace&, options_i& options)
 {
   auto cb_algs_opts = VW::make_unique<cb_algs_options_instance_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit");

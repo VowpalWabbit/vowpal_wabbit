@@ -236,7 +236,7 @@ struct mwt_options_instance_v1
   bool learn;
 };
 
-std::unique_ptr<mwt_options_instance_v1> get_mwt_options_instance(VW::workspace&, options_i& options)
+std::unique_ptr<mwt_options_instance_v1> get_mwt_options_instance(const VW::workspace&, options_i& options)
 {
   auto mwt_opts = VW::make_unique<mwt_options_instance_v1>();
   option_group_definition new_options("[Reduction] Multiworld Testing");

@@ -265,7 +265,8 @@ struct offset_tree_options_instance_v1
   uint32_t num_actions;
 };
 
-std::unique_ptr<offset_tree_options_instance_v1> get_offset_tree_options_instance(VW::workspace&, options_i& options)
+std::unique_ptr<offset_tree_options_instance_v1> get_offset_tree_options_instance(
+    const VW::workspace&, options_i& options)
 {
   auto offset_tree_opts = VW::make_unique<offset_tree_options_instance_v1>();
   option_group_definition new_options("[Reduction] Offset Tree");
