@@ -145,8 +145,7 @@ namespace
 // the case for a Cartesian product when the logging policy is a product
 // distribution. This can be seen in example 4 of the paper.
 // https://arxiv.org/abs/1605.04812
-float get_estimate(
-    const ACTION_SCORE::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
+float get_estimate(const VW::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
 {
   assert(!label_probs.empty());
   assert(!prediction_probs.empty());
@@ -168,7 +167,7 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   float loss = 0.;
   bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
   float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
-  v_array<ACTION_SCORE::action_score> label_probs;
+  v_array<VW::action_score> label_probs;
 
   for (auto* ec : ec_seq)
   {

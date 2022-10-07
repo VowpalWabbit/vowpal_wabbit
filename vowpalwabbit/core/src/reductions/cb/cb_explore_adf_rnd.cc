@@ -61,7 +61,7 @@ private:
   void zero_bonuses(VW::multi_ex&);
   void accumulate_bonuses(VW::multi_ex&);
   void finish_bonuses();
-  void compute_ci(v_array<ACTION_SCORE::action_score>&, float);
+  void compute_ci(v_array<VW::action_score>&, float);
 
   template <bool>
   void save_labels(VW::multi_ex&);
@@ -107,7 +107,7 @@ void cb_explore_adf_rnd::finish_bonuses()
   for (auto& b : bonuses) { b = std::sqrt(b / numrnd); }
 }
 
-void cb_explore_adf_rnd::compute_ci(v_array<ACTION_SCORE::action_score>& preds, float max_bonus)
+void cb_explore_adf_rnd::compute_ci(v_array<VW::action_score>& preds, float max_bonus)
 {
   constexpr float eulergamma = 0.57721566490153286f;
   for (auto& p : preds) { p.score -= eulergamma * (bonuses[p.action] - max_bonus); }

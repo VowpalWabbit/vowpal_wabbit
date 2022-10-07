@@ -816,7 +816,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlates
 
     for (int i = 0; i < sizeActions; i++)
     {
-      ACTION_SCORE::action_score as;
+      VW::action_score as;
       as.action = actions0[i];
       as.score = probs0[i];
       ld->probabilities.push_back(as);

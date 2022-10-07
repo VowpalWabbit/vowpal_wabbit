@@ -50,7 +50,7 @@ private:
   VW::version_struct _model_file_version;
 
   // for backing up cb example data when computing sensitivities
-  std::vector<ACTION_SCORE::action_scores> _ex_as;
+  std::vector<VW::action_scores> _ex_as;
   std::vector<std::vector<CB::cb_class>> _ex_costs;
 
 public:
@@ -171,7 +171,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, VW:
 void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examples)
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   const float max_range = _max_cb_cost - _min_cb_cost;
@@ -224,7 +224,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
 
 void cb_explore_adf_regcb::learn_impl(multi_learner& base, VW::multi_ex& examples)
 {
-  v_array<ACTION_SCORE::action_score> preds = std::move(examples[0]->pred.a_s);
+  v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
     CB::label& ld = examples[i]->l.cb;

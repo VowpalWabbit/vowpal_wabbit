@@ -93,9 +93,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
       if (ld.probabilities.size() > 1)
       {
         float total_pred = std::accumulate(ld.probabilities.begin(), ld.probabilities.end(), 0.f,
-            [](float result_so_far, const ACTION_SCORE::action_score& action_pred) {
-              return result_so_far + action_pred.score;
-            });
+            [](float result_so_far, const VW::action_score& action_pred) { return result_so_far + action_pred.score; });
 
         if (!VW::math::are_same(total_pred, 1.f))
         {

@@ -23,7 +23,6 @@
 
 using namespace VW::LEARNER;
 using namespace CB;
-using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
@@ -343,7 +342,8 @@ void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::exampl
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (auto& sink : all.final_prediction_sink) { print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {

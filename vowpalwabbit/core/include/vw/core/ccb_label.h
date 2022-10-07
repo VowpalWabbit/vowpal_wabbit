@@ -29,7 +29,7 @@ struct conditional_contextual_bandit_outcome
 
   // Either probability for top action or for all actions in action set.
   // Top action is always in first position.
-  ACTION_SCORE::action_scores probabilities;
+  VW::action_scores probabilities;
 };
 
 // TODO: Remove the elements that are in reduction_features

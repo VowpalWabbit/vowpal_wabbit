@@ -114,7 +114,7 @@ public:
   shrink_factor_config(float gamma_scale, float gamma_exponent, bool apply_shrink_factor);
 
   void calculate_shrink_factor(
-      size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors);
+      size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors);
 };
 
 class spanner_state

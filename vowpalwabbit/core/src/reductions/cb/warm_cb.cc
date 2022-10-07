@@ -22,7 +22,6 @@
 
 using namespace VW::LEARNER;
 using namespace exploration;
-using namespace ACTION_SCORE;
 using namespace VW::config;
 
 #define WARM_START 1
@@ -47,7 +46,7 @@ struct warm_cb
 {
   CB::label cb_label;
   uint64_t app_seed = 0;
-  action_scores a_s;
+  VW::action_scores a_s;
   // used as the seed
   size_t example_counter = 0;
   VW::workspace* all = nullptr;
@@ -75,7 +74,7 @@ struct warm_cb
   uint32_t num_actions = 0;
   float epsilon = 0.f;
   std::vector<float> lambdas;
-  action_scores a_s_adf;
+  VW::action_scores a_s_adf;
   std::vector<float> cumulative_costs;
   CB::cb_class cl_adf;
   uint32_t ws_train_size = 0;

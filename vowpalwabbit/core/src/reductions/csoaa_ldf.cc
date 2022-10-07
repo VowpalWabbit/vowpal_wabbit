@@ -26,7 +26,6 @@
 using namespace VW::LEARNER;
 using namespace COST_SENSITIVE;
 using namespace VW::config;
-using namespace ACTION_SCORE;
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::csoaa_ldf
@@ -44,10 +43,10 @@ struct ldf
   VW::workspace* all = nullptr;
 
   bool rank = false;
-  action_scores a_s;
+  VW::action_scores a_s;
   uint64_t ft_offset = 0;
 
-  std::vector<action_scores> stored_preds;
+  std::vector<VW::action_scores> stored_preds;
 };
 
 inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
@@ -408,7 +407,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
     VW::example* ec = ec_seq_all[k];
     data.stored_preds.emplace_back(std::move(ec->pred.a_s));
     make_single_prediction(data, base, *ec);
-    action_score s;
+    VW::action_score s;
     s.score = ec->partial_prediction;
     s.action = ec->l.cs.costs[0].class_index;
     data.a_s.push_back(s);
@@ -508,7 +507,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   all.sd->total_features += head_ec.get_num_features();
 
   float loss = 0.;
-  VW::v_array<action_score>& preds = head_ec.pred.a_s;
+  VW::v_array<VW::action_score>& preds = head_ec.pred.a_s;
 
   if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
   {
@@ -527,7 +526,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   }
 
   for (auto& sink : all.final_prediction_sink)
-  { print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger); }
+  { VW::details::print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {

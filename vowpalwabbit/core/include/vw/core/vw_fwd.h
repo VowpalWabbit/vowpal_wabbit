@@ -39,6 +39,9 @@ struct workspace;
 using multi_ex = std::vector<example*>;
 using namespace_index = unsigned char;
 
+struct action_score;
+using action_scores = VW::v_array<action_score>;
+
 namespace LEARNER
 {
 template <class T, class E>
