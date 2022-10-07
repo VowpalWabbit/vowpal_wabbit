@@ -29,7 +29,7 @@ VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
   }
 
   if (settings->ParallelOptions != nullptr)
-  { m_vw->all_reduce_type = all_reduce_type::Thread;
+  { m_vw->selected_all_reduce_type = all_reduce_type::THREAD;
     auto total = settings->ParallelOptions->MaxDegreeOfParallelism;
 
     if (settings->Root == nullptr)
