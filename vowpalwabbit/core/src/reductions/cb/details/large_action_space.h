@@ -28,15 +28,8 @@ enum class implementation_type
   one_pass_svd
 };
 
-class vanilla_rand_svd_impl
+struct vanilla_rand_svd_impl
 {
-private:
-  VW::workspace* _all;
-  uint64_t _d;
-  uint64_t _seed;
-  std::vector<Eigen::Triplet<float>> _triplets;
-
-public:
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -50,18 +43,16 @@ public:
   // testing only
   void _test_only_set_rank(uint64_t rank);
   bool _set_testing_components = false;
-};
 
-class model_weight_rand_svd_impl
-{
 private:
   VW::workspace* _all;
   uint64_t _d;
   uint64_t _seed;
-  dense_parameters _internal_weights;
-  void cleanup_model_weight_Y(const multi_ex& examples);
+  std::vector<Eigen::Triplet<float>> _triplets;
+};
 
-public:
+struct model_weight_rand_svd_impl
+{
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -80,20 +71,17 @@ public:
   void _test_only_populate_from_model_weight_Y(const multi_ex& examples);
   void _test_only_set_rank(uint64_t rank);
   bool _set_testing_components = false;
-};
 
-class one_pass_svd_impl
-{
 private:
   VW::workspace* _all;
   uint64_t _d;
   uint64_t _seed;
-  thread_pool _thread_pool;
-  size_t _block_size;
-  std::vector<std::future<void>> _futures;
-  Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
+  dense_parameters _internal_weights;
+  void cleanup_model_weight_Y(const multi_ex& examples);
+};
 
-public:
+struct one_pass_svd_impl
+{
   Eigen::MatrixXf AOmega;
   one_pass_svd_impl(
       VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
@@ -103,11 +91,19 @@ public:
   // for testing purposes only
   void _test_only_set_rank(uint64_t rank);
   bool _set_testing_components = false;
+
+private:
+  VW::workspace* _all;
+  uint64_t _d;
+  uint64_t _seed;
+  thread_pool _thread_pool;
+  size_t _block_size;
+  std::vector<std::future<void>> _futures;
+  Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
 };
 
-class shrink_factor_config
+struct shrink_factor_config
 {
-public:
   const float _gamma_scale;
   const float _gamma_exponent;
   const bool _apply_shrink_factor;
@@ -117,15 +113,8 @@ public:
       size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors);
 };
 
-class spanner_state
+struct spanner_state
 {
-private:
-  const float _c = 2;
-  std::vector<uint64_t> _action_indices;
-  Eigen::MatrixXf _X;
-  std::vector<bool> _spanner_bitvec;
-
-public:
   spanner_state(float c, uint64_t d) : _c(c), _action_indices(d){};
 
   void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
@@ -135,10 +124,24 @@ public:
   size_t spanner_size();
 
   void _test_only_set_rank(uint64_t rank);
+
+private:
+  const float _c = 2;
+  std::vector<uint64_t> _action_indices;
+  Eigen::MatrixXf _X;
+  std::vector<bool> _spanner_bitvec;
 };
 
-class one_rank_spanner_state
+struct one_rank_spanner_state
 {
+  one_rank_spanner_state(float c, uint64_t d) : _c(c), _action_indices(d), _log_determinant_factor(0.f){};
+  void find_max_volume(const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid);
+  void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
+  bool is_action_in_spanner(uint32_t action);
+  size_t spanner_size();
+
+  void _test_only_set_rank(uint64_t rank);
+
 private:
   const float _c = 2;
   std::vector<uint64_t> _action_indices;
@@ -151,30 +154,11 @@ private:
       const Eigen::MatrixXf& U, float max_volume, uint64_t U_rid, float shrink_factor, uint64_t row_iteration);
   void update_inverse(const Eigen::VectorXf& y, const Eigen::VectorXf& Xi, uint64_t row_iteration);
   void scale_all(float max_volume, uint64_t num_examples);
-
-public:
-  one_rank_spanner_state(float c, uint64_t d) : _c(c), _action_indices(d), _log_determinant_factor(0.f){};
-  void find_max_volume(const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid);
-  void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
-  bool is_action_in_spanner(uint32_t action);
-  size_t spanner_size();
-
-  void _test_only_set_rank(uint64_t rank);
 };
 
 template <typename randomized_svd_impl, typename spanner_impl>
-class cb_explore_adf_large_action_space
+struct cb_explore_adf_large_action_space
 {
-private:
-  uint64_t _d;
-  VW::workspace* _all;
-  size_t _counter;
-  uint64_t _seed;
-  implementation_type _impl_type;
-  size_t _non_degenerate_singular_values;
-  bool _set_testing_components = false;
-
-public:
   spanner_impl spanner_state;
   shrink_factor_config shrink_fact_config;
   randomized_svd_impl impl;
@@ -219,6 +203,13 @@ private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
+  uint64_t _d;
+  VW::workspace* _all;
+  size_t _counter;
+  uint64_t _seed;
+  implementation_type _impl_type;
+  size_t _non_degenerate_singular_values;
+  bool _set_testing_components = false;
 };
 
 template <typename TripletType>

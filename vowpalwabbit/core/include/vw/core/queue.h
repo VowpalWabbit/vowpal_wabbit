@@ -23,9 +23,8 @@
 namespace VW
 {
 template <typename T>
-class thread_safe_queue
+struct thread_safe_queue
 {
-public:
   thread_safe_queue(size_t max_size) : max_size(max_size) {}
 
   bool try_pop(T& item)

@@ -87,15 +87,6 @@ template <typename ExploreType>
 // data common to all cb_explore_adf reductions
 struct cb_explore_adf_base
 {
-private:
-  CB::cb_class _known_cost;
-  // used in output_example
-  CB::label _action_label;
-  CB::label _empty_label;
-  VW::action_scores _saved_pred;
-  std::unique_ptr<cb_explore_metrics> _metrics;
-
-public:
   template <typename... Args>
   cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
   {
@@ -110,10 +101,15 @@ public:
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-public:
   ExploreType explore;
 
 private:
+  CB::cb_class _known_cost;
+  // used in output_example
+  CB::label _action_label;
+  CB::label _empty_label;
+  VW::action_scores _saved_pred;
+  std::unique_ptr<cb_explore_metrics> _metrics;
   void output_example_seq(VW::workspace& all, const multi_ex& ec_seq);
   void output_example(VW::workspace& all, const multi_ex& ec_seq);
 };

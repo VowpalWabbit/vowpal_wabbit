@@ -15,9 +15,8 @@ namespace VW
 namespace details
 {
 template <typename TScopeExitLambda>
-class scope_exit_caller
+struct scope_exit_caller
 {
-public:
   explicit scope_exit_caller(TScopeExitLambda&& lambda) noexcept : _scope_exit_lambda(std::move(lambda))
   {
     static_assert(std::is_same<decltype(lambda()), void>::value, "scope_exit lambdas cannot have a return value.");

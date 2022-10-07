@@ -112,14 +112,8 @@ std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std:
 }  // namespace VW
 
 template <typename feature_value_type_t, typename feature_index_type_t, typename audit_type_t>
-class audit_features_iterator final
+struct audit_features_iterator final
 {
-private:
-  feature_value_type_t* _begin_values;
-  feature_index_type_t* _begin_indices;
-  audit_type_t* _begin_audit;
-
-public:
   using iterator_category = std::random_access_iterator_tag;
   using difference_type = std::ptrdiff_t;
   using value_type = audit_features_iterator<feature_value_type_t, feature_index_type_t, audit_type_t>;
@@ -241,12 +235,16 @@ public:
     std::swap(lhs._begin_audit, rhs._begin_audit);
   }
   friend struct features;
+
+private:
+  feature_value_type_t* _begin_values;
+  feature_index_type_t* _begin_indices;
+  audit_type_t* _begin_audit;
 };
 
 template <typename features_t, typename audit_features_iterator_t, typename extent_it>
-class ns_extent_iterator final
+struct ns_extent_iterator final
 {
-public:
   ns_extent_iterator(features_t* feature_group, uint64_t hash, extent_it index_current)
       : _feature_group(feature_group), _hash(hash), _index_current(index_current)
   {
@@ -255,12 +253,6 @@ public:
     { ++_index_current; }
   }
 
-private:
-  features_t* _feature_group;
-  uint64_t _hash;
-  extent_it _index_current;
-
-public:
   using iterator_category = std::forward_iterator_tag;
   using difference_type = std::ptrdiff_t;
   using value_type = std::pair<audit_features_iterator_t, audit_features_iterator_t>;
@@ -295,16 +287,16 @@ public:
 
   friend bool operator!=(const ns_extent_iterator& lhs, const ns_extent_iterator& rhs) { return !(lhs == rhs); }
   friend struct features;
+
+private:
+  features_t* _feature_group;
+  uint64_t _hash;
+  extent_it _index_current;
 };
 
 template <typename feature_value_type_t, typename feature_index_type_t>
-class features_iterator final
+struct features_iterator final
 {
-private:
-  feature_value_type_t* _begin_values;
-  feature_index_type_t* _begin_indices;
-
-public:
   using iterator_category = std::random_access_iterator_tag;
   using difference_type = std::ptrdiff_t;
   using value_type = features_iterator<feature_value_type_t, feature_index_type_t>;
@@ -404,6 +396,10 @@ public:
     std::swap(lhs._begin_indices, rhs._begin_indices);
   }
   friend struct features;
+
+private:
+  feature_value_type_t* _begin_values;
+  feature_index_type_t* _begin_indices;
 };
 
 /// the core definition of a set of features.

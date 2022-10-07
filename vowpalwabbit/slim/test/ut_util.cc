@@ -238,7 +238,7 @@ struct PredictParam
             << (param.weight_type == PredictParamWeightType::Sparse ? "sparse" : "dense");
 }
 
-class PredictTest : public ::testing::TestWithParam<PredictParam>
+struct PredictTest : public ::testing::TestWithParam<PredictParam>
 {
 };
 
@@ -303,7 +303,7 @@ struct InvalidModelParam
 // nice rendering in unit tests
 ::std::ostream& operator<<(::std::ostream& os, const InvalidModelParam& param) { return os << param.name; }
 
-class InvalidModelTest : public ::testing::TestWithParam<InvalidModelParam>
+struct InvalidModelTest : public ::testing::TestWithParam<InvalidModelParam>
 {
 };
 
@@ -616,7 +616,7 @@ struct CBPredictParam
   return os << param.description << " " << param.model_filename;
 }
 
-class CBPredictTest : public ::testing::TestWithParam<CBPredictParam>
+struct CBPredictTest : public ::testing::TestWithParam<CBPredictParam>
 {
 };
 
@@ -702,7 +702,7 @@ INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, CBPredictTest, ::testing::ValuesIn(cb
 
 // Test fixture to allow for both sparse and dense parameters
 template <typename W>
-class VwSlimTest : public ::testing::Test
+struct VwSlimTest : public ::testing::Test
 {
 };
 

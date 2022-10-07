@@ -39,11 +39,8 @@ void print_action_score(
 
 std::string to_string(const action_scores& action_scores_or_probs, int decimal_precision = DEFAULT_FLOAT_PRECISION);
 
-class action_scores_score_iterator
+struct action_scores_score_iterator
 {
-  action_score* _p;
-
-public:
   using iterator_category = std::random_access_iterator_tag;
   using value_type = float;
   using difference_type = long;
@@ -69,6 +66,9 @@ public:
   size_t operator-(const action_scores_score_iterator& other) const { return _p - other._p; }
 
   float& operator*() { return _p->score; }
+
+private:
+  action_score* _p;
 };
 
 inline action_scores_score_iterator begin_scores(action_scores& a_s) { return {a_s.begin()}; }

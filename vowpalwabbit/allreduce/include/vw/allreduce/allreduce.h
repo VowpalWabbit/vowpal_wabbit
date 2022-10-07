@@ -27,7 +27,7 @@ namespace std
 {
 // forward declare promise as C++/CLI doesn't allow usage in header files
 template <typename T>
-class promise;
+struct promise;
 
 }  // namespace std
 #else
@@ -99,9 +99,8 @@ enum class all_reduce_type
   THREAD
 };
 
-class all_reduce_base
+struct all_reduce_base
 {
-public:
   const size_t total;  // total number of nodes
   const size_t node;   // node id number
   bool quiet;
@@ -114,22 +113,8 @@ public:
   virtual ~all_reduce_base() = default;
 };
 
-class all_reduce_sync
+struct all_reduce_sync
 {
-private:
-  std::mutex _mutex;
-  std::condition_variable _cv;
-
-  // total number of threads we wait for
-  size_t _total;
-
-  // number of threads reached the barrier
-  uint32_t _count;
-
-  // current wait-barrier-run required to protect against spurious wakeups of _cv->wait(...)
-  bool _run;
-
-public:
   all_reduce_sync(size_t total);
   ~all_reduce_sync();
 
@@ -142,15 +127,23 @@ public:
   }
 
   void** buffers;
+
+private:
+  std::mutex _mutex;
+  std::condition_variable _cv;
+
+  // total number of threads we wait for
+  size_t _total;
+
+  // number of threads reached the barrier
+  uint32_t _count;
+
+  // current wait-barrier-run required to protect against spurious wakeups of _cv->wait(...)
+  bool _run;
 };
 
-class all_reduce_threads : public all_reduce_base
+struct all_reduce_threads : public all_reduce_base
 {
-private:
-  all_reduce_sync* _sync;
-  bool _sync_owner;
-
-public:
   all_reduce_threads(all_reduce_threads* root, size_t ptotal, size_t pnode, bool quiet = false);
 
   all_reduce_threads(size_t ptotal, size_t pnode, bool quiet = false);
@@ -198,10 +191,33 @@ public:
 
     _sync->wait_for_synchronization();
   }
+
+private:
+  all_reduce_sync* _sync;
+  bool _sync_owner;
 };
 
-class all_reduce_sockets : public all_reduce_base
+struct all_reduce_sockets : public all_reduce_base
 {
+  all_reduce_sockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
+      const size_t pnode, bool pquiet)
+      : all_reduce_base(ptotal, pnode, pquiet)
+      , _span_server(std::move(pspan_server))
+      , _port(pport)
+      , _unique_id(punique_id)
+  {
+  }
+
+  ~all_reduce_sockets() override = default;
+
+  template <class T, void (*f)(T&, const T&)>
+  void all_reduce(T* buffer, const size_t n, VW::io::logger& logger)
+  {
+    if (_span_server != _socks.current_master) { all_reduce_init(logger); }
+    reduce<T, f>((char*)buffer, n * sizeof(T));
+    broadcast((char*)buffer, n * sizeof(T));
+  }
+
 private:
   details::node_socks _socks;
   std::string _span_server;
@@ -301,26 +317,6 @@ private:
 
   socket_t sock_connect(uint32_t ip, int port, VW::io::logger& logger);
   socket_t getsock(VW::io::logger& logger);
-
-public:
-  all_reduce_sockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
-      const size_t pnode, bool pquiet)
-      : all_reduce_base(ptotal, pnode, pquiet)
-      , _span_server(std::move(pspan_server))
-      , _port(pport)
-      , _unique_id(punique_id)
-  {
-  }
-
-  ~all_reduce_sockets() override = default;
-
-  template <class T, void (*f)(T&, const T&)>
-  void all_reduce(T* buffer, const size_t n, VW::io::logger& logger)
-  {
-    if (_span_server != _socks.current_master) { all_reduce_init(logger); }
-    reduce<T, f>((char*)buffer, n * sizeof(T));
-    broadcast((char*)buffer, n * sizeof(T));
-  }
 };
 
 }  // namespace VW

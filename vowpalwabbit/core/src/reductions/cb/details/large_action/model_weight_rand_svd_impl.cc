@@ -13,15 +13,6 @@ namespace cb_explore_adf
 {
 struct Y_constructor
 {
-  uint64_t _weights_mask;
-  dense_parameters& _weights;
-  uint64_t _row_index;
-  uint64_t _column_index;
-  uint64_t _seed;
-  std::set<uint64_t>& _non_zero_rows;
-  const std::vector<float>& _shrink_factors;
-
-public:
   Y_constructor(uint64_t weights_mask, dense_parameters& weights, uint64_t row_index, uint64_t column_index,
       uint64_t seed, std::set<uint64_t>& _non_zero_rows, const std::vector<float>& shrink_factors)
       : _weights_mask(weights_mask)
@@ -45,15 +36,19 @@ public:
       _weights[strided_index] += calc;
     }
   }
+
+private:
+  uint64_t _weights_mask;
+  dense_parameters& _weights;
+  uint64_t _row_index;
+  uint64_t _column_index;
+  uint64_t _seed;
+  std::set<uint64_t>& _non_zero_rows;
+  const std::vector<float>& _shrink_factors;
 };
 
 struct Y_destructor
 {
-  uint64_t _weights_mask;
-  dense_parameters& _weights;
-  uint64_t _column_index;
-
-public:
   Y_destructor(uint64_t weights_mask, dense_parameters& weights, uint64_t column_index)
       : _weights_mask(weights_mask), _weights(weights), _column_index(column_index)
   {
@@ -67,17 +62,15 @@ public:
       _weights[strided_index] = 0.f;  // TODO initial weight defined by cli
     }
   }
+
+private:
+  uint64_t _weights_mask;
+  dense_parameters& _weights;
+  uint64_t _column_index;
 };
 
 struct Y_triplet_populator
 {
-  uint64_t _weights_mask;
-  dense_parameters& _weights;
-  std::vector<Eigen::Triplet<float>>& _triplets;
-  uint64_t _column_index;
-  uint64_t& _max_col;
-
-public:
   Y_triplet_populator(uint64_t weights_mask, dense_parameters& weights, std::vector<Eigen::Triplet<float>>& triplets,
       uint64_t column_index, uint64_t& max_col)
       : _weights_mask(weights_mask)
@@ -97,17 +90,17 @@ public:
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
   }
+
+private:
+  uint64_t _weights_mask;
+  dense_parameters& _weights;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t _column_index;
+  uint64_t& _max_col;
 };
 
 struct A_times_Y_dot_product
 {
-private:
-  uint64_t _weights_mask;
-  dense_parameters& _weights;
-  uint64_t _column_index;
-  float& _final_dot_product;
-
-public:
   A_times_Y_dot_product(
       uint64_t weights_mask, dense_parameters& weights, uint64_t column_index, float& final_dot_product)
       : _weights_mask(weights_mask)
@@ -123,6 +116,12 @@ public:
     auto strided_index = (index & _weights_mask) + _column_index;
     _final_dot_product += feature_value * _weights[strided_index];
   }
+
+private:
+  uint64_t _weights_mask;
+  dense_parameters& _weights;
+  uint64_t _column_index;
+  float& _final_dot_product;
 };
 
 bool model_weight_rand_svd_impl::generate_model_weight_Y(
