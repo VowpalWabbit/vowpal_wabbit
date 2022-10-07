@@ -99,19 +99,19 @@ enum class all_reduce_type
   THREAD
 };
 
-class all_reduce
+class all_reduce_base
 {
 public:
   const size_t total;  // total number of nodes
   const size_t node;   // node id number
   bool quiet;
 
-  all_reduce(size_t ptotal, const size_t pnode, bool pquiet = false) : total(ptotal), node(pnode), quiet(pquiet)
+  all_reduce_base(size_t ptotal, const size_t pnode, bool pquiet = false) : total(ptotal), node(pnode), quiet(pquiet)
   {
     assert(node < total);
   }
 
-  virtual ~all_reduce() = default;
+  virtual ~all_reduce_base() = default;
 };
 
 class all_reduce_sync
@@ -144,7 +144,7 @@ public:
   void** buffers;
 };
 
-class all_reduce_threads : public all_reduce
+class all_reduce_threads : public all_reduce_base
 {
 private:
   all_reduce_sync* _sync;
@@ -200,7 +200,7 @@ public:
   }
 };
 
-class all_reduce_sockets : public all_reduce
+class all_reduce_sockets : public all_reduce_base
 {
 private:
   details::node_socks _socks;
@@ -305,7 +305,10 @@ private:
 public:
   all_reduce_sockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
       const size_t pnode, bool pquiet)
-      : VW::all_reduce(ptotal, pnode, pquiet), _span_server(std::move(pspan_server)), _port(pport), _unique_id(punique_id)
+      : all_reduce_base(ptotal, pnode, pquiet)
+      , _span_server(std::move(pspan_server))
+      , _port(pport)
+      , _unique_id(punique_id)
   {
   }
 
@@ -324,7 +327,8 @@ public:
 
 using AllReduceType VW_DEPRECATED(
     "AllReduceType was moved into VW namespace. Use VW::all_reduce_type") = VW::all_reduce_type;
-using AllReduce VW_DEPRECATED("AllReduce was moved into VW namespace. Use VW::all_reduce") = VW::all_reduce;
+using AllReduce VW_DEPRECATED("AllReduce was moved into VW namespace. Use VW::all_reduce_base") = VW::all_reduce_base;
+using AllReduceSync VW_DEPRECATED("AllReduceSync was moved into VW namespace. Use VW::all_reduce_sync") = VW::all_reduce_sync;
 using AllReduceSockets VW_DEPRECATED(
     "all_reduce_sockets was moved into VW namespace. Use VW::all_reduce_sockets") = VW::all_reduce_sockets;
 using AllReduceThreads VW_DEPRECATED(

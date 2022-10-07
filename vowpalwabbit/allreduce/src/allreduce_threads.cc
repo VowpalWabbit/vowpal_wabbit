@@ -9,7 +9,10 @@ This implements the allreduce function using threads.
 
 #include <future>
 
-VW::all_reduce_sync::all_reduce_sync(size_t total) : _total(total), _count(0), _run(true) { buffers = new void*[total]; }
+VW::all_reduce_sync::all_reduce_sync(size_t total) : _total(total), _count(0), _run(true)
+{
+  buffers = new void*[total];
+}
 
 VW::all_reduce_sync::~all_reduce_sync() { delete[] buffers; }
 
@@ -41,12 +44,12 @@ void VW::all_reduce_sync::wait_for_synchronization()
 }
 
 VW::all_reduce_threads::all_reduce_threads(all_reduce_threads* root, size_t ptotal, size_t pnode, bool pquiet)
-    : VW::all_reduce(ptotal, pnode, pquiet), _sync(root->_sync), _sync_owner(false)
+    : all_reduce_base(ptotal, pnode, pquiet), _sync(root->_sync), _sync_owner(false)
 {
 }
 
 VW::all_reduce_threads::all_reduce_threads(size_t ptotal, size_t pnode, bool pquiet)
-    : VW::all_reduce(ptotal, pnode, pquiet), _sync(new all_reduce_sync(ptotal)), _sync_owner(true)
+    : all_reduce_base(ptotal, pnode, pquiet), _sync(new all_reduce_sync(ptotal)), _sync_owner(true)
 {
 }
 

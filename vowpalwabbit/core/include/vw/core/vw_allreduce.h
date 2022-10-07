@@ -17,7 +17,7 @@ namespace details
 template <class T, void (*f)(T&, const T&)>
 void all_reduce(VW::workspace& all, T* buffer, const size_t n)
 {
-  switch (all.all_reduce_type)
+  switch (all.selected_all_reduce_type)
   {
     case all_reduce_type::SOCKET:
     {

@@ -48,7 +48,7 @@ namespace VW
 {
 struct workspace;
 
-class all_reduce;
+class all_reduce_base;
 enum class all_reduce_type;
 }  // namespace VW
 
@@ -112,8 +112,8 @@ public:
   parser* example_parser;
   std::thread parse_thread;
 
-  all_reduce_type all_reduce_type;
-  all_reduce* all_reduce;
+  all_reduce_type selected_all_reduce_type;
+  all_reduce_base* all_reduce;
 
   bool chain_hash_json = false;
 
