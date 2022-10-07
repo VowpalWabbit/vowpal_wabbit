@@ -21,13 +21,22 @@ std::ostream& operator<<(std::ostream& os, const VW::reductions::cats::tree_node
      << ", " << (node.is_leaf ? "true" : "false") << "}";
   return os;
 }
-
-std::ostream& operator<<(std::ostream& os, const VW::simple_label& label)
-{
-  os << label.label;
-  return os;
-}
 }  // namespace std
+
+namespace VW
+{
+std::ostream& operator<<(std::ostream& o, VW::simple_label const& lbl)
+{
+  o << "{l=" << lbl.label << "}";
+  return o;
+}
+
+std::ostream& operator<<(std::ostream& o, VW::simple_label_reduction_features const& red_fts)
+{
+  o << "{w=" << red_fts.weight << ", i=" << red_fts.initial << "}";
+  return o;
+}
+}  // namespace VW
 
 struct reduction_test_harness
 {
@@ -106,18 +115,6 @@ bool operator!=(const VW::simple_label& lhs, const VW::simple_label& rhs) { retu
 bool operator!=(const VW::simple_label_reduction_features& lhs, const VW::simple_label_reduction_features& rhs)
 {
   return !(lhs.weight == rhs.weight && lhs.initial == rhs.initial);
-}
-
-std::ostream& operator<<(std::ostream& o, VW::simple_label const& lbl)
-{
-  o << "{l=" << lbl.label << "}";
-  return o;
-}
-
-std::ostream& operator<<(std::ostream& o, VW::simple_label_reduction_features const& red_fts)
-{
-  o << "{w=" << red_fts.weight << ", i=" << red_fts.initial << "}";
-  return o;
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
