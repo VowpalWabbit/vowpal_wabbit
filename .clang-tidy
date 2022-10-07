@@ -20,6 +20,7 @@
     {"key": "readability-identifier-naming.EnumCase", "value": "lower_case"},
     {"key": "readability-identifier-naming.ScopedEnumConstantCase", "value": "UPPER_CASE"},
     {"key": "readability-identifier-naming.EnumConstantCase", "value": "UPPER_CASE"},
-    {"key": "readability-identifier-naming.GlobalConstantCase", "value": "UPPER_CASE"}
+    {"key": "readability-identifier-naming.GlobalConstantCase", "value": "UPPER_CASE"},
+    {"key": "readability-identifier-naming.StaticConstantCase", "value": "UPPER_CASE"}
   ]
 }
