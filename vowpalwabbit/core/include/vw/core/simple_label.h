@@ -21,6 +21,7 @@ struct simple_label
 };
 
 inline bool operator==(const simple_label& lhs, const simple_label& rhs) { return lhs.label == rhs.label; }
+inline bool operator!=(const simple_label& lhs, const simple_label& rhs) { return !(lhs == rhs); }
 
 struct simple_label_reduction_features
 {
