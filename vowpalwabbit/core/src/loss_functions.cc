@@ -85,9 +85,8 @@ inline float squared_loss_impl_second_derivative(const shared_data* sd, float pr
   }
 }
 
-class squaredloss : public VW::loss_function
+struct squaredloss : public VW::loss_function
 {
-public:
   std::string get_type() const override { return "squared"; }
 
   float get_loss(const shared_data* sd, float prediction, float label) const override
@@ -121,9 +120,8 @@ public:
   }
 };
 
-class classic_squaredloss : public VW::loss_function
+struct classic_squaredloss : public VW::loss_function
 {
-public:
   std::string get_type() const override { return "classic"; }
 
   float get_loss(const shared_data*, float prediction, float label) const override
@@ -155,11 +153,8 @@ public:
   float second_derivative(const shared_data*, float, float) const override { return 2.; }
 };
 
-class hingeloss : public VW::loss_function
+struct hingeloss : public VW::loss_function
 {
-  mutable VW::io::logger logger;
-
-public:
   explicit hingeloss(VW::io::logger logger) : logger(std::move(logger)) {}
 
   std::string get_type() const override { return "hinge"; }
@@ -197,15 +192,13 @@ public:
   }
 
   float second_derivative(const shared_data*, float, float) const override { return 0.; }
+
+private:
+  mutable VW::io::logger logger;
 };
 
-class logloss : public VW::loss_function
+struct logloss : public VW::loss_function
 {
-  mutable VW::io::logger logger;
-  float loss_min;
-  float loss_max;
-
-public:
   explicit logloss(VW::io::logger logger, float loss_min, float loss_max)
       : logger(std::move(logger)), loss_min(loss_min), loss_max(loss_max)
   {
@@ -312,11 +305,15 @@ public:
 
     return p * (1 - p);
   }
+
+private:
+  mutable VW::io::logger logger;
+  float loss_min;
+  float loss_max;
 };
 
-class quantileloss : public VW::loss_function
+struct quantileloss : public VW::loss_function
 {
-public:
   quantileloss(float& tau_) : tau(tau_) {}
 
   std::string get_type() const override { return "quantile"; }
@@ -377,9 +374,8 @@ public:
 
 // Expectile loss is closely related to the squared loss, but it's an asymmetric function with an expectile parameter
 // Its methods can be derived from the corresponding methods from the squared loss multiplied by the expectile value
-class expectileloss : public VW::loss_function
+struct expectileloss : public VW::loss_function
 {
-public:
   expectileloss(float& q) : _q(q) {}
 
   std::string get_type() const override { return "expectile"; }
@@ -428,11 +424,8 @@ private:
   float _q;
 };
 
-class poisson_loss : public VW::loss_function
+struct poisson_loss : public VW::loss_function
 {
-  mutable VW::io::logger logger;
-
-public:
   explicit poisson_loss(VW::io::logger logger) : logger(std::move(logger)) {}
 
   std::string get_type() const override { return "poisson"; }
@@ -482,6 +475,9 @@ public:
     float exp_prediction = std::exp(prediction);
     return exp_prediction;
   }
+
+private:
+  mutable VW::io::logger logger;
 };
 }  // namespace
 namespace VW

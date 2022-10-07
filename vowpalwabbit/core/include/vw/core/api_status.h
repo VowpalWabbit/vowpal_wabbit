@@ -20,9 +20,8 @@ using i_trace = void;
 /**
  * @brief Report status of all API calls
  */
-class api_status
+struct api_status
 {
-public:
   api_status();
 
   /**

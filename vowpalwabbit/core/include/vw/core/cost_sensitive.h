@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <vector>
 
-class io_buf;
+struct io_buf;
 namespace VW
 {
 struct example;

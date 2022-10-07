@@ -25,9 +25,8 @@ using namespace VW::config;
 
 namespace
 {
-class node_pred
+struct node_pred
 {
-public:
   double Ehk;
   float norm_Ehk;
   uint32_t nk;

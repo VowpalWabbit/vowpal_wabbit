@@ -72,26 +72,8 @@ inline int compare_on_hash_then_cost(const void* void_a, const void* void_b)
 }
 
 template <class T>
-class beam
+struct beam
 {
-private:
-  size_t beam_size;           // the beam size -- how many active elements can we have
-  size_t count;               // how many elements do we have currently -- should be == to A.size()
-  float pruning_coefficient;  // prune anything with cost >= pruning_coefficient * best, set to FLT_MAX to not do
-                              // coefficient-based pruning
-  float worst_cost;           // what is the cost of the worst (highest cost) item in the beam
-  float best_cost;            // what is the cost of the best (lowest cost) item in the beam
-  float prune_if_gt;          // prune any element with cost greater than this
-  T* best_cost_data;          // easy access to best-cost item
-  bool do_kbest;
-  v_array<beam_element<T>> A;  // the actual data
-  //  v_array<v_array<beam_element<T>*>> recomb_buckets;
-
-  //  static size_t NUM_RECOMB_BUCKETS = 10231;
-
-  bool (*is_equivalent)(T*, T*);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
-
-public:
   beam(size_t beam_size, float prune_coeff = FLT_MAX, bool (*test_equiv)(T*, T*) = nullptr, bool kbest = false)
       : beam_size(beam_size), pruning_coefficient(prune_coeff), do_kbest(kbest), is_equivalent(test_equiv)
   {
@@ -299,6 +281,22 @@ public:
   size_t get_beam_size() { return beam_size; }
 
 private:
+  size_t beam_size;           // the beam size -- how many active elements can we have
+  size_t count;               // how many elements do we have currently -- should be == to A.size()
+  float pruning_coefficient;  // prune anything with cost >= pruning_coefficient * best, set to FLT_MAX to not do
+                              // coefficient-based pruning
+  float worst_cost;           // what is the cost of the worst (highest cost) item in the beam
+  float best_cost;            // what is the cost of the best (lowest cost) item in the beam
+  float prune_if_gt;          // prune any element with cost greater than this
+  T* best_cost_data;          // easy access to best-cost item
+  bool do_kbest;
+  v_array<beam_element<T>> A;  // the actual data
+  //  v_array<v_array<beam_element<T>*>> recomb_buckets;
+
+  //  static size_t NUM_RECOMB_BUCKETS = 10231;
+
+  bool (*is_equivalent)(T*, T*);  // test if two items are equivalent; nullptr means don't do hypothesis recombination
+
   // void add_recomb_friend(beam_element<T> *better, beam_element<T> *worse) {
   //   assert( better->cost <= worse->cost );
   //   if (better->recomb_friends == nullptr) {

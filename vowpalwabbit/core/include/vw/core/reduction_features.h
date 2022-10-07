@@ -33,16 +33,8 @@
 
 namespace VW
 {
-class reduction_features
+struct reduction_features
 {
-private:
-  CCB::reduction_features _ccb_reduction_features;
-  VW::continuous_actions::reduction_features _contact_reduction_features;
-  simple_label_reduction_features _simple_label_reduction_features;
-  VW::cb_explore_adf::greedy::reduction_features _epsilon_reduction_features;
-  VW::generated_interactions::reduction_features _generated_interactions_reduction_features;
-
-public:
   template <typename T>
   T& get();
   template <typename T>
@@ -57,6 +49,13 @@ public:
     _epsilon_reduction_features.reset_to_default();
     _generated_interactions_reduction_features.reset_to_default();
   }
+
+private:
+  CCB::reduction_features _ccb_reduction_features;
+  VW::continuous_actions::reduction_features _contact_reduction_features;
+  simple_label_reduction_features _simple_label_reduction_features;
+  VW::cb_explore_adf::greedy::reduction_features _epsilon_reduction_features;
+  VW::generated_interactions::reduction_features _generated_interactions_reduction_features;
 };
 
 template <>

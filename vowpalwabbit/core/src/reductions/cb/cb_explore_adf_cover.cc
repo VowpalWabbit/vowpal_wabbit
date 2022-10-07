@@ -32,6 +32,18 @@ namespace
 {
 struct cb_explore_adf_cover
 {
+  cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
+      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, VW::cb_type_t cb_type,
+      VW::version_struct model_file_version, VW::io::logger logger);
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  {
+    predict_or_learn_impl<false>(base, examples);
+  }
+  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void save_load(io_buf& io, bool read, bool text);
+
 private:
   size_t _cover_size;
   float _psi;
@@ -53,21 +65,6 @@ private:
   COST_SENSITIVE::label _cs_labels_2;
   std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
   std::vector<CB::label> _cb_labels;
-
-public:
-  cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
-      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, VW::cb_type_t cb_type,
-      VW::version_struct model_file_version, VW::io::logger logger);
-
-  // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
-  {
-    predict_or_learn_impl<false>(base, examples);
-  }
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-  void save_load(io_buf& io, bool read, bool text);
-
-private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };

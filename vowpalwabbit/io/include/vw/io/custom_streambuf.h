@@ -12,15 +12,13 @@ namespace VW
 {
 namespace io
 {
-class noop_output_streambuf : public std::streambuf
+struct noop_output_streambuf : public std::streambuf
 {
-public:
   int overflow(int c) { return c; }
 };
 
-class writer_stream_buf : public std::stringbuf
+struct writer_stream_buf : public std::stringbuf
 {
-public:
   writer_stream_buf(std::unique_ptr<VW::io::writer>&& writer) : _writer(std::move(writer)) {}
 
   virtual int sync() override

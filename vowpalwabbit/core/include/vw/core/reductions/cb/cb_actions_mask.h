@@ -14,13 +14,12 @@ struct cb_actions_mask
 {
   // this reduction is used to get the actions mask from VW::actions_mask::reduction_features and apply it to the
   // outcoming predictions
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+
 private:
   template <bool is_learn>
   void learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-
-public:
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
 VW::LEARNER::base_learner* cb_actions_mask_setup(VW::setup_base_i&);

@@ -19,11 +19,9 @@ using namespace VW::config;
 
 namespace
 {
-class topk
+struct topk
 {
   using container_t = std::multimap<float, v_array<char>>;
-
-public:
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 

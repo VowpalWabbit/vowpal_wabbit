@@ -48,7 +48,7 @@ namespace VW
 {
 struct workspace;
 
-class all_reduce_base;
+struct all_reduce_base;
 enum class all_reduce_type;
 }  // namespace VW
 
@@ -68,11 +68,11 @@ namespace parsers
 {
 namespace flatbuffer
 {
-class parser;
+struct parser;
 }
 
 #ifdef VW_BUILD_CSV
-class csv_parser;
+struct csv_parser;
 struct csv_parser_options;
 #endif
 }  // namespace parsers
@@ -103,10 +103,6 @@ struct invert_hash_info
 }  // namespace details
 struct workspace
 {
-private:
-  std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
-
-public:
   shared_data* sd;
 
   parser* example_parser;
@@ -329,6 +325,7 @@ public:
 
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
+  std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
 };
 }  // namespace VW
 
