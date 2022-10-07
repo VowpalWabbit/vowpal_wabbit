@@ -30,11 +30,11 @@ private:
   COST_SENSITIVE::label _cs_labels;
   std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
 
-  ACTION_SCORE::action_scores _a_s;         // temporary storage for mtr and sm
-  ACTION_SCORE::action_scores _a_s_mtr_cs;  // temporary storage for mtr cost sensitive example
-  ACTION_SCORE::action_scores _prob_s;      // temporary storage for sm; stores softmax values
-  VW::v_array<uint32_t> _backup_nf;         // temporary storage for sm; backup for numFeatures in examples
-  VW::v_array<float> _backup_weights;       // temporary storage for sm; backup for weights in examples
+  VW::action_scores _a_s;              // temporary storage for mtr and sm
+  VW::action_scores _a_s_mtr_cs;       // temporary storage for mtr cost sensitive example
+  VW::action_scores _prob_s;           // temporary storage for sm; stores softmax values
+  VW::v_array<uint32_t> _backup_nf;    // temporary storage for sm; backup for numFeatures in examples
+  VW::v_array<float> _backup_weights;  // temporary storage for sm; backup for weights in examples
 
   uint64_t _offset = 0;
   const bool _no_predict;

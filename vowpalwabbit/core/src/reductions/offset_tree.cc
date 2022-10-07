@@ -232,7 +232,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 namespace
 {
 inline void copy_to_action_scores(
-    const VW::reductions::offset_tree::offset_tree::scores_t& scores, ACTION_SCORE::action_scores& a_s)
+    const VW::reductions::offset_tree::offset_tree::scores_t& scores, VW::action_scores& a_s)
 {
   a_s.clear();
   for (uint32_t idx = 0; idx < scores.size(); ++idx) { a_s.push_back({idx, scores[idx]}); }

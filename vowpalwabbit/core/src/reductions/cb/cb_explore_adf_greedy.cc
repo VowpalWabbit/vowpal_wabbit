@@ -52,7 +52,7 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 
 void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
 {
-  ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
+  VW::action_scores& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();

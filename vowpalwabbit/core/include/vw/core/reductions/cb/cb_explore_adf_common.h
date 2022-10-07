@@ -29,29 +29,28 @@ namespace VW
 namespace cb_explore_adf
 {
 // Free functions
-inline void sort_action_probs(v_array<ACTION_SCORE::action_score>& probs, const std::vector<float>& scores)
+inline void sort_action_probs(v_array<VW::action_score>& probs, const std::vector<float>& scores)
 {
   // We want to preserve the score order in the returned action_probs if possible.  To do this,
   // sort top_actions and action_probs by the order induced in scores.
-  std::sort(probs.begin(), probs.end(),
-      [&scores](const ACTION_SCORE::action_score& as1, const ACTION_SCORE::action_score& as2) {
-        if (as1.score > as2.score) { return true; }
-        else if (as1.score < as2.score)
-        {
-          return false;
-        }
-        // equal probabilities
-        if (scores[as1.action] < scores[as2.action]) { return true; }
-        else if (scores[as1.action] > scores[as2.action])
-        {
-          return false;
-        }
-        // equal probabilities and equal cost estimates
-        return as1.action < as2.action;
-      });
+  std::sort(probs.begin(), probs.end(), [&scores](const VW::action_score& as1, const VW::action_score& as2) {
+    if (as1.score > as2.score) { return true; }
+    else if (as1.score < as2.score)
+    {
+      return false;
+    }
+    // equal probabilities
+    if (scores[as1.action] < scores[as2.action]) { return true; }
+    else if (scores[as1.action] > scores[as2.action])
+    {
+      return false;
+    }
+    // equal probabilities and equal cost estimates
+    return as1.action < as2.action;
+  });
 }
 
-inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
+inline size_t fill_tied(const v_array<VW::action_score>& preds)
 {
   if (preds.size() == 0) { return 0; }
 
@@ -93,7 +92,7 @@ private:
   // used in output_example
   CB::label _action_label;
   CB::label _empty_label;
-  ACTION_SCORE::action_scores _saved_pred;
+  VW::action_scores _saved_pred;
   std::unique_ptr<cb_explore_metrics> _metrics;
 
 public:
@@ -236,7 +235,7 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
+  { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {

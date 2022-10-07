@@ -89,7 +89,7 @@ inline float get_cost_estimate(const CB::label& ld, uint32_t action)
 }
 
 // doubly robust estimate
-inline float get_cost_estimate(const ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
+inline float get_cost_estimate(const VW::action_score& a_s, float cost, uint32_t action, float offset = 0.)
 {
   if (action == a_s.action) { return (cost - offset) / a_s.score; }
   return 0.;

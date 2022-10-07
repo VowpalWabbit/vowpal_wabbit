@@ -39,7 +39,7 @@ private:
 
   VW::version_struct _model_file_version;
 
-  v_array<ACTION_SCORE::action_score> _action_probs;
+  v_array<VW::action_score> _action_probs;
   float _min_cost;
   float _max_cost;
 
@@ -88,7 +88,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     _max_cost = std::max(logged.cost, _max_cost);
   }
 
-  ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
+  VW::action_scores& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
@@ -102,14 +102,14 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   }
 
   for (size_t i = 0; i < num_actions; i++) { preds[i].score = VW::math::clamp(preds[i].score, _min_cost, _max_cost); }
-  std::make_heap(preds.begin(), preds.end(), std::greater<ACTION_SCORE::action_score>());
+  std::make_heap(preds.begin(), preds.end(), std::greater<VW::action_score>());
 
   _action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) { _action_probs.push_back({i, 0.}); }
 
   for (uint32_t i = 0; i < _synthcoversize;)
   {
-    std::pop_heap(preds.begin(), preds.end(), std::greater<ACTION_SCORE::action_score>());
+    std::pop_heap(preds.begin(), preds.end(), std::greater<VW::action_score>());
     auto minpred = preds.back();
     preds.pop_back();
 
@@ -121,12 +121,12 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     }
 
     preds.push_back(minpred);
-    std::push_heap(preds.begin(), preds.end(), std::greater<ACTION_SCORE::action_score>());
+    std::push_heap(preds.begin(), preds.end(), std::greater<VW::action_score>());
   }
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
 
-  std::sort(_action_probs.begin(), _action_probs.end(), std::greater<ACTION_SCORE::action_score>());
+  std::sort(_action_probs.begin(), _action_probs.end(), std::greater<VW::action_score>());
 
   for (size_t i = 0; i < num_actions; i++) { preds[i] = _action_probs[i]; }
 }

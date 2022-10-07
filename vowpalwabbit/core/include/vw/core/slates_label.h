@@ -44,7 +44,7 @@ struct label
 
   // For slot examples
   // Only valid if labeled
-  ACTION_SCORE::action_scores probabilities;
+  VW::action_scores probabilities;
 
   label() { reset_to_default(); }
 
