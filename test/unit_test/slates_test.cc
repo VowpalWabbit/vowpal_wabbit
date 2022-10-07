@@ -60,18 +60,18 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
 
   auto mock_learn_or_pred = [](VW::multi_ex& examples) {
     BOOST_CHECK_EQUAL(examples.size(), 6);
-    BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-    BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-    BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-    BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+    BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+    BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+    BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+    BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
 
-    BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+    BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
     BOOST_CHECK_CLOSE(examples[4]->l.conditional_contextual_bandit.outcome->cost, 0.8f, FLOAT_TOL);
     check_collections_with_float_tolerance(
         examples[4]->l.conditional_contextual_bandit.outcome->probabilities, std::vector<VW::action_score>{{0, 0.8f}});
     check_collections_exact(
         examples[4]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{0});
-    BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+    BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
     BOOST_CHECK_CLOSE(examples[5]->l.conditional_contextual_bandit.outcome->cost, 0.8f, FLOAT_TOL);
     check_collections_with_float_tolerance(
         examples[5]->l.conditional_contextual_bandit.outcome->probabilities, std::vector<VW::action_score>{{2, 0.6f}});

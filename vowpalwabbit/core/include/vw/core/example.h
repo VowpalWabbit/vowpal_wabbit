@@ -43,7 +43,7 @@ struct polylabel
   COST_SENSITIVE::label cs;
   CB::label cb;
   VW::cb_continuous::continuous_label cb_cont;
-  CCB::label conditional_contextual_bandit;
+  VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
