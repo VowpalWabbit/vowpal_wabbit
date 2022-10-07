@@ -34,13 +34,13 @@ struct options_cli : public options_i
   VW_ATTR(nodiscard) std::vector<std::string> get_positional_tokens() const override;
 
 private:
-  std::vector<std::string> m_command_line;
+  std::vector<std::string> _command_line;
 
   // Key is either short or long name
-  std::unordered_map<VW::string_view, std::vector<VW::string_view>> m_prog_parsed_token_map;
+  std::unordered_map<VW::string_view, std::vector<VW::string_view>> _prog_parsed_token_map;
 
-  std::set<std::string> m_reachable_options;
-  std::unordered_map<std::string, std::vector<std::set<std::string>>> m_dependent_necessary_options;
+  std::set<std::string> _reachable_options;
+  std::unordered_map<std::string, std::vector<std::set<std::string>>> _dependent_necessary_options;
 };
 
 }  // namespace config
