@@ -231,7 +231,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cbifyldf_setup);
   reductions.push_back(VW::reductions::cb_to_cb_adf_setup);
   reductions.push_back(VW::reductions::offset_tree_setup);
-  reductions.push_back(VW::reductions::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
+  reductions.push_back(VW::reductions::expreplay_setup<'c', VW::cs_label_parser>);
   reductions.push_back(VW::reductions::search_setup);
   reductions.push_back(VW::reductions::audit_regressor_setup);
   reductions.push_back(VW::reductions::metrics_setup);

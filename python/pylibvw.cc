@@ -398,7 +398,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lMULTICLASS:
       return &VW::multiclass_label;
     case lCOST_SENSITIVE:
-      return &COST_SENSITIVE::cs_label;
+      return &VW::cs_label_parser;
     case lCONTEXTUAL_BANDIT:
       return &CB::cb_label;
     case lCONDITIONAL_CONTEXTUAL_BANDIT:
@@ -424,7 +424,7 @@ size_t my_get_label_type(VW::workspace* all)
   {
     return lMULTICLASS;
   }
-  else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label)
+  else if (lp->parse_label == VW::cs_label_parser.parse_label)
   {
     return lCOST_SENSITIVE;
   }

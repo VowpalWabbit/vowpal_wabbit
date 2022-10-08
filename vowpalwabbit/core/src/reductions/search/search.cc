@@ -38,8 +38,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-namespace CS = COST_SENSITIVE;
-namespace MC = MULTICLASS;
 
 using std::endl;
 
@@ -280,13 +278,13 @@ public:
 
   // to reduce memory allocation
   std::unique_ptr<std::stringstream> rawOutputStringStream;
-  CS::label ldf_test_label;
+  VW::cs_label ldf_test_label;
   std::vector<action_repr> condition_on_actions;
   VW::v_array<size_t> timesteps;
   VW::polylabel learn_losses;
   VW::polylabel gte_label;
   std::vector<std::pair<float, size_t>> active_uncertainty;
-  std::vector<std::vector<std::pair<CS::wclass&, bool>>> active_known;
+  std::vector<std::vector<std::pair<VW::cs_label::wclass&, bool>>> active_known;
   bool force_setup_ec_ref = false;
   bool active_csoaa = false;
   float active_csoaa_verify = 0.f;
@@ -294,7 +292,7 @@ public:
   VW::LEARNER::base_learner* base_learner;
   clock_t start_clock_time;
 
-  CS::label empty_cs_label;
+  VW::cs_label empty_cs_label;
 
   search_task* task = nullptr;          // your task!
   search_metatask* metatask = nullptr;  // your (optional) metatask
@@ -925,7 +923,7 @@ inline void cs_cost_push_back(bool isCB, VW::polylabel& ld, uint32_t index, floa
   }
   else
   {
-    CS::wclass cost = {value, index, 0., 0.};
+    VW::cs_label::wclass cost = {value, index, 0., 0.};
     ld.cs.costs.push_back(cost);
   }
 }
@@ -1256,11 +1254,11 @@ action single_prediction_notLDF(search_private& priv, VW::example& ec, int polic
                                           cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() -
          1) << "] = certain=" << ec.l.cs.costs[k].pred_is_certain << ", cost=" << ec.l.cs.costs[k].partial_prediction <<
          "}" << endl; */
-      CS::wclass& wc = ec.l.cs.costs[k];
+      VW::cs_label::wclass& wc = ec.l.cs.costs[k];
       // Get query_needed from pred
       const auto& query_list = ec.pred.active_multiclass.more_info_required_for_classes;
       bool query_needed = std::find(query_list.begin(), query_list.end(), wc.class_index) != query_list.end();
-      std::pair<CS::wclass&, bool> p = {wc, query_needed};
+      std::pair<VW::cs_label::wclass&, bool> p = {wc, query_needed};
       // Push into active_known[cur_t] with wc
       priv.active_known[cur_t].push_back(p);
       // cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index
@@ -1300,15 +1298,15 @@ action single_prediction_LDF(search_private& priv, VW::example* ecs, size_t ec_c
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != static_cast<action>(-1));
 
-  CS::default_label(priv.ldf_test_label);
-  CS::wclass wc = {0., 1, 0., 0.};
+  VW::default_cs_label(priv.ldf_test_label);
+  VW::cs_label::wclass wc = {0., 1, 0., 0.};
   priv.ldf_test_label.costs.push_back(wc);
 
   // keep track of best (aka chosen) action
   float best_prediction = 0.;
   action best_action = 0;
 
-  size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
+  size_t start_K = (priv.is_ldf && VW::is_cs_example_header(ecs[0])) ? 1 : 0;
 
   VW::v_array<action_cache>* this_cache = nullptr;
   if (need_partial_predictions) { this_cache = new VW::v_array<action_cache>(); }
@@ -1529,7 +1527,7 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
   else  // is  LDF
   {
     assert(cs_get_costs_size(priv.cb_learner, losses) == priv.learn_ec_ref_cnt);
-    size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
+    size_t start_K = (priv.is_ldf && VW::is_cs_example_header(priv.learn_ec_ref[0])) ? 1 : 0;
 
     // TODO: weight
     if (add_conditioning)
@@ -1554,10 +1552,10 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
       for (action a = static_cast<uint32_t>(start_K); a < priv.learn_ec_ref_cnt; a++)
       {
         VW::example& ec = priv.learn_ec_ref[a];
-        CS::label& lab = ec.l.cs;
+        VW::cs_label& lab = ec.l.cs;
         if (lab.costs.size() == 0)
         {
-          CS::wclass wc = {0., a - static_cast<uint32_t>(start_K), 0., 0.};
+          VW::cs_label::wclass wc = {0., a - static_cast<uint32_t>(start_K), 0., 0.};
           lab.costs.push_back(wc);
         }
         lab.costs[0].x = losses.cs.costs[a - start_K].x;
@@ -1846,7 +1844,7 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
       }
       else  // we need to predict, and then cache, and maybe run foreach_action
       {
-        size_t start_K = (priv.is_ldf && COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 1 : 0;
+        size_t start_K = (priv.is_ldf && VW::is_cs_example_header(ecs[0])) ? 1 : 0;
         priv.last_action_repr.clear();
         if (priv.auto_condition_features)
         {
@@ -2007,7 +2005,7 @@ void get_training_timesteps(search_private& priv, VW::v_array<size_t>& timesteps
       if (priv.active_csoaa && (t < priv.active_known.size()))
       {
         count = 0;
-        for (std::pair<CS::wclass&, bool> wcq : priv.active_known[t])
+        for (std::pair<VW::cs_label::wclass&, bool> wcq : priv.active_known[t])
         {
           if (wcq.second)
           {
@@ -2092,16 +2090,16 @@ void run_task(search& sch, VW::multi_ex& ec)
   }
 }
 
-void verify_active_csoaa(COST_SENSITIVE::label& losses, const std::vector<std::pair<CS::wclass&, bool>>& known,
+void verify_active_csoaa(VW::cs_label& losses, const std::vector<std::pair<VW::cs_label::wclass&, bool>>& known,
     size_t t, float multiplier, VW::io::logger& logger)
 {
   float threshold = multiplier / std::sqrt(static_cast<float>(t));
   cdbg << "verify_active_csoaa, losses = [";
-  for (COST_SENSITIVE::wclass& wc : losses.costs) { cdbg << " " << wc.class_index << ":" << wc.x; }
+  for (VW::cs_label::wclass& wc : losses.costs) { cdbg << " " << wc.class_index << ":" << wc.x; }
   cdbg << " ]" << endl;
   // cdbg_print_array("verify_active_csoaa,  known", known);
   size_t i = 0;
-  for (COST_SENSITIVE::wclass& wc : losses.costs)
+  for (VW::cs_label::wclass& wc : losses.costs)
   {
     if (!known[i].second)
     {
@@ -2458,7 +2456,7 @@ void end_examples(search& sch)
   }
 }
 
-bool mc_label_is_test(const VW::polylabel& lab) { return MC::test_label(lab.multi); }
+bool mc_label_is_test(const VW::polylabel& lab) { return VW::test_multiclass_label(lab.multi); }
 
 void search_initialize(VW::workspace* all, search& sch)
 {
@@ -2497,7 +2495,7 @@ void search_initialize(VW::workspace* all, search& sch)
   priv.active_uncertainty.clear();
   priv.active_known.clear();
 
-  CS::default_label(priv.empty_cs_label);
+  VW::default_cs_label(priv.empty_cs_label);
 
   priv.rawOutputStringStream = VW::make_unique<std::stringstream>();
 }
@@ -2548,7 +2546,7 @@ void search_finish(search& sch)
   if (priv.metatask && priv.metatask->finish) { priv.metatask->finish(sch); }
 }
 
-std::vector<CS::label> read_allowed_transitions(action A, const char* filename, VW::io::logger& logger)
+std::vector<VW::cs_label> read_allowed_transitions(action A, const char* filename, VW::io::logger& logger)
 {
   FILE* f;
   if (VW::file_open(&f, filename, "r") != 0)
@@ -2568,24 +2566,24 @@ std::vector<CS::label> read_allowed_transitions(action A, const char* filename, 
   }
   fclose(f);
 
-  std::vector<CS::label> allowed;
+  std::vector<VW::cs_label> allowed;
 
   // from
   for (size_t i = 0; i < A; i++)
   {
-    std::vector<CS::wclass> costs;
+    std::vector<VW::cs_label::wclass> costs;
 
     // to
     for (size_t j = 0; j < A; j++)
     {
       if (bg[i * (A + 1) + j])
       {
-        CS::wclass c = {FLT_MAX, static_cast<action>(j), 0., 0.};
+        VW::cs_label::wclass c = {FLT_MAX, static_cast<action>(j), 0., 0.};
         costs.push_back(c);
       }
     }
 
-    CS::label ld = {costs};
+    VW::cs_label ld = {costs};
     allowed.push_back(ld);
   }
   free(bg);
@@ -2717,9 +2715,9 @@ action search::predictLDF(VW::example* ecs, size_t ec_cnt, ptag mytag, const act
   // action "1" is at index 0. Map action to its appropriate index. In particular, this fixes an
   // issue where the predicted action is the last, and there is no example header, causing an index
   // beyond the end of the array (usually resulting in a segfault at some point.)
-  size_t action_index = (a - COST_SENSITIVE::ec_is_example_header(ecs[0])) ? 0 : 1;
+  size_t action_index = (a - VW::is_cs_example_header(ecs[0])) ? 0 : 1;
 
-  if ((mytag != 0) && ecs[action_index].l.cs.costs.size() > 0)
+  if ((mytag != 0) && !ecs[action_index].l.cs.costs.empty())
   {
     if (mytag < priv->ptag_to_action.size())
     {
@@ -3242,7 +3240,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   else
   {
     priv.cb_learner = false;
-    CS::cs_label.default_label(priv.allowed_actions_cache);
+    VW::cs_label_parser.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cs.costs.clear();
     priv.gte_label.cs.costs.clear();
   }

@@ -134,7 +134,7 @@ struct cbify
   uint32_t chosen_action = 0;
 
   // for ldf inputs
-  std::vector<std::vector<COST_SENSITIVE::wclass>> cs_costs;
+  std::vector<std::vector<VW::cs_label::wclass>> cs_costs;
   std::vector<std::vector<CB::cb_class>> cb_costs;
   std::vector<VW::action_scores> cb_as;
 };
@@ -149,7 +149,7 @@ float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
   }
 }
 
-float loss_cs(const cbify& data, const std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+float loss_cs(const cbify& data, const std::vector<VW::cs_label::wclass>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (const auto& wc : costs)
@@ -164,7 +164,7 @@ float loss_cs(const cbify& data, const std::vector<COST_SENSITIVE::wclass>& cost
 }
 
 float loss_csldf(
-    const cbify& data, const std::vector<std::vector<COST_SENSITIVE::wclass>>& cs_costs, uint32_t final_prediction)
+    const cbify& data, const std::vector<std::vector<VW::cs_label::wclass>>& cs_costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (const auto& costs : cs_costs)
@@ -349,7 +349,7 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
 {
   // Store the multiclass or cost-sensitive input label
   VW::multiclass_label ld;
-  COST_SENSITIVE::label csl;
+  VW::cs_label csl;
   if (use_cs) { csl = std::move(ec.l.cs); }
   else
   {
@@ -411,7 +411,7 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
 {
   auto& out_ec = *data.adf_data.ecs[0];
   VW::multiclass_label ld;
-  COST_SENSITIVE::label csl;
+  VW::cs_label csl;
 
   if (use_cs) { csl = ec.l.cs; }
   else
@@ -528,7 +528,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
   const auto& costs = ec.l.cs.costs;
 
   if (VW::example_is_newline(ec)) { return; }
-  if (COST_SENSITIVE::ec_is_example_header(ec)) { return; }
+  if (VW::is_cs_example_header(ec)) { return; }
 
   all.sd->total_features += ec.get_num_features();
 
@@ -536,7 +536,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
 
   uint32_t predicted_class = ec.pred.multiclass;
 
-  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
+  if (!VW::cs_label_parser.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -568,7 +568,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
+  VW::details::print_cs_update(all, VW::cs_label_parser.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_example_seq(VW::workspace& all, const VW::multi_ex& ec_seq)
@@ -804,9 +804,9 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       in_label_type = VW::label_type_t::cs;
       learn_ptr = learn_adf<true>;
       predict_ptr = predict_adf<true>;
-      finish_ptr = COST_SENSITIVE::finish_example;
+      finish_ptr = VW::details::finish_cs_example;
       name_addition = "-adf-cs";
-      all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+      all.example_parser->lbl_parser = VW::cs_label_parser;
     }
     else
     {
@@ -863,9 +863,9 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       out_pred_type = VW::prediction_type_t::multiclass;
       learn_ptr = predict_or_learn<true, true>;
       predict_ptr = predict_or_learn<false, true>;
-      finish_ptr = COST_SENSITIVE::finish_example;
+      finish_ptr = VW::details::finish_cs_example;
       name_addition = "-cs";
-      all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+      all.example_parser->lbl_parser = VW::cs_label_parser;
     }
     else
     {
@@ -935,7 +935,7 @@ VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stac
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_finish_example(finish_multiline_example)
                 .build(&all.logger);
-  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+  all.example_parser->lbl_parser = VW::cs_label_parser;
 
   return make_base(*l);
 }

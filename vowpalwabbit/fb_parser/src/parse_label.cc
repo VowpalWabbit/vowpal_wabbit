@@ -97,7 +97,7 @@ void parser::parse_cs_label(polylabel* l, const CS_Label* label)
 {
   for (auto const& cost : *(label->costs()))
   {
-    COST_SENSITIVE::wclass f;
+    VW::cs_label::wclass f;
     f.x = cost->x();
     f.partial_prediction = cost->partial_pred();
     f.wap_value = cost->wap_value();

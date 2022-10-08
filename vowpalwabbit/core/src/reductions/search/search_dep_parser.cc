@@ -121,7 +121,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
   }
 
-  sch.set_label_parser(COST_SENSITIVE::cs_label, [](const VW::polylabel& l) -> bool { return l.cs.costs.empty(); });
+  sch.set_label_parser(VW::cs_label_parser, [](const VW::polylabel& l) -> bool { return l.cs.costs.empty(); });
 }
 
 void inline add_feature(

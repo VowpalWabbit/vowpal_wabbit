@@ -101,7 +101,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     }
   }
 
-  COST_SENSITIVE::label ld = std::move(ec.l.cs);
+  VW::cs_label ld = std::move(ec.l.cs);
 
   // Guard VW::example state restore against throws
   auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = std::move(ld); });
@@ -172,13 +172,15 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
       add_passthrough_feature(ec, constant * 2 + 1 + second_best, 1.);
     }
     else
+    {
       add_passthrough_feature(ec, constant * 3, 1.);
+    }
   }
 
   ec.pred.multiclass = prediction;
 }
 
-void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { VW::details::finish_cs_example(all, ec); }
 }  // namespace
 
 base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
@@ -209,7 +211,7 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(::finish_example)
                 .build();
 
-  all.example_parser->lbl_parser = cs_label;
+  all.example_parser->lbl_parser = VW::cs_label_parser;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }

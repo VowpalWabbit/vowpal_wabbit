@@ -40,7 +40,7 @@ struct polylabel
   VW::no_label empty = static_cast<char>(0);
   VW::simple_label simple;
   VW::multiclass_label multi;
-  COST_SENSITIVE::label cs;
+  VW::cs_label cs;
   CB::label cb;
   VW::cb_continuous::continuous_label cb_cont;
   VW::ccb_label conditional_contextual_bandit;

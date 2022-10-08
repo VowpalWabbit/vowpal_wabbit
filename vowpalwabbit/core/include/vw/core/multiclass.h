@@ -49,7 +49,9 @@ size_t write_model_field(io_buf&, const VW::multiclass_label&, const std::string
 namespace MULTICLASS  // NOLINT
 {
 using label_t VW_DEPRECATED(
-    "VW::multiclass_label renamed to VW::multiclass_label. VW::multiclass_label will be removed in VW 10.") =
+    "MULTICLASS::label_t renamed to VW::multiclass_label. MULTICLASS::label_t will be removed in VW 10.") =
     VW::multiclass_label;
+VW_DEPRECATED(
+    "MULTICLASS::test_label renamed to VW::test_multiclass_label. MULTICLASS::test_label will be removed in VW 10.")
 inline bool test_label(const VW::multiclass_label& ld) { return VW::test_multiclass_label(ld); }
 }  // namespace MULTICLASS

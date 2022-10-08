@@ -29,7 +29,7 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
       return CB_EVAL::cb_eval;
 
     case VW::label_type_t::cs:
-      return COST_SENSITIVE::cs_label;
+      return VW::cs_label_parser;
 
     case VW::label_type_t::multilabel:
       return MULTILABEL::multilabel;

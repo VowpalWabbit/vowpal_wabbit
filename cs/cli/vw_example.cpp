@@ -77,7 +77,7 @@ ILabel^ VowpalWabbitExample::Label::get()
     label = gcnew ContextualBanditLabel();
   else if (!memcmp(&lp, &CB_EVAL::cb_eval, sizeof(lp)))
     label = gcnew SimpleLabel();
-  else if (!memcmp(&lp, &COST_SENSITIVE::cs_label, sizeof(lp)))
+  else if (!memcmp(&lp, &VW::cs_label_parser, sizeof(lp)))
     label = gcnew SimpleLabel();
   else
     return nullptr;

@@ -608,7 +608,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSe
 
   try
   {
-    COST_SENSITIVE::label* ld = &ex->l.cs;
+    VW::cs_label* ld = &ex->l.cs;
 
     int sizeCosts = env->GetArrayLength(costs);
     int sizeClasses = env->GetArrayLength(classes);
@@ -628,7 +628,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSe
     // loop over weights/labels
     for (int i = 0; i < sizeCosts; i++)
     {
-      COST_SENSITIVE::wclass w;
+      VW::cs_label::wclass w;
       w.x = costs0[i];
       w.class_index = classes0[i];
 
