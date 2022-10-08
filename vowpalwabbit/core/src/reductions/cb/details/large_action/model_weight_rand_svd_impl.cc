@@ -131,7 +131,7 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
   std::set<uint64_t> non_zero_rows;
   for (auto* ex : examples)
   {
-    assert(!VW::is_cb_example_header(*ex));
+    assert(!CB::ec_is_example_header(*ex));
 
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
     for (uint64_t col = 0; col < _d; col++)
@@ -191,7 +191,7 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
   uint64_t row_index = 0;
   for (auto* ex : examples)
   {
-    assert(!VW::is_cb_example_header(*ex));
+    assert(!CB::ec_is_example_header(*ex));
 
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
@@ -231,7 +231,7 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
   uint64_t max_non_zero_col = 0;
   for (auto* ex : examples)
   {
-    assert(!VW::is_cb_example_header(*ex));
+    assert(!CB::ec_is_example_header(*ex));
 
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
     for (uint64_t col = 0; col < _d; col++)
@@ -274,7 +274,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
 {
   for (auto* ex : examples)
   {
-    assert(!VW::is_cb_example_header(*ex));
+    assert(!CB::ec_is_example_header(*ex));
 
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
     for (uint64_t col = 0; col < _d; col++)

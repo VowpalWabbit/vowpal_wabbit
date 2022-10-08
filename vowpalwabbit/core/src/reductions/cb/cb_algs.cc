@@ -18,35 +18,36 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
+using namespace CB;
 using namespace GEN_CS;
 
 namespace CB_ALGS
 {
 void generic_output_example(
-    VW::workspace& all, float loss, const VW::example& ec, const VW::cb_label& ld, const VW::cb_class* known_cost)
+    VW::workspace& all, float loss, const VW::example& ec, const CB::label& ld, const CB::cb_class* known_cost)
 {
-  all.sd->update(ec.test_only, !VW::details::is_test_cb_label(ld), loss, 1.f, ec.get_num_features());
+  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
-    std::stringstream oss;
+    std::stringstream outputStringStream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
-      VW::cb_class cl = ld.costs[i];
-      if (i > 0) { oss << ' '; }
-      oss << cl.action << ':' << cl.partial_prediction;
+      cb_class cl = ld.costs[i];
+      if (i > 0) { outputStringStream << ' '; }
+      outputStringStream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), oss.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  bool is_ld_test_label = VW::details::is_test_cb_label(ld);
-  if (!is_ld_test_label) { VW::details::print_cb_update(all, is_ld_test_label, ec, nullptr, false, known_cost); }
+  bool is_ld_test_label = CB::is_test_label(ld);
+  if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, known_cost); }
   else
   {
-    VW::details::print_cb_update(all, is_ld_test_label, ec, nullptr, false, nullptr);
+    print_update(all, is_ld_test_label, ec, nullptr, false, nullptr);
   }
 }
 }  // namespace CB_ALGS
@@ -69,7 +70,7 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
   else
   {
-    c.known_cost = VW::cb_class{};
+    c.known_cost = CB::cb_class{};
   }
 
   // cost observed, not default
@@ -102,7 +103,7 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
   else
   {
-    c.known_cost = VW::cb_class{};
+    c.known_cost = CB::cb_class{};
   }
   gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
@@ -112,13 +113,12 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-void output_example(VW::workspace& all, cb& data, const VW::example& ec, const VW::cb_label& ld)
+void output_example(VW::workspace& all, cb& data, const VW::example& ec, const CB::label& ld)
 {
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!VW::details::is_test_cb_label(ld))
-  { loss = CB_ALGS::get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
+  if (!CB::is_test_label(ld)) { loss = CB_ALGS::get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
 
   CB_ALGS::generic_output_example(all, loss, ec, ld, &c.known_cost);
 }
@@ -203,10 +203,10 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   }
 
   auto base = as_singleline(stack_builder.setup_base_learner());
-  if (eval) { all.example_parser->lbl_parser = VW::cb_eval_label_parser_global; }
+  if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
   else
   {
-    all.example_parser->lbl_parser = VW::cb_label_parser_global;
+    all.example_parser->lbl_parser = CB::cb_label;
   }
   c.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 

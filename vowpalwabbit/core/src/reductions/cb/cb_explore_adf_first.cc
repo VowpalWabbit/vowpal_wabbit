@@ -120,7 +120,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
   size_t problem_multiplier = 1;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
 

@@ -100,7 +100,7 @@ public:
 
   virtual void ReadFromExample(example* ex)
   {
-    VW::cb_label* ld = &ex->l.cb;
+    CB::label* ld = &ex->l.cb;
     if (ld->costs.size() > 0)
     { cb_class& f = ld->costs[0];
 
@@ -112,8 +112,8 @@ public:
 
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
-    VW::cb_label* ld = &ex->l.cb;
-    VW::cb_class f;
+    CB::label* ld = &ex->l.cb;
+    CB::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = m_action;
@@ -152,8 +152,8 @@ public:
 
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
-    VW::cb_label* ld = &ex->l.cb;
-    VW::cb_class f;
+    CB::label* ld = &ex->l.cb;
+    CB::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = m_action;

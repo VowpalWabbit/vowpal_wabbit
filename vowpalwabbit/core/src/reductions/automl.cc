@@ -47,7 +47,7 @@ void predict_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 template <typename CMType, bool is_explore>
 void learn_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 {
-  VW::cb_class logged{};
+  CB::cb_class logged{};
   uint64_t labelled_action = 0;
   const auto it = std::find_if(ec.begin(), ec.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
 

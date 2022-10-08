@@ -67,7 +67,7 @@ private:
 
   // for backing up cb example data when computing sensitivities
   std::vector<VW::action_scores> _ex_as;
-  std::vector<std::vector<VW::cb_class>> _ex_costs;
+  std::vector<std::vector<CB::cb_class>> _ex_costs;
 };
 
 cb_explore_adf_regcb::cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost,
@@ -226,7 +226,7 @@ void cb_explore_adf_regcb::learn_impl(multi_learner& base, VW::multi_ex& example
   v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
-    VW::cb_label& ld = examples[i]->l.cb;
+    CB::label& ld = examples[i]->l.cb;
     if (ld.costs.size() == 1)
     {
       ld.costs[0].probability = 1.f;  // no importance weighting
@@ -307,7 +307,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
   size_t problem_multiplier = 1;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  all.example_parser->lbl_parser = CB::cb_label;
 
   bool with_metrics = options.was_supplied("extra_metrics");
 

@@ -714,8 +714,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContex
 
   try
   {
-    VW::cb_label* ld = &ex->l.cb;
-    VW::cb_class f;
+    CB::label* ld = &ex->l.cb;
+    CB::cb_class f;
 
     f.action = (uint32_t)action;
     f.cost = (float)cost;
@@ -736,8 +736,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
   try
   {
     // https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/vowpalwabbit/parse_example_json.h#L437
-    VW::cb_label* ld = &ex->l.cb;
-    VW::cb_class f;
+    CB::label* ld = &ex->l.cb;
+    CB::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = (uint32_t)VW::uniform_hash("shared", 6 /*length of string*/, 0);
@@ -895,14 +895,14 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     }
     else if (!memcmp(&lp, &VW::cb_label_parser_global, sizeof(lp)))
     {
-      VW::cb_label* ld = &ex->l.cb;
+      CB::label* ld = &ex->l.cb;
       ostr << "CB " << ld->costs.size();
 
       if (ld->costs.size() > 0)
       {
         ostr << " ";
 
-        VW::cb_class& f = ld->costs[0];
+        CB::cb_class& f = ld->costs[0];
 
         // Ignore checking if f.action == VW::uniform_hash("shared")
         if (f.partial_prediction == 0 && f.cost == FLT_MAX && f.probability == -1.f)

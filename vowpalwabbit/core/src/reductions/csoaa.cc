@@ -12,7 +12,6 @@
 #include <utility>
 
 using namespace VW::LEARNER;
-using namespace COST_SENSITIVE;
 using namespace VW::config;
 
 #undef VW_DEBUG_LOG

@@ -56,7 +56,7 @@ struct mwt
 {
   bool namespaces[256];            // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
-  std::pair<bool, VW::cb_class> optional_observation;
+  std::pair<bool, CB::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
   double total = 0.;
   uint32_t num_classes = 0;
@@ -183,7 +183,7 @@ void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
   {
     VW::v_array<float> temp = ec.pred.scalars;
     ec.pred.multiclass = static_cast<uint32_t>(temp[0]);
-    VW::details::print_cb_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
+    CB::print_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
     ec.pred.scalars = temp;
   }
   VW::finish_example(all, ec);
@@ -303,6 +303,6 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(::finish_example)
                 .build();
 
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);
 }

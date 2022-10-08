@@ -166,9 +166,9 @@ void pmf_to_pdf_reduction::learn(example& ec)
   auto actual_bandwidth = !tree_bandwidth ? 1 : 2 * b;  // avoid zero division
 
   ec.l.cb.costs.push_back(
-      VW::cb_class(cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
+      CB::cb_class(cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
   ec.l.cb.costs.push_back(
-      VW::cb_class(cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
+      CB::cb_class(cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 

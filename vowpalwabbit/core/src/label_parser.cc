@@ -23,10 +23,10 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
       return VW::simple_label_parser_global;
 
     case VW::label_type_t::cb:
-      return VW::cb_label_parser_global;
+      return CB::cb_label;
 
     case VW::label_type_t::cb_eval:
-      return VW::cb_eval_label_parser_global;
+      return CB_EVAL::cb_eval;
 
     case VW::label_type_t::cs:
       return VW::cs_label_parser_global;

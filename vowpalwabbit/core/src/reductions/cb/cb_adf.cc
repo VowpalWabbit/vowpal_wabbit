@@ -22,6 +22,7 @@
 #include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
+using namespace CB;
 using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
@@ -29,12 +30,12 @@ using namespace exploration;
 
 namespace CB_ADF
 {
-VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
+cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
 {
   bool found = false;
   uint32_t found_index = 0;
   uint32_t i = 0;
-  VW::cb_class known_cost;
+  CB::cb_class known_cost;
 
   for (const auto* example_ptr : examples)
   {
@@ -122,7 +123,7 @@ void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
 
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    VW::cb_label ld = examples[i]->l.cb;
+    CB::label ld = examples[i]->l.cb;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       chosen_action = i;
@@ -326,10 +327,10 @@ void output_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  if (labeled_example) { VW::details::print_cb_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
+  if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
   else
   {
-    VW::details::print_cb_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
   }
 }
 
@@ -356,10 +357,10 @@ void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::exampl
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  if (labeled_example) { VW::details::print_cb_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
+  if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
   else
   {
-    VW::details::print_cb_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
+    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
   }
 }
 
@@ -516,7 +517,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   auto ld = VW::make_unique<CB_ADF::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
 
   auto base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  all.example_parser->lbl_parser = CB::cb_label;
 
   CB_ADF::cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();

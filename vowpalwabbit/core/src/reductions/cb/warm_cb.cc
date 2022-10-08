@@ -8,8 +8,6 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/cb_label_parser.h"
-#include "vw/core/cost_sensitive.h"
-#include "vw/core/multiclass.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
@@ -46,7 +44,7 @@ namespace
 {
 struct warm_cb
 {
-  VW::cb_label cb_label;
+  CB::label cb_label;
   uint64_t app_seed = 0;
   VW::action_scores a_s;
   // used as the seed
@@ -78,7 +76,7 @@ struct warm_cb
   std::vector<float> lambdas;
   VW::action_scores a_s_adf;
   std::vector<float> cumulative_costs;
-  VW::cb_class cl_adf;
+  CB::cb_class cl_adf;
   uint32_t ws_train_size = 0;
   uint32_t ws_vali_size = 0;
   VW::multi_ex ws_vali;
@@ -88,7 +86,7 @@ struct warm_cb
   VW::multiclass_label mc_label;
   VW::cs_label cs_label;
   std::vector<VW::cs_label> csls;
-  std::vector<VW::cb_label> cbls;
+  std::vector<CB::label> cbls;
   bool use_cs = 0;
 
   ~warm_cb()
@@ -160,7 +158,7 @@ void copy_example_to_adf(warm_cb& data, VW::example& ec)
     auto& eca = *data.ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    VW::details::default_cb_label(lab);
+    CB::default_label(lab);
 
     // copy data
     VW::copy_example_data(&eca, &ec);
@@ -173,8 +171,7 @@ void copy_example_to_adf(warm_cb& data, VW::example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && VW::cb_label_parser_global.test_label(eca.l))
-    { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
   }
 }
 
@@ -301,7 +298,7 @@ uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, VW::example&
 
 void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
-  VW::cb_class& cl = data.cl_adf;
+  CB::cb_class& cl = data.cl_adf;
   // IPS for approximating the cumulative costs for all lambdas
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
@@ -515,7 +512,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   {
     data.ecs[a] = VW::alloc_examples(1);
     auto& lab = data.ecs[a]->l.cb;
-    VW::details::default_cb_label(lab);
+    CB::default_label(lab);
   }
 
   // The rest of the initialization is for warm start CB

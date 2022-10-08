@@ -30,7 +30,7 @@ struct pmf_to_pdf_reduction
 private:
   void transform_prediction(example& ec);
 
-  VW::cb_label temp_lbl_cb;
+  CB::label temp_lbl_cb;
   VW::action_scores temp_pred_a_s;
 };
 }  // namespace reductions

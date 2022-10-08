@@ -225,7 +225,7 @@ private:
 template <bool audit>
 struct LabelObjectState : public BaseState<audit>
 {
-  VW::cb_class cb_label;
+  CB::cb_class cb_label;
   VW::cb_continuous::continuous_label_elm cont_label_element = {0., 0., 0.};
   bool found = false;
   bool found_cb = false;
@@ -396,7 +396,7 @@ struct LabelObjectState : public BaseState<audit>
         probs.clear();
 
         ld.outcome = outcome;
-        cb_label = VW::cb_class{};
+        cb_label = CB::cb_class{};
       }
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
@@ -410,7 +410,7 @@ struct LabelObjectState : public BaseState<audit>
         for (size_t i = 0; i < this->actions.size(); i++) { ld.probabilities.push_back({actions[i], probs[i]}); }
         actions.clear();
         probs.clear();
-        cb_label = VW::cb_class{};
+        cb_label = CB::cb_class{};
       }
     }
     else if (found_cb)
@@ -419,7 +419,7 @@ struct LabelObjectState : public BaseState<audit>
       ld.costs.push_back(cb_label);
 
       found_cb = false;
-      cb_label = VW::cb_class{};
+      cb_label = CB::cb_class{};
     }
     else if (found_cb_continuous)
     {
@@ -591,8 +591,8 @@ struct MultiState : BaseState<audit>
     // mark shared example
     if (ctx._label_parser.label_type == VW::label_type_t::cb)
     {
-      VW::cb_label* ld = &ctx.ex->l.cb;
-      VW::cb_class f;
+      CB::label* ld = &ctx.ex->l.cb;
+      CB::cb_class f;
 
       f.partial_prediction = 0.;
       f.action = static_cast<uint32_t>(VW::uniform_hash("shared", 6, 0));

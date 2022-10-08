@@ -36,7 +36,7 @@ void gen_cs_example_ips(const VW::multi_ex& examples, VW::cs_label& cs_labels, V
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    const VW::cb_label& ld = examples[i]->l.cb;
+    const CB::label& ld = examples[i]->l.cb;
 
     VW::cs_class wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
@@ -51,7 +51,7 @@ void gen_cs_example_dm(const VW::multi_ex& examples, VW::cs_label& cs_labels)
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    const VW::cb_label& ld = examples[i]->l.cb;
+    const CB::label& ld = examples[i]->l.cb;
 
     VW::cs_class wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX) { wc.x = ld.costs[0].cost; }
@@ -71,7 +71,7 @@ void gen_cs_test_example(const VW::multi_ex& examples, VW::cs_label& cs_labels)
 }
 
 // single line version
-void gen_cs_example_ips(cb_to_cs& c, const VW::cb_label& ld, VW::cs_label& cs_ld, VW::io::logger& logger, float clip_p)
+void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, VW::cs_label& cs_ld, VW::io::logger& logger, float clip_p)
 {
   // this implements the inverse propensity score method, where cost are importance weighted by the probability of the
   // chosen action generate cost-sensitive example
@@ -134,7 +134,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_
   cs_labels.costs.clear();
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
-    VW::cb_label& ld = ec_seq[i]->l.cb;
+    CB::label& ld = ec_seq[i]->l.cb;
 
     VW::cs_class wc = {0, 0, 0, 0};
 
@@ -173,7 +173,7 @@ void gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset,
   }
 }
 
-void cs_prep_labels(VW::multi_ex& examples, std::vector<VW::cb_label>& cb_labels, VW::cs_label& cs_labels,
+void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, VW::cs_label& cs_labels,
     std::vector<VW::cs_label>& prepped_cs_labels, uint64_t offset)
 {
   cb_labels.clear();

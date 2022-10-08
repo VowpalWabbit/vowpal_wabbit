@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
     uint64_t action_index = 0;
     auto* ex = examples[action_index];
     // test sanity - test assumes no shared features
-    BOOST_CHECK_EQUAL(!VW::is_cb_example_header(*ex), true);
+    BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
     for (auto ns : ex->indices)
     {
       for (size_t i = 0; i < ex->feature_space[ns].indices.size(); i++)
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
       {
         auto* ex = examples[action_index];
         // test sanity - test assumes no shared features
-        BOOST_CHECK_EQUAL(!VW::is_cb_example_header(*ex), true);
+        BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
         for (auto ns : ex->indices)
         {
           for (uint64_t col = 0; col < d; col++)

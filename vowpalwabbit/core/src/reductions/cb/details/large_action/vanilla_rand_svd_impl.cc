@@ -80,7 +80,7 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
   std::set<uint64_t> non_zero_rows;
   for (auto* ex : examples)
   {
-    assert(!VW::is_cb_example_header(*ex));
+    assert(!CB::ec_is_example_header(*ex));
 
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 
@@ -131,7 +131,7 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
   uint64_t row_index = 0;
   for (auto* ex : examples)
   {
-    assert(!VW::is_cb_example_header(*ex));
+    assert(!CB::ec_is_example_header(*ex));
 
     auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
 

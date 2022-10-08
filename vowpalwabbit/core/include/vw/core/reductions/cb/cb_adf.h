@@ -22,7 +22,7 @@ VW::LEARNER::base_learner* cb_adf_setup(VW::setup_base_i& stack_builder);
 namespace CB_ADF
 {
 VW::example* test_adf_sequence(const VW::multi_ex& ec_seq);
-VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
+CB::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 struct cb_adf
 {
   GEN_CS::cb_to_cs_adf _gen_cs;
@@ -52,7 +52,7 @@ struct cb_adf
         _gen_cs.cb_type == VW::cb_type_t::sm;
   }
 
-  VW::cb_class* known_cost() { return &_gen_cs.known_cost; }
+  CB::cb_class* known_cost() { return &_gen_cs.known_cost; }
 
 private:
   void learn_IPS(LEARNER::multi_learner& base, VW::multi_ex& examples);
@@ -63,7 +63,7 @@ private:
   void learn_MTR(LEARNER::multi_learner& base, VW::multi_ex& examples);
 
 private:
-  std::vector<VW::cb_label> _cb_labels;
+  std::vector<CB::label> _cb_labels;
   VW::cs_label _cs_labels;
   std::vector<VW::cs_label> _prepped_cs_labels;
 

@@ -20,17 +20,13 @@
 
 using namespace VW::LEARNER;
 
-namespace VW
-{
-namespace details
+namespace CB
 {
 template <>
-void default_cb_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label&)
+void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label&)
 {
 }
-
-}  // namespace details
-}  // namespace VW
+}  // namespace CB
 
 void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
     VW::reduction_features& red_features, VW::io::logger& logger)
@@ -120,7 +116,7 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
 label_parser the_label_parser = {
     // default_label
-    [](polylabel& label) { VW::details::default_cb_label<continuous_label>(label.cb_cont); },
+    [](polylabel& label) { CB::default_label<continuous_label>(label.cb_cont); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
@@ -146,9 +142,7 @@ label_parser the_label_parser = {
     // CB::weight just returns 1.f? This seems like it could be a bug...
     [](const polylabel& /*label*/, const reduction_features& /*red_features*/) { return 1.f; },
     // test_label
-    [](const polylabel& label) {
-      return VW::details::is_test_cb_label<continuous_label, continuous_label_elm>(label.cb_cont);
-    },
+    [](const polylabel& label) { return CB::is_test_label<continuous_label, continuous_label_elm>(label.cb_cont); },
     // label type
     VW::label_type_t::continuous};
 

@@ -41,11 +41,11 @@ struct polylabel
   VW::simple_label simple;
   VW::multiclass_label multi;
   VW::cs_label cs;
-  VW::cb_label cb;
+  CB::label cb;
   VW::cb_continuous::continuous_label cb_cont;
   VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
-  VW::cb_eval_label cb_eval;
+  CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 };
 

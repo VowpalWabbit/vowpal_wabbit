@@ -23,7 +23,6 @@
 #define B_SEARCH_MAX_ITER 20
 
 using namespace VW::LEARNER;
-using namespace COST_SENSITIVE;
 using namespace VW::config;
 
 using std::endl;

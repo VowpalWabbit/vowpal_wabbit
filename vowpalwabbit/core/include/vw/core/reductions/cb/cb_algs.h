@@ -28,7 +28,7 @@ namespace CB_ALGS
 {
 template <bool is_learn>
 float get_cost_pred(
-    VW::LEARNER::single_learner* scorer, const VW::cb_class& known_cost, VW::example& ec, uint32_t index, uint32_t base)
+    VW::LEARNER::single_learner* scorer, const CB::cb_class& known_cost, VW::example& ec, uint32_t index, uint32_t base)
 {
   VW_DBG(ec) << "get_cost_pred:" << is_learn << std::endl;
 
@@ -62,14 +62,14 @@ float get_cost_pred(
 }
 
 // IPS estimate
-inline float get_cost_estimate(const VW::cb_class& observation, uint32_t action, float offset = 0.)
+inline float get_cost_estimate(const CB::cb_class& observation, uint32_t action, float offset = 0.)
 {
   if (action == observation.action) { return (observation.cost - offset) / observation.probability; }
   return 0.;
 }
 
 // doubly robust estimate
-inline float get_cost_estimate(const VW::cb_class& observation, const VW::cs_label& scores, uint32_t action)
+inline float get_cost_estimate(const CB::cb_class& observation, const VW::cs_label& scores, uint32_t action)
 {
   for (auto& cl : scores.costs)
   {
@@ -80,7 +80,7 @@ inline float get_cost_estimate(const VW::cb_class& observation, const VW::cs_lab
 }
 
 // IPS
-inline float get_cost_estimate(const VW::cb_label& ld, uint32_t action)
+inline float get_cost_estimate(const CB::label& ld, uint32_t action)
 {
   for (auto& cl : ld.costs)
   {
@@ -98,10 +98,10 @@ inline float get_cost_estimate(const VW::action_score& a_s, float cost, uint32_t
 
 inline bool example_is_newline_not_header(VW::example const& ec)
 {
-  return (VW::example_is_newline(ec) && !VW::is_cb_example_header(ec));
+  return (VW::example_is_newline(ec) && !CB::ec_is_example_header(ec));
 }
 
 void generic_output_example(
-    VW::workspace& all, float loss, const VW::example& ec, const VW::cb_label& ld, const VW::cb_class* known_cost);
+    VW::workspace& all, float loss, const VW::example& ec, const CB::label& ld, const CB::cb_class* known_cost);
 
 }  // namespace CB_ALGS
