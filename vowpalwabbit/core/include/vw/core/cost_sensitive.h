@@ -65,7 +65,7 @@ using wclass VW_DEPRECATED(
 VW_DEPRECATED(
     "COST_SENSITIVE::default_label renamed to VW::default_cs_label. COST_SENSITIVE::default_label will be removed in "
     "VW 10.")
-inline void default_label(label& ld) { VW::default_cs_label(ld); }
+inline void default_label(VW::cs_label& ld) { VW::default_cs_label(ld); }
 // example headers look like "0:-1" or just "shared"
 VW_DEPRECATED(
     "COST_SENSITIVE::ec_is_example_header renamed to VW::is_cs_example_header. COST_SENSITIVE::ec_is_example_header "

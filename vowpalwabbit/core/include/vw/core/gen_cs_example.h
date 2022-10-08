@@ -140,8 +140,7 @@ void gen_cs_label(cb_to_cs& c, VW::example& ec, VW::cs_label& cs_ld, uint32_t ac
 }
 
 template <bool is_learn>
-void gen_cs_example_dr(
-    cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs_label& cs_ld, float /*clip_p*/ = 0.f)
+void gen_cs_example_dr(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs_label& cs_ld, float /*clip_p*/ = 0.f)
 {
   // this implements the doubly robust method
   VW_DBG(ec) << "gen_cs_example_dr:" << is_learn << std::endl;
@@ -169,8 +168,7 @@ void gen_cs_example_dr(
 }
 
 template <bool is_learn>
-void gen_cs_example(
-    cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs_label& cs_ld, VW::io::logger& logger)
+void gen_cs_example(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs_label& cs_ld, VW::io::logger& logger)
 {
   switch (c.cb_type)
   {
@@ -262,8 +260,8 @@ void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, V
 
 template <bool is_learn>
 void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples,
-    std::vector<CB::label>& cb_labels, VW::cs_label& cs_labels,
-    std::vector<VW::cs_label>& prepped_cs_labels, bool predict_first, uint64_t offset, size_t id = 0)
+    std::vector<CB::label>& cb_labels, VW::cs_label& cs_labels, std::vector<VW::cs_label>& prepped_cs_labels,
+    bool predict_first, uint64_t offset, size_t id = 0)
 {
   VW_DBG(*examples[0]) << "cs_ldf_" << (is_learn ? "<learn>" : "<predict>") << ": ex=" << examples[0]->example_counter
                        << ", offset=" << offset << ", id=" << id << std::endl;
