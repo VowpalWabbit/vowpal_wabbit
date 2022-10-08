@@ -38,7 +38,7 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
       return MULTICLASS::mc_label;
 
     case VW::label_type_t::ccb:
-      return CCB::ccb_label_parser;
+      return VW::ccb_label_parser;
 
     case VW::label_type_t::slates:
       return VW::slates::slates_label_parser;
