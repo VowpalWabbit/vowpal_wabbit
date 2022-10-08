@@ -165,6 +165,12 @@ VW::string_view VW::to_string(VW::slates::example_type ex_type)
 #undef CASE
 }
 
+std::ostream& VW::slates::operator<<(std::ostream& stream, const example_type& ex_type)
+{
+  stream << to_string(ex_type);
+  return stream;
+}
+
 namespace VW
 {
 namespace model_utils

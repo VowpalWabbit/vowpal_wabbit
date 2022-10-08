@@ -18,11 +18,11 @@ namespace reductions
 {
 namespace automl
 {
-namespace
+namespace details
 {
 constexpr uint64_t MAX_CONFIGS = 10;
 constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
-}  // namespace
+}  // namespace details
 
 using interaction_vec_t = std::vector<std::vector<namespace_index>>;
 
@@ -159,7 +159,7 @@ struct oracle_rand_impl
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
       const size_t num, set_ns_list_t& new_elements, config_type conf_type);
   Iterator begin() { return Iterator(); }
-  Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
+  Iterator end() { return Iterator(details::CONFIGS_PER_CHAMP_CHANGE); }
 };
 struct one_diff_impl
 {
@@ -276,6 +276,10 @@ struct automl
   // inner loop of learn driven by # MAX_CONFIGS
   void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
 };
+
+std::ostream& operator<<(std::ostream& stream, const VW::reductions::automl::automl_state& obj);
+std::ostream& operator<<(std::ostream& stream, const VW::reductions::automl::config_state& obj);
+std::ostream& operator<<(std::ostream& stream, const VW::reductions::automl::config_type& obj);
 }  // namespace automl
 
 namespace util
@@ -311,33 +315,3 @@ VW::string_view to_string(reductions::automl::automl_state state);
 VW::string_view to_string(reductions::automl::config_state state);
 VW::string_view to_string(reductions::automl::config_type state);
 }  // namespace VW
-
-namespace fmt
-{
-template <>
-struct formatter<VW::reductions::automl::automl_state> : formatter<std::string>
-{
-  auto format(VW::reductions::automl::automl_state c, format_context& ctx) -> decltype(ctx.out())
-  {
-    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
-  }
-};
-
-template <>
-struct formatter<VW::reductions::automl::config_state> : formatter<std::string>
-{
-  auto format(VW::reductions::automl::config_state c, format_context& ctx) -> decltype(ctx.out())
-  {
-    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
-  }
-};
-
-template <>
-struct formatter<VW::reductions::automl::config_type> : formatter<std::string>
-{
-  auto format(VW::reductions::automl::config_type c, format_context& ctx) -> decltype(ctx.out())
-  {
-    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
-  }
-};
-}  // namespace fmt

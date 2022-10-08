@@ -19,6 +19,8 @@ enum class ccb_example_type : uint8_t
   SLOT = 3
 };
 
+std::ostream& operator<<(std::ostream& stream, const ccb_example_type& ex_type);
+
 struct ccb_reduction_features
 {
   ccb_example_type type;

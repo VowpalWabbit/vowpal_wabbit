@@ -6,6 +6,7 @@
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/core/ccb_label.h"
+#include "vw/core/ccb_reduction_features.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parser.h"

@@ -62,18 +62,3 @@ inline std::ostream& operator<<(std::ostream& os, const namespace_extent& extent
   return os;
 }
 }  // namespace VW
-
-namespace std
-{
-inline std::ostream& operator<<(std::ostream& os, VW::slates::example_type ex_type)
-{
-  os << VW::to_string(ex_type);
-  return os;
-}
-
-inline std::ostream& operator<<(std::ostream& os, VW::ccb_example_type ex_type)
-{
-  os << VW::to_string(ex_type);
-  return os;
-}
-}  // namespace std

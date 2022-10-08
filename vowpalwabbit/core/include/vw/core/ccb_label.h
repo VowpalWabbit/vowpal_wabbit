@@ -11,9 +11,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/v_array.h"
 
-#include <fmt/core.h>
-#include <fmt/format.h>
-
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -128,18 +125,6 @@ size_t read_model_field(io_buf&, ccb_label&);
 size_t write_model_field(io_buf&, const ccb_label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
-
-namespace fmt
-{
-template <>
-struct formatter<VW::ccb_example_type> : formatter<std::string>
-{
-  auto format(VW::ccb_example_type c, format_context& ctx) -> decltype(ctx.out())
-  {
-    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
-  }
-};
-}  // namespace fmt
 
 namespace CCB
 {

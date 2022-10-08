@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/simple_label_parser.h"
-#include "vw/core/vw_string_view_fmt.h"
 
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
@@ -17,8 +16,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-// needed for printing ranges of objects (eg: all elements of a vector)
-#include <fmt/ranges.h>
 
 char* bufread_simple_label(VW::simple_label& ld, VW::simple_label_reduction_features& red_features, char* c)
 {

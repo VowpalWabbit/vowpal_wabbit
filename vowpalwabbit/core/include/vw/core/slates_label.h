@@ -8,9 +8,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/vw_fwd.h"
 
-#include <fmt/core.h>
-#include <fmt/format.h>
-
 #include <cstdint>
 
 namespace VW
@@ -24,6 +21,7 @@ enum class example_type : uint8_t
   action = 2,
   slot = 3
 };
+std::ostream& operator<<(std::ostream& stream, const example_type& ex_type);
 
 struct label
 {
@@ -74,15 +72,3 @@ size_t read_model_field(io_buf&, VW::slates::label&);
 size_t write_model_field(io_buf&, const VW::slates::label&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
-
-namespace fmt
-{
-template <>
-struct formatter<VW::slates::example_type> : formatter<std::string>
-{
-  auto format(VW::slates::example_type c, format_context& ctx) -> decltype(ctx.out())
-  {
-    return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
-  }
-};
-}  // namespace fmt

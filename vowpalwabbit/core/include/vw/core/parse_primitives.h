@@ -3,8 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/vw_string_view_fmt.h"
-
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/fast_pow10.h"

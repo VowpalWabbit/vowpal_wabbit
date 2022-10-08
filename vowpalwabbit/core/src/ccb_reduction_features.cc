@@ -27,3 +27,9 @@ const char* VW::to_string(VW::ccb_example_type ex_type)
 
 #undef CASE
 }
+
+std::ostream& VW::operator<<(std::ostream& stream, const ccb_example_type& ex_type)
+{
+  stream << to_string(ex_type);
+  return stream;
+}

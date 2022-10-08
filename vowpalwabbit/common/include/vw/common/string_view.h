@@ -6,8 +6,16 @@
 
 #include "nonstd/string_view.h"
 
+#include <ostream>
+
 // This is a special case of the namespacing rules since it is a commonly used type.
 namespace VW
 {
 using string_view = nonstd::string_view;
+
+inline std::ostream& operator<<(std::ostream& stream, const string_view& str_view)
+{
+  nonstd::operator<<(stream, str_view);
+  return stream;
 }
+}  // namespace VW

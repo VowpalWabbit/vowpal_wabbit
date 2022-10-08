@@ -409,6 +409,24 @@ template struct automl<interaction_config_manager<config_oracle<one_diff_impl>, 
 template struct automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence>>;
 template struct automl<interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>>;
 
+std::ostream& operator<<(std::ostream& stream, const VW::reductions::automl::automl_state& obj)
+{
+  stream << VW::to_string(obj);
+  return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const VW::reductions::automl::config_state& obj)
+{
+  stream << VW::to_string(obj);
+  return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const VW::reductions::automl::config_type& obj)
+{
+  stream << VW::to_string(obj);
+  return stream;
+}
+
 }  // namespace automl
 }  // namespace reductions
 }  // namespace VW

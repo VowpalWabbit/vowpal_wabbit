@@ -283,10 +283,10 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   bool ccb_on = options.was_supplied("ccb_explore_adf");
   bool predict_only_model = options.was_supplied("aml_predict_only_model");
 
-  if (max_live_configs > MAX_CONFIGS)
+  if (max_live_configs > automl::details::MAX_CONFIGS)
   {
     THROW("Maximum number of configs is "
-        << MAX_CONFIGS << " and " << max_live_configs
+        << automl::details::MAX_CONFIGS << " and " << max_live_configs
         << " were specified. Please decrease the number of configs with the --automl flag.");
   }
 
