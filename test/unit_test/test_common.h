@@ -71,7 +71,7 @@ inline std::ostream& operator<<(std::ostream& os, VW::slates::example_type ex_ty
   return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, CCB::example_type ex_type)
+inline std::ostream& operator<<(std::ostream& os, VW::ccb_example_type ex_type)
 {
   os << VW::to_string(ex_type);
   return os;
