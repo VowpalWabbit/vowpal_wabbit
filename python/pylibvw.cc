@@ -396,13 +396,13 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lBINARY:  // or #lSIMPLE
       return &VW::simple_label_parser_global;
     case lMULTICLASS:
-      return &VW::multiclass_label;
+      return &VW::multiclass_label_parser_global;
     case lCOST_SENSITIVE:
-      return &VW::cs_label_parser;
+      return &VW::cs_label_parser_global;
     case lCONTEXTUAL_BANDIT:
-      return &VW::cb_label_parser_global;
+      return &CB::cb_label;
     case lCONDITIONAL_CONTEXTUAL_BANDIT:
-      return &VW::ccb_label_parser;
+      return &VW::ccb_label_parser_global;
     case lSLATES:
       return &VW::slates::slates_label_parser;
     case lCONTINUOUS:
@@ -428,11 +428,11 @@ size_t my_get_label_type(VW::workspace* all)
   {
     return lCOST_SENSITIVE;
   }
-  else if (lp->parse_label == VW::cb_label_parser_global.parse_label)
+  else if (lp->parse_label == CB::cb_label.parse_label)
   {
     return lCONTEXTUAL_BANDIT;
   }
-  else if (lp->parse_label == VW::cb_eval_label_parser_global.parse_label)
+  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label)
   {
     return lCONTEXTUAL_BANDIT_EVAL;
   }

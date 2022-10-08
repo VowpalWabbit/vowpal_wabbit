@@ -893,7 +893,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
       const auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       ostr << "simple " << ld->label << ":" << red_fts.weight << ":" << red_fts.initial;
     }
-    else if (!memcmp(&lp, &VW::cb_label_parser_global, sizeof(lp)))
+    else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
     {
       CB::label* ld = &ex->l.cb;
       ostr << "CB " << ld->costs.size();
