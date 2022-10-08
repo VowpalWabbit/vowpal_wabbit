@@ -46,7 +46,7 @@ void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increme
   {
     ecs[a] = VW::alloc_examples(1);
     auto& lab = ecs[a]->l.cb;
-    CB::default_label(lab);
+    VW::details::default_cb_label(lab);
     ecs[a]->interactions = &interactions;
     ecs[a]->extent_interactions = &extent_interactions;
   }
@@ -78,7 +78,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
     auto& eca = *ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::default_label(lab);
+    VW::details::default_cb_label(lab);
 
     // copy data
     VW::copy_example_data(&eca, &ec);
@@ -96,7 +96,8 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && VW::cb_label_parser_global.test_label(eca.l))
+    { eca.tag.push_back('n'); }
   }
 }
 }  // namespace reductions
@@ -119,7 +120,7 @@ struct cbify_reg
 
 struct cbify
 {
-  CB::label cb_label;
+  VW::cb_label cb_label;
   uint64_t app_seed = 0;
   VW::action_scores a_s;
   cbify_reg regression_data;
@@ -135,7 +136,7 @@ struct cbify
 
   // for ldf inputs
   std::vector<std::vector<VW::cs_class>> cs_costs;
-  std::vector<std::vector<CB::cb_class>> cb_costs;
+  std::vector<std::vector<VW::cb_class>> cb_costs;
   std::vector<VW::action_scores> cb_as;
 };
 
@@ -220,7 +221,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW:
           data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-  CB::cb_class cb;
+  VW::cb_class cb;
   cb.action = chosen_action + 1;
   cb.probability = ec.pred.a_s[chosen_action].score;
 
@@ -369,7 +370,7 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
   // Create a new cb label
   const auto action = chosen_action + 1;
   const auto cost = use_cs ? loss_cs(data, csl.costs, action) : loss(data, ld.label, action);
-  ec.l.cb.costs.push_back(CB::cb_class{
+  ec.l.cb.costs.push_back(VW::cb_class{
       cost,
       action,                           // action
       ec.pred.a_s[chosen_action].score  // probability
@@ -418,7 +419,7 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
     ld = ec.l.multi;
   }
 
-  CB::cb_class cl;
+  VW::cb_class cl;
   cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
   cl.probability = out_ec.pred.a_s[data.chosen_action].score;
 
@@ -480,7 +481,7 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_se
 
 void do_actual_learning_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  CB::cb_class cl;
+  VW::cb_class cl;
 
   cl.action = data.cb_as[0][data.chosen_action].action + 1;
   cl.probability = data.cb_as[0][data.chosen_action].score;
@@ -535,7 +536,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
 
   uint32_t predicted_class = ec.pred.multiclass;
 
-  if (!VW::cs_label_parser.test_label(ec.l))
+  if (!VW::cs_label_parser_global.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -567,7 +568,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  VW::details::print_cs_update(all, VW::cs_label_parser.test_label(ec.l), ec, ec_seq, false, predicted_class);
+  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_example_seq(VW::workspace& all, const VW::multi_ex& ec_seq)
@@ -805,7 +806,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       predict_ptr = predict_adf<true>;
       finish_ptr = VW::details::finish_cs_example;
       name_addition = "-adf-cs";
-      all.example_parser->lbl_parser = VW::cs_label_parser;
+      all.example_parser->lbl_parser = VW::cs_label_parser_global;
     }
     else
     {
@@ -814,7 +815,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       predict_ptr = predict_adf<false>;
       finish_ptr = VW::details::finish_multiclass_example<cbify&>;
       name_addition = "-adf";
-      all.example_parser->lbl_parser = VW::multiclass_label_parser;
+      all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
@@ -834,7 +835,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     {
       in_label_type = VW::label_type_t::simple;
       out_pred_type = VW::prediction_type_t::scalar;
-      all.example_parser->lbl_parser = VW::simple_label_parser;
+      all.example_parser->lbl_parser = VW::simple_label_parser_global;
       if (use_discrete)
       {
         out_label_type = VW::label_type_t::cb;
@@ -864,7 +865,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       predict_ptr = predict_or_learn<false, true>;
       finish_ptr = VW::details::finish_cs_example;
       name_addition = "-cs";
-      all.example_parser->lbl_parser = VW::cs_label_parser;
+      all.example_parser->lbl_parser = VW::cs_label_parser_global;
     }
     else
     {
@@ -876,7 +877,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       predict_ptr = predict_or_learn<false, false>;
       finish_ptr = VW::details::finish_multiclass_example<cbify&>;
       name_addition = "";
-      all.example_parser->lbl_parser = VW::multiclass_label_parser;
+      all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
@@ -934,7 +935,7 @@ VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stac
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_finish_example(finish_multiline_example)
                 .build(&all.logger);
-  all.example_parser->lbl_parser = VW::cs_label_parser;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
 
   return make_base(*l);
 }

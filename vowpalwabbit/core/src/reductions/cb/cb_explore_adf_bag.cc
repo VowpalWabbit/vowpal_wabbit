@@ -184,7 +184,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
 
   size_t problem_multiplier = VW::cast_to_smaller_type<size_t>(bag_size);
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool with_metrics = options.was_supplied("extra_metrics");
 

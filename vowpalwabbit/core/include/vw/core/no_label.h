@@ -10,7 +10,7 @@ namespace VW
 {
 using no_label = char;
 
-extern VW::label_parser no_label_parser;
+extern VW::label_parser no_label_parser_global;
 namespace details
 {
 void return_no_label_example(VW::workspace& all, void*, VW::example& ec);

@@ -71,7 +71,7 @@ void parse_multiclass_label(VW::multiclass_label& ld, const VW::named_labels* ld
 
 namespace VW
 {
-VW::label_parser multiclass_label_parser = {
+VW::label_parser multiclass_label_parser_global = {
     // default_label
     [](VW::polylabel& label) { default_label(label.multi); },
     // parse_label

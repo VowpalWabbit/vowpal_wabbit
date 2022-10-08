@@ -42,7 +42,7 @@ struct cb_explore
   VW::v_array<uint32_t> preds;
   VW::v_array<float> cover_probs;
 
-  CB::label cb_label;
+  VW::cb_label cb_label;
   VW::cs_label cs_label;
   VW::cs_label second_cs_label;
 
@@ -217,7 +217,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
     if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
     else
     {
-      data.cbcs.known_cost = CB::cb_class{};
+      data.cbcs.known_cost = VW::cb_class{};
     }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
     for (uint32_t i = 0; i < num_actions; i++) { probabilities[i] = 0.f; }
@@ -266,13 +266,13 @@ void print_update_cb_explore(VW::workspace& all, bool is_test, VW::example& ec, 
   }
 }
 
-float calc_loss(cb_explore& data, VW::example& ec, const CB::label& ld)
+float calc_loss(cb_explore& data, VW::example& ec, const VW::cb_label& ld)
 {
   float loss = 0.f;
 
   cb_to_cs& c = data.cbcs;
 
-  auto optional_cost = CB::get_observed_cost_cb(ld);
+  auto optional_cost = VW::get_observed_cost_cb(ld);
   // cost observed, not default
   if (optional_cost.first == true)
   {
@@ -306,9 +306,9 @@ void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
 
 namespace CB_EXPLORE
 {
-void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB::label& ld)
+void generic_output_example(VW::workspace& all, float loss, VW::example& ec, VW::cb_label& ld)
 {
-  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
+  all.sd->update(ec.test_only, !VW::details::is_test_cb_label(ld), loss, 1.f, ec.get_num_features());
 
   std::stringstream ss;
   float maxprob = 0.f;
@@ -326,7 +326,7 @@ void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB:
 
   std::stringstream sso;
   sso << maxid << ":" << std::fixed << maxprob;
-  print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
+  print_update_cb_explore(all, VW::details::is_test_cb_label(ld), ec, sso);
 }
 
 }  // namespace CB_EXPLORE

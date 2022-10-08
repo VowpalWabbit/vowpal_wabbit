@@ -79,7 +79,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
 
   if (it != examples.end())
   {
-    const CB::cb_class logged = (*it)->l.cb.costs[0];
+    const VW::cb_class logged = (*it)->l.cb.costs[0];
 
     _min_cost = std::min(logged.cost, _min_cost);
     _max_cost = std::max(logged.cost, _max_cost);
@@ -192,7 +192,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
 
   size_t problem_multiplier = 1;
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool with_metrics = options.was_supplied("extra_metrics");
 

@@ -403,7 +403,7 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
                 .build();
 
   // Label parser set to cost sensitive label parser
-  all.example_parser->lbl_parser = VW::cs_label_parser;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   base_learner* b = make_base(*l);
   all.cost_sensitive = b;
   return b;

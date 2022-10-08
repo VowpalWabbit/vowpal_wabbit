@@ -35,7 +35,7 @@ struct cs_label
   std::vector<cs_class> costs;
 };
 
-extern VW::label_parser cs_label_parser;
+extern VW::label_parser cs_label_parser_global;
 
 bool is_cs_example_header(const VW::example& ec);
 void default_cs_label(cs_label& ld);
@@ -68,7 +68,8 @@ VW_DEPRECATED(
 inline void default_label(label& ld) { VW::default_cs_label(ld); }
 // example headers look like "0:-1" or just "shared"
 VW_DEPRECATED(
-    "VW::is_cs_example_header renamed to VW::is_cs_example_header. VW::is_cs_example_header will be removed in VW 10.")
+    "COST_SENSITIVE::ec_is_example_header renamed to VW::is_cs_example_header. COST_SENSITIVE::ec_is_example_header "
+    "will be removed in VW 10.")
 inline bool ec_is_example_header(VW::example const& ec) { return VW::is_cs_example_header(ec); }
 }  // namespace COST_SENSITIVE
 

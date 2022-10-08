@@ -347,7 +347,7 @@ template struct interaction_config_manager<config_oracle<champdupe_impl>, VW::co
 template struct interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>;
 
 template <typename CMType>
-void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
+void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;
   cm->process_example(ec);
@@ -357,7 +357,7 @@ void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& l
 }
 
 template <typename CMType>
-void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
+void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   interaction_vec_t* incoming_interactions = ec[0]->interactions;
   for (VW::example* ex : ec)

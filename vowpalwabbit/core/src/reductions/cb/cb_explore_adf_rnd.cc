@@ -67,7 +67,7 @@ private:
   std::vector<float> bonuses;
   std::vector<float> initials;
 
-  CB::cb_class save_class;
+  VW::cb_class save_class;
 
   template <bool is_learn>
   void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
@@ -301,7 +301,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
   size_t problem_multiplier = 1 + numrnd;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool with_metrics = options.was_supplied("extra_metrics");
 

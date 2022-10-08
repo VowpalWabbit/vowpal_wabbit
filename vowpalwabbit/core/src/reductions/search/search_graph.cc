@@ -133,7 +133,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   sch.set_task_data<task_data>(D.release());
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
-  sch.set_label_parser(VW::cs_label_parser, example_is_test);
+  sch.set_label_parser(VW::cs_label_parser_global, example_is_test);
 }
 
 inline bool example_is_edge(VW::example* e) { return e->l.cs.costs.size() > 1; }

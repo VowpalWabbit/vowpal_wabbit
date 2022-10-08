@@ -9,7 +9,7 @@
 
 namespace VW
 {
-extern VW::label_parser simple_label_parser;
+extern VW::label_parser simple_label_parser_global;
 
 namespace model_utils
 {

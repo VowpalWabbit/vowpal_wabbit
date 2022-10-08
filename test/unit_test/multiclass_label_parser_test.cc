@@ -26,7 +26,7 @@ void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l)
 
 BOOST_AUTO_TEST_CASE(multiclass_label_parser)
 {
-  auto lp = VW::multiclass_label_parser;
+  auto lp = VW::multiclass_label_parser_global;
   {
     auto plabel = scoped_calloc_or_throw<VW::polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, "1,2,3", *plabel), VW::vw_exception);

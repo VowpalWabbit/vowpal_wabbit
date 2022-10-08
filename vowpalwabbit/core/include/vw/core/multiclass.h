@@ -18,7 +18,7 @@ struct multiclass_label
   void reset_to_default();
 };
 
-extern VW::label_parser multiclass_label_parser;
+extern VW::label_parser multiclass_label_parser_global;
 
 bool test_multiclass_label(const multiclass_label& ld);
 

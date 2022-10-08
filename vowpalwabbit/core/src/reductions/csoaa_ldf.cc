@@ -130,14 +130,14 @@ bool test_ldf_sequence(ldf& /*data*/, const VW::multi_ex& ec_seq, VW::io::logger
   if (ec_seq.empty()) { isTest = true; }
   else
   {
-    isTest = VW::cs_label_parser.test_label(ec_seq[0]->l);
+    isTest = VW::cs_label_parser_global.test_label(ec_seq[0]->l);
   }
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
 
-    if (VW::cs_label_parser.test_label(ec->l) != isTest)
+    if (VW::cs_label_parser_global.test_label(ec->l) != isTest)
     {
       isTest = true;
       logger.err_warn("ldf example has mix of train/test data; assuming test");
@@ -458,7 +458,7 @@ void output_example(
     predicted_class = ec.pred.multiclass;
   }
 
-  if (!VW::cs_label_parser.test_label(ec.l))
+  if (!VW::cs_label_parser_global.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -493,7 +493,7 @@ void output_example(
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  VW::details::print_cs_update(all, VW::cs_label_parser.test_label(ec.l), ec, ec_seq, false, predicted_class);
+  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_loss, VW::multi_ex* ec_seq)
@@ -508,7 +508,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   float loss = 0.;
   VW::v_array<VW::action_score>& preds = head_ec.pred.a_s;
 
-  if (!VW::cs_label_parser.test_label(head_ec.l))
+  if (!VW::cs_label_parser_global.test_label(head_ec.l))
   {
     for (VW::example* ex : *ec_seq)
     {
@@ -540,7 +540,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), head_ec.tag, all.logger);
   }
 
-  VW::details::print_cs_update(all, VW::cs_label_parser.test_label(head_ec.l), head_ec, ec_seq, true, 0);
+  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(head_ec.l), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
@@ -744,7 +744,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(pred_type)
                 .build();
 
-  all.example_parser->lbl_parser = VW::cs_label_parser;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }

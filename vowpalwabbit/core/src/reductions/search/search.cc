@@ -918,7 +918,7 @@ inline void cs_cost_push_back(bool isCB, VW::polylabel& ld, uint32_t index, floa
 {
   if (isCB)
   {
-    CB::cb_class cost{value, index, 0.};
+    VW::cb_class cost{value, index, 0.};
     ld.cb.costs.push_back(cost);
   }
   else
@@ -3233,14 +3233,14 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(priv.allowed_actions_cache);
+    VW::cb_label_parser_global.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cb.costs.clear();
     priv.gte_label.cb.costs.clear();
   }
   else
   {
     priv.cb_learner = false;
-    VW::cs_label_parser.default_label(priv.allowed_actions_cache);
+    VW::cs_label_parser_global.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cs.costs.clear();
     priv.gte_label.cs.costs.clear();
   }
@@ -3349,7 +3349,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   auto* base = stack_builder.setup_base_learner();
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
-  all.example_parser->lbl_parser = VW::multiclass_label_parser;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
   if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }

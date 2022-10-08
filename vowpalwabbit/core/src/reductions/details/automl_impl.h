@@ -272,9 +272,9 @@ struct automl
   {
   }
   // This fn gets called before learning any example
-  void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
+  void one_step(multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
   // inner loop of learn driven by # MAX_CONFIGS
-  void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
+  void offset_learn(multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
 };
 }  // namespace automl
 

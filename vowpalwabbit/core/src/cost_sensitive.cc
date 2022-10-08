@@ -276,7 +276,7 @@ void VW::details::finish_cs_example(VW::workspace& all, VW::example& ec)
 
 namespace VW
 {
-VW::label_parser cs_label_parser = {
+VW::label_parser cs_label_parser_global = {
     // default_label
     [](VW::polylabel& label) { default_cs_label(label.cs); },
     // parse_label

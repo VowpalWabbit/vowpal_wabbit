@@ -99,7 +99,7 @@ void parse_explicit_inclusions(
 
 namespace VW
 {
-VW::label_parser ccb_label_parser = {
+VW::label_parser ccb_label_parser_global = {
     // default_label
     [](VW::polylabel& label) { default_ccb_label(label.conditional_contextual_bandit); },
     // parse_label

@@ -31,16 +31,16 @@ API void SimpleLabelUpdateExample(
   VW::count_label(*workspace->vw->sd, ld->label);
 }
 
-API CB::cb_class* CbLabelReadFromExampleDangerous(example* ex)
+API VW::cb_class* CbLabelReadFromExampleDangerous(example* ex)
 {
-  CB::label* ld = &ex->l.cb;
+  VW::cb_label* ld = &ex->l.cb;
 
   return (ld->costs.size() > 0) ? &ld->costs[0] : nullptr;
 }
 
-API void CbLabelUpdateExample(example* ex, const CB::cb_class* f)
+API void CbLabelUpdateExample(example* ex, const VW::cb_class* f)
 {
-  CB::label* ld = &ex->l.cb;
+  VW::cb_label* ld = &ex->l.cb;
 
   // TODO: Should we be clearing the costs here?
   // ld->costs.clear();
@@ -84,8 +84,8 @@ API char* ComputeDiffDescriptionSimpleLabels(example* ex1, example* ex2)
 
 API char* ComputeDiffDescriptionCbLabels(example* ex1, example* ex2)
 {
-  CB::label ld1 = ex1->l.cb;
-  CB::label ld2 = ex2->l.cb;
+  VW::cb_label ld1 = ex1->l.cb;
+  VW::cb_label ld2 = ex2->l.cb;
 
   std::stringstream sstream;
   if (ld1.costs.size() != ld2.costs.size())
@@ -97,8 +97,8 @@ API char* ComputeDiffDescriptionCbLabels(example* ex1, example* ex2)
   {
     for (size_t i = 0; i < ld1.costs.size(); i++)
     {
-      CB::cb_class c1 = ld1.costs[i];
-      CB::cb_class c2 = ld2.costs[i];
+      VW::cb_class c1 = ld1.costs[i];
+      VW::cb_class c2 = ld2.costs[i];
 
       if (c1.action != c2.action)
       {

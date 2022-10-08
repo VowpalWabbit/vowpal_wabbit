@@ -211,7 +211,7 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(::finish_example)
                 .build();
 
-  all.example_parser->lbl_parser = VW::cs_label_parser;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }

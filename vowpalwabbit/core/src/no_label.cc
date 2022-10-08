@@ -26,7 +26,7 @@ void parse_no_label(const std::vector<VW::string_view>& words, VW::io::logger& l
 
 namespace VW
 {
-VW::label_parser no_label_parser = {
+VW::label_parser no_label_parser_global = {
     // default_label
     [](VW::polylabel& /* label */) {},
     // parse_label

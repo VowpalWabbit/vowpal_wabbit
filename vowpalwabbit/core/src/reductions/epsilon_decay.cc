@@ -64,7 +64,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
 void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   auto model_count = static_cast<int64_t>(conf_seq_estimators.size());
-  CB::cb_class logged{};
+  VW::cb_class logged{};
   uint64_t labelled_action = 0;
   const auto it =
       std::find_if(examples.begin(), examples.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });

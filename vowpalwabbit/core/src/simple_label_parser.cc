@@ -73,7 +73,7 @@ void parse_simple_label(VW::simple_label& ld, VW::reduction_features& red_featur
 
 namespace VW
 {
-VW::label_parser simple_label_parser = {
+VW::label_parser simple_label_parser_global = {
     // default_label
     [](VW::polylabel& label) { default_simple_label(label.simple); },
     // parse_label

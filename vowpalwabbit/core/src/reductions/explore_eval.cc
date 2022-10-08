@@ -30,12 +30,12 @@ namespace
 {
 struct explore_eval
 {
-  CB::cb_class known_cost;
+  VW::cb_class known_cost;
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
   uint64_t offset = 0;
-  CB::label action_label;
-  CB::label empty_label;
+  VW::cb_label action_label;
+  VW::cb_label empty_label;
   size_t example_counter = 0;
 
   size_t update_count = 0;
@@ -111,7 +111,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
+  VW::details::print_cb_update(all, !labeled_example, ec, ec_seq, true, nullptr);
 }
 
 void output_example_seq(VW::workspace& all, const explore_eval& data, const VW::multi_ex& ec_seq)
@@ -228,7 +228,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
       stack_builder.get_setupfn_name(explore_eval_setup))

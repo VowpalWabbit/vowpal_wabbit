@@ -13,7 +13,7 @@
 //   defined in the cc file (con: can't inline those functions)
 // - templatize all input parameters (con: no type safety)
 #include "vw/core/action_score.h"    // used in sort_action_probs
-#include "vw/core/cb.h"              // required for CB::label
+#include "vw/core/cb.h"              // required for VW::cb_label
 #include "vw/core/example.h"         // used in predict
 #include "vw/core/gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
 #include "vw/core/metric_sink.h"
@@ -104,10 +104,10 @@ struct cb_explore_adf_base
   ExploreType explore;
 
 private:
-  CB::cb_class _known_cost;
+  VW::cb_class _known_cost;
   // used in output_example
-  CB::label _action_label;
-  CB::label _empty_label;
+  VW::cb_label _action_label;
+  VW::cb_label _empty_label;
   VW::action_scores _saved_pred;
   std::unique_ptr<cb_explore_metrics> _metrics;
   void output_example_seq(VW::workspace& all, const multi_ex& ec_seq);
@@ -192,7 +192,7 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
 
   for (const auto& example : ec_seq)
   {
-    if (CB::ec_is_example_header(*example))
+    if (VW::is_cb_example_header(*example))
     {
       num_features +=
           (ec_seq.size() - 1) * (example->get_num_features() - example->feature_space[constant_namespace].size());
@@ -247,10 +247,10 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
     all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
   }
 
-  if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost); }
+  if (labeled_example) { VW::details::print_cb_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost); }
   else
   {
-    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
+    VW::details::print_cb_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
   }
 }
 
