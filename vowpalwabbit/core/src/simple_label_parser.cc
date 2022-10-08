@@ -22,17 +22,6 @@
 
 namespace
 {
-char* bufread_simple_label(VW::simple_label& ld, VW::simple_label_reduction_features& red_features, char* c)
-{
-  memcpy(&ld.label, c, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(&red_features.weight, c, sizeof(red_features.weight));
-  c += sizeof(red_features.weight);
-  memcpy(&red_features.initial, c, sizeof(red_features.initial));
-  c += sizeof(red_features.initial);
-  return c;
-}
-
 float get_weight(const VW::reduction_features& red_features)
 {
   const auto& simple_red_features = red_features.template get<VW::simple_label_reduction_features>();
