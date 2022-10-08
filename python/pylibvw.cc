@@ -870,7 +870,7 @@ float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->weight; }
 float ex_get_simplelabel_initial(example_ptr ec)
 {
-  return ec->_reduction_features.template get<simple_label_reduction_features>().initial;
+  return ec->_reduction_features.template get<VW::simple_label_reduction_features>().initial;
 }
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 float ex_get_prob(example_ptr ec) { return ec->pred.prob; }

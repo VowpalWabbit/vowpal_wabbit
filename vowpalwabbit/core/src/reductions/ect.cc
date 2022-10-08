@@ -181,7 +181,7 @@ uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
 
   // Binary final elimination tournament first
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   for (size_t i = e.tree_height - 1; i != static_cast<size_t>(0) - 1; i--)
   {
@@ -219,7 +219,7 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
   }
   MULTICLASS::label_t mc = ec.l.multi;
 
-  label_data simple_temp;
+  VW::simple_label simple_temp;
 
   e.tournaments_won.clear();
 

@@ -941,7 +941,7 @@ struct base_learner_builder
         reinterpret_cast<details::sensitivity_data::fn>(details::noop_sensitivity_base);
     this->_learner->finish_example_fd.data = this->_learner->learner_data.get();
     this->_learner->finish_example_fd.finish_example_f =
-        reinterpret_cast<details::finish_example_data::fn>(return_simple_example);
+        reinterpret_cast<details::finish_example_data::fn>(VW::details::return_simple_example);
 
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
 

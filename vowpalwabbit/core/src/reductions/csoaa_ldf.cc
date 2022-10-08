@@ -118,8 +118,8 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
     LabelDict::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
   });
 
-  ec.l.simple = label_data{FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.l.simple = VW::simple_label{FLT_MAX};
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
@@ -162,8 +162,8 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
 
     // save original variables
     COST_SENSITIVE::label save_cs_label = ec1->l.cs;
-    label_data& simple_lbl = ec1->l.simple;
-    auto& simple_red_features = ec1->_reduction_features.template get<simple_label_reduction_features>();
+    auto& simple_lbl = ec1->l.simple;
+    auto& simple_red_features = ec1->_reduction_features.template get<VW::simple_label_reduction_features>();
 
     auto costs1 = save_cs_label.costs;
     if (costs1[0].class_index == static_cast<uint32_t>(-1)) { continue; }
@@ -236,7 +236,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
     const auto& costs = save_cs_label.costs;
 
     // build example for the base learner
-    label_data simple_lbl;
+    VW::simple_label simple_lbl;
 
     float old_weight = ec->weight;
     if (!data.treat_as_classifier)
@@ -256,7 +256,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+    auto& simple_red_features = ec->_reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = 0.;
     ec->l.simple = simple_lbl;
 

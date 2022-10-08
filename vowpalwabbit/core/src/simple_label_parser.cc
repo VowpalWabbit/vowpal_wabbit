@@ -20,7 +20,7 @@
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
-char* bufread_simple_label(label_data& ld, simple_label_reduction_features& red_features, char* c)
+char* bufread_simple_label(VW::simple_label& ld, VW::simple_label_reduction_features& red_features, char* c)
 {
   memcpy(&ld.label, c, sizeof(ld.label));
   c += sizeof(ld.label);
@@ -33,20 +33,20 @@ char* bufread_simple_label(label_data& ld, simple_label_reduction_features& red_
 
 float get_weight(const VW::reduction_features& red_features)
 {
-  const auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = red_features.template get<VW::simple_label_reduction_features>();
   return simple_red_features.weight;
 }
 
-void default_simple_label(label_data& ld) { ld.reset_to_default(); }
+void default_simple_label(VW::simple_label& ld) { ld.reset_to_default(); }
 
-bool test_label(const label_data& ld) { return ld.label == FLT_MAX; }
+bool test_label(const VW::simple_label& ld) { return ld.label == FLT_MAX; }
 
 // Example: 0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924
 // label := 0, weight := 1, initial := 0.5
-void parse_simple_label(label_data& ld, VW::reduction_features& red_features, const std::vector<VW::string_view>& words,
-    VW::io::logger& logger)
+void parse_simple_label(VW::simple_label& ld, VW::reduction_features& red_features,
+    const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
-  auto& simple_red_features = red_features.template get<simple_label_reduction_features>();
+  auto& simple_red_features = red_features.template get<VW::simple_label_reduction_features>();
   switch (words.size())
   {
     case 0:
@@ -81,14 +81,14 @@ VW::label_parser simple_label_parser = {
       size_t bytes = 0;
       bytes += VW::model_utils::write_model_field(cache, label.simple, upstream_name, text);
       bytes += VW::model_utils::write_model_field(
-          cache, red_feats.template get<simple_label_reduction_features>(), upstream_name, text);
+          cache, red_feats.template get<VW::simple_label_reduction_features>(), upstream_name, text);
       return bytes;
     },
     // read_cached_label
     [](VW::polylabel& label, VW::reduction_features& red_feats, io_buf& cache) {
       size_t bytes = 0;
       bytes += VW::model_utils::read_model_field(cache, label.simple);
-      bytes += VW::model_utils::read_model_field(cache, red_feats.template get<simple_label_reduction_features>());
+      bytes += VW::model_utils::read_model_field(cache, red_feats.template get<VW::simple_label_reduction_features>());
       return bytes;
     },
     // get_weight
@@ -102,14 +102,14 @@ namespace VW
 {
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, label_data& ld)
+size_t read_model_field(io_buf& io, VW::simple_label& ld)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, ld.label);
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const label_data& ld, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::simple_label& ld, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ld.label, upstream_name + "_label", text);

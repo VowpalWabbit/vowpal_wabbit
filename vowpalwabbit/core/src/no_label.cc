@@ -74,7 +74,7 @@ void output_and_account_no_label_example(VW::workspace& all, VW::example& ec)
 
 void return_no_label_example(VW::workspace& all, void*, VW::example& ec)
 {
-  output_and_account_example(all, ec);
+  VW::details::output_and_account_example(all, ec);
   VW::finish_example(all, ec);
 }
 }  // namespace no_label

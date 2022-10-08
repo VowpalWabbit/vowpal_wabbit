@@ -35,7 +35,7 @@ void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
   if (ec.l.simple.label != FLT_MAX)
   {
     (*all.trace_message) << ec.l.simple.label << " ";
-    const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
     if (ec.weight != 1 || simple_red_features.initial != 0)
     {
       (*all.trace_message) << ec.weight << " ";

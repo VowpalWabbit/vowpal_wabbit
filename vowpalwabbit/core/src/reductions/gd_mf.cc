@@ -15,6 +15,7 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <cfloat>
 #include <cstdio>
@@ -100,7 +101,7 @@ template <class T>
 float mf_predict(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
   ec.num_features_from_interactions = 0;
@@ -195,7 +196,7 @@ template <class T>
 void mf_train(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
-  label_data& ld = ec.l.simple;
+  VW::simple_label& ld = ec.l.simple;
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
@@ -313,7 +314,8 @@ void end_pass(gdmf& d)
 
   if (!all->holdout_set_off)
   {
-    if (summarize_holdout_set(*all, d.no_win_counter)) { finalize_regressor(*all, all->final_regressor_name); }
+    if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
+    { finalize_regressor(*all, all->final_regressor_name); }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
     { set_done(*all); }

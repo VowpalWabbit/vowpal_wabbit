@@ -152,7 +152,7 @@ void print_result(
 
 void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
 {
-  const label_data& ld = ec.l.simple;
+  const auto& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) { all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight; }
@@ -171,7 +171,7 @@ void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
   for (auto& sink : all.final_prediction_sink)
   { print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger); }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 template <bool is_learn>

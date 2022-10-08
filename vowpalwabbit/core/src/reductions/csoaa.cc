@@ -110,7 +110,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0.};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   bool dont_learn = DO_MULTIPREDICT && !is_learn;
 
@@ -123,7 +123,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   else if (dont_learn)
   {
     ec.l.simple = {FLT_MAX};
-    ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+    ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     if (c.indexing == 0)

@@ -169,7 +169,7 @@ inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
 float predict_and_gradient(VW::workspace& all, VW::example& ec)
 {
   float fp = bfgs_predict(all, ec);
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   all.set_minmax(all.sd, ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
@@ -190,7 +190,7 @@ inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(VW::workspace& all, VW::example& ec)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   float temp = simple_red_features.initial;
   GD::foreach_feature<float, add_DIR>(all, ec, temp);
   return temp;
@@ -896,7 +896,7 @@ int process_pass(VW::workspace& all, bfgs& b)
 
 void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   if (b.first_pass) { b.importance_weight_sum += ec.weight; }
 
   /********************************************************************/
@@ -968,7 +968,8 @@ void end_pass(bfgs& b)
       }
       if (!all->holdout_set_off)
       {
-        if (summarize_holdout_set(*all, b.no_win_counter)) { finalize_regressor(*all, all->final_regressor_name); }
+        if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
+        { finalize_regressor(*all, all->final_regressor_name); }
         if (b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
