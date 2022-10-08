@@ -49,23 +49,6 @@ void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v,
   }
 }
 
-char* bufread_label(VW::cs_label& ld, char* c, io_buf& cache)
-{
-  size_t num = *reinterpret_cast<size_t*>(c);
-  ld.costs.clear();
-  c += sizeof(size_t);
-  size_t total = sizeof(VW::cs_class) * num;
-  if (cache.buf_read(c, static_cast<int>(total)) < total) { THROW("error in demarshal of cost data"); }
-  for (size_t i = 0; i < num; i++)
-  {
-    VW::cs_class temp = *reinterpret_cast<VW::cs_class*>(c);
-    c += sizeof(VW::cs_class);
-    ld.costs.push_back(temp);
-  }
-
-  return c;
-}
-
 float cs_weight(const VW::cs_label&) { return 1.; }
 
 bool test_label_internal(const VW::cs_label& ld)
@@ -79,8 +62,6 @@ bool test_label_internal(const VW::cs_label& ld)
 }
 
 bool test_label(const VW::cs_label& ld) { return test_label_internal(ld); }
-
-bool test_label(VW::cs_label& ld) { return test_label_internal(ld); }
 
 void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::named_labels* ldict,
     const std::vector<VW::string_view>& words, VW::io::logger& logger)
