@@ -42,7 +42,7 @@ struct lq_data
   bool is_range_overlapped;  // Indicator of whether this label's cost range overlaps with the cost range that has the
                              // minimum max_pred
   bool query_needed;         // Used in reduction mode: tell upper-layer whether a query is needed for this label
-  VW::cs_label::wclass* cl;
+  VW::cs_class* cl;
 };
 
 struct cs_active
@@ -239,7 +239,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
   if (ld.costs.size() > 0)
   {
     // Create metadata structure
-    for (VW::cs_label::wclass& cl : ld.costs)
+    for (VW::cs_class& cl : ld.costs)
     {
       lq_data f = {0.0, 0.0, 0, 0, 0, &cl};
       cs_a.query_data.push_back(f);

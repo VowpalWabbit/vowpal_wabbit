@@ -401,7 +401,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
       data->epsilon_decay = true;
     }
     data->cs = reinterpret_cast<learner<cb_explore, VW::example>*>(as_singleline(all.cost_sensitive));
-    for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(VW::cs_label::wclass{}); }
+    for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(VW::cs_class{}); }
     data->cover_probs.resize_but_with_stl_behavior(num_actions);
     data->preds.reserve(data->cover_size);
     learn_ptr = predict_or_learn_cover<true>;

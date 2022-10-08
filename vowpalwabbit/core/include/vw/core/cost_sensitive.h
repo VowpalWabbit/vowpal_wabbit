@@ -11,29 +11,28 @@
 
 namespace VW
 {
+/// if class_index > 0, then this is a "normal" example
+/// if class_index == 0, then:
+///   if x == -FLT_MAX then this is a 'shared' example
+///   if x > 0 then this is a label feature vector for (size_t)x
+struct cs_class
+{
+  float x;
+  uint32_t class_index;
+  float partial_prediction;  // a partial prediction: new!
+  float wap_value;           // used for wap to store values derived from costs
+
+  cs_class(float x, uint32_t class_index, float partial_prediction, float wap_value)
+      : x(x), class_index(class_index), partial_prediction(partial_prediction), wap_value(wap_value)
+  {
+  }
+  cs_class() : x(0.f), class_index(0), partial_prediction(0.f), wap_value(0.f) {}
+
+  bool operator==(const cs_class& j) const { return class_index == j.class_index; }
+};
 struct cs_label
 {
-  /// if class_index > 0, then this is a "normal" example
-  /// if class_index == 0, then:
-  ///   if x == -FLT_MAX then this is a 'shared' example
-  ///   if x > 0 then this is a label feature vector for (size_t)x
-  struct wclass
-  {
-    float x;
-    uint32_t class_index;
-    float partial_prediction;  // a partial prediction: new!
-    float wap_value;           // used for wap to store values derived from costs
-
-    wclass(float x, uint32_t class_index, float partial_prediction, float wap_value)
-        : x(x), class_index(class_index), partial_prediction(partial_prediction), wap_value(wap_value)
-    {
-    }
-    wclass() : x(0.f), class_index(0), partial_prediction(0.f), wap_value(0.f) {}
-
-    bool operator==(const wclass& j) const { return class_index == j.class_index; }
-  };
-
-  std::vector<wclass> costs;
+  std::vector<cs_class> costs;
 };
 
 extern VW::label_parser cs_label_parser;
@@ -61,8 +60,7 @@ namespace COST_SENSITIVE  // NOLINT
 using label VW_DEPRECATED(
     "COST_SENSITIVE::label renamed to VW::cs_label. COST_SENSITIVE::label will be removed in VW 10.") = VW::cs_label;
 using wclass VW_DEPRECATED(
-    "COST_SENSITIVE::wclass renamed to VW::cs_label::wclass. COST_SENSITIVE::wclass will be removed in VW 10.") =
-    VW::cs_label::wclass;
+    "COST_SENSITIVE::wclass renamed to VW::cs_class. COST_SENSITIVE::wclass will be removed in VW 10.") = VW::cs_class;
 
 VW_DEPRECATED(
     "COST_SENSITIVE::default_label renamed to VW::default_cs_label. COST_SENSITIVE::default_label will be removed in "
@@ -78,8 +76,8 @@ namespace VW
 {
 namespace model_utils
 {
-size_t read_model_field(io_buf&, cs_label::wclass&);
-size_t write_model_field(io_buf&, const cs_label::wclass&, const std::string&, bool);
+size_t read_model_field(io_buf&, cs_class&);
+size_t write_model_field(io_buf&, const cs_class&, const std::string&, bool);
 size_t read_model_field(io_buf&, cs_label&);
 size_t write_model_field(io_buf&, const cs_label&, const std::string&, bool);
 }  // namespace model_utils

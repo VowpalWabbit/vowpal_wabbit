@@ -284,7 +284,7 @@ public:
   VW::polylabel learn_losses;
   VW::polylabel gte_label;
   std::vector<std::pair<float, size_t>> active_uncertainty;
-  std::vector<std::vector<std::pair<VW::cs_label::wclass&, bool>>> active_known;
+  std::vector<std::vector<std::pair<VW::cs_class&, bool>>> active_known;
   bool force_setup_ec_ref = false;
   bool active_csoaa = false;
   float active_csoaa_verify = 0.f;
@@ -923,7 +923,7 @@ inline void cs_cost_push_back(bool isCB, VW::polylabel& ld, uint32_t index, floa
   }
   else
   {
-    VW::cs_label::wclass cost = {value, index, 0., 0.};
+    VW::cs_class cost = {value, index, 0., 0.};
     ld.cs.costs.push_back(cost);
   }
 }
@@ -1254,11 +1254,11 @@ action single_prediction_notLDF(search_private& priv, VW::example& ec, int polic
                                           cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() -
          1) << "] = certain=" << ec.l.cs.costs[k].pred_is_certain << ", cost=" << ec.l.cs.costs[k].partial_prediction <<
          "}" << endl; */
-      VW::cs_label::wclass& wc = ec.l.cs.costs[k];
+      VW::cs_class& wc = ec.l.cs.costs[k];
       // Get query_needed from pred
       const auto& query_list = ec.pred.active_multiclass.more_info_required_for_classes;
       bool query_needed = std::find(query_list.begin(), query_list.end(), wc.class_index) != query_list.end();
-      std::pair<VW::cs_label::wclass&, bool> p = {wc, query_needed};
+      std::pair<VW::cs_class&, bool> p = {wc, query_needed};
       // Push into active_known[cur_t] with wc
       priv.active_known[cur_t].push_back(p);
       // cdbg << "active_known[" << cur_t << "][" << (priv.active_known[cur_t].size() - 1) << "] = " << wc.class_index
@@ -1299,7 +1299,7 @@ action single_prediction_LDF(search_private& priv, VW::example* ecs, size_t ec_c
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != static_cast<action>(-1));
 
   VW::default_cs_label(priv.ldf_test_label);
-  VW::cs_label::wclass wc = {0., 1, 0., 0.};
+  VW::cs_class wc = {0., 1, 0., 0.};
   priv.ldf_test_label.costs.push_back(wc);
 
   // keep track of best (aka chosen) action
@@ -1555,7 +1555,7 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
         VW::cs_label& lab = ec.l.cs;
         if (lab.costs.size() == 0)
         {
-          VW::cs_label::wclass wc = {0., a - static_cast<uint32_t>(start_K), 0., 0.};
+          VW::cs_class wc = {0., a - static_cast<uint32_t>(start_K), 0., 0.};
           lab.costs.push_back(wc);
         }
         lab.costs[0].x = losses.cs.costs[a - start_K].x;
@@ -2005,7 +2005,7 @@ void get_training_timesteps(search_private& priv, VW::v_array<size_t>& timesteps
       if (priv.active_csoaa && (t < priv.active_known.size()))
       {
         count = 0;
-        for (std::pair<VW::cs_label::wclass&, bool> wcq : priv.active_known[t])
+        for (std::pair<VW::cs_class&, bool> wcq : priv.active_known[t])
         {
           if (wcq.second)
           {
@@ -2090,16 +2090,16 @@ void run_task(search& sch, VW::multi_ex& ec)
   }
 }
 
-void verify_active_csoaa(VW::cs_label& losses, const std::vector<std::pair<VW::cs_label::wclass&, bool>>& known,
-    size_t t, float multiplier, VW::io::logger& logger)
+void verify_active_csoaa(VW::cs_label& losses, const std::vector<std::pair<VW::cs_class&, bool>>& known, size_t t,
+    float multiplier, VW::io::logger& logger)
 {
   float threshold = multiplier / std::sqrt(static_cast<float>(t));
   cdbg << "verify_active_csoaa, losses = [";
-  for (VW::cs_label::wclass& wc : losses.costs) { cdbg << " " << wc.class_index << ":" << wc.x; }
+  for (VW::cs_class& wc : losses.costs) { cdbg << " " << wc.class_index << ":" << wc.x; }
   cdbg << " ]" << endl;
   // cdbg_print_array("verify_active_csoaa,  known", known);
   size_t i = 0;
-  for (VW::cs_label::wclass& wc : losses.costs)
+  for (VW::cs_class& wc : losses.costs)
   {
     if (!known[i].second)
     {
@@ -2571,14 +2571,14 @@ std::vector<VW::cs_label> read_allowed_transitions(action A, const char* filenam
   // from
   for (size_t i = 0; i < A; i++)
   {
-    std::vector<VW::cs_label::wclass> costs;
+    std::vector<VW::cs_class> costs;
 
     // to
     for (size_t j = 0; j < A; j++)
     {
       if (bg[i * (A + 1) + j])
       {
-        VW::cs_label::wclass c = {FLT_MAX, static_cast<action>(j), 0., 0.};
+        VW::cs_class c = {FLT_MAX, static_cast<action>(j), 0., 0.};
         costs.push_back(c);
       }
     }

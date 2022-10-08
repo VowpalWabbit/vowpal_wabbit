@@ -388,7 +388,7 @@ struct task_data
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/)
 {
-  VW::cs_label::wclass default_wclass = {0., 0, 0., 0.};
+  VW::cs_class default_wclass = {0., 0, 0., 0.};
 
   task_data* data = new task_data;
   data->ldf_examples.resize(num_actions);

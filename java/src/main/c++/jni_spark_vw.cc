@@ -628,7 +628,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSe
     // loop over weights/labels
     for (int i = 0; i < sizeCosts; i++)
     {
-      VW::cs_label::wclass w;
+      VW::cs_class w;
       w.x = costs0[i];
       w.class_index = classes0[i];
 

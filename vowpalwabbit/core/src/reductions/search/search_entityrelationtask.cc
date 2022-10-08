@@ -81,7 +81,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   if (my_task_data->search_order != 3 && my_task_data->search_order != 4) { sch.set_options(0); }
   else
   {
-    VW::cs_label::wclass default_wclass = {0., 0, 0., 0.};
+    VW::cs_class default_wclass = {0., 0, 0., 0.};
     for (size_t a = 0; a < NUM_LDF_ENTITY_EXAMPLES; a++)
     {
       my_task_data->ldf_entity[a].l.cs.costs.push_back(default_wclass);

@@ -108,7 +108,7 @@ float loss(warm_cb& data, uint32_t label, uint32_t final_prediction)
   }
 }
 
-float loss_cs(warm_cb& data, std::vector<VW::cs_label::wclass>& costs, uint32_t final_prediction)
+float loss_cs(warm_cb& data, std::vector<VW::cs_class>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (auto wc : costs)

@@ -134,7 +134,7 @@ struct cbify
   uint32_t chosen_action = 0;
 
   // for ldf inputs
-  std::vector<std::vector<VW::cs_label::wclass>> cs_costs;
+  std::vector<std::vector<VW::cs_class>> cs_costs;
   std::vector<std::vector<CB::cb_class>> cb_costs;
   std::vector<VW::action_scores> cb_as;
 };
@@ -149,7 +149,7 @@ float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
   }
 }
 
-float loss_cs(const cbify& data, const std::vector<VW::cs_label::wclass>& costs, uint32_t final_prediction)
+float loss_cs(const cbify& data, const std::vector<VW::cs_class>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (const auto& wc : costs)
@@ -163,8 +163,7 @@ float loss_cs(const cbify& data, const std::vector<VW::cs_label::wclass>& costs,
   return data.loss0 + (data.loss1 - data.loss0) * cost;
 }
 
-float loss_csldf(
-    const cbify& data, const std::vector<std::vector<VW::cs_label::wclass>>& cs_costs, uint32_t final_prediction)
+float loss_csldf(const cbify& data, const std::vector<std::vector<VW::cs_class>>& cs_costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (const auto& costs : cs_costs)

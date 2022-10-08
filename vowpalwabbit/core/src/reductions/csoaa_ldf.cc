@@ -48,9 +48,9 @@ struct ldf
   std::vector<VW::action_scores> stored_preds;
 };
 
-inline bool cmp_wclass_ptr(const VW::cs_label::wclass* a, const VW::cs_label::wclass* b) { return a->x < b->x; }
+inline bool cmp_wclass_ptr(const VW::cs_class* a, const VW::cs_class* b) { return a->x < b->x; }
 
-void compute_wap_values(std::vector<VW::cs_label::wclass*> costs)
+void compute_wap_values(std::vector<VW::cs_class*> costs)
 {
   std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
   costs[0]->wap_value = 0.;
@@ -151,7 +151,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
   VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
 
   size_t K = ec_seq.size();
-  std::vector<VW::cs_label::wclass*> all_costs;
+  std::vector<VW::cs_class*> all_costs;
   for (const auto& example : ec_seq) { all_costs.push_back(&example->l.cs.costs[0]); }
   compute_wap_values(all_costs);
 

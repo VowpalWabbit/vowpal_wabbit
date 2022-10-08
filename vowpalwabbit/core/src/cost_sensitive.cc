@@ -54,12 +54,12 @@ char* bufread_label(VW::cs_label& ld, char* c, io_buf& cache)
   size_t num = *reinterpret_cast<size_t*>(c);
   ld.costs.clear();
   c += sizeof(size_t);
-  size_t total = sizeof(VW::cs_label::wclass) * num;
+  size_t total = sizeof(VW::cs_class) * num;
   if (cache.buf_read(c, static_cast<int>(total)) < total) { THROW("error in demarshal of cost data"); }
   for (size_t i = 0; i < num; i++)
   {
-    VW::cs_label::wclass temp = *reinterpret_cast<VW::cs_label::wclass*>(c);
-    c += sizeof(VW::cs_label::wclass);
+    VW::cs_class temp = *reinterpret_cast<VW::cs_class*>(c);
+    c += sizeof(VW::cs_class);
     ld.costs.push_back(temp);
   }
 
@@ -107,7 +107,7 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
         { logger.err_error("shared feature vectors should not have costs on: {}", words[0]); }
         else
         {
-          VW::cs_label::wclass f = {-FLT_MAX, 0, 0., 0.};
+          VW::cs_class f = {-FLT_MAX, 0, 0., 0.};
           ld.costs.push_back(f);
         }
       }
@@ -117,7 +117,7 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
         { logger.err_error("label feature vectors should have exactly one cost on: {}", words[0]); }
         else
         {
-          VW::cs_label::wclass f = {float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
+          VW::cs_class f = {float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
           ld.costs.push_back(f);
         }
       }
@@ -128,7 +128,7 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
   // otherwise this is a "real" example
   for (auto word : words)
   {
-    VW::cs_label::wclass f = {0., 0, 0., 0.};
+    VW::cs_class f = {0., 0, 0., 0.};
     name_value(word, reuse_mem.tokens, f.x, logger);
 
     if (reuse_mem.tokens.empty()) THROW(" invalid cost: specification -- no names on: " << word);
@@ -253,7 +253,7 @@ void VW::details::output_cs_example(
     std::stringstream oss;
     for (unsigned int i = 0; i < label.costs.size(); i++)
     {
-      VW::cs_label::wclass cl = label.costs[i];
+      VW::cs_class cl = label.costs[i];
       if (i > 0) { oss << ' '; }
       oss << cl.class_index << ':' << cl.partial_prediction;
     }
@@ -300,7 +300,7 @@ VW::label_parser cs_label_parser = {
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, cs_label::wclass& wc)
+size_t read_model_field(io_buf& io, cs_class& wc)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, wc.x);
@@ -310,7 +310,7 @@ size_t read_model_field(io_buf& io, cs_label::wclass& wc)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const cs_label::wclass& wc, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const cs_class& wc, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, wc.x, upstream_name + "_x", text);

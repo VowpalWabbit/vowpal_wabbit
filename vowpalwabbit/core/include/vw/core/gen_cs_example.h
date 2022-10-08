@@ -62,7 +62,7 @@ void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs
   {                                      // in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++)
     {
-      VW::cs_label::wclass wc = {0., i, 0., 0.};
+      VW::cs_class wc = {0., i, 0., 0.};
       // get cost prediction for this action
       wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, i, 0);
       if (wc.x < min)
@@ -89,7 +89,7 @@ void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs
   {     // in this case generate cost-sensitive example with only allowed actions
     for (const auto& cl : ld.costs)
     {
-      VW::cs_label::wclass wc = {0., cl.action, 0., 0.};
+      VW::cs_class wc = {0., cl.action, 0., 0.};
 
       // get cost prediction for this action
       wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl.action, 0);
@@ -119,7 +119,7 @@ void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs
 template <bool is_learn>
 void gen_cs_label(cb_to_cs& c, VW::example& ec, VW::cs_label& cs_ld, uint32_t action, float clip_p = 0.f)
 {
-  VW::cs_label::wclass wc = {0., action, 0., 0.};
+  VW::cs_class wc = {0., action, 0., 0.};
 
   // get cost prediction for this action
   wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, action, c.num_actions);
@@ -150,7 +150,7 @@ void gen_cs_example_dr(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs
   {  // a test example
     for (uint32_t i = 1; i <= c.num_actions; i++)
     {  // Explicit declaration for a weak compiler.
-      VW::cs_label::wclass temp = {FLT_MAX, i, 0., 0.};
+      VW::cs_class temp = {FLT_MAX, i, 0., 0.};
       cs_ld.costs.push_back(temp);
     }
   }
@@ -209,7 +209,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
   {
     if (CB_ALGS::example_is_newline_not_header(*examples[i])) { continue; }
 
-    VW::cs_label::wclass wc = {0., static_cast<uint32_t>(i), 0., 0.};
+    VW::cs_class wc = {0., static_cast<uint32_t>(i), 0., 0.};
 
     if (c.known_cost.action == i)
     {
