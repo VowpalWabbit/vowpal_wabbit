@@ -590,7 +590,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultic
 
   try
   {
-    MULTICLASS::label_t* ld = &ex->l.multi;
+    VW::multiclass_label* ld = &ex->l.multi;
 
     ld->label = label;
     ld->weight = weight;
@@ -887,7 +887,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     ostr << "VowpalWabbitExample(label=";
     auto lp = all->example_parser->lbl_parser;
 
-    if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
+    if (!memcmp(&lp, &VW::simple_label_parser, sizeof(lp)))
     {
       auto* ld = &ex->l.simple;
       const auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();

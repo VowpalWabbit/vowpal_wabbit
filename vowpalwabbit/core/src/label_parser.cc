@@ -20,7 +20,7 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
   switch (label_type)
   {
     case VW::label_type_t::simple:
-      return simple_label_parser;
+      return VW::simple_label_parser;
 
     case VW::label_type_t::cb:
       return CB::cb_label;
@@ -35,7 +35,7 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
       return MULTILABEL::multilabel;
 
     case VW::label_type_t::multiclass:
-      return MULTICLASS::mc_label;
+      return VW::multiclass_label_parser;
 
     case VW::label_type_t::ccb:
       return VW::ccb_label_parser;

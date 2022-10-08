@@ -3351,7 +3351,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   auto* base = stack_builder.setup_base_learner();
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
-  all.example_parser->lbl_parser = MC::mc_label;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser;
 
   if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
   if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }

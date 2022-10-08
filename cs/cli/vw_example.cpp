@@ -71,7 +71,7 @@ bool VowpalWabbitExample::IsNewLine::get()
 ILabel^ VowpalWabbitExample::Label::get()
 { ILabel^ label;
   auto lp = m_owner->Native->m_vw->example_parser->lbl_parser;
-  if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
+  if (!memcmp(&lp, &VW::simple_label_parser, sizeof(lp)))
     label = gcnew SimpleLabel();
   else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
     label = gcnew ContextualBanditLabel();

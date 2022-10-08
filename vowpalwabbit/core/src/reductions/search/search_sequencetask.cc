@@ -99,7 +99,7 @@ void convert_bio_to_bilou(VW::multi_ex& ec)
 {
   for (size_t n = 0; n < ec.size(); n++)
   {
-    MULTICLASS::label_t& ylab = ec[n]->l.multi;
+    VW::multiclass_label& ylab = ec[n]->l.multi;
     action y = ylab.label;
     action nexty = (n == ec.size() - 1) ? 0 : ec[n + 1]->l.multi.label;
     if (y == 1)
@@ -209,7 +209,7 @@ void takedown(Search::search& sch, VW::multi_ex& ec)
   {
     for (size_t n = 0; n < ec.size(); n++)
     {
-      MULTICLASS::label_t ylab = ec[n]->l.multi;
+      VW::multiclass_label ylab = ec[n]->l.multi;
       ylab.label = bilou_to_bio(ylab.label);
     }
   }

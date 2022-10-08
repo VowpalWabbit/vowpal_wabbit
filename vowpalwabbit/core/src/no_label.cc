@@ -22,11 +22,10 @@ void parse_no_label(const std::vector<VW::string_view>& words, VW::io::logger& l
       logger.out_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
 }
-}
+}  // namespace
 
 namespace VW
 {
-
 VW::label_parser no_label_parser = {
     // default_label
     [](VW::polylabel& /* label */) {},

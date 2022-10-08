@@ -348,7 +348,7 @@ template <bool is_learn, bool use_cs>
 void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
 {
   // Store the multiclass or cost-sensitive input label
-  MULTICLASS::label_t ld;
+  VW::multiclass_label ld;
   COST_SENSITIVE::label csl;
   if (use_cs) { csl = std::move(ec.l.cs); }
   else
@@ -410,7 +410,7 @@ template <bool use_cs>
 void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
 {
   auto& out_ec = *data.adf_data.ecs[0];
-  MULTICLASS::label_t ld;
+  VW::multiclass_label ld;
   COST_SENSITIVE::label csl;
 
   if (use_cs) { csl = ec.l.cs; }
@@ -813,9 +813,9 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       in_label_type = VW::label_type_t::multiclass;
       learn_ptr = learn_adf<false>;
       predict_ptr = predict_adf<false>;
-      finish_ptr = MULTICLASS::finish_example<cbify&>;
+      finish_ptr = VW::details::finish_multiclass_example<cbify&>;
       name_addition = "-adf";
-      all.example_parser->lbl_parser = MULTICLASS::mc_label;
+      all.example_parser->lbl_parser = VW::multiclass_label_parser;
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
@@ -835,7 +835,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     {
       in_label_type = VW::label_type_t::simple;
       out_pred_type = VW::prediction_type_t::scalar;
-      all.example_parser->lbl_parser = simple_label_parser;
+      all.example_parser->lbl_parser = VW::simple_label_parser;
       if (use_discrete)
       {
         out_label_type = VW::label_type_t::cb;
@@ -875,9 +875,9 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       out_pred_type = VW::prediction_type_t::multiclass;
       learn_ptr = predict_or_learn<true, false>;
       predict_ptr = predict_or_learn<false, false>;
-      finish_ptr = MULTICLASS::finish_example<cbify&>;
+      finish_ptr = VW::details::finish_multiclass_example<cbify&>;
       name_addition = "";
-      all.example_parser->lbl_parser = MULTICLASS::mc_label;
+      all.example_parser->lbl_parser = VW::multiclass_label_parser;
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)

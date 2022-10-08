@@ -8,6 +8,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/cb_label_parser.h"
+#include "vw/core/multiclass.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
@@ -83,7 +84,7 @@ struct warm_cb
   float cumu_var = 0.f;
   uint32_t ws_iter = 0;
   uint32_t inter_iter = 0;
-  MULTICLASS::label_t mc_label;
+  VW::multiclass_label mc_label;
   COST_SENSITIVE::label cs_label;
   std::vector<COST_SENSITIVE::label> csls;
   std::vector<CB::label> cbls;
@@ -645,8 +646,8 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
   {
     learn_pred_ptr = predict_and_learn_adf<false>;
     name_addition = "-multi";
-    finish_ptr = MULTICLASS::finish_example;
-    all.example_parser->lbl_parser = MULTICLASS::mc_label;
+    finish_ptr = VW::details::finish_multiclass_example;
+    all.example_parser->lbl_parser = VW::multiclass_label_parser;
     label_type = VW::label_type_t::multiclass;
   }
 

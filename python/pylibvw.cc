@@ -394,9 +394,9 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lDEFAULT:
       return all ? &all->example_parser->lbl_parser : NULL;
     case lBINARY:  // or #lSIMPLE
-      return &simple_label_parser;
+      return &VW::simple_label_parser;
     case lMULTICLASS:
-      return &MULTICLASS::mc_label;
+      return &VW::multiclass_label;
     case lCOST_SENSITIVE:
       return &COST_SENSITIVE::cs_label;
     case lCONTEXTUAL_BANDIT:
@@ -419,8 +419,8 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 size_t my_get_label_type(VW::workspace* all)
 {
   VW::label_parser* lp = &all->example_parser->lbl_parser;
-  if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
-  else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
+  if (lp->parse_label == VW::simple_label_parser.parse_label) { return lSIMPLE; }
+  else if (lp->parse_label == VW::multiclass_label.parse_label)
   {
     return lMULTICLASS;
   }
