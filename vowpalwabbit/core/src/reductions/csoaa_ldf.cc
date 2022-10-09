@@ -441,7 +441,7 @@ void output_example(
     // predicted_class was already computed in do_actual_learning(),
     // but we cannot store it in ec.pred union because we store ec.pred.prob there.
     // So we must compute it again.
-    uint32_t predicted_class = 0;
+    uint32_t predicted_k = 0;
     float min_score = FLT_MAX;
     for (size_t k = 0; k < ec_seq->size(); k++)
     {
@@ -449,10 +449,10 @@ void output_example(
       if (ec_k->partial_prediction < min_score)
       {
         min_score = ec_k->partial_prediction;
-        predicted_class = static_cast<uint32_t>(k);
+        predicted_k = static_cast<uint32_t>(k);
       }
     }
-    predicted_class = (*ec_seq)[predicted_class]->l.cs.costs[0].class_index;
+    predicted_class = (*ec_seq)[predicted_k]->l.cs.costs[0].class_index;
   }
   else
   {
