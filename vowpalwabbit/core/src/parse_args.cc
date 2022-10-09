@@ -1038,13 +1038,13 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (directory_exists(".")) { all.dictionary_path.emplace_back("."); }
 
 #if _WIN32
-    std::string PATH;
+    std::string path_env_var;
     char* buf;
     size_t buf_size;
     auto err = _dupenv_s(&buf, &buf_size, "PATH");
     if (!err && buf_size != 0)
     {
-      PATH = std::string(buf, buf_size);
+      path_env_var = std::string(buf, buf_size);
       free(buf);
     }
     const char delimiter = ';';
