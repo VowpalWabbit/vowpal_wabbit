@@ -473,11 +473,14 @@ inline float digamma<float, lda_math_mode::USE_SIMD>(float x)
 {
   return digamma<float, lda_math_mode::USE_FAST_APPROX>(x);
 }
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_UNUSED_FUNCTION
 template <>
 inline float exponential<float, lda_math_mode::USE_SIMD>(float x)
 {
   return exponential<float, lda_math_mode::USE_FAST_APPROX>(x);
 }
+VW_WARNING_STATE_POP
 template <>
 inline float powf<float, lda_math_mode::USE_SIMD>(float x, float p)
 {
