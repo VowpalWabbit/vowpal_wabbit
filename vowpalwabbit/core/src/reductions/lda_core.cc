@@ -43,7 +43,7 @@ VW_WARNING_STATE_POP
 using namespace VW::config;
 using namespace VW::LEARNER;
 
-namespace LDA_ANON
+namespace
 {
 enum class lda_math_mode : int
 {
@@ -64,14 +64,14 @@ struct lda
   size_t topics = 0;
   float lda_alpha = 0.f;
   float lda_rho = 0.f;
-  float lda_D = 0.f;
+  float lda_D = 0.f;  // NOLINT
   float lda_epsilon = 0.f;
   size_t minibatch = 0;
   lda_math_mode mmode;
 
   size_t finish_example_count = 0;
 
-  VW::v_array<float> Elogtheta;
+  VW::v_array<float> Elogtheta;  // NOLINT
   VW::v_array<float> decay_levels;
   VW::v_array<float> total_new;
   VW::multi_ex examples;
@@ -92,7 +92,7 @@ struct lda
   double example_t;
   VW::workspace* all = nullptr;  // regressor, lda
 
-  static constexpr float underflow_threshold = 1.0e-10f;
+  static constexpr float UNDERFLOW_THRESHOLD = 1.0e-10f;
   inline float digamma(float x);
   inline float lgamma(float x);
   inline float powf(float x, float p);
@@ -577,13 +577,13 @@ void lda::expdigammify(VW::workspace& all_, float* gamma)
   switch (mmode)
   {
     case lda_math_mode::USE_FAST_APPROX:
-      ldamath::expdigammify<float, lda_math_mode::USE_FAST_APPROX>(all_, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, lda_math_mode::USE_FAST_APPROX>(all_, gamma, UNDERFLOW_THRESHOLD, 0.0f);
       break;
     case lda_math_mode::USE_PRECISE:
-      ldamath::expdigammify<float, lda_math_mode::USE_PRECISE>(all_, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, lda_math_mode::USE_PRECISE>(all_, gamma, UNDERFLOW_THRESHOLD, 0.0f);
       break;
     case lda_math_mode::USE_SIMD:
-      ldamath::expdigammify<float, lda_math_mode::USE_SIMD>(all_, gamma, underflow_threshold, 0.0f);
+      ldamath::expdigammify<float, lda_math_mode::USE_SIMD>(all_, gamma, UNDERFLOW_THRESHOLD, 0.0f);
       break;
     default:
       std::cerr << "lda::expdigammify: Trampled or invalid math mode, aborting" << std::endl;
@@ -596,13 +596,13 @@ void lda::expdigammify_2(VW::workspace& all_, float* gamma, float* norm)
   switch (mmode)
   {
     case lda_math_mode::USE_FAST_APPROX:
-      ldamath::expdigammify_2<float, lda_math_mode::USE_FAST_APPROX>(all_, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, lda_math_mode::USE_FAST_APPROX>(all_, gamma, norm, UNDERFLOW_THRESHOLD);
       break;
     case lda_math_mode::USE_PRECISE:
-      ldamath::expdigammify_2<float, lda_math_mode::USE_PRECISE>(all_, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, lda_math_mode::USE_PRECISE>(all_, gamma, norm, UNDERFLOW_THRESHOLD);
       break;
     case lda_math_mode::USE_SIMD:
-      ldamath::expdigammify_2<float, lda_math_mode::USE_SIMD>(all_, gamma, norm, underflow_threshold);
+      ldamath::expdigammify_2<float, lda_math_mode::USE_SIMD>(all_, gamma, norm, UNDERFLOW_THRESHOLD);
       break;
     default:
       std::cerr << "lda::expdigammify_2: Trampled or invalid math mode, aborting" << std::endl;
@@ -733,11 +733,11 @@ size_t next_pow2(size_t x)
 
 struct initial_weights
 {
-  weight _initial;
-  weight _initial_random;
-  bool _random;
-  uint32_t _lda;
-  uint64_t _stride;
+  weight initial;
+  weight initial_random;
+  bool random;
+  uint32_t lda;
+  uint64_t stride;
 };
 
 void save_load(lda& l, io_buf& model_file, bool read, bool text)
@@ -751,14 +751,14 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
         all.random_weights, all.lda, all.weights.stride()};
 
     auto initial_lda_weight_initializer = [init](weight* weights, uint64_t index) {
-      uint32_t lda = init._lda;
-      weight initial_random = init._initial_random;
-      if (init._random)
+      uint32_t lda = init.lda;
+      weight initial_random = init.initial_random;
+      if (init.random)
       {
         for (size_t i = 0; i != lda; ++i, ++index)
         { weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random; }
       }
-      weights[lda] = init._initial;
+      weights[lda] = init.initial;
     };
 
     all.weights.set_default(initial_lda_weight_initializer);
@@ -772,7 +772,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     do
     {
       brw = 0;
-      size_t K = all.lda;
+      size_t K = all.lda;  // NOLINT
       if (!read && text) { msg << i << " "; }
 
       if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
@@ -1103,16 +1103,16 @@ void compute_coherence_metrics(lda& l, T& weights)
   }
 
   // compress word pairs and create record for storing frequency
-  std::map<uint64_t, std::vector<word_doc_frequency>> coWordsDFSet;
+  std::map<uint64_t, std::vector<word_doc_frequency>> co_words_df_set;
   for (auto& vec : topics_word_pairs)
   {
     for (auto& wp : vec)
     {
       auto f1 = wp.f1;
       auto f2 = wp.f2;
-      auto wdf = coWordsDFSet.find(f1);
+      auto wdf = co_words_df_set.find(f1);
 
-      if (wdf != coWordsDFSet.end())
+      if (wdf != co_words_df_set.end())
       {
         // http://stackoverflow.com/questions/5377434/does-stdmapiterator-return-a-copy-of-value-or-a-value-itself
         // if (wdf->second.find(f2) == wdf->second.end())
@@ -1127,13 +1127,13 @@ void compute_coherence_metrics(lda& l, T& weights)
       else
       {
         std::vector<word_doc_frequency> tmp_vec = {{f2, 0}};
-        coWordsDFSet.insert(std::make_pair(f1, tmp_vec));
+        co_words_df_set.insert(std::make_pair(f1, tmp_vec));
       }
     }
   }
 
   // this.GetWordPairsDocumentFrequency(coWordsDFSet);
-  for (auto& pair : coWordsDFSet)
+  for (auto& pair : co_words_df_set)
   {
     auto& examples_for_f1 = l.feature_to_example_map[pair.first];
     for (auto& wdf : pair.second)
@@ -1175,7 +1175,7 @@ void compute_coherence_metrics(lda& l, T& weights)
       if (l.feature_counts[f1] == 0) { continue; }
 
       auto f2 = pairs.f2;
-      auto& co_feature = coWordsDFSet[f1];
+      auto& co_feature = co_words_df_set[f1];
       auto co_feature_df = std::find_if(
           co_feature.begin(), co_feature.end(), [&f2](const word_doc_frequency& v) { return v.idx == f2; });
 
@@ -1259,9 +1259,7 @@ void finish_example(VW::workspace& all, lda& l, VW::example& e)
 
   assert(l.finish_example_count <= l.minibatch);
 }
-}  // namespace LDA_ANON
-
-using namespace LDA_ANON;
+}  // namespace
 
 void VW::reductions::lda::get_top_weights(
     VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output)

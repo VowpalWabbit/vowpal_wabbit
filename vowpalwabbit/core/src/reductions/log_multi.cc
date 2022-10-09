@@ -27,8 +27,8 @@ namespace
 {
 struct node_pred
 {
-  double Ehk;
-  float norm_Ehk;
+  double Ehk;      // NOLINT
+  float norm_Ehk;  // NOLINT
   uint32_t nk;
   uint32_t label;
   uint32_t label_count;
@@ -66,8 +66,8 @@ struct node
   uint32_t base_predictor;  // id of the base predictor
   uint32_t left;            // left child
   uint32_t right;           // right child
-  float norm_Eh;            // the average margin at the node
-  double Eh;                // total margin at the node
+  float norm_Eh;            // NOLINT the average margin at the node
+  double Eh;                // NOLINT total margin at the node
   uint32_t n;               // total events at the node
 
   // leaf has

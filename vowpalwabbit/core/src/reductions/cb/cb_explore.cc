@@ -37,7 +37,7 @@ namespace
 {
 struct cb_explore
 {
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   cb_to_cs cbcs;
   VW::v_array<uint32_t> preds;
   VW::v_array<float> cover_probs;
@@ -127,7 +127,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
   float prob = 1.f / static_cast<float>(data.bag_size);
   for (size_t i = 0; i < data.bag_size; i++)
   {
-    uint32_t count = VW::reductions::bs::weight_gen(data._random_state);
+    uint32_t count = VW::reductions::bs::weight_gen(data.random_state);
     bool learn = is_learn && count > 0;
     if (learn) { base.learn(ec, i); }
     else
@@ -362,7 +362,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("indexing"))
   { THROW("--indexing is not compatible with contextual bandits, please remove this option") }
 
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
   // If neither cb nor cats_tree are present on the reduction stack then

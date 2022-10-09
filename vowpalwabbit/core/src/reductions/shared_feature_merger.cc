@@ -25,7 +25,7 @@ struct sfm_metrics
 
 struct sfm_data
 {
-  std::unique_ptr<sfm_metrics> _metrics;
+  std::unique_ptr<sfm_metrics> metrics;
   VW::label_type_t label_type = VW::label_type_t::cb;
 };
 
@@ -66,19 +66,19 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
     base.predict(ec_seq);
   }
 
-  if (data._metrics)
+  if (data.metrics)
   {
     VW_WARNING_STATE_PUSH
     VW_WARNING_DISABLE_COND_CONST_EXPR
-    if (is_learn && has_example_header) { data._metrics->count_learn_example_with_shared++; }
+    if (is_learn && has_example_header) { data.metrics->count_learn_example_with_shared++; }
     VW_WARNING_STATE_POP
   }
 }
 
 void persist(sfm_data& data, VW::metric_sink& metrics)
 {
-  if (data._metrics)
-  { metrics.set_uint("sfm_count_learn_example_with_shared", data._metrics->count_learn_example_with_shared); }
+  if (data.metrics)
+  { metrics.set_uint("sfm_count_learn_example_with_shared", data.metrics->count_learn_example_with_shared); }
 }
 }  // namespace
 
@@ -92,7 +92,7 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
   if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
 
   auto data = VW::make_unique<sfm_data>();
-  if (options.was_supplied("extra_metrics")) { data->_metrics = VW::make_unique<sfm_metrics>(); }
+  if (options.was_supplied("extra_metrics")) { data->metrics = VW::make_unique<sfm_metrics>(); }
 
   auto* multi_base = VW::LEARNER::as_multiline(base);
   data->label_type = all.example_parser->lbl_parser.label_type;

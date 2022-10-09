@@ -167,7 +167,7 @@ struct node
 struct memory_tree
 {
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
 
   std::vector<node> nodes;  // array of nodes.
   // v_array<node> nodes;         // array of nodes.
@@ -199,13 +199,13 @@ struct memory_tree
   size_t current_pass = 0;  // for tracking # of passes over the dataset
   size_t final_pass = 0;
 
-  int top_K;         // commands:
+  int top_k;         // commands:
   bool oas = false;  // indicator for multi-label classification (oas = 1)
   int dream_at_update = 0;
 
   bool online = false;  // indicator for running CMT in online fashion
 
-  float F1_score = 0.f;
+  float f1_score = 0.f;
   float hamming_loss = 0.f;
 
   VW::example* kprod_ec = nullptr;
@@ -221,7 +221,7 @@ struct memory_tree
     max_ex_in_leaf = 0;
     construct_time = 0.f;
     test_time = 0.f;
-    top_K = 1;
+    top_k = 1;
   }
 
   ~memory_tree()
@@ -279,9 +279,9 @@ void init_tree(memory_tree& b)
   b.max_ex_in_leaf = 0;
   b.construct_time = 0;
   b.test_time = 0;
-  b.top_K = 1;
+  b.top_k = 1;
   b.hamming_loss = 0.f;
-  b.F1_score = 0.f;
+  b.f1_score = 0.f;
 
   b.nodes.push_back(node());
   b.nodes[0].internal = -1;  // mark the root as leaf
@@ -334,8 +334,8 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     }
     else if ((b.nodes[cn].nl >= 1) && (b.nodes[cn].nr >= 1))
     {
-      pred = b._random_state->get_and_update_random() < (b.nodes[cn].nl * 1. / (b.nodes[cn].nr + b.nodes[cn].nl)) ? -1.f
-                                                                                                                  : 1.f;
+      pred = b.random_state->get_and_update_random() < (b.nodes[cn].nl * 1. / (b.nodes[cn].nr + b.nodes[cn].nl)) ? -1.f
+                                                                                                                 : 1.f;
     }
     else
     {
@@ -358,7 +358,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
 
   if (b.nodes[cn].examples_index.size() >= 1)
   {
-    int loc_at_leaf = static_cast<int>(b._random_state->get_and_update_random() * b.nodes[cn].examples_index.size());
+    int loc_at_leaf = static_cast<int>(b.random_state->get_and_update_random() * b.nodes[cn].examples_index.size());
     uint32_t ec_id = b.nodes[cn].examples_index[loc_at_leaf];
     remove_at_index(b.nodes[cn].examples_index, loc_at_leaf);
     return ec_id;
@@ -658,7 +658,7 @@ float get_overlap_from_two_examples(VW::example& ec1, VW::example& ec2)
 }
 
 // we use F1 score as the reward signal
-float F1_score_for_two_examples(VW::example& ec1, VW::example& ec2)
+float f1_score_for_two_examples(VW::example& ec1, VW::example& ec2)
 {
   float num_overlaps = get_overlap_from_two_examples(ec1, ec2);
   float v1 = static_cast<float>(num_overlaps / (1e-7 + ec1.l.multilabels.label_v.size() * 1.));
@@ -730,8 +730,8 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
     closest_ec = pick_nearest(b, base, cn, ec);
     if (closest_ec != -1)
     {
-      reward = F1_score_for_two_examples(ec, *b.examples[closest_ec]);
-      b.F1_score += reward;
+      reward = f1_score_for_two_examples(ec, *b.examples[closest_ec]);
+      b.f1_score += reward;
     }
     VW::v_array<uint32_t> selected_labs;
     ec.loss = static_cast<float>(compute_hamming_loss_via_oas(b, base, cn, ec, selected_labs));
@@ -785,7 +785,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   }
   else
   {
-    if (closest_ec != -1) { reward = F1_score_for_two_examples(ec, *b.examples[closest_ec]); }
+    if (closest_ec != -1) { reward = f1_score_for_two_examples(ec, *b.examples[closest_ec]); }
   }
   b.total_num_queries++;
 
@@ -817,7 +817,7 @@ void learn_at_leaf_random(
   if (b.nodes[leaf_id].examples_index.size() > 0)
   {
     uint32_t pos =
-        static_cast<uint32_t>(b._random_state->get_and_update_random() * b.nodes[leaf_id].examples_index.size());
+        static_cast<uint32_t>(b.random_state->get_and_update_random() * b.nodes[leaf_id].examples_index.size());
     ec_id = b.nodes[leaf_id].examples_index[pos];
   }
   if (ec_id != -1)
@@ -897,16 +897,16 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
 
   if (path_to_leaf.size() > 1)
   {
-    // uint32_t random_pos = merand48(b._random_state->get_current_state())*(path_to_leaf.size()-1);
+    // uint32_t random_pos = merand48(b.random_state->get_current_state())*(path_to_leaf.size()-1);
     uint32_t random_pos =
-        static_cast<uint32_t>(b._random_state->get_and_update_random() * (path_to_leaf.size()));  // include leaf
+        static_cast<uint32_t>(b.random_state->get_and_update_random() * (path_to_leaf.size()));  // include leaf
     uint64_t cn = path_to_leaf[random_pos];
 
     if (b.nodes[cn].internal != -1)
     {  // if it's an internal node:'
       float objective = 0.f;
       float prob_right = 0.5;
-      float coin = b._random_state->get_and_update_random() < prob_right ? 1.f : -1.f;
+      float coin = b.random_state->get_and_update_random() < prob_right ? 1.f : -1.f;
       float weight = path_to_leaf.size() * 1.f / (path_to_leaf.size() - 1.f);
       if (coin == -1.f)
       {  // go left
@@ -1044,7 +1044,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
     {
       if (b.oas == false)
       {
-        std::cout << "at iter " << b.iter << ", top(" << b.top_K << ") pred error: " << b.num_mistakes * 1. / b.iter
+        std::cout << "at iter " << b.iter << ", top(" << b.top_k << ") pred error: " << b.num_mistakes * 1. / b.iter
                   << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
                   << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       }
@@ -1262,7 +1262,7 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
       .add(make_option("dream_repeats", tree->dream_repeats)
                .default_value(1)
                .help("Number of dream operations per example (default = 1)"))
-      .add(make_option("top_K", tree->top_K).default_value(1).help("Top K prediction error"))
+      .add(make_option("top_k", tree->top_k).default_value(1).help("Top K prediction error"))
       .add(make_option("learn_at_leaf", tree->learn_at_leaf).help("Enable learning at leaf"))
       .add(make_option("oas", tree->oas).help("Use oas at the leaf"))
       .add(make_option("dream_at_update", tree->dream_at_update)
@@ -1275,7 +1275,7 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
   tree->max_num_labels = VW::cast_to_smaller_type<size_t>(max_num_labels);
   tree->leaf_example_multiplier = VW::cast_to_smaller_type<size_t>(leaf_example_multiplier);
   tree->all = &all;
-  tree->_random_state = all.get_random_state();
+  tree->random_state = all.get_random_state();
   tree->current_pass = 0;
   tree->final_pass = all.numpasses;
 

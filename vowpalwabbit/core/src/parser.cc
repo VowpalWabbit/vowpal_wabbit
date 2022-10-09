@@ -40,16 +40,16 @@ int daemon(int /*a*/, int /*b*/) { exit(0); }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
-// use VW_getpid instead of getpid to avoid name collisions with process.h
+// use VW_GETPID instead of getpid to avoid name collisions with process.h
 #  if _MSC_VER >= 1920
-#    define VW_getpid _getpid
+#    define VW_GETPID _getpid
 #  else
-int VW_getpid() { return (int)::GetCurrentProcessId(); }
+int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #  endif
 
 #else
 #  include <netdb.h>
-#  define VW_getpid getpid
+#  define VW_GETPID getpid
 #endif
 
 #if defined(__FreeBSD__) || defined(__APPLE__)
@@ -410,9 +410,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     { *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl; }
 
     // Enable TCP Keep Alive to prevent socket leaks
-    int enableTKA = 1;
-    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA),
-            sizeof(enableTKA)) < 0)
+    int enable_tka = 1;
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enable_tka),
+            sizeof(enable_tka)) < 0)
     { *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl; }
 
     sockaddr_in address;

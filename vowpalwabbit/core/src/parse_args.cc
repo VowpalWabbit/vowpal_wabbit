@@ -63,7 +63,7 @@ using namespace VW::config;
 uint64_t hash_file_contents(VW::io::reader* file_reader)
 {
   uint64_t hash = 5289374183516789128;
-  const uint64_t BUFFER_SIZE = 1024;
+  static const uint64_t BUFFER_SIZE = 1024;
   char buf[BUFFER_SIZE];
   while (true)
   {
@@ -1049,20 +1049,20 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
     const char delimiter = ';';
 #else
-    const std::string PATH = getenv("PATH");
+    const std::string path_env_var = getenv("PATH");
     const char delimiter = ':';
 #endif
-    if (!PATH.empty())
+    if (!path_env_var.empty())
     {
       size_t previous = 0;
-      size_t index = PATH.find(delimiter);
+      size_t index = path_env_var.find(delimiter);
       while (index != std::string::npos)
       {
-        all.dictionary_path.push_back(PATH.substr(previous, index - previous));
+        all.dictionary_path.push_back(path_env_var.substr(previous, index - previous));
         previous = index + 1;
-        index = PATH.find(delimiter, previous);
+        index = path_env_var.find(delimiter, previous);
       }
-      all.dictionary_path.push_back(PATH.substr(previous));
+      all.dictionary_path.push_back(path_env_var.substr(previous));
     }
   }
 

@@ -127,36 +127,36 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
 
 bool test_ldf_sequence(ldf& /*data*/, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  bool isTest;
-  if (ec_seq.empty()) { isTest = true; }
+  bool is_test;
+  if (ec_seq.empty()) { is_test = true; }
   else
   {
-    isTest = COST_SENSITIVE::cs_label.test_label(ec_seq[0]->l);
+    is_test = COST_SENSITIVE::cs_label.test_label(ec_seq[0]->l);
   }
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
 
-    if (COST_SENSITIVE::cs_label.test_label(ec->l) != isTest)
+    if (COST_SENSITIVE::cs_label.test_label(ec->l) != is_test)
     {
-      isTest = true;
+      is_test = true;
       logger.err_warn("ldf example has mix of train/test data; assuming test");
     }
   }
-  return isTest;
+  return is_test;
 }
 
 void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
 
-  size_t K = ec_seq.size();
+  size_t num_classes = ec_seq.size();
   std::vector<COST_SENSITIVE::wclass*> all_costs;
   for (const auto& example : ec_seq) { all_costs.push_back(&example->l.cs.costs[0]); }
   compute_wap_values(all_costs);
 
-  for (size_t k1 = 0; k1 < K; k1++)
+  for (size_t k1 = 0; k1 < num_classes; k1++)
   {
     VW::example* ec1 = ec_seq[k1];
 
@@ -178,7 +178,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
       ec1->l.cs = save_cs_label;
     });
 
-    for (size_t k2 = k1 + 1; k2 < K; k2++)
+    for (size_t k2 = k1 + 1; k2 < num_classes; k2++)
     {
       VW::example* ec2 = ec_seq[k2];
       auto costs2 = ec2->l.cs.costs;
@@ -337,14 +337,14 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
 
-  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
-  uint32_t predicted_K = 0;
+  uint32_t num_classes = static_cast<uint32_t>(ec_seq_all.size());
+  uint32_t predicted_class = 0;
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K, &predicted_K] {
+  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, num_classes, &predicted_class] {
     // Mark the predicted sub-example with its class_index, all other with 0
-    for (size_t k = 0; k < K; k++)
+    for (size_t k = 0; k < num_classes; k++)
     {
-      if (k == predicted_K) { ec_seq_all[k]->pred.multiclass = ec_seq_all[k]->l.cs.costs[0].class_index; }
+      if (k == predicted_class) { ec_seq_all[k]->pred.multiclass = ec_seq_all[k]->l.cs.costs[0].class_index; }
       else
       {
         ec_seq_all[k]->pred.multiclass = 0;
@@ -357,14 +357,14 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
 
   /////////////////////// do prediction
   float min_score = FLT_MAX;
-  for (uint32_t k = 0; k < K; k++)
+  for (uint32_t k = 0; k < num_classes; k++)
   {
     VW::example* ec = ec_seq_all[k];
     make_single_prediction(data, base, *ec);
     if (ec->partial_prediction < min_score)
     {
       min_score = ec->partial_prediction;
-      predicted_K = k;
+      predicted_class = k;
     }
   }
 }
@@ -382,17 +382,17 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
     return;  // nothing more to do
   }
 
-  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
+  uint32_t num_classes = static_cast<uint32_t>(ec_seq_all.size());
 
   /////////////////////// do prediction
   data.a_s.clear();
   data.stored_preds.clear();
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K] {
+  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, num_classes] {
     std::sort(data.a_s.begin(), data.a_s.end());
 
     data.stored_preds[0].clear();
-    for (size_t k = 0; k < K; k++)
+    for (size_t k = 0; k < num_classes; k++)
     {
       ec_seq_all[k]->pred.a_s = std::move(data.stored_preds[k]);
       ec_seq_all[0]->pred.a_s.push_back(data.a_s[k]);
@@ -402,7 +402,7 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
     if (data.is_probabilities) { convert_to_probabilities(ec_seq_all); }
   });
 
-  for (uint32_t k = 0; k < K; k++)
+  for (uint32_t k = 0; k < num_classes; k++)
   {
     VW::example* ec = ec_seq_all[k];
     data.stored_preds.emplace_back(std::move(ec->pred.a_s));
@@ -438,10 +438,10 @@ void output_example(
   uint32_t predicted_class = 0;
   if (data.is_probabilities)
   {
-    // predicted_K was already computed in do_actual_learning(),
+    // predicted_class was already computed in do_actual_learning(),
     // but we cannot store it in ec.pred union because we store ec.pred.prob there.
     // So we must compute it again.
-    uint32_t predicted_K = 0;
+    uint32_t predicted_class = 0;
     float min_score = FLT_MAX;
     for (size_t k = 0; k < ec_seq->size(); k++)
     {
@@ -449,10 +449,10 @@ void output_example(
       if (ec_k->partial_prediction < min_score)
       {
         min_score = ec_k->partial_prediction;
-        predicted_K = static_cast<uint32_t>(k);
+        predicted_class = static_cast<uint32_t>(k);
       }
     }
-    predicted_class = (*ec_seq)[predicted_K]->l.cs.costs[0].class_index;
+    predicted_class = (*ec_seq)[predicted_class]->l.cs.costs[0].class_index;
   }
   else
   {
@@ -483,15 +483,15 @@ void output_example(
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
@@ -530,15 +530,15 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), head_ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), head_ec.tag, all.logger);
   }
 
   COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
@@ -546,8 +546,8 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
 
 void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 {
-  size_t K = ec_seq.size();
-  if (K > 0)
+  size_t num_classes = ec_seq.size();
+  if (num_classes > 0)
   {
     if (test_ldf_sequence(data, ec_seq, all.logger)) { all.sd->weighted_unlabeled_examples += ec_seq[0]->weight; }
     else
@@ -574,7 +574,7 @@ void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
       float min_cost = FLT_MAX;
       size_t correct_class_k = 0;
 
-      for (size_t k = 0; k < K; k++)
+      for (size_t k = 0; k < num_classes; k++)
       {
         float ec_cost = ec_seq[k]->l.cs.costs[0].x;
         if (ec_cost < min_cost)

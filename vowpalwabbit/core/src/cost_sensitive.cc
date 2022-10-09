@@ -262,14 +262,14 @@ void output_example(
 
   if (all.raw_prediction != nullptr)
   {
-    std::stringstream outputStringStream;
+    std::stringstream output_string_stream;
     for (unsigned int i = 0; i < label.costs.size(); i++)
     {
       wclass cl = label.costs[i];
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << cl.class_index << ':' << cl.partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   print_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);
