@@ -102,7 +102,8 @@ public:
   {
     CB::label* ld = &ex->l.cb;
     if (ld->costs.size() > 0)
-    { CB::cb_class& f = ld->costs[0];
+    {
+      CB::cb_class& f = ld->costs[0];
 
       m_action = f.action;
       m_cost = f.cost;
