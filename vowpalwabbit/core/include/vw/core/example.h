@@ -38,12 +38,12 @@ void setup_example(VW::workspace& all, example* ae);
 struct polylabel
 {
   no_label::no_label empty = static_cast<char>(0);
-  label_data simple;
+  VW::simple_label simple;
   MULTICLASS::label_t multi;
   COST_SENSITIVE::label cs;
   CB::label cb;
   VW::cb_continuous::continuous_label cb_cont;
-  CCB::label conditional_contextual_bandit;
+  VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;

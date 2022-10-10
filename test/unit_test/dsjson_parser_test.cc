@@ -494,11 +494,11 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
   auto examples = parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 5);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
 
   auto label1 = examples[3]->l.conditional_contextual_bandit;
   BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 2);
@@ -589,11 +589,11 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_as_ccb)
   auto examples = parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 5);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
 
   auto label2 = examples[4]->l.conditional_contextual_bandit;
   BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);

@@ -348,7 +348,10 @@ struct OjaNewton
   }
 };
 
-void keep_example(VW::workspace& all, OjaNewton& /* ON */, VW::example& ec) { output_and_account_example(all, ec); }
+void keep_example(VW::workspace& all, OjaNewton& /* ON */, VW::example& ec)
+{
+  VW::details::output_and_account_example(all, ec);
+}
 
 void make_pred(oja_n_update_data& data, float x, float& wref)
 {

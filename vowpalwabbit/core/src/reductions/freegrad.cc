@@ -14,6 +14,7 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <cfloat>
 #include <cmath>
@@ -309,7 +310,8 @@ void end_pass(freegrad& fg)
 
   if (!all.holdout_set_off)
   {
-    if (summarize_holdout_set(all, fg.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
+    if (VW::details::summarize_holdout_set(all, fg.no_win_counter))
+    { finalize_regressor(all, all.final_regressor_name); }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
     { set_done(all); }

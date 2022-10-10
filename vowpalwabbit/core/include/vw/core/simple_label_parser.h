@@ -13,8 +13,8 @@ namespace VW
 {
 namespace model_utils
 {
-size_t read_model_field(io_buf&, label_data&);
-size_t write_model_field(io_buf&, const label_data&, const std::string&, bool);
+size_t read_model_field(io_buf&, simple_label&);
+size_t write_model_field(io_buf&, const simple_label&, const std::string&, bool);
 size_t read_model_field(io_buf&, simple_label_reduction_features&);
 size_t write_model_field(io_buf&, const simple_label_reduction_features&, const std::string&, bool);
 }  // namespace model_utils

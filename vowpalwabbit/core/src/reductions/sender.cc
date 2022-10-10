@@ -87,10 +87,10 @@ void receive_result(sender& s)
   VW::example& ec = *s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
   ec.pred.scalar = res;
 
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   ec.loss = s.all->loss->get_loss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
 
-  return_simple_example(*(s.all), nullptr, ec);
+  VW::details::return_simple_example(*(s.all), nullptr, ec);
 }
 
 void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, VW::example& ec)

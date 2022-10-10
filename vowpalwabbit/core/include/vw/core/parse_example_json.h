@@ -277,13 +277,13 @@ struct LabelObjectState : public BaseState<audit>
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
@@ -326,13 +326,13 @@ struct LabelObjectState : public BaseState<audit>
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = v;
       found = true;
     }
@@ -387,7 +387,7 @@ struct LabelObjectState : public BaseState<audit>
 
       if ((actions.size() != 0) && (probs.size() != 0))
       {
-        auto outcome = new CCB::conditional_contextual_bandit_outcome();
+        auto* outcome = new VW::ccb_outcome();
         outcome->cost = cb_label.cost;
         if (actions.size() != probs.size()) { THROW("Actions and probabilities must be the same length."); }
 
@@ -603,8 +603,8 @@ struct MultiState : BaseState<audit>
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::ccb)
     {
-      CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
-      ld->type = CCB::example_type::shared;
+      auto* ld = &ctx.ex->l.conditional_contextual_bandit;
+      ld->type = VW::ccb_example_type::SHARED;
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
@@ -624,7 +624,7 @@ struct MultiState : BaseState<audit>
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
+    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::action;
@@ -672,7 +672,7 @@ struct SlotsState : BaseState<audit>
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
+    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::slot;
@@ -1040,15 +1040,15 @@ struct DefaultState : public BaseState<audit>
       if (ctx._label_parser.label_type == VW::label_type_t::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
-            [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+            [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT; });
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
           ctx._label_parser.default_label(ctx.ex->l);
-          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+          ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
           ctx.examples->push_back(ctx.ex);
 
-          auto outcome = new CCB::conditional_contextual_bandit_outcome();
+          auto outcome = new VW::ccb_outcome();
           outcome->cost = ctx.label_object_state.cb_label.cost;
           outcome->probabilities.push_back(
               {ctx.label_object_state.cb_label.action - 1, ctx.label_object_state.cb_label.probability});
@@ -1313,7 +1313,7 @@ struct SlotOutcomeList : public BaseState<audit>
     for (auto ex : *ctx.examples)
     {
       if ((ctx._label_parser.label_type == VW::label_type_t::ccb &&
-              ex->l.conditional_contextual_bandit.type != CCB::example_type::slot) ||
+              ex->l.conditional_contextual_bandit.type != VW::ccb_example_type::SLOT) ||
           (ctx._label_parser.label_type == VW::label_type_t::slates &&
               ex->l.slates.type != VW::slates::example_type::slot))
       { slot_object_index++; }
@@ -1347,7 +1347,7 @@ struct SlotOutcomeList : public BaseState<audit>
     for (auto ex : *ctx.examples)
     {
       if (ctx._label_parser.label_type == VW::label_type_t::ccb &&
-          ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+          ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT)
       {
         if (ex->l.conditional_contextual_bandit.outcome)
         {
