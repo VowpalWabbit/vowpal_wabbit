@@ -24,7 +24,6 @@ using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Globalization;
 using namespace System::Text;
-using namespace CB;
 using namespace MULTICLASS;
 using namespace Newtonsoft::Json;
 
@@ -103,7 +102,8 @@ public:
   {
     CB::label* ld = &ex->l.cb;
     if (ld->costs.size() > 0)
-    { cb_class& f = ld->costs[0];
+    {
+      CB::cb_class& f = ld->costs[0];
 
       m_action = f.action;
       m_cost = f.cost;
@@ -114,7 +114,7 @@ public:
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     CB::label* ld = &ex->l.cb;
-    cb_class f;
+    CB::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = m_action;
@@ -154,7 +154,7 @@ public:
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     CB::label* ld = &ex->l.cb;
-    cb_class f;
+    CB::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = m_action;

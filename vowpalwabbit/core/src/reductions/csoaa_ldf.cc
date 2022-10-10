@@ -24,7 +24,6 @@
 #include <cmath>
 
 using namespace VW::LEARNER;
-using namespace COST_SENSITIVE;
 using namespace VW::config;
 
 #undef VW_DEBUG_LOG
@@ -49,9 +48,9 @@ struct ldf
   std::vector<VW::action_scores> stored_preds;
 };
 
-inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
+inline bool cmp_wclass_ptr(const VW::cs_class* a, const VW::cs_class* b) { return a->x < b->x; }
 
-void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
+void compute_wap_values(std::vector<VW::cs_class*> costs)
 {
   std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
   costs[0]->wap_value = 0.;
@@ -131,14 +130,14 @@ bool test_ldf_sequence(ldf& /*data*/, const VW::multi_ex& ec_seq, VW::io::logger
   if (ec_seq.empty()) { is_test = true; }
   else
   {
-    is_test = COST_SENSITIVE::cs_label.test_label(ec_seq[0]->l);
+    is_test = VW::cs_label_parser_global.test_label(ec_seq[0]->l);
   }
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
 
-    if (COST_SENSITIVE::cs_label.test_label(ec->l) != is_test)
+    if (VW::cs_label_parser_global.test_label(ec->l) != is_test)
     {
       is_test = true;
       logger.err_warn("ldf example has mix of train/test data; assuming test");
@@ -152,7 +151,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
   VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
 
   size_t num_classes = ec_seq.size();
-  std::vector<COST_SENSITIVE::wclass*> all_costs;
+  std::vector<VW::cs_class*> all_costs;
   for (const auto& example : ec_seq) { all_costs.push_back(&example->l.cs.costs[0]); }
   compute_wap_values(all_costs);
 
@@ -161,7 +160,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
     VW::example* ec1 = ec_seq[k1];
 
     // save original variables
-    COST_SENSITIVE::label save_cs_label = ec1->l.cs;
+    VW::cs_label save_cs_label = ec1->l.cs;
     auto& simple_lbl = ec1->l.simple;
     auto& simple_red_features = ec1->_reduction_features.template get<VW::simple_label_reduction_features>();
 
@@ -232,7 +231,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
   for (const auto& ec : ec_seq)
   {
     // save original variables
-    label save_cs_label = std::move(ec->l.cs);
+    VW::cs_label save_cs_label = std::move(ec->l.cs);
     const auto& costs = save_cs_label.costs;
 
     // build example for the base learner
@@ -417,12 +416,12 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
 void output_example(
     VW::workspace& all, const VW::example& ec, bool& hit_loss, const VW::multi_ex* ec_seq, const ldf& data)
 {
-  const label& ld = ec.l.cs;
+  const auto& ld = ec.l.cs;
   const auto& costs = ld.costs;
 
   if (VW::example_is_newline(ec)) { return; }
 
-  if (COST_SENSITIVE::ec_is_example_header(ec))
+  if (VW::is_cs_example_header(ec))
   {
     all.sd->total_features +=
         (ec_seq->size() - 1) * (ec.get_num_features() - ec.feature_space[constant_namespace].size());
@@ -459,7 +458,7 @@ void output_example(
     predicted_class = ec.pred.multiclass;
   }
 
-  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
+  if (!VW::cs_label_parser_global.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -494,7 +493,7 @@ void output_example(
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
+  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_loss, VW::multi_ex* ec_seq)
@@ -502,14 +501,14 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   const auto& costs = head_ec.l.cs.costs;
 
   if (VW::example_is_newline(head_ec)) { return; }
-  if (COST_SENSITIVE::ec_is_example_header(head_ec)) { return; }
+  if (VW::is_cs_example_header(head_ec)) { return; }
 
   all.sd->total_features += head_ec.get_num_features();
 
   float loss = 0.;
   VW::v_array<VW::action_score>& preds = head_ec.pred.a_s;
 
-  if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
+  if (!VW::cs_label_parser_global.test_label(head_ec.l))
   {
     for (VW::example* ex : *ec_seq)
     {
@@ -541,7 +540,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), head_ec.tag, all.logger);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
+  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(head_ec.l), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
@@ -608,13 +607,13 @@ void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_se
 {
   if (!ec_seq.empty())
   {
-    if (ec_seq.size() > 1 && COST_SENSITIVE::ec_is_example_header(*ec_seq[0]))
+    if (ec_seq.size() > 1 && VW::is_cs_example_header(*ec_seq[0]))
     {
       std::swap(ec_seq[0]->pred, ec_seq[1]->pred);
       std::swap(ec_seq[0]->tag, ec_seq[1]->tag);
     }
     output_example_seq(all, data, ec_seq);
-    if (ec_seq.size() > 1 && COST_SENSITIVE::ec_is_example_header(*ec_seq[0]))
+    if (ec_seq.size() > 1 && VW::is_cs_example_header(*ec_seq[0]))
     {
       std::swap(ec_seq[0]->pred, ec_seq[1]->pred);
       std::swap(ec_seq[0]->tag, ec_seq[1]->tag);
@@ -745,7 +744,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(pred_type)
                 .build();
 
-  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }

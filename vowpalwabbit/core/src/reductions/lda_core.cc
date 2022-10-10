@@ -1347,7 +1347,7 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 
   ld->decay_levels.push_back(0.f);
 
-  all.example_parser->lbl_parser = no_label::no_label_parser;
+  all.example_parser->lbl_parser = VW::no_label_parser_global;
 
   auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),

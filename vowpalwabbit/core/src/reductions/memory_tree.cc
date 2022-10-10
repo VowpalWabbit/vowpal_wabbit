@@ -375,7 +375,7 @@ float train_node(memory_tree& b, single_learner& base, VW::example& ec, const ui
 {
   // predict, learn and predict
   // note: here we first train the router and then predict.
-  MULTICLASS::label_t mc{0, 0};
+  VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
   MULTILABEL::labels preds;
@@ -461,7 +461,7 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
   for (size_t ec_id = 0; ec_id < b.nodes[cn].examples_index.size(); ec_id++)  // scan all examples stored in the cn
   {
     uint32_t ec_pos = b.nodes[cn].examples_index[ec_id];
-    MULTICLASS::label_t mc{0, 0};
+    VW::multiclass_label mc{0, 0};
     uint32_t save_multi_pred = 0;
     MULTILABEL::labels multilabels;
     MULTILABEL::labels preds;
@@ -672,7 +672,7 @@ float f1_score_for_two_examples(VW::example& ec1, VW::example& ec2)
 }
 void predict(memory_tree& b, single_learner& base, VW::example& ec)
 {
-  MULTICLASS::label_t mc{0, 0};
+  VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
   MULTILABEL::labels preds;
@@ -741,7 +741,7 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
 
 float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, VW::example& ec, float weight = 1.f)
 {
-  MULTICLASS::label_t mc{0, 0};
+  VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
   MULTILABEL::labels preds;
@@ -839,7 +839,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 {
   VW::example& ec = *b.examples[ec_array_index];
 
-  MULTICLASS::label_t mc{0, 0};
+  VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
   MULTILABEL::labels multilabels;
   MULTILABEL::labels preds;
@@ -923,7 +923,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
 
       float ec_input_weight = ec.weight;
 
-      MULTICLASS::label_t mc{0, 0};
+      VW::multiclass_label mc{0, 0};
       MULTILABEL::labels multilabels;
       MULTILABEL::labels preds;
       if (b.oas == false) { mc = ec.l.multi; }
@@ -1303,7 +1303,7 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
   if (!oas)
   {
     num_learners = tree->max_nodes + 1;
-    all.example_parser->lbl_parser = MULTICLASS::mc_label;
+    all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     pred_type = VW::prediction_type_t::multiclass;
     label_type = VW::label_type_t::multiclass;
   }  // multi-label classification
@@ -1323,7 +1323,7 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_output_prediction_type(pred_type)
                .set_input_label_type(label_type);
 
-  if (!oas) { l.set_finish_example(MULTICLASS::finish_example<memory_tree&>); }
+  if (!oas) { l.set_finish_example(VW::details::finish_multiclass_example<memory_tree&>); }
 
   return make_base(*l.build());
 }

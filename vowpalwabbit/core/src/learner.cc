@@ -322,7 +322,7 @@ bool ec_is_example_header(const example& ec, label_type_t label_type)
   }
   else if (label_type == VW::label_type_t::cs)
   {
-    return COST_SENSITIVE::ec_is_example_header(ec);
+    return VW::is_cs_example_header(ec);
   }
   return false;
 }

@@ -69,7 +69,7 @@ inline float get_cost_estimate(const CB::cb_class& observation, uint32_t action,
 }
 
 // doubly robust estimate
-inline float get_cost_estimate(const CB::cb_class& observation, const COST_SENSITIVE::label& scores, uint32_t action)
+inline float get_cost_estimate(const CB::cb_class& observation, const VW::cs_label& scores, uint32_t action)
 {
   for (auto& cl : scores.costs)
   {

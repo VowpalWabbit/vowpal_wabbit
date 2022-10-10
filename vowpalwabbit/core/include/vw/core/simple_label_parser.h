@@ -7,10 +7,10 @@
 #include "vw/core/simple_label.h"
 #include "vw/core/vw_fwd.h"
 
-extern VW::label_parser simple_label_parser;
-
 namespace VW
 {
+extern VW::label_parser simple_label_parser_global;
+
 namespace model_utils
 {
 size_t read_model_field(io_buf&, simple_label&);

@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/multiclass.h"
+
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/example.h"
@@ -16,25 +18,24 @@
 #include <cstring>
 #include <iomanip>
 
-namespace MULTICLASS
-{
-label_t::label_t() { reset_to_default(); }
+VW::multiclass_label::multiclass_label() { reset_to_default(); }
 
-label_t::label_t(uint32_t label, float weight) : label(label), weight(weight) {}
+VW::multiclass_label::multiclass_label(uint32_t label, float weight) : label(label), weight(weight) {}
 
-void label_t::reset_to_default()
+void VW::multiclass_label::reset_to_default()
 {
   label = std::numeric_limits<uint32_t>::max();
   weight = 1.f;
 }
 
-void default_label(label_t& ld) { ld.reset_to_default(); }
+bool VW::test_multiclass_label(const VW::multiclass_label& ld) { return ld.label == static_cast<uint32_t>(-1); }
 
-float weight(const label_t& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
-bool test_label(const label_t& ld) { return ld.label == static_cast<uint32_t>(-1); }
-
-void parse_label(
-    label_t& ld, const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+namespace
+{
+void default_label(VW::multiclass_label& ld) { ld.reset_to_default(); }
+float multiclass_label_weight(const VW::multiclass_label& ld) { return (ld.weight > 0) ? ld.weight : 0.f; }
+void parse_multiclass_label(VW::multiclass_label& ld, const VW::named_labels* ldict,
+    const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   switch (words.size())
   {
@@ -66,14 +67,17 @@ void parse_label(
       THROW("Malformed example, words.size() = " << words.size());
   }
 }
+}  // namespace
 
-VW::label_parser mc_label = {
+namespace VW
+{
+VW::label_parser multiclass_label_parser_global = {
     // default_label
     [](VW::polylabel& label) { default_label(label.multi); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
         const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.multi, ldict, words, logger); },
+        VW::io::logger& logger) { parse_multiclass_label(label.multi, ldict, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
         const std::string& upstream_name,
@@ -83,12 +87,17 @@ VW::label_parser mc_label = {
       return VW::model_utils::read_model_field(cache, label.multi);
     },
     // get_weight
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) { return weight(label.multi); },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) {
+      return multiclass_label_weight(label.multi);
+    },
     // test_label
-    [](const VW::polylabel& label) { return test_label(label.multi); },
+    [](const VW::polylabel& label) { return test_multiclass_label(label.multi); },
     // label type
     VW::label_type_t::multiclass};
+}
 
+namespace
+{
 void print_label_pred(VW::workspace& all, VW::example& ec, uint32_t prediction)
 {
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
@@ -142,17 +151,18 @@ void print_update(VW::workspace& all, VW::example& ec, uint32_t prediction)
     }
   }
 }
+}  // namespace
 
-void print_update_with_probability(VW::workspace& all, VW::example& ec, uint32_t pred)
+void VW::details::print_multiclass_update_with_probability(VW::workspace& all, VW::example& ec, uint32_t pred)
 {
-  print_update<print_probability>(all, ec, pred);
+  ::print_update<print_probability>(all, ec, pred);
 }
-void print_update_with_score(VW::workspace& all, VW::example& ec, uint32_t pred)
+void VW::details::print_multiclass_update_with_score(VW::workspace& all, VW::example& ec, uint32_t pred)
 {
-  print_update<print_score>(all, ec, pred);
+  ::print_update<print_score>(all, ec, pred);
 }
 
-void finish_example(VW::workspace& all, VW::example& ec, bool update_loss)
+void VW::details::finish_multiclass_example(VW::workspace& all, VW::example& ec, bool update_loss)
 {
   float loss = 0;
   if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.label != static_cast<uint32_t>(-1)) { loss = ec.weight; }
@@ -170,16 +180,11 @@ void finish_example(VW::workspace& all, VW::example& ec, bool update_loss)
     }
   }
 
-  MULTICLASS::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
+  ::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
   VW::finish_example(all, ec);
 }
-}  // namespace MULTICLASS
 
-namespace VW
-{
-namespace model_utils
-{
-size_t read_model_field(io_buf& io, MULTICLASS::label_t& multi)
+size_t VW::model_utils::read_model_field(io_buf& io, VW::multiclass_label& multi)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, multi.label);
@@ -187,12 +192,11 @@ size_t read_model_field(io_buf& io, MULTICLASS::label_t& multi)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const MULTICLASS::label_t& multi, const std::string& upstream_name, bool text)
+size_t VW::model_utils::write_model_field(
+    io_buf& io, const VW::multiclass_label& multi, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, multi.label, upstream_name + "_label", text);
   bytes += write_model_field(io, multi.weight, upstream_name + "_weight", text);
   return bytes;
 }
-}  // namespace model_utils
-}  // namespace VW

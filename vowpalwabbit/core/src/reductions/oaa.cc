@@ -61,7 +61,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec
     o.indexing = 1;
   }
 
-  MULTICLASS::label_t ld = ec.l.multi;
+  VW::multiclass_label ld = ec.l.multi;
 
   // Label validation
   if (o.indexing == 0 && ld.label >= o.k)
@@ -126,7 +126,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   }
 
   // Save label
-  MULTICLASS::label_t mc_label_data = ec.l.multi;
+  VW::multiclass_label mc_label_data = ec.l.multi;
 
   // Label validation
   if (o.indexing == 0 && mc_label_data.label >= o.k)
@@ -189,11 +189,11 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
     if (o.indexing == 0)
     {
       add_passthrough_feature(ec, 0, o.pred[o.k - 1].scalar);
-      for (uint32_t i = 0; i < o.k - 1; i++) add_passthrough_feature(ec, (i + 1), o.pred[i].scalar);
+      for (uint32_t i = 0; i < o.k - 1; i++) { add_passthrough_feature(ec, (i + 1), o.pred[i].scalar); }
     }
     else
     {
-      for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar);
+      for (uint32_t i = 1; i <= o.k; i++) { add_passthrough_feature(ec, i, o.pred[i - 1].scalar); }
     }
   }
 
@@ -302,10 +302,10 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   // So let's report (average) multiclass_log_loss only in the final resume.
 
   // === Print progress report
-  if (probabilities) { MULTICLASS::print_update_with_probability(all, ec, pred_lbl); }
+  if (probabilities) { VW::details::print_multiclass_update_with_probability(all, ec, pred_lbl); }
   else
   {
-    MULTICLASS::print_update_with_score(all, ec, pred_lbl);
+    VW::details::print_multiclass_update_with_score(all, ec, pred_lbl);
   }
   VW::finish_example(all, ec);
 }
@@ -398,7 +398,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   else
   {
     pred_type = VW::prediction_type_t::multiclass;
-    finish_ptr = MULTICLASS::finish_example<oaa>;
+    finish_ptr = VW::details::finish_multiclass_example<oaa>;
     if (all.raw_prediction != nullptr)
     {
       learn_ptr = learn<PRINT_ALL, !SCORES, !PROBABILITIES>;
@@ -413,12 +413,12 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
     }
   }
 
-  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   if (data_ptr->num_subsample > 0)
   {
     learn_ptr = learn_randomized;
-    finish_ptr = MULTICLASS::finish_example_without_loss<oaa>;
+    finish_ptr = VW::details::finish_multiclass_example_without_loss<oaa>;
   }
 
   auto l = make_reduction_learner(

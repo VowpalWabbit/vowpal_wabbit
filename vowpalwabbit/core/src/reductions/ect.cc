@@ -217,7 +217,7 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
   {  // nothing to do
     return;
   }
-  MULTICLASS::label_t mc = ec.l.multi;
+  VW::multiclass_label mc = ec.l.multi;
 
   VW::simple_label simple_temp;
 
@@ -311,7 +311,7 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
 
 void predict(ect& e, single_learner& base, VW::example& ec)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
+  VW::multiclass_label mc = ec.l.multi;
   if (mc.label == 0 || (mc.label > e.k && mc.label != static_cast<uint32_t>(-1)))
   {
     // In order to print curly braces, they need to be embedded within curly braces to escape them.
@@ -324,7 +324,7 @@ void predict(ect& e, single_learner& base, VW::example& ec)
 
 void learn(ect& e, single_learner& base, VW::example& ec)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
+  VW::multiclass_label mc = ec.l.multi;
   uint32_t pred = ec.pred.multiclass;
 
   if (mc.label != static_cast<uint32_t>(-1)) { ect_train(e, base, ec); }
@@ -362,12 +362,12 @@ base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(
       std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
                 .set_params_per_weight(wpp)
-                .set_finish_example(MULTICLASS::finish_example<ect&>)
+                .set_finish_example(VW::details::finish_multiclass_example<ect&>)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_input_label_type(VW::label_type_t::multiclass)
                 .build();
 
-  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   return make_base(*l);
 }
