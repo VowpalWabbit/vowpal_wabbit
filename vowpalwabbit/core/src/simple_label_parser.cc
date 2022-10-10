@@ -20,17 +20,8 @@
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
-char* bufread_simple_label(VW::simple_label& ld, VW::simple_label_reduction_features& red_features, char* c)
+namespace
 {
-  memcpy(&ld.label, c, sizeof(ld.label));
-  c += sizeof(ld.label);
-  memcpy(&red_features.weight, c, sizeof(red_features.weight));
-  c += sizeof(red_features.weight);
-  memcpy(&red_features.initial, c, sizeof(red_features.initial));
-  c += sizeof(red_features.initial);
-  return c;
-}
-
 float get_weight(const VW::reduction_features& red_features)
 {
   const auto& simple_red_features = red_features.template get<VW::simple_label_reduction_features>();
@@ -67,8 +58,11 @@ void parse_simple_label(VW::simple_label& ld, VW::reduction_features& red_featur
       logger.out_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
 }
+}  // namespace
 
-VW::label_parser simple_label_parser = {
+namespace VW
+{
+VW::label_parser simple_label_parser_global = {
     // default_label
     [](VW::polylabel& label) { default_simple_label(label.simple); },
     // parse_label
@@ -98,8 +92,6 @@ VW::label_parser simple_label_parser = {
     // label type
     VW::label_type_t::simple};
 
-namespace VW
-{
 namespace model_utils
 {
 size_t read_model_field(io_buf& io, VW::simple_label& ld)

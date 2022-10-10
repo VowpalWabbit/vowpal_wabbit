@@ -61,9 +61,9 @@ private:
 
   v_array<VW::action_score> _action_probs;
   std::vector<float> _scores;
-  COST_SENSITIVE::label _cs_labels;
-  COST_SENSITIVE::label _cs_labels_2;
-  std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
+  VW::cs_label _cs_labels;
+  VW::cs_label _cs_labels_2;
+  std::vector<VW::cs_label> _prepped_cs_labels;
   std::vector<CB::label> _cb_labels;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);

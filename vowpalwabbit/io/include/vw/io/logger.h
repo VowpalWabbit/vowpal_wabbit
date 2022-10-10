@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "fmt/core.h"
+#include <fmt/core.h>
 
 #include <iostream>
 #include <memory>

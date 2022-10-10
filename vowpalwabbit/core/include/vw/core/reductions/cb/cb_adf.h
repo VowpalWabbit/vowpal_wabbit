@@ -64,8 +64,8 @@ private:
 
 private:
   std::vector<CB::label> _cb_labels;
-  COST_SENSITIVE::label _cs_labels;
-  std::vector<COST_SENSITIVE::label> _prepped_cs_labels;
+  VW::cs_label _cs_labels;
+  std::vector<VW::cs_label> _prepped_cs_labels;
 
   VW::action_scores _a_s;              // temporary storage for mtr and sm
   VW::action_scores _a_s_mtr_cs;       // temporary storage for mtr cost sensitive example

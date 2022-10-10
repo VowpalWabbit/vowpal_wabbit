@@ -101,7 +101,7 @@ parser::parser(size_t example_queue_limit, bool strict_parse_)
     , num_finished_examples(0)
     , strict_parse{strict_parse_}
 {
-  this->lbl_parser = simple_label_parser;
+  this->lbl_parser = VW::simple_label_parser_global;
 }
 
 namespace VW

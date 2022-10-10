@@ -6,10 +6,10 @@
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/parse_primitives.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
@@ -17,7 +17,18 @@
 #include <cfloat>
 #include <cmath>
 
-namespace COST_SENSITIVE
+void VW::default_cs_label(cs_label& ld) { ld.costs.clear(); }
+
+bool VW::is_cs_example_header(const VW::example& ec)  // example headers look like "shared"
+{
+  const auto& costs = ec.l.cs.costs;
+  if (costs.size() != 1) { return false; }
+  if (costs[0].class_index != 0) { return false; }
+  if (costs[0].x != -FLT_MAX) { return false; }
+  return true;
+}
+
+namespace
 {
 void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v, VW::io::logger& logger)
 {
@@ -38,42 +49,21 @@ void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v,
   }
 }
 
-char* bufread_label(label& ld, char* c, io_buf& cache)
+float cs_weight(const VW::cs_label&) { return 1.; }
+
+bool test_label_internal(const VW::cs_label& ld)
 {
-  size_t num = *reinterpret_cast<size_t*>(c);
-  ld.costs.clear();
-  c += sizeof(size_t);
-  size_t total = sizeof(wclass) * num;
-  if (cache.buf_read(c, static_cast<int>(total)) < total) { THROW("error in demarshal of cost data"); }
-  for (size_t i = 0; i < num; i++)
+  if (ld.costs.empty()) { return true; }
+  for (auto cost : ld.costs)
   {
-    wclass temp = *reinterpret_cast<wclass*>(c);
-    c += sizeof(wclass);
-    ld.costs.push_back(temp);
-  }
-
-  return c;
-}
-
-float weight(const label&) { return 1.; }
-
-void default_label(label& ld) { ld.costs.clear(); }
-
-bool test_label_internal(const label& ld)
-{
-  if (ld.costs.size() == 0) { return true; }
-  for (unsigned int i = 0; i < ld.costs.size(); i++)
-  {
-    if (FLT_MAX != ld.costs[i].x) { return false; }
+    if (FLT_MAX != cost.x) { return false; }
   }
   return true;
 }
 
-bool test_label(const label& ld) { return test_label_internal(ld); }
+bool test_label(const VW::cs_label& ld) { return test_label_internal(ld); }
 
-bool test_label(label& ld) { return test_label_internal(ld); }
-
-void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::named_labels* ldict,
+void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::named_labels* ldict,
     const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   ld.costs.clear();
@@ -98,7 +88,7 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
         { logger.err_error("shared feature vectors should not have costs on: {}", words[0]); }
         else
         {
-          wclass f = {-FLT_MAX, 0, 0., 0.};
+          VW::cs_class f = {-FLT_MAX, 0, 0., 0.};
           ld.costs.push_back(f);
         }
       }
@@ -108,7 +98,7 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
         { logger.err_error("label feature vectors should have exactly one cost on: {}", words[0]); }
         else
         {
-          wclass f = {float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
+          VW::cs_class f = {float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
           ld.costs.push_back(f);
         }
       }
@@ -117,12 +107,12 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
   }
 
   // otherwise this is a "real" example
-  for (unsigned int i = 0; i < words.size(); i++)
+  for (auto word : words)
   {
-    wclass f = {0., 0, 0., 0.};
-    name_value(words[i], reuse_mem.tokens, f.x, logger);
+    VW::cs_class f = {0., 0, 0., 0.};
+    name_value(word, reuse_mem.tokens, f.x, logger);
 
-    if (reuse_mem.tokens.size() == 0) THROW(" invalid cost: specification -- no names on: " << words[i]);
+    if (reuse_mem.tokens.empty()) THROW(" invalid cost: specification -- no names on: " << word);
 
     if (reuse_mem.tokens.size() == 1 || reuse_mem.tokens.size() == 2 || reuse_mem.tokens.size() == 3)
     {
@@ -140,30 +130,9 @@ void parse_label(label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::nam
     ld.costs.push_back(f);
   }
 }
+}  // namespace
 
-VW::label_parser cs_label = {
-    // default_label
-    [](VW::polylabel& label) { default_label(label.cs); },
-    // parse_label
-    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.cs, reuse_mem, ldict, words, logger); },
-    // cache_label
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.cs, upstream_name, text); },
-    // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.cs);
-    },
-    // get_weight
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) { return weight(label.cs); },
-    // test_label
-    [](const VW::polylabel& label) { return test_label(label.cs); },
-    // label type
-    VW::label_type_t::cs};
-
-void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
+void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool action_scores, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
@@ -176,7 +145,7 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
       num_current_features = 0;
       for (const auto& ecc : *ec_seq)
       {
-        if (COST_SENSITIVE::ec_is_example_header(*ecc))
+        if (VW::is_cs_example_header(*ecc))
         {
           num_current_features +=
               (ec_seq->size() - 1) * (ecc->get_num_features() - ecc->feature_space[constant_namespace].size());
@@ -223,14 +192,14 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
   }
 }
 
-void output_example(
-    VW::workspace& all, const VW::example& ec, const COST_SENSITIVE::label& label, uint32_t multiclass_prediction)
+void VW::details::output_cs_example(
+    VW::workspace& all, const VW::example& ec, const VW::cs_label& label, uint32_t multiclass_prediction)
 {
   float loss = 0.;
   if (!test_label(label))
   {
     // need to compute exact loss
-    size_t pred = static_cast<size_t>(multiclass_prediction);
+    auto pred = static_cast<size_t>(multiclass_prediction);
 
     float chosen_loss = FLT_MAX;
     float min = FLT_MAX;
@@ -262,53 +231,57 @@ void output_example(
 
   if (all.raw_prediction != nullptr)
   {
-    std::stringstream outputStringStream;
+    std::stringstream oss;
     for (unsigned int i = 0; i < label.costs.size(); i++)
     {
-      wclass cl = label.costs[i];
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << cl.class_index << ':' << cl.partial_prediction;
+      VW::cs_class cl = label.costs[i];
+      if (i > 0) { oss << ' '; }
+      oss << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), oss.str(), ec.tag, all.logger);
   }
 
-  print_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);
+  print_cs_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);
 }
 
-void output_example(VW::workspace& all, const VW::example& ec) { output_example(all, ec, ec.l.cs, ec.pred.multiclass); }
-
-void finish_example(VW::workspace& all, VW::example& ec)
+void VW::details::output_cs_example(VW::workspace& all, const VW::example& ec)
 {
-  output_example(all, ec, ec.l.cs, ec.pred.multiclass);
+  output_cs_example(all, ec, ec.l.cs, ec.pred.multiclass);
+}
+
+void VW::details::finish_cs_example(VW::workspace& all, VW::example& ec)
+{
+  output_cs_example(all, ec, ec.l.cs, ec.pred.multiclass);
   VW::finish_example(all, ec);
 }
 
-bool example_is_test(const VW::example& ec)
-{
-  const auto& costs = ec.l.cs.costs;
-  if (costs.size() == 0) { return true; }
-  for (size_t j = 0; j < costs.size(); j++)
-  {
-    if (costs[j].x != FLT_MAX) { return false; }
-  }
-  return true;
-}
-
-bool ec_is_example_header(const VW::example& ec)  // example headers look like "shared"
-{
-  const auto& costs = ec.l.cs.costs;
-  if (costs.size() != 1) { return false; }
-  if (costs[0].class_index != 0) { return false; }
-  if (costs[0].x != -FLT_MAX) { return false; }
-  return true;
-}
-}  // namespace COST_SENSITIVE
-
 namespace VW
 {
+VW::label_parser cs_label_parser_global = {
+    // default_label
+    [](VW::polylabel& label) { default_cs_label(label.cs); },
+    // parse_label
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
+        VW::io::logger& logger) { parse_label(label.cs, reuse_mem, ldict, words, logger); },
+    // cache_label
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
+        const std::string& upstream_name,
+        bool text) { return VW::model_utils::write_model_field(cache, label.cs, upstream_name, text); },
+    // read_cached_label
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
+      return VW::model_utils::read_model_field(cache, label.cs);
+    },
+    // get_weight
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) { return cs_weight(label.cs); },
+    // test_label
+    [](const VW::polylabel& label) { return test_label(label.cs); },
+    // label type
+    VW::label_type_t::cs};
+
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, COST_SENSITIVE::wclass& wc)
+size_t read_model_field(io_buf& io, cs_class& wc)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, wc.x);
@@ -318,7 +291,7 @@ size_t read_model_field(io_buf& io, COST_SENSITIVE::wclass& wc)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const COST_SENSITIVE::wclass& wc, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const cs_class& wc, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, wc.x, upstream_name + "_x", text);
@@ -328,14 +301,14 @@ size_t write_model_field(io_buf& io, const COST_SENSITIVE::wclass& wc, const std
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, COST_SENSITIVE::label& cs)
+size_t read_model_field(io_buf& io, VW::cs_label& cs)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, cs.costs);
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const COST_SENSITIVE::label& cs, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::cs_label& cs, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, cs.costs, upstream_name + "_costs", text);
