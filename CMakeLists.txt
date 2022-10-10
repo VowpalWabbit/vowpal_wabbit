@@ -135,6 +135,8 @@ option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
 option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
 
+option(VW_PROTO_AUTOFB "Enable auto-generated flatbuffer serialization" OFF)
+
 if(VW_USE_ASAN)
   add_compile_definitions(VW_USE_ASAN)
   if(MSVC)
@@ -302,6 +304,10 @@ endif()
 
 if(vw_BUILD_NET_FRAMEWORK OR vw_BUILD_NET_CORE)
   add_subdirectory(cs)
+endif()
+
+if (VW_PROTO_AUTOFB)
+  add_subdirectory(prototype)
 endif()
 
 # Handle installation of targets, version, config and pkgconfig
