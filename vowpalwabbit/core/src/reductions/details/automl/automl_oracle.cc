@@ -239,6 +239,11 @@ void config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
 void oracle_rand_impl::gen_ns_groupings_at(const std::string& interaction_type,
     const interaction_vec_t& champ_interactions, const size_t, set_ns_list_t& new_elements, config_type)
 {
+  if (champ_interactions.size() == 0)
+  {
+    // nothing to remove, since champ interactions is empty
+    return;
+  }
   uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
   if (interaction_type == "quadratic")
   {
