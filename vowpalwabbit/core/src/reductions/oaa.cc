@@ -277,19 +277,19 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   if (ec.l.multi.label != pred_lbl) { zero_one_loss = ec.weight; }
 
   // === Print probabilities for all classes
-  std::ostringstream outputStringStream;
+  std::ostringstream output_string_stream;
   for (uint32_t i = 0; i < o.k; i++)
   {
     uint32_t corrected_label = (o.indexing == 0) ? i : i + 1;
-    if (i > 0) { outputStringStream << ' '; }
-    if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(corrected_label); }
+    if (i > 0) { output_string_stream << ' '; }
+    if (all.sd->ldict) { output_string_stream << all.sd->ldict->get(corrected_label); }
     else
     {
-      outputStringStream << corrected_label;
+      output_string_stream << corrected_label;
     }
-    outputStringStream << ':' << ec.pred.scalars[i];
+    output_string_stream << ':' << ec.pred.scalars[i];
   }
-  const auto ss_str = outputStringStream.str();
+  const auto ss_str = output_string_stream.str();
   for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
 
   // === Report updates using zero-one loss

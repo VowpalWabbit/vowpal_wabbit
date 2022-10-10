@@ -120,7 +120,7 @@ struct svm_params
   float loss_sum = 0.f;
 
   VW::workspace* all = nullptr;  // flatten, parallel
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
 
   ~svm_params()
   {
@@ -601,7 +601,7 @@ void train(svm_params& params)
             (1.0f +
                 expf(static_cast<float>(params.active_c * std::fabs(scores[i])) *
                     static_cast<float>(pow(params.pool[i]->ex.example_counter, 0.5f))));
-        if (params._random_state->get_and_update_random() < queryp)
+        if (params.random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
           auto& simple_red_features = fec->ex._reduction_features.template get<VW::simple_label_reduction_features>();
@@ -647,7 +647,7 @@ void train(svm_params& params)
         {
           if (model->num_support == 0) { break; }
           int randi = 1;
-          if (params._random_state->get_and_update_random() < 0.5) { randi = 0; }
+          if (params.random_state->get_and_update_random() < 0.5) { randi = 0; }
           if (randi)
           {
             size_t max_pos = suboptimality(model, subopt);
@@ -662,7 +662,7 @@ void train(svm_params& params)
           else
           {
             size_t rand_pos =
-                static_cast<size_t>(floorf(params._random_state->get_and_update_random() * model->num_support));
+                static_cast<size_t>(floorf(params.random_state->get_and_update_random() * model->num_support));
             update(params, rand_pos);
           }
         }
@@ -769,7 +769,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   params->maxcache = 1024 * 1024 * 1024;
   params->loss_sum = 0.;
   params->all = &all;
-  params->_random_state = all.get_random_state();
+  params->random_state = all.get_random_state();
 
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and

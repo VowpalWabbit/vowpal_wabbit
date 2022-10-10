@@ -20,9 +20,9 @@ namespace
 {
 struct cb_dro_data
 {
-  explicit cb_dro_data(double alpha, double tau, double wmax) : chisq(alpha, tau, 0, wmax) {}
+  explicit cb_dro_data(double alpha, double tau, double wmax) : _chisq(alpha, tau, 0, wmax) {}
 
-  bool isValid() { return chisq.isValid(); }
+  bool is_valid() { return _chisq.is_valid(); }
 
   template <bool is_learn, bool is_explore>
   inline void learn_or_predict(multi_learner& base, VW::multi_ex& examples)
@@ -63,17 +63,17 @@ struct cb_dro_data
         const float w = logged.probability > 0 ? 1 / logged.probability : 0;
         const float r = -logged.cost;
 
-        chisq.update(chosen_action == labelled_action ? w : 0, r);
+        _chisq.update(chosen_action == labelled_action ? w : 0, r);
 
-        float qlb = static_cast<float>(w > 0 ? chisq.effn() * chisq.qlb(w, r, 1) / w : 1);
+        float qlb = static_cast<float>(w > 0 ? _chisq.effn() * _chisq.qlb(w, r, 1) / w : 1);
 
         // avoid pathological cases
         qlb = std::max(qlb, 0.01f);
 
         // save the original weights and scale the example weights
-        save_weight.clear();
-        save_weight.reserve(examples.size());
-        std::transform(examples.cbegin(), examples.cend(), std::back_inserter(save_weight),
+        _save_weight.clear();
+        _save_weight.reserve(examples.size());
+        std::transform(examples.cbegin(), examples.cend(), std::back_inserter(_save_weight),
             [](const VW::example* item) { return item->weight; });
         std::for_each(examples.begin(), examples.end(), [qlb](VW::example* item) { item->weight *= qlb; });
 
@@ -81,7 +81,7 @@ struct cb_dro_data
         multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
 
         // restore the original weights
-        auto save_weight_it = save_weight.begin();
+        auto save_weight_it = _save_weight.begin();
         std::for_each(examples.begin(), examples.end(),
             [&save_weight_it](VW::example* item) { item->weight = *save_weight_it++; });
       }
@@ -89,8 +89,8 @@ struct cb_dro_data
   }
 
 private:
-  VW::distributionally_robust::ChiSquared chisq;
-  std::vector<float> save_weight;
+  VW::distributionally_robust::ChiSquared _chisq;
+  std::vector<float> _save_weight;
 };
 template <bool is_learn, bool is_explore>
 void learn_or_predict(cb_dro_data& data, multi_learner& base, VW::multi_ex& examples)
@@ -143,7 +143,7 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
 
   auto data = VW::make_unique<cb_dro_data>(alpha, tau, wmax);
 
-  if (!data->isValid()) { THROW("invalid cb_dro parameter values supplied"); }
+  if (!data->is_valid()) { THROW("invalid cb_dro parameter values supplied"); }
 
   void (*learn_ptr)(cb_dro_data&, multi_learner&, VW::multi_ex&);
   void (*pred_ptr)(cb_dro_data&, multi_learner&, VW::multi_ex&);

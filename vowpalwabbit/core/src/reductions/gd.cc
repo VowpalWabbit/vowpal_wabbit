@@ -96,7 +96,7 @@ namespace GD
 {
 void sync_weights(VW::workspace& all);
 
-inline float quake_InvSqrt(float x)
+inline float quake_inv_sqrt(float x)
 {
   // Carmack/Quake/SGI fast method:
   float xhalf = 0.5f * x;
@@ -108,7 +108,7 @@ inline float quake_InvSqrt(float x)
   return x;
 }
 
-static inline float InvSqrt(float x)
+static inline float inv_sqrt(float x)
 {
 #if !defined(VW_NO_INLINE_SIMD)
 #  if defined(__ARM_NEON__)
@@ -583,7 +583,7 @@ inline float compute_rate_decay(power_data& s, float& fw)
   float rate_decay = 1.f;
   if (adaptive)
   {
-    if (sqrt_rate) { rate_decay = InvSqrt(w[adaptive]); }
+    if (sqrt_rate) { rate_decay = inv_sqrt(w[adaptive]); }
     else
     {
       rate_decay = powf(w[adaptive], s.minus_power_t);
@@ -618,9 +618,9 @@ struct norm_data
   VW::io::logger* logger;
 };
 
-constexpr float x_min = 1.084202e-19f;
-constexpr float x2_min = x_min * x_min;
-constexpr float x2_max = FLT_MAX;
+constexpr float X_MIN = 1.084202e-19f;
+constexpr float X2_MIN = X_MIN * X_MIN;
+constexpr float X2_MAX = FLT_MAX;
 
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
@@ -630,10 +630,10 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
   {
     weight* w = &fw;
     float x2 = x * x;
-    if (x2 < x2_min)
+    if (x2 < X2_MIN)
     {
-      x = (x > 0) ? x_min : -x_min;
-      x2 = x2_min;
+      x = (x > 0) ? X_MIN : -X_MIN;
+      x2 = X2_MIN;
     }
     if (stateless)  // we must not modify the parameter state so introduce a shadow version.
     {
@@ -665,7 +665,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
         w[normalized] = x_abs;
       }
       float norm_x2 = x2 / (w[normalized] * w[normalized]);
-      if (x2 > x2_max)
+      if (x2 > X2_MAX)
       {
         norm_x2 = 1;
         assert(nd.logger != nullptr);

@@ -36,10 +36,10 @@ void confidence_sequence::update(double w, double r, double p_drop, double n_dro
 
   if (n_drop == -1.0) { n_drop = p_drop / (1.0 - p_drop); }
 
-  double sumXlow = 0.0;
-  double Xhatlow = 0.0;
-  double sumXhigh = 0.0;
-  double Xhathigh = 0.0;
+  double sumXlow = 0.0;   // NOLINT
+  double Xhatlow = 0.0;   // NOLINT
+  double sumXhigh = 0.0;  // NOLINT
+  double Xhathigh = 0.0;  // NOLINT
 
   if (n_drop > 0.0)
   {
@@ -118,7 +118,7 @@ float confidence_sequence::lower_bound() const
 
   double sumvlow = (sumwsqrsq - 2.0 * rmin * sumwsqr + std::pow(rmin, 2) * sumwsq) / std::pow(rmax - rmin, 2) -
       2.0 * (sumwrxhatlow - rmin * sumwxhatlow) / (rmax - rmin) + sumxhatlowsq;
-  double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
+  double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);  // NOLINT
   double l = lblogwealth(sumXlow, sumvlow, eta, s, alpha / 2.0);
 
   return static_cast<float>(rmin + l * (rmax - rmin));
@@ -130,7 +130,7 @@ float confidence_sequence::upper_bound() const
 
   double sumvhigh = (sumwsqrsq - 2.0 * rmax * sumwsqr + std::pow(rmax, 2) * sumwsq) / std::pow(rmax - rmin, 2) +
       2.0 * (sumwrxhathigh - rmax * sumwxhathigh) / (rmax - rmin) + sumxhathighsq;
-  double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
+  double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);  // NOLINT
   double u = 1.0 - lblogwealth(sumXhigh, sumvhigh, eta, s, alpha / 2.0);
 
   return static_cast<float>(rmin + u * (rmax - rmin));

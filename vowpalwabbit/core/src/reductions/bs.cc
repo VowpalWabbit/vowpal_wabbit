@@ -29,13 +29,13 @@ using namespace VW::reductions;
 
 struct bs_data
 {
-  uint32_t B = 0;  // number of bootstrap rounds
+  uint32_t num_bootstrap_rounds = 0;  // number of bootstrap rounds
   size_t bs_type = 0;
   float lb = 0.f;
   float ub = 0.f;
   std::vector<double> pred_vec;
   VW::workspace* all = nullptr;  // for raw prediction and loss
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
 };
 
 void bs_predict_mean(VW::workspace& all, VW::example& ec, std::vector<double>& pred_vec)
@@ -178,16 +178,16 @@ template <bool is_learn>
 void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *d.all;
-  bool shouldOutput = all.raw_prediction != nullptr;
+  bool should_output = all.raw_prediction != nullptr;
 
   float weight_temp = ec.weight;
 
-  std::stringstream outputStringStream;
+  std::stringstream output_string_stream;
   d.pred_vec.clear();
 
-  for (size_t i = 1; i <= d.B; i++)
+  for (size_t i = 1; i <= d.num_bootstrap_rounds; i++)
   {
-    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(d._random_state));
+    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(d.random_state));
 
     if (is_learn) { base.learn(ec, i - 1); }
     else
@@ -197,10 +197,10 @@ void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
 
     d.pred_vec.push_back(ec.pred.scalar);
 
-    if (shouldOutput)
+    if (should_output)
     {
-      if (i > 1) { outputStringStream << ' '; }
-      outputStringStream << i << ':' << ec.partial_prediction;
+      if (i > 1) { output_string_stream << ' '; }
+      output_string_stream << i << ':' << ec.partial_prediction;
     }
   }
 
@@ -218,7 +218,8 @@ void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
       THROW("Unknown bs_type specified: " << d.bs_type);
   }
 
-  if (shouldOutput) { all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger); }
+  if (should_output)
+  { all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger); }
 }
 
 void finish_example(VW::workspace& all, bs_data& d, VW::example& ec)
@@ -235,7 +236,10 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
   std::string type_string;
   option_group_definition new_options("[Reduction] Bootstrap");
   new_options
-      .add(make_option("bootstrap", data->B).keep().necessary().help("K-way bootstrap by online importance resampling"))
+      .add(make_option("bootstrap", data->num_bootstrap_rounds)
+               .keep()
+               .necessary()
+               .help("K-way bootstrap by online importance resampling"))
       .add(make_option("bs_type", type_string)
                .keep()
                .default_value("mean")
@@ -243,7 +247,7 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
                .help("Prediction type"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  size_t ws = data->B;
+  size_t ws = data->num_bootstrap_rounds;
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;
 
@@ -265,9 +269,9 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
     data->bs_type = BS_TYPE_MEAN;
   }
 
-  data->pred_vec.reserve(data->B);
+  data->pred_vec.reserve(data->num_bootstrap_rounds);
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
 
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))

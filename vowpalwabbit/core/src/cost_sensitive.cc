@@ -231,14 +231,14 @@ void VW::details::output_cs_example(
 
   if (all.raw_prediction != nullptr)
   {
-    std::stringstream oss;
+    std::stringstream output_string_stream;
     for (unsigned int i = 0; i < label.costs.size(); i++)
     {
       VW::cs_class cl = label.costs[i];
-      if (i > 0) { oss << ' '; }
-      oss << cl.class_index << ':' << cl.partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), oss.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   print_cs_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);

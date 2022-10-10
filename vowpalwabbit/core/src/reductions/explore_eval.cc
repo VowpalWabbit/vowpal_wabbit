@@ -32,7 +32,7 @@ struct explore_eval
 {
   CB::cb_class known_cost;
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   uint64_t offset = 0;
   CB::label action_label;
   CB::label empty_label;
@@ -99,16 +99,16 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
@@ -174,7 +174,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     if (threshold > 1. + 1e-6) { data.violations++; }
 
-    if (data._random_state->get_and_update_random() < threshold)
+    if (data.random_state->get_and_update_random() < threshold)
     {
       VW::example* ec_found = nullptr;
       for (VW::example*& ec : ec_seq)
@@ -217,7 +217,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
 
   if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
   else

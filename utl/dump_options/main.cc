@@ -125,18 +125,18 @@ struct type_info_injector : typed_option_visitor
 
 struct json_help_formatter : VW::config::help_formatter
 {
-  rapidjson::Document _document;
+  rapidjson::Document document;
 
-  json_help_formatter(rapidjson::Document&& doc) : _document(std::move(doc)) {}
+  json_help_formatter(rapidjson::Document&& doc) : document(std::move(doc)) {}
 
   std::string format_help(const std::vector<option_group_definition>& groups) override
   {
     // must pass an allocator when the object may need to allocate memory
-    auto& allocator = _document.GetAllocator();
+    auto& allocator = document.GetAllocator();
 
     // create a rapidjson array type with similar syntax to std::vector
     rapidjson::Value array(rapidjson::kArrayType);
-    _document.AddMember("option_groups", array, allocator);
+    document.AddMember("option_groups", array, allocator);
 
     for (const auto& group : groups)
     {
@@ -172,11 +172,11 @@ struct json_help_formatter : VW::config::help_formatter
       }
 
       group_object.AddMember("options", options_array, allocator);
-      _document["option_groups"].PushBack(group_object, allocator);
+      document["option_groups"].PushBack(group_object, allocator);
     }
     rapidjson::StringBuffer strbuf;
     rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
-    _document.Accept(writer);
+    document.Accept(writer);
     return strbuf.GetString();
   }
 };
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
   rapidjson::Document doc;
   auto& allocator = doc.GetAllocator();
 
-  // define the _document as an object rather than an array
+  // define the document as an object rather than an array
   doc.SetObject();
 
   rapidjson::Value version_object(rapidjson::kObjectType);

@@ -50,7 +50,7 @@ struct warm_cb
   // used as the seed
   size_t example_counter = 0;
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   VW::multi_ex ecs;
   float loss0 = 0.f;
   float loss1 = 0.f;
@@ -221,7 +221,7 @@ void setup_lambdas(warm_cb& data)
 
 uint32_t generate_uar_action(warm_cb& data)
 {
-  float randf = data._random_state->get_and_update_random();
+  float randf = data.random_state->get_and_update_random();
 
   for (uint32_t i = 1; i <= data.num_actions; i++)
   {
@@ -242,7 +242,7 @@ uint32_t corrupt_action(warm_cb& data, uint32_t action, int ec_type)
     cor_type = data.cor_type_ws;
   }
 
-  float randf = data._random_state->get_and_update_random();
+  float randf = data.random_state->get_and_update_random();
   if (randf < cor_prob)
   {
     if (cor_type == UAR) { cor_action = generate_uar_action(data); }
@@ -596,7 +596,7 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
 
   data->app_seed = VW::uniform_hash("vw", 2, 0);
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
   data->use_cs = use_cs;
 
   init_adf_data(*data.get(), num_actions);

@@ -75,7 +75,7 @@ struct cs_active
   float range = 0.f;
 };
 
-float binarySearch(float fhat, float delta, float sens, float tol)
+float binary_search(float fhat, float delta, float sens, float tol)
 {
   float maxw = std::min(fhat / sens, FLT_MAX);
 
@@ -177,10 +177,10 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& 
   else
   {
     // finding max_pred and min_pred by binary search
-    max_pred =
-        std::min(ec.pred.scalar + sens * binarySearch(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
-    min_pred =
-        std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
+    max_pred = std::min(
+        ec.pred.scalar + sens * binary_search(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
+    min_pred = std::max(
+        ec.pred.scalar - sens * binary_search(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
     {

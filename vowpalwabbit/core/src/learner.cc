@@ -150,32 +150,32 @@ struct multi_example_handler
   {
     if (try_complete_multi_ex(ec))
     {
-      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
-      ec_seq.clear();
+      _context.template process<multi_ex, learn_multi_ex>(_ec_seq);
+      _ec_seq.clear();
     }
     // after we learn, cleanup is_newline or end_pass example
     if (ec->end_pass)
     {
       // Because the end_pass example is used to complete the in-flight multi_ex prior
       // to this call we should have no more in-flight multi_ex here.
-      assert(ec_seq.empty());
+      assert(_ec_seq.empty());
       _context.template process<example, end_pass>(*ec);
     }
     else if (ec->is_newline)
     {
       // Because the is_newline example is used to complete the in-flight multi_ex prior
       // to this call we should have no more in-flight multi_ex here.
-      assert(ec_seq.empty());
+      assert(_ec_seq.empty());
       VW::finish_example(_context.get_master(), *ec);
     }
   }
 
   void process_remaining()
   {
-    if (!ec_seq.empty())
+    if (!_ec_seq.empty())
     {
-      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
-      ec_seq.clear();
+      _context.template process<multi_ex, learn_multi_ex>(_ec_seq);
+      _ec_seq.clear();
     }
   }
 
@@ -186,10 +186,10 @@ private:
     const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
 
-    if (!is_newline && !ec->end_pass) { ec_seq.push_back(ec); }
+    if (!is_newline && !ec->end_pass) { _ec_seq.push_back(ec); }
     // A terminating example can occur when there have been no featureful examples
     // collected. In this case, do not trigger a learn.
-    return (is_newline || ec->end_pass) && !ec_seq.empty();
+    return (is_newline || ec->end_pass) && !_ec_seq.empty();
   }
 
   bool try_complete_multi_ex(example* ec)
@@ -212,7 +212,7 @@ private:
   }
 
   context_type _context;
-  multi_ex ec_seq;
+  multi_ex _ec_seq;
 };
 
 // ready_examples_queue / custom_examples_queue - adapters for connecting example handler to parser produce-consume loop

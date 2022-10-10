@@ -33,14 +33,14 @@ void generic_output_example(
 
   if (all.raw_prediction != nullptr)
   {
-    std::stringstream outputStringStream;
+    std::stringstream output_string_stream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       cb_class cl = ld.costs[i];
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << cl.action << ':' << cl.partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   bool is_ld_test_label = CB::is_test_label(ld);

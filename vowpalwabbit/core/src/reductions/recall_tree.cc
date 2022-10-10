@@ -71,7 +71,7 @@ struct node
 struct recall_tree
 {
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   uint32_t k = 0;
   bool node_only = false;
 
@@ -390,7 +390,7 @@ void learn(recall_tree& b, single_learner& base, VW::example& ec)
     {
       float which = train_node(b, base, ec, cn);
 
-      if (b.randomized_routing) { which = (b._random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f); }
+      if (b.randomized_routing) { which = (b.random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f); }
 
       uint32_t newcn = descend(b.nodes[cn], which);
       bool cond = stop_recurse_check(b, cn, newcn);
@@ -509,7 +509,7 @@ base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   tree->all = &all;
-  tree->_random_state = all.get_random_state();
+  tree->random_state = all.get_random_state();
   tree->max_candidates = options.was_supplied("max_candidates")
       ? VW::cast_to_smaller_type<size_t>(max_candidates)
       : std::min(tree->k, 4 * static_cast<uint32_t>(ceil(log(tree->k) / log(2.0))));
