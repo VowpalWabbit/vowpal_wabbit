@@ -247,6 +247,7 @@ jobs:
     permissions:
       contents: write
       deployments: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v2
         with:
@@ -329,7 +330,7 @@ jobs:
         with:
           tool: 'benchmarkdotnet'
           output-file-path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/BenchmarkRun.json
-          alert-threshold: '150%'
+          alert-threshold: '200%'
           fail-on-alert: true
           comment-on-alert: true
           auto-push: false

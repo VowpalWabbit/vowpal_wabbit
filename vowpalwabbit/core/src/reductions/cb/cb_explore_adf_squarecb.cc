@@ -40,6 +40,15 @@ namespace
 {
 struct cb_explore_adf_squarecb
 {
+  cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
+      float max_cb_cost, VW::version_struct model_file_version);
+  ~cb_explore_adf_squarecb() = default;
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(multi_learner& base, VW::multi_ex& examples);
+  void learn(multi_learner& base, VW::multi_ex& examples);
+  void save_load(io_buf& io, bool read, bool text);
+
 private:
   // size_t _counter;
   size_t _counter;
@@ -60,18 +69,6 @@ private:
   // for backing up cb example data when computing sensitivities
   std::vector<VW::action_scores> _ex_as;
   std::vector<std::vector<CB::cb_class>> _ex_costs;
-
-public:
-  cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
-      float max_cb_cost, VW::version_struct model_file_version);
-  ~cb_explore_adf_squarecb() = default;
-
-  // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples);
-  void learn(multi_learner& base, VW::multi_ex& examples);
-  void save_load(io_buf& io, bool read, bool text);
-
-private:
   void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };

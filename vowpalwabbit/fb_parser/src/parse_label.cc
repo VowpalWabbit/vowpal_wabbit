@@ -25,7 +25,7 @@ namespace flatbuffer
 void parser::parse_simple_label(
     shared_data* /*sd*/, polylabel* l, reduction_features* red_features, const SimpleLabel* label)
 {
-  auto& simple_red_features = red_features->template get<simple_label_reduction_features>();
+  auto& simple_red_features = red_features->template get<VW::simple_label_reduction_features>();
   l->simple.label = label->label();
   simple_red_features.weight = label->weight();
   simple_red_features.initial = label->initial();
@@ -49,24 +49,24 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
 {
   l->conditional_contextual_bandit.weight = label->weight();
   if (label->example_type() == 1)
-    l->conditional_contextual_bandit.type = CCB::example_type::shared;
+    l->conditional_contextual_bandit.type = VW::ccb_example_type::SHARED;
   else if (label->example_type() == 2)
-    l->conditional_contextual_bandit.type = CCB::example_type::action;
+    l->conditional_contextual_bandit.type = VW::ccb_example_type::ACTION;
   else if (label->example_type() == 3)
   {
-    l->conditional_contextual_bandit.type = CCB::example_type::unset;
+    l->conditional_contextual_bandit.type = VW::ccb_example_type::UNSET;
 
     if (label->explicit_included_actions() != nullptr)
     {
-      l->conditional_contextual_bandit.type = CCB::example_type::slot;
+      l->conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
       for (const auto& exp_included_action : *(label->explicit_included_actions()))
       { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); }
     }
 
     if (label->outcome() != nullptr)
     {
-      l->conditional_contextual_bandit.type = CCB::example_type::slot;
-      auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
+      l->conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
+      auto& ccb_outcome = *(new VW::ccb_outcome());
       ccb_outcome.cost = label->outcome()->cost();
       ccb_outcome.probabilities.clear();
 
@@ -97,7 +97,7 @@ void parser::parse_cs_label(polylabel* l, const CS_Label* label)
 {
   for (auto const& cost : *(label->costs()))
   {
-    COST_SENSITIVE::wclass f;
+    VW::cs_class f;
     f.x = cost->x();
     f.partial_prediction = cost->partial_pred();
     f.wap_value = cost->wap_value();

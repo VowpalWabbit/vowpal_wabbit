@@ -26,7 +26,7 @@ namespace std
 {
 // forward declare promise as C++/CLI doesn't allow usage in header files
 template <typename T>
-class future;
+struct future;
 }  // namespace std
 #else
 #  include <arpa/inet.h>
@@ -46,8 +46,17 @@ using socket_t = int;
 
 namespace VW
 {
-class SpanningTree
+struct SpanningTree
 {
+  SpanningTree(short unsigned int port = 26543, bool quiet = false);
+  ~SpanningTree();
+
+  short unsigned int BoundPort();
+
+  void Start();
+  void Run();
+  void Stop();
+
 private:
   bool m_stop;
   socket_t sock;
@@ -58,15 +67,5 @@ private:
   std::future<void>* m_future;
 
   bool m_quiet;
-
-public:
-  SpanningTree(short unsigned int port = 26543, bool quiet = false);
-  ~SpanningTree();
-
-  short unsigned int BoundPort();
-
-  void Start();
-  void Run();
-  void Stop();
 };
 }  // namespace VW

@@ -50,7 +50,7 @@ struct warm_cb
   // used as the seed
   size_t example_counter = 0;
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   VW::multi_ex ecs;
   float loss0 = 0.f;
   float loss1 = 0.f;
@@ -83,9 +83,9 @@ struct warm_cb
   float cumu_var = 0.f;
   uint32_t ws_iter = 0;
   uint32_t inter_iter = 0;
-  MULTICLASS::label_t mc_label;
-  COST_SENSITIVE::label cs_label;
-  std::vector<COST_SENSITIVE::label> csls;
+  VW::multiclass_label mc_label;
+  VW::cs_label cs_label;
+  std::vector<VW::cs_label> csls;
   std::vector<CB::label> cbls;
   bool use_cs = 0;
 
@@ -106,7 +106,7 @@ float loss(warm_cb& data, uint32_t label, uint32_t final_prediction)
   }
 }
 
-float loss_cs(warm_cb& data, std::vector<COST_SENSITIVE::wclass>& costs, uint32_t final_prediction)
+float loss_cs(warm_cb& data, std::vector<VW::cs_class>& costs, uint32_t final_prediction)
 {
   float cost = 0.;
   for (auto wc : costs)
@@ -221,7 +221,7 @@ void setup_lambdas(warm_cb& data)
 
 uint32_t generate_uar_action(warm_cb& data)
 {
-  float randf = data._random_state->get_and_update_random();
+  float randf = data.random_state->get_and_update_random();
 
   for (uint32_t i = 1; i <= data.num_actions; i++)
   {
@@ -242,7 +242,7 @@ uint32_t corrupt_action(warm_cb& data, uint32_t action, int ec_type)
     cor_type = data.cor_type_ws;
   }
 
-  float randf = data._random_state->get_and_update_random();
+  float randf = data.random_state->get_and_update_random();
   if (randf < cor_prob)
   {
     if (cor_type == UAR) { cor_action = generate_uar_action(data); }
@@ -519,7 +519,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   data.csls.resize(num_actions);
   for (uint32_t a = 0; a < num_actions; ++a)
   {
-    COST_SENSITIVE::default_label(data.csls[a]);
+    VW::default_cs_label(data.csls[a]);
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
   data.cbls.resize(num_actions);
@@ -596,7 +596,7 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
 
   data->app_seed = VW::uniform_hash("vw", 2, 0);
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
   data->use_cs = use_cs;
 
   init_adf_data(*data.get(), num_actions);
@@ -637,16 +637,16 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
   {
     learn_pred_ptr = predict_and_learn_adf<true>;
     name_addition = "-cs";
-    finish_ptr = COST_SENSITIVE::finish_example;
-    all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+    finish_ptr = VW::details::finish_cs_example;
+    all.example_parser->lbl_parser = VW::cs_label_parser_global;
     label_type = VW::label_type_t::cs;
   }
   else
   {
     learn_pred_ptr = predict_and_learn_adf<false>;
     name_addition = "-multi";
-    finish_ptr = MULTICLASS::finish_example;
-    all.example_parser->lbl_parser = MULTICLASS::mc_label;
+    finish_ptr = VW::details::finish_multiclass_example;
+    all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     label_type = VW::label_type_t::multiclass;
   }
 

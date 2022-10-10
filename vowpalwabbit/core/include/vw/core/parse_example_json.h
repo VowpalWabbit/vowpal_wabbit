@@ -139,12 +139,8 @@ struct BaseState
 };
 
 template <bool audit>
-class ArrayToPdfState : public BaseState<audit>
+struct ArrayToPdfState : public BaseState<audit>
 {
-private:
-  BaseState<audit>* obj_return_state;
-
-public:
   VW::continuous_actions::pdf_segment segment;
 
   BaseState<audit>* return_state;
@@ -221,15 +217,14 @@ public:
     segment = {0., 0., 0.};
     return obj_return_state;
   }
+
+private:
+  BaseState<audit>* obj_return_state;
 };
 
 template <bool audit>
-class LabelObjectState : public BaseState<audit>
+struct LabelObjectState : public BaseState<audit>
 {
-private:
-  BaseState<audit>* return_state;
-
-public:
   CB::cb_class cb_label;
   VW::cb_continuous::continuous_label_elm cont_label_element = {0., 0., 0.};
   bool found = false;
@@ -282,13 +277,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
@@ -331,13 +326,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = v;
       found = true;
     }
@@ -392,7 +387,7 @@ public:
 
       if ((actions.size() != 0) && (probs.size() != 0))
       {
-        auto outcome = new CCB::conditional_contextual_bandit_outcome();
+        auto* outcome = new VW::ccb_outcome();
         outcome->cost = cb_label.cost;
         if (actions.size() != probs.size()) { THROW("Actions and probabilities must be the same length."); }
 
@@ -441,6 +436,9 @@ public:
 
     return return_state;
   }
+
+private:
+  BaseState<audit>* return_state;
 };
 
 // "_label_*":
@@ -605,8 +603,8 @@ struct MultiState : BaseState<audit>
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::ccb)
     {
-      CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
-      ld->type = CCB::example_type::shared;
+      auto* ld = &ctx.ex->l.conditional_contextual_bandit;
+      ld->type = VW::ccb_example_type::SHARED;
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
@@ -626,7 +624,7 @@ struct MultiState : BaseState<audit>
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
+    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::action;
@@ -674,7 +672,7 @@ struct SlotsState : BaseState<audit>
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
+    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::slot;
@@ -705,11 +703,8 @@ struct SlotsState : BaseState<audit>
 
 // "...":[Numbers only]
 template <bool audit>
-class ArrayState : public BaseState<audit>
+struct ArrayState : public BaseState<audit>
 {
-  feature_index array_hash;
-
-public:
   ArrayState() : BaseState<audit>("Array") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
@@ -765,6 +760,9 @@ public:
   {
     return ctx.PopNamespace();
   }
+
+private:
+  feature_index array_hash;
 };
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
@@ -777,9 +775,8 @@ struct IgnoreState : BaseState<audit>
 };
 
 template <bool audit>
-class DefaultState : public BaseState<audit>
+struct DefaultState : public BaseState<audit>
 {
-public:
   DefaultState() : BaseState<audit>("Default") {}
 
   BaseState<audit>* Ignore(Context<audit>& ctx, rapidjson::SizeType length)
@@ -1043,15 +1040,15 @@ public:
       if (ctx._label_parser.label_type == VW::label_type_t::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
-            [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+            [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT; });
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
           ctx._label_parser.default_label(ctx.ex->l);
-          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+          ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
           ctx.examples->push_back(ctx.ex);
 
-          auto outcome = new CCB::conditional_contextual_bandit_outcome();
+          auto outcome = new VW::ccb_outcome();
           outcome->cost = ctx.label_object_state.cb_label.cost;
           outcome->probabilities.push_back(
               {ctx.label_object_state.cb_label.action - 1, ctx.label_object_state.cb_label.probability});
@@ -1078,9 +1075,8 @@ public:
 };
 
 template <bool audit, typename T>
-class ArrayToVectorState : public BaseState<audit>
+struct ArrayToVectorState : public BaseState<audit>
 {
-public:
   ArrayToVectorState() : BaseState<audit>("ArrayToVectorState") {}
 
   std::vector<T>* output_array;
@@ -1168,9 +1164,8 @@ public:
 };
 
 template <bool audit>
-class StringToStringState : public BaseState<audit>
+struct StringToStringState : public BaseState<audit>
 {
-public:
   StringToStringState() : BaseState<audit>("StringToStringState") {}
 
   std::string* output_string;
@@ -1195,9 +1190,8 @@ inline void add(float* output, float f) { *output += f; }
 }  // namespace float_aggregation
 
 template <bool audit, void (*func)(float*, float)>
-class FloatToFloatState : public BaseState<audit>
+struct FloatToFloatState : public BaseState<audit>
 {
-public:
   FloatToFloatState() : BaseState<audit>("FloatToFloatState") {}
 
   float* output_float;
@@ -1222,9 +1216,8 @@ public:
 //       logic which cannot be handled in the state machine in a better way without impacting performance.
 //       This level of specificity should NOT be in the parser, do not use this as an example of what to do.
 template <bool audit>
-class FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
+struct FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
 {
-public:
   FloatToFloatState_OriginalLabelCostHack() : BaseState<audit>("FloatToFloatState_OriginalLabelCostHack") {}
 
   float* aggr_float;
@@ -1253,9 +1246,8 @@ public:
 };
 
 template <bool audit>
-class UIntDedupState : public BaseState<audit>
+struct UIntDedupState : public BaseState<audit>
 {
-public:
   UIntDedupState() : BaseState<audit>("UIntDedupState") {}
 
   uint32_t* output_uint;
@@ -1277,9 +1269,8 @@ public:
 };
 
 template <bool audit>
-class UIntToUIntState : public BaseState<audit>
+struct UIntToUIntState : public BaseState<audit>
 {
-public:
   UIntToUIntState() : BaseState<audit>("UIntToUIntState") {}
 
   uint32_t* output_uint;
@@ -1293,9 +1284,8 @@ public:
 };
 
 template <bool audit>
-class BoolToBoolState : public BaseState<audit>
+struct BoolToBoolState : public BaseState<audit>
 {
-public:
   BoolToBoolState() : BaseState<audit>("BoolToBoolState") {}
 
   bool* output_bool;
@@ -1309,17 +1299,8 @@ public:
 };
 
 template <bool audit>
-class SlotOutcomeList : public BaseState<audit>
+struct SlotOutcomeList : public BaseState<audit>
 {
-  int slot_object_index = 0;
-
-  std::vector<uint32_t> actions;
-  std::vector<float> probs;
-  float cost;
-
-  BaseState<audit>* old_root;
-
-public:
   DecisionServiceInteraction* interactions;
 
   SlotOutcomeList() : BaseState<audit>("SlotOutcomeList") {}
@@ -1332,7 +1313,7 @@ public:
     for (auto ex : *ctx.examples)
     {
       if ((ctx._label_parser.label_type == VW::label_type_t::ccb &&
-              ex->l.conditional_contextual_bandit.type != CCB::example_type::slot) ||
+              ex->l.conditional_contextual_bandit.type != VW::ccb_example_type::SLOT) ||
           (ctx._label_parser.label_type == VW::label_type_t::slates &&
               ex->l.slates.type != VW::slates::example_type::slot))
       { slot_object_index++; }
@@ -1366,7 +1347,7 @@ public:
     for (auto ex : *ctx.examples)
     {
       if (ctx._label_parser.label_type == VW::label_type_t::ccb &&
-          ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+          ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT)
       {
         if (ex->l.conditional_contextual_bandit.outcome)
         {
@@ -1388,12 +1369,20 @@ public:
     ctx.root_state = old_root;
     return &ctx.decision_service_state;
   }
+
+private:
+  int slot_object_index = 0;
+
+  std::vector<uint32_t> actions;
+  std::vector<float> probs;
+  float cost;
+
+  BaseState<audit>* old_root;
 };
 
 template <bool audit>
-class DecisionServiceState : public BaseState<audit>
+struct DecisionServiceState : public BaseState<audit>
 {
-public:
   DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
   DecisionServiceInteraction* data;
@@ -1516,10 +1505,6 @@ public:
 template <bool audit>
 struct Context
 {
-private:
-  std::unique_ptr<std::stringstream> error_ptr;
-
-public:
   VW::label_parser _label_parser;
   hash_func_t _hash_func;
   uint64_t _hash_seed;
@@ -1648,6 +1633,9 @@ public:
 
     return true;
   }
+
+private:
+  std::unique_ptr<std::stringstream> error_ptr;
 };
 
 template <bool audit>

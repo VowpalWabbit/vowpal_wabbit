@@ -120,7 +120,7 @@ struct svm_params
   float loss_sum = 0.f;
 
   VW::workspace* all = nullptr;  // flatten, parallel
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
 
   ~svm_params()
   {
@@ -386,7 +386,7 @@ size_t suboptimality(svm_model* model, double* subopt)
   {
     float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
     const auto& simple_red_features =
-        model->support_vec[i]->ex._reduction_features.template get<simple_label_reduction_features>();
+        model->support_vec[i]->ex._reduction_features.template get<VW::simple_label_reduction_features>();
     if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
     { subopt[i] = fabs(model->delta[i]); }
     else
@@ -452,7 +452,7 @@ bool update(svm_params& params, size_t pos)
   svm_model* model = params.model;
   bool overshoot = false;
   svm_example* fec = model->support_vec[pos];
-  label_data& ld = fec->ex.l.simple;
+  auto& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
   float* inprods = fec->krow.begin();
   float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
@@ -464,7 +464,7 @@ bool update(svm_params& params, size_t pos)
   float proj = alphaKi * ld.label;
   float ai = (params.lambda - proj) / inprods[pos];
 
-  const auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = fec->ex._reduction_features.template get<VW::simple_label_reduction_features>();
   if (ai > simple_red_features.weight) { ai = simple_red_features.weight; }
   else if (ai < 0)
   {
@@ -484,7 +484,7 @@ bool update(svm_params& params, size_t pos)
 
   for (size_t i = 0; i < model->num_support; i++)
   {
-    label_data& ldi = model->support_vec[i]->ex.l.simple;
+    auto& ldi = model->support_vec[i]->ex.l.simple;
     model->delta[i] += diff * inprods[i] * ldi.label / params.lambda;
   }
 
@@ -601,10 +601,10 @@ void train(svm_params& params)
             (1.0f +
                 expf(static_cast<float>(params.active_c * std::fabs(scores[i])) *
                     static_cast<float>(pow(params.pool[i]->ex.example_counter, 0.5f))));
-        if (params._random_state->get_and_update_random() < queryp)
+        if (params.random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
-          auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
+          auto& simple_red_features = fec->ex._reduction_features.template get<VW::simple_label_reduction_features>();
           simple_red_features.weight *= 1 / queryp;
           train_pool[i] = 1;
         }
@@ -647,7 +647,7 @@ void train(svm_params& params)
         {
           if (model->num_support == 0) { break; }
           int randi = 1;
-          if (params._random_state->get_and_update_random() < 0.5) { randi = 0; }
+          if (params.random_state->get_and_update_random() < 0.5) { randi = 0; }
           if (randi)
           {
             size_t max_pos = suboptimality(model, subopt);
@@ -662,7 +662,7 @@ void train(svm_params& params)
           else
           {
             size_t rand_pos =
-                static_cast<size_t>(floorf(params._random_state->get_and_update_random() * model->num_support));
+                static_cast<size_t>(floorf(params.random_state->get_and_update_random() * model->num_support));
             update(params, rand_pos);
           }
         }
@@ -769,7 +769,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   params->maxcache = 1024 * 1024 * 1024;
   params->loss_sum = 0.;
   params->all = &all;
-  params->_random_state = all.get_random_state();
+  params->random_state = all.get_random_state();
 
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and

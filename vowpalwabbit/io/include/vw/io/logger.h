@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "fmt/core.h"
+#include <fmt/core.h>
 
 #include <iostream>
 #include <memory>
@@ -226,9 +226,8 @@ struct logger_impl
 };
 
 template <typename Mutex>
-class function_ptr_sink : public spdlog::sinks::base_sink<Mutex>
+struct function_ptr_sink : public spdlog::sinks::base_sink<Mutex>
 {
-public:
   function_ptr_sink(void* context, logger_output_func_t func)
       : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context)
   {
@@ -250,9 +249,8 @@ protected:
 
 // Same as above but ignores the log level.
 template <typename Mutex>
-class function_ptr_legacy_sink : public spdlog::sinks::base_sink<Mutex>
+struct function_ptr_legacy_sink : public spdlog::sinks::base_sink<Mutex>
 {
-public:
   function_ptr_legacy_sink(void* context, logger_legacy_output_func_t func)
       : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context)
   {
@@ -276,17 +274,6 @@ protected:
 
 struct logger
 {
-private:
-  std::shared_ptr<details::logger_impl> _logger_impl;
-
-  logger(std::shared_ptr<details::logger_impl> inner_logger) : _logger_impl(std::move(inner_logger)) {}
-
-  friend logger create_default_logger();
-  friend logger create_null_logger();
-  friend logger create_custom_sink_logger(void* context, logger_output_func_t func);
-  friend logger create_custom_sink_logger_legacy(void* context, logger_legacy_output_func_t func);
-
-public:
 #if FMT_VERSION >= 80000
   template <typename... Args>
   void err_info(fmt::format_string<Args...> fmt, Args&&... args)
@@ -420,6 +407,16 @@ public:
   void set_location(output_location location);
   size_t get_log_count() const;
   void log_summary();
+
+private:
+  std::shared_ptr<details::logger_impl> _logger_impl;
+
+  logger(std::shared_ptr<details::logger_impl> inner_logger) : _logger_impl(std::move(inner_logger)) {}
+
+  friend logger create_default_logger();
+  friend logger create_null_logger();
+  friend logger create_custom_sink_logger(void* context, logger_output_func_t func);
+  friend logger create_custom_sink_logger_legacy(void* context, logger_legacy_output_func_t func);
 };
 
 inline logger create_default_logger()

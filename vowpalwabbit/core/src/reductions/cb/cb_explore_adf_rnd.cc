@@ -39,19 +39,35 @@ namespace
 {
 struct cb_explore_adf_rnd
 {
+  cb_explore_adf_rnd(
+      float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, VW::workspace* _all)
+      : _epsilon(_epsilon)
+      , _alpha(_alpha)
+      , _sqrtinvlambda(std::sqrt(_invlambda))
+      , _numrnd(_numrnd)
+      , _increment(_increment)
+      , _all(_all)
+  {
+  }
+  ~cb_explore_adf_rnd() = default;
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+
 private:
-  float epsilon;
-  float alpha;
-  float sqrtinvlambda;
-  uint32_t numrnd;
+  float _epsilon;
+  float _alpha;
+  float _sqrtinvlambda;
+  uint32_t _numrnd;
 
-  size_t increment;
-  VW::workspace* all;
+  size_t _increment;
+  VW::workspace* _all;
 
-  std::vector<float> bonuses;
-  std::vector<float> initials;
+  std::vector<float> _bonuses;
+  std::vector<float> _initials;
 
-  CB::cb_class save_class;
+  CB::cb_class _save_class;
 
   template <bool is_learn>
   void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
@@ -71,46 +87,29 @@ private:
   void restore_labels(VW::multi_ex&);
   template <bool>
   void base_learn_or_predict(multi_learner&, VW::multi_ex&, uint32_t);
-
-public:
-  cb_explore_adf_rnd(
-      float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, VW::workspace* _all)
-      : epsilon(_epsilon)
-      , alpha(_alpha)
-      , sqrtinvlambda(std::sqrt(_invlambda))
-      , numrnd(_numrnd)
-      , increment(_increment)
-      , all(_all)
-  {
-  }
-  ~cb_explore_adf_rnd() = default;
-
-  // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 };
 
-void cb_explore_adf_rnd::zero_bonuses(VW::multi_ex& examples) { bonuses.assign(examples.size(), 0.f); }
+void cb_explore_adf_rnd::zero_bonuses(VW::multi_ex& examples) { _bonuses.assign(examples.size(), 0.f); }
 
 void cb_explore_adf_rnd::accumulate_bonuses(VW::multi_ex& examples)
 {
   const auto& preds = examples[0]->pred.a_s;
   for (const auto& p : preds)
   {
-    float score = p.score - initials[p.action];
-    bonuses[p.action] += score * score;
+    float score = p.score - _initials[p.action];
+    _bonuses[p.action] += score * score;
   }
 }
 
 void cb_explore_adf_rnd::finish_bonuses()
 {
-  for (auto& b : bonuses) { b = std::sqrt(b / numrnd); }
+  for (auto& b : _bonuses) { b = std::sqrt(b / _numrnd); }
 }
 
 void cb_explore_adf_rnd::compute_ci(v_array<VW::action_score>& preds, float max_bonus)
 {
   constexpr float eulergamma = 0.57721566490153286f;
-  for (auto& p : preds) { p.score -= eulergamma * (bonuses[p.action] - max_bonus); }
+  for (auto& p : preds) { p.score -= eulergamma * (_bonuses[p.action] - max_bonus); }
 }
 
 namespace
@@ -130,8 +129,8 @@ void cb_explore_adf_rnd::save_labels(VW::multi_ex& examples)
     {
       if (is_the_labeled_example(ec))
       {
-        save_class.cost = ec->l.cb.costs[0].cost;
-        save_class.probability = ec->l.cb.costs[0].probability;
+        _save_class.cost = ec->l.cb.costs[0].cost;
+        _save_class.probability = ec->l.cb.costs[0].probability;
         break;
       }
     }
@@ -140,7 +139,7 @@ void cb_explore_adf_rnd::save_labels(VW::multi_ex& examples)
 
 namespace
 {
-struct LazyGaussian
+struct lazy_gaussian
 {
   inline float operator[](uint64_t index) const { return merand48_boxmuller(index); }
 };
@@ -155,27 +154,27 @@ inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)
 
 float cb_explore_adf_rnd::get_initial_prediction(VW::example* ec)
 {
-  LazyGaussian w;
+  lazy_gaussian w;
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
-  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, LazyGaussian>(w, all->ignore_some_linear,
-      all->ignore_linear, all->interactions, all->extent_interactions, all->permutations, *ec, dotwithnorm,
-      all->_generate_interactions_object_cache);
+  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, lazy_gaussian>(w, _all->ignore_some_linear,
+      _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ec, dotwithnorm,
+      _all->_generate_interactions_object_cache);
 
-  return sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
+  return _sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }
 
 void cb_explore_adf_rnd::get_initial_predictions(VW::multi_ex& examples, uint32_t id)
 {
-  initials.clear();
-  initials.reserve(examples.size());
+  _initials.clear();
+  _initials.reserve(examples.size());
   for (size_t i = 0; i < examples.size(); ++i)
   {
     auto* ec = examples[i];
 
-    LEARNER::details::increment_offset(*ec, increment, id);
-    initials.push_back(get_initial_prediction(ec));
-    LEARNER::details::decrement_offset(*ec, increment, id);
+    LEARNER::details::increment_offset(*ec, _increment, id);
+    _initials.push_back(get_initial_prediction(ec));
+    LEARNER::details::decrement_offset(*ec, _increment, id);
   }
 }
 
@@ -189,7 +188,7 @@ void cb_explore_adf_rnd::make_fake_rnd_labels(VW::multi_ex& examples)
       auto* ec = examples[i];
       if (is_the_labeled_example(ec))
       {
-        ec->l.cb.costs[0].cost = alpha * all->get_random_state()->get_and_update_gaussian() + initials[i];
+        ec->l.cb.costs[0].cost = _alpha * _all->get_random_state()->get_and_update_gaussian() + _initials[i];
         ec->l.cb.costs[0].probability = 1.0f;
         break;
       }
@@ -206,8 +205,8 @@ void cb_explore_adf_rnd::restore_labels(VW::multi_ex& examples)
     {
       if (is_the_labeled_example(ec))
       {
-        ec->l.cb.costs[0].cost = save_class.cost;
-        ec->l.cb.costs[0].probability = save_class.probability;
+        ec->l.cb.costs[0].cost = _save_class.cost;
+        ec->l.cb.costs[0].probability = _save_class.probability;
         break;
       }
     }
@@ -233,7 +232,7 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, VW::multi_ex
   auto restore_guard = VW::scope_exit([this, &examples] { this->restore_labels<is_learn>(examples); });
 
   zero_bonuses(examples);
-  for (uint32_t id = 0; id < numrnd; ++id)
+  for (uint32_t id = 0; id < _numrnd; ++id)
   {
     get_initial_predictions(examples, 1 + id);
     make_fake_rnd_labels<is_learn>(examples);
@@ -247,11 +246,11 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, VW::multi_ex
   base_learn_or_predict<is_learn>(base, examples, 0);
 
   auto& preds = examples[0]->pred.a_s;
-  float max_bonus = std::max(1e-3f, *std::max_element(bonuses.begin(), bonuses.end()));
+  float max_bonus = std::max(1e-3f, *std::max_element(_bonuses.begin(), _bonuses.end()));
   compute_ci(preds, max_bonus);
   exploration::generate_softmax(
       -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
-  exploration::enforce_minimum_probability(epsilon, true, begin_scores(preds), end_scores(preds));
+  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 }  // namespace
 

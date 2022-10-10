@@ -30,18 +30,6 @@ namespace
 {
 struct cb_explore_adf_bag
 {
-private:
-  float _epsilon;
-  size_t _bag_size;
-  bool _greedify;
-  bool _first_only;
-  std::shared_ptr<VW::rand_state> _random_state;
-
-  v_array<VW::action_score> _action_probs;
-  std::vector<float> _scores;
-  std::vector<float> _top_actions;
-
-public:
   using PredictionT = v_array<VW::action_score>;
 
   cb_explore_adf_bag(
@@ -54,6 +42,15 @@ public:
   const PredictionT& get_cached_prediction() { return _action_probs; };
 
 private:
+  float _epsilon;
+  size_t _bag_size;
+  bool _greedify;
+  bool _first_only;
+  std::shared_ptr<VW::rand_state> _random_state;
+
+  v_array<VW::action_score> _action_probs;
+  std::vector<float> _scores;
+  std::vector<float> _top_actions;
   uint32_t get_bag_learner_update_count(uint32_t learner_index);
 };
 

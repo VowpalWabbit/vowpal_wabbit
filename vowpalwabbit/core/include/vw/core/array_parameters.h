@@ -7,9 +7,8 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/array_parameters_sparse.h"
 
-class parameters
+struct parameters
 {
-public:
   bool adaptive;
   bool normalized;
 

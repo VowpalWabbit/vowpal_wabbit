@@ -27,9 +27,9 @@ using namespace VW::config;
 
 namespace
 {
-constexpr float hidden_min_activation = -3;
-constexpr float hidden_max_activation = 3;
-constexpr uint64_t nn_constant = 533357803;
+constexpr float HIDDEN_MIN_ACTIVATION = -3;
+constexpr float HIDDEN_MAX_ACTIVATION = 3;
+constexpr uint64_t NN_CONSTANT = 533357803;
 
 struct nn
 {
@@ -54,7 +54,7 @@ struct nn
   VW::polyprediction* hiddenbias_pred = nullptr;
 
   VW::workspace* all = nullptr;  // many things
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
 
   ~nn()
   {
@@ -93,7 +93,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.output_layer.interactions = &all.interactions;
   n.output_layer.extent_interactions = &all.extent_interactions;
   n.output_layer.indices.push_back(nn_output_namespace);
-  uint64_t nn_index = nn_constant << all.weights.stride_shift();
+  uint64_t nn_index = NN_CONSTANT << all.weights.stride_shift();
 
   features& fs = n.output_layer.feature_space[nn_output_namespace];
   for (unsigned int i = 0; i < n.k; ++i)
@@ -136,7 +136,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
-  n.outputweight._reduction_features.template get<simple_label_reduction_features>().initial = 0.f;
+  n.outputweight._reduction_features.template get<VW::simple_label_reduction_features>().initial = 0.f;
 
   n.finished_setup = true;
 }
@@ -149,7 +149,7 @@ void end_pass(nn& n)
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 {
-  bool shouldOutput = n.all->raw_prediction != nullptr;
+  bool should_output = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) { finish_setup(n, *(n.all)); }
   // Yes, copy all of shared data.
   shared_data sd{*n.all->sd};
@@ -157,7 +157,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
     auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
-    label_data ld = ec.l.simple;
+    VW::simple_label ld = ec.l.simple;
     void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
@@ -168,13 +168,13 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     VW::polyprediction* hiddenbias_pred = n.hiddenbias_pred;
     bool* dropped_out = n.dropped_out;
 
-    std::ostringstream outputStringStream;
+    std::ostringstream output_string_stream;
 
     n.all->set_minmax = noop_mm;
     save_min_label = n.all->sd->min_label;
-    n.all->sd->min_label = hidden_min_activation;
+    n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
     save_max_label = n.all->sd->max_label;
-    n.all->sd->max_label = hidden_max_activation;
+    n.all->sd->max_label = HIDDEN_MAX_ACTIVATION;
 
     uint64_t save_ft_offset = ec.ft_offset;
 
@@ -191,7 +191,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
         // avoid saddle point at 0
         if (hiddenbias_pred[i].scalar == 0)
         {
-          n.hiddenbias.l.simple.label = static_cast<float>(n._random_state->get_and_update_random() - 0.5);
+          n.hiddenbias.l.simple.label = static_cast<float>(n.random_state->get_and_update_random() - 0.5);
           base.learn(n.hiddenbias, i);
           n.hiddenbias.l.simple.label = FLT_MAX;
         }
@@ -211,13 +211,13 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       }
     }
 
-    if (shouldOutput)
+    if (should_output)
     {
       for (unsigned int i = 0; i < n.k; ++i)
       {
-        if (i > 0) { outputStringStream << ' '; }
-        outputStringStream << i << ':' << hidden_units[i].scalar << ','
-                           << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
+        if (i > 0) { output_string_stream << ' '; }
+        output_string_stream << i << ':' << hidden_units[i].scalar << ','
+                             << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
       }
     }
 
@@ -261,7 +261,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       if (wf == 0)
       {
         float sqrtk = std::sqrt(static_cast<float>(n.k));
-        n.outputweight.l.simple.label = static_cast<float>(n._random_state->get_and_update_random() - 0.5) / sqrtk;
+        n.outputweight.l.simple.label = static_cast<float>(n.random_state->get_and_update_random() - 0.5) / sqrtk;
         base.update(n.outputweight, n.k);
         n.outputweight.l.simple.label = FLT_MAX;
       }
@@ -306,8 +306,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     {
       n.output_layer.ft_offset = ec.ft_offset;
       n.output_layer.l.simple = ec.l.simple;
-      n.output_layer._reduction_features.template get<simple_label_reduction_features>().initial =
-          ec._reduction_features.template get<simple_label_reduction_features>().initial;
+      n.output_layer._reduction_features.template get<VW::simple_label_reduction_features>().initial =
+          ec._reduction_features.template get<VW::simple_label_reduction_features>().initial;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn) { base.learn(n.output_layer, n.k); }
@@ -319,10 +319,10 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
     n.prediction = GD::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
 
-    if (shouldOutput)
+    if (should_output)
     {
-      outputStringStream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction.get(), outputStringStream.str(), ec.tag, n.all->logger);
+      output_string_stream << ' ' << n.output_layer.partial_prediction;
+      n.all->print_text_by_ref(n.all->raw_prediction.get(), output_string_stream.str(), ec.tag, n.all->logger);
     }
 
     if (is_learn)
@@ -336,9 +336,9 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
           auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
           n.all->set_minmax = noop_mm;
           save_min_label = n.all->sd->min_label;
-          n.all->sd->min_label = hidden_min_activation;
+          n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
           save_max_label = n.all->sd->max_label;
-          n.all->sd->max_label = hidden_max_activation;
+          n.all->sd->max_label = HIDDEN_MAX_ACTIVATION;
           save_ft_offset = ec.ft_offset;
 
           if (n.multitask) { ec.ft_offset = 0; }
@@ -423,7 +423,7 @@ void finish_example(VW::workspace& all, nn&, VW::example& ec)
 {
   std::unique_ptr<VW::io::writer> temp(nullptr);
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
-  return_simple_example(all, nullptr, ec);
+  VW::details::return_simple_example(all, nullptr, ec);
 }
 }  // namespace
 
@@ -446,7 +446,7 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   n->all = &all;
-  n->_random_state = all.get_random_state();
+  n->random_state = all.get_random_state();
 
   if (n->multitask && !all.quiet)
   { all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing")); }

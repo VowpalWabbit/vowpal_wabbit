@@ -37,24 +37,24 @@ size_t write_model_field(io_buf&, const VW::baseline_challenger_data&, const std
 }  // namespace model_utils
 struct discounted_expectation
 {
-  discounted_expectation(double tau) : tau(tau), sum(0), n(0) {}
+  discounted_expectation(double tau) : _tau(tau), _sum(0), _n(0) {}
 
   void update(double w, double r)
   {
-    sum = tau * sum + w * r;
-    n = tau * n + w;
+    _sum = _tau * _sum + w * r;
+    _n = _tau * _n + w;
   }
 
-  double current() const { return n == 0 ? 0 : sum / n; }
+  double current() const { return _n == 0 ? 0 : _sum / _n; }
 
   friend size_t VW::model_utils::read_model_field(io_buf&, VW::discounted_expectation&);
   friend size_t VW::model_utils::write_model_field(
       io_buf&, const VW::discounted_expectation&, const std::string&, bool);
 
 private:
-  double tau;
-  double sum;
-  double n;
+  double _tau;
+  double _sum;
+  double _n;
 };
 
 struct baseline_challenger_data
@@ -130,16 +130,16 @@ namespace model_utils
 size_t read_model_field(io_buf& io, VW::discounted_expectation& de)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, de.sum);
-  bytes += read_model_field(io, de.n);
+  bytes += read_model_field(io, de._sum);
+  bytes += read_model_field(io, de._n);
   return bytes;
 }
 
 size_t write_model_field(io_buf& io, const VW::discounted_expectation& de, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, de.sum, upstream_name + "_expectation_sum", text);
-  bytes += write_model_field(io, de.n, upstream_name + "_expectation_n", text);
+  bytes += write_model_field(io, de._sum, upstream_name + "_expectation_sum", text);
+  bytes += write_model_field(io, de._n, upstream_name + "_expectation_n", text);
   return bytes;
 }
 

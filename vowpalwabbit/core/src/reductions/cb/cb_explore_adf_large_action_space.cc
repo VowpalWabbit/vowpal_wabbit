@@ -28,13 +28,6 @@ namespace cb_explore_adf
 {
 struct A_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _row_index;
-  std::vector<Eigen::Triplet<float>>& _triplets;
-  uint64_t& _max_col;
-
-public:
   A_triplet_constructor(
       uint64_t weights_mask, uint64_t row_index, std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col)
       : _weights_mask(weights_mask), _row_index(row_index), _triplets(triplets), _max_col(max_col)
@@ -49,6 +42,12 @@ public:
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _row_index;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t& _max_col;
 };
 
 bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
@@ -330,8 +329,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool model_weight_impl = false;
   bool use_vanilla_impl = false;
   bool full_spanner = false;
-  size_t thread_pool_size = 0;
-  size_t block_size = 0;
+  uint64_t thread_pool_size = 0;
+  uint64_t block_size = 0;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");

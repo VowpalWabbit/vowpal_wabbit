@@ -12,7 +12,6 @@
 #include <utility>
 
 using namespace VW::LEARNER;
-using namespace COST_SENSITIVE;
 using namespace VW::config;
 
 #undef VW_DEBUG_LOG
@@ -101,7 +100,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     }
   }
 
-  COST_SENSITIVE::label ld = std::move(ec.l.cs);
+  VW::cs_label ld = std::move(ec.l.cs);
 
   // Guard VW::example state restore against throws
   auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = std::move(ld); });
@@ -110,7 +109,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0.};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   bool dont_learn = DO_MULTIPREDICT && !is_learn;
 
@@ -123,7 +122,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   else if (dont_learn)
   {
     ec.l.simple = {FLT_MAX};
-    ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+    ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     if (c.indexing == 0)
@@ -172,13 +171,15 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
       add_passthrough_feature(ec, constant * 2 + 1 + second_best, 1.);
     }
     else
+    {
       add_passthrough_feature(ec, constant * 3, 1.);
+    }
   }
 
   ec.pred.multiclass = prediction;
 }
 
-void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { VW::details::finish_cs_example(all, ec); }
 }  // namespace
 
 base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
@@ -209,7 +210,7 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(::finish_example)
                 .build();
 
-  all.example_parser->lbl_parser = cs_label;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }

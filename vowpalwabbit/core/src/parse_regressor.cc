@@ -120,7 +120,10 @@ void initialize_regressor(VW::workspace& all)
   }
 }
 
-constexpr size_t default_buf_size = 512;
+namespace
+{
+constexpr size_t DEFAULT_BUF_SIZE = 512;
+}
 
 // file_options will be written to when reading
 void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options,
@@ -128,7 +131,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 {
   if (model_file.num_files() > 0)
   {
-    std::vector<char> buff2(default_buf_size);
+    std::vector<char> buff2(DEFAULT_BUF_SIZE);
 
     size_t bytes_read_write = 0;
 
@@ -139,7 +142,7 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     if (read)
     {
       v_length = buff2.size();
-      buff2[std::min(v_length, default_buf_size) - 1] = '\0';
+      buff2[std::min(v_length, DEFAULT_BUF_SIZE) - 1] = '\0';
     }
     bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
     all.model_file_ver = VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
@@ -153,8 +156,8 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
       v_length = all.id.length() + 1;
 
       msg << "Id " << all.id << "\n";
-      memcpy(buff2.data(), all.id.c_str(), std::min(v_length, default_buf_size));
-      if (read) { v_length = default_buf_size; }
+      memcpy(buff2.data(), all.id.c_str(), std::min(v_length, DEFAULT_BUF_SIZE));
+      if (read) { v_length = DEFAULT_BUF_SIZE; }
       bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
       all.id = buff2.data();
 

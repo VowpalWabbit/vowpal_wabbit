@@ -53,7 +53,7 @@ using namespace VW::config;
 #define LEARN_CURV 1
 #define LEARN_CONV 2
 
-class curv_exception : public std::exception
+struct curv_exception : public std::exception
 {
 } curv_ex;
 
@@ -68,7 +68,7 @@ class curv_exception : public std::exception
 // w[2] = step direction
 // w[3] = preconditioner
 
-constexpr float max_precond_ratio = 10000.f;
+constexpr float MAX_PRECOND_RATIO = 10000.f;
 
 struct bfgs
 {
@@ -125,7 +125,7 @@ struct bfgs
   }
 };
 
-constexpr const char* curv_message =
+constexpr const char* CURV_MESSAGE =
     "Zero or negative curvature detected.\n"
     "To increase curvature you can increase regularization or rescale features.\n"
     "It is also possible that you have reached numerical accuracy\n"
@@ -169,7 +169,7 @@ inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
 float predict_and_gradient(VW::workspace& all, VW::example& ec)
 {
   float fp = bfgs_predict(all, ec);
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   all.set_minmax(all.sd, ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
@@ -186,13 +186,13 @@ void update_preconditioner(VW::workspace& all, VW::example& ec)
   GD::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
-inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * fx; }
+inline void add_dir(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * fx; }
 
 float dot_with_direction(VW::workspace& all, VW::example& ec)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   float temp = simple_red_features.initial;
-  GD::foreach_feature<float, add_DIR>(all, ec, temp);
+  GD::foreach_feature<float, add_dir>(all, ec, temp);
   return temp;
 }
 
@@ -255,7 +255,7 @@ template <class T>
 void bfgs_iter_start(
     VW::workspace& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int& origin, T& weights)
 {
-  double g1_Hg1 = 0.;
+  double g1_Hg1 = 0.;  // NOLINT
   double g1_g1 = 0.;
 
   origin = 0;
@@ -295,8 +295,8 @@ void bfgs_iter_middle(
   // implement conjugate gradient
   if (b.m == 0)
   {
-    double g_Hy = 0.;
-    double g_Hg = 0.;
+    double g_Hy = 0.;  // NOLINT
+    double g_Hg = 0.;  // NOLINT
     double y = 0.;
 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
@@ -332,7 +332,7 @@ void bfgs_iter_middle(
 
   // implement bfgs
   double y_s = 0.;
-  double y_Hy = 0.;
+  double y_Hy = 0.;  // NOLINT
   double s_q = 0.;
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
@@ -428,7 +428,7 @@ double wolfe_eval(VW::workspace& all, bfgs& b, float* mem, double loss_sum, doub
 {
   double g0_d = 0.;
   double g1_d = 0.;
-  double g1_Hg1 = 0.;
+  double g1_Hg1 = 0.;  // NOLINT
   double g1_g1 = 0.;
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
@@ -546,7 +546,7 @@ void finalize_preconditioner(VW::workspace& /* all */, bfgs& b, float regulariza
     }
   }
 
-  float max_precond = (max_hessian == 0.f) ? 0.f : max_precond_ratio / max_hessian;
+  float max_precond = (max_hessian == 0.f) ? 0.f : MAX_PRECOND_RATIO / max_hessian;
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
@@ -811,7 +811,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       }
       catch (const curv_exception&)
       {
-        fprintf(stdout, "In bfgs_iter_middle: %s", curv_message);
+        fprintf(stdout, "In bfgs_iter_middle: %s", CURV_MESSAGE);
         b.step_size = 0.0;
         status = LEARN_CURV;
       }
@@ -847,7 +847,7 @@ int process_pass(VW::workspace& all, bfgs& b)
     float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
     if (b.curvature == 0. && dd != 0.)
     {
-      fprintf(stdout, "%s", curv_message);
+      fprintf(stdout, "%s", CURV_MESSAGE);
       b.step_size = 0.0;
       status = LEARN_CURV;
     }
@@ -896,7 +896,7 @@ int process_pass(VW::workspace& all, bfgs& b)
 
 void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   if (b.first_pass) { b.importance_weight_sum += ec.weight; }
 
   /********************************************************************/
@@ -968,7 +968,8 @@ void end_pass(bfgs& b)
       }
       if (!all->holdout_set_off)
       {
-        if (summarize_holdout_set(*all, b.no_win_counter)) { finalize_regressor(*all, all->final_regressor_name); }
+        if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
+        { finalize_regressor(*all, all->final_regressor_name); }
         if (b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);

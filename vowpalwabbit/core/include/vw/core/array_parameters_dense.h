@@ -11,15 +11,8 @@
 #include <iterator>
 
 template <typename T>
-class dense_iterator
+struct dense_iterator
 {
-private:
-  T* _current;
-  T* _begin;
-  uint64_t _stride;
-  uint32_t _stride_shift;
-
-public:
   using iterator_category = std::forward_iterator_tag;
   using value_type = T;
   using difference_type = std::ptrdiff_t;
@@ -77,17 +70,16 @@ public:
   bool operator!=(const dense_iterator& rhs) const { return _current != rhs._current; }
   bool operator<(const dense_iterator& rhs) const { return _current < rhs._current; }
   bool operator<=(const dense_iterator& rhs) const { return _current <= rhs._current; }
+
+private:
+  T* _current;
+  T* _begin;
+  uint64_t _stride;
+  uint32_t _stride_shift;
 };
 
-class dense_parameters
+struct dense_parameters
 {
-private:
-  weight* _begin;
-  uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
-  uint32_t _stride_shift;
-  bool _seeded;  // whether the instance is sharing model state with others
-
-public:
   using iterator = dense_iterator<weight>;
   using const_iterator = dense_iterator<const weight>;
 
@@ -156,4 +148,10 @@ public:
   void share(size_t length);
 #  endif
 #endif
+
+private:
+  weight* _begin;
+  uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
+  uint32_t _stride_shift;
+  bool _seeded;  // whether the instance is sharing model state with others
 };

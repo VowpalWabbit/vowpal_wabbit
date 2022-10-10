@@ -31,19 +31,6 @@ namespace
 {
 struct cb_explore_adf_synthcover
 {
-private:
-  float _epsilon;
-  float _psi;
-  size_t _synthcoversize;
-  std::shared_ptr<VW::rand_state> _random_state;
-
-  VW::version_struct _model_file_version;
-
-  v_array<VW::action_score> _action_probs;
-  float _min_cost;
-  float _max_cost;
-
-public:
   cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
       std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
 
@@ -56,6 +43,16 @@ public:
   void save_load(io_buf& model_file, bool read, bool text);
 
 private:
+  float _epsilon;
+  float _psi;
+  size_t _synthcoversize;
+  std::shared_ptr<VW::rand_state> _random_state;
+
+  VW::version_struct _model_file_version;
+
+  v_array<VW::action_score> _action_probs;
+  float _min_cost;
+  float _max_cost;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };

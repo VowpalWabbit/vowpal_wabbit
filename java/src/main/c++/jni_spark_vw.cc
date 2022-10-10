@@ -556,9 +556,9 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
 
   try
   {
-    label_data* ld = &ex->l.simple;
+    auto* ld = &ex->l.simple;
     ld->label = label;
-    auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
     red_fts.weight = weight;
 
     VW::count_label(*all->sd, ld->label);
@@ -590,7 +590,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultic
 
   try
   {
-    MULTICLASS::label_t* ld = &ex->l.multi;
+    VW::multiclass_label* ld = &ex->l.multi;
 
     ld->label = label;
     ld->weight = weight;
@@ -608,7 +608,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSe
 
   try
   {
-    COST_SENSITIVE::label* ld = &ex->l.cs;
+    VW::cs_label* ld = &ex->l.cs;
 
     int sizeCosts = env->GetArrayLength(costs);
     int sizeClasses = env->GetArrayLength(classes);
@@ -628,7 +628,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSe
     // loop over weights/labels
     for (int i = 0; i < sizeCosts; i++)
     {
-      COST_SENSITIVE::wclass w;
+      VW::cs_class w;
       w.x = costs0[i];
       w.class_index = classes0[i];
 
@@ -887,10 +887,10 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     ostr << "VowpalWabbitExample(label=";
     auto lp = all->example_parser->lbl_parser;
 
-    if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
+    if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     {
-      label_data* ld = &ex->l.simple;
-      const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto* ld = &ex->l.simple;
+      const auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       ostr << "simple " << ld->label << ":" << red_fts.weight << ":" << red_fts.initial;
     }
     else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))

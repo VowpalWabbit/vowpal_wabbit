@@ -312,15 +312,15 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   std::string arg;
   bool epsilon_decay_option;
   uint64_t model_count;
-  uint64_t _min_scope;
-  float _epsilon_decay_significance_level;
-  float _epsilon_decay_estimator_decay;
-  std::string _epsilon_decay_audit_str;
-  bool _constant_epsilon = false;
-  bool _lb_trick = false;
-  bool _fixed_significance_level = false;
-  uint64_t _min_champ_examples;
-  float _initial_epsilon;
+  uint64_t min_scope;
+  float epsilon_decay_significance_level;
+  float epsilon_decay_estimator_decay;
+  std::string epsilon_decay_audit_str;
+  bool constant_epsilon = false;
+  bool lb_trick = false;
+  bool fixed_significance_level = false;
+  uint64_t min_champ_examples;
+  float initial_epsilon;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -334,43 +334,43 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .default_value(3)
                .help("Set number of exploration models")
                .experimental())
-      .add(make_option("min_scope", _min_scope)
+      .add(make_option("min_scope", min_scope)
                .keep()
                .default_value(100)
                .help("Minimum example count of model before removing")
                .experimental())
-      .add(make_option("epsilon_decay_significance_level", _epsilon_decay_significance_level)
+      .add(make_option("epsilon_decay_significance_level", epsilon_decay_significance_level)
                .keep()
                .default_value(DEFAULT_ALPHA)
                .help("Set significance level for champion change")
                .experimental())
-      .add(make_option("epsilon_decay_estimator_decay", _epsilon_decay_estimator_decay)
+      .add(make_option("epsilon_decay_estimator_decay", epsilon_decay_estimator_decay)
                .keep()
                .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
                .experimental())
-      .add(make_option("epsilon_decay_audit", _epsilon_decay_audit_str)
+      .add(make_option("epsilon_decay_audit", epsilon_decay_audit_str)
                .default_value("")
                .help("Epsilon decay audit file name")
                .experimental())
-      .add(make_option("constant_epsilon", _constant_epsilon)
+      .add(make_option("constant_epsilon", constant_epsilon)
                .keep()
                .help("Keep epsilon constant across models")
                .experimental())
-      .add(make_option("lb_trick", _lb_trick)
+      .add(make_option("lb_trick", lb_trick)
                .default_value(false)
                .help("Use 1-lower_bound as upper_bound for estimator")
                .experimental())
-      .add(make_option("fixed_significance_level", _fixed_significance_level)
+      .add(make_option("fixed_significance_level", fixed_significance_level)
                .keep()
                .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
                .experimental())
-      .add(make_option("min_champ_examples", _min_champ_examples)
+      .add(make_option("min_champ_examples", min_champ_examples)
                .default_value(0)
                .keep()
                .help("Minimum number of examples for any challenger to become champion")
                .experimental())
-      .add(make_option("initial_epsilon", _initial_epsilon)
+      .add(make_option("initial_epsilon", initial_epsilon)
                .default_value(1.0)
                .keep()
                .help("Initial epsilon value")
@@ -380,11 +380,11 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
-  if (!_fixed_significance_level) { _epsilon_decay_significance_level /= model_count; }
+  if (!fixed_significance_level) { epsilon_decay_significance_level /= model_count; }
 
-  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, _min_scope,
-      _epsilon_decay_significance_level, _epsilon_decay_estimator_decay, all.weights.dense_weights,
-      _epsilon_decay_audit_str, _constant_epsilon, all.wpp, _lb_trick, _min_champ_examples, _initial_epsilon);
+  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
+      epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
+      epsilon_decay_audit_str, constant_epsilon, all.wpp, lb_trick, min_champ_examples, initial_epsilon);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

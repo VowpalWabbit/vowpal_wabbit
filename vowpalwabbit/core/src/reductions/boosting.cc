@@ -60,7 +60,7 @@ struct boosting
 template <bool is_learn>
 void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
 
   float final_prediction = 0;
 
@@ -133,7 +133,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::exampl
 template <bool is_learn>
 void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
 
   float final_prediction = 0;
 
@@ -189,7 +189,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
 template <bool is_learn>
 void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
 
   float final_prediction = 0, partial_prediction = 0;
 
@@ -327,7 +327,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 
 void return_example(VW::workspace& all, boosting& /* a */, VW::example& ec)
 {
-  output_and_account_example(all, ec);
+  VW::details::output_and_account_example(all, ec);
   VW::finish_example(all, ec);
 }
 
