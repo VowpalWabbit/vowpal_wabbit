@@ -134,3 +134,88 @@ jobs:
         shell: bash
         run: |
           python -m pytest ./python/tests/
+  windows-python-build:
+    name: windows-2019.amd64.py${{ matrix.config.version }}.build
+    runs-on: windows-2019
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
+      VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
+    strategy:
+      matrix:
+        config:
+        - { version: "3.9", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python39\\" }
+      fail-fast: false
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.config.version }}
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          path: ${{github.workspace}}\vowpal_wabbit
+      - uses: actions/checkout@v2
+        with:
+          path: ${{ env.VCPKG_ROOT }}
+          repository: 'microsoft/vcpkg'
+          ref: ${{ env.VCPKG_REF }}
+          # We need a deep clone so that we can go back in history for version selection.
+          fetch-depth: '0'
+      - name: Restore vcpkg and build artifacts
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: |
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-5
+      - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
+      - name: Build wheel
+        shell: powershell
+        run: |
+          if (![System.IO.Directory]::Exists("${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"))
+          {
+              New-Item -ItemType Directory -Force -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+          }
+          ls ${{ github.workspace }}
+          ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          cd ${{github.workspace}}\\vowpal_wabbit
+          cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
+          pip install wheel
+          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v1
+        with:
+          name: windows_amd64_${{ matrix.config.version }}
+          path: wheel_output
+  windows-python-test:
+    name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
+    needs: windows-python-build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        version: ["3.9"]
+        os: ["windows-2019"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.version }}
+      - uses: actions/download-artifact@v1
+        with:
+          name: windows_amd64_${{ matrix.version }}
+          path: built_wheel
+      - name: Install deps and test wheel
+        shell: bash
+        run: |
+          export wheel_files=(built_wheel/*)
+          export wheel_file="${wheel_files[0]}"
+          echo Installing ${wheel_file}...
+          pip install -r requirements.txt
+          pip install pytest twine
+          pip install ${wheel_file}
+          twine check ${wheel_file}
+          python -m pytest .\\python\\tests\\
+          python .\\python\\tests\\run_doctest.py
