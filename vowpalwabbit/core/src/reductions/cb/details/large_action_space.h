@@ -159,6 +159,16 @@ private:
 template <typename randomized_svd_impl, typename spanner_impl>
 struct cb_explore_adf_large_action_space
 {
+private:
+  uint64_t _d;
+  VW::workspace* _all;
+  size_t _counter;
+  uint64_t _seed;
+  implementation_type _impl_type;
+  size_t _non_degenerate_singular_values;
+  bool _set_testing_components = false;
+
+public:
   spanner_impl spanner_state;
   shrink_factor_config shrink_fact_config;
   randomized_svd_impl impl;
@@ -203,13 +213,6 @@ private:
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
-  uint64_t _d;
-  VW::workspace* _all;
-  size_t _counter;
-  uint64_t _seed;
-  implementation_type _impl_type;
-  size_t _non_degenerate_singular_values;
-  bool _set_testing_components = false;
 };
 
 template <typename TripletType>
