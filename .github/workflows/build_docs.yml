@@ -29,8 +29,8 @@ jobs:
           submodules: recursive
       - name: Configure
         run: |
-          sudo apt-get update
-          sudo apt-install doxygen graphviz
+          sudo apt update
+          sudo apt install doxygen graphviz
       - name: Build docs
         run: |
           cd doc
