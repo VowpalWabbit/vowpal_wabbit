@@ -281,7 +281,7 @@ file_adapter::file_adapter(const char* filename, file_mode mode)
     : reader(true /*is_resettable*/), _mode(mode), _should_close(true)
 {
 #ifdef _WIN32
-  if (_mode == file_mode::read)
+  if (_mode == file_mode::READ)
   {
     // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
     _sopen_s(&_file_descriptor, filename, _O_RDONLY | _O_BINARY | _O_SEQUENTIAL, _SH_DENYWR, 0);
