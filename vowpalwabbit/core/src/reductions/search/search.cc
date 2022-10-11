@@ -184,7 +184,7 @@ public:
   size_t A = 0;             // NOLINT total number of actions, [1..A]; 0 means ldf
   size_t num_learners = 0;  // total number of learners;
   bool cb_learner = false;  // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
-  search_state state;        // current state of learning
+  search_state state;       // current state of learning
   size_t learn_learner_id = 0;   // we allow user to use different learners for different states
   int mix_per_roll_policy = 0;   // for MIX_PER_ROLL, we need to choose a policy to use; this is where it's stored (-2
                                  // means "not selected yet")
@@ -779,9 +779,9 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
     if (ec.l.cs.costs.size() > 0) { extra_offset = 3849017 * ec.l.cs.costs[0].class_index; }
   }
 
-  size_t I = condition_on_cnt; // NOLINT
-  size_t N = std::max(priv.acset.max_bias_ngram_length, priv.acset.max_quad_ngram_length); // NOLINT
-  for (size_t i = 0; i < I; i++)  // position in conditioning
+  size_t I = condition_on_cnt;                                                              // NOLINT
+  size_t N = std::max(priv.acset.max_bias_ngram_length, priv.acset.max_quad_ngram_length);  // NOLINT
+  for (size_t i = 0; i < I; i++)                                                            // position in conditioning
   {
     uint64_t fid = 71933 + 8491087 * extra_offset;
     if (priv.all->audit)
@@ -876,7 +876,10 @@ void del_example_conditioning(search_private& priv, VW::example& ec)
   { del_features_in_top_namespace(priv, ec, conditioning_namespace); }
 }
 
-inline size_t cs_get_costs_size(bool is_cb, VW::polylabel& ld) { return is_cb ? ld.cb.costs.size() : ld.cs.costs.size(); }
+inline size_t cs_get_costs_size(bool is_cb, VW::polylabel& ld)
+{
+  return is_cb ? ld.cb.costs.size() : ld.cs.costs.size();
+}
 
 inline uint32_t cs_get_cost_index(bool is_cb, VW::polylabel& ld, size_t k)
 {
@@ -1040,7 +1043,8 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
       {
         for (action k = 0; k < priv.A; k++)
         {
-          cs_set_cost_loss(is_cb, lab, k, array_contains<action>(k + 1, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f);
+          cs_set_cost_loss(
+              is_cb, lab, k, array_contains<action>(k + 1, oracle_actions, oracle_actions_cnt) ? 0.f : 1.f);
         }
       }
     }
@@ -1091,7 +1095,7 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   action a = static_cast<action>(-1);
   if (priv.use_action_costs)
   {
-    size_t K = (allowed_actions == nullptr) ? priv.A : allowed_actions_cnt; // NOLINT
+    size_t K = (allowed_actions == nullptr) ? priv.A : allowed_actions_cnt;  // NOLINT
     cdbg << "costs = [";
     for (size_t k = 0; k < K; k++) { cdbg << ' ' << allowed_actions_cost[k]; }
     cdbg << " ]" << endl;
@@ -1136,8 +1140,9 @@ action choose_oracle_action(search_private& priv, size_t ec_cnt, const action* o
   {
     VW::v_array<action_cache>* this_cache = new VW::v_array<action_cache>();
     // TODO we don't really need to construct this VW::polylabel
-    VW::polylabel l = allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost); // NOLINT
-    size_t K = cs_get_costs_size(priv.cb_learner, l); // NOLINT
+    VW::polylabel l =
+        allowed_actions_to_ld(priv, 1, allowed_actions, allowed_actions_cnt, allowed_actions_cost);  // NOLINT
+    size_t K = cs_get_costs_size(priv.cb_learner, l);                                                // NOLINT
     for (size_t k = 0; k < K; k++)
     {
       action cl = cs_get_cost_index(priv.cb_learner, l, k);
@@ -1189,7 +1194,7 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
 
   if (need_partial_predictions)
   {
-    size_t K = cs_get_costs_size(priv.cb_learner, ec.l); // NOLINT
+    size_t K = cs_get_costs_size(priv.cb_learner, ec.l);  // NOLINT
     float min_cost = FLT_MAX;
     for (size_t k = 0; k < K; k++)
     {
@@ -1218,7 +1223,7 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
 
   if ((priv.state == search_state::INIT_TRAIN) && (priv.subsample_timesteps <= -1))  // active learning
   {
-    size_t K = cs_get_costs_size(priv.cb_learner, ec.l); // NOLINT
+    size_t K = cs_get_costs_size(priv.cb_learner, ec.l);  // NOLINT
     float min_cost = FLT_MAX, min_cost2 = FLT_MAX;
     for (size_t k = 0; k < K; k++)
     {
@@ -1279,7 +1284,7 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
     {
       if (k > 0) { (*priv.raw_output_string_stream) << ' '; }
       (*priv.raw_output_string_stream) << cs_get_cost_index(priv.cb_learner, ec.l, k) << ':'
-                                    << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
+                                       << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
     }
     all.print_text_by_ref(all.raw_prediction.get(), priv.raw_output_string_stream->str(), ec.tag, all.logger);
   }
@@ -1307,7 +1312,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
   float best_prediction = 0.;
   action best_action = 0;
 
-  size_t start_K = (priv.is_ldf && VW::is_cs_example_header(ecs[0])) ? 1 : 0; // NOLINT
+  size_t start_K = (priv.is_ldf && VW::is_cs_example_header(ecs[0])) ? 1 : 0;  // NOLINT
 
   VW::v_array<action_cache>* this_cache = nullptr;
   if (need_partial_predictions) { this_cache = new VW::v_array<action_cache>(); }
@@ -1381,10 +1386,10 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
 int choose_policy(search_private& priv, bool advance_prng = true)
 {
   roll_method method = (priv.state == search_state::INIT_TEST) ? roll_method::POLICY
-                                                             : (priv.state == search_state::LEARN)
+                                                               : (priv.state == search_state::LEARN)
           ? priv.rollout_method
           : (priv.state == search_state::INIT_TRAIN) ? priv.rollin_method
-                                                    : roll_method::NO_ROLLOUT;  // this should never happen
+                                                     : roll_method::NO_ROLLOUT;  // this should never happen
   switch (method)
   {
     case roll_method::POLICY:
@@ -1412,8 +1417,8 @@ int choose_policy(search_private& priv, bool advance_prng = true)
 
 bool cached_item_equivalent(unsigned char* const& A, unsigned char* const& B)
 {
-  size_t sz_A = *A; // NOLINT
-  size_t sz_B = *B; // NOLINT
+  size_t sz_A = *A;  // NOLINT
+  size_t sz_B = *B;  // NOLINT
   if (sz_A != sz_B) { return false; }
   return memcmp(A, B, sz_A) == 0;
 }
@@ -1528,7 +1533,7 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
   else  // is  LDF
   {
     assert(cs_get_costs_size(priv.cb_learner, losses) == priv.learn_ec_ref_cnt);
-    size_t start_K = (priv.is_ldf && VW::is_cs_example_header(priv.learn_ec_ref[0])) ? 1 : 0; // NOLINT
+    size_t start_K = (priv.is_ldf && VW::is_cs_example_header(priv.learn_ec_ref[0])) ? 1 : 0;  // NOLINT
 
     // TODO: weight
     if (add_conditioning)
@@ -1845,7 +1850,7 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
       }
       else  // we need to predict, and then cache, and maybe run foreach_action
       {
-        size_t start_K = (priv.is_ldf && VW::is_cs_example_header(ecs[0])) ? 1 : 0; // NOLINT
+        size_t start_K = (priv.is_ldf && VW::is_cs_example_header(ecs[0])) ? 1 : 0;  // NOLINT
         priv.last_action_repr.clear();
         if (priv.auto_condition_features)
         {
@@ -1948,14 +1953,14 @@ void hoopla_permute(size_t* B, size_t* end)
 {
   // from Curtis IPL 2004, "Darts and hoopla board design"
   // first sort
-  size_t N = end - B; // NOLINT
+  size_t N = end - B;  // NOLINT
   std::sort(B, end, cmp_size_t);
   // make some temporary space
-  size_t* A = calloc_or_throw<size_t>((N + 1) * 2); // NOLINT
-  A[N] = B[0];                // arbitrarily choose the maximum in the middle
-  A[N + 1] = B[N - 1];        // so the maximum goes next to it
-  size_t lo = N, hi = N + 1;  // which parts of A have we filled in? [lo,hi]
-  size_t i = 0, j = N - 1;    // which parts of B have we already covered? [0,i] and [j,N-1]
+  size_t* A = calloc_or_throw<size_t>((N + 1) * 2);  // NOLINT
+  A[N] = B[0];                                       // arbitrarily choose the maximum in the middle
+  A[N + 1] = B[N - 1];                               // so the maximum goes next to it
+  size_t lo = N, hi = N + 1;                         // which parts of A have we filled in? [lo,hi]
+  size_t i = 0, j = N - 1;                           // which parts of B have we already covered? [0,i] and [j,N-1]
   while (i + 1 < j)
   {
     // there are four options depending on where things get placed
@@ -3052,17 +3057,17 @@ predictor& predictor::set_tag(ptag tag)
 
 action predictor::predict()
 {
-  const action* orA = oracle_actions.size() == 0 ? nullptr : oracle_actions.begin(); // NOLINT
-  const ptag* cOn = condition_on_names.size() == 0 ? nullptr : condition_on_tags.begin(); // NOLINT
-  const char* cNa = nullptr; // NOLINT
+  const action* orA = oracle_actions.size() == 0 ? nullptr : oracle_actions.begin();       // NOLINT
+  const ptag* cOn = condition_on_names.size() == 0 ? nullptr : condition_on_tags.begin();  // NOLINT
+  const char* cNa = nullptr;                                                               // NOLINT
   if (condition_on_names.size() > 0)
   {
     condition_on_names.push_back(static_cast<char>(0));  // null terminate
     cNa = condition_on_names.begin();
   }
-  const action* alA = (allowed_actions.size() == 0) ? nullptr : allowed_actions.begin(); // NOLINT
-  const float* alAcosts = (allowed_actions_cost.size() == 0) ? nullptr : allowed_actions_cost.begin(); // NOLINT
-  size_t numAlA = std::max(allowed_actions.size(), allowed_actions_cost.size()); // NOLINT
+  const action* alA = (allowed_actions.size() == 0) ? nullptr : allowed_actions.begin();                // NOLINT
+  const float* alAcosts = (allowed_actions_cost.size() == 0) ? nullptr : allowed_actions_cost.begin();  // NOLINT
+  size_t numAlA = std::max(allowed_actions.size(), allowed_actions_cost.size());                        // NOLINT
   action p = is_ldf
       ? sch.predictLDF(ec, ec_cnt, my_tag, orA, oracle_actions.size(), cOn, cNa, learner_id, weight)
       : sch.predict(*ec, my_tag, orA, oracle_actions.size(), cOn, cNa, alA, numAlA, alAcosts, learner_id, weight);
@@ -3091,7 +3096,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   std::string neighbor_features_string;
   std::string rollout_string = "mix_per_state";
   std::string rollin_string = "mix_per_state";
-  uint64_t A; // NOLINT
+  uint64_t A;  // NOLINT
   uint64_t passes_per_policy;
   uint64_t history_length;
   uint64_t rollout_num_steps;

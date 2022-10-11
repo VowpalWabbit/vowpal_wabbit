@@ -19,7 +19,7 @@ VW::LEARNER::base_learner* cb_adf_setup(VW::setup_base_i& stack_builder);
 }  // namespace VW
 
 // TODO: Move these functions into VW lib and not reductions
-namespace CB_ADF // NOLINT
+namespace CB_ADF  // NOLINT
 {
 VW::example* test_adf_sequence(const VW::multi_ex& ec_seq);
 CB::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);

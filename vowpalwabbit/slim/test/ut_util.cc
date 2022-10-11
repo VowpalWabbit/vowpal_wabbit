@@ -441,13 +441,13 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
 
   // we have loaded the model and can push the features
   VW::example_predict features;
-  vw_slim::example_predict_builder bOa(&features, "64"); // NOLINT
+  vw_slim::example_predict_builder bOa(&features, "64");  // NOLINT
   bOa.push_feature(static_cast<int>(call_type), 1.f);
-  vw_slim::example_predict_builder bOb(&features, "16"); // NOLINT
+  vw_slim::example_predict_builder bOb(&features, "16");  // NOLINT
   bOb.push_feature(static_cast<int>(modality), 1.f);
-  vw_slim::example_predict_builder bOc(&features, "32"); // NOLINT
+  vw_slim::example_predict_builder bOc(&features, "32");  // NOLINT
   bOc.push_feature(static_cast<int>(network_type), 1.f);
-  vw_slim::example_predict_builder bOd(&features, "48"); // NOLINT
+  vw_slim::example_predict_builder bOd(&features, "48");  // NOLINT
   bOd.push_feature(static_cast<int>(platform), 1.f);
 
   // push actions
@@ -455,7 +455,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
   VW::example_predict actions[min_delay_actions];
   for (int i = 0; i < min_delay_actions; i++)
   {
-    vw_slim::example_predict_builder bOe(&actions[i], "80"); // NOLINT
+    vw_slim::example_predict_builder bOe(&actions[i], "80");  // NOLINT
     bOe.push_feature(i, 1.f);
   }
 
@@ -490,7 +490,7 @@ TEST(VowpalWabbitSlim, interaction_num_bits_bug)
   VW::example_predict features;
 
   // Test with the single namespace.
-  vw_slim::example_predict_builder bOa(&features, "Features", vw.feature_index_num_bits()); // NOLINT
+  vw_slim::example_predict_builder bOa(&features, "Features", vw.feature_index_num_bits());  // NOLINT
   bOa.push_feature_string("Networkmobile", 1.f);
   bOa.push_feature_string("CallTypeP2P", 1.f);
   bOa.push_feature_string("PlatformAndroid", 1.f);
@@ -501,7 +501,7 @@ TEST(VowpalWabbitSlim, interaction_num_bits_bug)
   VW::example_predict actions[MINDELAYACTIONS];
   for (int i = 0; i < MINDELAYACTIONS; i++)
   {
-    vw_slim::example_predict_builder bOe(&actions[i], "80"); // NOLINT
+    vw_slim::example_predict_builder bOe(&actions[i], "80");  // NOLINT
     bOe.push_feature(i, 1.f);
   }
 
@@ -784,14 +784,14 @@ TEST(ColdStartModel, action_set_not_reordered)
 
   VW::example_predict features;
 
-  vw_slim::example_predict_builder bOa(&features, "Features", vw.feature_index_num_bits()); // NOLINT
+  vw_slim::example_predict_builder bOa(&features, "Features", vw.feature_index_num_bits());  // NOLINT
   bOa.push_feature_string("f1", 1.f);
 
   static const int NUM_ACTIONS = 5;
   std::array<VW::example_predict, NUM_ACTIONS> actions;
   for (size_t i = 0; i < actions.size(); i++)
   {
-    vw_slim::example_predict_builder bOe(&actions[i], "ActionFeatures"); // NOLINT
+    vw_slim::example_predict_builder bOe(&actions[i], "ActionFeatures");  // NOLINT
     bOe.push_feature(i, 1.f);
   }
 

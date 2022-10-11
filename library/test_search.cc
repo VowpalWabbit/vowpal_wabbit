@@ -16,7 +16,7 @@ struct wt
   wt(std::string w, uint32_t t) : word(std::move(w)), tag(t) {}
 };
 
-class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> > // NOLINT
+class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> >  // NOLINT
 {
 public:
   SequenceLabelerTask(VW::workspace& vw_obj)
@@ -42,7 +42,7 @@ public:
     }
   }
 
-  void _run2(Search::search& sch, std::vector<wt>& input_example, std::vector<uint32_t>& output) // NOLINT
+  void _run2(Search::search& sch, std::vector<wt>& input_example, std::vector<uint32_t>& output)  // NOLINT
   {
     auto& vw_obj = sch.get_vw_pointer_unsafe();
     output.clear();

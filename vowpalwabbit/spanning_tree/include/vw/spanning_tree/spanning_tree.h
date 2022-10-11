@@ -46,36 +46,41 @@ using socket_t = int;
 
 #include "vw/common/future_compat.h"
 
-namespace VW // NOLINT
+namespace VW  // NOLINT
 {
 struct spanning_tree
 {
   spanning_tree(short unsigned int port = 26543, bool quiet = false);
   ~spanning_tree();
 
-  VW_DEPRECATED("VW::SpanningTree::BoundPort renamed to VW::spanning_tree::bound_port. VW::SpanningTree::BoundPort will be removed in VW 10.")
-  inline short unsigned int BoundPort() // NOLINT
+  VW_DEPRECATED(
+      "VW::SpanningTree::BoundPort renamed to VW::spanning_tree::bound_port. VW::SpanningTree::BoundPort will be "
+      "removed in VW 10.")
+  inline short unsigned int BoundPort()  // NOLINT
   {
     return bound_port();
   }
   short unsigned int bound_port();
 
-  VW_DEPRECATED("VW::SpanningTree::Start renamed to VW::spanning_tree::start. VW::SpanningTree::Start will be removed in VW 10.")
-  inline void Start() // NOLINT
+  VW_DEPRECATED(
+      "VW::SpanningTree::Start renamed to VW::spanning_tree::start. VW::SpanningTree::Start will be removed in VW 10.")
+  inline void Start()  // NOLINT
   {
     return start();
   }
   void start();
 
-  VW_DEPRECATED("VW::SpanningTree::Run renamed to VW::spanning_tree::run. VW::SpanningTree::Run will be removed in VW 10.")
-  inline void Run() // NOLINT
+  VW_DEPRECATED(
+      "VW::SpanningTree::Run renamed to VW::spanning_tree::run. VW::SpanningTree::Run will be removed in VW 10.")
+  inline void Run()  // NOLINT
   {
     return run();
   }
   void run();
 
-  VW_DEPRECATED("VW::SpanningTree::Stop renamed to VW::spanning_tree::stop. VW::SpanningTree::Stop will be removed in VW 10.")
-  inline void Stop() // NOLINT
+  VW_DEPRECATED(
+      "VW::SpanningTree::Stop renamed to VW::spanning_tree::stop. VW::SpanningTree::Stop will be removed in VW 10.")
+  inline void Stop()  // NOLINT
   {
     return stop();
   }
@@ -93,5 +98,6 @@ private:
   bool _quiet;
 };
 
-using SpanningTree VW_DEPRECATED("VW::SpanningTree renamed to VW::spanning_tree. VW::SpanningTree will be removed in VW 10.") = spanning_tree;
+using SpanningTree VW_DEPRECATED(
+    "VW::SpanningTree renamed to VW::spanning_tree. VW::SpanningTree will be removed in VW 10.") = spanning_tree;
 }  // namespace VW

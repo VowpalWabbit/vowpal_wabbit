@@ -149,9 +149,9 @@ int main(int argc, char* argv[])
     exit(2);
   }
 
-  FILE* fB; // NOLINT
-  FILE* fU; // NOLINT
-  FILE* fI; // NOLINT
+  FILE* fB;  // NOLINT
+  FILE* fU;  // NOLINT
+  FILE* fI;  // NOLINT
 
   if (VW::file_open(&fB, blacklistfilename.c_str(), "r") != 0)
   {

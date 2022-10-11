@@ -269,14 +269,16 @@ void run(Search::search& sch, VW::multi_ex& ec)
       search_predictor.set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p');
       if (pass > 1)
       {
-        search_predictor.add_condition_range(static_cast<ptag>(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
+        search_predictor.add_condition_range(
+            static_cast<ptag>(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
       }
       search_predictor.set_oracle(oracle);
       last_prediction = search_predictor.predict();
 
       if ((pass == data.multipass) && sch.output().good())
       {
-        sch.output() << ((data.encoding == encoding_type::BIO) ? last_prediction : bilou_to_bio(last_prediction)) << ' ';
+        sch.output() << ((data.encoding == encoding_type::BIO) ? last_prediction : bilou_to_bio(last_prediction))
+                     << ' ';
       }
     }
   }
@@ -297,7 +299,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 
 void run(Search::search& sch, VW::multi_ex& ec)
 {
-  size_t K = *sch.get_task_data<size_t>(); // NOLINT
+  size_t K = *sch.get_task_data<size_t>();  // NOLINT
   float* costs = calloc_or_throw<float>(K);
   Search::predictor search_predictor(sch, static_cast<ptag>(0));
   for (size_t i = 0; i < ec.size(); i++)

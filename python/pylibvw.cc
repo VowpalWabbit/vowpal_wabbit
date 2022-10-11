@@ -1683,7 +1683,8 @@ BOOST_PYTHON_MODULE(pylibvw)
           "For program (cmd line) options, check to see if a given option was specified; eg _sch.po_exists(\"search\") "
           "should be True")
       .def("po_get", &po_get,
-          "For program (cmd line) options, if an option was specified, get its value; eg _sch.po_get(\"search\") should "
+          "For program (cmd line) options, if an option was specified, get its value; eg _sch.po_get(\"search\") "
+          "should "
           "return the # of actions (returns either int or string)")
       .def("po_get_str", &po_get_string, "Same as po_get, but specialized for string return values.")
       .def("po_get_int", &po_get_int, "Same as po_get, but specialized for integer return values.")

@@ -40,12 +40,12 @@ using std::endl;
 
 struct boosting
 {
-  int N = 0; // NOLINT
+  int N = 0;  // NOLINT
   float gamma = 0.f;
   std::string alg = "";
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> random_state;
-  std::vector<std::vector<int64_t> > C; // NOLINT
+  std::vector<std::vector<int64_t> > C;  // NOLINT
   std::vector<float> alpha;
   std::vector<float> v;
   int t = 0;

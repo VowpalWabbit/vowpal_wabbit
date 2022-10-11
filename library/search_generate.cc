@@ -42,7 +42,7 @@ struct nextstr
 
 inline float min_float(float a, float b) { return (a < b) ? a : b; }
 
-class Trie // NOLINT
+class Trie  // NOLINT
 {
 public:
   Trie() : _terminus(false), _count(0), _max_count(0), _max_string("") {}
@@ -91,7 +91,8 @@ public:
     {
       next.clear();
       float c = 1.0f / (float)_count;
-      next.push_back(nextstr('$', std::log(1.0f + c * (float)_terminus), _max_string, std::log(1.0f + (float)_max_count)));
+      next.push_back(
+          nextstr('$', std::log(1.0f + c * (float)_terminus), _max_string, std::log(1.0f + (float)_max_count)));
       for (size_t id = 0; id < _children.size(); id++)
       {
         if (_children[id])
@@ -147,7 +148,7 @@ private:
   std::vector<Trie*> _children;
 };
 
-class IncrementalEditDistance // NOLINT
+class IncrementalEditDistance  // NOLINT
 {
 public:
   IncrementalEditDistance(std::string& target, size_t subst_cost = 1, size_t ins_cost = 1, size_t del_cost = 1)
@@ -173,8 +174,8 @@ public:
     _prev_row_min = _cur_row[0];
     for (size_t n = 1; n <= _N; n++)
     {
-      _cur_row[n] = min3(
-          _prev_row[n] + _ins_cost, _prev_row[n - 1] + ((_target[n - 1] == c) ? 0 : _subst_cost), _cur_row[n - 1] + _del_cost);
+      _cur_row[n] = min3(_prev_row[n] + _ins_cost, _prev_row[n - 1] + ((_target[n - 1] == c) ? 0 : _subst_cost),
+          _cur_row[n - 1] + _del_cost);
       _prev_row_min = std::min(_prev_row_min, _cur_row[n]);
     }
     // swap cur_row and prev_row
@@ -266,7 +267,7 @@ float get_or_one(std::vector<std::pair<char, size_t>>& v, char c)
   return 1.;
 }
 
-class Generator : public SearchTask<input, output> // NOLINT
+class Generator : public SearchTask<input, output>  // NOLINT
 {
 public:
   Generator(VW::workspace& vw_obj, Trie* _dict = nullptr)

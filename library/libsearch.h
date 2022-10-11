@@ -15,7 +15,7 @@ license as described in the file LICENSE.
 #  include <memory>
 
 template <class INPUT, class OUTPUT>
-class SearchTask // NOLINT
+class SearchTask  // NOLINT
 {
 public:
   SearchTask(VW::workspace& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
@@ -38,9 +38,10 @@ public:
     VW::dealloc_examples(_bogus_example, 1);
   }
 
-  virtual void _run(Search::search& sch, INPUT& input_example, OUTPUT& output) {}  // NOLINT YOU MUST DEFINE THIS FUNCTION!
-  void _setup(Search::search& sch, INPUT& input_example, OUTPUT& output) {}        // NOLINT OPTIONAL
-  void _takedown(Search::search& sch, INPUT& input_example, OUTPUT& output) {}     // NOLINT OPTIONAL
+  virtual void _run(Search::search& sch, INPUT& input_example, OUTPUT& output) {
+  }                                                                             // NOLINT YOU MUST DEFINE THIS FUNCTION!
+  void _setup(Search::search& sch, INPUT& input_example, OUTPUT& output) {}     // NOLINT OPTIONAL
+  void _takedown(Search::search& sch, INPUT& input_example, OUTPUT& output) {}  // NOLINT OPTIONAL
 
   void learn(INPUT& input_example, OUTPUT& output)
   {
@@ -54,8 +55,8 @@ public:
   }
 
 protected:
-  VW::workspace& vw_obj; // NOLINT
-  Search::search& sch; // NOLINT
+  VW::workspace& vw_obj;  // NOLINT
+  Search::search& sch;    // NOLINT
 
 private:
   VW::example* _bogus_example;
@@ -95,7 +96,7 @@ private:
   }
 };
 
-class BuiltInTask : public SearchTask<VW::multi_ex, std::vector<uint32_t>> // NOLINT
+class BuiltInTask : public SearchTask<VW::multi_ex, std::vector<uint32_t>>  // NOLINT
 {
 public:
   BuiltInTask(VW::workspace& vw_obj, Search::search_task* task)
@@ -119,7 +120,7 @@ public:
   }
 
 protected:
-  Search::search_task* my_task; // NOLINT
+  Search::search_task* my_task;  // NOLINT
 };
 
 #endif

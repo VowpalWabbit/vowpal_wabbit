@@ -97,7 +97,7 @@ inline bool example_is_test(const VW::polylabel& l) { return l.cs.costs.empty();
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
-  auto D = VW::make_unique<task_data>(); // NOLINT
+  auto D = VW::make_unique<task_data>();  // NOLINT
   uint64_t num_loops;
 
   option_group_definition new_options("[Search] Search Graphtask");
@@ -186,7 +186,7 @@ void run_bfs(task_data& D, VW::multi_ex& ec)
 
 void setup(Search::search& sch, VW::multi_ex& ec)
 {
-  task_data& D = *sch.get_task_data<task_data>(); // NOLINT
+  task_data& D = *sch.get_task_data<task_data>();  // NOLINT
   D.multiplier = D.wpp << D.ss;
   D.wpp = sch.get_vw_pointer_unsafe().wpp;
   D.mask = sch.get_vw_pointer_unsafe().weights.mask();
@@ -239,7 +239,7 @@ void setup(Search::search& sch, VW::multi_ex& ec)
 
 void takedown(Search::search& sch, VW::multi_ex& /*ec*/)
 {
-  task_data& D = *sch.get_task_data<task_data>(); // NOLINT
+  task_data& D = *sch.get_task_data<task_data>();  // NOLINT
   D.bfs.clear();
   D.pred.clear();
   for (auto x : D.adj) { x.clear(); }

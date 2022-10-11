@@ -220,8 +220,8 @@ void spanning_tree::run()
     {
       if (!_quiet)
       {
-        std::cout << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): invalid id=" << id
-                  << " >=  " << total << std::endl;
+        std::cout << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): invalid id=" << id << " >=  " << total
+                  << std::endl;
       }
       ok = false;
     }

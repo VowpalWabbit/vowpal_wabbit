@@ -148,7 +148,7 @@ void inner_update_proximal(ftrl_update_data& d, float x, float& wref)
   float gradient = d.update * x;
   float ng2 = w[W_G2] + gradient * gradient;
   float sqrt_ng2 = sqrtf(ng2);
-  float sqrt_wW_G2 = sqrtf(w[W_G2]); // NOLINT
+  float sqrt_wW_G2 = sqrtf(w[W_G2]);  // NOLINT
   float sigma = (sqrt_ng2 - sqrt_wW_G2) / d.ftrl_alpha;
   w[W_ZT] += gradient - sigma * w[W_XT];
   w[W_G2] = ng2;
