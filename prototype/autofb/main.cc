@@ -19,15 +19,11 @@ data(base)
   //_(float, eta);
 };
 
-// extension(derived) of (base)
-// {
-//   _(double, l1);
-//   _(double, l2);
-// };
-
-
-
-
+extension(derived) of (base)
+{
+  _(double, l1);
+  _(double, l2);
+};
 
 // a type erased object needs to have the following capabilities
 //  - sized storage that can be 
@@ -141,15 +137,24 @@ int main(int argc, char** argv)
     .add<uint32_t, print_type<uint32_t>>()
     .add<float, print_type<float>>()
     .add<bool, print_type<bool>>()
-    .add<unsigned char, print_type<unsigned char>>();
+    .add<unsigned char, print_type<unsigned char>>()
+    .add<double, print_type<double>>();
   
 
   base b; // unfortunately, due to static lifetime initialization, we must construct a prototype of the object
           // before we can reflect over its properties
           // the expectation is that all of these objects need to be trivially constructable
+  derived d;
   std::for_each(types.types_begin(), types.types_end(), [&dt](const typesys::type_info& type_info)
   {
-    cout << "Type: " << type_info.name.name << "_V" << type_info.name.version << endl;
+    cout << "Type: " << type_info.name.name << "_V" << type_info.name.version;
+    if (type_info.has_base())
+    {
+      auto& base_type_info = universe::instance().get_type(type_info.base());
+      cout << " : " << base_type_info.name.name << "_V" << base_type_info.name.version;
+    }
+    cout << endl;
+
     //auto properties = type_info.properties;
     std::for_each(type_info.props_begin(), type_info.props_end(), [&dt](const typesys::property_info& property_info)
     {
