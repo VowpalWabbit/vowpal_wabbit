@@ -27,8 +27,9 @@ static constexpr std::array<VW::column_definition, NUM_COLS> AUDIT_REGRESSOR_COL
 static const std::array<std::string, NUM_COLS> AUDIT_REGRESSOR_HEADER = {
     "example\ncounter", "values\naudited", "total\nprogress"};
 
-struct audit_regressor_data
+class audit_regressor_data
 {
+public:
   audit_regressor_data(VW::workspace* all, std::unique_ptr<VW::io::writer>&& output) : all(all)
   {
     out_file.add_file(std::move(output));

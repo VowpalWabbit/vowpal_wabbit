@@ -22,8 +22,9 @@ using namespace VW::config;
 
 namespace
 {
-struct lrq_state
+class lrq_state
 {
+public:
   VW::workspace* all = nullptr;  // feature creation, audit, hash_inv
   bool lrindices[256];
   size_t orig_size[256];

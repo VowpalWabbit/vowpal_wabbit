@@ -18,8 +18,9 @@ using namespace VW::config;
 
 namespace
 {
-struct cb_dro_data
+class cb_dro_data
 {
+public:
   explicit cb_dro_data(double alpha, double tau, double wmax) : _chisq(alpha, tau, 0, wmax) {}
 
   bool is_valid() { return _chisq.is_valid(); }

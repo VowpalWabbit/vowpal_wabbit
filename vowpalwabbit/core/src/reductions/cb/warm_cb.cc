@@ -42,8 +42,9 @@ using namespace VW::config;
 
 namespace
 {
-struct warm_cb
+class warm_cb
 {
+public:
   CB::label cb_label;
   uint64_t app_seed = 0;
   VW::action_scores a_s;

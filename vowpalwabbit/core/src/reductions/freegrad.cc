@@ -32,9 +32,10 @@ constexpr size_t H1 = 3;     // maximum absolute value of features
 constexpr size_t HT = 4;     // maximum gradient
 constexpr size_t S = 5;      // sum of radios \sum_s |x_s|/h_s
 
-struct freegrad;
-struct freegrad_update_data
+class freegrad;
+class freegrad_update_data
 {
+public:
   freegrad* freegrad_data_ptr;
   float update = 0.f;
   float ec_weight = 0.f;
@@ -46,8 +47,9 @@ struct freegrad_update_data
   float maximum_clipped_gradient_norm = 0.f;
 };
 
-struct freegrad
+class freegrad
 {
+public:
   VW::workspace* all;  // features, finalize, l1, l2,
   float epsilon = 0.f;
   float lipschitz_const = 0.f;

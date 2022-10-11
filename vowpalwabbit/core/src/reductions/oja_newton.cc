@@ -22,8 +22,9 @@ using namespace VW::config;
 
 namespace
 {
-struct oja_n_update_data
+class oja_n_update_data
 {
+public:
   struct OjaNewton* oja_newton_ptr = nullptr;
   float g = 0.f;
   float sketch_cnt = 0.f;
@@ -35,8 +36,9 @@ struct oja_n_update_data
   float prediction = 0.f;
 };
 
-struct OjaNewton
+class OjaNewton
 {
+public:
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> random_state;
   int m = 0;

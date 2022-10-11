@@ -12,9 +12,10 @@
 
 namespace VW
 {
-struct metric_sink;
-struct metric_sink_visitor
+class metric_sink;
+class metric_sink_visitor
 {
+public:
   virtual ~metric_sink_visitor() = default;
   virtual void int_metric(const std::string& key, uint64_t value) = 0;
   virtual void float_metric(const std::string& key, float value) = 0;

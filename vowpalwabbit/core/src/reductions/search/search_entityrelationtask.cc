@@ -27,8 +27,9 @@ using namespace Search;
 
 void update_example_indices(bool audit, VW::example* ec, uint64_t mult_amount, uint64_t plus_amount);
 
-struct task_data
+class task_data
 {
+public:
   float relation_none_cost;
   float entity_cost;
   float relation_cost;
