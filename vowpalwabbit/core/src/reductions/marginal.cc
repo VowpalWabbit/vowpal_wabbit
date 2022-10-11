@@ -9,6 +9,7 @@
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/interactions.h"
+#include "vw/core/io_buf.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"

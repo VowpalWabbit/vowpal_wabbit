@@ -37,14 +37,14 @@ namespace
 {
 struct cb_explore
 {
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   cb_to_cs cbcs;
   VW::v_array<uint32_t> preds;
   VW::v_array<float> cover_probs;
 
   CB::label cb_label;
-  COST_SENSITIVE::label cs_label;
-  COST_SENSITIVE::label second_cs_label;
+  VW::cs_label cs_label;
+  VW::cs_label second_cs_label;
 
   learner<cb_explore, VW::example>* cs = nullptr;
 
@@ -127,7 +127,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
   float prob = 1.f / static_cast<float>(data.bag_size);
   for (size_t i = 0; i < data.bag_size; i++)
   {
-    uint32_t count = VW::reductions::bs::weight_gen(data._random_state);
+    uint32_t count = VW::reductions::bs::weight_gen(data.random_state);
     bool learn = is_learn && count > 0;
     if (learn) { base.learn(ec, i); }
     else
@@ -247,7 +247,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
     data.second_cs_label = std::move(ec.l.cs);
   }
 
-  ec.l.cs = COST_SENSITIVE::label{};
+  ec.l.cs = VW::cs_label{};
 }
 
 void print_update_cb_explore(VW::workspace& all, bool is_test, VW::example& ec, std::stringstream& pred_string)
@@ -408,7 +408,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   cb_explore_data->nounif = cb_explore_opts->nounif;
   cb_explore_data->psi = cb_explore_opts->psi;
 
-  cb_explore_data->_random_state = all.get_random_state();
+  cb_explore_data->random_state = all.get_random_state();
   uint32_t num_actions = cb_explore_data->cbcs.num_actions;
 
   if (cb_explore_data->epsilon < 0.0 || cb_explore_data->epsilon > 1.0)
@@ -438,8 +438,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
       cb_explore_data->epsilon_decay = true;
     }
     cb_explore_data->cs = reinterpret_cast<learner<cb_explore, VW::example>*>(as_singleline(all.cost_sensitive));
-    for (uint32_t j = 0; j < num_actions; j++)
-    { cb_explore_data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
+    for (uint32_t j = 0; j < num_actions; j++) { cb_explore_data->second_cs_label.costs.push_back(VW::cs_class{}); }
     cb_explore_data->cover_probs.resize_but_with_stl_behavior(num_actions);
     cb_explore_data->preds.reserve(cb_explore_data->cover_size);
     learn_ptr = predict_or_learn_cover<true>;

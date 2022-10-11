@@ -115,7 +115,7 @@ void default_ccb_label(ccb_label& ld);
 void parse_ccb_label(ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
     VW::io::logger& logger);
 
-extern VW::label_parser ccb_label_parser;
+extern VW::label_parser ccb_label_parser_global;
 }  // namespace VW
 
 namespace VW

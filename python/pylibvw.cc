@@ -394,15 +394,15 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lDEFAULT:
       return all ? &all->example_parser->lbl_parser : NULL;
     case lBINARY:  // or #lSIMPLE
-      return &simple_label_parser;
+      return &VW::simple_label_parser_global;
     case lMULTICLASS:
-      return &MULTICLASS::mc_label;
+      return &VW::multiclass_label_parser_global;
     case lCOST_SENSITIVE:
-      return &COST_SENSITIVE::cs_label;
+      return &VW::cs_label_parser_global;
     case lCONTEXTUAL_BANDIT:
       return &CB::cb_label;
     case lCONDITIONAL_CONTEXTUAL_BANDIT:
-      return &VW::ccb_label_parser;
+      return &VW::ccb_label_parser_global;
     case lSLATES:
       return &VW::slates::slates_label_parser;
     case lCONTINUOUS:
@@ -419,12 +419,12 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 size_t my_get_label_type(VW::workspace* all)
 {
   VW::label_parser* lp = &all->example_parser->lbl_parser;
-  if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
-  else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
+  if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
+  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label)
   {
     return lMULTICLASS;
   }
-  else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label)
+  else if (lp->parse_label == VW::cs_label_parser_global.parse_label)
   {
     return lCOST_SENSITIVE;
   }
@@ -436,7 +436,7 @@ size_t my_get_label_type(VW::workspace* all)
   {
     return lCONTEXTUAL_BANDIT_EVAL;
   }
-  else if (lp->parse_label == VW::ccb_label_parser.parse_label)
+  else if (lp->parse_label == VW::ccb_label_parser_global.parse_label)
   {
     return lCONDITIONAL_CONTEXTUAL_BANDIT;
   }

@@ -280,7 +280,7 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     do
     {
       brw = 0;
-      size_t K = d.rank * 2 + 1;
+      size_t K = d.rank * 2 + 1;  // NOLINT
       std::stringstream msg;
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);

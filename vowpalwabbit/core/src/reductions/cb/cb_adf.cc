@@ -315,16 +315,16 @@ void output_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
@@ -347,14 +347,14 @@ void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::exampl
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }

@@ -80,18 +80,18 @@ void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
   if (o.probabilities)
   {
     // === Print probabilities for all classes
-    std::ostringstream outputStringStream;
+    std::ostringstream output_string_stream;
     for (uint32_t i = 0; i < o.k; i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i); }
+      if (i > 0) { output_string_stream << ' '; }
+      if (all.sd->ldict) { output_string_stream << all.sd->ldict->get(i); }
       else
       {
-        outputStringStream << i;
+        output_string_stream << i;
       }
-      outputStringStream << ':' << ec.pred.scalars[i];
+      output_string_stream << ':' << ec.pred.scalars[i];
     }
-    const auto ss_str = outputStringStream.str();
+    const auto ss_str = output_string_stream.str();
     for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
   }
   MULTILABEL::output_example(all, ec);

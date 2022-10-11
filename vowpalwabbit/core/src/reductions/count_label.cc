@@ -19,16 +19,16 @@ namespace
 {
 struct reduction_data
 {
-  VW::workspace* _all = nullptr;
-  VW::LEARNER::base_learner* _base = nullptr;
+  VW::workspace* all = nullptr;
+  VW::LEARNER::base_learner* base = nullptr;
 
-  explicit reduction_data(VW::workspace* all, VW::LEARNER::base_learner* base) : _all(all), _base(base) {}
+  explicit reduction_data(VW::workspace* all, VW::LEARNER::base_learner* base) : all(all), base(base) {}
 };
 
 template <bool is_learn>
 void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  shared_data* sd = data._all->sd;
+  shared_data* sd = data.all->sd;
   VW::count_label(*sd, ec.l.simple.label);
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
@@ -41,7 +41,7 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
 template <bool is_learn>
 void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq)
 {
-  shared_data* sd = data._all->sd;
+  shared_data* sd = data.all->sd;
   for (const auto* ex : ec_seq) { VW::count_label(*sd, ex->l.simple.label); }
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec_seq); }
@@ -54,11 +54,11 @@ void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, V
 // This reduction must delegate finish to the one it is above as this is just a utility counter.
 void finish_example_multi(VW::workspace& all, reduction_data& data, VW::multi_ex& ec)
 {
-  VW::LEARNER::as_multiline(data._base)->finish_example(all, ec);
+  VW::LEARNER::as_multiline(data.base)->finish_example(all, ec);
 }
 void finish_example_single(VW::workspace& all, reduction_data& data, VW::example& ec)
 {
-  VW::LEARNER::as_singleline(data._base)->finish_example(all, ec);
+  VW::LEARNER::as_singleline(data.base)->finish_example(all, ec);
 }
 }  // namespace
 

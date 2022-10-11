@@ -22,7 +22,7 @@ using namespace VW::config;
 
 namespace
 {
-struct LRQstate
+struct lrq_state
 {
   VW::workspace* all = nullptr;  // feature creation, audit, hash_inv
   bool lrindices[256];
@@ -32,7 +32,7 @@ struct LRQstate
   uint64_t seed = 0;
   uint64_t initial_seed = 0;
 
-  LRQstate()
+  lrq_state()
   {
     std::fill(lrindices, lrindices + 256, false);
     std::fill(orig_size, orig_size + 256, 0);
@@ -60,13 +60,13 @@ inline float cheesyrand(uint64_t x)
 
 constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
-void reset_seed(LRQstate& lrq)
+void reset_seed(lrq_state& lrq)
 {
   if (lrq.all->bfgs) { lrq.seed = lrq.initial_seed; }
 }
 
 template <bool is_learn>
-void predict_or_learn(LRQstate& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -177,7 +177,7 @@ base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto lrq = VW::make_unique<LRQstate>();
+  auto lrq = VW::make_unique<lrq_state>();
   std::vector<std::string> lrq_names;
   option_group_definition new_options("[Reduction] Low Rank Quadratics");
   new_options.add(make_option("lrq", lrq_names).keep().necessary().help("Use low rank quadratic features"))

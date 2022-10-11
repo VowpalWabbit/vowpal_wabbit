@@ -16,7 +16,7 @@ using namespace VW::reductions;
 
 namespace
 {
-constexpr float max_multiplier = 1000.f;
+constexpr float MAX_MULTIPLIER = 1000.f;
 }  // namespace
 
 void VW::reductions::baseline::set_baseline_enabled(VW::example* ec)
@@ -112,7 +112,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
       if (multiplier == 0)
       {
         multiplier = std::max(0.0001f, std::max(std::abs(data.all->sd->min_label), std::abs(data.all->sd->max_label)));
-        if (multiplier > max_multiplier) { multiplier = max_multiplier; }
+        if (multiplier > MAX_MULTIPLIER) { multiplier = MAX_MULTIPLIER; }
       }
       data.all->eta *= multiplier;
       base.learn(data.ec);

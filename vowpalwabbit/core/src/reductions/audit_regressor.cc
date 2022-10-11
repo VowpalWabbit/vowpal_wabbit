@@ -18,13 +18,13 @@
 
 using namespace VW::config;
 
-static constexpr size_t num_cols = 3;
-static constexpr std::array<VW::column_definition, num_cols> AUDIT_REGRESSOR_COLUMNS = {
+static constexpr size_t NUM_COLS = 3;
+static constexpr std::array<VW::column_definition, NUM_COLS> AUDIT_REGRESSOR_COLUMNS = {
     VW::column_definition(8, VW::align_type::left, VW::wrap_type::wrap_space),    // example counter
     VW::column_definition(9, VW::align_type::right, VW::wrap_type::wrap_space),   // values audited
     VW::column_definition(12, VW::align_type::right, VW::wrap_type::wrap_space),  // total progress
 };
-static const std::array<std::string, num_cols> AUDIT_REGRESSOR_HEADER = {
+static const std::array<std::string, NUM_COLS> AUDIT_REGRESSOR_HEADER = {
     "example\ncounter", "values\naudited", "total\nprogress"};
 
 struct audit_regressor_data

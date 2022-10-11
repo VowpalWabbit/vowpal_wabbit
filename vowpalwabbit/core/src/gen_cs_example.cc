@@ -14,7 +14,6 @@ namespace GEN_CS
 {
 using namespace VW::LEARNER;
 using namespace CB_ALGS;
-using namespace CB;
 
 float safe_probability(float prob, VW::io::logger& logger)
 {
@@ -32,15 +31,14 @@ float safe_probability(float prob, VW::io::logger& logger)
 }
 
 // Multiline version
-void gen_cs_example_ips(
-    const VW::multi_ex& examples, COST_SENSITIVE::label& cs_labels, VW::io::logger& logger, float clip_p)
+void gen_cs_example_ips(const VW::multi_ex& examples, VW::cs_label& cs_labels, VW::io::logger& logger, float clip_p)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
     const CB::label& ld = examples[i]->l.cb;
 
-    COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
+    VW::cs_class wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     { wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p), logger); }
     cs_labels.costs.push_back(wc);
@@ -48,44 +46,43 @@ void gen_cs_example_ips(
 }
 
 // Multiline version
-void gen_cs_example_dm(const VW::multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_dm(const VW::multi_ex& examples, VW::cs_label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
     const CB::label& ld = examples[i]->l.cb;
 
-    COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
+    VW::cs_class wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX) { wc.x = ld.costs[0].cost; }
     cs_labels.costs.push_back(wc);
   }
 }
 
 // Multiline version
-void gen_cs_test_example(const VW::multi_ex& examples, COST_SENSITIVE::label& cs_labels)
+void gen_cs_test_example(const VW::multi_ex& examples, VW::cs_label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    COST_SENSITIVE::wclass wc = {FLT_MAX, i, 0., 0.};
+    VW::cs_class wc = {FLT_MAX, i, 0., 0.};
     cs_labels.costs.push_back(wc);
   }
 }
 
 // single line version
-void gen_cs_example_ips(
-    cb_to_cs& c, const CB::label& ld, COST_SENSITIVE::label& cs_ld, VW::io::logger& logger, float clip_p)
+void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, VW::cs_label& cs_ld, VW::io::logger& logger, float clip_p)
 {
   // this implements the inverse propensity score method, where cost are importance weighted by the probability of the
   // chosen action generate cost-sensitive example
   cs_ld.costs.clear();
-  if (ld.costs.size() == 0 || (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX))
+  if (ld.costs.empty() || (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX))
   // this is a typical example where we can perform all actions
   {
     // in this case generate cost-sensitive example with all actions
     for (uint32_t i = 1; i <= c.num_actions; i++)
     {
-      COST_SENSITIVE::wclass wc = {0., i, 0., 0.};
+      VW::cs_class wc = {0., i, 0., 0.};
       if (i == c.known_cost.action)
       {
         // use importance weighted cost for observed action, 0 otherwise
@@ -108,7 +105,7 @@ void gen_cs_example_ips(
     // in this case generate cost-sensitive example with only allowed actions
     for (const auto& cl : ld.costs)
     {
-      COST_SENSITIVE::wclass wc = {0., cl.action, 0., 0.};
+      VW::cs_class wc = {0., cl.action, 0., 0.};
       if (cl.action == c.known_cost.action)
       {
         // use importance weighted cost for observed action, 0 otherwise
@@ -128,7 +125,7 @@ void gen_cs_example_ips(
   }
 }
 
-void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, COST_SENSITIVE::label& cs_labels)
+void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels)
 {
   c.action_sum += ec_seq.size();
   c.event_sum++;
@@ -139,7 +136,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, COST_SENSITIVE::l
   {
     CB::label& ld = ec_seq[i]->l.cb;
 
-    COST_SENSITIVE::wclass wc = {0, 0, 0, 0};
+    VW::cs_class wc = {0, 0, 0, 0};
 
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
@@ -153,18 +150,18 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, COST_SENSITIVE::l
 }
 
 void gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset, const VW::action_scores& action_vals,
-    COST_SENSITIVE::label& cs_labels)
+    VW::cs_label& cs_labels)
 {
   cs_labels.costs.clear();
-  for (uint32_t i = 0; i < action_vals.size(); i++)
+  for (const auto& action_val : action_vals)
   {
-    uint32_t current_action = action_vals[i].action;
-    COST_SENSITIVE::wclass wc = {0., current_action, 0., 0.};
+    uint32_t current_action = action_val.action;
+    VW::cs_class wc = {0., current_action, 0., 0.};
 
-    if (current_action == chosen_action) { wc.x = action_vals[i].score + sign_offset; }
+    if (current_action == chosen_action) { wc.x = action_val.score + sign_offset; }
     else
     {
-      wc.x = action_vals[i].score - sign_offset;
+      wc.x = action_val.score - sign_offset;
     }
 
     // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to
@@ -176,8 +173,8 @@ void gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset,
   }
 }
 
-void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, COST_SENSITIVE::label& cs_labels,
-    std::vector<COST_SENSITIVE::label>& prepped_cs_labels, uint64_t offset)
+void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, VW::cs_label& cs_labels,
+    std::vector<VW::cs_label>& prepped_cs_labels, uint64_t offset)
 {
   cb_labels.clear();
   if (prepped_cs_labels.size() < cs_labels.costs.size() + 1) { prepped_cs_labels.resize(cs_labels.costs.size() + 1); }

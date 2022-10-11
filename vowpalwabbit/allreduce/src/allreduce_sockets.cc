@@ -52,9 +52,9 @@ socket_t VW::all_reduce_sockets::sock_connect(const uint32_t ip, const int port,
     if (nullptr == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN)) THROWERRNO("inet_ntop");
 
     char hostname[NI_MAXHOST];
-    char servInfo[NI_MAXSERV];
-    if (getnameinfo(reinterpret_cast<sockaddr*>(&far_end), sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV,
-            NI_NUMERICSERV))
+    char serv_info[NI_MAXSERV];
+    if (getnameinfo(reinterpret_cast<sockaddr*>(&far_end), sizeof(sockaddr), hostname, NI_MAXHOST, serv_info,
+            NI_MAXSERV, NI_NUMERICSERV))
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
     logger.err_info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs(static_cast<u_short>(port)));
@@ -95,8 +95,8 @@ socket_t VW::all_reduce_sockets::getsock(VW::io::logger& logger)
 #endif
 
   // Enable TCP Keep Alive to prevent socket leaks
-  int enableTKA = 1;
-  if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA), sizeof(enableTKA)) < 0)
+  int enable_tka = 1;
+  if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enable_tka), sizeof(enable_tka)) < 0)
   { logger.err_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno)); }
 
   return sock;
