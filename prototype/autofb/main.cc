@@ -13,15 +13,17 @@ using namespace typesys;
 
 data(base)
 {
+//private: static property_witness<unsigned char>& b_propinfo() { static property_witness<unsigned char> pi{"b"}; return pi; } 
+//public: __<unsigned char> name = __<unsigned char>("b", b_propinfo().info);
   _(unsigned char, b);
-  _(float, eta);
+  //_(float, eta);
 };
 
-extension(derived) of (base)
-{
-  _(double, l1);
-  _(double, l2);
-};
+// extension(derived) of (base)
+// {
+//   _(double, l1);
+//   _(double, l2);
+// };
 
 
 
@@ -107,6 +109,12 @@ struct reduction_factory
 bool enable_reduction (options_t options, empty_t const& init_params) { return true; }
 learner_t init_reduction (stack_builder_t stack_builder, reduction_data<empty_t, empty_t, empty_t> const& data) { return nullptr; }
 
+template <typename builtin>
+void print_type()
+{
+  std::cout << typeid(builtin).name() << std::endl;
+}
+
 int main(int argc, char** argv)
 {
   using empty_reduction_factory = reduction_factory<empty_t, empty_t, empty_t, init_reduction, enable_reduction>;
@@ -115,6 +123,7 @@ int main(int argc, char** argv)
   empty_reduction_factory actual_factory;
   actual_factory.setup_erased();
 
+  //b.int_prop = 1;
 
   using std::cout;
   using std::endl;
@@ -124,9 +133,29 @@ int main(int argc, char** argv)
                                                // \/ this ONLY works because of the IMPL detail that it is a vector
   cout << "Types in the universe: (Count = " << (types.types_end() - types.types_begin()) << ")" << endl;
 
-  std::for_each(types.types_begin(), types.types_end(), [](const typesys::type_info& type_info)
+  // dispatch table for BUILTIN property types (for now int32 types, float type and bool type)
+  erased_dispatch_table dt;
+
+  // register a lambda to print the type name for each of the types
+  dt.add<int32_t, print_type<int32_t>>()
+    .add<uint32_t, print_type<uint32_t>>()
+    .add<float, print_type<float>>()
+    .add<bool, print_type<bool>>()
+    .add<unsigned char, print_type<unsigned char>>();
+  
+
+  base b; // unfortunately, due to static lifetime initialization, we must construct a prototype of the object
+          // before we can reflect over its properties
+          // the expectation is that all of these objects need to be trivially constructable
+  std::for_each(types.types_begin(), types.types_end(), [&dt](const typesys::type_info& type_info)
   {
     cout << "Type: " << type_info.name.name << "_V" << type_info.name.version << endl;
-
+    //auto properties = type_info.properties;
+    std::for_each(type_info.props_begin(), type_info.props_end(), [&dt](const typesys::property_info& property_info)
+    {
+      cout << "  Property: " << property_info.name << ": ";
+      dt.dispatch(property_info.etype);
+      cout << endl;
+    });
   });
 }

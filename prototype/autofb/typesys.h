@@ -4,17 +4,14 @@
 #include <unordered_map>
 #include <functional>
 
+#include "typeerase.h"
+
 #define DATA_KIND struct
 
 namespace typesys
 {
   using name_t = const char*;
   using version_t = unsigned int;
-
-  enum type_kind {
-    TK_BUILTIN,
-    TK_DATA
-  };
 
   struct versioned_name
   {
@@ -48,6 +45,8 @@ namespace typesys
     }
   };
 
+  using type_index = std::uint32_t;
+  
   template <name_t N, version_t V>
   struct type_identity
   {
@@ -58,18 +57,38 @@ namespace typesys
     {
       return { N, V };
     }
+
+    inline static type_index register_type()
+    {
+      return universe::instance().register_type(versioned_name());
+    }
   };
 
-  using type_index = std::uint32_t;
+  struct property_info
+{
+  const char* name;
+  const erased_type etype;
 
-  struct property_info;
+  property_info(const char* name, erased_type etype) : name(name), etype(etype) {};
+  property_info(property_info& other) = default;
+};
 
   struct type_info
   {
-    const type_kind kind;
     const versioned_name name;
     const type_index index;
 
+    type_info(versioned_name name, type_index index) : name{name}, index{index} {}
+    type_info(type_info& other) = default;
+
+    inline void add_property(property_info pi) { properties.push_back(property_info{pi}); }
+    
+    using props_iter = std::vector<property_info>::const_iterator;
+
+    inline props_iter props_begin() const { return properties.cbegin(); };
+    inline props_iter props_end() const { return properties.cend(); };
+
+  private:
     std::vector<property_info> properties;
   };
 
@@ -99,17 +118,24 @@ class universe
 
     inline type_index register_type(const versioned_name& name)
     {
-      return register_type_internal(name, TK_DATA);
+      return register_type_internal(name);
     }
 
-    const type_info& get_type(name_t name, version_t version)
+    type_info& get_type(const versioned_name& name)
+    {
+      // find the type_id in typemap, then chain to get_type(type_id)
+      // todo: what to do when not found?
+      return get_type(name.name, name.version);
+    }
+
+    type_info& get_type(name_t name, version_t version)
     {
       // find the type_id in typemap, then chain to get_type(type_id)
       // todo: what to do when not found?
       return get_type(typemap[{name, version}]);
     }
 
-    const type_info& get_type(type_index id) const
+    type_info& get_type(type_index id)
     {
       // todo: check range
       return typeinfos[id];
@@ -132,12 +158,12 @@ class universe
       register_type_internal({typeid(T).name(), 0}, TK_BUILTIN); 
     }
 
-    inline type_index register_type_internal(const versioned_name& name, type_kind kind)
+    inline type_index register_type_internal(const versioned_name& name)
     {
       // todo: bounds check
       type_index id = static_cast<type_index>(typeinfos.size());
 
-      typeinfos.push_back(type_info{kind, name, id});
+      typeinfos.push_back(type_info{name, id});
       typemap[name] = id;
 
       return id;
@@ -149,16 +175,7 @@ class universe
     type_map_t typemap;
 };
 
-struct property_info
-  {
-    const char* name;
-    const type_index type_index;
 
-    inline const type_info& type() const
-    {
-      return universe::instance().get_type(type_index);
-    }
-  };
 
 namespace detail
 {
@@ -168,11 +185,13 @@ namespace detail
   //   using base_type_identity = type_identity<base_t, base_t::version>;
   // };
 
+
+
   template <typename T, typename container_t>
   class property
   {
     public:
-      property(const char* name, property_info&)
+      property(const char* name, const property_info&)
       {
         //TODO: register property location with reflector
       }
@@ -187,6 +206,8 @@ namespace detail
     private:
       T _value;
   };
+
+  using register_f = type_index(*)();
 
   struct registration_witness
   {
@@ -216,7 +237,7 @@ namespace detail
       auto iter = universe::instance().find_type(tid::versioned_name());
       if (iter == universe::instance().type_map_end())
       {
-        return universe::instance().register_type(tid::versioned_name());
+        return tid::register_type();
       }
       else
       {
@@ -239,7 +260,7 @@ namespace detail
     }
 
     inline type_index index() const { return _registration._type_index; }
-    inline const type_info& type() const { return universe::instance().get_type(_type_index); }
+    inline type_info const& type() const { return universe::instance().get_type(_type_index); }
 
   private:
     registration_witness _witness;
@@ -263,14 +284,16 @@ namespace detail
       using __ = property<T, concrete_t>;
 
       template <typename T>
-      struct property_info : typesys::property_info
+      struct property_witness
       {
-        property_info(const char* name) : detail::property_info{name}
-        {
-          universe::instance().get_type(rw._name).properties.push_back(*this);
-        }
+        property_info info;
 
-        // TODO: accessors and serializers
+        property_witness(const char* name) : info{name, type<T>::erase()} 
+        {
+          std::cout << "in prop witness" << std::endl;
+          universe::instance().get_type(rw._name).add_property(info);
+          //props.push_back(property_info(info));
+        }
       };
   };
 
@@ -282,11 +305,12 @@ namespace detail
     using data<concrete_t, rw>::__;
     using data<concrete_t, rw>::property_info;
   };
+
 } // namespace detail
 } // namespace typesys
 
-#define _(type, name) private: property_info<type> name ## _propinfo = property_info<type>(#name); \
-  public: __<type> name = __<type>(#name, name ## _propinfo);
+#define _(type, name) private: static property_witness< ## type ## >& name ## _propwitness() { static property_witness<type> pi{#name}; return pi; } \
+  public: __<type> name = __<type>(#name, name ## _propwitness().info);
 
 // TODO: Versions
 #define details(type_name) __ ## type_name ## _details
