@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
   std::vector<uint32_t> previous;
   const size_t iterations = 10;
   const std::vector<std::string> event_ids = {"slot1", "slot2"};
-  const std::string SEED_TAG = "seed=";
+  static const std::string SEED_TAG = "seed=";
   for (size_t iteration = 0; iteration < iterations; ++iteration)
   {
     const std::string json =

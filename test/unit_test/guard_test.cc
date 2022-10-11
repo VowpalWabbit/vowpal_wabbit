@@ -11,8 +11,8 @@
 
 struct non_copyable_struct
 {
-  int _value;
-  explicit non_copyable_struct(int value) : _value(value) {}
+  int value;
+  explicit non_copyable_struct(int value) : value(value) {}
 
   non_copyable_struct(const non_copyable_struct&) = delete;
   non_copyable_struct& operator=(const non_copyable_struct&) = delete;
@@ -42,14 +42,14 @@ BOOST_AUTO_TEST_CASE(swap_guard_execute_on_scope_end_no_copy)
   non_copyable_struct location_to_swap(99999);
 
   {
-    BOOST_CHECK_EQUAL(original_location._value, 1);
-    BOOST_CHECK_EQUAL(location_to_swap._value, 99999);
+    BOOST_CHECK_EQUAL(original_location.value, 1);
+    BOOST_CHECK_EQUAL(location_to_swap.value, 99999);
     auto guard = VW::swap_guard(original_location, location_to_swap);
-    BOOST_CHECK_EQUAL(original_location._value, 99999);
-    BOOST_CHECK_EQUAL(location_to_swap._value, 1);
+    BOOST_CHECK_EQUAL(original_location.value, 99999);
+    BOOST_CHECK_EQUAL(location_to_swap.value, 1);
   }
-  BOOST_CHECK_EQUAL(original_location._value, 1);
-  BOOST_CHECK_EQUAL(location_to_swap._value, 99999);
+  BOOST_CHECK_EQUAL(original_location.value, 1);
+  BOOST_CHECK_EQUAL(location_to_swap.value, 99999);
 }
 
 BOOST_AUTO_TEST_CASE(swap_guard_cancel)
@@ -138,11 +138,11 @@ BOOST_AUTO_TEST_CASE(swap_guard_execute_temp_value_no_copy)
   non_copyable_struct original_location(1);
 
   {
-    BOOST_CHECK_EQUAL(original_location._value, 1);
+    BOOST_CHECK_EQUAL(original_location.value, 1);
     auto guard = VW::swap_guard(original_location, non_copyable_struct(9999));
-    BOOST_CHECK_EQUAL(original_location._value, 9999);
+    BOOST_CHECK_EQUAL(original_location.value, 9999);
   }
-  BOOST_CHECK_EQUAL(original_location._value, 1);
+  BOOST_CHECK_EQUAL(original_location.value, 1);
 }
 
 BOOST_AUTO_TEST_CASE(swap_guard_unique_ptr)

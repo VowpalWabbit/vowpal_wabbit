@@ -90,13 +90,13 @@ VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
   return ret;
 }
 
-void cb_adf::learn_IPS(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_ips(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_ips(examples, _cs_labels, _all->logger, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_sm(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_test_example(examples, _cs_labels);  // create test labels.
   cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
@@ -187,20 +187,20 @@ void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
   }
 }
 
-void cb_adf::learn_DR(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_dr(multi_learner& base, VW::multi_ex& examples)
 {
-  gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
+  gen_cs_example_dr<true>(gen_cs, examples, _cs_labels, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void cb_adf::learn_DM(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_dm(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_dm(examples, _cs_labels);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 template <bool PREDICT>
-void cb_adf::learn_MTR(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_mtr(multi_learner& base, VW::multi_ex& examples)
 {
   if (PREDICT)  // first get the prediction to return
   {
@@ -212,20 +212,20 @@ void cb_adf::learn_MTR(multi_learner& base, VW::multi_ex& examples)
   // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
-  gen_cs_example_mtr(_gen_cs, examples, _cs_labels);
-  uint32_t nf = static_cast<uint32_t>(examples[_gen_cs.mtr_example]->num_features);
-  float old_weight = examples[_gen_cs.mtr_example]->weight;
-  const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *=
-      1.f / clipped_p * (static_cast<float>(_gen_cs.event_sum) / static_cast<float>(_gen_cs.action_sum));
+  gen_cs_example_mtr(gen_cs, examples, _cs_labels);
+  uint32_t nf = static_cast<uint32_t>(examples[gen_cs.mtr_example]->num_features);
+  float old_weight = examples[gen_cs.mtr_example]->weight;
+  const float clipped_p = std::max(examples[gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
+  examples[gen_cs.mtr_example]->weight *=
+      1.f / clipped_p * (static_cast<float>(gen_cs.event_sum) / static_cast<float>(gen_cs.action_sum));
 
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
   // dropped)
-  cs_ldf_learn_or_predict<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
-  examples[_gen_cs.mtr_example]->num_features = nf;
-  examples[_gen_cs.mtr_example]->weight = old_weight;
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  cs_ldf_learn_or_predict<true>(base, gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  examples[gen_cs.mtr_example]->num_features = nf;
+  examples[gen_cs.mtr_example]->weight = old_weight;
+  std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
 
   if (PREDICT)
   {  // Return the saved prediction
@@ -238,27 +238,27 @@ void cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
   if (CB_ADF::test_adf_sequence(ec_seq) != nullptr)
   {
     _offset = ec_seq[0]->ft_offset;
-    _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-    switch (_gen_cs.cb_type)
+    gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+    switch (gen_cs.cb_type)
     {
       case VW::cb_type_t::dr:
-        learn_DR(base, ec_seq);
+        learn_dr(base, ec_seq);
         break;
       case VW::cb_type_t::dm:
-        learn_DM(base, ec_seq);
+        learn_dm(base, ec_seq);
         break;
       case VW::cb_type_t::ips:
-        learn_IPS(base, ec_seq);
+        learn_ips(base, ec_seq);
         break;
       case VW::cb_type_t::mtr:
-        if (_no_predict) { learn_MTR<false>(base, ec_seq); }
+        if (_no_predict) { learn_mtr<false>(base, ec_seq); }
         else
         {
-          learn_MTR<true>(base, ec_seq);
+          learn_mtr<true>(base, ec_seq);
         }
         break;
       case VW::cb_type_t::sm:
-        learn_SM(base, ec_seq);
+        learn_sm(base, ec_seq);
         break;
     }
   }
@@ -271,7 +271,7 @@ void cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
 void cb_adf::predict(multi_learner& base, VW::multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+  gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
   gen_cs_test_example(ec_seq, _cs_labels);                                   // create test labels.
   cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
@@ -288,7 +288,7 @@ bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq
   float loss = 0.;
 
   bool labeled_example = true;
-  if (_gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action); }
+  if (gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(gen_cs.known_cost, gen_cs.pred_scores, action); }
   else
   {
     labeled_example = false;

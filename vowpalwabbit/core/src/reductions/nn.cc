@@ -65,8 +65,6 @@ struct nn
   }
 };
 
-#define cast_uint32_t static_cast<uint32_t>
-
 static inline float fastpow2(float p)
 {
   float offset = (p < 0) ? 1.0f : 0.0f;
@@ -77,7 +75,7 @@ static inline float fastpow2(float p)
   {
     uint32_t i;
     float f;
-  } v = {cast_uint32_t((1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z))};
+  } v = {static_cast<uint32_t>((1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z))};
 
   return v.f;
 }

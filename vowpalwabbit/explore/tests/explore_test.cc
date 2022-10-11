@@ -67,18 +67,18 @@ TEST(explore_tests, new_sample_pdf)
 
 struct bins_calc
 {
-  bins_calc(vector<float>&& bins) : _bins(bins), _counts(_bins.size() - 1), _total_samples(0) {}
+  bins_calc(vector<float>&& bins) : bins(bins), counts(bins.size() - 1), total_samples(0) {}
 
   void add_to_bin(float val)
   {
-    ++_total_samples;
-    float left = _bins[0];
-    for (size_t i = 1; i < _bins.size(); i++)
+    ++total_samples;
+    float left = bins[0];
+    for (size_t i = 1; i < bins.size(); i++)
     {
-      float right = _bins[i];
+      float right = bins[i];
       if (left <= val && val < right)
       {
-        ++_counts[i - 1];
+        ++counts[i - 1];
         return;
       }
     }
@@ -87,9 +87,9 @@ struct bins_calc
     throw std::logic_error(err_strm.str());
   }
 
-  vector<float> _bins{};
-  vector<uint32_t> _counts{};
-  uint32_t _total_samples;
+  vector<float> bins{};
+  vector<uint32_t> counts{};
+  uint32_t total_samples;
 };
 
 TEST(explore_tests, sample_continuous_action_statistical)
@@ -118,9 +118,9 @@ TEST(explore_tests, sample_continuous_action_statistical)
   const float total_mass = std::accumulate(std::begin(scores), std::end(scores), 0.f,
       [](const float& acc, const pdf_seg& rhs) { return acc + (rhs.pdf_value * (rhs.right - rhs.left)); });
 
-  for (uint32_t idx = 0; idx < bins._counts.size(); ++idx)
+  for (uint32_t idx = 0; idx < bins.counts.size(); ++idx)
   {
-    EXPECT_NEAR(bins._counts[idx] / (float)bins._total_samples,
+    EXPECT_NEAR(bins.counts[idx] / (float)bins.total_samples,
         (scores[idx].pdf_value * (scores[idx].right - scores[idx].left)) / total_mass, 1.5f);
   }
 }

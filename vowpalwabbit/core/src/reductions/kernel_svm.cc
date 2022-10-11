@@ -455,7 +455,7 @@ bool update(svm_params& params, size_t pos)
   auto& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
   float* inprods = fec->krow.begin();
-  float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
+  float alphaKi = dense_dot(inprods, model->alpha, model->num_support); // NOLINT
   model->delta[pos] = alphaKi * ld.label / params.lambda - 1;
   float alpha_old = model->alpha[pos];
   alphaKi -= model->alpha[pos] * inprods[pos];
