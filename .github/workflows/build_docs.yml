@@ -16,28 +16,26 @@ on:
       - published
   workflow_dispatch:
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
   cpp:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
           submodules: recursive
       - name: Configure
         run: |
-          mkdir build
-          cd build
-          cmake .. -DBUILD_DOCS=On
+          sudo apt-get update
+          sudo apt-install doxygen graphviz
       - name: Build docs
         run: |
-          cd build
-          make doc
+          cd doc
+          doxygen --version
+          doxygen
       - name: Upload built docs
         uses: actions/upload-artifact@v1
         with:
