@@ -1,4 +1,5 @@
 #include "vw/common/future_compat.h"
+#include "vw/core/parse_slates_example_json.h"
 
 // If the Windows.h header has been included at some point then the GetObject breaks this file.
 // Workaround by undefing it for the content of this header.
@@ -17,8 +18,6 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CLASS_MEMACCESS
 #include <rapidjson/document.h>
 VW_WARNING_STATE_POP
-
-#include "vw/core/parse_slates_example_json.h"
 
 using namespace rapidjson;
 
