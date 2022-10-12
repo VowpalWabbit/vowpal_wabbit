@@ -373,34 +373,34 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
     switch (all.example_parser->lbl_parser.label_type)
     {
-      case VW::label_type_t::NOLABEL:
+      case VW::label_type_t::nolabel:
         to_flat::create_no_label(ae, ex_builder);
         break;
-      case VW::label_type_t::CB:
+      case VW::label_type_t::cb:
         to_flat::create_cb_label(ae, ex_builder);
         break;
-      case VW::label_type_t::CCB:
+      case VW::label_type_t::ccb:
         to_flat::create_ccb_label(ae, ex_builder);
         break;
-      case VW::label_type_t::MULTILABEL:
+      case VW::label_type_t::multilabel:
         to_flat::create_multi_label(ae, ex_builder);
         break;
-      case VW::label_type_t::MULTICLASS:
+      case VW::label_type_t::multiclass:
         to_flat::create_mc_label(all.sd->ldict.get(), ae, ex_builder);
         break;
-      case VW::label_type_t::CS:
+      case VW::label_type_t::cs:
         to_flat::create_cs_label(ae, ex_builder);
         break;
-      case VW::label_type_t::CB_EVAL:
+      case VW::label_type_t::cb_eval:
         to_flat::create_cb_eval_label(ae, ex_builder);
         break;
-      case VW::label_type_t::SLATES:
+      case VW::label_type_t::slates:
         to_flat::create_slates_label(ae, ex_builder);
         break;
-      case VW::label_type_t::SIMPLE:
+      case VW::label_type_t::simple:
         to_flat::create_simple_label(ae, ex_builder);
         break;
-      case VW::label_type_t::CONTINUOUS:
+      case VW::label_type_t::continuous:
         to_flat::create_continuous_action_label(ae, ex_builder);
         break;
       default:
@@ -441,11 +441,11 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     if (all.l->is_multiline())
     {
       if (!VW::example_is_newline(*ae) ||
-          (all.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
+          (all.example_parser->lbl_parser.label_type == VW::label_type_t::cb &&
               !CB_ALGS::example_is_newline_not_header(*ae)) ||
-          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
+          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
                ae->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT) ||
-              (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&
+              (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
                   ae->l.slates.type == VW::slates::example_type::slot)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());

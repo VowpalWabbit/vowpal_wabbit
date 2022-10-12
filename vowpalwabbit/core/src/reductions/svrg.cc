@@ -188,7 +188,7 @@ base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
-      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+      VW::prediction_type_t::scalar, VW::label_type_t::simple)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_save_load(save_load)
                 .build();

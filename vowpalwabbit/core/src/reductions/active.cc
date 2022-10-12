@@ -216,8 +216,8 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
 
   // Create new learner
   auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_learn_returns_prediction(learn_returns_prediction)
                 .set_save_load(save_load)
                 .set_finish_example(finish_ptr)

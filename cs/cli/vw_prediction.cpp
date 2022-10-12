@@ -113,7 +113,7 @@ uint32_t VowpalWabbitMulticlassPredictionFactory::Create(VW::workspace* vw, exam
 }
 
 cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(VW::workspace* vw, example* ex)
-{ CheckExample(vw, ex, prediction_type_t::MULTILABELS);
+{ CheckExample(vw, ex, prediction_type_t::multilabels);
 
   size_t length;
   uint32_t* labels;
@@ -162,7 +162,7 @@ cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(VW::workspace* vw,
 
 VowpalWabbitActiveMulticlass^ VowpalWabbitActiveMulticlassPredictionFactory::Create(VW::workspace* vw, example* ex)
 {
-  CheckExample(vw, ex, prediction_type_t::ACTIVE_MULTICLASS);
+  CheckExample(vw, ex, prediction_type_t::active_multiclass);
   auto struct_obj = gcnew VowpalWabbitActiveMulticlass();
   const auto length = ex->pred.active_multiclass.more_info_required_for_classes.size();
   struct_obj->more_info_required_for_classes = gcnew cli::array<int>((int)length);
@@ -183,23 +183,23 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(VW::workspace* vw, 
     throw gcnew ArgumentNullException("ex");
 
   switch (vw->l->get_output_prediction_type())
-  { case prediction_type_t::SCALAR:
+  { case prediction_type_t::scalar:
       return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
-    case prediction_type_t::SCALARS:
+    case prediction_type_t::scalars:
       return VowpalWabbitPredictionType::Scalars->Create(vw, ex);
-    case prediction_type_t::MULTICLASS:
+    case prediction_type_t::multiclass:
       return VowpalWabbitPredictionType::Multiclass->Create(vw, ex);
-    case prediction_type_t::MULTILABELS:
+    case prediction_type_t::multilabels:
       return VowpalWabbitPredictionType::Multilabel->Create(vw, ex);
-    case prediction_type_t::ACTION_SCORES:
+    case prediction_type_t::action_scores:
       return VowpalWabbitPredictionType::ActionScore->Create(vw, ex);
-    case prediction_type_t::ACTION_PROBS:
+    case prediction_type_t::action_probs:
       return VowpalWabbitPredictionType::ActionProbabilities->Create(vw, ex);
-    case prediction_type_t::PROB:
+    case prediction_type_t::prob:
       return VowpalWabbitPredictionType::Probability->Create(vw, ex);
-    case prediction_type_t::MULTICLASSPROBS:
+    case prediction_type_t::multiclassprobs:
       return VowpalWabbitPredictionType::MultiClassProbabilities->Create(vw, ex);
-    case prediction_type_t::ACTIVE_MULTICLASS:
+    case prediction_type_t::active_multiclass:
       return VowpalWabbitPredictionType::ActiveMulticlass->Create(vw, ex);
     default:
     { auto sb = gcnew StringBuilder();

@@ -77,28 +77,28 @@ JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNI
   VW::workspace* vwInstance = (VW::workspace*)vwPtr;
   switch (vwInstance->l->get_output_prediction_type())
   {
-    case VW::prediction_type_t::ACTION_PROBS:
+    case VW::prediction_type_t::action_probs:
       field = env->GetStaticFieldID(clVWReturnType, "ActionProbs", RETURN_TYPE_INSTANCE);
       break;
-    case VW::prediction_type_t::ACTION_SCORES:
+    case VW::prediction_type_t::action_scores:
       field = env->GetStaticFieldID(clVWReturnType, "ActionScores", RETURN_TYPE_INSTANCE);
       break;
-    case VW::prediction_type_t::MULTICLASS:
+    case VW::prediction_type_t::multiclass:
       field = env->GetStaticFieldID(clVWReturnType, "Multiclass", RETURN_TYPE_INSTANCE);
       break;
-    case VW::prediction_type_t::MULTILABELS:
+    case VW::prediction_type_t::multilabels:
       field = env->GetStaticFieldID(clVWReturnType, "Multilabels", RETURN_TYPE_INSTANCE);
       break;
-    case VW::prediction_type_t::PROB:
+    case VW::prediction_type_t::prob:
       field = env->GetStaticFieldID(clVWReturnType, "Prob", RETURN_TYPE_INSTANCE);
       break;
-    case VW::prediction_type_t::SCALAR:
+    case VW::prediction_type_t::scalar:
       field = env->GetStaticFieldID(clVWReturnType, "Scalar", RETURN_TYPE_INSTANCE);
       break;
-    case VW::prediction_type_t::SCALARS:
+    case VW::prediction_type_t::scalars:
       field = env->GetStaticFieldID(clVWReturnType, "Scalars", RETURN_TYPE_INSTANCE);
       break;
-    case VW::prediction_type_t::DECISION_PROBS:
+    case VW::prediction_type_t::decision_probs:
       field = env->GetStaticFieldID(clVWReturnType, "DecisionProbs", RETURN_TYPE_INSTANCE);
       break;
     default:

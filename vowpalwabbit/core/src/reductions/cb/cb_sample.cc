@@ -131,10 +131,10 @@ base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(cb_sample_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+                .set_input_label_type(VW::label_type_t::cb)
+                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_prediction_type(VW::prediction_type_t::action_probs)
+                .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_learn_returns_prediction(true)
                 .build(&all.logger);
   return make_base(*l);

@@ -946,8 +946,8 @@ struct base_learner_builder
     this->_learner->learn_fd.data = this->_learner->learner_data.get();
 
     super::set_input_label_type(in_label_type);
-    super::set_output_label_type(label_type_t::NOLABEL);
-    super::set_input_prediction_type(prediction_type_t::NOPRED);
+    super::set_output_label_type(label_type_t::nolabel);
+    super::set_input_prediction_type(prediction_type_t::nopred);
     super::set_output_prediction_type(out_pred_type);
 
     set_params_per_weight(1);

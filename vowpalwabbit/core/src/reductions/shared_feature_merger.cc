@@ -26,7 +26,7 @@ struct sfm_metrics
 struct sfm_data
 {
   std::unique_ptr<sfm_metrics> metrics;
-  VW::label_type_t label_type = VW::label_type_t::CB;
+  VW::label_type_t label_type = VW::label_type_t::cb;
 };
 
 template <bool is_learn>
@@ -88,7 +88,7 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto* base = stack_builder.setup_base_learner();
   if (base == nullptr) { return nullptr; }
-  std::set<label_type_t> sfm_labels = {label_type_t::CB, label_type_t::CS};
+  std::set<label_type_t> sfm_labels = {label_type_t::cb, label_type_t::cs};
   if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
 
   auto data = VW::make_unique<sfm_data>();

@@ -3396,7 +3396,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
           .set_finish(search_finish)
           .set_end_pass(end_pass)
           .set_input_label_type(expected_label_type)
-          // .set_output_label(priv.cb_learner ? label_type_t::CB : label_type_t::CS)
+          // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
           // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
           .build();
 

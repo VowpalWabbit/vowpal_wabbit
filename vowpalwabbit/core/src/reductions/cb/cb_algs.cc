@@ -213,15 +213,15 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   std::string name_addition = eval ? "-eval" : "";
   auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
   auto predict_ptr = eval ? predict_eval : predict_or_learn<false>;
-  auto label_type = eval ? VW::label_type_t::CB_EVAL : VW::label_type_t::CB;
+  auto label_type = eval ? VW::label_type_t::cb_eval : VW::label_type_t::cb;
   auto finish_ex = eval ? eval_finish_example : ::finish_example;
 
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
                 .set_input_label_type(label_type)
-                .set_output_label_type(VW::label_type_t::CS)
-                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_output_label_type(VW::label_type_t::cs)
+                .set_input_prediction_type(VW::prediction_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_params_per_weight(problem_multiplier)
                 .set_learn_returns_prediction(eval)
                 .set_finish_example(finish_ex)

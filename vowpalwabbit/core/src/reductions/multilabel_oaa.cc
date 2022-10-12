@@ -131,7 +131,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
       options.replace("link", "logistic");
       data->link = "logistic";
     }
-    pred_type = VW::prediction_type_t::SCALARS;
+    pred_type = VW::prediction_type_t::scalars;
     auto loss_function_type = all.loss->get_type();
     if (loss_function_type != "logistic")
     {
@@ -144,7 +144,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
   else
   {
     name_addition = "";
-    pred_type = VW::prediction_type_t::MULTILABELS;
+    pred_type = VW::prediction_type_t::multilabels;
   }
 
   auto* l =
@@ -152,7 +152,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
           predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
           .set_params_per_weight(ws)
           .set_learn_returns_prediction(true)
-          .set_input_label_type(VW::label_type_t::MULTILABEL)
+          .set_input_label_type(VW::label_type_t::multilabel)
           .set_output_prediction_type(pred_type)
           .set_finish_example(::finish_example)
           .build();

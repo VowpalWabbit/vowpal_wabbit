@@ -224,8 +224,8 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                .set_input_label_type(VW::label_type_t::cb)
                 .set_save_load(save_load)
                 .set_persist_metrics(persist_metrics)
                 .build();

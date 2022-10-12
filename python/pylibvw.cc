@@ -34,7 +34,7 @@ namespace py = boost::python;
 class py_log_wrapper;
 
 typedef boost::shared_ptr<VW::workspace> vw_ptr;
-typedef boost::shared_ptr<VW::example> example_ptr;
+typedef boost::shared_ptr<example> example_ptr;
 typedef boost::shared_ptr<Search::search> search_ptr;
 typedef boost::shared_ptr<Search::predictor> predictor_ptr;
 typedef boost::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
@@ -462,31 +462,31 @@ size_t my_get_prediction_type(vw_ptr all)
 {
   switch (all->l->get_output_prediction_type())
   {
-    case VW::prediction_type_t::SCALAR:
+    case VW::prediction_type_t::scalar:
       return pSCALAR;
-    case VW::prediction_type_t::SCALARS:
+    case VW::prediction_type_t::scalars:
       return pSCALARS;
-    case VW::prediction_type_t::ACTION_SCORES:
+    case VW::prediction_type_t::action_scores:
       return pACTION_SCORES;
-    case VW::prediction_type_t::ACTION_PROBS:
+    case VW::prediction_type_t::action_probs:
       return pACTION_PROBS;
-    case VW::prediction_type_t::MULTICLASS:
+    case VW::prediction_type_t::multiclass:
       return pMULTICLASS;
-    case VW::prediction_type_t::MULTILABELS:
+    case VW::prediction_type_t::multilabels:
       return pMULTILABELS;
-    case VW::prediction_type_t::PROB:
+    case VW::prediction_type_t::prob:
       return pPROB;
-    case VW::prediction_type_t::MULTICLASSPROBS:
+    case VW::prediction_type_t::multiclassprobs:
       return pMULTICLASSPROBS;
-    case VW::prediction_type_t::DECISION_PROBS:
+    case VW::prediction_type_t::decision_probs:
       return pDECISION_SCORES;
-    case VW::prediction_type_t::ACTION_PDF_VALUE:
+    case VW::prediction_type_t::action_pdf_value:
       return pACTION_PDF_VALUE;
-    case VW::prediction_type_t::PDF:
+    case VW::prediction_type_t::pdf:
       return pPDF;
-    case VW::prediction_type_t::ACTIVE_MULTICLASS:
+    case VW::prediction_type_t::active_multiclass:
       return pACTIVE_MULTICLASS;
-    case VW::prediction_type_t::NOPRED:
+    case VW::prediction_type_t::nopred:
       return pNOPRED;
     default:
       THROW("unsupported prediction type used");

@@ -16,32 +16,19 @@ VW::string_view VW::to_string(prediction_type_t prediction_type)
 
   switch (prediction_type)
   {
-    case prediction_type_t::SCALAR:
-      return "scalar";
-    case prediction_type_t::SCALARS:
-      return "scalars";
-    case prediction_type_t::ACTION_SCORES:
-      return "action_scores";
-    case prediction_type_t::PDF:
-      return "pdf";
-    case prediction_type_t::ACTION_PROBS:
-      return "action_probs";
-    case prediction_type_t::MULTICLASS:
-      return "multiclass";
-    case prediction_type_t::MULTILABELS:
-      return "multilabels";
-    case prediction_type_t::PROB:
-      return "prob";
-    case prediction_type_t::MULTICLASSPROBS:
-      return "multiclassprobs";
-    case prediction_type_t::DECISION_PROBS:
-      return "decision_probs";
-    case prediction_type_t::ACTION_PDF_VALUE:
-      return "action_pdf_value";
-    case prediction_type_t::ACTIVE_MULTICLASS:
-      return "active_multiclass";
-    case prediction_type_t::NOPRED:
-      return "nopred";
+    CASE(prediction_type_t::scalar)
+    CASE(prediction_type_t::scalars)
+    CASE(prediction_type_t::action_scores)
+    CASE(prediction_type_t::pdf)
+    CASE(prediction_type_t::action_probs)
+    CASE(prediction_type_t::multiclass)
+    CASE(prediction_type_t::multilabels)
+    CASE(prediction_type_t::prob)
+    CASE(prediction_type_t::multiclassprobs)
+    CASE(prediction_type_t::decision_probs)
+    CASE(prediction_type_t::action_pdf_value)
+    CASE(prediction_type_t::active_multiclass)
+    CASE(prediction_type_t::nopred)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`

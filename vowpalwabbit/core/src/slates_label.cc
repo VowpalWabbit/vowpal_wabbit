@@ -136,7 +136,7 @@ label_parser slates_label_parser = {
     // test_label
     [](const polylabel& label) { return test_label(label.slates); },
     // label type
-    label_type_t::SLATES};
+    label_type_t::slates};
 
 }  // namespace slates
 }  // namespace VW

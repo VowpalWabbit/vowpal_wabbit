@@ -422,8 +422,8 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .build();

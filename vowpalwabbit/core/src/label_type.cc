@@ -6,30 +6,24 @@
 
 #include <cassert>
 
+#define CASE(type) \
+  case VW::type:   \
+    return #type;
+
 VW::string_view VW::to_string(VW::label_type_t label_type)
 {
   switch (label_type)
   {
-    case label_type_t::SIMPLE:
-      return "simple";
-    case label_type_t::CB:
-      return "cb";
-    case label_type_t::CB_EVAL:
-      return "cb_eval";
-    case label_type_t::CS:
-      return "cs";
-    case label_type_t::MULTILABEL:
-      return "multilabel";
-    case label_type_t::MULTICLASS:
-      return "multiclass";
-    case label_type_t::CCB:
-      return "ccb";
-    case label_type_t::SLATES:
-      return "slates";
-    case label_type_t::NOLABEL:
-      return "nolabel";
-    case label_type_t::CONTINUOUS:
-      return "continuous";
+    CASE(label_type_t::simple)
+    CASE(label_type_t::cb)
+    CASE(label_type_t::cb_eval)
+    CASE(label_type_t::cs)
+    CASE(label_type_t::multilabel)
+    CASE(label_type_t::multiclass)
+    CASE(label_type_t::ccb)
+    CASE(label_type_t::slates)
+    CASE(label_type_t::nolabel)
+    CASE(label_type_t::continuous)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`

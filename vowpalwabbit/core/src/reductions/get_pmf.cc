@@ -110,7 +110,7 @@ VW::LEARNER::base_learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
-                .set_output_prediction_type(VW::prediction_type_t::PDF)
+                .set_output_prediction_type(VW::prediction_type_t::pdf)
                 .build();
 
   return make_base(*l);
