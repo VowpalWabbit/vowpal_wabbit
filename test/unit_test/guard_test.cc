@@ -9,8 +9,9 @@
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
 
-struct non_copyable_struct
+class non_copyable_struct
 {
+public:
   int _value;
   explicit non_copyable_struct(int value) : _value(value) {}
 
@@ -171,8 +172,9 @@ BOOST_AUTO_TEST_CASE(stash_guard_execute_on_scope_end)
   BOOST_CHECK_EQUAL(target_location, 999);
 }
 
-struct struct_with_non_trivial_ctor
+class struct_with_non_trivial_ctor
 {
+public:
   int value;
   struct_with_non_trivial_ctor() : value(123) {}
 };

@@ -9,8 +9,9 @@ namespace VW
 {
 namespace io
 {
-struct owning_ostream : public std::ostream
+class owning_ostream : public std::ostream
 {
+public:
   owning_ostream(std::unique_ptr<std::streambuf>&& output)
       : std::ostream(output.get()), _output_buffer(std::move(output))
   {

@@ -29,7 +29,7 @@
 #if (ZLIB_VERNUM < 0x1252)
 typedef void* gzFile;
 #else
-struct gzFile_s;
+class gzFile_s;
 using gzFile = struct gzFile_s*;
 #endif
 
@@ -63,8 +63,9 @@ int get_stdout_fileno()
 #endif
 }
 
-struct socket_adapter : public writer, public reader
+class socket_adapter : public writer, public reader
 {
+public:
   socket_adapter(int fd, const std::shared_ptr<details::socket_closer>& closer)
       : reader(false /*is_resettable*/), _socket_fd{fd}, _closer{closer}
   {
@@ -77,8 +78,9 @@ private:
   std::shared_ptr<details::socket_closer> _closer;
 };
 
-struct file_adapter : public writer, public reader
+class file_adapter : public writer, public reader
 {
+public:
   // investigate whether not using the old flags affects perf. Old claim:
   // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
   file_adapter(const char* filename, file_mode mode);
@@ -94,8 +96,9 @@ private:
   bool _should_close;
 };
 
-struct stdio_adapter : public writer, public reader
+class stdio_adapter : public writer, public reader
 {
+public:
   stdio_adapter()
       : reader(false /*is_resettable*/)
       , _stdin_file(get_stdin_fileno(), file_mode::read, false)
@@ -110,8 +113,9 @@ private:
   file_adapter _stdout_file;
 };
 
-struct gzip_file_adapter : public writer, public reader
+class gzip_file_adapter : public writer, public reader
 {
+public:
   gzip_file_adapter(const char* filename, file_mode mode);
   gzip_file_adapter(int file_descriptor, file_mode mode);
   ~gzip_file_adapter();
@@ -125,8 +129,9 @@ private:
   file_mode _mode;
 };
 
-struct gzip_stdio_adapter : public writer, public reader
+class gzip_stdio_adapter : public writer, public reader
 {
+public:
   gzip_stdio_adapter();
   ~gzip_stdio_adapter();
   ssize_t read(char* buffer, size_t num_bytes) override;
@@ -137,8 +142,9 @@ private:
   gzFile _gz_stdout;
 };
 
-struct custom_func_writer : public writer
+class custom_func_writer : public writer
 {
+public:
   custom_func_writer(void* context, write_func_t write_func);
   ~custom_func_writer() = default;
   ssize_t write(const char* buffer, size_t num_bytes) override;
@@ -148,8 +154,9 @@ private:
   write_func_t _write_func;
 };
 
-struct vector_writer : public writer
+class vector_writer : public writer
 {
+public:
   vector_writer(std::shared_ptr<std::vector<char>>& buffer);
   ~vector_writer() = default;
   ssize_t write(const char* buffer, size_t num_bytes) override;
@@ -158,8 +165,9 @@ private:
   std::shared_ptr<std::vector<char>> _buffer;
 };
 
-struct buffer_view : public reader
+class buffer_view : public reader
 {
+public:
   buffer_view(const char* data, size_t len);
   ~buffer_view() = default;
   ssize_t read(char* buffer, size_t num_bytes) override;

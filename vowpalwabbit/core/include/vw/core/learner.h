@@ -44,7 +44,7 @@ namespace VW
 namespace LEARNER
 {
 template <class T, class E>
-struct learner;
+class learner;
 
 /// \brief Used to type erase the object and pass around common type.
 using base_learner = learner<char, char>;
@@ -776,10 +776,11 @@ public:
 };
 
 template <class DataT, class ExampleT, class BaseLearnerT>
-struct reduction_learner_builder
+class reduction_learner_builder
     : public common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT,
           BaseLearnerT>
 {
+public:
   using super =
       common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT, BaseLearnerT>;
   reduction_learner_builder(std::unique_ptr<DataT>&& data, BaseLearnerT* base, const std::string& name)
@@ -880,10 +881,11 @@ struct reduction_learner_builder
 };
 
 template <class ExampleT, class BaseLearnerT>
-struct reduction_no_data_learner_builder
+class reduction_no_data_learner_builder
     : public common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT,
           BaseLearnerT>
 {
+public:
   using super =
       common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT, BaseLearnerT>;
   reduction_no_data_learner_builder(BaseLearnerT* base, const std::string& name)
@@ -926,9 +928,10 @@ struct reduction_no_data_learner_builder
 };
 
 template <class DataT, class ExampleT>
-struct base_learner_builder
+class base_learner_builder
     : public common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>
 {
+public:
   using super = common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>;
   base_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
       label_type_t in_label_type)

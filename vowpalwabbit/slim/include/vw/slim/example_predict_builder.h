@@ -4,8 +4,9 @@
 
 namespace vw_slim
 {
-struct example_predict_builder
+class example_predict_builder
 {
+public:
   example_predict_builder(VW::example_predict* ex, const char* namespace_name, uint32_t feature_index_num_bits = 18);
   example_predict_builder(
       VW::example_predict* ex, VW::namespace_index namespace_idx, uint32_t feature_index_num_bits = 18);

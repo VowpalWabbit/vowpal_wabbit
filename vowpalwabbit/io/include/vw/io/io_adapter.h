@@ -23,8 +23,9 @@ namespace io
 {
 namespace details
 {
-struct socket_closer
+class socket_closer
 {
+public:
   socket_closer(int fd);
   ~socket_closer();
 
@@ -33,8 +34,9 @@ private:
 };
 }  // namespace details
 
-struct reader
+class reader
 {
+public:
   reader(bool is_resettable) : _is_resettable(is_resettable) {}
   virtual ~reader() = default;
 
@@ -61,8 +63,9 @@ private:
   bool _is_resettable;
 };
 
-struct writer
+class writer
 {
+public:
   writer() = default;
   virtual ~writer() = default;
 
@@ -81,8 +84,9 @@ struct writer
   writer& operator=(writer&& other) = delete;
 };
 
-struct socket
+class socket
 {
+public:
   socket(int fd) : _socket_fd(fd) { _closer = std::make_shared<details::socket_closer>(fd); }
   ~socket() = default;
   std::unique_ptr<reader> get_reader();
