@@ -53,10 +53,7 @@ using namespace VW::config;
 #define LEARN_CURV 1
 #define LEARN_CONV 2
 
-class curv_exception : public std::exception
-{
-public:
-} curv_ex;
+class curv_exception : public std::exception{public : } curv_ex;
 
 /********************************************************************/
 /* mem & w definition ***********************************************/
