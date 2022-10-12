@@ -62,7 +62,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
-      "test_learner", VW::prediction_type_t::action_scores, VW::label_type_t::continuous)
+      "test_learner", VW::prediction_type_t::ACTION_SCORES, VW::label_type_t::CONTINUOUS)
                           .build();  // Create a learner using the base reduction.
   return test_learner;
 }

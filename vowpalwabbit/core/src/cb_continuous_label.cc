@@ -144,7 +144,7 @@ label_parser the_label_parser = {
     // test_label
     [](const polylabel& label) { return CB::is_test_label<continuous_label, continuous_label_elm>(label.cb_cont); },
     // label type
-    VW::label_type_t::continuous};
+    VW::label_type_t::CONTINUOUS};
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////

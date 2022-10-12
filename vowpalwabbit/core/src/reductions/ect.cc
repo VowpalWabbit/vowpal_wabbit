@@ -363,8 +363,8 @@ base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
       std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
                 .set_params_per_weight(wpp)
                 .set_finish_example(VW::details::finish_multiclass_example<ect&>)
-                .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_input_label_type(VW::label_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_input_label_type(VW::label_type_t::MULTICLASS)
                 .build();
 
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;

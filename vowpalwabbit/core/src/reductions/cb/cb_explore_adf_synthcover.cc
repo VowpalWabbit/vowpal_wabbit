@@ -201,10 +201,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
       VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_synthcover_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)

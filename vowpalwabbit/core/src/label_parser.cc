@@ -19,34 +19,34 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
 {
   switch (label_type)
   {
-    case VW::label_type_t::simple:
+    case VW::label_type_t::SIMPLE:
       return VW::simple_label_parser_global;
 
-    case VW::label_type_t::cb:
+    case VW::label_type_t::CB:
       return CB::cb_label;
 
-    case VW::label_type_t::cb_eval:
+    case VW::label_type_t::CB_EVAL:
       return CB_EVAL::cb_eval;
 
-    case VW::label_type_t::cs:
+    case VW::label_type_t::CS:
       return VW::cs_label_parser_global;
 
-    case VW::label_type_t::multilabel:
+    case VW::label_type_t::MULTILABEL:
       return MULTILABEL::multilabel;
 
-    case VW::label_type_t::multiclass:
+    case VW::label_type_t::MULTICLASS:
       return VW::multiclass_label_parser_global;
 
-    case VW::label_type_t::ccb:
+    case VW::label_type_t::CCB:
       return VW::ccb_label_parser_global;
 
-    case VW::label_type_t::slates:
+    case VW::label_type_t::SLATES:
       return VW::slates::slates_label_parser;
 
-    case VW::label_type_t::nolabel:
+    case VW::label_type_t::NOLABEL:
       return VW::no_label_parser_global;
 
-    case VW::label_type_t::continuous:
+    case VW::label_type_t::CONTINUOUS:
       return VW::cb_continuous::the_label_parser;
   }
 

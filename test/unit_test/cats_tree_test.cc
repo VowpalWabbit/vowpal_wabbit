@@ -93,7 +93,7 @@ learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_re
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
-      "test_learner", VW::prediction_type_t::scalar, VW::label_type_t::cb)
+      "test_learner", VW::prediction_type_t::SCALAR, VW::label_type_t::CB)
                           .build();  // Create a learner using the base reduction.
   return test_learner;
 }

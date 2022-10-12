@@ -65,7 +65,7 @@ VW::LEARNER::base_learner* VW::reductions::print_setup(VW::setup_base_i& stack_b
 
   all.weights.stride_shift(0);
   auto* learner = VW::LEARNER::make_base_learner(VW::make_unique<print>(&all), learn, learn,
-      stack_builder.get_setupfn_name(print_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(print_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                       .build();
   return VW::LEARNER::make_base(*learner);
 }

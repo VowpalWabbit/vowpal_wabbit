@@ -80,7 +80,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
   auto base_label_type = all->example_parser->lbl_parser.label_type;
   if (dont_output_best_constant)
   {
-    if (base_label_type != label_type_t::simple)
+    if (base_label_type != label_type_t::SIMPLE)
     {
       all->logger.out_warn(
           "--dont_output_best_constant is not relevant. best constant is only tracked if the label type is simple.");
@@ -93,7 +93,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
   // return nullptr if the reduction is not active. However, in this reduction we
   // have already constructed the base. So we must return what we've already
   // constructed but it works because we aren't part of it
-  if (base_label_type != label_type_t::simple) { return base; }
+  if (base_label_type != label_type_t::SIMPLE) { return base; }
 
   auto data = VW::make_unique<reduction_data>(all, base);
   if (base->is_multiline())
@@ -102,7 +102,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
         count_label_multi<true>, count_label_multi<false>, stack_builder.get_setupfn_name(count_label_setup))
                         .set_learn_returns_prediction(base->learn_returns_prediction)
                         .set_output_prediction_type(base->get_output_prediction_type())
-                        .set_input_label_type(label_type_t::simple)
+                        .set_input_label_type(label_type_t::SIMPLE)
                         .set_finish_example(finish_example_multi)
                         .build();
     return VW::LEARNER::make_base(*learner);
@@ -112,7 +112,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .set_output_prediction_type(base->get_output_prediction_type())
-                      .set_input_label_type(label_type_t::simple)
+                      .set_input_label_type(label_type_t::SIMPLE)
                       .set_finish_example(finish_example_single)
                       .build();
   return VW::LEARNER::make_base(*learner);

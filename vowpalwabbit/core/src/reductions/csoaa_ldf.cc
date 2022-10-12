@@ -721,26 +721,26 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   if (ld->rank)
   {
     name_addition = "-rank";
-    pred_type = VW::prediction_type_t::action_scores;
+    pred_type = VW::prediction_type_t::ACTION_SCORES;
     pred_ptr = predict_csoaa_ldf_rank;
   }
   else if (ld->is_probabilities)
   {
     name_addition = "-prob";
-    pred_type = VW::prediction_type_t::prob;
+    pred_type = VW::prediction_type_t::PROB;
     pred_ptr = predict_csoaa_ldf;
   }
   else
   {
     name_addition = "";
-    pred_type = VW::prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::MULTICLASS;
     pred_ptr = predict_csoaa_ldf;
   }
 
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
-                .set_input_label_type(VW::label_type_t::cs)
+                .set_input_label_type(VW::label_type_t::CS)
                 .set_output_prediction_type(pred_type)
                 .build();
 
