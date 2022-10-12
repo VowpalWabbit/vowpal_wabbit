@@ -1,5 +1,6 @@
-#include "vw/common/future_compat.h"
 #include "vw/core/parse_slates_example_json.h"
+
+#include "vw/common/future_compat.h"
 
 // If the Windows.h header has been included at some point then the GetObject breaks this file.
 // Workaround by undefing it for the content of this header.
