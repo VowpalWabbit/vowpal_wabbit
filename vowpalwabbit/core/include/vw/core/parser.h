@@ -36,8 +36,9 @@ void parse_example_label(string_view label, const VW::label_parser& lbl_parser, 
 void setup_examples(VW::workspace& all, VW::multi_ex& examples);
 namespace details
 {
-struct cache_temp_buffer
+class cache_temp_buffer
 {
+public:
   std::shared_ptr<std::vector<char>> _backing_buffer;
   io_buf _temporary_cache_buffer;
   cache_temp_buffer()
@@ -49,11 +50,12 @@ struct cache_temp_buffer
 }  // namespace details
 }  // namespace VW
 
-struct input_options;
-struct dsjson_metrics;
+class input_options;
+class dsjson_metrics;
 
-struct parser
+class parser
 {
+public:
   parser(size_t example_queue_limit, bool strict_parse_);
 
   // delete copy constructor
@@ -117,8 +119,9 @@ struct parser
   std::unique_ptr<dsjson_metrics> metrics = nullptr;
 };
 
-struct dsjson_metrics
+class dsjson_metrics
 {
+public:
   size_t NumberOfSkippedEvents = 0;
   size_t NumberOfEventsZeroActions = 0;
   size_t LineParseError = 0;

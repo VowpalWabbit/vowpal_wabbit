@@ -15,8 +15,9 @@ namespace VW
 /// if class_index == 0, then:
 ///   if x == -FLT_MAX then this is a 'shared' example
 ///   if x > 0 then this is a label feature vector for (size_t)x
-struct cs_class
+class cs_class
 {
+public:
   float x;
   uint32_t class_index;
   float partial_prediction;  // a partial prediction: new!
@@ -30,8 +31,9 @@ struct cs_class
 
   bool operator==(const cs_class& j) const { return class_index == j.class_index; }
 };
-struct cs_label
+class cs_label
 {
+public:
   std::vector<cs_class> costs;
 };
 

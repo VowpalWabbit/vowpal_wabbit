@@ -18,8 +18,9 @@
 
 namespace VW
 {
-struct threads_joiner
+class threads_joiner
 {
+public:
   explicit threads_joiner(std::vector<std::thread>& threads) : _threads{threads} {}
   ~threads_joiner()
   {
@@ -33,8 +34,9 @@ private:
   std::vector<std::thread>& _threads;
 };
 
-struct thread_pool
+class thread_pool
 {
+public:
   // Initializes a thread pool with num_threads threads.
   explicit thread_pool(size_t num_threads)
       : _done{false}, _task_queue{std::numeric_limits<size_t>::max()}, _joiner{_threads}

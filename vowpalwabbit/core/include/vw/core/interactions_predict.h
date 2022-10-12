@@ -19,19 +19,21 @@ const static VW::audit_strings EMPTY_AUDIT_STRINGS;
 
 namespace INTERACTIONS
 {
-struct feature_gen_data;
+class feature_gen_data;
 using features_range_t = std::pair<features::const_audit_iterator, features::const_audit_iterator>;
 
-struct extent_interaction_expansion_stack_item
+class extent_interaction_expansion_stack_item
 {
+public:
   size_t current_term;
   size_t prev_term;
   size_t offset;
   std::vector<features_range_t> so_far;
 };
 
-struct generate_interactions_object_cache
+class generate_interactions_object_cache
 {
+public:
   std::vector<feature_gen_data> state_data;
   VW::moved_object_pool<extent_interaction_expansion_stack_item> frame_pool;
   std::stack<extent_interaction_expansion_stack_item> in_process_frames;
@@ -67,8 +69,9 @@ inline void call_FuncT(DataT& dat, WeightsT& /*weights*/, const float ft_value, 
 
 // state data used in non-recursive feature generation algorithm
 // contains N feature_gen_data records (where N is length of interaction)
-struct feature_gen_data
+class feature_gen_data
 {
+public:
   uint64_t hash = 0;              // hash of feature interactions of previous namespaces in the list
   float x = 1.f;                  // value of feature interactions of previous namespaces in the list
                                   // than once calculated at preprocessing together with same_ns

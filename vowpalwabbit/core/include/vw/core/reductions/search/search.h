@@ -22,15 +22,16 @@ using ptag = uint32_t;
 
 namespace Search
 {
-struct search_private;
-struct search_task;
+class search_private;
+class search_task;
 
 extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF, NO_CACHING, ACTION_COSTS;
 
-struct search;
+class search;
 
-struct BaseTask
+class BaseTask
 {
+public:
   BaseTask(search* _sch, VW::multi_ex& _ec) : sch(_sch), ec(_ec)
   {
     _foreach_action = nullptr;
@@ -77,8 +78,9 @@ struct BaseTask
   void (*_with_output_string)(search&, std::stringstream&);
 };
 
-struct search
-{  // INTERFACE
+class search
+{
+public:  // INTERFACE
   // for managing task-specific data that you want on the heap:
   template <class T>
   void set_task_data(T* data)
@@ -227,8 +229,9 @@ struct search
 };
 
 // for defining new tasks, you must fill out a search_task
-struct search_task
-{  // required
+class search_task
+{
+public:  // required
   const char* task_name;
   void (*run)(search&, VW::multi_ex&);
 
@@ -239,8 +242,9 @@ struct search_task
   void (*run_takedown)(search&, VW::multi_ex&);
 };
 
-struct search_metatask
-{  // required
+class search_metatask
+{
+public:  // required
   const char* metatask_name;
   void (*run)(search&, VW::multi_ex&);
 
@@ -253,8 +257,9 @@ struct search_metatask
 
 // to make calls to "predict" (and "predictLDF") cleaner when you
 // want to use crazy combinations of arguments
-struct predictor
+class predictor
 {
+public:
   predictor(search& sch, ptag my_tag);
 
   // tell the predictor what to use as input. a single example input

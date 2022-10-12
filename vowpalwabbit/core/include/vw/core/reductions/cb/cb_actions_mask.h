@@ -10,8 +10,9 @@ namespace VW
 {
 namespace reductions
 {
-struct cb_actions_mask
+class cb_actions_mask
 {
+public:
   // this reduction is used to get the actions mask from VW::actions_mask::reduction_features and apply it to the
   // outcoming predictions
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);

@@ -17,8 +17,9 @@
 namespace VW
 {
 using namespace_index = unsigned char;
-struct example_predict
+class example_predict
 {
+public:
   struct iterator
   {
     iterator(features* feature_space, namespace_index* index);

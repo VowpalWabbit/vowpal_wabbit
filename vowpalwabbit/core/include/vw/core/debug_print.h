@@ -9,8 +9,8 @@
 
 namespace VW
 {
-struct example;
-struct example_predict;
+class example;
+class example_predict;
 using multi_ex = std::vector<example*>;
 }  // namespace VW
 

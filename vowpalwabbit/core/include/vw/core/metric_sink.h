@@ -24,8 +24,9 @@ public:
   virtual void sink_metric(const std::string& key, const metric_sink& value) = 0;
 };
 
-struct metric_sink
+class metric_sink
 {
+public:
   void set_uint(const std::string& key, uint64_t value, bool overwrite = false);
   void set_float(const std::string& key, float value, bool overwrite = false);
   void set_string(const std::string& key, const std::string& value, bool overwrite = false);

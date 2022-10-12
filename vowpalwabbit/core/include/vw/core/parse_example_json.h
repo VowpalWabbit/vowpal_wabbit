@@ -61,18 +61,19 @@ using namespace rapidjson;
 
 namespace VW
 {
-struct workspace;
+class workspace;
 }
 
 template <bool audit>
-struct BaseState;
+class BaseState;
 
 template <bool audit>
-struct Context;
+class Context;
 
 template <bool audit>
-struct BaseState
+class BaseState
 {
+public:
   const char* name;
 
   BaseState(const char* pname) : name(pname) {}
@@ -139,8 +140,9 @@ struct BaseState
 };
 
 template <bool audit>
-struct ArrayToPdfState : public BaseState<audit>
+class ArrayToPdfState : public BaseState<audit>
 {
+public:
   VW::continuous_actions::pdf_segment segment;
 
   BaseState<audit>* return_state;
@@ -223,8 +225,9 @@ private:
 };
 
 template <bool audit>
-struct LabelObjectState : public BaseState<audit>
+class LabelObjectState : public BaseState<audit>
 {
+public:
   CB::cb_class cb_label;
   VW::cb_continuous::continuous_label_elm cont_label_element = {0., 0., 0.};
   bool found = false;
@@ -443,8 +446,9 @@ private:
 
 // "_label_*":
 template <bool audit>
-struct LabelSinglePropertyState : BaseState<audit>
+class LabelSinglePropertyState : public BaseState<audit>
 {
+public:
   LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
@@ -485,8 +489,9 @@ struct LabelSinglePropertyState : BaseState<audit>
 };
 
 template <bool audit>
-struct LabelIndexState : BaseState<audit>
+class LabelIndexState : public BaseState<audit>
 {
+public:
   int index;
 
   LabelIndexState() : BaseState<audit>("LabelIndex"), index(-1) {}
@@ -501,8 +506,9 @@ struct LabelIndexState : BaseState<audit>
 // "_label":"1"
 // Note: doesn't support labelIndex
 template <bool audit>
-struct LabelState : BaseState<audit>
+class LabelState : public BaseState<audit>
 {
+public:
   LabelState() : BaseState<audit>("Label") {}
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
@@ -531,8 +537,9 @@ struct LabelState : BaseState<audit>
 
 // "_text":"a b c"
 template <bool audit>
-struct TextState : BaseState<audit>
+class TextState : public BaseState<audit>
 {
+public:
   TextState() : BaseState<audit>("text") {}
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
@@ -569,8 +576,9 @@ struct TextState : BaseState<audit>
 };
 
 template <bool audit>
-struct TagState : BaseState<audit>
+class TagState : public BaseState<audit>
 {
+public:
   // "_tag":"abc"
   TagState() : BaseState<audit>("tag") {}
 
@@ -582,8 +590,9 @@ struct TagState : BaseState<audit>
 };
 
 template <bool audit>
-struct MultiState : BaseState<audit>
+class MultiState : public BaseState<audit>
 {
+public:
   MultiState() : BaseState<audit>("Multi") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
@@ -649,8 +658,9 @@ struct MultiState : BaseState<audit>
 
 // This state makes the assumption we are in CCB
 template <bool audit>
-struct SlotsState : BaseState<audit>
+class SlotsState : public BaseState<audit>
 {
+public:
   SlotsState() : BaseState<audit>("Slots") {}
   BaseState<audit>* saved;
   BaseState<audit>* saved_root_state;
@@ -703,8 +713,9 @@ struct SlotsState : BaseState<audit>
 
 // "...":[Numbers only]
 template <bool audit>
-struct ArrayState : public BaseState<audit>
+class ArrayState : public BaseState<audit>
 {
+public:
   ArrayState() : BaseState<audit>("Array") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
@@ -767,16 +778,18 @@ private:
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
 template <bool audit>
-struct IgnoreState : BaseState<audit>
+class IgnoreState : public BaseState<audit>
 {
+public:
   IgnoreState() : BaseState<audit>("Ignore") {}
 
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned) override { return ctx.previous_state; }
 };
 
 template <bool audit>
-struct DefaultState : public BaseState<audit>
+class DefaultState : public BaseState<audit>
 {
+public:
   DefaultState() : BaseState<audit>("Default") {}
 
   BaseState<audit>* Ignore(Context<audit>& ctx, rapidjson::SizeType length)
@@ -1075,8 +1088,9 @@ struct DefaultState : public BaseState<audit>
 };
 
 template <bool audit, typename T>
-struct ArrayToVectorState : public BaseState<audit>
+class ArrayToVectorState : public BaseState<audit>
 {
+public:
   ArrayToVectorState() : BaseState<audit>("ArrayToVectorState") {}
 
   std::vector<T>* output_array;
@@ -1164,8 +1178,9 @@ struct ArrayToVectorState : public BaseState<audit>
 };
 
 template <bool audit>
-struct StringToStringState : public BaseState<audit>
+class StringToStringState : public BaseState<audit>
 {
+public:
   StringToStringState() : BaseState<audit>("StringToStringState") {}
 
   std::string* output_string;
@@ -1190,8 +1205,9 @@ inline void add(float* output, float f) { *output += f; }
 }  // namespace float_aggregation
 
 template <bool audit, void (*func)(float*, float)>
-struct FloatToFloatState : public BaseState<audit>
+class FloatToFloatState : public BaseState<audit>
 {
+public:
   FloatToFloatState() : BaseState<audit>("FloatToFloatState") {}
 
   float* output_float;
@@ -1216,8 +1232,9 @@ struct FloatToFloatState : public BaseState<audit>
 //       logic which cannot be handled in the state machine in a better way without impacting performance.
 //       This level of specificity should NOT be in the parser, do not use this as an example of what to do.
 template <bool audit>
-struct FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
+class FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
 {
+public:
   FloatToFloatState_OriginalLabelCostHack() : BaseState<audit>("FloatToFloatState_OriginalLabelCostHack") {}
 
   float* aggr_float;
@@ -1246,8 +1263,9 @@ struct FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
 };
 
 template <bool audit>
-struct UIntDedupState : public BaseState<audit>
+class UIntDedupState : public BaseState<audit>
 {
+public:
   UIntDedupState() : BaseState<audit>("UIntDedupState") {}
 
   uint32_t* output_uint;
@@ -1269,8 +1287,9 @@ struct UIntDedupState : public BaseState<audit>
 };
 
 template <bool audit>
-struct UIntToUIntState : public BaseState<audit>
+class UIntToUIntState : public BaseState<audit>
 {
+public:
   UIntToUIntState() : BaseState<audit>("UIntToUIntState") {}
 
   uint32_t* output_uint;
@@ -1284,8 +1303,9 @@ struct UIntToUIntState : public BaseState<audit>
 };
 
 template <bool audit>
-struct BoolToBoolState : public BaseState<audit>
+class BoolToBoolState : public BaseState<audit>
 {
+public:
   BoolToBoolState() : BaseState<audit>("BoolToBoolState") {}
 
   bool* output_bool;
@@ -1299,8 +1319,9 @@ struct BoolToBoolState : public BaseState<audit>
 };
 
 template <bool audit>
-struct SlotOutcomeList : public BaseState<audit>
+class SlotOutcomeList : public BaseState<audit>
 {
+public:
   DecisionServiceInteraction* interactions;
 
   SlotOutcomeList() : BaseState<audit>("SlotOutcomeList") {}
@@ -1381,8 +1402,9 @@ private:
 };
 
 template <bool audit>
-struct DecisionServiceState : public BaseState<audit>
+class DecisionServiceState : public BaseState<audit>
 {
+public:
   DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
   DecisionServiceInteraction* data;
@@ -1503,8 +1525,9 @@ struct DecisionServiceState : public BaseState<audit>
 };
 
 template <bool audit>
-struct Context
+class Context
 {
+public:
   VW::label_parser _label_parser;
   hash_func_t _hash_func;
   uint64_t _hash_seed;
@@ -1639,8 +1662,9 @@ private:
 };
 
 template <bool audit>
-struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler<audit>>
+class VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler<audit>>
 {
+public:
   Context<audit> ctx;
 
   void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
@@ -1696,8 +1720,9 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 };
 
 template <bool audit>
-struct json_parser
+class json_parser
 {
+public:
   rapidjson::Reader reader;
   VWReaderHandler<audit> handler;
 };

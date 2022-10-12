@@ -26,8 +26,9 @@ using namespace_index = unsigned char;
 namespace VW
 
 {
-struct audit_strings
+class audit_strings
 {
+public:
   std::string ns;
   std::string name;
 
@@ -59,12 +60,13 @@ using audit_strings VW_DEPRECATED("Moved into VW namespace") = VW::audit_strings
 // First: character based feature group, second: hash of extent
 using extent_term = std::pair<namespace_index, uint64_t>;
 
-struct features;
-struct features_value_index_audit_range;
+class features;
+class features_value_index_audit_range;
 
 // sparse feature definition for the library interface
-struct feature
+class feature
 {
+public:
   float x;
   uint64_t weight_index;
 
@@ -81,8 +83,9 @@ static_assert(std::is_trivial<feature>::value, "To be used in v_array feature mu
 
 namespace VW
 {
-struct namespace_extent
+class namespace_extent
 {
+public:
   namespace_extent() = default;
 
   namespace_extent(size_t begin_index, size_t end_index, uint64_t hash)
@@ -112,8 +115,9 @@ std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std:
 }  // namespace VW
 
 template <typename feature_value_type_t, typename feature_index_type_t, typename audit_type_t>
-struct audit_features_iterator final
+class audit_features_iterator final
 {
+public:
   using iterator_category = std::random_access_iterator_tag;
   using difference_type = std::ptrdiff_t;
   using value_type = audit_features_iterator<feature_value_type_t, feature_index_type_t, audit_type_t>;
@@ -243,8 +247,9 @@ private:
 };
 
 template <typename features_t, typename audit_features_iterator_t, typename extent_it>
-struct ns_extent_iterator final
+class ns_extent_iterator final
 {
+public:
   ns_extent_iterator(features_t* feature_group, uint64_t hash, extent_it index_current)
       : _feature_group(feature_group), _hash(hash), _index_current(index_current)
   {
@@ -295,8 +300,9 @@ private:
 };
 
 template <typename feature_value_type_t, typename feature_index_type_t>
-struct features_iterator final
+class features_iterator final
 {
+public:
   using iterator_category = std::random_access_iterator_tag;
   using difference_type = std::ptrdiff_t;
   using value_type = features_iterator<feature_value_type_t, feature_index_type_t>;
@@ -403,8 +409,9 @@ private:
 };
 
 /// the core definition of a set of features.
-struct features
+class features
 {
+public:
   using iterator = features_iterator<feature_value, feature_index>;
   using const_iterator = features_iterator<const feature_value, const feature_index>;
   using audit_iterator = audit_features_iterator<feature_value, feature_index, VW::audit_strings>;
