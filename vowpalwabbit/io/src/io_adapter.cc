@@ -29,8 +29,8 @@
 #if (ZLIB_VERNUM < 0x1252)
 typedef void* gzFile;
 #else
-class gzFile_s;
-using gzFile = class gzFile_s*;
+struct gzFile_s;
+using gzFile = struct gzFile_s*;
 #endif
 
 #ifndef O_LARGEFILE  // for OSX
