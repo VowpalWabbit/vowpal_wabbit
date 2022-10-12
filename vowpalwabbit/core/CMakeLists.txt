@@ -231,8 +231,10 @@ set(vw_core_sources
   src/no_label.cc
   src/parse_args.cc
   src/parse_example.cc
+  src/parse_example_json.cc
   src/parse_primitives.cc
   src/parse_regressor.cc
+  src/parse_slates_example_json.cc
   src/parser.cc
   src/prediction_type.cc
   src/print_utils.cc
