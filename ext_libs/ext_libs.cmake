@@ -41,7 +41,7 @@ if(RAPIDJSON_SYS_DEP)
   target_include_directories(RapidJSON INTERFACE ${RapidJSON_INCLUDE_DIRS})
 else()
   add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE "${CMAKE_CURRENT_LIST_DIR}/rapidjson/include")
+  target_include_directories(RapidJSON SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/rapidjson/include")
 endif()
 
 if(VW_BOOST_MATH_SYS_DEP)
