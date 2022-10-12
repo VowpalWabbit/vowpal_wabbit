@@ -210,7 +210,7 @@ bool ec_is_example_header(example const& ec, label_type_t label_type);
 
 /// \brief Defines the interface for a learning algorithm.
 ///
-/// Learner is implemented as a struct of pointers, and associated methods. It
+/// Learner is implemented as a class of pointers, and associated methods. It
 /// implements a sort of virtual inheritance through the use of bundling
 /// function pointers with the associated objects to call them with. A reduction
 /// will recursively call the base given to it, whereas a base learner will not
@@ -536,13 +536,13 @@ public:
 
 private:
   template <class FluentBuilderT, class DataT, class ExampleT, class BaseLearnerT>
-  friend struct common_learner_builder;
+  friend class common_learner_builder;
   template <class DataT, class ExampleT>
-  friend struct base_learner_builder;
+  friend class base_learner_builder;
   template <class DataT, class ExampleT, class BaseLearnerT>
-  friend struct reduction_learner_builder;
+  friend class reduction_learner_builder;
   template <class ExampleT, class BaseLearnerT>
-  friend struct reduction_no_data_learner_builder;
+  friend class reduction_no_data_learner_builder;
 
   details::func_data init_fd;
   details::learn_data learn_fd;

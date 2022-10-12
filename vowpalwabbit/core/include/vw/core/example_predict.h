@@ -20,8 +20,9 @@ using namespace_index = unsigned char;
 class example_predict
 {
 public:
-  struct iterator
+  class iterator
   {
+  public:
     iterator(features* feature_space, namespace_index* index);
     features& operator*();
     iterator& operator++();

@@ -148,10 +148,10 @@ void clear_memo_foreach_action(search_private& priv);
 
 class search_private
 {
-public:
 private:
-  struct cached_item_equivalent
+  class cached_item_equivalent
   {
+  public:
     bool operator()(const byte_array& A, const byte_array& B) const
     {
       size_t sz_A = *A.get();
@@ -160,8 +160,9 @@ private:
       return memcmp(A.get(), B.get(), sz_A) == 0;
     }
   };
-  struct cached_item_hash
+  class cached_item_hash
   {
+  public:
     size_t operator()(const byte_array& key) const
     {
       size_t sz = *key.get();

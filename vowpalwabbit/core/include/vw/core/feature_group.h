@@ -238,7 +238,7 @@ public:
     std::swap(lhs._begin_indices, rhs._begin_indices);
     std::swap(lhs._begin_audit, rhs._begin_audit);
   }
-  friend struct features;
+  friend class features;
 
 private:
   feature_value_type_t* _begin_values;
@@ -291,7 +291,7 @@ public:
   }
 
   friend bool operator!=(const ns_extent_iterator& lhs, const ns_extent_iterator& rhs) { return !(lhs == rhs); }
-  friend struct features;
+  friend class features;
 
 private:
   features_t* _feature_group;
@@ -401,7 +401,7 @@ public:
     std::swap(lhs._begin_values, rhs._begin_values);
     std::swap(lhs._begin_indices, rhs._begin_indices);
   }
-  friend struct features;
+  friend class features;
 
 private:
   feature_value_type_t* _begin_values;

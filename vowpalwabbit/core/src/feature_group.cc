@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-class feature_slice  // a helper struct for functions using the set {v,i,space_name}
+class feature_slice  // a helper class for functions using the set {v,i,space_name}
 {
 public:
   feature_value x;

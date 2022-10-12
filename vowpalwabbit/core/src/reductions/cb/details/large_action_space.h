@@ -165,7 +165,6 @@ private:
 template <typename randomized_svd_impl, typename spanner_impl>
 class cb_explore_adf_large_action_space
 {
-public:
 private:
   uint64_t _d;
   VW::workspace* _all;

@@ -279,9 +279,9 @@ void shrink_factor_config::calculate_shrink_factor(
   }
 }
 
-template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
-template struct cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
-template struct cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 

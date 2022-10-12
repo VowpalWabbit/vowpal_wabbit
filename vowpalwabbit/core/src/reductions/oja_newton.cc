@@ -25,7 +25,7 @@ namespace
 class oja_n_update_data
 {
 public:
-  struct OjaNewton* oja_newton_ptr = nullptr;
+  class OjaNewton* oja_newton_ptr = nullptr;
   float g = 0.f;
   float sketch_cnt = 0.f;
   float norm2_x = 0.f;
@@ -59,7 +59,7 @@ public:
 
   VW::example** buffer = nullptr;
   float* weight_buffer = nullptr;
-  struct oja_n_update_data data;
+  class oja_n_update_data data;
 
   float learning_rate_cnt = 0.f;
   bool normalize = false;
