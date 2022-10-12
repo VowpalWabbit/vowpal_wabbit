@@ -40,22 +40,23 @@ namespace io
 {
 enum class output_location
 {
-  out,
-  err,
-  compat
+  STDOUT,
+  STDERR,
+  COMPAT
 };
 
 output_location get_output_location(const std::string& name);
 
+// There are global macros defined which conflict without the _LEVEL suffix.
 enum class log_level
 {
-  trace = spdlog::level::trace,
-  debug = spdlog::level::debug,
-  info = spdlog::level::info,
-  warn = spdlog::level::warn,
-  error = spdlog::level::err,
-  critical = spdlog::level::critical,
-  off = spdlog::level::off
+  TRACE_LEVEL = spdlog::level::trace,
+  DEBUG_LEVEL = spdlog::level::debug,
+  INFO_LEVEL = spdlog::level::info,
+  WARN_LEVEL = spdlog::level::warn,
+  ERROR_LEVEL = spdlog::level::err,
+  CRITICAL_LEVEL = spdlog::level::critical,
+  OFF_LEVEL = spdlog::level::off
 };
 
 log_level get_log_level(const std::string& level);
@@ -65,39 +66,39 @@ using logger_legacy_output_func_t = void (*)(void*, const std::string&);
 
 namespace details
 {
-const constexpr char* default_pattern = "%^[%l]%$ %v";
+const constexpr char* DEFAULT_PATTERN = "%^[%l]%$ %v";
 class logger_impl
 {
 public:
-  std::unique_ptr<spdlog::logger> _spdlog_stdout_logger;
-  std::unique_ptr<spdlog::logger> _spdlog_stderr_logger;
-  size_t _max_limit = SIZE_MAX;
-  size_t _log_count = 0;
-  output_location _location = output_location::compat;
+  std::unique_ptr<spdlog::logger> spdlog_stdout_logger;
+  std::unique_ptr<spdlog::logger> spdlog_stderr_logger;
+  size_t max_limit = SIZE_MAX;
+  size_t log_count = 0;
+  output_location location = output_location::COMPAT;
 
   logger_impl(std::unique_ptr<spdlog::logger> inner_stdout_logger, std::unique_ptr<spdlog::logger> inner_stderr_logger)
-      : _spdlog_stdout_logger(std::move(inner_stdout_logger)), _spdlog_stderr_logger(std::move(inner_stderr_logger))
+      : spdlog_stdout_logger(std::move(inner_stdout_logger)), spdlog_stderr_logger(std::move(inner_stderr_logger))
   {
-    _spdlog_stdout_logger->set_pattern(details::default_pattern);
-    _spdlog_stdout_logger->set_level(spdlog::level::info);
-    _spdlog_stderr_logger->set_pattern(details::default_pattern);
-    _spdlog_stderr_logger->set_level(spdlog::level::info);
+    spdlog_stdout_logger->set_pattern(details::DEFAULT_PATTERN);
+    spdlog_stdout_logger->set_level(spdlog::level::info);
+    spdlog_stderr_logger->set_pattern(details::DEFAULT_PATTERN);
+    spdlog_stderr_logger->set_level(spdlog::level::info);
   }
 
   template <typename FormatString, typename... Args>
   void err_info(const FormatString& fmt, Args&&... args)
   {
-    _log_count++;
-    if (_log_count <= _max_limit)
+    log_count++;
+    if (log_count <= max_limit)
     {
-      if (_location == output_location::compat) { _spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...); }
-      else if (_location == output_location::err)
+      if (location == output_location::COMPAT) { spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...); }
+      else if (location == output_location::STDERR)
       {
-        _spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...);
+        spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...);
       }
       else
       {
-        _spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...);
+        spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...);
       }
     }
   }
@@ -105,17 +106,17 @@ public:
   template <typename FormatString, typename... Args>
   void err_warn(const FormatString& fmt, Args&&... args)
   {
-    _log_count++;
-    if (_log_count <= _max_limit)
+    log_count++;
+    if (log_count <= max_limit)
     {
-      if (_location == output_location::compat) { _spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...); }
-      else if (_location == output_location::err)
+      if (location == output_location::COMPAT) { spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...); }
+      else if (location == output_location::STDERR)
       {
-        _spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...);
+        spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...);
       }
       else
       {
-        _spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...);
+        spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...);
       }
     }
   }
@@ -123,17 +124,17 @@ public:
   template <typename FormatString, typename... Args>
   void err_error(const FormatString& fmt, Args&&... args)
   {
-    _log_count++;
-    if (_log_count <= _max_limit)
+    log_count++;
+    if (log_count <= max_limit)
     {
-      if (_location == output_location::compat) { _spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...); }
-      else if (_location == output_location::err)
+      if (location == output_location::COMPAT) { spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...); }
+      else if (location == output_location::STDERR)
       {
-        _spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...);
+        spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...);
       }
       else
       {
-        _spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...);
+        spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...);
       }
     }
   }
@@ -141,33 +142,33 @@ public:
   template <typename FormatString, typename... Args>
   void err_critical(const FormatString& fmt, Args&&... args)
   {
-    _log_count++;
+    log_count++;
     // we ignore max_limit with critical log
-    if (_location == output_location::compat) { _spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...); }
-    else if (_location == output_location::err)
+    if (location == output_location::COMPAT) { spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...); }
+    else if (location == output_location::STDERR)
     {
-      _spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...);
+      spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...);
     }
     else
     {
-      _spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...);
+      spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...);
     }
   }
 
   template <typename FormatString, typename... Args>
   void out_info(const FormatString& fmt, Args&&... args)
   {
-    _log_count++;
-    if (_log_count <= _max_limit)
+    log_count++;
+    if (log_count <= max_limit)
     {
-      if (_location == output_location::compat) { _spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...); }
-      else if (_location == output_location::err)
+      if (location == output_location::COMPAT) { spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...); }
+      else if (location == output_location::STDERR)
       {
-        _spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...);
+        spdlog_stderr_logger->info(fmt, std::forward<Args>(args)...);
       }
       else
       {
-        _spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...);
+        spdlog_stdout_logger->info(fmt, std::forward<Args>(args)...);
       }
     }
   }
@@ -175,17 +176,17 @@ public:
   template <typename FormatString, typename... Args>
   void out_warn(const FormatString& fmt, Args&&... args)
   {
-    _log_count++;
-    if (_log_count <= _max_limit)
+    log_count++;
+    if (log_count <= max_limit)
     {
-      if (_location == output_location::compat) { _spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...); }
-      else if (_location == output_location::err)
+      if (location == output_location::COMPAT) { spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...); }
+      else if (location == output_location::STDERR)
       {
-        _spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...);
+        spdlog_stderr_logger->warn(fmt, std::forward<Args>(args)...);
       }
       else
       {
-        _spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...);
+        spdlog_stdout_logger->warn(fmt, std::forward<Args>(args)...);
       }
     }
   }
@@ -193,17 +194,17 @@ public:
   template <typename FormatString, typename... Args>
   void out_error(const FormatString& fmt, Args&&... args)
   {
-    _log_count++;
-    if (_log_count <= _max_limit)
+    log_count++;
+    if (log_count <= max_limit)
     {
-      if (_location == output_location::compat) { _spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...); }
-      else if (_location == output_location::err)
+      if (location == output_location::COMPAT) { spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...); }
+      else if (location == output_location::STDERR)
       {
-        _spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...);
+        spdlog_stderr_logger->error(fmt, std::forward<Args>(args)...);
       }
       else
       {
-        _spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...);
+        spdlog_stdout_logger->error(fmt, std::forward<Args>(args)...);
       }
     }
   }
@@ -211,16 +212,16 @@ public:
   template <typename FormatString, typename... Args>
   void out_critical(const FormatString& fmt, Args&&... args)
   {
-    _log_count++;
+    log_count++;
     // we ignore max_limit with critical log
-    if (_location == output_location::compat) { _spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...); }
-    else if (_location == output_location::err)
+    if (location == output_location::COMPAT) { spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...); }
+    else if (location == output_location::STDERR)
     {
-      _spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...);
+      spdlog_stderr_logger->critical(fmt, std::forward<Args>(args)...);
     }
     else
     {
-      _spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...);
+      spdlog_stdout_logger->critical(fmt, std::forward<Args>(args)...);
     }
   }
 };
