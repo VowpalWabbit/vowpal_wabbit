@@ -11,8 +11,9 @@
 
 namespace VW
 {
-struct simple_label
+class simple_label
 {
+public:
   float label = 0.f;
 
   simple_label();
@@ -23,8 +24,9 @@ struct simple_label
 inline bool operator==(const simple_label& lhs, const simple_label& rhs) { return lhs.label == rhs.label; }
 inline bool operator!=(const simple_label& lhs, const simple_label& rhs) { return !(lhs == rhs); }
 
-struct simple_label_reduction_features
+class simple_label_reduction_features
 {
+public:
   float weight;
   float initial;
 

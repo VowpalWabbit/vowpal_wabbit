@@ -57,8 +57,9 @@ void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
   array = std::vector<T>{};
 }
 
-struct ccb_data
+class ccb_data
 {
+public:
   VW::workspace* all = nullptr;
   VW::example* shared = nullptr;
   VW::multi_ex actions, slots;

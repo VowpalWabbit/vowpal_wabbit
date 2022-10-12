@@ -14,8 +14,9 @@
 
 namespace VW
 {
-struct action_score
+class action_score
 {
+public:
   uint32_t action;
   float score;
 };
@@ -39,8 +40,9 @@ void print_action_score(
 
 std::string to_string(const action_scores& action_scores_or_probs, int decimal_precision = DEFAULT_FLOAT_PRECISION);
 
-struct action_scores_score_iterator
+class action_scores_score_iterator
 {
+public:
   using iterator_category = std::random_access_iterator_tag;
   using value_type = float;
   using difference_type = long;

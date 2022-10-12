@@ -111,8 +111,9 @@ void start_parser(VW::workspace& all);
 void end_parser(VW::workspace& all);
 bool is_ring_example(const VW::workspace& all, const example* ae);
 
-struct primitive_feature_space  // just a helper definition.
+class primitive_feature_space  // just a helper definition.
 {
+public:
   unsigned char name;
   feature* fs;
   size_t len;

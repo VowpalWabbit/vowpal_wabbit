@@ -47,8 +47,9 @@ namespace cb_explore_adf
  * (row's cell) on the fly, and adding the product to the final dotproduct corresponding to that example-row)
  */
 
-struct AO_triplet_constructor
+class AO_triplet_constructor
 {
+public:
   AO_triplet_constructor(uint64_t weights_mask, uint64_t column_index, uint64_t seed, float& final_dot_product)
       : _weights_mask(weights_mask), _column_index(column_index), _seed(seed), _final_dot_product(final_dot_product)
   {

@@ -34,8 +34,9 @@ using namespace VW::math;
 
 namespace
 {
-struct ftrl_update_data
+class ftrl_update_data
 {
+public:
   float update = 0.f;
   float ftrl_alpha = 0.f;
   float ftrl_beta = 0.f;
@@ -46,8 +47,9 @@ struct ftrl_update_data
   float average_squared_norm_x = 0.f;
 };
 
-struct ftrl
+class ftrl
 {
+public:
   VW::workspace* all = nullptr;  // features, finalize, l1, l2,
   float ftrl_alpha = 0.f;
   float ftrl_beta = 0.f;
@@ -59,8 +61,9 @@ struct ftrl
   double normalized_sum_norm_x = 0.0;
 };
 
-struct uncertainty
+class uncertainty
 {
+public:
   float pred;
   float score;
   ftrl& b;

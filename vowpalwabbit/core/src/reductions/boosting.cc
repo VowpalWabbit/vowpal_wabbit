@@ -38,8 +38,9 @@ using namespace VW::reductions;
 
 using std::endl;
 
-struct boosting
+class boosting
 {
+public:
   int N = 0;
   float gamma = 0.f;
   std::string alg = "";

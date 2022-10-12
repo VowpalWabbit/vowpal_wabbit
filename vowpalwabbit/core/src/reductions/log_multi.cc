@@ -25,8 +25,9 @@ using namespace VW::config;
 
 namespace
 {
-struct node_pred
+class node_pred
 {
+public:
   double Ehk;      // NOLINT
   float norm_Ehk;  // NOLINT
   uint32_t nk;
@@ -52,8 +53,9 @@ struct node_pred
 
 static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
 
-struct node
+class node
 {
+public:
   // everyone has
   uint32_t parent;               // the parent node
   VW::v_array<node_pred> preds;  // per-class state
@@ -75,8 +77,9 @@ struct node
   uint32_t max_count_label;  // the most common label
 };
 
-struct log_multi
+class log_multi
 {
+public:
   uint32_t k = 0;
 
   std::vector<node> nodes;

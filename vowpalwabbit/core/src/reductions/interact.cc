@@ -16,8 +16,9 @@ using namespace VW::config;
 
 namespace
 {
-struct interact
+class interact
 {
+public:
   // namespaces to interact
   unsigned char n1 = static_cast<unsigned char>(0);
   unsigned char n2 = static_cast<unsigned char>(0);

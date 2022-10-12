@@ -14,8 +14,9 @@ namespace VW
 {
 namespace reductions
 {
-struct slates_data
+class slates_data
 {
+public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
 

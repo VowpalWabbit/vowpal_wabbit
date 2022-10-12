@@ -22,8 +22,9 @@ namespace reductions
 namespace expreplay
 {
 template <VW::label_parser& lp>
-struct expreplay
+class expreplay
 {
+public:
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
   size_t N = 0;                // how big is the buffer?

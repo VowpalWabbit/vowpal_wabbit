@@ -39,8 +39,9 @@ using namespace VW::config;
 
 namespace
 {
-struct sender
+class sender
 {
+public:
   io_buf* buf = nullptr;
   std::unique_ptr<VW::io::socket> socket;
   std::unique_ptr<VW::io::reader> socket_reader;

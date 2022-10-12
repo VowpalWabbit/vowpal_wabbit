@@ -19,12 +19,12 @@ namespace config
 namespace details
 {
 template <typename T, typename _ = void>
-struct is_vector : std::false_type
+class is_vector : public std::false_type
 {
 };
 
 template <typename T>
-struct is_vector<T,
+class is_vector<T,
     typename std::enable_if<std::is_same<typename std::decay<T>::type,
         std::vector<typename std::decay<T>::type::value_type, typename std::decay<T>::type::allocator_type>>::value>::
         type> : std::true_type
@@ -33,7 +33,7 @@ struct is_vector<T,
 
 }  // namespace details
 
-struct base_option;
+class base_option;
 
 // option_builder decouples the specific type of the option and the interface
 // for building it. It handles generating a shared_ptr at the end of the
@@ -45,8 +45,9 @@ struct base_option;
 // - For nearly all purposes T should be typed_option<value_type> or a subclass
 //   of this.
 template <typename T>
-struct option_builder
+class option_builder
 {
+public:
   template <typename... Args>
   option_builder(Args&&... args) : _option_obj(std::forward<Args>(args)...)
   {

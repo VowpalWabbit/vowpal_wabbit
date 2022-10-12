@@ -19,8 +19,9 @@ enum class ccb_example_type : uint8_t
   SLOT = 3
 };
 
-struct ccb_reduction_features
+class ccb_reduction_features
 {
+public:
   ccb_example_type type;
   VW::v_array<uint32_t> explicit_included_actions;
   void clear() { explicit_included_actions.clear(); }

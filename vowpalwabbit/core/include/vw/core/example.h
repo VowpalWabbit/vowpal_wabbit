@@ -28,15 +28,16 @@
 
 namespace VW
 {
-struct workspace;
+class workspace;
 }
 namespace VW
 {
 void copy_example_data(example* dst, const example* src);
 void setup_example(VW::workspace& all, example* ae);
 
-struct polylabel
+class polylabel
 {
+public:
   VW::no_label empty = static_cast<char>(0);
   VW::simple_label simple;
   VW::multiclass_label multi;
@@ -49,8 +50,9 @@ struct polylabel
   MULTILABEL::labels multilabels;
 };
 
-struct polyprediction
+class polyprediction
 {
+public:
   polyprediction() = default;
   ~polyprediction() = default;
 
@@ -75,8 +77,9 @@ struct polyprediction
 
 std::string to_string(const v_array<float>& scalars, int decimal_precision = DEFAULT_FLOAT_PRECISION);
 
-struct example : public example_predict  // core example datatype.
+class example : public example_predict  // core example datatype.
 {
+public:
   example() = default;
   ~example();
 
@@ -134,10 +137,11 @@ private:
   bool use_permutations = false;
 };
 
-struct workspace;
+class workspace;
 
-struct flat_example
+class flat_example
 {
+public:
   polylabel l;
   reduction_features _reduction_features;
 
