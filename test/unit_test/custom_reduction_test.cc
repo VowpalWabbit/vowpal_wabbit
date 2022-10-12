@@ -107,8 +107,9 @@ void reset_test_state()
 //
 // custom_builder can be augmented to do heavier edits (reorder/remove)
 // on reduction_stack
-struct custom_builder : VW::default_reduction_stack_setup
+class custom_builder : public VW::default_reduction_stack_setup
 {
+public:
   custom_builder()
   {
     // this is the reduction stack of function pointers

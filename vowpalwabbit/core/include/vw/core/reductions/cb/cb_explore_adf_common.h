@@ -66,8 +66,9 @@ inline size_t fill_tied(const v_array<VW::action_score>& preds)
   return ret;
 }
 
-struct cb_explore_metrics
+class cb_explore_metrics
 {
+public:
   size_t metric_labeled = 0;
   size_t metric_predict_in_learn = 0;
   float metric_sum_cost = 0.0;
@@ -85,8 +86,9 @@ struct cb_explore_metrics
 // Object
 template <typename ExploreType>
 // data common to all cb_explore_adf reductions
-struct cb_explore_adf_base
+class cb_explore_adf_base
 {
+public:
   template <typename... Args>
   cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
   {

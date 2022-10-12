@@ -250,8 +250,9 @@ std::string convert_token_value<std::string>(const VW::string_view& token)
   return std::string{token};
 }
 
-struct cli_typed_option_handler : typed_option_visitor
+class cli_typed_option_handler : public typed_option_visitor
 {
+public:
   std::unordered_map<VW::string_view, std::vector<VW::string_view>>& m_tokens;
 
   cli_typed_option_handler(std::unordered_map<VW::string_view, std::vector<VW::string_view>>& tokens) : m_tokens(tokens)

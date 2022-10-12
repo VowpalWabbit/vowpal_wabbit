@@ -12,11 +12,12 @@
 
 namespace VW
 {
-struct example;
+class example;
 namespace cb_continuous
 {
-struct continuous_label_elm
+class continuous_label_elm
 {
+public:
   float action;     // the continuous action
   float cost;       // the cost of this class
   float pdf_value;  // the pdf density of the chosen location, specifies the probability the data collection policy
@@ -25,8 +26,9 @@ struct continuous_label_elm
   bool operator==(const continuous_label_elm&& j) const { return action == j.action; }
 };
 
-struct continuous_label
+class continuous_label
 {
+public:
   v_array<continuous_label_elm> costs;
 };
 

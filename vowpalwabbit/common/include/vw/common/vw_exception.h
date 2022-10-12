@@ -31,8 +31,9 @@
 
 namespace VW
 {
-struct VW_EXPORT_EXCEPTION vw_exception : public std::exception
+class VW_EXPORT_EXCEPTION vw_exception : public std::exception
 {
+public:
   vw_exception(const char* file, int lineNumber, std::string const& message)
       : _file(file), _message(message), _line_number(lineNumber)
   {
@@ -57,8 +58,9 @@ private:
   int _line_number;
 };
 
-struct VW_EXPORT_EXCEPTION vw_argument_disagreement_exception : public vw_exception
+class VW_EXPORT_EXCEPTION vw_argument_disagreement_exception : public vw_exception
 {
+public:
   vw_argument_disagreement_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
@@ -71,8 +73,9 @@ struct VW_EXPORT_EXCEPTION vw_argument_disagreement_exception : public vw_except
   ~vw_argument_disagreement_exception() noexcept override = default;
 };
 
-struct VW_EXPORT_EXCEPTION vw_argument_invalid_value_exception : public vw_exception
+class VW_EXPORT_EXCEPTION vw_argument_invalid_value_exception : public vw_exception
 {
+public:
   vw_argument_invalid_value_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
@@ -85,8 +88,9 @@ struct VW_EXPORT_EXCEPTION vw_argument_invalid_value_exception : public vw_excep
   ~vw_argument_invalid_value_exception() noexcept override = default;
 };
 
-struct VW_EXPORT_EXCEPTION vw_unrecognised_option_exception : public vw_exception
+class VW_EXPORT_EXCEPTION vw_unrecognised_option_exception : public vw_exception
 {
+public:
   vw_unrecognised_option_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
@@ -99,8 +103,9 @@ struct VW_EXPORT_EXCEPTION vw_unrecognised_option_exception : public vw_exceptio
   ~vw_unrecognised_option_exception() noexcept override = default;
 };
 
-struct VW_EXPORT_EXCEPTION save_load_model_exception : public vw_exception
+class VW_EXPORT_EXCEPTION save_load_model_exception : public vw_exception
 {
+public:
   save_load_model_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {
@@ -113,8 +118,9 @@ struct VW_EXPORT_EXCEPTION save_load_model_exception : public vw_exception
   ~save_load_model_exception() noexcept override = default;
 };
 
-struct VW_EXPORT_EXCEPTION strict_parse_exception : public vw_exception
+class VW_EXPORT_EXCEPTION strict_parse_exception : public vw_exception
 {
+public:
   strict_parse_exception(const char* file, int lineNumber, const std::string& message)
       : vw_exception(file, lineNumber, message)
   {

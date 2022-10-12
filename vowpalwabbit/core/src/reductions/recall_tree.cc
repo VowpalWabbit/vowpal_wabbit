@@ -25,8 +25,9 @@ using namespace VW::config;
 
 namespace
 {
-struct node_pred
+class node_pred
 {
+public:
   uint32_t label;
   double label_count;
 
@@ -36,8 +37,9 @@ struct node_pred
 
 static_assert(std::is_trivial<node_pred>::value, "To be used in VW::v_array node_pred must be trivial");
 
-struct node
+class node
 {
+public:
   uint32_t parent;
   float recall_lbest;
 
@@ -68,8 +70,9 @@ struct node
   }
 };
 
-struct recall_tree
+class recall_tree
 {
+public:
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> random_state;
   uint32_t k = 0;
@@ -289,8 +292,9 @@ bool is_candidate(recall_tree& b, uint32_t cn, VW::example& ec)
 
 inline uint32_t descend(node& n, float prediction) { return prediction < 0 ? n.left : n.right; }
 
-struct predict_type
+class predict_type
 {
+public:
   uint32_t node_id;
   uint32_t class_prediction;
 

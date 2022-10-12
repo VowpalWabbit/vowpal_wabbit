@@ -25,8 +25,9 @@ std::ostream& operator<<(std::ostream& os, const VW::reductions::offset_tree::tr
 
 namespace
 {
-struct reduction_test_harness
+class reduction_test_harness
 {
+public:
   reduction_test_harness() : _curr_idx(0) {}
 
   void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }

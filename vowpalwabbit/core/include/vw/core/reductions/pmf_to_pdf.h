@@ -13,8 +13,9 @@ namespace VW
 namespace reductions
 {
 LEARNER::base_learner* pmf_to_pdf_setup(VW::setup_base_i& stack_builder);
-struct pmf_to_pdf_reduction
+class pmf_to_pdf_reduction
 {
+public:
   void predict(example& ec);
   void learn(example& ec);
 

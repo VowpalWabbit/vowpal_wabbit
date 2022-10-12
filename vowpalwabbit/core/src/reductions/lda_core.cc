@@ -52,15 +52,17 @@ enum class lda_math_mode : int
   USE_FAST_APPROX
 };
 
-struct index_feature
+class index_feature
 {
+public:
   uint32_t document;
   feature f;
   bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
-struct lda
+class lda
 {
+public:
   size_t topics = 0;
   float lda_alpha = 0.f;
   float lda_rho = 0.f;
@@ -734,8 +736,9 @@ size_t next_pow2(size_t x)
   return (static_cast<size_t>(1)) << i;
 }
 
-struct initial_weights
+class initial_weights
 {
+public:
   weight initial;
   weight initial_random;
   bool random;
@@ -1009,8 +1012,9 @@ void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
 void predict(lda& l, base_learner& base, VW::example& ec) { learn(l, base, ec); }
 void predict_with_metrics(lda& l, base_learner& base, VW::example& ec) { learn_with_metrics(l, base, ec); }
 
-struct word_doc_frequency
+class word_doc_frequency
 {
+public:
   // feature/word index
   uint64_t idx;
   // document count
@@ -1018,8 +1022,9 @@ struct word_doc_frequency
 };
 
 // cooccurence of 2 features/words
-struct feature_pair
+class feature_pair
 {
+public:
   // feature/word 1
   uint64_t f1;
   // feature/word 2

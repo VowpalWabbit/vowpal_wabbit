@@ -17,8 +17,9 @@ using std::vector;
 
 namespace
 {
-struct reduction_test_harness
+class reduction_test_harness
 {
+public:
   reduction_test_harness() : _curr_idx(0) {}
 
   void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }

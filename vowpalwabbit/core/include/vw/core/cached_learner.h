@@ -7,8 +7,9 @@
 
 namespace VW
 {
-struct cached_learner : public setup_base_i
+class cached_learner : public setup_base_i
 {
+public:
   VW::LEARNER::base_learner* setup_base_learner() override { return _cached; }
 
   operator bool() const { return !(_cached == nullptr); }

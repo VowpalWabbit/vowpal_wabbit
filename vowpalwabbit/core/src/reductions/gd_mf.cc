@@ -26,8 +26,9 @@ using namespace VW::config;
 
 namespace
 {
-struct gdmf
+class gdmf
 {
+public:
   VW::workspace* all = nullptr;  // regressor, printing
   VW::v_array<float> scalars;
   uint32_t rank = 0;
@@ -89,8 +90,9 @@ void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
   mf_print_offset_features(d, ec, offset);
 }
 
-struct pred_offset
+class pred_offset
 {
+public:
   float p;
   uint64_t offset;
 };

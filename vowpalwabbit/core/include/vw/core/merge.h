@@ -9,8 +9,9 @@
 
 namespace VW
 {
-struct model_delta
+class model_delta
 {
+public:
   // model_delta takes ownership of the workspace
   explicit model_delta(VW::workspace* ws) : _ws(ws) {}
   explicit model_delta(std::unique_ptr<VW::workspace>&& ws) : _ws(std::move(ws)) {}

@@ -27,7 +27,7 @@ namespace std
 {
 // forward declare promise as C++/CLI doesn't allow usage in header files
 template <typename T>
-struct promise;
+class promise;
 
 }  // namespace std
 #else
@@ -68,8 +68,9 @@ namespace VW
 namespace details
 {
 constexpr size_t AR_BUF_SIZE = 1 << 16;
-struct node_socks
+class node_socks
 {
+public:
   std::string current_master;
   socket_t parent;
   socket_t children[2];
@@ -99,8 +100,9 @@ enum class all_reduce_type
   THREAD
 };
 
-struct all_reduce_base
+class all_reduce_base
 {
+public:
   const size_t total;  // total number of nodes
   const size_t node;   // node id number
   bool quiet;
@@ -113,8 +115,9 @@ struct all_reduce_base
   virtual ~all_reduce_base() = default;
 };
 
-struct all_reduce_sync
+class all_reduce_sync
 {
+public:
   all_reduce_sync(size_t total);
   ~all_reduce_sync();
 
@@ -142,8 +145,9 @@ private:
   bool _run;
 };
 
-struct all_reduce_threads : public all_reduce_base
+class all_reduce_threads : public all_reduce_base
 {
+public:
   all_reduce_threads(all_reduce_threads* root, size_t ptotal, size_t pnode, bool quiet = false);
 
   all_reduce_threads(size_t ptotal, size_t pnode, bool quiet = false);
@@ -197,8 +201,9 @@ private:
   bool _sync_owner;
 };
 
-struct all_reduce_sockets : public all_reduce_base
+class all_reduce_sockets : public all_reduce_base
 {
+public:
   all_reduce_sockets(std::string pspan_server, const int pport, const size_t punique_id, size_t ptotal,
       const size_t pnode, bool pquiet)
       : all_reduce_base(ptotal, pnode, pquiet)

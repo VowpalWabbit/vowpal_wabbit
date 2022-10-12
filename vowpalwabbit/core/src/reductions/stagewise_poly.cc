@@ -32,14 +32,16 @@ static constexpr float TOLERANCE = 1e-9f;
 static constexpr uint32_t INDICATOR_BIT = 128;
 static constexpr uint32_t DEFAULT_DEPTH = 127;
 
-struct sort_data
+class sort_data
 {
+public:
   float weightsal;
   uint64_t wid;
 };
 
-struct stagewise_poly
+class stagewise_poly
 {
+public:
   VW::workspace* all = nullptr;  // many uses, unmodular reduction
 
   float sched_exponent = 0.f;

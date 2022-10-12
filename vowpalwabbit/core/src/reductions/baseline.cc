@@ -36,8 +36,9 @@ bool VW::reductions::baseline::baseline_enabled(const VW::example* ec)
   return it != ec->indices.end();
 }
 
-struct baseline_data
+class baseline_data
 {
+public:
   VW::example ec;
   VW::workspace* all = nullptr;
   bool lr_scaling = false;  // whether to scale baseline_data learning rate based on max label

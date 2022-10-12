@@ -21,8 +21,9 @@ using namespace VW::config;
 
 namespace
 {
-struct lrqfa_state
+class lrqfa_state
 {
+public:
   VW::workspace* all = nullptr;
   std::string field_name = "";
   int k = 0;

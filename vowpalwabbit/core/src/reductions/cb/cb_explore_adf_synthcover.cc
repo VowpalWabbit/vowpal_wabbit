@@ -29,8 +29,9 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_synthcover
+class cb_explore_adf_synthcover
 {
+public:
   cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
       std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
 

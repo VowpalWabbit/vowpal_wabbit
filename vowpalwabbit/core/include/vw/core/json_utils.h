@@ -10,8 +10,9 @@
 #include <vector>
 
 // Decision Service JSON header information - required to construct final label
-struct DecisionServiceInteraction
+class DecisionServiceInteraction
 {
+public:
   std::string eventId;
   std::string timestamp;
   std::vector<unsigned> actions;
@@ -24,8 +25,9 @@ struct DecisionServiceInteraction
 };
 
 template <bool audit>
-struct Namespace
+class Namespace
 {
+public:
   char feature_group;
   feature_index namespace_hash;
   features* ftrs;

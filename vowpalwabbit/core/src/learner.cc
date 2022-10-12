@@ -74,8 +74,9 @@ void drain_examples(VW::workspace& all)
 // single_instance_context / multi_instance_context - classes incapsulating single/multiinstance example processing
 // get_master - returns main vw instance for owner's example manipulations (i.e. finish)
 // process<process_impl> - call process_impl for all vw instances
-struct single_instance_context
+class single_instance_context
 {
+public:
   single_instance_context(VW::workspace& all) : _all(all) {}
 
   VW::workspace& get_master() const { return _all; }
@@ -90,8 +91,9 @@ private:
   VW::workspace& _all;
 };
 
-struct multi_instance_context
+class multi_instance_context
 {
+public:
   multi_instance_context(const std::vector<VW::workspace*>& all) : _all(all) {}
 
   VW::workspace& get_master() const { return *_all.front(); }
@@ -110,8 +112,9 @@ private:
 // single_example_handler / multi_example_handler - consumer classes with on_example handle method, incapsulating
 // creation of example / multi_ex and passing it to context.process
 template <typename context_type>
-struct single_example_handler
+class single_example_handler
 {
+public:
   single_example_handler(const context_type& context) : _context(context) {}
 
   void on_example(example* ec)
@@ -141,8 +144,9 @@ private:
 };
 
 template <typename context_type>
-struct multi_example_handler
+class multi_example_handler
 {
+public:
   multi_example_handler(const context_type context) : _context(context) {}
   ~multi_example_handler() = default;
 
@@ -217,8 +221,9 @@ private:
 
 // ready_examples_queue / custom_examples_queue - adapters for connecting example handler to parser produce-consume loop
 // for single- and multi-threaded scenarios
-struct ready_examples_queue
+class ready_examples_queue
 {
+public:
   ready_examples_queue(VW::workspace& master) : _master(master) {}
 
   example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
@@ -227,8 +232,9 @@ private:
   VW::workspace& _master;
 };
 
-struct custom_examples_queue
+class custom_examples_queue
 {
+public:
   void reset_examples(const VW::multi_ex* examples)
   {
     assert(examples != nullptr);
