@@ -64,8 +64,9 @@ void generic_driver_onethread(VW::workspace& all);
 
 namespace details
 {
-struct func_data
+class func_data
 {
+public:
   using fn = void (*)(void* data);
   void* data = nullptr;
   base_learner* base = nullptr;
@@ -81,8 +82,9 @@ inline func_data tuple_dbf(void* data, base_learner* base, void (*func)(void*))
   return foo;
 }
 
-struct learn_data
+class learn_data
 {
+public:
   using fn = void (*)(void* data, base_learner& base, void* ex);
   using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, polyprediction* pred,
       bool finalize_predictions);
@@ -95,31 +97,35 @@ struct learn_data
   multi_fn multipredict_f = nullptr;
 };
 
-struct sensitivity_data
+class sensitivity_data
 {
+public:
   using fn = float (*)(void* data, base_learner& base, example& ex);
   void* data = nullptr;
   fn sensitivity_f = nullptr;
 };
 
-struct save_load_data
+class save_load_data
 {
+public:
   using fn = void (*)(void*, io_buf&, bool read, bool text);
   void* data = nullptr;
   base_learner* base = nullptr;
   fn save_load_f = nullptr;
 };
 
-struct save_metric_data
+class save_metric_data
 {
+public:
   using fn = void (*)(void*, metric_sink& metrics);
   void* data = nullptr;
   base_learner* base = nullptr;
   fn save_metric_f = nullptr;
 };
 
-struct finish_example_data
+class finish_example_data
 {
+public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
   void* data = nullptr;
   base_learner* base = nullptr;
@@ -225,9 +231,8 @@ bool ec_is_example_header(example const& ec, label_type_t label_type);
 /// \tparam E Example type this reduction supports. Must be one of ::example or
 /// ::multi_ex
 template <class T, class E>
-struct learner
+class learner
 {
-private:
   /// \private
   void debug_log_message(example& ec, const std::string& msg)
   {
@@ -616,8 +621,9 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CAST_FUNC_TYPE
 template <class FluentBuilderT, class DataT, class ExampleT, class BaseLearnerT>
-struct common_learner_builder
+class common_learner_builder
 {
+public:
   learner<DataT, ExampleT>* _learner = nullptr;
 
   using end_fptr_type = void (*)(VW::workspace&, void*, void*);
