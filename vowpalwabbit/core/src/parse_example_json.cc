@@ -61,6 +61,7 @@ class Context;
 template <bool audit>
 class BaseState
 {
+public:
   const char* name;
 
   BaseState(const char* pname) : name(pname) {}
@@ -129,6 +130,7 @@ class BaseState
 template <bool audit>
 class ArrayToPdfState : public BaseState<audit>
 {
+public:
   VW::continuous_actions::pdf_segment segment;
 
   BaseState<audit>* return_state;
@@ -213,6 +215,7 @@ private:
 template <bool audit>
 class LabelObjectState : public BaseState<audit>
 {
+public:
   CB::cb_class cb_label;
   VW::cb_continuous::continuous_label_elm cont_label_element = {0., 0., 0.};
   bool found = false;
@@ -431,8 +434,9 @@ private:
 
 // "_label_*":
 template <bool audit>
-class LabelSinglePropertyState : BaseState<audit>
+class LabelSinglePropertyState : public BaseState<audit>
 {
+public:
   LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
@@ -473,8 +477,9 @@ class LabelSinglePropertyState : BaseState<audit>
 };
 
 template <bool audit>
-class LabelIndexState : BaseState<audit>
+class LabelIndexState : public BaseState<audit>
 {
+public:
   int index;
 
   LabelIndexState() : BaseState<audit>("LabelIndex"), index(-1) {}
@@ -489,8 +494,9 @@ class LabelIndexState : BaseState<audit>
 // "_label":"1"
 // Note: doesn't support labelIndex
 template <bool audit>
-class LabelState : BaseState<audit>
+class LabelState : public BaseState<audit>
 {
+public:
   LabelState() : BaseState<audit>("Label") {}
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
@@ -519,8 +525,9 @@ class LabelState : BaseState<audit>
 
 // "_text":"a b c"
 template <bool audit>
-class TextState : BaseState<audit>
+class TextState : public BaseState<audit>
 {
+public:
   TextState() : BaseState<audit>("text") {}
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
@@ -557,8 +564,9 @@ class TextState : BaseState<audit>
 };
 
 template <bool audit>
-class TagState : BaseState<audit>
+class TagState : public BaseState<audit>
 {
+public:
   // "_tag":"abc"
   TagState() : BaseState<audit>("tag") {}
 
@@ -570,8 +578,9 @@ class TagState : BaseState<audit>
 };
 
 template <bool audit>
-class MultiState : BaseState<audit>
+class MultiState : public BaseState<audit>
 {
+public:
   MultiState() : BaseState<audit>("Multi") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
@@ -637,8 +646,9 @@ class MultiState : BaseState<audit>
 
 // This state makes the assumption we are in CCB
 template <bool audit>
-class SlotsState : BaseState<audit>
+class SlotsState : public BaseState<audit>
 {
+public:
   SlotsState() : BaseState<audit>("Slots") {}
   BaseState<audit>* saved;
   BaseState<audit>* saved_root_state;
@@ -693,6 +703,7 @@ class SlotsState : BaseState<audit>
 template <bool audit>
 class ArrayState : public BaseState<audit>
 {
+public:
   ArrayState() : BaseState<audit>("Array") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
@@ -755,8 +766,9 @@ private:
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
 template <bool audit>
-class IgnoreState : BaseState<audit>
+class IgnoreState : public BaseState<audit>
 {
+public:
   IgnoreState() : BaseState<audit>("Ignore") {}
 
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned) override { return ctx.previous_state; }
@@ -765,6 +777,7 @@ class IgnoreState : BaseState<audit>
 template <bool audit>
 class DefaultState : public BaseState<audit>
 {
+public:
   DefaultState() : BaseState<audit>("Default") {}
 
   BaseState<audit>* Ignore(Context<audit>& ctx, rapidjson::SizeType length)
@@ -1065,6 +1078,7 @@ class DefaultState : public BaseState<audit>
 template <bool audit, typename T>
 class ArrayToVectorState : public BaseState<audit>
 {
+public:
   ArrayToVectorState() : BaseState<audit>("ArrayToVectorState") {}
 
   std::vector<T>* output_array;
@@ -1154,6 +1168,7 @@ class ArrayToVectorState : public BaseState<audit>
 template <bool audit>
 class StringToStringState : public BaseState<audit>
 {
+public:
   StringToStringState() : BaseState<audit>("StringToStringState") {}
 
   std::string* output_string;
@@ -1180,6 +1195,7 @@ inline void add(float* output, float f) { *output += f; }
 template <bool audit, void (*func)(float*, float)>
 class FloatToFloatState : public BaseState<audit>
 {
+public:
   FloatToFloatState() : BaseState<audit>("FloatToFloatState") {}
 
   float* output_float;
@@ -1206,6 +1222,7 @@ class FloatToFloatState : public BaseState<audit>
 template <bool audit>
 class FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
 {
+public:
   FloatToFloatState_OriginalLabelCostHack() : BaseState<audit>("FloatToFloatState_OriginalLabelCostHack") {}
 
   float* aggr_float;
@@ -1236,6 +1253,7 @@ class FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
 template <bool audit>
 class UIntDedupState : public BaseState<audit>
 {
+public:
   UIntDedupState() : BaseState<audit>("UIntDedupState") {}
 
   uint32_t* output_uint;
@@ -1259,6 +1277,7 @@ class UIntDedupState : public BaseState<audit>
 template <bool audit>
 class UIntToUIntState : public BaseState<audit>
 {
+public:
   UIntToUIntState() : BaseState<audit>("UIntToUIntState") {}
 
   uint32_t* output_uint;
@@ -1274,6 +1293,7 @@ class UIntToUIntState : public BaseState<audit>
 template <bool audit>
 class BoolToBoolState : public BaseState<audit>
 {
+public:
   BoolToBoolState() : BaseState<audit>("BoolToBoolState") {}
 
   bool* output_bool;
@@ -1289,6 +1309,7 @@ class BoolToBoolState : public BaseState<audit>
 template <bool audit>
 class SlotOutcomeList : public BaseState<audit>
 {
+public:
   DecisionServiceInteraction* interactions;
 
   SlotOutcomeList() : BaseState<audit>("SlotOutcomeList") {}
@@ -1371,6 +1392,7 @@ private:
 template <bool audit>
 class DecisionServiceState : public BaseState<audit>
 {
+public:
   DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
   DecisionServiceInteraction* data;
@@ -1493,6 +1515,7 @@ class DecisionServiceState : public BaseState<audit>
 template <bool audit>
 class Context
 {
+public:
   VW::label_parser _label_parser;
   hash_func_t _hash_func;
   uint64_t _hash_seed;
@@ -1629,6 +1652,7 @@ private:
 template <bool audit>
 class VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler<audit>>
 {
+public:
   Context<audit> ctx;
 
   void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
@@ -1686,6 +1710,7 @@ class VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, V
 template <bool audit>
 class json_parser
 {
+public:
   rapidjson::Reader reader;
   VWReaderHandler<audit> handler;
 };
