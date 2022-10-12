@@ -26,8 +26,9 @@ static constexpr bool PRINT_ALL = true;
 static constexpr bool SCORES = true;
 static constexpr bool PROBABILITIES = true;
 
-struct oaa
+class oaa
 {
+public:
   uint64_t k = 0;
   VW::workspace* all = nullptr;         // for raw
   VW::polyprediction* pred = nullptr;   // for multipredict

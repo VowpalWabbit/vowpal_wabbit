@@ -28,8 +28,9 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_bag
+class cb_explore_adf_bag
 {
+public:
   using PredictionT = v_array<VW::action_score>;
 
   cb_explore_adf_bag(

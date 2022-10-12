@@ -499,7 +499,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
       // install signal handler so we can kill children when killed
       {
-        struct sigaction sa;
+        class sigaction sa;
         // specifically don't set SA_RESTART in sa.sa_flags, so that
         // waitid will be interrupted by SIGTERM with handler installed
         memset(&sa, 0, sizeof(sa));

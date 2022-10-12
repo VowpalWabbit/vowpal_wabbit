@@ -11,42 +11,42 @@
 #include <vector>
 
 // forward declarations
-struct io_buf;
-struct parameters;
-struct dense_parameters;
-struct features;
-struct shared_data;
-struct parser;
+class io_buf;
+class parameters;
+class dense_parameters;
+class features;
+class shared_data;
+class parser;
 
 namespace VW
 {
 template <typename T, typename Enable = void>
-struct v_array;
+class v_array;
 
 template <class T>
-struct v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>::type>;
+class v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>::type>;
 
-struct loss_function;
-struct named_labels;
-struct reduction_features;
-struct example;
-struct kskip_ngram_transformer;
-struct label_parser;
-struct polylabel;
-struct rand_state;
-struct setup_base_i;
-struct workspace;
+class loss_function;
+class named_labels;
+class reduction_features;
+class example;
+class kskip_ngram_transformer;
+class label_parser;
+class polylabel;
+class rand_state;
+class setup_base_i;
+class workspace;
 
 using multi_ex = std::vector<example*>;
 using namespace_index = unsigned char;
 
-struct action_score;
+class action_score;
 using action_scores = VW::v_array<action_score>;
 
 namespace LEARNER
 {
 template <class T, class E>
-struct learner;
+class learner;
 using base_learner = learner<char, char>;
 using single_learner = learner<char, example>;
 using multi_learner = learner<char, multi_ex>;
@@ -54,19 +54,19 @@ using multi_learner = learner<char, multi_ex>;
 
 namespace config
 {
-struct options_i;
+class options_i;
 }  // namespace config
 
 namespace io
 {
-struct logger;
-struct reader;
-struct writer;
+class logger;
+class reader;
+class writer;
 }  // namespace io
 
 namespace details
 {
-struct cache_temp_buffer;
+class cache_temp_buffer;
 }
 
 }  // namespace VW

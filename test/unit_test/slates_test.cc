@@ -16,8 +16,9 @@
 #include <vector>
 
 template <typename LearnFunc, typename PredictFunc>
-struct test_base
+class test_base
 {
+public:
   LearnFunc test_learn_func;
   PredictFunc test_predict_func;
 

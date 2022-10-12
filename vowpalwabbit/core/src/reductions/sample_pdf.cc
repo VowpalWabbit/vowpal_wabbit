@@ -32,8 +32,9 @@ namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN sample_pdf reduction and reduction methods
-struct sample_pdf
+class sample_pdf
 {
+public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 

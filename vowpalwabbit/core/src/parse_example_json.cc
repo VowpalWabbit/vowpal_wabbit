@@ -49,17 +49,17 @@ using namespace rapidjson;
 
 namespace VW
 {
-struct workspace;
+class workspace;
 }
 
 template <bool audit>
-struct BaseState;
+class BaseState;
 
 template <bool audit>
-struct Context;
+class Context;
 
 template <bool audit>
-struct BaseState
+class BaseState
 {
   const char* name;
 
@@ -127,7 +127,7 @@ struct BaseState
 };
 
 template <bool audit>
-struct ArrayToPdfState : public BaseState<audit>
+class ArrayToPdfState : public BaseState<audit>
 {
   VW::continuous_actions::pdf_segment segment;
 
@@ -211,7 +211,7 @@ private:
 };
 
 template <bool audit>
-struct LabelObjectState : public BaseState<audit>
+class LabelObjectState : public BaseState<audit>
 {
   CB::cb_class cb_label;
   VW::cb_continuous::continuous_label_elm cont_label_element = {0., 0., 0.};
@@ -431,7 +431,7 @@ private:
 
 // "_label_*":
 template <bool audit>
-struct LabelSinglePropertyState : BaseState<audit>
+class LabelSinglePropertyState : BaseState<audit>
 {
   LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
 
@@ -473,7 +473,7 @@ struct LabelSinglePropertyState : BaseState<audit>
 };
 
 template <bool audit>
-struct LabelIndexState : BaseState<audit>
+class LabelIndexState : BaseState<audit>
 {
   int index;
 
@@ -489,7 +489,7 @@ struct LabelIndexState : BaseState<audit>
 // "_label":"1"
 // Note: doesn't support labelIndex
 template <bool audit>
-struct LabelState : BaseState<audit>
+class LabelState : BaseState<audit>
 {
   LabelState() : BaseState<audit>("Label") {}
 
@@ -519,7 +519,7 @@ struct LabelState : BaseState<audit>
 
 // "_text":"a b c"
 template <bool audit>
-struct TextState : BaseState<audit>
+class TextState : BaseState<audit>
 {
   TextState() : BaseState<audit>("text") {}
 
@@ -557,7 +557,7 @@ struct TextState : BaseState<audit>
 };
 
 template <bool audit>
-struct TagState : BaseState<audit>
+class TagState : BaseState<audit>
 {
   // "_tag":"abc"
   TagState() : BaseState<audit>("tag") {}
@@ -570,7 +570,7 @@ struct TagState : BaseState<audit>
 };
 
 template <bool audit>
-struct MultiState : BaseState<audit>
+class MultiState : BaseState<audit>
 {
   MultiState() : BaseState<audit>("Multi") {}
 
@@ -637,7 +637,7 @@ struct MultiState : BaseState<audit>
 
 // This state makes the assumption we are in CCB
 template <bool audit>
-struct SlotsState : BaseState<audit>
+class SlotsState : BaseState<audit>
 {
   SlotsState() : BaseState<audit>("Slots") {}
   BaseState<audit>* saved;
@@ -691,7 +691,7 @@ struct SlotsState : BaseState<audit>
 
 // "...":[Numbers only]
 template <bool audit>
-struct ArrayState : public BaseState<audit>
+class ArrayState : public BaseState<audit>
 {
   ArrayState() : BaseState<audit>("Array") {}
 
@@ -755,7 +755,7 @@ private:
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
 template <bool audit>
-struct IgnoreState : BaseState<audit>
+class IgnoreState : BaseState<audit>
 {
   IgnoreState() : BaseState<audit>("Ignore") {}
 
@@ -763,7 +763,7 @@ struct IgnoreState : BaseState<audit>
 };
 
 template <bool audit>
-struct DefaultState : public BaseState<audit>
+class DefaultState : public BaseState<audit>
 {
   DefaultState() : BaseState<audit>("Default") {}
 
@@ -1063,7 +1063,7 @@ struct DefaultState : public BaseState<audit>
 };
 
 template <bool audit, typename T>
-struct ArrayToVectorState : public BaseState<audit>
+class ArrayToVectorState : public BaseState<audit>
 {
   ArrayToVectorState() : BaseState<audit>("ArrayToVectorState") {}
 
@@ -1152,7 +1152,7 @@ struct ArrayToVectorState : public BaseState<audit>
 };
 
 template <bool audit>
-struct StringToStringState : public BaseState<audit>
+class StringToStringState : public BaseState<audit>
 {
   StringToStringState() : BaseState<audit>("StringToStringState") {}
 
@@ -1178,7 +1178,7 @@ inline void add(float* output, float f) { *output += f; }
 }  // namespace float_aggregation
 
 template <bool audit, void (*func)(float*, float)>
-struct FloatToFloatState : public BaseState<audit>
+class FloatToFloatState : public BaseState<audit>
 {
   FloatToFloatState() : BaseState<audit>("FloatToFloatState") {}
 
@@ -1204,7 +1204,7 @@ struct FloatToFloatState : public BaseState<audit>
 //       logic which cannot be handled in the state machine in a better way without impacting performance.
 //       This level of specificity should NOT be in the parser, do not use this as an example of what to do.
 template <bool audit>
-struct FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
+class FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
 {
   FloatToFloatState_OriginalLabelCostHack() : BaseState<audit>("FloatToFloatState_OriginalLabelCostHack") {}
 
@@ -1234,7 +1234,7 @@ struct FloatToFloatState_OriginalLabelCostHack : public BaseState<audit>
 };
 
 template <bool audit>
-struct UIntDedupState : public BaseState<audit>
+class UIntDedupState : public BaseState<audit>
 {
   UIntDedupState() : BaseState<audit>("UIntDedupState") {}
 
@@ -1257,7 +1257,7 @@ struct UIntDedupState : public BaseState<audit>
 };
 
 template <bool audit>
-struct UIntToUIntState : public BaseState<audit>
+class UIntToUIntState : public BaseState<audit>
 {
   UIntToUIntState() : BaseState<audit>("UIntToUIntState") {}
 
@@ -1272,7 +1272,7 @@ struct UIntToUIntState : public BaseState<audit>
 };
 
 template <bool audit>
-struct BoolToBoolState : public BaseState<audit>
+class BoolToBoolState : public BaseState<audit>
 {
   BoolToBoolState() : BaseState<audit>("BoolToBoolState") {}
 
@@ -1287,7 +1287,7 @@ struct BoolToBoolState : public BaseState<audit>
 };
 
 template <bool audit>
-struct SlotOutcomeList : public BaseState<audit>
+class SlotOutcomeList : public BaseState<audit>
 {
   DecisionServiceInteraction* interactions;
 
@@ -1369,7 +1369,7 @@ private:
 };
 
 template <bool audit>
-struct DecisionServiceState : public BaseState<audit>
+class DecisionServiceState : public BaseState<audit>
 {
   DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
@@ -1491,7 +1491,7 @@ struct DecisionServiceState : public BaseState<audit>
 };
 
 template <bool audit>
-struct Context
+class Context
 {
   VW::label_parser _label_parser;
   hash_func_t _hash_func;
@@ -1627,7 +1627,7 @@ private:
 };
 
 template <bool audit>
-struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler<audit>>
+class VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler<audit>>
 {
   Context<audit> ctx;
 
@@ -1684,7 +1684,7 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 };
 
 template <bool audit>
-struct json_parser
+class json_parser
 {
   rapidjson::Reader reader;
   VWReaderHandler<audit> handler;

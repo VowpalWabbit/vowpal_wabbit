@@ -22,9 +22,10 @@ using namespace VW::config;
 
 namespace
 {
-struct oja_n_update_data
+class oja_n_update_data
 {
-  struct OjaNewton* oja_newton_ptr = nullptr;
+public:
+  class OjaNewton* oja_newton_ptr = nullptr;
   float g = 0.f;
   float sketch_cnt = 0.f;
   float norm2_x = 0.f;
@@ -35,8 +36,9 @@ struct oja_n_update_data
   float prediction = 0.f;
 };
 
-struct OjaNewton
+class OjaNewton
 {
+public:
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> random_state;
   int m = 0;
@@ -57,7 +59,7 @@ struct OjaNewton
 
   VW::example** buffer = nullptr;
   float* weight_buffer = nullptr;
-  struct oja_n_update_data data;
+  class oja_n_update_data data;
 
   float learning_rate_cnt = 0.f;
   bool normalize = false;

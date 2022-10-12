@@ -79,8 +79,9 @@ enum class RollMethod
 };
 
 // a data structure to hold conditioning information
-struct prediction
+class prediction
 {
+public:
   ptag me;        // the id of the current prediction (the one being memoized)
   size_t cnt;     // how many variables are we conditioning on?
   ptag* tags;     // which variables are they?
@@ -89,8 +90,9 @@ struct prediction
 };
 
 // parameters for auto-conditioning
-struct auto_condition_settings
+class auto_condition_settings
 {
+public:
   size_t max_bias_ngram_length = 0;   // add a "bias" feature for each ngram up to and including this length. eg., if
                                       // it's 1, then you get a single feature for each conditional
   size_t max_quad_ngram_length = 0;   // add bias *times* input features for each ngram up to and including this length
@@ -98,8 +100,9 @@ struct auto_condition_settings
   bool use_passthrough_repr = false;  // should we ask lower-level reductions for their internal state?
 };
 
-struct scored_action
+class scored_action
 {
+public:
   action a;  // the action
   float s;   // the predicted cost of this action
   // v_array<feature> repr;
@@ -113,8 +116,9 @@ std::ostream& operator<<(std::ostream& os, const scored_action& x)
   return os;
 }
 
-struct action_repr
+class action_repr
 {
+public:
   action a = 0;
   features* repr = nullptr;
   action_repr() = default;
@@ -125,8 +129,9 @@ struct action_repr
   action_repr(action _a) : a(_a), repr(nullptr) {}
 };
 
-struct action_cache
+class action_cache
 {
+public:
   float min_cost;
   action k;
   bool is_opt;
@@ -141,11 +146,12 @@ std::ostream& operator<<(std::ostream& os, const action_cache& x)
 
 void clear_memo_foreach_action(search_private& priv);
 
-struct search_private
+class search_private
 {
 private:
-  struct cached_item_equivalent
+  class cached_item_equivalent
   {
+  public:
     bool operator()(const byte_array& A, const byte_array& B) const
     {
       size_t sz_A = *A.get();
@@ -154,8 +160,9 @@ private:
       return memcmp(A.get(), B.get(), sz_A) == 0;
     }
   };
-  struct cached_item_hash
+  class cached_item_hash
   {
+  public:
     size_t operator()(const byte_array& key) const
     {
       size_t sz = *key.get();

@@ -22,8 +22,9 @@ using namespace VW::config;
 using namespace VW::reductions;
 using std::endl;
 
-struct binary_data
+class binary_data
 {
+public:
   VW::io::logger logger;
   explicit binary_data(VW::io::logger logger) : logger(std::move(logger)) {}
 };

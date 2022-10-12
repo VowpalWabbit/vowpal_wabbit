@@ -12,8 +12,9 @@ namespace VW
 namespace details
 {
 template <typename T>
-struct swap_guard_impl
+class swap_guard_impl
 {
+public:
   swap_guard_impl(T* original_location, T* value_to_swap) noexcept
       : _original_location(original_location), _value_to_swap(value_to_swap)
   {
@@ -57,8 +58,9 @@ private:
 };
 
 template <typename T>
-struct swap_guard_impl_rvalue
+class swap_guard_impl_rvalue
 {
+public:
   swap_guard_impl_rvalue(T* original_location, T&& value_to_swap) noexcept
       : _original_location(original_location), _value_to_swap(std::move(value_to_swap))
   {

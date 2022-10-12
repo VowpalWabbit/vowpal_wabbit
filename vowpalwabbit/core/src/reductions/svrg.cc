@@ -26,8 +26,9 @@ namespace
 #define W_STABLE 1      // stable weights, updated per stage
 #define W_STABLEGRAD 2  // gradient corresponding to stable weights
 
-struct svrg
+class svrg
 {
+public:
   int stage_size = 1;         // Number of data passes per stage.
   int prev_pass = -1;         // To detect that we're in a new pass.
   int stable_grad_count = 0;  // Number of data points that
@@ -79,8 +80,9 @@ float gradient_scalar(const svrg& s, const VW::example& ec, float pred)
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --
 
-struct update
+class update
 {
+public:
   float g_scalar_stable;
   float g_scalar_inner;
   float eta;

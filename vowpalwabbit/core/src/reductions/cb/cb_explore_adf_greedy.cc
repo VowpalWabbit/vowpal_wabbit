@@ -22,8 +22,9 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_greedy
+class cb_explore_adf_greedy
 {
+public:
   cb_explore_adf_greedy(float epsilon, bool first_only);
   ~cb_explore_adf_greedy() = default;
 

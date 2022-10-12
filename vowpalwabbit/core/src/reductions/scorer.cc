@@ -21,8 +21,9 @@ using namespace VW::config;
 
 namespace
 {
-struct scorer
+class scorer
 {
+public:
   scorer(VW::workspace* all) : all(all) {}
   VW::workspace* all;
 };  // for set_minmax, loss

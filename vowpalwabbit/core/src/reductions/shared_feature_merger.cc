@@ -18,13 +18,15 @@
 #include <vector>
 namespace
 {
-struct sfm_metrics
+class sfm_metrics
 {
+public:
   size_t count_learn_example_with_shared = 0;
 };
 
-struct sfm_data
+class sfm_data
 {
+public:
   std::unique_ptr<sfm_metrics> metrics;
   VW::label_type_t label_type = VW::label_type_t::cb;
 };

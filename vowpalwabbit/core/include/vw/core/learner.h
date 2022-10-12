@@ -44,7 +44,7 @@ namespace VW
 namespace LEARNER
 {
 template <class T, class E>
-struct learner;
+class learner;
 
 /// \brief Used to type erase the object and pass around common type.
 using base_learner = learner<char, char>;
@@ -64,8 +64,9 @@ void generic_driver_onethread(VW::workspace& all);
 
 namespace details
 {
-struct func_data
+class func_data
 {
+public:
   using fn = void (*)(void* data);
   void* data = nullptr;
   base_learner* base = nullptr;
@@ -81,8 +82,9 @@ inline func_data tuple_dbf(void* data, base_learner* base, void (*func)(void*))
   return foo;
 }
 
-struct learn_data
+class learn_data
 {
+public:
   using fn = void (*)(void* data, base_learner& base, void* ex);
   using multi_fn = void (*)(void* data, base_learner& base, void* ex, size_t count, size_t step, polyprediction* pred,
       bool finalize_predictions);
@@ -95,31 +97,35 @@ struct learn_data
   multi_fn multipredict_f = nullptr;
 };
 
-struct sensitivity_data
+class sensitivity_data
 {
+public:
   using fn = float (*)(void* data, base_learner& base, example& ex);
   void* data = nullptr;
   fn sensitivity_f = nullptr;
 };
 
-struct save_load_data
+class save_load_data
 {
+public:
   using fn = void (*)(void*, io_buf&, bool read, bool text);
   void* data = nullptr;
   base_learner* base = nullptr;
   fn save_load_f = nullptr;
 };
 
-struct save_metric_data
+class save_metric_data
 {
+public:
   using fn = void (*)(void*, metric_sink& metrics);
   void* data = nullptr;
   base_learner* base = nullptr;
   fn save_metric_f = nullptr;
 };
 
-struct finish_example_data
+class finish_example_data
 {
+public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
   void* data = nullptr;
   base_learner* base = nullptr;
@@ -204,7 +210,7 @@ bool ec_is_example_header(example const& ec, label_type_t label_type);
 
 /// \brief Defines the interface for a learning algorithm.
 ///
-/// Learner is implemented as a struct of pointers, and associated methods. It
+/// Learner is implemented as a class of pointers, and associated methods. It
 /// implements a sort of virtual inheritance through the use of bundling
 /// function pointers with the associated objects to call them with. A reduction
 /// will recursively call the base given to it, whereas a base learner will not
@@ -225,9 +231,8 @@ bool ec_is_example_header(example const& ec, label_type_t label_type);
 /// \tparam E Example type this reduction supports. Must be one of ::example or
 /// ::multi_ex
 template <class T, class E>
-struct learner
+class learner
 {
-private:
   /// \private
   void debug_log_message(example& ec, const std::string& msg)
   {
@@ -531,13 +536,13 @@ public:
 
 private:
   template <class FluentBuilderT, class DataT, class ExampleT, class BaseLearnerT>
-  friend struct common_learner_builder;
+  friend class common_learner_builder;
   template <class DataT, class ExampleT>
-  friend struct base_learner_builder;
+  friend class base_learner_builder;
   template <class DataT, class ExampleT, class BaseLearnerT>
-  friend struct reduction_learner_builder;
+  friend class reduction_learner_builder;
   template <class ExampleT, class BaseLearnerT>
-  friend struct reduction_no_data_learner_builder;
+  friend class reduction_no_data_learner_builder;
 
   details::func_data init_fd;
   details::learn_data learn_fd;
@@ -616,8 +621,9 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CAST_FUNC_TYPE
 template <class FluentBuilderT, class DataT, class ExampleT, class BaseLearnerT>
-struct common_learner_builder
+class common_learner_builder
 {
+public:
   learner<DataT, ExampleT>* _learner = nullptr;
 
   using end_fptr_type = void (*)(VW::workspace&, void*, void*);
@@ -770,10 +776,11 @@ struct common_learner_builder
 };
 
 template <class DataT, class ExampleT, class BaseLearnerT>
-struct reduction_learner_builder
+class reduction_learner_builder
     : public common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT,
           BaseLearnerT>
 {
+public:
   using super =
       common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT, BaseLearnerT>;
   reduction_learner_builder(std::unique_ptr<DataT>&& data, BaseLearnerT* base, const std::string& name)
@@ -874,10 +881,11 @@ struct reduction_learner_builder
 };
 
 template <class ExampleT, class BaseLearnerT>
-struct reduction_no_data_learner_builder
+class reduction_no_data_learner_builder
     : public common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT,
           BaseLearnerT>
 {
+public:
   using super =
       common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT, BaseLearnerT>;
   reduction_no_data_learner_builder(BaseLearnerT* base, const std::string& name)
@@ -920,9 +928,10 @@ struct reduction_no_data_learner_builder
 };
 
 template <class DataT, class ExampleT>
-struct base_learner_builder
+class base_learner_builder
     : public common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>
 {
+public:
   using super = common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>;
   base_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
       label_type_t in_label_type)

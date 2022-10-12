@@ -15,8 +15,9 @@ using namespace VW::config;
 
 namespace
 {
-struct classweights
+class classweights
 {
+public:
   std::unordered_map<uint32_t, float> weights;
 
   void load_string(std::string const& source)

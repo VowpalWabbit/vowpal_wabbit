@@ -11,12 +11,13 @@
 #include <functional>
 #include <unordered_map>
 
-struct sparse_parameters;
+class sparse_parameters;
 using weight_map = std::unordered_map<uint64_t, weight*>;
 
 template <typename T>
-struct sparse_iterator
+class sparse_iterator
 {
+public:
   using iterator_category = std::forward_iterator_tag;
   using value_type = T;
   using difference_type = ptrdiff_t;
@@ -48,8 +49,9 @@ private:
   uint32_t _stride;
 };
 
-struct sparse_parameters
+class sparse_parameters
 {
+public:
   using iterator = sparse_iterator<weight>;
   using const_iterator = sparse_iterator<const weight>;
 

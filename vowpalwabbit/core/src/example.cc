@@ -146,8 +146,9 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
 
 }  // namespace VW
 
-struct features_and_source
+class features_and_source
 {
+public:
   VW::v_array<feature> feature_map;  // map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
@@ -174,8 +175,9 @@ feature* get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
 void return_features(feature* f) { free_it(f); }
 }  // namespace VW
 
-struct full_features_and_source
+class full_features_and_source
 {
+public:
   features fs;
   uint32_t stride_shift;
   uint64_t mask;

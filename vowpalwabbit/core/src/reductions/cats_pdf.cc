@@ -39,8 +39,9 @@ namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN cats_pdf reduction and reduction methods
-struct cats_pdf
+class cats_pdf
 {
+public:
   cats_pdf(single_learner* p_base, bool always_predict = false);
 
   int learn(VW::example& ec, VW::experimental::api_status* status);
@@ -92,8 +93,9 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, VW::example& ec)
 
 ///////////////////////////////////////////////////
 // BEGIN: functions to output progress
-struct reduction_output
+class reduction_output
 {
+public:
   static void report_progress(VW::workspace& all, const cats_pdf&, const VW::example& ec);
   static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
       const VW::continuous_actions::probability_density_function& prediction);

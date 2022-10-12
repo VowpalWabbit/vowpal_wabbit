@@ -25,16 +25,18 @@ using namespace VW::config;
 
 namespace
 {
-struct node
+class node
 {
+public:
   uint32_t n;  // node number
   float p;     // node probability
 
   bool operator<(const node& r) const { return p < r.p; }
 };
 
-struct plt
+class plt
 {
+public:
   VW::workspace* all = nullptr;
 
   // tree structure
