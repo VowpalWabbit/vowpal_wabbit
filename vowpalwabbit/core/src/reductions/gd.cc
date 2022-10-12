@@ -127,10 +127,10 @@ static inline float inv_sqrt(float x)
   eta = _mm_rsqrt_ss(eta);
   _mm_store_ss(&x, eta);
 #  else
-  x = quake_InvSqrt(x);
+  x = quake_inv_sqrt(x);
 #  endif
 #else
-  x = quake_InvSqrt(x);
+  x = quake_inv_sqrt(x);
 #endif
 
   return x;
