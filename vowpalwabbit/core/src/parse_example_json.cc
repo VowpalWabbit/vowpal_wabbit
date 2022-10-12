@@ -2,11 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/parse_example_json.h"
+
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
-#include "vw/core/parse_example_json.h"
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
@@ -33,11 +34,11 @@ VW_WARNING_STATE_POP
 #endif
 
 #include <algorithm>
+#include <cfloat>
+#include <cstring>
 #include <limits>
 #include <sstream>
 #include <vector>
-#include <cfloat>
-#include <cstring>
 
 // portability fun
 #ifndef _WIN32
@@ -2009,16 +2010,20 @@ template void VW::read_line_json_s<false>(VW::workspace& all, VW::multi_ex& exam
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
-template bool VW::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data);
-template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data);
+template bool VW::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
+    size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    DecisionServiceInteraction* data);
+template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
+    size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    DecisionServiceInteraction* data);
 
 template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 
-template void line_to_examples_json<true>(VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
-template void line_to_examples_json<false>(VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
+template void line_to_examples_json<true>(
+    VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
+template void line_to_examples_json<false>(
+    VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
 
 template int read_features_json<true>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 template int read_features_json<false>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);

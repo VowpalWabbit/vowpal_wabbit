@@ -65,10 +65,10 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/parse_example.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/parse_primitives.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/unique_sort.h"
 #include "vw/core/vw.h"
-#include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/io/io_adapter.h"
 
 #include <cassert>

@@ -250,8 +250,8 @@ void parse_slates_example_json(const VW::workspace& all, VW::multi_ex& examples,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
-  parse_slates_example_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher,
-      all.hash_seed, all.parse_mask, all.chain_hash_json, examples, line, length, example_factory, ex_factory_context, dedup_examples);
+  parse_slates_example_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
+      all.parse_mask, all.chain_hash_json, examples, line, length, example_factory, ex_factory_context, dedup_examples);
 }
 
 template <bool audit>
@@ -340,20 +340,20 @@ void parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, cha
 }
 
 // Explicitly instantiate templates only in this source file
-template void parse_slates_example_json<true>(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line, size_t length,
+template void parse_slates_example_json<true>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
+    uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line, size_t length,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
-template void parse_slates_example_json<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
-    uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line, size_t length,
+template void parse_slates_example_json<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
+    uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line, size_t length,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
-template void parse_slates_example_json<true>(const VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    VW::example_factory_t example_factory, void* ex_factory_context,
+template void parse_slates_example_json<true>(const VW::workspace& all, VW::multi_ex& examples, char* line,
+    size_t length, VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
-template void parse_slates_example_json<false>(const VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    VW::example_factory_t example_factory, void* ex_factory_context,
+template void parse_slates_example_json<false>(const VW::workspace& all, VW::multi_ex& examples, char* line,
+    size_t length, VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void parse_slates_example_dsjson<true>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
