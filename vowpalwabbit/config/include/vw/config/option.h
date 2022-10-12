@@ -19,10 +19,11 @@ namespace VW
 namespace config
 {
 template <typename>
-struct typed_option;
+class typed_option;
 
-struct typed_option_visitor
+class typed_option_visitor
 {
+public:
   virtual void visit(typed_option<uint32_t>& /*option*/){};
   virtual void visit(typed_option<uint64_t>& /*option*/){};
   virtual void visit(typed_option<int64_t>& /*option*/){};
@@ -35,8 +36,9 @@ struct typed_option_visitor
   virtual ~typed_option_visitor() = default;
 };
 
-struct base_option
+class base_option
 {
+public:
   base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
 
   std::string m_name = "";
@@ -56,8 +58,9 @@ struct base_option
 };
 
 template <typename T>
-struct typed_option : base_option
+class typed_option : public base_option
 {
+public:
   using value_type = T;
 
   static_assert(std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value ||
@@ -143,8 +146,9 @@ private:
 // The contract of typed_option_with_location is that the first set of the option value is written to the given
 // location, otherwise it is a noop.
 template <typename T>
-struct typed_option_with_location : typed_option<T>
+class typed_option_with_location : public typed_option<T>
 {
+public:
   typed_option_with_location(const std::string& name, T& location) : typed_option<T>(name), m_location{&location} {}
   virtual void value_set_callback(const T& value, bool called_from_add_and_parse) override
   {

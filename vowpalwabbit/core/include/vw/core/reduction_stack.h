@@ -10,8 +10,9 @@ using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 namespace VW
 {
-struct default_reduction_stack_setup : public setup_base_i
+class default_reduction_stack_setup : public setup_base_i
 {
+public:
   default_reduction_stack_setup(VW::workspace& all, VW::config::options_i& options);
   // using this constructor implies a later call into delayed_state_attach
   // see parse_args.cc:instantiate_learner(..)

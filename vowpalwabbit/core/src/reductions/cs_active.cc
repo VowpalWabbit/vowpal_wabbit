@@ -32,8 +32,9 @@ using std::endl;
 
 namespace
 {
-struct lq_data
+class lq_data
 {
+public:
   // The following are used by cost-sensitive active learning
   float max_pred;            // The max cost for this label predicted by the current set of good regressors
   float min_pred;            // The min cost for this label predicted by the current set of good regressors
@@ -44,8 +45,9 @@ struct lq_data
   VW::cs_class* cl;
 };
 
-struct cs_active
+class cs_active
 {
+public:
   // active learning algorithm parameters
   float c0 = 0.f;        // mellowness controlling the width of the set of good functions
   float c1 = 0.f;        // multiplier on the threshold for the cost range test

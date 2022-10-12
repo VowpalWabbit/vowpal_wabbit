@@ -12,8 +12,9 @@ Search::search_task task = {"multiclasstask", run, initialize, nullptr, nullptr,
 
 namespace MulticlassTask
 {
-struct task_data
+class task_data
 {
+public:
   size_t max_label;
   size_t num_level;
   VW::v_array<uint32_t> y_allowed;

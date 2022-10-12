@@ -134,8 +134,9 @@ void diag_kronecker_product_test(VW::example& ec1, VW::example& ec2, VW::example
 ///////////////////////////////////////////////////////////////////////
 
 // construct node for tree.
-struct node
+class node
 {
+public:
   uint64_t parent;  // parent index
   int internal;
   // bool internal; //an internal or leaf
@@ -164,8 +165,9 @@ struct node
 };
 
 // memory_tree
-struct memory_tree
+class memory_tree
 {
+public:
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> random_state;
 

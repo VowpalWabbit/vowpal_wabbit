@@ -299,8 +299,9 @@ void subtract(const VW::workspace& ws1, const GD::gd& data1, const VW::workspace
 
 #include <algorithm>
 
-struct string_value
+class string_value
 {
+public:
   float v;
   std::string s;
   friend bool operator<(const string_value& first, const string_value& second);
@@ -308,8 +309,9 @@ struct string_value
 
 bool operator<(const string_value& first, const string_value& second) { return fabsf(first.v) > fabsf(second.v); }
 
-struct audit_results
+class audit_results
 {
+public:
   VW::workspace& all;
   const uint64_t offset;
   std::vector<VW::audit_strings> components;
@@ -449,8 +451,9 @@ float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret)
   return ret;
 }
 
-struct trunc_data
+class trunc_data
 {
+public:
   float prediction;
   float gravity;
 };
@@ -570,8 +573,9 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
   }
 }
 
-struct power_data
+class power_data
 {
+public:
   float minus_power_t;
   float neg_norm_power;
 };
@@ -608,8 +612,9 @@ inline float compute_rate_decay(power_data& s, float& fw)
   return rate_decay;
 }
 
-struct norm_data
+class norm_data
 {
+public:
   float grad_squared;
   float pred_per_update;
   float norm_x;

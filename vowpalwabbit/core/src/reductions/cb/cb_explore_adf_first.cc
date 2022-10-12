@@ -27,8 +27,9 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_first
+class cb_explore_adf_first
 {
+public:
   cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version);
   ~cb_explore_adf_first() = default;
 

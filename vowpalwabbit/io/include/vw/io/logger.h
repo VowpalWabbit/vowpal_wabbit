@@ -66,8 +66,9 @@ using logger_legacy_output_func_t = void (*)(void*, const std::string&);
 namespace details
 {
 const constexpr char* default_pattern = "%^[%l]%$ %v";
-struct logger_impl
+class logger_impl
 {
+public:
   std::unique_ptr<spdlog::logger> _spdlog_stdout_logger;
   std::unique_ptr<spdlog::logger> _spdlog_stderr_logger;
   size_t _max_limit = SIZE_MAX;
@@ -225,8 +226,9 @@ struct logger_impl
 };
 
 template <typename Mutex>
-struct function_ptr_sink : public spdlog::sinks::base_sink<Mutex>
+class function_ptr_sink : public spdlog::sinks::base_sink<Mutex>
 {
+public:
   function_ptr_sink(void* context, logger_output_func_t func)
       : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context)
   {
@@ -248,8 +250,9 @@ protected:
 
 // Same as above but ignores the log level.
 template <typename Mutex>
-struct function_ptr_legacy_sink : public spdlog::sinks::base_sink<Mutex>
+class function_ptr_legacy_sink : public spdlog::sinks::base_sink<Mutex>
 {
+public:
   function_ptr_legacy_sink(void* context, logger_legacy_output_func_t func)
       : spdlog::sinks::base_sink<Mutex>(), _func(func), _context(context)
   {
@@ -271,8 +274,9 @@ protected:
 
 }  // namespace details
 
-struct logger
+class logger
 {
+public:
 #if FMT_VERSION >= 80000
   template <typename... Args>
   void err_info(fmt::format_string<Args...> fmt, Args&&... args)

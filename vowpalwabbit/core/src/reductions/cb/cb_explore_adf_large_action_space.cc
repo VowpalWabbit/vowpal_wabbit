@@ -26,8 +26,9 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-struct A_triplet_constructor
+class A_triplet_constructor
 {
+public:
   A_triplet_constructor(
       uint64_t weights_mask, uint64_t row_index, std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col)
       : _weights_mask(weights_mask), _row_index(row_index), _triplets(triplets), _max_col(max_col)
@@ -278,9 +279,9 @@ void shrink_factor_config::calculate_shrink_factor(
   }
 }
 
-template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
-template struct cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
-template struct cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 

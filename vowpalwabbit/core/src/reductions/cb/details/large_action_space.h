@@ -28,8 +28,9 @@ enum class implementation_type
   one_pass_svd
 };
 
-struct vanilla_rand_svd_impl
+class vanilla_rand_svd_impl
 {
+public:
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -51,8 +52,9 @@ private:
   std::vector<Eigen::Triplet<float>> _triplets;
 };
 
-struct model_weight_rand_svd_impl
+class model_weight_rand_svd_impl
 {
+public:
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
@@ -80,8 +82,9 @@ private:
   void cleanup_model_weight_Y(const multi_ex& examples);
 };
 
-struct one_pass_svd_impl
+class one_pass_svd_impl
 {
+public:
   Eigen::MatrixXf AOmega;
   one_pass_svd_impl(
       VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
@@ -102,8 +105,9 @@ private:
   Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
 };
 
-struct shrink_factor_config
+class shrink_factor_config
 {
+public:
   const float _gamma_scale;
   const float _gamma_exponent;
   const bool _apply_shrink_factor;
@@ -113,8 +117,9 @@ struct shrink_factor_config
       size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors);
 };
 
-struct spanner_state
+class spanner_state
 {
+public:
   spanner_state(float c, uint64_t d) : _c(c), _action_indices(d){};
 
   void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
@@ -132,8 +137,9 @@ private:
   std::vector<bool> _spanner_bitvec;
 };
 
-struct one_rank_spanner_state
+class one_rank_spanner_state
 {
+public:
   one_rank_spanner_state(float c, uint64_t d) : _c(c), _action_indices(d), _log_determinant_factor(0.f){};
   void find_max_volume(const Eigen::MatrixXf& U, const Eigen::VectorXf& phi, float& max_volume, uint64_t& U_rid);
   void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
@@ -157,7 +163,7 @@ private:
 };
 
 template <typename randomized_svd_impl, typename spanner_impl>
-struct cb_explore_adf_large_action_space
+class cb_explore_adf_large_action_space
 {
 private:
   uint64_t _d;

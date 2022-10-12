@@ -13,8 +13,9 @@ namespace VW
 namespace details
 {
 // Experimental.
-struct input_parser
+class input_parser
 {
+public:
   input_parser(std::string name) : _name(std::move(name)) {}
   virtual ~input_parser() = default;
 

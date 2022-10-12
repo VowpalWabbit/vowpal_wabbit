@@ -13,8 +13,9 @@
 using namespace VW::details;
 
 // Used in parse_source
-struct input_options
+class input_options
 {
+public:
   bool daemon;
   bool foreground;
   uint32_t port;

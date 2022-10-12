@@ -21,8 +21,9 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-struct active_cover
+class active_cover
 {
+public:
   // active learning algorithm parameters
   float active_c0 = 0.f;
   float alpha = 0.f;

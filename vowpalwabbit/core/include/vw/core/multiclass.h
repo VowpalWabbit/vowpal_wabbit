@@ -8,8 +8,9 @@
 
 namespace VW
 {
-struct multiclass_label
+class multiclass_label
 {
+public:
   uint32_t label;
   float weight;
 

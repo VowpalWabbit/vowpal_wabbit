@@ -21,8 +21,9 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_softmax
+class cb_explore_adf_softmax
 {
+public:
   cb_explore_adf_softmax(float epsilon, float lambda);
   ~cb_explore_adf_softmax() = default;
 

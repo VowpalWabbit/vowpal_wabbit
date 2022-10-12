@@ -17,8 +17,9 @@ namespace VW
 {
 namespace config
 {
-struct options_i
+class options_i
 {
+public:
   void add_and_parse(const option_group_definition& group);
   bool add_parse_and_check_necessary(const option_group_definition& group);
 

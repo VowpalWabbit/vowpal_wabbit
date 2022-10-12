@@ -15,8 +15,9 @@ using namespace VW::config;
 namespace
 {
 // TODO: This file should probably(?) use trace_message
-struct print
+class print
 {
+public:
   print(VW::workspace* all) : all(all) {}
   VW::workspace* all;
 };  // regressor, feature loop

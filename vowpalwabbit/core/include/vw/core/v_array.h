@@ -23,11 +23,11 @@ namespace VW
  * copyable.
  * \tparam T Element type
  * \tparam Enable Used to check if T is trivially_copyable
- * \note If you get an error message saying that x uses undefined struct 'v_array<...,void>' that means the type is
+ * \note If you get an error message saying that x uses undefined class 'v_array<...,void>' that means the type is
  * not trivially copyable and cannot be used with v_array.
  */
 template <typename T, typename Enable>
-struct v_array;
+class v_array;
 
 /**
  * \brief v_array is a container type that makes use of realloc for efficiency.  However, it is only safe to use
@@ -35,8 +35,9 @@ struct v_array;
  * \tparam T Element type
  */
 template <class T>
-struct v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>::type>
+class v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>::type>
 {
+public:
   static_assert(sizeof(T) > 0, "The sizeof v_array's element type T cannot be 0.");
 
   using value_type = T;

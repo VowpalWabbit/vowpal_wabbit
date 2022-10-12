@@ -12,8 +12,9 @@ namespace VW
 {
 namespace continuous_actions
 {
-struct probability_density_function_value
+class probability_density_function_value
 {
+public:
   float action = 0.f;     // continuous action
   float pdf_value = 0.f;  // pdf value
 
@@ -21,8 +22,9 @@ struct probability_density_function_value
   probability_density_function_value(float action, float pdf_value) : action(action), pdf_value(pdf_value) {}
 };
 
-struct pdf_segment
+class pdf_segment
 {
+public:
   float left = 0.f;       // starting point
   float right = 0.f;      // ending point
   float pdf_value = 0.f;  // height
