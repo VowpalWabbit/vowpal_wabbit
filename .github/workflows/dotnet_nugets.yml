@@ -47,8 +47,10 @@ jobs:
         shell: bash
         run: |
           version=$(./utl/version_number.py)
+          version_trimmed=$(echo $version | sed 's/\+.*//')
           echo "Generated version number: $version"
           echo "::set-output name=version::$version"
+          echo "::set-output name=version_trimmed::$version_trimmed"
 
       # Build .NET Core, all platforms
       - name: Configure .NET Core
@@ -58,6 +60,7 @@ jobs:
           -Dvw_DOTNET_USE_MSPROJECT=Off
           -DVW_NUGET_PACKAGE_NAME=VowpalWabbit
           -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
+          -DVW_NUGET_PACKAGE_VERSION_TRIMMED="${{ steps.get_version.outputs.version_trimmed }}"
           -DBUILD_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
@@ -83,6 +86,7 @@ jobs:
           -Dvw_BUILD_NET_FRAMEWORK=On
           -DVW_NUGET_PACKAGE_NAME=VowpalWabbit
           -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
+          -DVW_NUGET_PACKAGE_VERSION_TRIMMED="${{ steps.get_version.outputs.version_trimmed }}"
           -DBUILD_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
