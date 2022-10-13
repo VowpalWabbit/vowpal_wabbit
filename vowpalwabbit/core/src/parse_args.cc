@@ -324,7 +324,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   if (help)
   {
     all.quiet = true;
-    all.logger.set_level(VW::io::log_level::off);
+    all.logger.set_level(VW::io::log_level::OFF_LEVEL);
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
     // results in the ostream not outputting anything.
@@ -1456,7 +1456,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   logger.set_location(location);
 
   // Don't print warning if a custom log output trace_listener is supplied.
-  if (trace_listener == nullptr && location == VW::io::output_location::compat)
+  if (trace_listener == nullptr && location == VW::io::output_location::COMPAT)
   { logger.err_warn("'compat' mode for --log_output is deprecated and will be removed in a future release."); }
 
   if (options->was_supplied("limit_output") && (upper_limit != 0))

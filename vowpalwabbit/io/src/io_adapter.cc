@@ -41,8 +41,8 @@ using namespace VW::io;
 
 enum class file_mode
 {
-  read,
-  write
+  READ,
+  WRITE
 };
 
 int get_stdin_fileno()
@@ -85,7 +85,7 @@ public:
   // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
   file_adapter(const char* filename, file_mode mode);
   file_adapter(int file_descriptor, file_mode mode, bool should_close);
-  ~file_adapter();
+  ~file_adapter() override;
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
   void reset() override;
@@ -101,8 +101,8 @@ class stdio_adapter : public writer, public reader
 public:
   stdio_adapter()
       : reader(false /*is_resettable*/)
-      , _stdin_file(get_stdin_fileno(), file_mode::read, false)
-      , _stdout_file(get_stdout_fileno(), file_mode::write, false)
+      , _stdin_file(get_stdin_fileno(), file_mode::READ, false)
+      , _stdout_file(get_stdout_fileno(), file_mode::WRITE, false)
   {
   }
   ssize_t read(char* buffer, size_t num_bytes) override;
@@ -118,7 +118,7 @@ class gzip_file_adapter : public writer, public reader
 public:
   gzip_file_adapter(const char* filename, file_mode mode);
   gzip_file_adapter(int file_descriptor, file_mode mode);
-  ~gzip_file_adapter();
+  ~gzip_file_adapter() override;
 
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
@@ -133,7 +133,7 @@ class gzip_stdio_adapter : public writer, public reader
 {
 public:
   gzip_stdio_adapter();
-  ~gzip_stdio_adapter();
+  ~gzip_stdio_adapter() override;
   ssize_t read(char* buffer, size_t num_bytes) override;
   ssize_t write(const char* buffer, size_t num_bytes) override;
 
@@ -146,7 +146,7 @@ class custom_func_writer : public writer
 {
 public:
   custom_func_writer(void* context, write_func_t write_func);
-  ~custom_func_writer() = default;
+  ~custom_func_writer() override = default;
   ssize_t write(const char* buffer, size_t num_bytes) override;
 
 private:
@@ -158,7 +158,7 @@ class vector_writer : public writer
 {
 public:
   vector_writer(std::shared_ptr<std::vector<char>>& buffer);
-  ~vector_writer() = default;
+  ~vector_writer() override = default;
   ssize_t write(const char* buffer, size_t num_bytes) override;
 
 private:
@@ -169,7 +169,7 @@ class buffer_view : public reader
 {
 public:
   buffer_view(const char* data, size_t len);
-  ~buffer_view() = default;
+  ~buffer_view() override = default;
   ssize_t read(char* buffer, size_t num_bytes) override;
   void reset() override;
 
@@ -185,22 +185,22 @@ namespace io
 {
 std::unique_ptr<writer> open_file_writer(const std::string& file_path)
 {
-  return std::unique_ptr<writer>(new file_adapter(file_path.c_str(), file_mode::write));
+  return std::unique_ptr<writer>(new file_adapter(file_path.c_str(), file_mode::WRITE));
 }
 
 std::unique_ptr<reader> open_file_reader(const std::string& file_path)
 {
-  return std::unique_ptr<reader>(new file_adapter(file_path.c_str(), file_mode::read));
+  return std::unique_ptr<reader>(new file_adapter(file_path.c_str(), file_mode::READ));
 }
 
 std::unique_ptr<writer> open_compressed_file_writer(const std::string& file_path)
 {
-  return std::unique_ptr<writer>(new gzip_file_adapter(file_path.c_str(), file_mode::write));
+  return std::unique_ptr<writer>(new gzip_file_adapter(file_path.c_str(), file_mode::WRITE));
 }
 
 std::unique_ptr<reader> open_compressed_file_reader(const std::string& file_path)
 {
-  return std::unique_ptr<reader>(new gzip_file_adapter(file_path.c_str(), file_mode::read));
+  return std::unique_ptr<reader>(new gzip_file_adapter(file_path.c_str(), file_mode::READ));
 }
 
 std::unique_ptr<reader> open_compressed_stdin() { return std::unique_ptr<reader>(new gzip_stdio_adapter()); }
@@ -289,7 +289,7 @@ file_adapter::file_adapter(const char* filename, file_mode mode)
     : reader(true /*is_resettable*/), _mode(mode), _should_close(true)
 {
 #ifdef _WIN32
-  if (_mode == file_mode::read)
+  if (_mode == file_mode::READ)
   {
     // _O_SEQUENTIAL hints to OS that we'll be reading sequentially, so cache aggressively.
     _sopen_s(&_file_descriptor, filename, _O_RDONLY | _O_BINARY | _O_SEQUENTIAL, _SH_DENYWR, 0);
@@ -300,7 +300,7 @@ file_adapter::file_adapter(const char* filename, file_mode mode)
         &_file_descriptor, filename, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
   }
 #else
-  if (_mode == file_mode::read) { _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE); }
+  if (_mode == file_mode::READ) { _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE); }
   else
   {
     _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
@@ -317,7 +317,7 @@ file_adapter::file_adapter(int file_descriptor, file_mode mode, bool should_clos
 
 ssize_t file_adapter::read(char* buffer, size_t num_bytes)
 {
-  assert(_mode == file_mode::read);
+  assert(_mode == file_mode::READ);
 #ifdef _WIN32
   return ::_read(_file_descriptor, buffer, (unsigned int)num_bytes);
 #else
@@ -327,7 +327,7 @@ ssize_t file_adapter::read(char* buffer, size_t num_bytes)
 
 ssize_t file_adapter::write(const char* buffer, size_t num_bytes)
 {
-  assert(_mode == file_mode::write);
+  assert(_mode == file_mode::WRITE);
 #ifdef _WIN32
   return ::_write(_file_descriptor, buffer, (unsigned int)num_bytes);
 #else
@@ -362,14 +362,14 @@ file_adapter::~file_adapter()
 
 gzip_file_adapter::gzip_file_adapter(const char* filename, file_mode mode) : reader(true /*is_resettable*/), _mode(mode)
 {
-  auto file_mode_arg = _mode == file_mode::read ? "rb" : "wb";
+  const auto* file_mode_arg = _mode == file_mode::READ ? "rb" : "wb";
   _gz_file = gzopen(filename, file_mode_arg);
   // TODO test for failure
 }
 
 gzip_file_adapter::gzip_file_adapter(int file_descriptor, file_mode mode) : reader(true /*is_resettable*/), _mode(mode)
 {
-  auto file_mode_arg = _mode == file_mode::read ? "rb" : "wb";
+  const auto* file_mode_arg = _mode == file_mode::READ ? "rb" : "wb";
   _gz_file = gzdopen(file_descriptor, file_mode_arg);
 }
 
@@ -377,7 +377,7 @@ gzip_file_adapter::~gzip_file_adapter() { gzclose(_gz_file); }
 
 ssize_t gzip_file_adapter::read(char* buffer, size_t num_bytes)
 {
-  assert(_mode == file_mode::read);
+  assert(_mode == file_mode::READ);
 
   auto num_read = gzread(_gz_file, buffer, static_cast<unsigned int>(num_bytes));
   return (num_read > 0) ? static_cast<size_t>(num_read) : 0;
@@ -385,7 +385,7 @@ ssize_t gzip_file_adapter::read(char* buffer, size_t num_bytes)
 
 ssize_t gzip_file_adapter::write(const char* buffer, size_t num_bytes)
 {
-  assert(_mode == file_mode::write);
+  assert(_mode == file_mode::WRITE);
 
   auto num_written = gzwrite(_gz_file, buffer, static_cast<unsigned int>(num_bytes));
   return (num_written > 0) ? static_cast<size_t>(num_written) : 0;
