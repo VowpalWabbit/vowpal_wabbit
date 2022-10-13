@@ -20,8 +20,9 @@ using namespace exploration;
 // #define VW_SLIM_TEST_DEBUG "vwslim-debug.log"
 
 // some gymnastics to re-use the float reading code
-struct membuf : std::streambuf
+class membuf : public std::streambuf
 {
+public:
   membuf(char* begin, char* end) { this->setg(begin, begin, end); }
 };
 
@@ -47,8 +48,9 @@ std::vector<float> read_floats(const char* filename)
   return read_floats(data);
 }
 
-struct test_data
+class test_data
 {
+public:
   unsigned char* model;
   unsigned int model_len;
   unsigned char* pred;
@@ -223,8 +225,9 @@ enum class PredictParamWeightType
   Dense
 };
 
-struct PredictParam
+class PredictParam
 {
+public:
   const char* model_filename;
   const char* data_filename;
   const char* prediction_reference_filename;
@@ -240,6 +243,7 @@ struct PredictParam
 
 class PredictTest : public ::testing::TestWithParam<PredictParam>
 {
+public:
 };
 
 TEST_P(PredictTest, Run)
@@ -291,8 +295,9 @@ std::vector<PredictParam> GenerateTestParams()
 
 INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, PredictTest, ::testing::ValuesIn(GenerateTestParams()));
 
-struct InvalidModelParam
+class InvalidModelParam
 {
+public:
   const char* name;
   unsigned char* model;
   unsigned int model_len;
@@ -305,6 +310,7 @@ struct InvalidModelParam
 
 class InvalidModelTest : public ::testing::TestWithParam<InvalidModelParam>
 {
+public:
 };
 
 TEST_P(InvalidModelTest, Run)
@@ -599,8 +605,9 @@ std::string generate_string_seed(size_t i)
   return s.str();
 }
 
-struct CBPredictParam
+class CBPredictParam
 {
+public:
   const char* description;
   const char* model_filename;
 
@@ -618,6 +625,7 @@ struct CBPredictParam
 
 class CBPredictTest : public ::testing::TestWithParam<CBPredictParam>
 {
+public:
 };
 
 TEST_P(CBPredictTest, CBRunPredict)
@@ -704,6 +712,7 @@ INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, CBPredictTest, ::testing::ValuesIn(cb
 template <typename W>
 class VwSlimTest : public ::testing::Test
 {
+public:
 };
 
 TYPED_TEST_SUITE_P(VwSlimTest);

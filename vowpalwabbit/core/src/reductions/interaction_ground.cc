@@ -21,8 +21,9 @@ using namespace CB_ALGS;
 
 namespace
 {
-struct interaction_ground
+class interaction_ground
 {
+public:
   // the accumulated importance weighted reward of a policy which optimizes the given value
   double total_importance_weighted_reward = 0.;
   double total_uniform_reward = 0.;

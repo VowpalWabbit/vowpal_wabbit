@@ -4,6 +4,7 @@
 #include "vw/core/reductions/search/search_sequencetask.h"
 
 #include "vw/config/options.h"
+#include "vw/core/cost_sensitive.h"
 #include "vw/core/memory.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/vw.h"
@@ -99,7 +100,7 @@ void convert_bio_to_bilou(VW::multi_ex& ec)
 {
   for (size_t n = 0; n < ec.size(); n++)
   {
-    MULTICLASS::label_t& ylab = ec[n]->l.multi;
+    VW::multiclass_label& ylab = ec[n]->l.multi;
     action y = ylab.label;
     action nexty = (n == ec.size() - 1) ? 0 : ec[n + 1]->l.multi.label;
     if (y == 1)
@@ -132,8 +133,9 @@ void convert_bio_to_bilou(VW::multi_ex& ec)
   }
 }
 
-struct task_data
+class task_data
 {
+public:
   EncodingType encoding;
   VW::v_array<action> allowed_actions;
   VW::v_array<action> only_two_allowed;  // used for BILOU encoding
@@ -209,7 +211,7 @@ void takedown(Search::search& sch, VW::multi_ex& ec)
   {
     for (size_t n = 0; n < ec.size(); n++)
     {
-      MULTICLASS::label_t ylab = ec[n]->l.multi;
+      VW::multiclass_label ylab = ec[n]->l.multi;
       ylab.label = bilou_to_bio(ylab.label);
     }
   }
@@ -317,8 +319,9 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
 namespace ArgmaxTask
 {
-struct task_data
+class task_data
 {
+public:
   float false_negative_cost;
   float negative_weight;
   bool predict_max;
@@ -379,23 +382,23 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
 namespace SequenceTask_DemoLDF  // this is just to debug/show off how to do LDF
 {
-namespace CS = COST_SENSITIVE;
-struct task_data
+class task_data
 {
+public:
   std::vector<VW::example> ldf_examples;
   size_t num_actions;
 };
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/)
 {
-  CS::wclass default_wclass = {0., 0, 0., 0.};
+  VW::cs_class default_wclass = {0., 0, 0., 0.};
 
   task_data* data = new task_data;
   data->ldf_examples.resize(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
-    CS::label& lab = data->ldf_examples[a].l.cs;
-    CS::default_label(lab);
+    auto& lab = data->ldf_examples[a].l.cs;
+    VW::default_cs_label(lab);
     lab.costs.push_back(default_wclass);
     data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
     data->ldf_examples[a].extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
@@ -421,7 +424,7 @@ void my_update_example_indices(
 
 void run(Search::search& sch, VW::multi_ex& ec)
 {
-  task_data* data = sch.get_task_data<task_data>();
+  auto* data = sch.get_task_data<task_data>();
   Search::predictor P(sch, static_cast<ptag>(0));
   for (ptag i = 0; i < ec.size(); i++)
   {
@@ -435,7 +438,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
       }
 
       // regardless of whether the example is needed or not, the class info is needed
-      CS::label& lab = data->ldf_examples[a].l.cs;
+      auto& lab = data->ldf_examples[a].l.cs;
       // need to tell search what the action id is, so that it can add history features correctly!
       lab.costs[0].x = 0.;
       lab.costs[0].class_index = a + 1;

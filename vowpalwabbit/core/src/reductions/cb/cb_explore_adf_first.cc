@@ -27,14 +27,8 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_first
+class cb_explore_adf_first
 {
-private:
-  size_t _tau;
-  float _epsilon;
-
-  VW::version_struct _model_file_version;
-
 public:
   cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version);
   ~cb_explore_adf_first() = default;
@@ -45,6 +39,10 @@ public:
   void save_load(io_buf& io, bool read, bool text);
 
 private:
+  size_t _tau;
+  float _epsilon;
+
+  VW::version_struct _model_file_version;
   template <bool is_learn>
   void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
 };
@@ -64,7 +62,7 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, VW::multi_
     multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   if (_tau)

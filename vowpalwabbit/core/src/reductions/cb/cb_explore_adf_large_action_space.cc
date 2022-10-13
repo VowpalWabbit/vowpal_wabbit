@@ -26,14 +26,8 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-struct A_triplet_constructor
+class A_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _row_index;
-  std::vector<Eigen::Triplet<float>>& _triplets;
-  uint64_t& _max_col;
-
 public:
   A_triplet_constructor(
       uint64_t weights_mask, uint64_t row_index, std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col)
@@ -49,6 +43,12 @@ public:
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _row_index;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t& _max_col;
 };
 
 bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
@@ -261,7 +261,7 @@ shrink_factor_config::shrink_factor_config(float gamma_scale, float gamma_expone
 }
 
 void shrink_factor_config::calculate_shrink_factor(
-    size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors)
+    size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors)
 {
   if (_apply_shrink_factor)
   {
@@ -279,9 +279,9 @@ void shrink_factor_config::calculate_shrink_factor(
   }
 }
 
-template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
-template struct cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
-template struct cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -330,8 +330,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool model_weight_impl = false;
   bool use_vanilla_impl = false;
   bool full_spanner = false;
-  size_t thread_pool_size = 0;
-  size_t block_size = 0;
+  uint64_t thread_pool_size = 0;
+  uint64_t block_size = 0;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");

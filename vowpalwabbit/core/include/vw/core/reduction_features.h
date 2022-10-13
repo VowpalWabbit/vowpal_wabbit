@@ -35,13 +35,6 @@ namespace VW
 {
 class reduction_features
 {
-private:
-  CCB::reduction_features _ccb_reduction_features;
-  VW::continuous_actions::reduction_features _contact_reduction_features;
-  simple_label_reduction_features _simple_label_reduction_features;
-  VW::cb_explore_adf::greedy::reduction_features _epsilon_reduction_features;
-  VW::generated_interactions::reduction_features _generated_interactions_reduction_features;
-
 public:
   template <typename T>
   T& get();
@@ -57,16 +50,23 @@ public:
     _epsilon_reduction_features.reset_to_default();
     _generated_interactions_reduction_features.reset_to_default();
   }
+
+private:
+  VW::ccb_reduction_features _ccb_reduction_features;
+  VW::continuous_actions::reduction_features _contact_reduction_features;
+  simple_label_reduction_features _simple_label_reduction_features;
+  VW::cb_explore_adf::greedy::reduction_features _epsilon_reduction_features;
+  VW::generated_interactions::reduction_features _generated_interactions_reduction_features;
 };
 
 template <>
-inline CCB::reduction_features& reduction_features::get<CCB::reduction_features>()
+inline VW::ccb_reduction_features& reduction_features::get<VW::ccb_reduction_features>()
 {
   return _ccb_reduction_features;
 }
 
 template <>
-inline const CCB::reduction_features& reduction_features::get<CCB::reduction_features>() const
+inline const VW::ccb_reduction_features& reduction_features::get<VW::ccb_reduction_features>() const
 {
   return _ccb_reduction_features;
 }
@@ -85,13 +85,13 @@ reduction_features::get<VW::continuous_actions::reduction_features>() const
 }
 
 template <>
-inline simple_label_reduction_features& reduction_features::get<simple_label_reduction_features>()
+inline simple_label_reduction_features& reduction_features::get<VW::simple_label_reduction_features>()
 {
   return _simple_label_reduction_features;
 }
 
 template <>
-inline const simple_label_reduction_features& reduction_features::get<simple_label_reduction_features>() const
+inline const simple_label_reduction_features& reduction_features::get<VW::simple_label_reduction_features>() const
 {
   return _simple_label_reduction_features;
 }

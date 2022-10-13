@@ -47,14 +47,8 @@ namespace cb_explore_adf
  * (row's cell) on the fly, and adding the product to the final dotproduct corresponding to that example-row)
  */
 
-struct AO_triplet_constructor
+class AO_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _column_index;
-  uint64_t _seed;
-  float& _final_dot_product;
-
 public:
   AO_triplet_constructor(uint64_t weights_mask, uint64_t column_index, uint64_t seed, float& final_dot_product)
       : _weights_mask(weights_mask), _column_index(column_index), _seed(seed), _final_dot_product(final_dot_product)
@@ -76,6 +70,12 @@ public:
 #endif
     _final_dot_product += feature_value * val;
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _column_index;
+  uint64_t _seed;
+  float& _final_dot_product;
 };
 
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
@@ -85,7 +85,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   // this constant factor should be enough, we need a higher probability that we get a fair coin flip in the Omega
   // matrix
   const uint64_t sampling_slack = 10;
-  auto p = std::min(num_actions, _d + sampling_slack);
+  auto p = std::min(num_actions, static_cast<size_t>(_d + sampling_slack));
   AOmega.resize(num_actions, p);
 
   auto calculate_aomega_row = [](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,

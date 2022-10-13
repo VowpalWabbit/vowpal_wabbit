@@ -55,9 +55,9 @@ int read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples
 }
 
 template <bool audit>
-class TC_parser
+class tc_parser
 {
-public:
+private:
   VW::string_view _line;
   size_t _read_idx;
   float _cur_channel_v;
@@ -77,13 +77,11 @@ public:
   uint32_t _hash_seed;
   uint64_t _parse_mask;
   std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
-  VW::io::logger* logger;
-
-  ~TC_parser() {}
+  VW::io::logger* _logger;
 
   // TODO: Currently this function is called by both warning and error conditions. We only log
   //      to warning here though.
-  inline FORCE_INLINE void parserWarning(const char* message, VW::string_view var_msg, const char* message2,
+  inline FORCE_INLINE void parser_warning(const char* message, VW::string_view var_msg, const char* message2,
       size_t example_number, VW::io::logger& warn_logger)
   {
     // VW::string_view will output the entire view into the output stream.
@@ -107,7 +105,7 @@ public:
     }
   }
 
-  inline FORCE_INLINE VW::string_view stringFeatureValue(VW::string_view sv)
+  inline FORCE_INLINE VW::string_view string_feature_value(VW::string_view sv)
   {
     size_t start_idx = sv.find_first_not_of(" \t\r\n");
     if (start_idx > 0 && start_idx != std::string::npos)
@@ -122,7 +120,7 @@ public:
     return sv.substr(0, end_idx);
   }
 
-  inline FORCE_INLINE bool isFeatureValueFloat(float& float_feature_value)
+  inline FORCE_INLINE bool is_feature_value_float(float& float_feature_value)
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -142,8 +140,8 @@ public:
       if (std::isnan(_v))
       {
         _v = float_feature_value = 0.f;
-        parserWarning("Invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.",
-            _ae->example_counter, *logger);
+        parser_warning("Invalid feature value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 0.",
+            _ae->example_counter, *_logger);
       }
       _read_idx += end_read;
       return true;
@@ -152,8 +150,8 @@ public:
     {
       _v = float_feature_value = 0.f;
       // syntax error
-      parserWarning("malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter, *logger);
+      parser_warning("malformed example! '|', ':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *_logger);
       return true;
     }
   }
@@ -168,7 +166,7 @@ public:
     return _line.substr(name_start, _read_idx - name_start);
   }
 
-  inline FORCE_INLINE void maybeFeature()
+  inline FORCE_INLINE void maybe_feature()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -179,14 +177,14 @@ public:
     {
       // maybeFeature --> 'String' FeatureValue
       VW::string_view feature_name = read_name();
-      VW::string_view string_feature_value;
+      VW::string_view str_feat_value;
 
       float float_feature_value = 0.f;
-      bool is_feature_float = isFeatureValueFloat(float_feature_value);
+      bool is_feature_float = is_feature_value_float(float_feature_value);
 
       if (!is_feature_float)
       {
-        string_feature_value = stringFeatureValue(_line.substr(_read_idx));
+        str_feat_value = string_feature_value(_line.substr(_read_idx));
         _v = 1;
       }
       else
@@ -196,10 +194,10 @@ public:
 
       uint64_t word_hash;
       // Case where string:string or :string
-      if (!string_feature_value.empty())
+      if (!str_feat_value.empty())
       {
         // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-        word_hash = (_p->hasher(string_feature_value.data(), string_feature_value.length(),
+        word_hash = (_p->hasher(str_feat_value.data(), str_feat_value.length(),
                          _p->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
             _parse_mask);
       }
@@ -223,11 +221,11 @@ public:
 
       if (audit)
       {
-        if (!string_feature_value.empty())
+        if (!str_feat_value.empty())
         {
           std::stringstream ss;
           fs.space_names.push_back(
-              VW::audit_strings(std::string{_base}, std::string{feature_name}, std::string{string_feature_value}));
+              VW::audit_strings(std::string{_base}, std::string{feature_name}, std::string{str_feat_value}));
         }
         else
         {
@@ -353,7 +351,7 @@ public:
     }
   }
 
-  inline FORCE_INLINE void nameSpaceInfoValue()
+  inline FORCE_INLINE void name_space_info_value()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' || _line[_read_idx] == '|' ||
         _line[_read_idx] == '\r')
@@ -369,33 +367,33 @@ public:
       _cur_channel_v = parseFloat(sv.data(), end_read, sv.data() + sv.size());
       if (end_read + _read_idx >= _line.size())
       {
-        parserWarning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"",
-            _ae->example_counter, *logger);
+        parser_warning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"",
+            _ae->example_counter, *_logger);
       }
       if (std::isnan(_cur_channel_v))
       {
         _cur_channel_v = 1.f;
-        parserWarning("Invalid namespace value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 1.",
-            _ae->example_counter, *logger);
+        parser_warning("Invalid namespace value:\"", _line.substr(_read_idx), "\" read as NaN. Replacing with 1.",
+            _ae->example_counter, *_logger);
       }
       _read_idx += end_read;
     }
     else
     {
       // syntax error
-      parserWarning("malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter, *logger);
+      parser_warning("malformed example! '|',':', space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *_logger);
     }
   }
 
-  inline FORCE_INLINE void nameSpaceInfo()
+  inline FORCE_INLINE void name_space_info()
   {
     if (_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == ' ' || _line[_read_idx] == '\t' ||
         _line[_read_idx] == ':' || _line[_read_idx] == '\r')
     {
       // syntax error
-      parserWarning("malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter, *logger);
+      parser_warning("malformed example! String expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *_logger);
     }
     else
     {
@@ -409,27 +407,27 @@ public:
       VW::string_view name = read_name();
       if (audit) { _base = name; }
       _channel_hash = _p->hasher(name.data(), name.length(), this->_hash_seed);
-      nameSpaceInfoValue();
+      name_space_info_value();
     }
   }
 
-  inline FORCE_INLINE void listFeatures()
+  inline FORCE_INLINE void list_features()
   {
     while ((_read_idx < _line.size()) && (_line[_read_idx] == ' ' || _line[_read_idx] == '\t'))
     {
       // listFeatures --> ' ' MaybeFeature ListFeatures
       ++_read_idx;
-      maybeFeature();
+      maybe_feature();
     }
     if (!(_read_idx >= _line.size() || _line[_read_idx] == '|' || _line[_read_idx] == '\r'))
     {
       // syntax error
-      parserWarning("malformed example! '|',space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter, *logger);
+      parser_warning("malformed example! '|',space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *_logger);
     }
   }
 
-  inline FORCE_INLINE void nameSpace()
+  inline FORCE_INLINE void name_space()
   {
     _cur_channel_v = 1.0;
     _index = 0;
@@ -451,21 +449,21 @@ public:
       _channel_hash = this->_hash_seed == 0 ? 0 : VW::uniform_hash("", 0, this->_hash_seed);
       _ae->feature_space[_index].start_ns_extent(_channel_hash);
       did_start_extent = true;
-      listFeatures();
+      list_features();
     }
     else if (_line[_read_idx] != ':')
     {
       // NameSpace --> NameSpaceInfo ListFeatures
-      nameSpaceInfo();
+      name_space_info();
       _ae->feature_space[_index].start_ns_extent(_channel_hash);
       did_start_extent = true;
-      listFeatures();
+      list_features();
     }
     else
     {
       // syntax error
-      parserWarning("malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter, *logger);
+      parser_warning("malformed example! '|',String,space, or EOL expected after : \"", _line.substr(0, _read_idx),
+          "\"", _ae->example_counter, *_logger);
     }
 
     if (_new_index && _ae->feature_space[_index].size() > 0) { _ae->indices.push_back(_index); }
@@ -474,22 +472,23 @@ public:
     if (did_start_extent) { _ae->feature_space[_index].end_ns_extent(); }
   }
 
-  inline FORCE_INLINE void listNameSpace()
+  inline FORCE_INLINE void list_name_space()
   {
     while ((_read_idx < _line.size()) && (_line[_read_idx] == '|'))  // ListNameSpace --> '|' NameSpace ListNameSpace
     {
       ++_read_idx;
-      nameSpace();
+      name_space();
     }
     if (_read_idx < _line.size() && _line[_read_idx] != '\r')
     {
       // syntax error
-      parserWarning("malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
-          _ae->example_counter, *logger);
+      parser_warning("malformed example! '|' or EOL expected after : \"", _line.substr(0, _read_idx), "\"",
+          _ae->example_counter, *_logger);
     }
   }
 
-  TC_parser(VW::string_view line, VW::workspace& all, VW::example* ae) : _line(line)
+public:
+  tc_parser(VW::string_view line, VW::workspace& all, VW::example* ae) : _line(line)
   {
     if (!_line.empty())
     {
@@ -503,8 +502,8 @@ public:
       this->_namespace_dictionaries = &all.namespace_dictionaries;
       this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
-      this->logger = &all.logger;
-      listNameSpace();
+      this->_logger = &all.logger;
+      list_name_space();
     }
     else
     {
@@ -555,10 +554,10 @@ void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view e
 
   if (bar_idx != VW::string_view::npos)
   {
-    if (all->audit || all->hash_inv) { TC_parser<true> parser_line(example.substr(bar_idx), *all, ae); }
+    if (all->audit || all->hash_inv) { tc_parser<true> parser_line(example.substr(bar_idx), *all, ae); }
     else
     {
-      TC_parser<false> parser_line(example.substr(bar_idx), *all, ae);
+      tc_parser<false> parser_line(example.substr(bar_idx), *all, ae);
     }
   }
 }

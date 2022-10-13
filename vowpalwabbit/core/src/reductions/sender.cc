@@ -39,11 +39,12 @@ using namespace VW::config;
 
 namespace
 {
-struct sender
+class sender
 {
+public:
   io_buf* buf = nullptr;
-  std::unique_ptr<VW::io::socket> _socket;
-  std::unique_ptr<VW::io::reader> _socket_reader;
+  std::unique_ptr<VW::io::socket> socket;
+  std::unique_ptr<VW::io::reader> socket_reader;
   VW::workspace* all = nullptr;  // loss example_queue_limit others
   VW::example** delay_ring = nullptr;
   size_t sent_index = 0;
@@ -58,10 +59,10 @@ struct sender
 
 void open_sockets(sender& s, const std::string& host)
 {
-  s._socket = VW::io::wrap_socket_descriptor(VW::details::open_socket(host.c_str(), s.all->logger));
-  s._socket_reader = s._socket->get_reader();
+  s.socket = VW::io::wrap_socket_descriptor(VW::details::open_socket(host.c_str(), s.all->logger));
+  s.socket_reader = s.socket->get_reader();
   s.buf = new io_buf();
-  s.buf->add_file(s._socket->get_writer());
+  s.buf->add_file(s.socket->get_writer());
 }
 
 void send_features(io_buf* b, VW::example& ec, uint32_t mask)
@@ -83,14 +84,14 @@ void receive_result(sender& s)
   float res;
   float weight;
 
-  get_prediction(s._socket_reader.get(), res, weight);
+  get_prediction(s.socket_reader.get(), res, weight);
   VW::example& ec = *s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
   ec.pred.scalar = res;
 
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   ec.loss = s.all->loss->get_loss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
 
-  return_simple_example(*(s.all), nullptr, ec);
+  VW::details::return_simple_example(*(s.all), nullptr, ec);
 }
 
 void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, VW::example& ec)

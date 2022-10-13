@@ -14,8 +14,12 @@ namespace VW
 {
 namespace reductions
 {
-struct slates_data
+class slates_data
 {
+public:
+  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+
 private:
   std::vector<slates::label> _stashed_labels;
 
@@ -44,10 +48,6 @@ private:
   */
   template <bool is_learn>
   void learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-
-public:
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
 };
 
 VW::LEARNER::base_learner* slates_setup(VW::setup_base_i&);

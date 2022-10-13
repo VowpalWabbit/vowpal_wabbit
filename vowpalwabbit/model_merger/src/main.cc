@@ -36,8 +36,9 @@ void print_help(const options_cli& options)
   std::cout << formatter.format_help(option_groups);
 }
 
-struct logger_context
+class logger_context
 {
+public:
   VW::io::logger& logger;
   std::string model_file_name;
 };
@@ -69,8 +70,9 @@ void logger_output_func(void* void_context, VW::io::log_level level, const std::
   }
 }
 
-struct command_line_options
+class command_line_options
 {
+public:
   VW::io::log_level log_level{};
   VW::io::output_location log_output_stream{};
   std::string output_file;

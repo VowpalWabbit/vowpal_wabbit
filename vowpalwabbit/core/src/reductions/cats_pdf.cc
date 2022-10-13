@@ -39,8 +39,9 @@ namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN cats_pdf reduction and reduction methods
-struct cats_pdf
+class cats_pdf
 {
+public:
   cats_pdf(single_learner* p_base, bool always_predict = false);
 
   int learn(VW::example& ec, VW::experimental::api_status* status);

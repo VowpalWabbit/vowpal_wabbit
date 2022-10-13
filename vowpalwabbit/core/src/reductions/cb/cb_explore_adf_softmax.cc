@@ -21,12 +21,8 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_softmax
+class cb_explore_adf_softmax
 {
-private:
-  float _epsilon;
-  float _lambda;
-
 public:
   cb_explore_adf_softmax(float epsilon, float lambda);
   ~cb_explore_adf_softmax() = default;
@@ -39,6 +35,8 @@ public:
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
+  float _epsilon;
+  float _lambda;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };
@@ -50,7 +48,7 @@ void cb_explore_adf_softmax::predict_or_learn_impl(VW::LEARNER::multi_learner& b
 {
   VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   exploration::generate_softmax(
       -_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 

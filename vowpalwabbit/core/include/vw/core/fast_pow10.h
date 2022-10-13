@@ -55,16 +55,19 @@ constexpr float constexpr_negative_int_pow10_with_offset(uint8_t exponent, uint8
 template <std::size_t... Integers>
 class index_sequence
 {
+public:
 };
 
 template <std::size_t CurrentNum, std::size_t... Integers>
-struct make_index_sequence : make_index_sequence<CurrentNum - 1, CurrentNum - 1, Integers...>
+class make_index_sequence : public make_index_sequence<CurrentNum - 1, CurrentNum - 1, Integers...>
 {
+public:
 };
 
 template <std::size_t... Integers>
-struct make_index_sequence<0, Integers...> : index_sequence<Integers...>
+class make_index_sequence<0, Integers...> : public index_sequence<Integers...>
 {
+public:
 };
 
 template <std::size_t ArrayLength, std::size_t... IntegerSequence>

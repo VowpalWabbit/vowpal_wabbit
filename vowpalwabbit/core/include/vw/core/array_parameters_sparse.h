@@ -17,10 +17,6 @@ using weight_map = std::unordered_map<uint64_t, weight*>;
 template <typename T>
 class sparse_iterator
 {
-private:
-  weight_map::iterator _iter;
-  uint32_t _stride;
-
 public:
   using iterator_category = std::forward_iterator_tag;
   using value_type = T;
@@ -47,23 +43,14 @@ public:
 
   bool operator==(const sparse_iterator& rhs) const { return _iter == rhs._iter; }
   bool operator!=(const sparse_iterator& rhs) const { return _iter != rhs._iter; }
+
+private:
+  weight_map::iterator _iter;
+  uint32_t _stride;
 };
 
 class sparse_parameters
 {
-private:
-  // This must be mutable because the const operator[] must be able to intialize default weights to return.
-  mutable weight_map _map;
-  uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
-  uint32_t _stride_shift;
-  bool _seeded;  // whether the instance is sharing model state with others
-  bool _delete;
-  std::function<void(weight*, uint64_t)> _default_func;
-
-  // It is marked const so it can be used from both const and non const operator[]
-  // The map itself is mutable to facilitate this
-  weight* get_or_default_and_get(size_t i) const;
-
 public:
   using iterator = sparse_iterator<weight>;
   using const_iterator = sparse_iterator<const weight>;
@@ -117,4 +104,17 @@ public:
 #ifndef _WIN32
   void share(size_t /* length */);
 #endif
+
+private:
+  // This must be mutable because the const operator[] must be able to intialize default weights to return.
+  mutable weight_map _map;
+  uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
+  uint32_t _stride_shift;
+  bool _seeded;  // whether the instance is sharing model state with others
+  bool _delete;
+  std::function<void(weight*, uint64_t)> _default_func;
+
+  // It is marked const so it can be used from both const and non const operator[]
+  // The map itself is mutable to facilitate this
+  weight* get_or_default_and_get(size_t i) const;
 };

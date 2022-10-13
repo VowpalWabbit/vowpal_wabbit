@@ -48,6 +48,16 @@ namespace VW
 {
 class SpanningTree
 {
+public:
+  SpanningTree(short unsigned int port = 26543, bool quiet = false);
+  ~SpanningTree();
+
+  short unsigned int BoundPort();
+
+  void Start();
+  void Run();
+  void Stop();
+
 private:
   bool m_stop;
   socket_t sock;
@@ -58,15 +68,5 @@ private:
   std::future<void>* m_future;
 
   bool m_quiet;
-
-public:
-  SpanningTree(short unsigned int port = 26543, bool quiet = false);
-  ~SpanningTree();
-
-  short unsigned int BoundPort();
-
-  void Start();
-  void Run();
-  void Stop();
 };
 }  // namespace VW

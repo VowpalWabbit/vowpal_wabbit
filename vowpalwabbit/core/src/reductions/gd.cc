@@ -96,7 +96,7 @@ namespace GD
 {
 void sync_weights(VW::workspace& all);
 
-inline float quake_InvSqrt(float x)
+inline float quake_inv_sqrt(float x)
 {
   // Carmack/Quake/SGI fast method:
   float xhalf = 0.5f * x;
@@ -108,7 +108,7 @@ inline float quake_InvSqrt(float x)
   return x;
 }
 
-static inline float InvSqrt(float x)
+static inline float inv_sqrt(float x)
 {
 #if !defined(VW_NO_INLINE_SIMD)
 #  if defined(__ARM_NEON__)
@@ -127,10 +127,10 @@ static inline float InvSqrt(float x)
   eta = _mm_rsqrt_ss(eta);
   _mm_store_ss(&x, eta);
 #  else
-  x = quake_InvSqrt(x);
+  x = quake_inv_sqrt(x);
 #  endif
 #else
-  x = quake_InvSqrt(x);
+  x = quake_inv_sqrt(x);
 #endif
 
   return x;
@@ -199,7 +199,8 @@ void end_pass(gd& g)
 
   if (!all.holdout_set_off)
   {
-    if (summarize_holdout_set(all, g.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
+    if (VW::details::summarize_holdout_set(all, g.no_win_counter))
+    { finalize_regressor(all, all.final_regressor_name); }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
     { set_done(all); }
@@ -298,8 +299,9 @@ void subtract(const VW::workspace& ws1, const GD::gd& data1, const VW::workspace
 
 #include <algorithm>
 
-struct string_value
+class string_value
 {
+public:
   float v;
   std::string s;
   friend bool operator<(const string_value& first, const string_value& second);
@@ -307,8 +309,9 @@ struct string_value
 
 bool operator<(const string_value& first, const string_value& second) { return fabsf(first.v) > fabsf(second.v); }
 
-struct audit_results
+class audit_results
 {
+public:
   VW::workspace& all;
   const uint64_t offset;
   std::vector<VW::audit_strings> components;
@@ -448,8 +451,9 @@ float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret)
   return ret;
 }
 
-struct trunc_data
+class trunc_data
 {
+public:
   float prediction;
   float gravity;
 };
@@ -461,7 +465,7 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 
 inline float trunc_predict(VW::workspace& all, VW::example& ec, double gravity, size_t& num_interacted_features)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   trunc_data temp = {simple_red_features.initial, static_cast<float>(gravity)};
   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp, num_interacted_features);
   return temp.prediction;
@@ -512,7 +516,7 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
   VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
   {
-    const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
     pred[c].scalar = simple_red_features.initial;
   }
 
@@ -569,8 +573,9 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
   }
 }
 
-struct power_data
+class power_data
 {
+public:
   float minus_power_t;
   float neg_norm_power;
 };
@@ -582,7 +587,7 @@ inline float compute_rate_decay(power_data& s, float& fw)
   float rate_decay = 1.f;
   if (adaptive)
   {
-    if (sqrt_rate) { rate_decay = InvSqrt(w[adaptive]); }
+    if (sqrt_rate) { rate_decay = inv_sqrt(w[adaptive]); }
     else
     {
       rate_decay = powf(w[adaptive], s.minus_power_t);
@@ -607,8 +612,9 @@ inline float compute_rate_decay(power_data& s, float& fw)
   return rate_decay;
 }
 
-struct norm_data
+class norm_data
 {
+public:
   float grad_squared;
   float pred_per_update;
   float norm_x;
@@ -617,9 +623,9 @@ struct norm_data
   VW::io::logger* logger;
 };
 
-constexpr float x_min = 1.084202e-19f;
-constexpr float x2_min = x_min * x_min;
-constexpr float x2_max = FLT_MAX;
+constexpr float X_MIN = 1.084202e-19f;
+constexpr float X2_MIN = X_MIN * X_MIN;
+constexpr float X2_MAX = FLT_MAX;
 
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare, bool stateless>
 inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
@@ -629,10 +635,10 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
   {
     weight* w = &fw;
     float x2 = x * x;
-    if (x2 < x2_min)
+    if (x2 < X2_MIN)
     {
-      x = (x > 0) ? x_min : -x_min;
-      x2 = x2_min;
+      x = (x > 0) ? X_MIN : -X_MIN;
+      x2 = X2_MIN;
     }
     if (stateless)  // we must not modify the parameter state so introduce a shadow version.
     {
@@ -664,7 +670,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
         w[normalized] = x_abs;
       }
       float norm_x2 = x2 / (w[normalized] * w[normalized]);
-      if (x2 > x2_max)
+      if (x2 > X2_MAX)
       {
         norm_x2 = 1;
         assert(nd.logger != nullptr);
@@ -683,7 +689,7 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
 float get_pred_per_update(gd& g, VW::example& ec)
 {
   // We must traverse the features in _precisely_ the same order as during training.
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   VW::workspace& all = *g.all;
 
   float grad_squared = ec.weight;
@@ -754,7 +760,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 float compute_update(gd& g, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
-  const label_data& ld = ec.l.simple;
+  const auto& ld = ec.l.simple;
   VW::workspace& all = *g.all;
 
   float update = 0.;

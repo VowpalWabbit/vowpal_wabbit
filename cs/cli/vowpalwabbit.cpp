@@ -29,16 +29,16 @@ VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
   }
 
   if (settings->ParallelOptions != nullptr)
-  { m_vw->all_reduce_type = AllReduceType::Thread;
+  { m_vw->selected_all_reduce_type = all_reduce_type::THREAD;
     auto total = settings->ParallelOptions->MaxDegreeOfParallelism;
 
     if (settings->Root == nullptr)
-    { m_vw->all_reduce = new AllReduceThreads(total, settings->Node);
+    { m_vw->all_reduce = new all_reduce_threads(total, settings->Node);
     }
     else
-    { auto parent_all_reduce = (AllReduceThreads*)settings->Root->m_vw->all_reduce;
+    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->all_reduce;
 
-      m_vw->all_reduce = new AllReduceThreads(parent_all_reduce, total, settings->Node);
+      m_vw->all_reduce = new all_reduce_threads(parent_all_reduce, total, settings->Node);
     }
   }
 

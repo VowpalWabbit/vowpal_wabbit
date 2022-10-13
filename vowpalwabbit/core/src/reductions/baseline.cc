@@ -16,7 +16,7 @@ using namespace VW::reductions;
 
 namespace
 {
-constexpr float max_multiplier = 1000.f;
+constexpr float MAX_MULTIPLIER = 1000.f;
 }  // namespace
 
 void VW::reductions::baseline::set_baseline_enabled(VW::example* ec)
@@ -36,8 +36,9 @@ bool VW::reductions::baseline::baseline_enabled(const VW::example* ec)
   return it != ec->indices.end();
 }
 
-struct baseline_data
+class baseline_data
 {
+public:
   VW::example ec;
   VW::workspace* all = nullptr;
   bool lr_scaling = false;  // whether to scale baseline_data learning rate based on max label
@@ -83,7 +84,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     }
     VW::copy_example_metadata(&data.ec, &ec);
     base.predict(data.ec);
-    auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = data.ec.pred.scalar;
     base.predict(ec);
   }
@@ -112,7 +113,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
       if (multiplier == 0)
       {
         multiplier = std::max(0.0001f, std::max(std::abs(data.all->sd->min_label), std::abs(data.all->sd->max_label)));
-        if (multiplier > max_multiplier) { multiplier = max_multiplier; }
+        if (multiplier > MAX_MULTIPLIER) { multiplier = MAX_MULTIPLIER; }
       }
       data.all->eta *= multiplier;
       base.learn(data.ec);
@@ -124,7 +125,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     }
 
     // regress residual
-    auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = data.ec.pred.scalar;
     base.learn(ec);
 
@@ -154,7 +155,7 @@ float sensitivity(baseline_data& data, base_learner& base, VW::example& ec)
 
   // sensitivity of residual
   as_singleline(&base)->predict(data.ec);
-  auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   simple_red_features.initial = data.ec.pred.scalar;
   const float sens = base.sensitivity(ec);
   return baseline_sens + sens;

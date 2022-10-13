@@ -40,16 +40,16 @@ int daemon(int /*a*/, int /*b*/) { exit(0); }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
-// use VW_getpid instead of getpid to avoid name collisions with process.h
+// use VW_GETPID instead of getpid to avoid name collisions with process.h
 #  if _MSC_VER >= 1920
-#    define VW_getpid _getpid
+#    define VW_GETPID _getpid
 #  else
-int VW_getpid() { return (int)::GetCurrentProcessId(); }
+int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #  endif
 
 #else
 #  include <netdb.h>
-#  define VW_getpid getpid
+#  define VW_GETPID getpid
 #endif
 
 #if defined(__FreeBSD__) || defined(__APPLE__)
@@ -101,7 +101,7 @@ parser::parser(size_t example_queue_limit, bool strict_parse_)
     , num_finished_examples(0)
     , strict_parse{strict_parse_}
 {
-  this->lbl_parser = simple_label_parser;
+  this->lbl_parser = VW::simple_label_parser_global;
 }
 
 namespace VW
@@ -410,9 +410,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     { *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl; }
 
     // Enable TCP Keep Alive to prevent socket leaks
-    int enableTKA = 1;
-    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA),
-            sizeof(enableTKA)) < 0)
+    int enable_tka = 1;
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enable_tka),
+            sizeof(enable_tka)) < 0)
     { *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl; }
 
     sockaddr_in address;
@@ -497,7 +497,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
       // install signal handler so we can kill children when killed
       {
-        struct sigaction sa;
+        class sigaction sa;
         // specifically don't set SA_RESTART in sa.sa_flags, so that
         // waitid will be interrupted by SIGTERM with handler installed
         memset(&sa, 0, sizeof(sa));
@@ -811,7 +811,7 @@ void add_constant_feature(VW::workspace& vw, VW::example* ec)
 void add_label(VW::example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+  auto& simple_red_features = ec->_reduction_features.template get<VW::simple_label_reduction_features>();
   simple_red_features.initial = base;
   ec->weight = weight;
 }
@@ -935,7 +935,7 @@ float get_importance(example* ec) { return ec->weight; }
 
 float get_initial(example* ec)
 {
-  const auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec->_reduction_features.template get<VW::simple_label_reduction_features>();
   return simple_red_features.initial;
 }
 
@@ -954,7 +954,7 @@ uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 
 float get_action_score(example* ec, size_t i)
 {
-  ACTION_SCORE::action_scores scores = ec->pred.a_s;
+  VW::action_scores scores = ec->pred.a_s;
 
   if (i < scores.size()) { return scores[i].score; }
   else

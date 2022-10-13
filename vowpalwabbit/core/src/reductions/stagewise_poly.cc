@@ -25,21 +25,23 @@ using namespace VW::config;
 
 namespace
 {
-static constexpr uint32_t parent_bit = 1;
-static constexpr uint32_t cycle_bit = 2;
-static constexpr uint32_t tree_atomics = 134;
-static constexpr float tolerance = 1e-9f;
-static constexpr uint32_t indicator_bit = 128;
-static constexpr uint32_t default_depth = 127;
+static constexpr uint32_t PARENT_BIT = 1;
+static constexpr uint32_t CYCLE_BIT = 2;
+static constexpr uint32_t TREE_ATOMICS = 134;
+static constexpr float TOLERANCE = 1e-9f;
+static constexpr uint32_t INDICATOR_BIT = 128;
+static constexpr uint32_t DEFAULT_DEPTH = 127;
 
-struct sort_data
+class sort_data
 {
+public:
   float weightsal;
   uint64_t wid;
 };
 
-struct stagewise_poly
+class stagewise_poly
 {
+public:
   VW::workspace* all = nullptr;  // many uses, unmodular reduction
 
   float sched_exponent = 0.f;
@@ -134,8 +136,8 @@ void depthsbits_create(stagewise_poly& poly)
   poly.depthsbits = calloc_or_throw<uint8_t>(2 * poly.all->length());
   for (uint64_t i = 0; i < poly.all->length() * 2; i += 2)
   {
-    poly.depthsbits[i] = default_depth;
-    poly.depthsbits[i + 1] = indicator_bit;
+    poly.depthsbits[i] = DEFAULT_DEPTH;
+    poly.depthsbits[i + 1] = INDICATOR_BIT;
   }
 }
 
@@ -143,21 +145,21 @@ inline bool parent_get(const stagewise_poly& poly, uint64_t wid)
 {
   assert(wid % stride_shift(poly, 1) == 0);
   assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
-  return poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] & parent_bit;
+  return poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] & PARENT_BIT;
 }
 
 inline void parent_toggle(stagewise_poly& poly, uint64_t wid)
 {
   assert(wid % stride_shift(poly, 1) == 0);
   assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
-  poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] ^= parent_bit;
+  poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] ^= PARENT_BIT;
 }
 
 inline bool cycle_get(const stagewise_poly& poly, uint64_t wid)
 {
   // note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
-  if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0) { return true; }
+  if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & CYCLE_BIT) > 0) { return true; }
   else
   {
     return false;
@@ -168,7 +170,7 @@ inline void cycle_toggle(stagewise_poly& poly, uint64_t wid)
 {
   // note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
-  poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= cycle_bit;
+  poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= CYCLE_BIT;
 }
 
 inline uint8_t min_depths_get(const stagewise_poly& poly, uint64_t wid)
@@ -312,7 +314,7 @@ void sort_data_update_support(stagewise_poly& poly)
        * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 / poly.num_examples)
        */
       ;
-      if (weightsal > tolerance)
+      if (weightsal > TOLERANCE)
       {
         assert(heap_end >= poly.sd);
         assert(heap_end <= poly.sd + num_new_features);
@@ -345,7 +347,7 @@ void sort_data_update_support(stagewise_poly& poly)
 
   for (uint64_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos)
   {
-    assert(!parent_get(poly, poly.sd[pos].wid) && poly.sd[pos].weightsal > tolerance &&
+    assert(!parent_get(poly, poly.sd[pos].wid) && poly.sd[pos].weightsal > TOLERANCE &&
         poly.sd[pos].wid != constant_feat_masked(poly));
     parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
@@ -404,15 +406,15 @@ void synthetic_reset(stagewise_poly& poly, VW::example& ec)
   poly.synth_ec.end_pass = ec.end_pass;
   poly.synth_ec.sorted = ec.sorted;
 
-  poly.synth_ec.feature_space[tree_atomics].clear();
+  poly.synth_ec.feature_space[TREE_ATOMICS].clear();
   poly.synth_ec.num_features = 0;
 
-  if (poly.synth_ec.indices.size() == 0) { poly.synth_ec.indices.push_back(tree_atomics); }
+  if (poly.synth_ec.indices.size() == 0) { poly.synth_ec.indices.push_back(TREE_ATOMICS); }
 }
 
 void synthetic_decycle(stagewise_poly& poly)
 {
-  features& fs = poly.synth_ec.feature_space[tree_atomics];
+  features& fs = poly.synth_ec.feature_space[TREE_ATOMICS];
   for (size_t i = 0; i < fs.size(); ++i)
   {
     assert(cycle_get(poly, fs.indices[i]));
@@ -448,7 +450,7 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
   }
 
   if (!cycle_get(poly, wid_cur) &&
-      ((poly.cur_depth > default_depth ? default_depth : poly.cur_depth) == min_depths_get(poly, wid_cur)))
+      ((poly.cur_depth > DEFAULT_DEPTH ? DEFAULT_DEPTH : poly.cur_depth) == min_depths_get(poly, wid_cur)))
   {
     cycle_toggle(poly, wid_cur);
 
@@ -457,7 +459,7 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
 #endif  // DEBUG
 
     feature temp = {v * poly.synth_rec_f.x, wid_cur};
-    poly.synth_ec.feature_space[tree_atomics].push_back(temp.x, temp.weight_index);
+    poly.synth_ec.feature_space[TREE_ATOMICS].push_back(temp.x, temp.weight_index);
     poly.synth_ec.num_features++;
 
     if (parent_get(poly, temp.weight_index))
@@ -551,13 +553,13 @@ void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
 void reduce_min_max(uint8_t& v1, const uint8_t& v2)
 {
   bool parent_or_depth;
-  if (v1 & indicator_bit) { parent_or_depth = true; }
+  if (v1 & INDICATOR_BIT) { parent_or_depth = true; }
   else
   {
     parent_or_depth = false;
   }
   bool p_or_d2;
-  if (v2 & indicator_bit) { p_or_d2 = true; }
+  if (v2 & INDICATOR_BIT) { p_or_d2 = true; }
   else
   {
     p_or_d2 = false;
@@ -573,8 +575,8 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
   if (parent_or_depth) { v1 = (v1 >= v2) ? v1 : v2; }
   else
   {
-    if (v1 == default_depth) { v1 = v2; }
-    else if (v2 != default_depth)
+    if (v1 == DEFAULT_DEPTH) { v1 = v2; }
+    else if (v2 != DEFAULT_DEPTH)
     {
       v1 = (v1 <= v2) ? v1 : v2;
     }
@@ -633,7 +635,7 @@ void finish_example(VW::workspace& all, stagewise_poly& poly, VW::example& ec)
 {
   size_t temp_num_features = ec.num_features;
   ec.num_features = poly.synth_ec.get_num_features();
-  output_and_account_example(all, ec);
+  VW::details::output_and_account_example(all, ec);
   ec.num_features = temp_num_features;
   VW::finish_example(all, ec);
 }

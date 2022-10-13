@@ -24,8 +24,9 @@ namespace DepParserTask
 Search::search_task task = {"dep_parser", run, initialize, nullptr, setup, nullptr};
 }
 
-struct task_data
+class task_data
 {
+public:
   VW::example ex;
   size_t root_label;
   uint32_t num_label;
@@ -121,7 +122,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
     sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
   }
 
-  sch.set_label_parser(COST_SENSITIVE::cs_label, [](const VW::polylabel& l) -> bool { return l.cs.costs.empty(); });
+  sch.set_label_parser(VW::cs_label_parser_global, [](const VW::polylabel& l) -> bool { return l.cs.costs.empty(); });
 }
 
 void inline add_feature(

@@ -60,32 +60,28 @@
 using std::endl;
 using namespace VW::config;
 
-uint64_t hash_file_contents(VW::io::reader* f)
+uint64_t hash_file_contents(VW::io::reader* file_reader)
 {
-  uint64_t v = 5289374183516789128;
-  const uint64_t max_buf = 1024;
-  char buf[max_buf];
+  uint64_t hash = 5289374183516789128;
+  static const uint64_t BUFFER_SIZE = 1024;
+  char buf[BUFFER_SIZE];
   while (true)
   {
-    ssize_t n = f->read(buf, max_buf);
-#ifdef _WIN32
-    char* rem_buf;
-    if ((rem_buf = std::remove(std::begin(buf), std::end(buf), '\r')) == nullptr) { THROW("error: invalid buffer"); }
-    n -= (max_buf - std::distance(std::begin(buf), rem_buf));
-#endif
-    if (n <= 0) { break; }
-    for (ssize_t i = 0; i < n; i++)
+    ssize_t bytes_read = file_reader->read(buf, BUFFER_SIZE);
+    if (bytes_read <= 0) { break; }
+    for (ssize_t i = 0; i < bytes_read; i++)
     {
-      v *= 341789041;
-      v += static_cast<uint64_t>(buf[i]);
+      if (buf[i] == '\r') { continue; }
+      hash *= 341789041;
+      hash += static_cast<uint64_t>(buf[i]);
     }
   }
-  return v;
+  return hash;
 }
 
 bool directory_exists(const std::string& path)
 {
-  struct stat info;
+  class stat info;
   if (stat(path.c_str(), &info) != 0) { return false; }
   else
   {
@@ -1042,31 +1038,31 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (directory_exists(".")) { all.dictionary_path.emplace_back("."); }
 
 #if _WIN32
-    std::string PATH;
+    std::string path_env_var;
     char* buf;
     size_t buf_size;
     auto err = _dupenv_s(&buf, &buf_size, "PATH");
     if (!err && buf_size != 0)
     {
-      PATH = std::string(buf, buf_size);
+      path_env_var = std::string(buf, buf_size);
       free(buf);
     }
     const char delimiter = ';';
 #else
-    const std::string PATH = getenv("PATH");
+    const std::string path_env_var = getenv("PATH");
     const char delimiter = ':';
 #endif
-    if (!PATH.empty())
+    if (!path_env_var.empty())
     {
       size_t previous = 0;
-      size_t index = PATH.find(delimiter);
+      size_t index = path_env_var.find(delimiter);
       while (index != std::string::npos)
       {
-        all.dictionary_path.push_back(PATH.substr(previous, index - previous));
+        all.dictionary_path.push_back(path_env_var.substr(previous, index - previous));
         previous = index + 1;
-        index = PATH.find(delimiter, previous);
+        index = path_env_var.find(delimiter, previous);
       }
-      all.dictionary_path.push_back(PATH.substr(previous));
+      all.dictionary_path.push_back(path_env_var.substr(previous));
     }
   }
 
@@ -1575,8 +1571,8 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
 
   if (all->options->was_supplied("span_server"))
   {
-    all->all_reduce_type = VW::AllReduceType::Socket;
-    all->all_reduce = new VW::AllReduceSockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
+    all->selected_all_reduce_type = VW::all_reduce_type::SOCKET;
+    all->all_reduce = new VW::all_reduce_sockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
         VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
         VW::cast_to_smaller_type<size_t>(node_arg), all->quiet);
   }

@@ -55,15 +55,17 @@ void insert_dsjson_metrics(
   }
 }
 
-struct metrics_data
+class metrics_data
 {
+public:
   std::string out_file;
   size_t learn_count = 0;
   size_t predict_count = 0;
 };
 
-struct json_metrics_writer : VW::metric_sink_visitor
+class json_metrics_writer : public VW::metric_sink_visitor
 {
+public:
   json_metrics_writer(Writer<FileWriteStream>& writer) : _writer(writer) { _writer.StartObject(); }
   ~json_metrics_writer() override { _writer.EndObject(); }
   void int_metric(const std::string& key, uint64_t value) override

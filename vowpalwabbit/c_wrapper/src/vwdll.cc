@@ -412,8 +412,9 @@ extern "C"
     return static_cast<VW_HANDLE>(all);
   }
 
-  struct buffer_holder
+  class buffer_holder
   {
+  public:
     std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>();
     io_buf holding_buffer;
   };

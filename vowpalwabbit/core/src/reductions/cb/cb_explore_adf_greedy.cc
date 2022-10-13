@@ -22,12 +22,8 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_greedy
+class cb_explore_adf_greedy
 {
-private:
-  float _epsilon;
-  bool _first_only;
-
 public:
   cb_explore_adf_greedy(float epsilon, bool first_only);
   ~cb_explore_adf_greedy() = default;
@@ -40,6 +36,8 @@ public:
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
+  float _epsilon;
+  bool _first_only;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
@@ -52,7 +50,7 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 
 void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
 {
-  ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
+  VW::action_scores& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();

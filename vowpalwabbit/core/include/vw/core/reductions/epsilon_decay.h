@@ -16,8 +16,9 @@ namespace epsilon_decay
 {
 float decayed_epsilon(float init_ep, uint64_t update_count);
 
-struct epsilon_decay_data
+class epsilon_decay_data
 {
+public:
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
       double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
       bool constant_epsilon, uint32_t& wpp, bool lb_trick, uint64_t _min_champ_examples, float initial_epsilon);

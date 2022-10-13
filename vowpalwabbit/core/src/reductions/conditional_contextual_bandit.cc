@@ -5,6 +5,8 @@
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 
 #include "vw/config/options.h"
+#include "vw/core/ccb_label.h"
+#include "vw/core/ccb_reduction_features.h"
 #include "vw/core/constant.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/decision_scores.h"
@@ -55,15 +57,16 @@ void return_collection(std::vector<T>& array, VW::vector_pool<T>& pool)
   array = std::vector<T>{};
 }
 
-struct ccb_data
+class ccb_data
 {
+public:
   VW::workspace* all = nullptr;
   VW::example* shared = nullptr;
   VW::multi_ex actions, slots;
   std::vector<uint32_t> origin_index;
   CB::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
-  std::vector<CCB::label> stored_labels;
+  std::vector<VW::ccb_label> stored_labels;
   size_t action_with_label = 0;
 
   VW::multi_ex cb_ex;
@@ -79,7 +82,7 @@ struct ccb_data
   bool no_pred = false;
 
   VW::vector_pool<CB::cb_class> cb_label_pool;
-  VW::v_array_pool<ACTION_SCORE::action_score> action_score_pool;
+  VW::v_array_pool<VW::action_score> action_score_pool;
 
   VW::version_struct model_file_version;
   // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.
@@ -108,13 +111,13 @@ bool split_multi_example_and_stash_labels(const VW::multi_ex& examples, ccb_data
   {
     switch (ex->l.conditional_contextual_bandit.type)
     {
-      case CCB::example_type::shared:
+      case VW::ccb_example_type::SHARED:
         data.shared = ex;
         break;
-      case CCB::example_type::action:
+      case VW::ccb_example_type::ACTION:
         data.actions.push_back(ex);
         break;
-      case CCB::example_type::slot:
+      case VW::ccb_example_type::SLOT:
         data.slots.push_back(ex);
         break;
       default:
@@ -151,8 +154,8 @@ void delete_cb_labels(ccb_data& data)
   }
 }
 
-void attach_label_to_example(uint32_t action_index_one_based, VW::example* example,
-    const CCB::conditional_contextual_bandit_outcome* outcome, ccb_data& data)
+void attach_label_to_example(
+    uint32_t action_index_one_based, VW::example* example, const VW::ccb_outcome* outcome, ccb_data& data)
 {
   // save the cb label
   // Action is unused in cb
@@ -290,7 +293,7 @@ void remove_slot_features(VW::example* shared, VW::example* slot)
 
 // build a cb example from the ccb example
 template <bool is_learn>
-void build_cb_example(VW::multi_ex& cb_ex, VW::example* slot, const CCB::label& ccb_label, ccb_data& data)
+void build_cb_example(VW::multi_ex& cb_ex, VW::example* slot, const VW::ccb_label& ccb_label, ccb_data& data)
 {
   const bool slot_has_label = ccb_label.outcome != nullptr;
 
@@ -656,7 +659,7 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
   }
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CCB::ccb_label_parser;
+  all.example_parser->lbl_parser = VW::ccb_label_parser_global;
 
   // Stash the base learners stride_shift so we can properly add a feature
   // later.
@@ -720,11 +723,11 @@ void VW::reductions::ccb::insert_ccb_interactions(std::vector<std::vector<VW::na
 
 bool VW::reductions::ccb::ec_is_example_header(VW::example const& ec)
 {
-  return ec.l.conditional_contextual_bandit.type == CCB::example_type::shared;
+  return ec.l.conditional_contextual_bandit.type == VW::ccb_example_type::SHARED;
 }
 bool VW::reductions::ccb::ec_is_example_unset(VW::example const& ec)
 {
-  return ec.l.conditional_contextual_bandit.type == CCB::example_type::unset;
+  return ec.l.conditional_contextual_bandit.type == VW::ccb_example_type::UNSET;
 }
 
 std::string VW::reductions::ccb::generate_ccb_label_printout(const VW::multi_ex& slots)

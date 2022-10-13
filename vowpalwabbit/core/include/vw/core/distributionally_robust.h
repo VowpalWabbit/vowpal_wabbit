@@ -16,7 +16,7 @@ namespace VW
 {
 namespace distributionally_robust
 {
-struct Duals;
+class Duals;
 class ChiSquared;
 }  // namespace distributionally_robust
 
@@ -30,8 +30,9 @@ size_t write_model_field(io_buf&, const VW::distributionally_robust::ChiSquared&
 
 namespace distributionally_robust
 {
-struct Duals
+class Duals
 {
+public:
   bool unbounded;
   double kappa;
   double gamma;
@@ -67,6 +68,29 @@ using ScoredDual = std::pair<double, Duals>;
 // https://en.wikipedia.org/wiki/Divergence_(statistics)
 class ChiSquared
 {
+public:
+  // alpha: confidence level
+  // tau: count decay time constant
+  explicit ChiSquared(double _alpha, double _tau, double _wmin = 0.0,
+      double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0.0, double _rmax = 1.0);
+  bool is_valid() const;
+  ChiSquared& update(double w, double r);
+  double qlb(double w, double r, double sign);  // sign = 1.0 for lower_bound, sign = -1.0 for upper_bound
+  void reset(double _alpha, double _tau);
+  double lower_bound_and_update();
+  double get_phi() const;
+  ScoredDual cressieread_duals(double r, double sign, double phi) const;
+  double cressieread_bound(double r, double sign, double phi) const;
+  double cressieread_lower_bound() const;
+  double cressieread_upper_bound() const;
+  ScoredDual recompute_duals();
+  static double chisq_onedof_isf(double alpha);
+  const double& effn() { return n; }
+  friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
+  friend size_t VW::model_utils::write_model_field(
+      io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
+  void save_load(io_buf& model_file, bool read, bool text, const char* name);
+
 private:
   double alpha;
   double tau;
@@ -86,29 +110,6 @@ private:
 
   bool duals_stale;
   ScoredDual duals;
-
-public:
-  // alpha: confidence level
-  // tau: count decay time constant
-  explicit ChiSquared(double _alpha, double _tau, double _wmin = 0.0,
-      double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0.0, double _rmax = 1.0);
-  bool isValid() const;
-  ChiSquared& update(double w, double r);
-  double qlb(double w, double r, double sign);  // sign = 1.0 for lower_bound, sign = -1.0 for upper_bound
-  void reset(double _alpha, double _tau);
-  double lower_bound_and_update();
-  double get_phi() const;
-  ScoredDual cressieread_duals(double r, double sign, double phi) const;
-  double cressieread_bound(double r, double sign, double phi) const;
-  double cressieread_lower_bound() const;
-  double cressieread_upper_bound() const;
-  ScoredDual recompute_duals();
-  static double chisq_onedof_isf(double alpha);
-  const double& effn() { return n; }
-  friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
-  friend size_t VW::model_utils::write_model_field(
-      io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
-  void save_load(io_buf& model_file, bool read, bool text, const char* name);
 };
 
 }  // namespace distributionally_robust

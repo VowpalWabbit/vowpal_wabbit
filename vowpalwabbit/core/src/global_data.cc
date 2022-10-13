@@ -40,8 +40,9 @@
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
-struct global_prediction
+class global_prediction
 {
+public:
   float p;
   float weight;
 };

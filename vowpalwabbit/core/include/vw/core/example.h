@@ -28,29 +28,31 @@
 
 namespace VW
 {
-struct workspace;
+class workspace;
 }
 namespace VW
 {
 void copy_example_data(example* dst, const example* src);
 void setup_example(VW::workspace& all, example* ae);
 
-struct polylabel
+class polylabel
 {
-  no_label::no_label empty = static_cast<char>(0);
-  label_data simple;
-  MULTICLASS::label_t multi;
-  COST_SENSITIVE::label cs;
+public:
+  VW::no_label empty = static_cast<char>(0);
+  VW::simple_label simple;
+  VW::multiclass_label multi;
+  VW::cs_label cs;
   CB::label cb;
   VW::cb_continuous::continuous_label cb_cont;
-  CCB::label conditional_contextual_bandit;
+  VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 };
 
-struct polyprediction
+class polyprediction
 {
+public:
   polyprediction() = default;
   ~polyprediction() = default;
 
@@ -61,8 +63,8 @@ struct polyprediction
   polyprediction& operator=(const polyprediction&) = delete;
 
   float scalar = 0.f;
-  VW::v_array<float> scalars;       // a sequence of scalar predictions
-  ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
+  VW::v_array<float> scalars;  // a sequence of scalar predictions
+  VW::action_scores a_s;       // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
   uint32_t multiclass = 0;
   MULTILABEL::labels multilabels;
@@ -75,8 +77,9 @@ struct polyprediction
 
 std::string to_string(const v_array<float>& scalars, int decimal_precision = DEFAULT_FLOAT_PRECISION);
 
-struct example : public example_predict  // core example datatype.
+class example : public example_predict  // core example datatype.
 {
+public:
   example() = default;
   ~example();
 
@@ -134,10 +137,11 @@ private:
   bool use_permutations = false;
 };
 
-struct workspace;
+class workspace;
 
-struct flat_example
+class flat_example
 {
+public:
   polylabel l;
   reduction_features _reduction_features;
 

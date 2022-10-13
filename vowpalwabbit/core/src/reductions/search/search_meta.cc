@@ -63,8 +63,9 @@ std::ostream& operator<<(std::ostream& os, const std::pair<unsigned int, float>&
   return os;
 }
 
-struct task_data
+class task_data
 {
+public:
   size_t max_branches, kbest;
   std::vector<branch> branches;
   std::vector<std::pair<branch, std::string*> > final;

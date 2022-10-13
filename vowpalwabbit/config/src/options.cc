@@ -19,7 +19,7 @@ std::vector<std::shared_ptr<base_option>> options_i::get_all_options()
 {
   std::vector<std::shared_ptr<base_option>> output_values;
 
-  std::transform(m_options.begin(), m_options.end(), std::back_inserter(output_values),
+  std::transform(_options.begin(), _options.end(), std::back_inserter(output_values),
       [](std::pair<const std::string, std::shared_ptr<base_option>>& kv) { return kv.second; });
 
   return output_values;
@@ -28,8 +28,8 @@ std::vector<std::shared_ptr<base_option>> options_i::get_all_options()
 std::vector<std::shared_ptr<const base_option>> VW::config::options_i::get_all_options() const
 {
   std::vector<std::shared_ptr<const base_option>> output_values;
-  output_values.reserve(m_options.size());
-  for (const auto& kv : m_options) { output_values.push_back(kv.second); }
+  output_values.reserve(_options.size());
+  for (const auto& kv : _options) { output_values.push_back(kv.second); }
   return output_values;
 }
 
@@ -46,29 +46,29 @@ std::shared_ptr<base_option> internal_get_option(
 
 std::shared_ptr<base_option> VW::config::options_i::get_option(const std::string& key)
 {
-  return internal_get_option(key, m_options);
+  return internal_get_option(key, _options);
 }
 
 std::shared_ptr<const base_option> VW::config::options_i::get_option(const std::string& key) const
 {
   // shared_ptr can implicitly upgrade to const from non-const
-  return internal_get_option(key, m_options);
+  return internal_get_option(key, _options);
 }
 
 void options_i::add_and_parse(const option_group_definition& group)
 {
   // Add known options before parsing so impl can make use of them.
-  m_option_group_definitions.push_back(group);
-  m_option_group_dic[m_current_reduction_tint].push_back(group);
+  _option_group_definitions.push_back(group);
+  _option_group_dic[_current_reduction_tint].push_back(group);
   for (const auto& option : group.m_options)
   {
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.
-    m_options[option->m_name] = option;
+    _options[option->m_name] = option;
     if (!option->m_short_name.empty())
     {
       assert(option->m_short_name.size() == 1);
-      m_short_options[option->m_short_name[0]] = option;
+      _short_options[option->m_short_name[0]] = option;
     }
   }
 
@@ -80,17 +80,17 @@ void options_i::add_and_parse(const option_group_definition& group)
 bool options_i::add_parse_and_check_necessary(const option_group_definition& group)
 {
   // Add known options before parsing so impl can make use of them.
-  m_option_group_definitions.push_back(group);
-  m_option_group_dic[m_current_reduction_tint].push_back(group);
+  _option_group_definitions.push_back(group);
+  _option_group_dic[_current_reduction_tint].push_back(group);
   for (const auto& option : group.m_options)
   {
     // The last definition is kept. There was a bug where using .insert at a later pointer changed the command line but
     // the previously defined option's default value was serialized into the model. This resolves that state info.
-    m_options[option->m_name] = option;
+    _options[option->m_name] = option;
     if (!option->m_short_name.empty())
     {
       assert(option->m_short_name.size() == 1);
-      m_short_options[option->m_short_name[0]] = option;
+      _short_options[option->m_short_name[0]] = option;
     }
   }
 
@@ -102,14 +102,14 @@ bool options_i::add_parse_and_check_necessary(const option_group_definition& gro
   return necessary_enabled;
 }
 
-void options_i::tint(const std::string& reduction_name) { m_current_reduction_tint = reduction_name; }
-void options_i::reset_tint() { m_current_reduction_tint = m_default_tint; }
+void options_i::tint(const std::string& reduction_name) { _current_reduction_tint = reduction_name; }
+void options_i::reset_tint() { _current_reduction_tint = DEFAULT_TINT; }
 
 std::map<std::string, std::vector<option_group_definition>> options_i::get_collection_of_options() const
 {
-  return m_option_group_dic;
+  return _option_group_dic;
 }
 const std::vector<option_group_definition>& options_i::get_all_option_group_definitions() const
 {
-  return m_option_group_definitions;
+  return _option_group_definitions;
 }

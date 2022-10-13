@@ -40,12 +40,12 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   std::vector<std::vector<uint32_t>> slot_action_pools(num_slots);
   for (size_t i = 0; i < examples.size(); i++)
   {
-    CCB::label ccb_label;
-    CCB::default_label(ccb_label);
+    VW::ccb_label ccb_label;
+    VW::default_ccb_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
     if (slates_label.type == slates::example_type::shared)
     {
-      ccb_label.type = CCB::example_type::shared;
+      ccb_label.type = VW::ccb_example_type::SHARED;
       if (slates_label.labeled)
       {
         global_cost_found = true;
@@ -55,19 +55,19 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
     else if (slates_label.type == slates::example_type::action)
     {
       if (slates_label.slot_id >= num_slots) { THROW("slot_id cannot be larger than or equal to the number of slots"); }
-      ccb_label.type = CCB::example_type::action;
+      ccb_label.type = VW::ccb_example_type::ACTION;
       slot_action_pools[slates_label.slot_id].push_back(action_index);
       action_index++;
     }
     else if (slates_label.type == slates::example_type::slot)
     {
-      ccb_label.type = CCB::example_type::slot;
+      ccb_label.type = VW::ccb_example_type::SLOT;
       ccb_label.explicit_included_actions.clear();
       for (const auto index : slot_action_pools[slot_index]) { ccb_label.explicit_included_actions.push_back(index); }
 
       if (global_cost_found)
       {
-        ccb_label.outcome = new CCB::conditional_contextual_bandit_outcome();
+        ccb_label.outcome = new VW::ccb_outcome();
         ccb_label.outcome->cost = global_cost;
         ccb_label.outcome->probabilities.clear();
 
@@ -145,8 +145,7 @@ namespace
 // the case for a Cartesian product when the logging policy is a product
 // distribution. This can be seen in example 4 of the paper.
 // https://arxiv.org/abs/1605.04812
-float get_estimate(
-    const ACTION_SCORE::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
+float get_estimate(const VW::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
 {
   assert(!label_probs.empty());
   assert(!prediction_probs.empty());
@@ -168,7 +167,7 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   float loss = 0.;
   bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
   float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
-  v_array<ACTION_SCORE::action_score> label_probs;
+  v_array<VW::action_score> label_probs;
 
   for (auto* ec : ec_seq)
   {

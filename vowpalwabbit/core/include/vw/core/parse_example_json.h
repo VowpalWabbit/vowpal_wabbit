@@ -61,18 +61,19 @@ using namespace rapidjson;
 
 namespace VW
 {
-struct workspace;
+class workspace;
 }
 
 template <bool audit>
-struct BaseState;
+class BaseState;
 
 template <bool audit>
-struct Context;
+class Context;
 
 template <bool audit>
-struct BaseState
+class BaseState
 {
+public:
   const char* name;
 
   BaseState(const char* pname) : name(pname) {}
@@ -141,9 +142,6 @@ struct BaseState
 template <bool audit>
 class ArrayToPdfState : public BaseState<audit>
 {
-private:
-  BaseState<audit>* obj_return_state;
-
 public:
   VW::continuous_actions::pdf_segment segment;
 
@@ -221,14 +219,14 @@ public:
     segment = {0., 0., 0.};
     return obj_return_state;
   }
+
+private:
+  BaseState<audit>* obj_return_state;
 };
 
 template <bool audit>
 class LabelObjectState : public BaseState<audit>
 {
-private:
-  BaseState<audit>* return_state;
-
 public:
   CB::cb_class cb_label;
   VW::cb_continuous::continuous_label_elm cont_label_element = {0., 0., 0.};
@@ -282,13 +280,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
@@ -331,13 +329,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = v;
       found = true;
     }
@@ -392,7 +390,7 @@ public:
 
       if ((actions.size() != 0) && (probs.size() != 0))
       {
-        auto outcome = new CCB::conditional_contextual_bandit_outcome();
+        auto* outcome = new VW::ccb_outcome();
         outcome->cost = cb_label.cost;
         if (actions.size() != probs.size()) { THROW("Actions and probabilities must be the same length."); }
 
@@ -441,12 +439,16 @@ public:
 
     return return_state;
   }
+
+private:
+  BaseState<audit>* return_state;
 };
 
 // "_label_*":
 template <bool audit>
-struct LabelSinglePropertyState : BaseState<audit>
+class LabelSinglePropertyState : public BaseState<audit>
 {
+public:
   LabelSinglePropertyState() : BaseState<audit>("LabelSingleProperty") {}
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
@@ -487,8 +489,9 @@ struct LabelSinglePropertyState : BaseState<audit>
 };
 
 template <bool audit>
-struct LabelIndexState : BaseState<audit>
+class LabelIndexState : public BaseState<audit>
 {
+public:
   int index;
 
   LabelIndexState() : BaseState<audit>("LabelIndex"), index(-1) {}
@@ -503,8 +506,9 @@ struct LabelIndexState : BaseState<audit>
 // "_label":"1"
 // Note: doesn't support labelIndex
 template <bool audit>
-struct LabelState : BaseState<audit>
+class LabelState : public BaseState<audit>
 {
+public:
   LabelState() : BaseState<audit>("Label") {}
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override { return ctx.label_object_state.StartObject(ctx); }
@@ -533,8 +537,9 @@ struct LabelState : BaseState<audit>
 
 // "_text":"a b c"
 template <bool audit>
-struct TextState : BaseState<audit>
+class TextState : public BaseState<audit>
 {
+public:
   TextState() : BaseState<audit>("text") {}
 
   BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool)
@@ -571,8 +576,9 @@ struct TextState : BaseState<audit>
 };
 
 template <bool audit>
-struct TagState : BaseState<audit>
+class TagState : public BaseState<audit>
 {
+public:
   // "_tag":"abc"
   TagState() : BaseState<audit>("tag") {}
 
@@ -584,8 +590,9 @@ struct TagState : BaseState<audit>
 };
 
 template <bool audit>
-struct MultiState : BaseState<audit>
+class MultiState : public BaseState<audit>
 {
+public:
   MultiState() : BaseState<audit>("Multi") {}
 
   BaseState<audit>* StartArray(Context<audit>& ctx) override
@@ -605,8 +612,8 @@ struct MultiState : BaseState<audit>
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::ccb)
     {
-      CCB::label* ld = &ctx.ex->l.conditional_contextual_bandit;
-      ld->type = CCB::example_type::shared;
+      auto* ld = &ctx.ex->l.conditional_contextual_bandit;
+      ld->type = VW::ccb_example_type::SHARED;
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
@@ -626,7 +633,7 @@ struct MultiState : BaseState<audit>
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::action; }
+    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::action;
@@ -651,8 +658,9 @@ struct MultiState : BaseState<audit>
 
 // This state makes the assumption we are in CCB
 template <bool audit>
-struct SlotsState : BaseState<audit>
+class SlotsState : public BaseState<audit>
 {
+public:
   SlotsState() : BaseState<audit>("Slots") {}
   BaseState<audit>* saved;
   BaseState<audit>* saved_root_state;
@@ -674,7 +682,7 @@ struct SlotsState : BaseState<audit>
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::ccb)
-    { ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot; }
+    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::slot;
@@ -707,8 +715,6 @@ struct SlotsState : BaseState<audit>
 template <bool audit>
 class ArrayState : public BaseState<audit>
 {
-  feature_index array_hash;
-
 public:
   ArrayState() : BaseState<audit>("Array") {}
 
@@ -765,12 +771,16 @@ public:
   {
     return ctx.PopNamespace();
   }
+
+private:
+  feature_index array_hash;
 };
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
 template <bool audit>
-struct IgnoreState : BaseState<audit>
+class IgnoreState : public BaseState<audit>
 {
+public:
   IgnoreState() : BaseState<audit>("Ignore") {}
 
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned) override { return ctx.previous_state; }
@@ -1043,15 +1053,15 @@ public:
       if (ctx._label_parser.label_type == VW::label_type_t::ccb)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
-            [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == CCB::example_type::slot; });
+            [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT; });
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
           ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
           ctx._label_parser.default_label(ctx.ex->l);
-          ctx.ex->l.conditional_contextual_bandit.type = CCB::example_type::slot;
+          ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
           ctx.examples->push_back(ctx.ex);
 
-          auto outcome = new CCB::conditional_contextual_bandit_outcome();
+          auto outcome = new VW::ccb_outcome();
           outcome->cost = ctx.label_object_state.cb_label.cost;
           outcome->probabilities.push_back(
               {ctx.label_object_state.cb_label.action - 1, ctx.label_object_state.cb_label.probability});
@@ -1311,14 +1321,6 @@ public:
 template <bool audit>
 class SlotOutcomeList : public BaseState<audit>
 {
-  int slot_object_index = 0;
-
-  std::vector<uint32_t> actions;
-  std::vector<float> probs;
-  float cost;
-
-  BaseState<audit>* old_root;
-
 public:
   DecisionServiceInteraction* interactions;
 
@@ -1332,7 +1334,7 @@ public:
     for (auto ex : *ctx.examples)
     {
       if ((ctx._label_parser.label_type == VW::label_type_t::ccb &&
-              ex->l.conditional_contextual_bandit.type != CCB::example_type::slot) ||
+              ex->l.conditional_contextual_bandit.type != VW::ccb_example_type::SLOT) ||
           (ctx._label_parser.label_type == VW::label_type_t::slates &&
               ex->l.slates.type != VW::slates::example_type::slot))
       { slot_object_index++; }
@@ -1366,7 +1368,7 @@ public:
     for (auto ex : *ctx.examples)
     {
       if (ctx._label_parser.label_type == VW::label_type_t::ccb &&
-          ex->l.conditional_contextual_bandit.type == CCB::example_type::slot)
+          ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT)
       {
         if (ex->l.conditional_contextual_bandit.outcome)
         {
@@ -1388,6 +1390,15 @@ public:
     ctx.root_state = old_root;
     return &ctx.decision_service_state;
   }
+
+private:
+  int slot_object_index = 0;
+
+  std::vector<uint32_t> actions;
+  std::vector<float> probs;
+  float cost;
+
+  BaseState<audit>* old_root;
 };
 
 template <bool audit>
@@ -1514,11 +1525,8 @@ public:
 };
 
 template <bool audit>
-struct Context
+class Context
 {
-private:
-  std::unique_ptr<std::stringstream> error_ptr;
-
 public:
   VW::label_parser _label_parser;
   hash_func_t _hash_func;
@@ -1648,11 +1656,15 @@ public:
 
     return true;
   }
+
+private:
+  std::unique_ptr<std::stringstream> error_ptr;
 };
 
 template <bool audit>
-struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler<audit>>
+class VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, VWReaderHandler<audit>>
 {
+public:
   Context<audit> ctx;
 
   void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
@@ -1708,8 +1720,9 @@ struct VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, 
 };
 
 template <bool audit>
-struct json_parser
+class json_parser
 {
+public:
   rapidjson::Reader reader;
   VWReaderHandler<audit> handler;
 };

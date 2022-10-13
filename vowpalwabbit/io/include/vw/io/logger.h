@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "fmt/core.h"
+#include <fmt/core.h>
 
 #include <iostream>
 #include <memory>
@@ -66,8 +66,9 @@ using logger_legacy_output_func_t = void (*)(void*, const std::string&);
 namespace details
 {
 const constexpr char* default_pattern = "%^[%l]%$ %v";
-struct logger_impl
+class logger_impl
 {
+public:
   std::unique_ptr<spdlog::logger> _spdlog_stdout_logger;
   std::unique_ptr<spdlog::logger> _spdlog_stderr_logger;
   size_t _max_limit = SIZE_MAX;
@@ -273,18 +274,8 @@ protected:
 
 }  // namespace details
 
-struct logger
+class logger
 {
-private:
-  std::shared_ptr<details::logger_impl> _logger_impl;
-
-  logger(std::shared_ptr<details::logger_impl> inner_logger) : _logger_impl(std::move(inner_logger)) {}
-
-  friend logger create_default_logger();
-  friend logger create_null_logger();
-  friend logger create_custom_sink_logger(void* context, logger_output_func_t func);
-  friend logger create_custom_sink_logger_legacy(void* context, logger_legacy_output_func_t func);
-
 public:
 #if FMT_VERSION >= 80000
   template <typename... Args>
@@ -419,6 +410,16 @@ public:
   void set_location(output_location location);
   size_t get_log_count() const;
   void log_summary();
+
+private:
+  std::shared_ptr<details::logger_impl> _logger_impl;
+
+  logger(std::shared_ptr<details::logger_impl> inner_logger) : _logger_impl(std::move(inner_logger)) {}
+
+  friend logger create_default_logger();
+  friend logger create_null_logger();
+  friend logger create_custom_sink_logger(void* context, logger_output_func_t func);
+  friend logger create_custom_sink_logger_legacy(void* context, logger_legacy_output_func_t func);
 };
 
 inline logger create_default_logger()

@@ -17,13 +17,11 @@
 namespace VW
 {
 using namespace_index = unsigned char;
-struct example_predict
+class example_predict
 {
+public:
   class iterator
   {
-    features* _feature_space;
-    VW::v_array<namespace_index>::iterator _index;
-
   public:
     iterator(features* feature_space, namespace_index* index);
     features& operator*();
@@ -31,6 +29,10 @@ struct example_predict
     namespace_index index();
     bool operator==(const iterator& rhs) const;
     bool operator!=(const iterator& rhs) const;
+
+  private:
+    features* _feature_space;
+    VW::v_array<namespace_index>::iterator _index;
   };
 
   example_predict() = default;
