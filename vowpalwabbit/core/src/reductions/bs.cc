@@ -27,8 +27,9 @@ using namespace VW::reductions;
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 
-struct bs_data
+class bs_data
 {
+public:
   uint32_t num_bootstrap_rounds = 0;  // number of bootstrap rounds
   size_t bs_type = 0;
   float lb = 0.f;

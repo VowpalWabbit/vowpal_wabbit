@@ -9,13 +9,15 @@
 #include <string>
 #include <vector>
 
-struct obj
+class obj
 {
+public:
   int i;
 };
 
-struct obj_initializer
+class obj_initializer
 {
+public:
   obj* operator()(obj* o) { return o; }
 };
 

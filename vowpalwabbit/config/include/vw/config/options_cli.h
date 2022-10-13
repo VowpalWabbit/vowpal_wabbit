@@ -18,8 +18,9 @@ namespace VW
 {
 namespace config
 {
-struct options_cli : public options_i
+class options_cli : public options_i
 {
+public:
   options_cli(std::vector<std::string> args);
 
   void internal_add_and_parse(const option_group_definition& group) override;

@@ -21,8 +21,9 @@ using namespace VW::config;
 
 namespace
 {
-struct confidence
+class confidence
 {
+public:
   VW::workspace* all = nullptr;
 };
 

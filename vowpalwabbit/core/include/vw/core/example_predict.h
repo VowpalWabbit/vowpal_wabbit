@@ -17,10 +17,12 @@
 namespace VW
 {
 using namespace_index = unsigned char;
-struct example_predict
+class example_predict
 {
-  struct iterator
+public:
+  class iterator
   {
+  public:
     iterator(features* feature_space, namespace_index* index);
     features& operator*();
     iterator& operator++();

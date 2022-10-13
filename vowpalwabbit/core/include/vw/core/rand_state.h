@@ -9,8 +9,9 @@
 
 namespace VW
 {
-struct rand_state
+class rand_state
 {
+public:
   rand_state() = default;
 
   /**

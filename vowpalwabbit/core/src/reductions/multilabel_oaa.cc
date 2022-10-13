@@ -20,8 +20,9 @@ using namespace VW::config;
 
 namespace
 {
-struct multi_oaa
+class multi_oaa
 {
+public:
   size_t k = 0;
   bool probabilities = false;
   std::string link = "";

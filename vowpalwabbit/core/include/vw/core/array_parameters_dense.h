@@ -11,8 +11,9 @@
 #include <iterator>
 
 template <typename T>
-struct dense_iterator
+class dense_iterator
 {
+public:
   using iterator_category = std::forward_iterator_tag;
   using value_type = T;
   using difference_type = std::ptrdiff_t;
@@ -78,8 +79,9 @@ private:
   uint32_t _stride_shift;
 };
 
-struct dense_parameters
+class dense_parameters
 {
+public:
   using iterator = dense_iterator<weight>;
   using const_iterator = dense_iterator<const weight>;
 

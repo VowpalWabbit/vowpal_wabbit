@@ -20,14 +20,16 @@
 // TODO: spanning tree exists outside the normal VW source (it should live in cluster/).
 //       If we use io/logger.h here, we need to link it to the cluster library
 
-struct client
+class client
 {
+public:
   uint32_t client_ip;
   socket_t socket;
 };
 
-struct partial
+class partial
 {
+public:
   client* nodes;
   size_t filled;
 };

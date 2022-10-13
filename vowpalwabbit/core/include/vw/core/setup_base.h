@@ -10,12 +10,13 @@
 
 namespace VW
 {
-struct setup_base_i;
+class setup_base_i;
 
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
-struct setup_base_i
+class setup_base_i
 {
+public:
   virtual void delayed_state_attach(VW::workspace&, VW::config::options_i&) = 0;
 
   virtual VW::LEARNER::base_learner* setup_base_learner() = 0;

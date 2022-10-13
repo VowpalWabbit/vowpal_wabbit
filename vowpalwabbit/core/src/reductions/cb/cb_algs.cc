@@ -53,8 +53,9 @@ void generic_output_example(
 }  // namespace CB_ALGS
 namespace
 {
-struct cb
+class cb
 {
+public:
   cb_to_cs cbcs;
   VW::io::logger logger;
 

@@ -25,8 +25,9 @@ using namespace VW::config;
 namespace
 {
 // cb_sample is used to automatically sample and swap from a cb explore pdf.
-struct cb_sample_data
+class cb_sample_data
 {
+public:
   explicit cb_sample_data(std::shared_ptr<VW::rand_state>& random_state) : _random_state(random_state) {}
   explicit cb_sample_data(std::shared_ptr<VW::rand_state>&& random_state) : _random_state(random_state) {}
 

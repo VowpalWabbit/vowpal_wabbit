@@ -45,15 +45,17 @@ void MWT::print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_ar
 
 namespace
 {
-struct policy_data
+class policy_data
 {
+public:
   double cost = 0.0;
   uint32_t action = 0;
   bool seen = false;
 };
 
-struct mwt
+class mwt
 {
+public:
   bool namespaces[256];            // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;

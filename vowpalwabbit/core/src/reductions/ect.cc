@@ -28,8 +28,9 @@ using namespace VW::config;
 
 namespace
 {
-struct direction
+class direction
 {
+public:
   size_t id;          // unique id for node
   size_t tournament;  // unique id for node
   uint32_t winner;    // up traversal, winner
@@ -39,8 +40,9 @@ struct direction
   bool last;
 };
 
-struct ect
+class ect
 {
+public:
   uint64_t k = 0;
   uint64_t errors = 0;
   float class_boundary = 0.f;

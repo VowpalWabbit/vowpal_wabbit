@@ -12,8 +12,9 @@
 
 namespace VW
 {
-struct named_labels
+class named_labels
 {
+public:
   named_labels(std::string label_list);
 
   named_labels(const named_labels& other);
