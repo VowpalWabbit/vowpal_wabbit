@@ -231,8 +231,10 @@ set(vw_core_sources
   src/no_label.cc
   src/parse_args.cc
   src/parse_example.cc
+  src/parse_example_json.cc
   src/parse_primitives.cc
   src/parse_regressor.cc
+  src/parse_slates_example_json.cc
   src/parser.cc
   src/prediction_type.cc
   src/print_utils.cc
@@ -366,11 +368,10 @@ vw_add_library(
     SOURCES ${vw_core_headers} ${vw_core_sources}
     PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt
     PRIVATE_DEPS
-        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}>
-        # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
-        # actually a private dependency and so do not "link" when processing targets for installation.
+        # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
+        # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
-        $<BUILD_INTERFACE:RapidJSON>
+        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
