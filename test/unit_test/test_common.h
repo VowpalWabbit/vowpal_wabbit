@@ -7,6 +7,7 @@
 #include "vw/core/action_score.h"
 #include "vw/core/ccb_reduction_features.h"
 #include "vw/core/parse_example_json.h"
+#include "vw/core/shared_data.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
 
