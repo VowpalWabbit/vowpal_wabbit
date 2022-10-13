@@ -173,7 +173,15 @@ jobs:
           path: downloaded_nugets
       - uses: actions/download-artifact@v1
         with:
-          name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
+          name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -225,6 +233,14 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -282,6 +298,14 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
