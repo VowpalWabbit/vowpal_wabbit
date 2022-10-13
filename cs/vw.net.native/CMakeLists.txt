@@ -50,13 +50,7 @@ set_target_properties(vw.net.native PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(vw.net.native PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(
   vw.net.native 
-  PUBLIC 
-  vw_core vw_common vw_config vw_io vw_spanning_tree vw_allreduce
-  PRIVATE 
-  # Workaround an issue where RapidJSON needed to be exported to install the target. This is
-  # actually a private dependency and so do not "link" when processing targets for installation.
-  # https://gitlab.kitware.com/cmake/cmake/issues/15415
-  $<BUILD_INTERFACE:RapidJSON>
+  PUBLIC vw_core vw_common vw_config vw_io vw_spanning_tree vw_allreduce
 )
 
 # Enable warnings as errors, crossplatform
