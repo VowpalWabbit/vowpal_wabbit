@@ -21,9 +21,9 @@
         <dependency id="System.Runtime.Caching" version="4.7.0" exclude="Build,Analyzers" />
         <dependency id="Microsoft.NETCore.Platforms" version="6.0.5" exclude="Build,Analyzers" />
 
-        <dependency id="VowpalWabbit.runtime.linux-x64" Version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
-        <dependency id="VowpalWabbit.runtime.win-x64" Version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
-        <dependency id="VowpalWabbit.runtime.osx-x64" Version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
+        <dependency id="VowpalWabbit.runtime.linux-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
+        <dependency id="VowpalWabbit.runtime.win-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
+        <dependency id="VowpalWabbit.runtime.osx-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
       </group>
       <group targetFramework=".NETFramework@VW_NET_FRAMEWORK_VERSION@">
         <dependency id="Newtonsoft.Json" version="9.0.1" exclude="Build,Analyzers" />
