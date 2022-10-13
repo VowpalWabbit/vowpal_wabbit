@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1665672441538,
+  "lastUpdate": 1665674047262,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -10170,6 +10170,150 @@ window.BENCHMARK_DATA = {
             "value": 73.86636103028599,
             "unit": "ns/iter",
             "extra": "iterations: 56972057\ncpu: 73.82716583324398 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "byronxu@microsoft.com",
+            "name": "Byron Xu",
+            "username": "byronxu99"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2522e9e9731d692751204db1f24aaa49a3a41098",
+          "message": "refactor: No RapidJSON in header files (#4219)\n\n* Move implementation of functions using RapidJSON to .cc source files\r\n* Replace the header files with just a declaration of the function\r\n* Explicitly instantiate templates for the two possible values of <bool audit>\r\n* Simplify CMake files now that RapidJSON no longer needs to be exported",
+          "timestamp": "2022-10-13T14:26:33Z",
+          "tree_id": "68f2d8d29f0cd9419eda06c7a096ff5f3da1466e",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/2522e9e9731d692751204db1f24aaa49a3a41098"
+        },
+        "date": 1665674037243,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 6334.383850097656,
+            "unit": "ns",
+            "range": "± 97.82899935057097"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 9379.078020368304,
+            "unit": "ns",
+            "range": "± 140.22553875220282"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 687.9974047342936,
+            "unit": "ns",
+            "range": "± 12.876866959603117"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 585.7988357543945,
+            "unit": "ns",
+            "range": "± 10.51262464726024"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 1072139.6223958333,
+            "unit": "ns",
+            "range": "± 16401.38681856113"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 672118.5872395834,
+            "unit": "ns",
+            "range": "± 10930.251002053248"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 671412.9231770834,
+            "unit": "ns",
+            "range": "± 11286.85364466076"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 1047014.3092105263,
+            "unit": "ns",
+            "range": "± 22131.884132077557"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 637283.73046875,
+            "unit": "ns",
+            "range": "± 7886.28864091683"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 6110025,
+            "unit": "ns",
+            "range": "± 59416.827847878834"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 1324765.9244791667,
+            "unit": "ns",
+            "range": "± 22328.872083058774"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 1136014.2057291667,
+            "unit": "ns",
+            "range": "± 20432.511008476376"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 3885369.84375,
+            "unit": "ns",
+            "range": "± 60656.035262999234"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 1180856.54296875,
+            "unit": "ns",
+            "range": "± 17591.262144964025"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 3801.3957096980166,
+            "unit": "ns",
+            "range": "± 45.62896670987905"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 13667.839813232422,
+            "unit": "ns",
+            "range": "± 194.4078785398737"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 163964.7900390625,
+            "unit": "ns",
+            "range": "± 2510.715363261866"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 23371.137288411457,
+            "unit": "ns",
+            "range": "± 343.1445591169316"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 6161161.495535715,
+            "unit": "ns",
+            "range": "± 64387.268697956046"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 278249.6895926339,
+            "unit": "ns",
+            "range": "± 4624.590525269857"
           }
         ]
       }
