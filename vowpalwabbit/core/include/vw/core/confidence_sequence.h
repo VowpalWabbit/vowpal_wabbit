@@ -18,8 +18,9 @@ constexpr float CS_DEFAULT_ALPHA = 0.05f;
 
 namespace VW
 {
-struct incremental_f_sum
+class incremental_f_sum
 {
+public:
   std::vector<double> partials;
 
   incremental_f_sum operator+=(double x)
@@ -58,8 +59,9 @@ struct incremental_f_sum
   }
 };
 
-struct confidence_sequence
+class confidence_sequence
 {
+public:
   double alpha;
   double rmin_init;
   double rmax_init;

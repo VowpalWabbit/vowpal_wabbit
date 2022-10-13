@@ -35,8 +35,9 @@ using std::endl;
 
 namespace
 {
-struct cb_explore
+class cb_explore
 {
+public:
   std::shared_ptr<VW::rand_state> random_state;
   cb_to_cs cbcs;
   VW::v_array<uint32_t> preds;

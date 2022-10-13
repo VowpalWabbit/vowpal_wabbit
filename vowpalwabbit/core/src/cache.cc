@@ -60,8 +60,9 @@ inline uint64_t zig_zag_encode(int64_t n)
   return ret;
 }
 
-struct one_float
+class one_float
 {
+public:
   float f;
 }
 #ifndef _WIN32

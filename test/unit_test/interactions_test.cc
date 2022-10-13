@@ -28,8 +28,9 @@ std::ostream& operator<<(std::ostream& os, const std::pair<VW::namespace_index, 
 }
 }  // namespace std
 
-struct eval_gen_data
+class eval_gen_data
 {
+public:
   size_t& new_features_cnt;
   float& new_features_value;
   eval_gen_data(size_t& features_cnt, float& features_value)

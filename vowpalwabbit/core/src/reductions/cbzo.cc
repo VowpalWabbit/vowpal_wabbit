@@ -26,16 +26,18 @@ namespace
 constexpr uint8_t CONSTANT_POLICY = 0;
 constexpr uint8_t LINEAR_POLICY = 1;
 
-struct cbzo
+class cbzo
 {
+public:
   float radius = 0.f;
   VW::workspace* all = nullptr;
   bool min_prediction_supplied = false;
   bool max_prediction_supplied = false;
 };
 
-struct linear_update_data
+class linear_update_data
 {
+public:
   float mult = 0.f;
   float part_grad = 0.f;
   VW::workspace* all = nullptr;

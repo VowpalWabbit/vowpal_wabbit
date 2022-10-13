@@ -16,8 +16,9 @@ LEARNER::base_learner* cats_setup(setup_base_i& stack_builder);
 
 namespace cats
 {
-struct cats
+class cats
 {
+public:
   uint32_t num_actions = 0;
   float bandwidth = 0.f;
   float min_value = 0.f;

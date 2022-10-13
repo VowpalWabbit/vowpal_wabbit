@@ -113,8 +113,9 @@ int32_t offset_tree::learner_count() const { return binary_tree.internal_node_co
 
 // Helper to deal with collections that don't start with an index of 0
 template <typename T>
-struct offset_helper
+class offset_helper
 {
+public:
   // typedef verbose prediction buffer type
   offset_helper(T& b, uint32_t index_offset) : _start_index_offset{index_offset}, _collection(b) {}
 

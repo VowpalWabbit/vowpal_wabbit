@@ -26,8 +26,8 @@ using namespace VW::reductions;
 
 namespace VW
 {
-struct discounted_expectation;
-struct baseline_challenger_data;
+class discounted_expectation;
+class baseline_challenger_data;
 namespace model_utils
 {
 size_t read_model_field(io_buf&, VW::discounted_expectation&);
@@ -35,8 +35,9 @@ size_t write_model_field(io_buf&, const VW::discounted_expectation&, const std::
 size_t read_model_field(io_buf&, VW::baseline_challenger_data&);
 size_t write_model_field(io_buf&, const VW::baseline_challenger_data&, const std::string&, bool);
 }  // namespace model_utils
-struct discounted_expectation
+class discounted_expectation
 {
+public:
   discounted_expectation(double tau) : _tau(tau), _sum(0), _n(0) {}
 
   void update(double w, double r)
@@ -57,8 +58,9 @@ private:
   double _n;
 };
 
-struct baseline_challenger_data
+class baseline_challenger_data
 {
+public:
   distributionally_robust::ChiSquared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;

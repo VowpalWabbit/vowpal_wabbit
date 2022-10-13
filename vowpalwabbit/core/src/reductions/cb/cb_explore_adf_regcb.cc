@@ -34,8 +34,9 @@ using namespace VW::LEARNER;
 
 namespace
 {
-struct cb_explore_adf_regcb
+class cb_explore_adf_regcb
 {
+public:
   cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost,
       VW::version_struct model_file_version);
   ~cb_explore_adf_regcb() = default;

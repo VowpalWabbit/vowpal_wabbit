@@ -11,8 +11,9 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-struct Y_triplet_constructor
+class Y_triplet_constructor
 {
+public:
   Y_triplet_constructor(uint64_t weights_mask, uint64_t row_index, uint64_t column_index, uint64_t seed,
       std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col, std::set<uint64_t>& non_zero_rows,
       const std::vector<float>& shrink_factors)
@@ -51,8 +52,9 @@ private:
   const std::vector<float>& _shrink_factors;
 };
 
-struct B_triplet_constructor
+class B_triplet_constructor
 {
+public:
   B_triplet_constructor(
       uint64_t weights_mask, uint64_t column_index, Eigen::SparseMatrix<float>& Y, float& final_dot_product)
       : _weights_mask(weights_mask), _column_index(column_index), _Y(Y), _final_dot_product(final_dot_product)

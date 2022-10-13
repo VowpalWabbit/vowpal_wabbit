@@ -17,8 +17,9 @@ using namespace VW::config;
 
 namespace
 {
-struct cb_to_cb_adf
+class cb_to_cb_adf
 {
+public:
   parameters* weights = nullptr;
   VW::reductions::cbify_adf_data adf_data;
   bool explore_mode = false;

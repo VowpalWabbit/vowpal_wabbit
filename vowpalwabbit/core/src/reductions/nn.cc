@@ -31,8 +31,9 @@ constexpr float HIDDEN_MIN_ACTIVATION = -3;
 constexpr float HIDDEN_MAX_ACTIVATION = 3;
 constexpr uint64_t NN_CONSTANT = 533357803;
 
-struct nn
+class nn
 {
+public:
   uint32_t k = 0;
   std::unique_ptr<VW::loss_function> squared_loss;
   VW::example output_layer;

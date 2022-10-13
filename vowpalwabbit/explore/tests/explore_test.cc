@@ -16,8 +16,9 @@ using namespace VW::continuous_actions;
 using std::vector;
 using namespace ::testing;
 
-struct pdf_seg
+class pdf_seg
 {
+public:
   float left;
   float right;
   float pdf_value;
@@ -65,8 +66,9 @@ TEST(explore_tests, new_sample_pdf)
   EXPECT_TRUE(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
 }
 
-struct bins_calc
+class bins_calc
 {
+public:
   bins_calc(vector<float>&& bins) : _bins(bins), _counts(_bins.size() - 1), _total_samples(0) {}
 
   void add_to_bin(float val)

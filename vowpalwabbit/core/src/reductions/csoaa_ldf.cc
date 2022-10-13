@@ -32,8 +32,9 @@ using namespace VW::config;
 namespace
 {
 // TODO: passthrough for ldf
-struct ldf
+class ldf
 {
+public:
   LabelDict::label_feature_map label_features;
 
   bool is_wap = false;

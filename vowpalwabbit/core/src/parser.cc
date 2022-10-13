@@ -65,6 +65,8 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/parse_example.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/parse_primitives.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
+#include "vw/core/shared_data.h"
 #include "vw/core/unique_sort.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
@@ -497,7 +499,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
       // install signal handler so we can kill children when killed
       {
-        struct sigaction sa;
+        class sigaction sa;
         // specifically don't set SA_RESTART in sa.sa_flags, so that
         // waitid will be interrupted by SIGTERM with handler installed
         memset(&sa, 0, sizeof(sa));

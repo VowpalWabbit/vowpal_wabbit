@@ -11,8 +11,9 @@
 
 namespace GEN_CS
 {
-struct cb_to_cs
+class cb_to_cs
 {
+public:
   VW::cb_type_t cb_type = VW::cb_type_t::dm;
   uint32_t num_actions = 0;
   VW::cs_label pred_scores;
@@ -25,8 +26,9 @@ struct cb_to_cs
   CB::cb_class known_cost;
 };
 
-struct cb_to_cs_adf
+class cb_to_cs_adf
 {
+public:
   VW::cb_type_t cb_type = VW::cb_type_t::dm;
 
   // for MTR

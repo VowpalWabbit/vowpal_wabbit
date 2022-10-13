@@ -37,8 +37,9 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_rnd
+class cb_explore_adf_rnd
 {
+public:
   cb_explore_adf_rnd(
       float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _increment, VW::workspace* _all)
       : _epsilon(_epsilon)
@@ -139,8 +140,9 @@ void cb_explore_adf_rnd::save_labels(VW::multi_ex& examples)
 
 namespace
 {
-struct lazy_gaussian
+class lazy_gaussian
 {
+public:
   inline float operator[](uint64_t index) const { return merand48_boxmuller(index); }
 };
 

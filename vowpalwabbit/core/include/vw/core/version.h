@@ -11,8 +11,9 @@
 
 namespace VW
 {
-struct version_struct
+class version_struct
 {
+public:
   int32_t major;
   int32_t minor;
   int32_t rev;

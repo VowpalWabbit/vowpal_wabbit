@@ -18,8 +18,9 @@
 namespace Beam
 {
 template <class T>
-struct beam_element
+class beam_element
 {
+public:
   uint32_t hash;  // a cached hash value -- if a ~= b then h(a) must== h(b)
   float cost;     // cost of this element
   T* data;        // pointer to element data -- rarely accessed!
@@ -72,8 +73,9 @@ inline int compare_on_hash_then_cost(const void* void_a, const void* void_b)
 }
 
 template <class T>
-struct beam
+class beam
 {
+public:
   beam(size_t beam_size, float prune_coeff = FLT_MAX, bool (*test_equiv)(T*, T*) = nullptr, bool kbest = false)
       : beam_size(beam_size), pruning_coefficient(prune_coeff), do_kbest(kbest), is_equivalent(test_equiv)
   {

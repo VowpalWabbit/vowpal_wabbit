@@ -24,8 +24,9 @@ namespace DepParserTask
 Search::search_task task = {"dep_parser", run, initialize, nullptr, setup, nullptr};
 }
 
-struct task_data
+class task_data
 {
+public:
   VW::example ex;
   size_t root_label;
   uint32_t num_label;

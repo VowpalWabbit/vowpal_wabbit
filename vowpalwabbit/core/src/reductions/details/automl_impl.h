@@ -27,8 +27,9 @@ constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 using interaction_vec_t = std::vector<std::vector<namespace_index>>;
 
 template <typename estimator_impl>
-struct aml_estimator
+class aml_estimator
 {
+public:
   estimator_impl _estimator;
   aml_estimator() : _estimator(estimator_impl()) {}
   aml_estimator(double alpha) : _estimator(estimator_impl(alpha)) {}
@@ -72,8 +73,9 @@ enum class config_type
 
 using set_ns_list_t = std::set<std::vector<VW::namespace_index>>;
 
-struct ns_based_config
+class ns_based_config
 {
+public:
   set_ns_list_t elements;
   uint64_t lease;
   config_state state = VW::reductions::automl::config_state::New;
@@ -103,8 +105,9 @@ struct ns_based_config
 using priority_func = float(const ns_based_config&, const std::map<namespace_index, uint64_t>&);
 
 template <typename oracle_impl>
-struct config_oracle
+class config_oracle
 {
+public:
   std::string _interaction_type;
   const std::string _oracle_type;
   config_type _conf_type;
@@ -131,8 +134,9 @@ struct config_oracle
   static uint64_t choose(std::priority_queue<std::pair<float, uint64_t>>& index_queue);
 };
 
-struct Iterator
+class Iterator
 {
+public:
   using iterator_category = std::forward_iterator_tag;
 
   Iterator(size_t start_value = 0) : current(start_value) {}
@@ -152,8 +156,9 @@ private:
   size_t current;
 };
 
-struct oracle_rand_impl
+class oracle_rand_impl
 {
+public:
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
@@ -161,8 +166,9 @@ struct oracle_rand_impl
   Iterator begin() { return Iterator(); }
   Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
 };
-struct one_diff_impl
+class one_diff_impl
 {
+public:
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
       const size_t num, set_ns_list_t::iterator& exclusion, set_ns_list_t& new_elements);
   Iterator begin() { return Iterator(); }
@@ -171,14 +177,16 @@ struct one_diff_impl
     return Iterator(champ_interactions.size() + champ_exclusions.size());
   }
 };
-struct champdupe_impl
+class champdupe_impl
 {
+public:
   Iterator begin() { return Iterator(); }
   Iterator end() { return Iterator(2); }
 };
 
-struct one_diff_inclusion_impl
+class one_diff_inclusion_impl
 {
+public:
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
       const size_t num, set_ns_list_t& copy_champ);
   Iterator begin() { return Iterator(); }
@@ -186,8 +194,9 @@ struct one_diff_inclusion_impl
 };
 
 template <typename config_oracle_impl, typename estimator_impl>
-struct interaction_config_manager
+class interaction_config_manager
 {
+public:
   uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
   const uint64_t current_champ = 0;
@@ -258,8 +267,9 @@ enum class automl_state
 };
 
 template <typename CMType>
-struct automl
+class automl
 {
+public:
   automl_state current_state = automl_state::Experimenting;
   std::unique_ptr<CMType> cm;
   VW::io::logger* logger;
@@ -315,8 +325,9 @@ VW::string_view to_string(reductions::automl::config_type state);
 namespace fmt
 {
 template <>
-struct formatter<VW::reductions::automl::automl_state> : formatter<std::string>
+class formatter<VW::reductions::automl::automl_state> : public formatter<std::string>
 {
+public:
   auto format(VW::reductions::automl::automl_state c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
@@ -324,8 +335,9 @@ struct formatter<VW::reductions::automl::automl_state> : formatter<std::string>
 };
 
 template <>
-struct formatter<VW::reductions::automl::config_state> : formatter<std::string>
+class formatter<VW::reductions::automl::config_state> : public formatter<std::string>
 {
+public:
   auto format(VW::reductions::automl::config_state c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
@@ -333,8 +345,9 @@ struct formatter<VW::reductions::automl::config_state> : formatter<std::string>
 };
 
 template <>
-struct formatter<VW::reductions::automl::config_type> : formatter<std::string>
+class formatter<VW::reductions::automl::config_type> : public formatter<std::string>
 {
+public:
   auto format(VW::reductions::automl::config_type c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
