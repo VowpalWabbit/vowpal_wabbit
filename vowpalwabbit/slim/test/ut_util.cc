@@ -243,7 +243,6 @@ public:
 
 class PredictTest : public ::testing::TestWithParam<PredictParam>
 {
-public:
 };
 
 TEST_P(PredictTest, Run)
@@ -310,7 +309,6 @@ public:
 
 class InvalidModelTest : public ::testing::TestWithParam<InvalidModelParam>
 {
-public:
 };
 
 TEST_P(InvalidModelTest, Run)
@@ -625,7 +623,6 @@ public:
 
 class CBPredictTest : public ::testing::TestWithParam<CBPredictParam>
 {
-public:
 };
 
 TEST_P(CBPredictTest, CBRunPredict)
@@ -712,7 +709,6 @@ INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, CBPredictTest, ::testing::ValuesIn(cb
 template <typename W>
 class VwSlimTest : public ::testing::Test
 {
-public:
 };
 
 TYPED_TEST_SUITE_P(VwSlimTest);

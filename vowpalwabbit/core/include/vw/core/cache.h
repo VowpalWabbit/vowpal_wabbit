@@ -6,8 +6,6 @@
 
 #include "vw/core/vw_fwd.h"
 
-#include <cstdint>
-
 namespace VW
 {
 namespace details
