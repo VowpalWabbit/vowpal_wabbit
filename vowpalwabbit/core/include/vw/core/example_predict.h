@@ -60,7 +60,7 @@ public:
   reduction_features _reduction_features;
 
   // Used for debugging reductions.  Keeps track of current reduction level.
-  uint32_t _debug_current_reduction_depth = 0;
+  uint32_t debug_current_reduction_depth = 0;
 };
 }  // namespace VW
 

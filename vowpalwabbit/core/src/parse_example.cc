@@ -135,7 +135,7 @@ private:
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _v = float_feature_value = parseFloat(sv.data(), end_read, sv.data() + sv.size());
+      _v = float_feature_value = parse_float(sv.data(), end_read, sv.data() + sv.size());
       if (end_read == 0) { return false; }
       if (std::isnan(_v))
       {
@@ -364,7 +364,7 @@ private:
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _cur_channel_v = parseFloat(sv.data(), end_read, sv.data() + sv.size());
+      _cur_channel_v = parse_float(sv.data(), end_read, sv.data() + sv.size());
       if (end_read + _read_idx >= _line.size())
       {
         parser_warning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"",

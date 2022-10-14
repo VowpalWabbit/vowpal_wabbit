@@ -31,7 +31,7 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   for (auto& example : examples) { _stashed_labels.push_back(std::move(example->l.slates)); }
 
   const size_t num_slots = std::count_if(examples.begin(), examples.end(),
-      [](const example* example) { return example->l.slates.type == VW::slates::example_type::slot; });
+      [](const example* example) { return example->l.slates.type == VW::slates::example_type::SLOT; });
 
   float global_cost = 0.f;
   bool global_cost_found = false;
@@ -43,7 +43,7 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
     VW::ccb_label ccb_label;
     VW::default_ccb_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
-    if (slates_label.type == slates::example_type::shared)
+    if (slates_label.type == slates::example_type::SHARED)
     {
       ccb_label.type = VW::ccb_example_type::SHARED;
       if (slates_label.labeled)
@@ -52,14 +52,14 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
         global_cost = slates_label.cost;
       }
     }
-    else if (slates_label.type == slates::example_type::action)
+    else if (slates_label.type == slates::example_type::ACTION)
     {
       if (slates_label.slot_id >= num_slots) { THROW("slot_id cannot be larger than or equal to the number of slots"); }
       ccb_label.type = VW::ccb_example_type::ACTION;
       slot_action_pools[slates_label.slot_id].push_back(action_index);
       action_index++;
     }
-    else if (slates_label.type == slates::example_type::slot)
+    else if (slates_label.type == slates::example_type::SLOT)
     {
       ccb_label.type = VW::ccb_example_type::SLOT;
       ccb_label.explicit_included_actions.clear();
@@ -173,7 +173,7 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   {
     num_features += ec->get_num_features();
 
-    if (ec->l.slates.type == VW::slates::example_type::slot)
+    if (ec->l.slates.type == VW::slates::example_type::SLOT)
     {
       slots.push_back(ec);
       if (is_labelled)

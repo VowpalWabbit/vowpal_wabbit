@@ -85,31 +85,31 @@ public:
   double cressieread_upper_bound() const;
   ScoredDual recompute_duals();
   static double chisq_onedof_isf(double alpha);
-  const double& effn() { return n; }
+  const double& effn() { return _n; }
   friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
   friend size_t VW::model_utils::write_model_field(
       io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
   void save_load(io_buf& model_file, bool read, bool text, const char* name);
 
 private:
-  double alpha;
-  double tau;
-  double wmin;
-  double wmax;
-  double rmin;
-  double rmax;
+  double _alpha;
+  double _tau;
+  double _wmin;
+  double _wmax;
+  double _rmin;
+  double _rmax;
 
-  double n;
-  double sumw;
-  double sumwsq;
-  double sumwr;
-  double sumwsqr;
-  double sumwsqrsq;
+  double _n;
+  double _sumw;
+  double _sumwsq;
+  double _sumwr;
+  double _sumwsqr;
+  double _sumwsqrsq;
 
-  double delta;
+  double _delta;
 
-  bool duals_stale;
-  ScoredDual duals;
+  bool _duals_stale;
+  ScoredDual _duals;
 };
 
 }  // namespace distributionally_robust

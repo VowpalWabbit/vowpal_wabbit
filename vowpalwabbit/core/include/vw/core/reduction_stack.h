@@ -24,17 +24,17 @@ public:
   // same signature as the old setup_base(...) from parse_args.cc
   VW::LEARNER::base_learner* setup_base_learner() override;
 
-  VW::config::options_i* get_options() override { return options_impl; }
+  VW::config::options_i* get_options() override { return _options_impl; }
 
-  VW::workspace* get_all_pointer() override { return all_ptr; }
+  VW::workspace* get_all_pointer() override { return _all_ptr; }
 
   std::string get_setupfn_name(reduction_setup_fn setup) override;
 
 private:
-  VW::config::options_i* options_impl = nullptr;
-  VW::workspace* all_ptr = nullptr;
+  VW::config::options_i* _options_impl = nullptr;
+  VW::workspace* _all_ptr = nullptr;
 
 protected:
-  std::vector<std::tuple<std::string, reduction_setup_fn>> reduction_stack;
+  std::vector<std::tuple<std::string, reduction_setup_fn>> _reduction_stack;
 };
 }  // namespace VW

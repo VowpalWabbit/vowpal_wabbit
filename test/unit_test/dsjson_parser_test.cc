@@ -747,14 +747,14 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
   auto examples = parse_dsjson(*vw, json_text, &ds_interaction);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
-  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::SLOT);
 
   const auto& label0 = examples[0]->l.slates;
   BOOST_CHECK_CLOSE(label0.cost, 1.f, FLOAT_TOL);
