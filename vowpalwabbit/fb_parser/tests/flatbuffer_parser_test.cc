@@ -81,7 +81,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
   EXPECT_EQ(example->namespaces()->Get(0)->hash(), VW::details::CONSTANT_NAMESPACE);
   EXPECT_EQ(example->namespaces()->Get(0)->full_hash(), VW::details::CONSTANT_NAMESPACE);
   EXPECT_STREQ(example->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
-  EXPECT_EQ(example->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
+  EXPECT_EQ(example->namespaces()->Get(0)->features()->Get(0)->hash(), VW::details::CONSTANT);
   EXPECT_FLOAT_EQ(example->namespaces()->Get(0)->features()->Get(0)->value(), 2.23);
 
   // Check vw example
@@ -125,7 +125,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
   EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->hash(), VW::details::CONSTANT_NAMESPACE);
   EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->full_hash(), VW::details::CONSTANT_NAMESPACE);
   EXPECT_STREQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->name()->c_str(), "hello");
-  EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->hash(), constant);
+  EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->hash(), VW::details::CONSTANT);
   EXPECT_FLOAT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->Get(0)->value(), 2.23);
 
   // check vw example
