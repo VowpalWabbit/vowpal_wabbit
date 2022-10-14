@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/global_data.h"
+#include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
 
 #include <memory>
@@ -23,6 +24,10 @@ public:
   // release ownership of the pointer to the underlying VW::workspace, and return it
   // unsafe, only for use in implementation of model merging and its corresponding unit tests
   VW::workspace* unsafe_release_workspace_ptr() { return _ws.release(); }
+
+  void serialize(VW::io::writer&) const;
+  // Must only load what was previously serialized with the serialize function.
+  static std::unique_ptr<model_delta> deserialize(VW::io::reader&);
 
 private:
   std::unique_ptr<VW::workspace> _ws;
