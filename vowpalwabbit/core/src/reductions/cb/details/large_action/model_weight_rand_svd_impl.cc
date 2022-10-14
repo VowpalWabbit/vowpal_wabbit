@@ -4,6 +4,7 @@
 
 #include "../large_action_space.h"
 #include "vw/core/cb.h"
+#include "vw/core/label_dictionary.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/reductions/gd.h"
 
@@ -137,7 +138,10 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
@@ -165,6 +169,9 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
             _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
       }
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+
     row_index++;
   }
 
@@ -197,7 +204,9 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
     for (uint64_t col = 0; col < max_existing_column; ++col)
     {
@@ -225,6 +234,9 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
 
       B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+
     row_index++;
   }
 }
@@ -237,7 +249,10 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
@@ -263,15 +278,18 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
             _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
       }
     }
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
   }
 
   Y.resize(max_non_zero_col + 1, _d);
   Y.setZero();
 
-  Y.setFromTriplets(triplets.begin(), triplets.end(), [](const float& a, const float& b) {
-    assert(a == b);
-    return b;
-  });
+  Y.setFromTriplets(triplets.begin(), triplets.end(),
+      [](const float& a, const float& b)
+      {
+        assert(a == b);
+        return b;
+      });
 }
 
 void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples)
@@ -280,7 +298,10 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
@@ -304,6 +325,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
             _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
       }
     }
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
   }
 }
 

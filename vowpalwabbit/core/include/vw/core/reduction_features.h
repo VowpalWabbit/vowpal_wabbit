@@ -56,7 +56,7 @@ private:
   VW::continuous_actions::reduction_features _contact_reduction_features;
   simple_label_reduction_features _simple_label_reduction_features;
   VW::cb_explore_adf::greedy::reduction_features _epsilon_reduction_features;
-  VW::large_action_space::reduction_features _large_action_space_reduction_features;
+  VW::large_action_space::las_reduction_features _large_action_space_reduction_features;
 };
 
 template <>
@@ -111,14 +111,14 @@ reduction_features::get<VW::cb_explore_adf::greedy::reduction_features>() const
 }
 
 template <>
-inline VW::large_action_space::reduction_features& reduction_features::get<VW::large_action_space::reduction_features>()
+inline VW::large_action_space::las_reduction_features& reduction_features::get<VW::large_action_space::las_reduction_features>()
 {
   return _large_action_space_reduction_features;
 }
 
 template <>
-inline const VW::large_action_space::reduction_features&
-reduction_features::get<VW::large_action_space::reduction_features>() const
+inline const VW::large_action_space::las_reduction_features&
+reduction_features::get<VW::large_action_space::las_reduction_features>() const
 {
   return _large_action_space_reduction_features;
 }

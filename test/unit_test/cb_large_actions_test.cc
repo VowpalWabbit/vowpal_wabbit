@@ -225,6 +225,7 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
     {
       VW::multi_ex examples;
 
+      examples.push_back(VW::read_example(vw, "shared |U b c"));
       examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
       examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
@@ -286,6 +287,7 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
     {
       VW::multi_ex examples;
 
+      examples.push_back(VW::read_example(vw, "shared |U b c"));
       examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
       examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));

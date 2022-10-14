@@ -96,7 +96,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     {
       VW::example* ex = examples[row_index];
 
-      auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
+      auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
       auto* shared_example = red_features.shared_example;
       if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 

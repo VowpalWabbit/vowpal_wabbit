@@ -62,7 +62,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
     if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
