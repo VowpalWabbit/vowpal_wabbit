@@ -398,8 +398,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
   data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
   data->_gd_total_weight = &(gd.per_model_states[0].total_weight);
-  data->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
-  data->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
+  data->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
+  data->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
   data->_sd_gravity = &(all.sd->gravity);
 
   if (base_learner->is_multiline())

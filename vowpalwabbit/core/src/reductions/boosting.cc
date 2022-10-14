@@ -41,12 +41,12 @@ using std::endl;
 class boosting
 {
 public:
-  int N = 0;
+  int N = 0;  // NOLINT
   float gamma = 0.f;
   std::string alg = "";
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
-  std::vector<std::vector<int64_t> > C;
+  std::shared_ptr<VW::rand_state> random_state;
+  std::vector<std::vector<int64_t> > C;  // NOLINT
   std::vector<float> alpha;
   std::vector<float> v;
   int t = 0;
@@ -201,7 +201,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   if (is_learn) { o.t++; }
   float eta = 4.f / sqrtf(static_cast<float>(o.t));
 
-  float stopping_point = o._random_state->get_and_update_random();
+  float stopping_point = o.random_state->get_and_update_random();
 
   for (int i = 0; i < o.N; i++)
   {
@@ -407,7 +407,7 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
 
