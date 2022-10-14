@@ -165,8 +165,8 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   VW::multi_ex slots;
   size_t num_features = 0;
   float loss = 0.;
-  bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
-  float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
+  bool is_labelled = ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.labeled;
+  float cost = is_labelled ? ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.cost : 0.f;
   v_array<VW::action_score> label_probs;
 
   for (auto* ec : ec_seq)
@@ -197,10 +197,10 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
     for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
   }
 
-  all.sd->update(holdout_example, is_labelled, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
+  all.sd->update(holdout_example, is_labelled, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
+  { VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
 
   VW::print_update_slates(all, slots, predictions, num_features);
 }

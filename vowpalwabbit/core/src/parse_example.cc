@@ -68,15 +68,15 @@ private:
   unsigned char _index;
   float _v;
   bool _redefine_some;
-  std::array<unsigned char, NUM_NAMESPACES>* _redefine;
+  std::array<unsigned char, VW::NUM_NAMESPACES>* _redefine;
   parser* _p;
   VW::example* _ae;
-  std::array<uint64_t, NUM_NAMESPACES>* _affix_features;
-  std::array<bool, NUM_NAMESPACES>* _spelling_features;
+  std::array<uint64_t, VW::NUM_NAMESPACES>* _affix_features;
+  std::array<bool, VW::NUM_NAMESPACES>* _spelling_features;
   VW::v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
-  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>* _namespace_dictionaries;
+  std::array<std::vector<std::shared_ptr<feature_dict>>, VW::NUM_NAMESPACES>* _namespace_dictionaries;
   VW::io::logger* _logger;
 
   // TODO: Currently this function is called by both warning and error conditions. We only log
@@ -235,8 +235,8 @@ private:
 
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
-        features& affix_fs = _ae->feature_space[affix_namespace];
-        if (affix_fs.size() == 0) { _ae->indices.push_back(affix_namespace); }
+        features& affix_fs = _ae->feature_space[VW::details::AFFIX_NAMESPACE];
+        if (affix_fs.size() == 0) { _ae->indices.push_back(VW::details::AFFIX_NAMESPACE); }
         uint64_t affix = (*_affix_features)[_index];
 
         while (affix > 0)
@@ -254,8 +254,8 @@ private:
           }
 
           word_hash = _p->hasher(affix_name.data(), affix_name.length(), (uint64_t)_channel_hash) *
-              (affix_constant + (affix & 0xF) * quadratic_constant);
-          affix_fs.push_back(_v, word_hash, affix_namespace);
+              (VW::details::AFFIX_CONSTANT + (affix & 0xF) * VW::details::QUADRATIC_CONSTANT);
+          affix_fs.push_back(_v, word_hash, VW::details::AFFIX_NAMESPACE);
           if (audit)
           {
             VW::v_array<char> affix_v;
@@ -272,8 +272,8 @@ private:
       }
       if ((*_spelling_features)[_index])
       {
-        features& spell_fs = _ae->feature_space[spelling_namespace];
-        if (spell_fs.empty()) { _ae->indices.push_back(spelling_namespace); }
+        features& spell_fs = _ae->feature_space[VW::details::SPELLING_NAMESPACE];
+        if (spell_fs.empty()) { _ae->indices.push_back(VW::details::SPELLING_NAMESPACE); }
         // v_array<char> spelling;
         _spelling.clear();
         for (char c : feature_name)
@@ -302,7 +302,7 @@ private:
 
         VW::string_view spelling_strview(_spelling.data(), _spelling.size());
         word_hash = hashstring(spelling_strview.data(), spelling_strview.length(), (uint64_t)_channel_hash);
-        spell_fs.push_back(_v, word_hash, spelling_namespace);
+        spell_fs.push_back(_v, word_hash, VW::details::SPELLING_NAMESPACE);
         if (audit)
         {
           VW::v_array<char> spelling_v;
@@ -327,9 +327,9 @@ private:
           if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))
           {
             const auto& feats = feats_it->second;
-            features& dict_fs = _ae->feature_space[dictionary_namespace];
-            if (dict_fs.empty()) { _ae->indices.push_back(dictionary_namespace); }
-            dict_fs.start_ns_extent(dictionary_namespace);
+            features& dict_fs = _ae->feature_space[VW::details::DICTIONARY_NAMESPACE];
+            if (dict_fs.empty()) { _ae->indices.push_back(VW::details::DICTIONARY_NAMESPACE); }
+            dict_fs.start_ns_extent(VW::details::DICTIONARY_NAMESPACE);
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
             dict_fs.indices.insert(dict_fs.indices.end(), feats->indices.begin(), feats->indices.end());
             dict_fs.sum_feat_sq += feats->sum_feat_sq;

@@ -147,8 +147,8 @@ void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::ex
       {
         if (VW::is_cs_example_header(*ecc))
         {
-          num_current_features +=
-              (ec_seq->size() - 1) * (ecc->get_num_features() - ecc->feature_space[constant_namespace].size());
+          num_current_features += (ec_seq->size() - 1) *
+              (ecc->get_num_features() - ecc->feature_space[VW::details::CONSTANT_NAMESPACE].size());
         }
         else
         {

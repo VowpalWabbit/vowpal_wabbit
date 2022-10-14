@@ -95,7 +95,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 
   data->ex.indices.push_back(VAL_NAMESPACE);
   for (size_t i = 1; i < 14; i++) { data->ex.indices.push_back(static_cast<unsigned char>(i) + 'A'); }
-  data->ex.indices.push_back(constant_namespace);
+  data->ex.indices.push_back(VW::details::CONSTANT_NAMESPACE);
   data->ex.interactions = &sch.get_vw_pointer_unsafe().interactions;
   data->ex.extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
 
@@ -137,8 +137,8 @@ void add_all_features(VW::example& ex, VW::example& src, unsigned char tgt_ns, u
   features& tgt_fs = ex.feature_space[tgt_ns];
   for (VW::namespace_index ns : src.indices)
   {
-    if (ns != constant_namespace)
-    {  // ignore constant_namespace
+    if (ns != VW::details::CONSTANT_NAMESPACE)
+    {  // ignore VW::details::CONSTANT_NAMESPACE
       for (feature_index i : src.feature_space[ns].indices)
       { tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask); }
     }

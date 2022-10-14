@@ -23,25 +23,25 @@ constexpr unsigned char interaction_ns_end = '~';
 
 inline constexpr bool is_interaction_ns(const unsigned char ns)
 {
-  return (ns >= interaction_ns_start && ns <= interaction_ns_end) || (ns == ccb_slot_namespace);
+  return (ns >= interaction_ns_start && ns <= interaction_ns_end) || (ns == VW::details::CCB_SLOT_NAMESPACE);
 }
 
 inline bool contains_wildcard(const std::vector<VW::namespace_index>& interaction)
 {
-  return std::find(interaction.begin(), interaction.end(), wildcard_namespace) != interaction.end();
+  return std::find(interaction.begin(), interaction.end(), VW::details::WILDCARD_NAMESPACE) != interaction.end();
 }
 
 inline bool contains_wildcard(const std::vector<extent_term>& interaction)
 {
-  return std::find(interaction.begin(), interaction.end(), extent_term{wildcard_namespace, wildcard_namespace}) !=
-      interaction.end();
+  return std::find(interaction.begin(), interaction.end(),
+             extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE}) != interaction.end();
 }
 
 // function estimates how many new features will be generated for example and their sum(value^2).
 float eval_sum_ft_squared_of_generated_ft(bool permutations,
     const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions,
-    const std::array<features, NUM_NAMESPACES>& feature_spaces);
+    const std::array<features, VW::NUM_NAMESPACES>& feature_spaces);
 
 template <typename T>
 std::vector<T> indices_to_values_one_based(const std::vector<size_t>& indices, const std::set<T>& values)
@@ -268,7 +268,7 @@ std::vector<std::vector<VW::namespace_index>> compile_interaction(
   size_t num_wildcards = 0;
   for (size_t i = 0; i < interaction.size(); i++)
   {
-    if (interaction[i] != wildcard_namespace)
+    if (interaction[i] != VW::details::WILDCARD_NAMESPACE)
     {
       insertion_indices.push_back(i);
       insertion_ns.push_back(interaction[i]);
@@ -298,7 +298,7 @@ std::vector<std::vector<extent_term>> compile_extent_interaction(
   size_t num_wildcards = 0;
   for (size_t i = 0; i < interaction.size(); i++)
   {
-    if (interaction[i].first != wildcard_namespace)
+    if (interaction[i].first != VW::details::WILDCARD_NAMESPACE)
     {
       insertion_indices.push_back(i);
       insertion_ns.push_back(interaction[i]);
@@ -405,7 +405,7 @@ public:
 
   template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
   void update_extent_interactions_if_new_namespace_seen(const std::vector<std::vector<extent_term>>& interactions,
-      const VW::v_array<VW::namespace_index>& indices, const std::array<features, NUM_NAMESPACES>& feature_space)
+      const VW::v_array<VW::namespace_index>& indices, const std::array<features, VW::NUM_NAMESPACES>& feature_space)
   {
     auto prev_count = all_seen_extents.size();
     for (auto ns_index : indices)

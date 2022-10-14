@@ -581,7 +581,7 @@ std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::st
             "A wildcard term in --experimental_full_name_interactions cannot contain characters other than ':'. Found: "
             << token)
       }
-      result.emplace_back(wildcard_namespace, wildcard_namespace);
+      result.emplace_back(VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE);
     }
     else
     {
@@ -862,7 +862,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
   }
 
-  for (size_t i = 0; i < NUM_NAMESPACES; i++)
+  for (size_t i = 0; i < VW::NUM_NAMESPACES; i++)
   {
     all.ignore[i] = false;
     all.ignore_linear[i] = false;
@@ -883,7 +883,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "ignoring namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (all.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -904,7 +904,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (all.ignore_linear[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -933,7 +933,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.ignore[i] = true; }
+    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.ignore[i] = true; }
 
     all.ignore_some = true;
 
@@ -946,7 +946,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "using namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (!all.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -960,7 +960,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   if (options.was_supplied("redefine"))
   {
     // initial values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.redefine[i] = static_cast<unsigned char>(i); }
+    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.redefine[i] = static_cast<unsigned char>(i); }
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -1019,7 +1019,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t j = 0; j < NUM_NAMESPACES; j++) { all.redefine[j] = new_namespace; }
+            for (size_t j = 0; j < VW::NUM_NAMESPACES; j++) { all.redefine[j] = new_namespace; }
             break;  // break processing S
           }
         }

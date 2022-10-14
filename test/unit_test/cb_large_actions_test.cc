@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
         auto ft_value = ex->feature_space[ns].values[i];
 
         if (ns == default_namespace) { BOOST_CHECK_CLOSE(ft_value, ft_values[i], FLOAT_TOL); }
-        else if (ns == constant_namespace)
+        else if (ns == VW::details::CONSTANT_NAMESPACE)
         {
           BOOST_CHECK_CLOSE(ft_value, 1.f, FLOAT_TOL);
         }

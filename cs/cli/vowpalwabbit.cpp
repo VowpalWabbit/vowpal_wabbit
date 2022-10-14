@@ -868,7 +868,7 @@ cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 
 	for (auto iter = weights.begin(); iter != weights.end(); ++iter)
 	{   // over topics
-		weight* wp = &(*iter);
+		VW::weight* wp = &(*iter);
 		for (uint64_t k = 0; k < K; k++)
 			allocation[(int)k][(int)iter.index()] = wp[k] + lda_rho;
 	}

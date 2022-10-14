@@ -144,20 +144,20 @@ void parse_ccb_label(ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const
   ld.weight = 1.0;
 
   if (words.size() < 2) THROW("ccb labels may not be empty");
-  if (!(words[0] == CCB_LABEL)) { THROW("ccb labels require the first word to be ccb"); }
+  if (!(words[0] == VW::details::CCB_LABEL)) { THROW("ccb labels require the first word to be ccb"); }
 
   auto type = words[1];
-  if (type == SHARED_TYPE)
+  if (type == VW::details::SHARED_TYPE)
   {
     if (words.size() > 2) THROW("shared labels may not have a cost");
     ld.type = VW::ccb_example_type::SHARED;
   }
-  else if (type == ACTION_TYPE)
+  else if (type == VW::details::ACTION_TYPE)
   {
     if (words.size() > 2) THROW("action labels may not have a cost");
     ld.type = VW::ccb_example_type::ACTION;
   }
-  else if (type == SLOT_TYPE)
+  else if (type == VW::details::SLOT_TYPE)
   {
     if (words.size() > 4) THROW("ccb slot label can only have a type cost and exclude list");
     ld.type = VW::ccb_example_type::SLOT;

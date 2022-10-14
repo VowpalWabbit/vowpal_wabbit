@@ -341,8 +341,8 @@ std::string workspace::dump_weights_to_json_experimental()
 }
 }  // namespace VW
 
-void compile_limits(
-    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/, VW::io::logger& logger)
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool /*quiet*/,
+    VW::io::logger& logger)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {

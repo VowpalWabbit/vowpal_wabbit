@@ -41,12 +41,12 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
   ld.weight = 1;
 
   if (words.empty()) { THROW("Slates labels may not be empty"); }
-  if (!(words[0] == SLATES_LABEL)) { THROW("Slates labels require the first word to be slates"); }
+  if (!(words[0] == VW::details::SLATES_LABEL)) { THROW("Slates labels require the first word to be slates"); }
 
   if (words.size() == 1) { THROW("Slates labels require a type. It must be one of: [shared, action, slot]"); }
 
   const auto& type = words[1];
-  if (type == SHARED_TYPE)
+  if (type == VW::details::SHARED_TYPE)
   {
     // There is a cost defined.
     if (words.size() == 3)
@@ -60,7 +60,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     }
     ld.type = example_type::SHARED;
   }
-  else if (type == ACTION_TYPE)
+  else if (type == VW::details::ACTION_TYPE)
   {
     if (words.size() != 3) { THROW("Slates action labels must be of the form: slates action <slot_id>"); }
 
@@ -71,7 +71,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
 
     ld.type = example_type::ACTION;
   }
-  else if (type == SLOT_TYPE)
+  else if (type == VW::details::SLOT_TYPE)
   {
     if (words.size() == 3)
     {

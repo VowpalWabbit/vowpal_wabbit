@@ -85,7 +85,7 @@ public:
 
       for (uint32_t i = 0; i < length; i++)
       {
-        weight& w = weights.strided_index(i);
+        VW::weight& w = weights.strided_index(i);
         float r1, r2;
         for (int j = 1; j <= m; j++)
         {
@@ -289,7 +289,7 @@ public:
     uint32_t length = 1 << all->num_bits;
     for (uint32_t i = 0; i < length; i++)
     {
-      weight& w = all->weights.strided_index(i);
+      VW::weight& w = all->weights.strided_index(i);
       for (int j = 1; j <= m; j++) { w += (&w)[j] * b[j] * D[j]; }
     }
 
@@ -301,7 +301,7 @@ public:
     for (uint32_t i = 0; i < length; ++i)
     {
       memset(tmp, 0, sizeof(float) * (m + 1));
-      weight& w = all->weights.strided_index(i);
+      VW::weight& w = all->weights.strided_index(i);
       for (int j = 1; j <= m; j++)
       {
         for (int h = 1; h <= m; ++h) { tmp[j] += A[j][h] * D[h] * (&w)[h]; }

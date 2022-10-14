@@ -20,7 +20,7 @@
 #endif
 
 dense_parameters::dense_parameters(size_t length, uint32_t stride_shift)
-    : _begin(calloc_mergable_or_throw<weight>(length << stride_shift))
+    : _begin(calloc_mergable_or_throw<VW::weight>(length << stride_shift))
     , _weight_mask((length << stride_shift) - 1)
     , _stride_shift(stride_shift)
     , _seeded(false)
@@ -96,7 +96,7 @@ void dense_parameters::share(size_t length)
   float* shared_weights = static_cast<float*>(mmap(
       nullptr, (length << _stride_shift) * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
   size_t float_count = length << _stride_shift;
-  weight* dest = shared_weights;
+  VW::weight* dest = shared_weights;
   memcpy(dest, _begin, float_count * sizeof(float));
   free(_begin);
   _begin = dest;
