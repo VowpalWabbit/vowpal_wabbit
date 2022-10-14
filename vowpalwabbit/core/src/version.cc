@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/version.h"
+
 #include "vw/common/future_compat.h"
 
 #include <fmt/format.h>
@@ -28,6 +29,7 @@ VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 const std::string git_commit(COMMIT_VERSION);
 VW_WARNING_STATE_POP
+
 
 const std::string GIT_COMMIT(COMMIT_VERSION);
 }  // namespace VW
