@@ -125,7 +125,6 @@ class reader_ref_adapter : public VW::io::reader
 public:
   reader_ref_adapter(VW::io::reader& ref) : VW::io::reader(false), _inner_ref(ref) {}
   ssize_t read(char* buffer, size_t num_bytes) override { return _inner_ref.read(buffer, num_bytes); }
-
 private:
   VW::io::reader& _inner_ref;
 };
@@ -135,10 +134,7 @@ class writer_ref_adapter : public VW::io::writer
 public:
   writer_ref_adapter(VW::io::writer& ref) : _inner_ref(ref) {}
   ssize_t write(const char* buffer, size_t num_bytes) override { return _inner_ref.write(buffer, num_bytes); }
-
-  /// Writers may implement flush - by default is a noop
   void flush() override { _inner_ref.flush(); }
-
 private:
   VW::io::writer& _inner_ref;
 };
