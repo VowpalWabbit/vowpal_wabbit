@@ -32,7 +32,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_coll
 
   auto label = get_label(builder, label_type);
 
-  fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
+  fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, VW::details::CONSTANT));
   namespaces.push_back(
       VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, VW::details::CONSTANT_NAMESPACE, &fts, 128));
   examples.push_back(VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label));
@@ -49,7 +49,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
 
   auto label = get_label(builder, label_type);
 
-  fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, constant));
+  fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(builder, "hello", 2.23f, VW::details::CONSTANT));
   namespaces.push_back(
       VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, VW::details::CONSTANT_NAMESPACE, &fts, 128));
   auto example = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
