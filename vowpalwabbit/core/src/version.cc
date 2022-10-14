@@ -30,6 +30,5 @@ VW_WARNING_DISABLE_DEPRECATED_USAGE
 const std::string git_commit(COMMIT_VERSION);
 VW_WARNING_STATE_POP
 
-
 const std::string GIT_COMMIT(COMMIT_VERSION);
 }  // namespace VW
