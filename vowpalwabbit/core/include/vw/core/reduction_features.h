@@ -111,8 +111,7 @@ reduction_features::get<VW::cb_explore_adf::greedy::reduction_features>() const
 }
 
 template <>
-inline VW::large_action_space::reduction_features&
-reduction_features::get<VW::large_action_space::reduction_features>()
+inline VW::large_action_space::reduction_features& reduction_features::get<VW::large_action_space::reduction_features>()
 {
   return _large_action_space_reduction_features;
 }

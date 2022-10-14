@@ -62,24 +62,26 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
   }
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit([has_example_header, &shared_example, &ec_seq, &store_shared_ex_in_reduction_features] {
-    if (has_example_header)
-    {
-      for (auto& example : ec_seq)
-      {
-        LabelDict::del_example_namespaces_from_example(*example, *shared_example);
-
-        if (store_shared_ex_in_reduction_features)
+  auto restore_guard =
+      VW::scope_exit([has_example_header, &shared_example, &ec_seq, &store_shared_ex_in_reduction_features] {
+        if (has_example_header)
         {
-          auto& red_features = example->_reduction_features.template get<VW::large_action_space::reduction_features>();
-          red_features.reset_to_default();
+          for (auto& example : ec_seq)
+          {
+            LabelDict::del_example_namespaces_from_example(*example, *shared_example);
+
+            if (store_shared_ex_in_reduction_features)
+            {
+              auto& red_features =
+                  example->_reduction_features.template get<VW::large_action_space::reduction_features>();
+              red_features.reset_to_default();
+            }
+          }
+          std::swap(shared_example->pred, ec_seq[0]->pred);
+          std::swap(shared_example->tag, ec_seq[0]->tag);
+          ec_seq.insert(ec_seq.begin(), shared_example);
         }
-      }
-      std::swap(shared_example->pred, ec_seq[0]->pred);
-      std::swap(shared_example->tag, ec_seq[0]->tag);
-      ec_seq.insert(ec_seq.begin(), shared_example);
-    }
-  });
+      });
 
   if (ec_seq.empty()) { return; }
   if (is_learn) { base.learn(ec_seq); }
