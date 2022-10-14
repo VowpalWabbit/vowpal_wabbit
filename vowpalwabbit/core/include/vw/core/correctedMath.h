@@ -24,5 +24,5 @@ T correctedExp(T exponent)
 // std::exp is used because on Linux, not using the namespace caused a different implementation of
 // exp to be linked providing incorrect values when `#include <boost/program_options.hpp>` was
 // removed in global_data.h
-#  define correctedExp std::exp
+#  define correctedExp std::exp  // NOLINT
 #endif

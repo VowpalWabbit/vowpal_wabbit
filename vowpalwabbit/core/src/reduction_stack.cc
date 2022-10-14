@@ -245,37 +245,37 @@ namespace VW
 default_reduction_stack_setup::default_reduction_stack_setup(VW::workspace& all, VW::config::options_i& options)
 {
   // push all reduction functions into the stack
-  prepare_reductions(reduction_stack);
+  prepare_reductions(_reduction_stack);
   delayed_state_attach(all, options);
 }
 
-default_reduction_stack_setup::default_reduction_stack_setup() { prepare_reductions(reduction_stack); }
+default_reduction_stack_setup::default_reduction_stack_setup() { prepare_reductions(_reduction_stack); }
 
 // this should be reworked, but its setup related to how setup is tied with all object
 // which is not applicable to everything
 void default_reduction_stack_setup::delayed_state_attach(VW::workspace& all, VW::config::options_i& options)
 {
-  all_ptr = &all;
-  options_impl = &options;
+  _all_ptr = &all;
+  _options_impl = &options;
   // populate setup_fn -> name map to be used to lookup names in setup_base
-  all.build_setupfn_name_dict(reduction_stack);
+  all.build_setupfn_name_dict(_reduction_stack);
 }
 
-// this function consumes all the reduction_stack until it's able to construct a base_learner
+// this function consumes all the _reduction_stack until it's able to construct a base_learner
 // same signature/code as the old setup_base(...) from parse_args.cc
 VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
 {
-  if (!reduction_stack.empty())
+  if (!_reduction_stack.empty())
   {
-    auto func_map = reduction_stack.back();
+    auto func_map = _reduction_stack.back();
     reduction_setup_fn setup_func = std::get<1>(func_map);
     std::string setup_func_name = std::get<0>(func_map);
-    reduction_stack.pop_back();
+    _reduction_stack.pop_back();
 
     // 'hacky' way of keeping track of the option group created by the setup_func about to be created
-    options_impl->tint(setup_func_name);
+    _options_impl->tint(setup_func_name);
     auto base = setup_func(*this);
-    options_impl->reset_tint();
+    _options_impl->reset_tint();
 
     // returning nullptr means that setup_func (any reduction) was not 'enabled' but
     // only added their respective command args and did not add itself into the
@@ -283,7 +283,7 @@ VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
     if (base == nullptr) { return this->setup_base_learner(); }
     else
     {
-      reduction_stack.clear();
+      _reduction_stack.clear();
       return base;
     }
   }
@@ -293,6 +293,6 @@ VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
 
 std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn setup)
 {
-  return all_ptr->get_setupfn_name(setup);
+  return _all_ptr->get_setupfn_name(setup);
 }
 }  // namespace VW

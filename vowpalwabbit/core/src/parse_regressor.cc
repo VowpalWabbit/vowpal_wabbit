@@ -135,10 +135,10 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 
     size_t bytes_read_write = 0;
 
-    size_t v_length = static_cast<uint32_t>(VW::version.to_string().length()) + 1;
+    size_t v_length = static_cast<uint32_t>(VW::VERSION.to_string().length()) + 1;
     std::stringstream msg;
-    msg << "Version " << VW::version.to_string() << "\n";
-    memcpy(buff2.data(), VW::version.to_string().c_str(), std::min(v_length, buff2.size()));
+    msg << "Version " << VW::VERSION.to_string() << "\n";
+    memcpy(buff2.data(), VW::VERSION.to_string().c_str(), std::min(v_length, buff2.size()));
     if (read)
     {
       v_length = buff2.size();

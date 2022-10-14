@@ -58,7 +58,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     {
       THROW("Slates shared labels must be of the form: slates shared [global_cost]");
     }
-    ld.type = example_type::shared;
+    ld.type = example_type::SHARED;
   }
   else if (type == ACTION_TYPE)
   {
@@ -69,7 +69,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
     { THROW("Slot id seems to be malformed"); }
 
-    ld.type = example_type::action;
+    ld.type = example_type::ACTION;
   }
   else if (type == SLOT_TYPE)
   {
@@ -108,7 +108,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
           "Slates shared labels must be of the form: slates slot "
           "[chosen_action_id:probability[,action_id:probability...]]");
     }
-    ld.type = example_type::slot;
+    ld.type = example_type::SLOT;
   }
   else
   {
@@ -150,10 +150,10 @@ VW::string_view VW::to_string(VW::slates::example_type ex_type)
   using namespace VW::slates;
   switch (ex_type)
   {
-    CASE(example_type::unset)
-    CASE(example_type::shared)
-    CASE(example_type::action)
-    CASE(example_type::slot)
+    CASE(example_type::UNSET)
+    CASE(example_type::SHARED)
+    CASE(example_type::ACTION)
+    CASE(example_type::SLOT)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`

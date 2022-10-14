@@ -16,8 +16,8 @@ public:
 
   void delayed_state_attach(VW::workspace& all, VW::config::options_i& options) override
   {
-    options_impl = &options;
-    all_ptr = &all;
+    _options_impl = &options;
+    _all_ptr = &all;
   }
 
   cached_learner(VW::LEARNER::base_learner* learner = nullptr) : _cached(learner) {}
@@ -28,15 +28,15 @@ public:
     delayed_state_attach(all, options);
   }
 
-  VW::config::options_i* get_options() override { return options_impl; }
+  VW::config::options_i* get_options() override { return _options_impl; }
 
-  VW::workspace* get_all_pointer() override { return all_ptr; }
+  VW::workspace* get_all_pointer() override { return _all_ptr; }
 
   std::string get_setupfn_name(reduction_setup_fn) override { return ""; }
 
 private:
   VW::LEARNER::base_learner* _cached = nullptr;
-  VW::config::options_i* options_impl = nullptr;
-  VW::workspace* all_ptr = nullptr;
+  VW::config::options_i* _options_impl = nullptr;
+  VW::workspace* _all_ptr = nullptr;
 };
 }  // namespace VW

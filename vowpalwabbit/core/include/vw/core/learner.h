@@ -152,27 +152,27 @@ float recur_sensitivity(void*, base_learner&, example&);
 
 inline void debug_increment_depth(example& ex)
 {
-  if (vw_dbg::track_stack) { ++ex._debug_current_reduction_depth; }
+  if (vw_dbg::track_stack) { ++ex.debug_current_reduction_depth; }
 }
 
 inline void debug_increment_depth(multi_ex& ec_seq)
 {
   if (vw_dbg::track_stack)
   {
-    for (auto& ec : ec_seq) { ++ec->_debug_current_reduction_depth; }
+    for (auto& ec : ec_seq) { ++ec->debug_current_reduction_depth; }
   }
 }
 
 inline void debug_decrement_depth(example& ex)
 {
-  if (vw_dbg::track_stack) { --ex._debug_current_reduction_depth; }
+  if (vw_dbg::track_stack) { --ex.debug_current_reduction_depth; }
 }
 
 inline void debug_decrement_depth(multi_ex& ec_seq)
 {
   if (vw_dbg::track_stack)
   {
-    for (auto& ec : ec_seq) { --ec->_debug_current_reduction_depth; }
+    for (auto& ec : ec_seq) { --ec->debug_current_reduction_depth; }
   }
 }
 
@@ -236,13 +236,13 @@ class learner
   /// \private
   void debug_log_message(example& ec, const std::string& msg)
   {
-    VW_DBG(ec) << "[" << name << "." << msg << "]" << std::endl;
+    VW_DBG(ec) << "[" << _name << "." << msg << "]" << std::endl;
   }
 
   /// \private
   void debug_log_message(multi_ex& ec, const std::string& msg)
   {
-    VW_DBG(*ec[0]) << "[" << name << "." << msg << "]" << std::endl;
+    VW_DBG(*ec[0]) << "[" << _name << "." << msg << "]" << std::endl;
   }
 
 public:
@@ -256,7 +256,7 @@ public:
   using end_fptr_type = void (*)(VW::workspace&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
-  void* get_internal_type_erased_data_pointer_test_use_only() { return learner_data.get(); }
+  void* get_internal_type_erased_data_pointer_test_use_only() { return _learner_data.get(); }
 
   // For all functions here that invoke stored function pointers,
   // NO_SANITIZE_UNDEFINED is needed because the function pointer's type may be
@@ -278,7 +278,7 @@ public:
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
     debug_log_message(ec, "learn");
-    learn_fd.learn_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    _learn_fd.learn_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
   }
 
@@ -297,7 +297,7 @@ public:
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
     debug_log_message(ec, "predict");
-    learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    _learn_fd.predict_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
   }
 
@@ -306,13 +306,13 @@ public:
   {
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
-    if (learn_fd.multipredict_f == nullptr)
+    if (_learn_fd.multipredict_f == nullptr)
     {
       details::increment_offset(ec, increment, lo);
       debug_log_message(ec, "multipredict");
       for (size_t c = 0; c < count; c++)
       {
-        learn_fd.predict_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+        _learn_fd.predict_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
         if (finalize_predictions)
         {
           pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
@@ -332,7 +332,8 @@ public:
     {
       details::increment_offset(ec, increment, lo);
       debug_log_message(ec, "multipredict");
-      learn_fd.multipredict_f(learn_fd.data, *learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
+      _learn_fd.multipredict_f(
+          _learn_fd.data, *_learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
       details::decrement_offset(ec, increment, lo);
     }
   }
@@ -343,7 +344,7 @@ public:
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
     debug_log_message(ec, "update");
-    learn_fd.update_f(learn_fd.data, *learn_fd.base, (void*)&ec);
+    _learn_fd.update_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
   }
 
@@ -351,7 +352,7 @@ public:
   {
     details::increment_offset(ec, increment, i);
     debug_log_message(ec, "sensitivity");
-    const float ret = sensitivity_fd.sensitivity_f(sensitivity_fd.data, *learn_fd.base, ec);
+    const float ret = _sensitivity_fd.sensitivity_f(_sensitivity_fd.data, *_learn_fd.base, ec);
     details::decrement_offset(ec, increment, i);
     return ret;
   }
@@ -361,79 +362,79 @@ public:
   {
     try
     {
-      save_load_fd.save_load_f(save_load_fd.data, io, read, text);
+      _save_load_fd.save_load_f(_save_load_fd.data, io, read, text);
     }
     catch (VW::vw_exception& vwex)
     {
       std::stringstream better_msg;
       better_msg << "model " << std::string(read ? "load" : "save") << " failed. Error Details: " << vwex.what();
-      throw VW::save_load_model_exception(vwex.Filename(), vwex.LineNumber(), better_msg.str());
+      throw VW::save_load_model_exception(vwex.filename(), vwex.line_number(), better_msg.str());
     }
-    if (save_load_fd.base) { save_load_fd.base->save_load(io, read, text); }
+    if (_save_load_fd.base) { _save_load_fd.base->save_load(io, read, text); }
   }
 
   // called when metrics is enabled.  Autorecursive.
   void NO_SANITIZE_UNDEFINED persist_metrics(metric_sink& metrics)
   {
-    persist_metrics_fd.save_metric_f(persist_metrics_fd.data, metrics);
-    if (persist_metrics_fd.base) { persist_metrics_fd.base->persist_metrics(metrics); }
+    _persist_metrics_fd.save_metric_f(_persist_metrics_fd.data, metrics);
+    if (_persist_metrics_fd.base) { _persist_metrics_fd.base->persist_metrics(metrics); }
   }
 
   inline void NO_SANITIZE_UNDEFINED finish()
   {
-    if (finisher_fd.data) { finisher_fd.func(finisher_fd.data); }
-    if (finisher_fd.base)
+    if (_finisher_fd.data) { _finisher_fd.func(_finisher_fd.data); }
+    if (_finisher_fd.base)
     {
-      finisher_fd.base->finish();
-      delete finisher_fd.base;
+      _finisher_fd.base->finish();
+      delete _finisher_fd.base;
     }
   }
 
   void NO_SANITIZE_UNDEFINED end_pass()
   {
-    end_pass_fd.func(end_pass_fd.data);
-    if (end_pass_fd.base) { end_pass_fd.base->end_pass(); }
+    _end_pass_fd.func(_end_pass_fd.data);
+    if (_end_pass_fd.base) { _end_pass_fd.base->end_pass(); }
   }  // autorecursive
 
   // called after parsing of examples is complete.  Autorecursive.
   void NO_SANITIZE_UNDEFINED end_examples()
   {
-    end_examples_fd.func(end_examples_fd.data);
-    if (end_examples_fd.base) { end_examples_fd.base->end_examples(); }
+    _end_examples_fd.func(_end_examples_fd.data);
+    if (_end_examples_fd.base) { _end_examples_fd.base->end_examples(); }
   }
 
   // Called at the beginning by the driver.  Explicitly not recursive.
-  void NO_SANITIZE_UNDEFINED init_driver() { init_fd.func(init_fd.data); }
+  void NO_SANITIZE_UNDEFINED init_driver() { _init_fd.func(_init_fd.data); }
 
   // called after learn example for each example.  Explicitly not recursive.
   inline void NO_SANITIZE_UNDEFINED finish_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "finish_example");
-    finish_example_fd.finish_example_f(all, finish_example_fd.data, (void*)&ec);
+    _finish_example_fd.finish_example_f(all, _finish_example_fd.data, (void*)&ec);
   }
 
   inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "print_example");
 
-    if (finish_example_fd.print_example_f == nullptr)
-      THROW("fatal: learner did not register print example fn: " + name);
+    if (_finish_example_fd.print_example_f == nullptr)
+      THROW("fatal: learner did not register print example fn: " + _name);
 
-    finish_example_fd.print_example_f(all, finish_example_fd.data, (void*)&ec);
+    _finish_example_fd.print_example_f(all, _finish_example_fd.data, (void*)&ec);
   }
 
   void get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
   {
-    if (learn_fd.base) { learn_fd.base->get_enabled_reductions(enabled_reductions); }
-    enabled_reductions.push_back(name);
+    if (_learn_fd.base) { _learn_fd.base->get_enabled_reductions(enabled_reductions); }
+    enabled_reductions.push_back(_name);
   }
 
   base_learner* get_learner_by_name_prefix(const std::string& reduction_name)
   {
-    if (name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
+    if (_name.find(reduction_name) != std::string::npos) { return (base_learner*)this; }
     else
     {
-      if (learn_fd.base != nullptr) { return learn_fd.base->get_learner_by_name_prefix(reduction_name); }
+      if (_learn_fd.base != nullptr) { return _learn_fd.base->get_learner_by_name_prefix(reduction_name); }
       else
         THROW("fatal: could not find in learner chain: " << reduction_name);
     }
@@ -457,16 +458,16 @@ public:
 
     std::vector<const void*> all_data;
     all_data.reserve(all_learners.size());
-    for (const auto& learner : all_learners) { all_data.push_back(learner->learner_data.get()); }
+    for (const auto& learner : all_learners) { all_data.push_back(learner->_learner_data.get()); }
 
     if (_merge_with_all_fn != nullptr)
     {
       _merge_with_all_fn(
-          per_model_weighting, all_workspaces, all_data, output_workspace, output_learner.learner_data.get());
+          per_model_weighting, all_workspaces, all_data, output_workspace, output_learner._learner_data.get());
     }
     else if (_merge_fn != nullptr)
     {
-      _merge_fn(per_model_weighting, all_data, output_learner.learner_data.get());
+      _merge_fn(per_model_weighting, all_data, output_learner._learner_data.get());
     }
     else
     {
@@ -482,12 +483,12 @@ public:
     assert(name == delta_l->get_name());
     if (_add_with_all_fn != nullptr)
     {
-      _add_with_all_fn(base_ws, base_l->learner_data.get(), delta_ws, delta_l->learner_data.get(), output_ws,
-          output_l->learner_data.get());
+      _add_with_all_fn(base_ws, base_l->_learner_data.get(), delta_ws, delta_l->_learner_data.get(), output_ws,
+          output_l->_learner_data.get());
     }
     else if (_add_fn != nullptr)
     {
-      _add_fn(base_l->learner_data.get(), delta_l->learner_data.get(), output_l->learner_data.get());
+      _add_fn(base_l->_learner_data.get(), delta_l->_learner_data.get(), output_l->_learner_data.get());
     }
     else
     {
@@ -504,11 +505,11 @@ public:
     if (_subtract_with_all_fn != nullptr)
     {
       _subtract_with_all_fn(
-          ws1, l1->learner_data.get(), ws2, l2->learner_data.get(), output_ws, output_l->learner_data.get());
+          ws1, l1->_learner_data.get(), ws2, l2->_learner_data.get(), output_ws, output_l->_learner_data.get());
     }
     else if (_subtract_fn != nullptr)
     {
-      _subtract_fn(l1->learner_data.get(), l2->learner_data.get(), output_l->learner_data.get());
+      _subtract_fn(l1->_learner_data.get(), l2->_learner_data.get(), output_l->_learner_data.get());
     }
     else
     {
@@ -527,12 +528,12 @@ public:
   VW_ATTR(nodiscard) label_type_t get_output_label_type() const { return _output_label_type; }
   VW_ATTR(nodiscard) label_type_t get_input_label_type() const { return _input_label_type; }
   VW_ATTR(nodiscard) bool is_multiline() const { return _is_multiline; }
-  VW_ATTR(nodiscard) const std::string& get_name() const { return name; }
-  VW_ATTR(nodiscard) const base_learner* get_learn_base() const { return learn_fd.base; }
-  VW_ATTR(nodiscard) base_learner* get_learn_base() { return learn_fd.base; }
+  VW_ATTR(nodiscard) const std::string& get_name() const { return _name; }
+  VW_ATTR(nodiscard) const base_learner* get_learn_base() const { return _learn_fd.base; }
+  VW_ATTR(nodiscard) base_learner* get_learn_base() { return _learn_fd.base; }
   /// If true, this specific learner defines a save load function. If false, it simply forwards to a base
   /// implementation.
-  VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return learn_fd.data == save_load_fd.data; }
+  VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return _learn_fd.data == _save_load_fd.data; }
 
 private:
   template <class FluentBuilderT, class DataT, class ExampleT, class BaseLearnerT>
@@ -544,16 +545,16 @@ private:
   template <class ExampleT, class BaseLearnerT>
   friend class reduction_no_data_learner_builder;
 
-  details::func_data init_fd;
-  details::learn_data learn_fd;
-  details::sensitivity_data sensitivity_fd;
-  details::finish_example_data finish_example_fd;
-  details::save_load_data save_load_fd;
-  details::func_data end_pass_fd;
-  details::func_data end_examples_fd;
-  details::save_metric_data persist_metrics_fd;
-  details::func_data finisher_fd;
-  std::string name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
+  details::func_data _init_fd;
+  details::learn_data _learn_fd;
+  details::sensitivity_data _sensitivity_fd;
+  details::finish_example_data _finish_example_fd;
+  details::save_load_data _save_load_fd;
+  details::func_data _end_pass_fd;
+  details::func_data _end_examples_fd;
+  details::save_metric_data _persist_metrics_fd;
+  details::func_data _finisher_fd;
+  std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
   prediction_type_t _output_pred_type;
   prediction_type_t _input_pred_type;
   label_type_t _output_label_type;
@@ -568,7 +569,7 @@ private:
   details::add_subtract_fn _subtract_fn;
   details::add_subtract_with_all_fn _subtract_with_all_fn;
 
-  std::shared_ptr<void> learner_data;
+  std::shared_ptr<void> _learner_data;
 
   learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
 };
@@ -624,17 +625,17 @@ template <class FluentBuilderT, class DataT, class ExampleT, class BaseLearnerT>
 class common_learner_builder
 {
 public:
-  learner<DataT, ExampleT>* _learner = nullptr;
+  learner<DataT, ExampleT>* learner_ptr = nullptr;
 
   using end_fptr_type = void (*)(VW::workspace&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
   common_learner_builder(learner<DataT, ExampleT>* learner, std::unique_ptr<DataT>&& data, const std::string& name)
   {
-    _learner = learner;
-    _learner->name = name;
-    _learner->_is_multiline = std::is_same<multi_ex, ExampleT>::value;
-    _learner->learner_data = std::shared_ptr<DataT>(data.release());
+    learner_ptr = learner;
+    learner_ptr->_name = name;
+    learner_ptr->_is_multiline = std::is_same<multi_ex, ExampleT>::value;
+    learner_ptr->_learner_data = std::shared_ptr<DataT>(data.release());
   }
 
   common_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name)
@@ -644,99 +645,99 @@ public:
 
   FluentBuilderT& set_predict(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
   {
-    this->_learner->learn_fd.predict_f = (details::learn_data::fn)fn_ptr;
+    this->learner_ptr->_learn_fd.predict_f = (details::learn_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_learn(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
   {
-    this->_learner->learn_fd.learn_f = (details::learn_data::fn)fn_ptr;
+    this->learner_ptr->_learn_fd.learn_f = (details::learn_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_multipredict(
       void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&, size_t, size_t, polyprediction*, bool))
   {
-    this->_learner->learn_fd.multipredict_f = (details::learn_data::multi_fn)fn_ptr;
+    this->learner_ptr->_learn_fd.multipredict_f = (details::learn_data::multi_fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_update(void (*u)(DataT& data, BaseLearnerT& base, ExampleT&))
   {
-    this->_learner->learn_fd.update_f = (details::learn_data::fn)u;
+    this->learner_ptr->_learn_fd.update_f = (details::learn_data::fn)u;
     return *static_cast<FluentBuilderT*>(this);
   }
 
   // used for active learning and confidence to determine how easily predictions are changed
   FluentBuilderT& set_sensitivity(float (*fn_ptr)(DataT& data, base_learner& base, example&))
   {
-    this->_learner->sensitivity_fd.data = this->_learner->learn_fd.data;
-    this->_learner->sensitivity_fd.sensitivity_f = (details::sensitivity_data::fn)fn_ptr;
+    this->learner_ptr->_sensitivity_fd.data = this->learner_ptr->_learn_fd.data;
+    this->learner_ptr->_sensitivity_fd.sensitivity_f = (details::sensitivity_data::fn)fn_ptr;
 
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_learn_returns_prediction(bool learn_returns_prediction)
   {
-    _learner->learn_returns_prediction = learn_returns_prediction;
+    learner_ptr->learn_returns_prediction = learn_returns_prediction;
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool))
   {
-    _learner->save_load_fd.save_load_f = (details::save_load_data::fn)fn_ptr;
-    _learner->save_load_fd.data = _learner->learn_fd.data;
-    _learner->save_load_fd.base = _learner->learn_fd.base;
+    learner_ptr->_save_load_fd.save_load_f = (details::save_load_data::fn)fn_ptr;
+    learner_ptr->_save_load_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_save_load_fd.base = learner_ptr->_learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_finish(void (*fn_ptr)(DataT&))
   {
-    _learner->finisher_fd =
-        details::tuple_dbf(_learner->learn_fd.data, _learner->learn_fd.base, (finish_fptr_type)(fn_ptr));
+    learner_ptr->_finisher_fd =
+        details::tuple_dbf(learner_ptr->_learn_fd.data, learner_ptr->_learn_fd.base, (finish_fptr_type)(fn_ptr));
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_end_pass(void (*fn_ptr)(DataT&))
   {
-    _learner->end_pass_fd =
-        details::tuple_dbf(_learner->learn_fd.data, _learner->learn_fd.base, (details::func_data::fn)fn_ptr);
+    learner_ptr->_end_pass_fd =
+        details::tuple_dbf(learner_ptr->_learn_fd.data, learner_ptr->_learn_fd.base, (details::func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_end_examples(void (*fn_ptr)(DataT&))
   {
-    _learner->end_examples_fd =
-        details::tuple_dbf(_learner->learn_fd.data, _learner->learn_fd.base, (details::func_data::fn)fn_ptr);
+    learner_ptr->_end_examples_fd =
+        details::tuple_dbf(learner_ptr->_learn_fd.data, learner_ptr->_learn_fd.base, (details::func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_init_driver(void (*fn_ptr)(DataT&))
   {
-    _learner->init_fd =
-        details::tuple_dbf(_learner->learn_fd.data, _learner->learn_fd.base, (details::func_data::fn)fn_ptr);
+    learner_ptr->_init_fd =
+        details::tuple_dbf(learner_ptr->_learn_fd.data, learner_ptr->_learn_fd.base, (details::func_data::fn)fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
   {
-    _learner->finish_example_fd.data = _learner->learn_fd.data;
-    _learner->finish_example_fd.finish_example_f = (end_fptr_type)(fn_ptr);
+    learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_finish_example_fd.finish_example_f = (end_fptr_type)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, const ExampleT&))
   {
-    _learner->finish_example_fd.data = _learner->learn_fd.data;
-    _learner->finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
+    learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_persist_metrics(void (*fn_ptr)(DataT&, metric_sink&))
   {
-    _learner->persist_metrics_fd.save_metric_f = (details::save_metric_data::fn)fn_ptr;
-    _learner->persist_metrics_fd.data = _learner->learn_fd.data;
-    _learner->persist_metrics_fd.base = _learner->learn_fd.base;
+    learner_ptr->_persist_metrics_fd.save_metric_f = (details::save_metric_data::fn)fn_ptr;
+    learner_ptr->_persist_metrics_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_persist_metrics_fd.base = learner_ptr->_learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 
@@ -744,7 +745,7 @@ public:
   // label will be operated on throughout the learn function.
   FluentBuilderT& set_input_label_type(label_type_t label_type)
   {
-    this->_learner->_input_label_type = label_type;
+    this->learner_ptr->_input_label_type = label_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 
@@ -753,7 +754,7 @@ public:
   // the learn function.
   FluentBuilderT& set_output_label_type(label_type_t label_type)
   {
-    this->_learner->_output_label_type = label_type;
+    this->learner_ptr->_output_label_type = label_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 
@@ -762,7 +763,7 @@ public:
   // passed directly into the predict function has no defined type.
   FluentBuilderT& set_input_prediction_type(prediction_type_t pred_type)
   {
-    this->_learner->_input_pred_type = pred_type;
+    this->learner_ptr->_input_pred_type = pred_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 
@@ -770,7 +771,7 @@ public:
   // This prediction will be passed when the reduction above it calls predict on its base.
   FluentBuilderT& set_output_prediction_type(prediction_type_t pred_type)
   {
-    this->_learner->_output_pred_type = pred_type;
+    this->learner_ptr->_output_pred_type = pred_type;
     return *static_cast<FluentBuilderT*>(this);
   }
 };
@@ -791,21 +792,21 @@ public:
       : common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT, BaseLearnerT>(
             new learner<DataT, ExampleT>(*reinterpret_cast<learner<DataT, ExampleT>*>(base)), std::move(data), name)
   {
-    this->_learner->learn_fd.base = make_base(*base);
-    this->_learner->learn_fd.data = this->_learner->learner_data.get();
-    this->_learner->sensitivity_fd.sensitivity_f =
+    this->learner_ptr->_learn_fd.base = make_base(*base);
+    this->learner_ptr->_learn_fd.data = this->learner_ptr->_learner_data.get();
+    this->learner_ptr->_sensitivity_fd.sensitivity_f =
         static_cast<details::sensitivity_data::fn>(details::recur_sensitivity);
-    this->_learner->finisher_fd.data = this->_learner->learner_data.get();
-    this->_learner->finisher_fd.base = make_base(*base);
-    this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
-    this->_learner->learn_fd.multipredict_f = nullptr;
+    this->learner_ptr->_finisher_fd.data = this->learner_ptr->_learner_data.get();
+    this->learner_ptr->_finisher_fd.base = make_base(*base);
+    this->learner_ptr->_finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
+    this->learner_ptr->_learn_fd.multipredict_f = nullptr;
     // Don't propagate merge functions
-    this->_learner->_merge_fn = nullptr;
-    this->_learner->_merge_with_all_fn = nullptr;
-    this->_learner->_add_fn = nullptr;
-    this->_learner->_add_with_all_fn = nullptr;
-    this->_learner->_subtract_fn = nullptr;
-    this->_learner->_subtract_with_all_fn = nullptr;
+    this->learner_ptr->_merge_fn = nullptr;
+    this->learner_ptr->_merge_with_all_fn = nullptr;
+    this->learner_ptr->_add_fn = nullptr;
+    this->learner_ptr->_add_with_all_fn = nullptr;
+    this->learner_ptr->_subtract_fn = nullptr;
+    this->learner_ptr->_subtract_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
@@ -822,29 +823,29 @@ public:
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
   {
-    this->_learner->weights = params_per_weight;
-    this->_learner->increment = this->_learner->learn_fd.base->increment * this->_learner->weights;
+    this->learner_ptr->weights = params_per_weight;
+    this->learner_ptr->increment = this->learner_ptr->_learn_fd.base->increment * this->learner_ptr->weights;
     return *this;
   }
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_merge(void (*merge_fn)(
       const std::vector<float>& per_model_weighting, const std::vector<const DataT*>& all_data, DataT& output_data))
   {
-    this->_learner->_merge_fn = reinterpret_cast<details::merge_fn>(merge_fn);
+    this->learner_ptr->_merge_fn = reinterpret_cast<details::merge_fn>(merge_fn);
     return *this;
   }
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_add(
       void (*add_fn)(const DataT& data1, const DataT& data2, DataT& data_out))
   {
-    this->_learner->_add_fn = reinterpret_cast<details::add_subtract_fn>(add_fn);
+    this->learner_ptr->_add_fn = reinterpret_cast<details::add_subtract_fn>(add_fn);
     return *this;
   }
 
   reduction_learner_builder<DataT, ExampleT, BaseLearnerT>& set_subtract(
       void (*subtract_fn)(const DataT& data1, const DataT& data2, DataT& data_out))
   {
-    this->_learner->_subtract_fn = reinterpret_cast<details::add_subtract_fn>(subtract_fn);
+    this->learner_ptr->_subtract_fn = reinterpret_cast<details::add_subtract_fn>(subtract_fn);
     return *this;
   }
 
@@ -852,31 +853,31 @@ public:
   {
     if (logger != nullptr)
     {
-      prediction_type_t in_pred_type = this->_learner->get_input_prediction_type();
-      prediction_type_t base_out_pred_type = this->_learner->learn_fd.base->get_output_prediction_type();
-      label_type_t out_label_type = this->_learner->get_output_label_type();
-      label_type_t base_in_label_type = this->_learner->learn_fd.base->get_input_label_type();
+      prediction_type_t in_pred_type = this->learner_ptr->get_input_prediction_type();
+      prediction_type_t base_out_pred_type = this->learner_ptr->_learn_fd.base->get_output_prediction_type();
+      label_type_t out_label_type = this->learner_ptr->get_output_label_type();
+      label_type_t base_in_label_type = this->learner_ptr->_learn_fd.base->get_input_label_type();
       if (in_pred_type != base_out_pred_type)
       {
         logger->err_warn(
             "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
             "reduction: {}.",
-            to_string(in_pred_type), this->_learner->name, to_string(base_out_pred_type),
-            this->_learner->learn_fd.base->get_name());
+            to_string(in_pred_type), this->learner_ptr->_name, to_string(base_out_pred_type),
+            this->learner_ptr->_learn_fd.base->get_name());
       }
       if (out_label_type != base_in_label_type)
       {
         logger->err_warn(
             "Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
-            to_string(out_label_type), this->_learner->name, to_string(base_in_label_type),
-            this->_learner->learn_fd.base->get_name());
+            to_string(out_label_type), this->learner_ptr->_name, to_string(base_in_label_type),
+            this->learner_ptr->_learn_fd.base->get_name());
       }
     }
 
-    if (this->_learner->_merge_fn != nullptr && this->_learner->_merge_with_all_fn != nullptr)
+    if (this->learner_ptr->_merge_fn != nullptr && this->learner_ptr->_merge_with_all_fn != nullptr)
     { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
 
-    return this->_learner;
+    return this->learner_ptr;
   }
 };
 
@@ -896,15 +897,15 @@ public:
       : common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT, BaseLearnerT>(
             new learner<char, ExampleT>(*reinterpret_cast<learner<char, ExampleT>*>(base)), nullptr, name)
   {
-    this->_learner->learn_fd.base = make_base(*base);
-    this->_learner->sensitivity_fd.sensitivity_f =
+    this->learner_ptr->_learn_fd.base = make_base(*base);
+    this->learner_ptr->_sensitivity_fd.sensitivity_f =
         static_cast<details::sensitivity_data::fn>(details::recur_sensitivity);
-    this->_learner->finisher_fd.data = this->_learner->learner_data.get();
-    this->_learner->finisher_fd.base = make_base(*base);
-    this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
+    this->learner_ptr->_finisher_fd.data = this->learner_ptr->_learner_data.get();
+    this->learner_ptr->_finisher_fd.base = make_base(*base);
+    this->learner_ptr->_finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
     // Don't propagate merge functions
-    this->_learner->_merge_fn = nullptr;
-    this->_learner->_merge_with_all_fn = nullptr;
+    this->learner_ptr->_merge_fn = nullptr;
+    this->learner_ptr->_merge_with_all_fn = nullptr;
 
     set_params_per_weight(1);
     // By default, will produce what the base expects
@@ -919,12 +920,12 @@ public:
 
   reduction_no_data_learner_builder<ExampleT, BaseLearnerT>& set_params_per_weight(size_t params_per_weight)
   {
-    this->_learner->weights = params_per_weight;
-    this->_learner->increment = this->_learner->learn_fd.base->increment * this->_learner->weights;
+    this->learner_ptr->weights = params_per_weight;
+    this->learner_ptr->increment = this->learner_ptr->_learn_fd.base->increment * this->learner_ptr->weights;
     return *this;
   }
 
-  learner<char, ExampleT>* build() { return this->_learner; }
+  learner<char, ExampleT>* build() { return this->learner_ptr; }
 };
 
 template <class DataT, class ExampleT>
@@ -938,21 +939,21 @@ public:
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, base_learner>(
             std::move(data), name)
   {
-    this->_learner->persist_metrics_fd.save_metric_f =
+    this->learner_ptr->_persist_metrics_fd.save_metric_f =
         static_cast<details::save_metric_data::fn>(details::noop_persist_metrics);
-    this->_learner->end_pass_fd.func = static_cast<details::func_data::fn>(details::noop);
-    this->_learner->end_examples_fd.func = static_cast<details::func_data::fn>(details::noop);
-    this->_learner->init_fd.func = static_cast<details::func_data::fn>(details::noop);
-    this->_learner->save_load_fd.save_load_f = static_cast<details::save_load_data::fn>(details::noop_save_load);
-    this->_learner->finisher_fd.data = this->_learner->learner_data.get();
-    this->_learner->finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
-    this->_learner->sensitivity_fd.sensitivity_f =
+    this->learner_ptr->_end_pass_fd.func = static_cast<details::func_data::fn>(details::noop);
+    this->learner_ptr->_end_examples_fd.func = static_cast<details::func_data::fn>(details::noop);
+    this->learner_ptr->_init_fd.func = static_cast<details::func_data::fn>(details::noop);
+    this->learner_ptr->_save_load_fd.save_load_f = static_cast<details::save_load_data::fn>(details::noop_save_load);
+    this->learner_ptr->_finisher_fd.data = this->learner_ptr->_learner_data.get();
+    this->learner_ptr->_finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
+    this->learner_ptr->_sensitivity_fd.sensitivity_f =
         reinterpret_cast<details::sensitivity_data::fn>(details::noop_sensitivity_base);
-    this->_learner->finish_example_fd.data = this->_learner->learner_data.get();
-    this->_learner->finish_example_fd.finish_example_f =
+    this->learner_ptr->_finish_example_fd.data = this->learner_ptr->_learner_data.get();
+    this->learner_ptr->_finish_example_fd.finish_example_f =
         reinterpret_cast<details::finish_example_data::fn>(VW::details::return_simple_example);
 
-    this->_learner->learn_fd.data = this->_learner->learner_data.get();
+    this->learner_ptr->_learn_fd.data = this->learner_ptr->_learner_data.get();
 
     super::set_input_label_type(in_label_type);
     super::set_output_label_type(label_type_t::nolabel);
@@ -964,8 +965,8 @@ public:
 
   base_learner_builder<DataT, ExampleT>& set_params_per_weight(size_t params_per_weight)
   {
-    this->_learner->weights = 1;
-    this->_learner->increment = params_per_weight;
+    this->learner_ptr->weights = 1;
+    this->learner_ptr->increment = params_per_weight;
     return *this;
   }
 
@@ -973,29 +974,30 @@ public:
       const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
       const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data))
   {
-    this->_learner->_merge_with_all_fn = reinterpret_cast<details::merge_with_all_fn>(merge_with_all_fn);
+    this->learner_ptr->_merge_with_all_fn = reinterpret_cast<details::merge_with_all_fn>(merge_with_all_fn);
     return *this;
   }
 
   base_learner_builder<DataT, ExampleT>& set_add_with_all(void (*add_with_all_fn)(const VW::workspace& ws1,
       const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out))
   {
-    this->_learner->_add_with_all_fn = reinterpret_cast<details::add_subtract_with_all_fn>(add_with_all_fn);
+    this->learner_ptr->_add_with_all_fn = reinterpret_cast<details::add_subtract_with_all_fn>(add_with_all_fn);
     return *this;
   }
 
   base_learner_builder<DataT, ExampleT>& set_subtract_with_all(void (*subtract_with_all_fn)(const VW::workspace& ws1,
       const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out))
   {
-    this->_learner->_subtract_with_all_fn = reinterpret_cast<details::add_subtract_with_all_fn>(subtract_with_all_fn);
+    this->learner_ptr->_subtract_with_all_fn =
+        reinterpret_cast<details::add_subtract_with_all_fn>(subtract_with_all_fn);
     return *this;
   }
 
   learner<DataT, ExampleT>* build()
   {
-    if (this->_learner->_merge_fn != nullptr && this->_learner->_merge_with_all_fn != nullptr)
+    if (this->learner_ptr->_merge_fn != nullptr && this->learner_ptr->_merge_with_all_fn != nullptr)
     { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
-    return this->_learner;
+    return this->learner_ptr;
   }
 };
 VW_WARNING_STATE_POP

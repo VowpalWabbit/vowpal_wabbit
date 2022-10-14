@@ -606,7 +606,7 @@ public:
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
       auto& ld = ctx.ex->l.slates;
-      ld.type = VW::slates::example_type::shared;
+      ld.type = VW::slates::example_type::SHARED;
     }
     else
       THROW("label type is not CB, CCB or slates")
@@ -624,7 +624,7 @@ public:
     { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
-      ctx.ex->l.slates.type = VW::slates::example_type::action;
+      ctx.ex->l.slates.type = VW::slates::example_type::ACTION;
     }
 
     ctx.examples->push_back(ctx.ex);
@@ -673,7 +673,7 @@ public:
     { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT; }
     else if (ctx._label_parser.label_type == VW::label_type_t::slates)
     {
-      ctx.ex->l.slates.type = VW::slates::example_type::slot;
+      ctx.ex->l.slates.type = VW::slates::example_type::SLOT;
     }
 
     ctx.examples->push_back(ctx.ex);
@@ -1324,7 +1324,7 @@ public:
       if ((ctx._label_parser.label_type == VW::label_type_t::ccb &&
               ex->l.conditional_contextual_bandit.type != VW::ccb_example_type::SLOT) ||
           (ctx._label_parser.label_type == VW::label_type_t::slates &&
-              ex->l.slates.type != VW::slates::example_type::slot))
+              ex->l.slates.type != VW::slates::example_type::SLOT))
       { slot_object_index++; }
     }
     old_root = ctx.root_state;
@@ -1365,7 +1365,7 @@ public:
         }
       }
       else if (ctx._label_parser.label_type == VW::label_type_t::slates &&
-          ex->l.slates.type == VW::slates::example_type::slot)
+          ex->l.slates.type == VW::slates::example_type::SLOT)
       {
         if (ex->l.slates.labeled)
         {
@@ -1867,7 +1867,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     {
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
-      if (all->example_parser->metrics) { all->example_parser->metrics->LineParseError++; }
+      if (all->example_parser->metrics) { all->example_parser->metrics->line_parse_error++; }
       return false;
     }
 
@@ -1875,21 +1875,21 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     {
       if (!interaction.eventId.empty())
       {
-        if (all->example_parser->metrics->FirstEventId.empty())
-        { all->example_parser->metrics->FirstEventId = std::move(interaction.eventId); }
+        if (all->example_parser->metrics->first_event_id.empty())
+        { all->example_parser->metrics->first_event_id = std::move(interaction.eventId); }
         else
         {
-          all->example_parser->metrics->LastEventId = std::move(interaction.eventId);
+          all->example_parser->metrics->last_event_id = std::move(interaction.eventId);
         }
       }
 
       if (!interaction.timestamp.empty())
       {
-        if (all->example_parser->metrics->FirstEventTime.empty())
-        { all->example_parser->metrics->FirstEventTime = std::move(interaction.timestamp); }
+        if (all->example_parser->metrics->first_event_time.empty())
+        { all->example_parser->metrics->first_event_time = std::move(interaction.timestamp); }
         else
         {
-          all->example_parser->metrics->LastEventTime = std::move(interaction.timestamp);
+          all->example_parser->metrics->last_event_time = std::move(interaction.timestamp);
         }
       }
 
@@ -1897,25 +1897,25 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
       // but according to Casey, the only operation used is Sum
       // The _original_label_cost element is found either at the top level OR under
       // the _outcomes node (for CCB)
-      all->example_parser->metrics->DsjsonSumCostOriginal += interaction.originalLabelCost;
-      all->example_parser->metrics->DsjsonSumCostOriginalFirstSlot += interaction.originalLabelCostFirstSlot;
+      all->example_parser->metrics->dsjson_sum_cost_original += interaction.originalLabelCost;
+      all->example_parser->metrics->dsjson_sum_cost_original_first_slot += interaction.originalLabelCostFirstSlot;
       if (!interaction.actions.empty())
       {
         // APS requires this metric for CB (baseline action is 1)
         if (interaction.actions[0] == 1)
-        { all->example_parser->metrics->DsjsonSumCostOriginalBaseline += interaction.originalLabelCost; }
+        { all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.originalLabelCost; }
 
         if (!interaction.baseline_actions.empty())
         {
           if (interaction.actions[0] == interaction.baseline_actions[0])
           {
-            all->example_parser->metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot++;
-            all->example_parser->metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot +=
+            all->example_parser->metrics->dsjson_number_of_label_equal_baseline_first_slot++;
+            all->example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
                 interaction.originalLabelCostFirstSlot;
           }
           else
           {
-            all->example_parser->metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot++;
+            all->example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++;
           }
         }
       }
@@ -1926,7 +1926,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     // for counterfactual. (@marco)
     if (interaction.skipLearn)
     {
-      if (all->example_parser->metrics) { all->example_parser->metrics->NumberOfSkippedEvents++; }
+      if (all->example_parser->metrics) { all->example_parser->metrics->number_of_skipped_events++; }
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
@@ -1935,7 +1935,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0 && all->l->is_multiline())
     {
-      if (all->example_parser->metrics) { all->example_parser->metrics->NumberOfEventsZeroActions++; }
+      if (all->example_parser->metrics) { all->example_parser->metrics->number_of_events_zero_actions++; }
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;

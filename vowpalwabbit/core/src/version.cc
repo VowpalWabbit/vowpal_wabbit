@@ -24,4 +24,5 @@ std::string version_struct::to_string() const { return fmt::format("{}.{}.{}", m
 version_struct version_struct::from_string(const char* str) { return version_struct{str}; }
 
 const std::string git_commit(COMMIT_VERSION);
+const std::string GIT_COMMIT(COMMIT_VERSION);
 }  // namespace VW

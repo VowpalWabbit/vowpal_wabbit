@@ -34,6 +34,7 @@
 #include "vw/core/reductions/metrics.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/text_utils.h"
+#include "vw/core/version.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_allreduce.h"
 #include "vw/core/vw_validate.h"
@@ -337,7 +338,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
-    std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
+    std::cout << VW::VERSION.to_string() << " (git commit: " << VW::GIT_COMMIT << ")\n";
     exit(0);
   }
 
@@ -687,7 +688,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.example_parser->hasher = getHasher(hash_function);
+  all.example_parser->hasher = get_hasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -1528,7 +1529,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   }
 
   all->example_parser = new parser{final_example_queue_limit, strict_parse};
-  all->example_parser->_shared_data = all->sd;
+  all->example_parser->shared_data_obj = all->sd;
 
   option_group_definition weight_args("Weight");
   weight_args
@@ -1869,7 +1870,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
   catch (VW::save_load_model_exception& e)
   {
     auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all->initial_regressors, ", "));
-    throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
+    throw save_load_model_exception(e.filename(), e.line_number(), msg);
   }
 
   if (!all->quiet)
@@ -2069,7 +2070,7 @@ VW::workspace* seed_vw_model(
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
-  new_model->example_parser->_shared_data = new_model->sd;
+  new_model->example_parser->shared_data_obj = new_model->sd;
 
   return new_model;
 }

@@ -1026,11 +1026,11 @@ size_t ex_get_slates_type(example_ptr ec)
 {
   switch (ec->l.slates.type)
   {
-    case VW::slates::example_type::shared:
+    case VW::slates::example_type::SHARED:
       return tSHARED;
-    case VW::slates::example_type::action:
+    case VW::slates::example_type::ACTION:
       return tACTION;
-    case VW::slates::example_type::slot:
+    case VW::slates::example_type::SLOT:
       return tSLOT;
     default:
       return tUNSET;
