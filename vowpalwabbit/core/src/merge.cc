@@ -8,6 +8,7 @@
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/global_data.h"
+#include "vw/core/memory.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -114,8 +115,52 @@ std::vector<float> calc_per_model_weighting(const std::vector<float>& example_co
 
 }  // namespace
 
+namespace
+{
+// These are a bit risky, but it feels like a much nicer user interface for a
+// user to be able to pass a ref to a writer to a function rather than require a
+// unique pointer especially since we do not take ownership.
+class reader_ref_adapter : public VW::io::reader
+{
+public:
+  reader_ref_adapter(VW::io::reader& ref) : VW::io::reader(false), _inner_ref(ref) {}
+  ssize_t read(char* buffer, size_t num_bytes) override { return _inner_ref.read(buffer, num_bytes); }
+
+private:
+  VW::io::reader& _inner_ref;
+};
+
+class writer_ref_adapter : public VW::io::writer
+{
+public:
+  writer_ref_adapter(VW::io::writer& ref) : _inner_ref(ref) {}
+  ssize_t write(const char* buffer, size_t num_bytes) override { return _inner_ref.write(buffer, num_bytes); }
+
+  /// Writers may implement flush - by default is a noop
+  void flush() override { _inner_ref.flush(); }
+
+private:
+  VW::io::writer& _inner_ref;
+};
+
+}  // namespace
+
 namespace VW
 {
+void model_delta::serialize(VW::io::writer& output) const
+{
+  io_buf buffer;
+  buffer.add_file(VW::make_unique<writer_ref_adapter>(output));
+  VW::save_predictor(*_ws, buffer);
+}
+
+std::unique_ptr<model_delta> model_delta::deserialize(VW::io::reader& input)
+{
+  return VW::make_unique<model_delta>(VW::initialize_experimental(
+      VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--preserve_performance_counters"}),
+      VW::make_unique<reader_ref_adapter>(input)));
+}
+
 VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger)
 {
   // Get workspace pointers from deltas
