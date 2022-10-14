@@ -38,8 +38,9 @@ std::ostream& operator<<(std::ostream& o, VW::simple_label_reduction_features co
 }
 }  // namespace VW
 
-struct reduction_test_harness
+class reduction_test_harness
 {
+public:
   reduction_test_harness() : curr_idx(0) {}
 
   void set_predict_response(const vector<float>& preds) { predictions = preds; }

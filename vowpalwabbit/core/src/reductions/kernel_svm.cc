@@ -44,13 +44,14 @@ using std::endl;
 
 namespace
 {
-struct svm_params;
+class svm_params;
 
 static size_t num_kernel_evals = 0;
 static size_t num_cache_evals = 0;
 
-struct svm_example
+class svm_example
 {
+public:
   VW::v_array<float> krow;
   VW::flat_example ex;
 
@@ -60,8 +61,9 @@ struct svm_example
   int clear_kernels();
 };
 
-struct svm_model
+class svm_model
 {
+public:
   size_t num_support;
   VW::v_array<svm_example*> support_vec;
   VW::v_array<float> alpha;
@@ -90,8 +92,9 @@ void free_svm_model(svm_model* model)
   free(model);
 }
 
-struct svm_params
+class svm_params
 {
+public:
   size_t current_pass = 0;
   bool active = false;
   bool active_pool_greedy = false;

@@ -110,7 +110,7 @@ void VW::all_reduce_sockets::all_reduce_init(VW::io::logger& logger)
   if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
 
-  struct hostent* master = gethostbyname(_span_server.c_str());
+  class hostent* master = gethostbyname(_span_server.c_str());
 
   if (master == nullptr) THROWERRNO("gethostbyname(" << _span_server << ")");
 

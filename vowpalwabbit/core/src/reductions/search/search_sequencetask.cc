@@ -133,9 +133,11 @@ void convert_bio_to_bilou(VW::multi_ex& ec)
   }
 }
 
-struct task_data
+class task_data
 {
+public:
   encoding_type encoding;
+
   VW::v_array<action> allowed_actions;
   VW::v_array<action> only_two_allowed;  // used for BILOU encoding
   size_t multipass;
@@ -320,8 +322,9 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
 namespace ArgmaxTask
 {
-struct task_data
+class task_data
 {
+public:
   float false_negative_cost;
   float negative_weight;
   bool predict_max;
@@ -382,8 +385,9 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
 namespace SequenceTask_DemoLDF  // this is just to debug/show off how to do LDF
 {
-struct task_data
+class task_data
 {
+public:
   std::vector<VW::example> ldf_examples;
   size_t num_actions;
 };

@@ -42,20 +42,21 @@ using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
-struct shared_data;
+class shared_data;
 
 namespace VW
 {
-struct workspace;
+class workspace;
 
-struct all_reduce_base;
+class all_reduce_base;
 enum class all_reduce_type;
 }  // namespace VW
 
 using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
 
-struct dictionary_info
+class dictionary_info
 {
+public:
   std::string name;
   uint64_t file_hash;
   std::shared_ptr<feature_dict> dict;
@@ -63,23 +64,24 @@ struct dictionary_info
 
 namespace VW
 {
-struct default_reduction_stack_setup;
+class default_reduction_stack_setup;
 namespace parsers
 {
 namespace flatbuffer
 {
-struct parser;
+class parser;
 }
 
 #ifdef VW_BUILD_CSV
-struct csv_parser;
-struct csv_parser_options;
+class csv_parser;
+class csv_parser_options;
 #endif
 }  // namespace parsers
 }  // namespace VW
 
-struct trace_message_wrapper
+class trace_message_wrapper
 {
+public:
   void* _inner_context;
   trace_message_t _trace_message;
 
@@ -94,15 +96,17 @@ namespace VW
 {
 namespace details
 {
-struct invert_hash_info
+class invert_hash_info
 {
+public:
   std::vector<VW::audit_strings> weight_components;
   uint64_t offset;
   uint64_t stride_shift;
 };
 }  // namespace details
-struct workspace
+class workspace
 {
+public:
   shared_data* sd;
 
   parser* example_parser;

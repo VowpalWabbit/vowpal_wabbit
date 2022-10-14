@@ -20,8 +20,9 @@ using namespace exploration;
 // #define VW_SLIM_TEST_DEBUG "vwslim-debug.log"
 
 // some gymnastics to re-use the float reading code
-struct membuf : std::streambuf
+class membuf : public std::streambuf
 {
+public:
   membuf(char* begin, char* end) { this->setg(begin, begin, end); }
 };
 
@@ -47,8 +48,9 @@ std::vector<float> read_floats(const char* filename)
   return read_floats(data);
 }
 
-struct test_data
+class test_data
 {
+public:
   unsigned char* model;
   unsigned int model_len;
   unsigned char* pred;
@@ -225,6 +227,7 @@ enum class predict_param_weight_type
 
 struct predict_param
 {
+public:
   const char* model_filename;
   const char* data_filename;
   const char* prediction_reference_filename;
@@ -293,6 +296,7 @@ INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, predict_test, ::testing::ValuesIn(gen
 
 struct invalid_model_param
 {
+public:
   const char* name;
   unsigned char* model;
   unsigned int model_len;
@@ -601,6 +605,7 @@ std::string generate_string_seed(size_t i)
 
 struct cb_predict_param
 {
+public:
   const char* description;
   const char* model_filename;
 

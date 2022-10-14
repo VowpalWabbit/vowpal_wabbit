@@ -19,8 +19,9 @@ using namespace VW::config;
 
 namespace
 {
-struct csoaa
+class csoaa
 {
+public:
   uint32_t num_classes = 0;
   bool search = false;
   VW::polyprediction* pred = nullptr;

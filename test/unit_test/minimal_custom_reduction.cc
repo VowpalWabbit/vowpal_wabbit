@@ -73,8 +73,9 @@ void reset_test_state()
 //
 // custom_builder can be augmented to do heavier edits (reorder/remove)
 // on reduction_stack
-struct custom_simple_builder : VW::default_reduction_stack_setup
+class custom_simple_builder : public VW::default_reduction_stack_setup
 {
+public:
   custom_simple_builder()
   {
     BOOST_CHECK_GT(reduction_stack.size(), 77);

@@ -36,8 +36,9 @@ void print_help(const options_cli& options)
   std::cout << formatter.format_help(option_groups);
 }
 
-struct logger_context
+class logger_context
 {
+public:
   VW::io::logger& logger;
   std::string model_file_name;
 };
@@ -50,27 +51,28 @@ void logger_output_func(void* void_context, VW::io::log_level level, const std::
       newline_stripped_message.end());
   switch (level)
   {
-    case VW::io::log_level::info:
+    case VW::io::log_level::INFO_LEVEL:
       context->logger.info("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::warn:
+    case VW::io::log_level::WARN_LEVEL:
       context->logger.warn("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::error:
+    case VW::io::log_level::ERROR_LEVEL:
       context->logger.error("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::critical:
+    case VW::io::log_level::CRITICAL_LEVEL:
       context->logger.critical("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::off:
+    case VW::io::log_level::OFF_LEVEL:
       break;
     default:
       THROW("Unsupported log level");
   }
 }
 
-struct command_line_options
+class command_line_options
 {
+public:
   VW::io::log_level log_level{};
   VW::io::output_location log_output_stream{};
   std::string output_file;

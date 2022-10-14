@@ -28,8 +28,9 @@ using namespace VW::config;
 
 namespace
 {
-struct explore_eval
+class explore_eval
 {
+public:
   CB::cb_class known_cost;
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> random_state;

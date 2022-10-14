@@ -369,8 +369,9 @@ std::vector<std::vector<extent_term>> compile_extent_interactions(
   return final_interactions;
 }
 
-struct interactions_generator
+class interactions_generator
 {
+public:
   std::vector<std::vector<VW::namespace_index>> generated_interactions;
   std::vector<std::vector<extent_term>> generated_extent_interactions;
   bool store_in_reduction_features = false;

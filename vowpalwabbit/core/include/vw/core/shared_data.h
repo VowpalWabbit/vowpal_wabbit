@@ -10,8 +10,9 @@
 #include <memory>
 #include <string>
 
-struct shared_data
+class shared_data
 {
+public:
   shared_data();
   ~shared_data();
   shared_data(const shared_data& other);

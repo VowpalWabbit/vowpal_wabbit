@@ -13,8 +13,9 @@
 
 using namespace VW::config;
 
-struct autolink
+class autolink
 {
+public:
   autolink(uint32_t poly_degree, uint32_t stride_shift);
   void predict(VW::LEARNER::single_learner& base, VW::example& ec) const;
   void learn(VW::LEARNER::single_learner& base, VW::example& ec) const;

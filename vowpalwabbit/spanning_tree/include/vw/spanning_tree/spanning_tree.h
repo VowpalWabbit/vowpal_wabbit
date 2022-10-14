@@ -26,7 +26,7 @@ namespace std
 {
 // forward declare promise as C++/CLI doesn't allow usage in header files
 template <typename T>
-struct future;
+class future;
 }  // namespace std
 #else
 #  include <arpa/inet.h>
@@ -48,8 +48,9 @@ using socket_t = int;
 
 namespace VW  // NOLINT
 {
-struct spanning_tree
+class spanning_tree
 {
+public:
   spanning_tree(short unsigned int port = 26543, bool quiet = false);
   ~spanning_tree();
 

@@ -26,20 +26,23 @@
 namespace VW
 {
 template <typename T>
-struct default_cleanup
+class default_cleanup
 {
+public:
   void operator()(T*) {}
 };
 
 template <typename T>
-struct default_initializer
+class default_initializer
 {
+public:
   T* operator()(T* obj) { return obj; }
 };
 
 template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
-struct no_lock_object_pool
+class no_lock_object_pool
 {
+public:
   no_lock_object_pool() = default;
   no_lock_object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
       : m_initializer(initializer), m_initial_chunk_size(initial_chunk_size), m_chunk_size(chunk_size)
@@ -123,8 +126,9 @@ private:
 };
 
 template <typename T>
-struct moved_object_pool
+class moved_object_pool
 {
+public:
   moved_object_pool() = default;
 
   void reclaim_object(T&& obj) { m_pool.push(std::move(obj)); }
@@ -150,8 +154,9 @@ private:
 };
 
 template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
-struct object_pool
+class object_pool
 {
+public:
   object_pool() = default;
   object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
       : inner_pool(initial_chunk_size, initializer, chunk_size)

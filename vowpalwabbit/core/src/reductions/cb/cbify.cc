@@ -104,8 +104,9 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
 
 namespace
 {
-struct cbify_reg
+class cbify_reg
 {
+public:
   float min_value = 0.f;
   float max_value = 0.f;
   float bandwidth = 0.f;
@@ -117,8 +118,9 @@ struct cbify_reg
   float max_cost = std::numeric_limits<float>::lowest();
 };
 
-struct cbify
+class cbify
 {
+public:
   CB::label cb_label;
   uint64_t app_seed = 0;
   VW::action_scores a_s;

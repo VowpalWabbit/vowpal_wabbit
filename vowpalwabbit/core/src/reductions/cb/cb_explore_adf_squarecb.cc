@@ -38,8 +38,9 @@ using namespace VW::LEARNER;
 
 namespace
 {
-struct cb_explore_adf_squarecb
+class cb_explore_adf_squarecb
 {
+public:
   cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
       float max_cb_cost, VW::version_struct model_file_version);
   ~cb_explore_adf_squarecb() = default;

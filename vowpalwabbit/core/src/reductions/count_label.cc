@@ -17,8 +17,9 @@
 
 namespace
 {
-struct reduction_data
+class reduction_data
 {
+public:
   VW::workspace* all = nullptr;
   VW::LEARNER::base_learner* base = nullptr;
 

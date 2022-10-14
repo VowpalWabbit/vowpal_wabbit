@@ -33,8 +33,9 @@
 
 namespace VW
 {
-struct reduction_features
+class reduction_features
 {
+public:
   template <typename T>
   T& get();
   template <typename T>

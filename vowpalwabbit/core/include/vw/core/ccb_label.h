@@ -23,8 +23,9 @@
 
 namespace VW
 {
-struct ccb_outcome
+class ccb_outcome
 {
+public:
   // The cost of this class
   float cost = 0.f;
 
@@ -35,8 +36,9 @@ struct ccb_outcome
 
 // TODO: Remove the elements that are in reduction_features
 // ccb_label.cc will need a major revamp before that can happen
-struct ccb_label
+class ccb_label
 {
+public:
   ccb_example_type type = ccb_example_type::UNSET;
   // Outcome may be unset.
   ccb_outcome* outcome = nullptr;
@@ -132,8 +134,9 @@ size_t write_model_field(io_buf&, const ccb_label&, const std::string&, bool);
 namespace fmt
 {
 template <>
-struct formatter<VW::ccb_example_type> : formatter<std::string>
+class formatter<VW::ccb_example_type> : public formatter<std::string>
 {
+public:
   auto format(VW::ccb_example_type c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);

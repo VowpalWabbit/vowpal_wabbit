@@ -17,8 +17,9 @@
 
 namespace vw_slim
 {
-struct model_parser
+class model_parser
 {
+public:
   model_parser(const char* model, size_t length);
 
   int read(const char* field_name, size_t field_length, const char** ret);

@@ -42,8 +42,9 @@
 ** This is done to avoid reallocating arrays as much as possible.
 */
 
-struct io_buf
+class io_buf
 {
+public:
   io_buf()
   {
     _buffer.realloc(INITIAL_BUFF_SIZE);
@@ -248,8 +249,9 @@ private:
   // io_buf requires a grow only variant of v_array where it has access to the internals.
   // It sets the begin, end and endarray members often and does not need the complexity
   // of a generic container type, hence why a thin object is defined here.
-  struct internal_buffer
+  class internal_buffer
   {
+  public:
     char* _begin = nullptr;
     char* _end = nullptr;
     char* _end_array = nullptr;

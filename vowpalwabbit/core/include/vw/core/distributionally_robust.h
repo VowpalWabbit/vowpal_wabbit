@@ -11,13 +11,13 @@ constexpr float BASELINE_DEFAULT_TAU = 0.999f;
 constexpr float CRESSEREAD_DEFAULT_TAU = 1.0f;
 constexpr float DEFAULT_ALPHA = 0.05f;
 
-struct io_buf;
+class io_buf;
 namespace VW
 {
 namespace distributionally_robust
 {
-struct Duals;
-struct ChiSquared;
+class Duals;
+class ChiSquared;
 }  // namespace distributionally_robust
 
 namespace model_utils
@@ -30,8 +30,9 @@ size_t write_model_field(io_buf&, const VW::distributionally_robust::ChiSquared&
 
 namespace distributionally_robust
 {
-struct Duals
+class Duals
 {
+public:
   bool unbounded;
   double kappa;
   double gamma;
@@ -65,8 +66,9 @@ struct Duals
 using ScoredDual = std::pair<double, Duals>;
 
 // https://en.wikipedia.org/wiki/Divergence_(statistics)
-struct ChiSquared
+class ChiSquared
 {
+public:
   // alpha: confidence level
   // tau: count decay time constant
   explicit ChiSquared(double _alpha, double _tau, double _wmin = 0.0,

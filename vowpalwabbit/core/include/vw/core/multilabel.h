@@ -6,17 +6,18 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/v_array.h"
 
-struct io_buf;
+class io_buf;
 namespace VW
 {
-struct workspace;
-struct example;
+class workspace;
+class example;
 }  // namespace VW
 
 namespace MULTILABEL
 {
-struct labels
+class labels
 {
+public:
   VW::v_array<uint32_t> label_v;
 };
 

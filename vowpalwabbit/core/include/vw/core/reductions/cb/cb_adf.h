@@ -23,9 +23,11 @@ namespace CB_ADF  // NOLINT
 {
 VW::example* test_adf_sequence(const VW::multi_ex& ec_seq);
 CB::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
-struct cb_adf
+class cb_adf
 {
+public:
   GEN_CS::cb_to_cs_adf gen_cs;
+
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
   void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
   bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq);

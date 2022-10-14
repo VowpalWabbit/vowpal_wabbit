@@ -64,8 +64,9 @@ namespace GraphTask
 {
 Search::search_task task = {"graph", run, initialize, nullptr, setup, takedown};
 
-struct task_data
+class task_data
 {
+public:
   // global data
   size_t num_loops;
   size_t K;     // number of labels, *NOT* including the +1 for 'unlabeled'

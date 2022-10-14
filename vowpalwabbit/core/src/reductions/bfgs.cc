@@ -53,7 +53,7 @@ using namespace VW::config;
 #define LEARN_CURV 1
 #define LEARN_CONV 2
 
-struct curv_exception : public std::exception
+class curv_exception : public std::exception
 {
 } curv_ex;
 
@@ -70,8 +70,9 @@ struct curv_exception : public std::exception
 
 constexpr float MAX_PRECOND_RATIO = 10000.f;
 
-struct bfgs
+class bfgs
 {
+public:
   VW::workspace* all = nullptr;  // prediction, regressor
   int m = 0;
   float rel_threshold = 0.f;  // termination threshold

@@ -32,8 +32,9 @@ uint64_t ceil_log_2(uint64_t v);
 
 // this guard assumes that namespaces are added in order
 // the complete feature_space of the added namespace is cleared afterwards
-struct namespace_copy_guard
+class namespace_copy_guard
 {
+public:
   namespace_copy_guard(VW::example_predict& ex, unsigned char ns);
   ~namespace_copy_guard();
 
@@ -45,8 +46,9 @@ private:
   bool _remove_ns;
 };
 
-struct feature_offset_guard
+class feature_offset_guard
 {
+public:
   feature_offset_guard(VW::example_predict& ex, uint64_t ft_offset);
   ~feature_offset_guard();
 
@@ -55,8 +57,9 @@ private:
   uint64_t _old_ft_offset;
 };
 
-struct stride_shift_guard
+class stride_shift_guard
 {
+public:
   stride_shift_guard(VW::example_predict& ex, uint64_t shift);
   ~stride_shift_guard();
 
@@ -69,8 +72,9 @@ private:
  * @brief Vowpal Wabbit slim predictor. Supports: regression, multi-class classification and contextual bandits.
  */
 template <typename W>
-struct vw_predict
+class vw_predict
 {
+public:
   vw_predict() : _contains_wildcard(false), _model_loaded(false) {}
 
   /**
