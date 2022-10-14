@@ -471,7 +471,7 @@ public:
     }
     else
     {
-      THROW("learner " << name << " does not support merging.");
+      THROW("learner " << _name << " does not support merging.");
     }
   }
 
