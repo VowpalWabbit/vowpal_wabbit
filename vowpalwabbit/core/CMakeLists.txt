@@ -38,7 +38,7 @@ set(vw_core_headers
   include/vw/core/feature_group.h
   include/vw/core/gd_predict.h
   include/vw/core/gen_cs_example.h
-  include/vw/core/generated_interactions_reduction_features.h
+  include/vw/core/large_action_space_reduction_features.h
   include/vw/core/generic_range.h
   include/vw/core/global_data.h
   include/vw/core/guard.h

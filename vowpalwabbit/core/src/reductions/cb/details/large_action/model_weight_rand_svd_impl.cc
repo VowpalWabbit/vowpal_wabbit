@@ -137,7 +137,7 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
@@ -197,7 +197,7 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
 
     for (uint64_t col = 0; col < max_existing_column; ++col)
     {
@@ -237,7 +237,7 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
@@ -280,7 +280,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)

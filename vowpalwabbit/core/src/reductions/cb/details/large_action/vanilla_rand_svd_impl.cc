@@ -15,15 +15,13 @@ class Y_triplet_constructor
 {
 public:
   Y_triplet_constructor(uint64_t weights_mask, uint64_t row_index, uint64_t column_index, uint64_t seed,
-      std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col, std::set<uint64_t>& non_zero_rows,
-      const std::vector<float>& shrink_factors)
+      std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col, const std::vector<float>& shrink_factors)
       : _weights_mask(weights_mask)
       , _row_index(row_index)
       , _column_index(column_index)
       , _seed(seed)
       , _triplets(triplets)
       , _max_col(max_col)
-      , _non_zero_rows(non_zero_rows)
       , _shrink_factors(shrink_factors)
   {
   }
@@ -32,7 +30,6 @@ public:
   {
     if (feature_value != 0.f)
     {
-      _non_zero_rows.emplace((index & _weights_mask));
       auto combined_index = _row_index + _column_index + _seed;
       // index is the equivalent of going over A's rows which turn out to be A.transpose()'s columns
       auto calc = feature_value * merand48_boxmuller(combined_index) * _shrink_factors[_row_index];
@@ -48,7 +45,6 @@ private:
   uint64_t _seed;
   std::vector<Eigen::Triplet<float>>& _triplets;
   uint64_t& _max_col;
-  std::set<uint64_t>& _non_zero_rows;
   const std::vector<float>& _shrink_factors;
 };
 
@@ -79,19 +75,19 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
   uint64_t max_non_zero_col = 0;
   _triplets.clear();
   uint64_t row_index = 0;
-  std::set<uint64_t> non_zero_rows;
+
   for (auto* ex : examples)
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
 
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
       {
-        Y_triplet_constructor tc(_all->weights.sparse_weights.mask(), row_index, col, _seed, _triplets,
-            max_non_zero_col, non_zero_rows, shrink_factors);
+        Y_triplet_constructor tc(
+            _all->weights.sparse_weights.mask(), row_index, col, _seed, _triplets, max_non_zero_col, shrink_factors);
         GD::foreach_feature<Y_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
             _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
@@ -101,8 +97,8 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
       }
       else
       {
-        Y_triplet_constructor tc(_all->weights.dense_weights.mask(), row_index, col, _seed, _triplets, max_non_zero_col,
-            non_zero_rows, shrink_factors);
+        Y_triplet_constructor tc(
+            _all->weights.dense_weights.mask(), row_index, col, _seed, _triplets, max_non_zero_col, shrink_factors);
         GD::foreach_feature<Y_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
             _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
@@ -120,7 +116,7 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
   // Orthonormalize Y
   VW::gram_schmidt(Y);
 
-  return non_zero_rows.size() > _d;
+  return static_cast<uint64_t>(Y.rows()) >= _d;
 }
 
 void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vector<float>& shrink_factors)
@@ -135,7 +131,7 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
 
     for (Eigen::Index col = 0; col < Y.outerSize(); ++col)
     {

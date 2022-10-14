@@ -10,13 +10,14 @@
 
 namespace VW
 {
-namespace generated_interactions
+namespace large_action_space
 {
 class reduction_features
 {
 public:
   std::vector<std::vector<VW::namespace_index>>* generated_interactions = nullptr;
   std::vector<std::vector<extent_term>>* generated_extent_interactions = nullptr;
+  VW::multi_ex::value_type shared_example = nullptr;
 
   reduction_features() = default;
 
@@ -24,8 +25,9 @@ public:
   {
     generated_interactions = nullptr;
     generated_extent_interactions = nullptr;
+    shared_example = nullptr;
   }
 };
 
-}  // namespace generated_interactions
+}  // namespace large_action_space
 }  // namespace VW

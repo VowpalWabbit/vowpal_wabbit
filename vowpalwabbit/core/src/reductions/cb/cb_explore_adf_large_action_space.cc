@@ -7,6 +7,7 @@
 #include "details/large_action_space.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
+#include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
@@ -61,7 +62,9 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
     if (_all->weights.sparse)
     {
@@ -84,6 +87,8 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
                                                       : *ex->extent_interactions),
           _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
 
     row_index++;
   }
