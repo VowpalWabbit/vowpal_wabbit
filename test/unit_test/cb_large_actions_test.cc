@@ -4,6 +4,7 @@
 
 #include "reductions/cb/details/large_action_space.h"
 #include "test_common.h"
+#include "vw/core/constant.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
@@ -71,7 +72,7 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
         auto ft_index = ex->feature_space[ns].indices[i];
         auto ft_value = ex->feature_space[ns].values[i];
 
-        if (ns == default_namespace) { BOOST_CHECK_CLOSE(ft_value, ft_values[i], FLOAT_TOL); }
+        if (ns == VW::details::DEFAULT_NAMESPACE) { BOOST_CHECK_CLOSE(ft_value, ft_values[i], FLOAT_TOL); }
         else if (ns == VW::details::CONSTANT_NAMESPACE)
         {
           BOOST_CHECK_CLOSE(ft_value, 1.f, FLOAT_TOL);
