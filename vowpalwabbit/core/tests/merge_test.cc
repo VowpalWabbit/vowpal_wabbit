@@ -8,6 +8,7 @@
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/io_adapter.h"
 
 #include <gtest/gtest.h>
 
@@ -327,4 +328,64 @@ TEST(merge_tests, merge_cb_model_delta)
   EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, result_model_merge->sd->weighted_labeled_examples);
   EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().event_sum, model_merged_cb_adf->get_gen_cs().event_sum);
   EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().action_sum, model_merged_cb_adf->get_gen_cs().action_sum);
+}
+
+TEST(merge_tests, serialize_deserialize_delta)
+{
+  auto options_strings = std::vector<std::string>{"--quiet"};
+  auto vw_base = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(options_strings));
+  auto vw_new = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(options_strings));
+
+  // Create a base workspace and another workspace trained on additional example
+  {
+    auto* ex = VW::read_example(*vw_base, "1 | a b");
+    VW::setup_example(*vw_base, ex);
+    vw_base->learn(*ex);
+    vw_base->finish_example(*ex);
+  }
+  {
+    auto* ex = VW::read_example(*vw_new, "1 | a b");
+    VW::setup_example(*vw_new, ex);
+    vw_new->learn(*ex);
+    vw_new->finish_example(*ex);
+  }
+  {
+    auto* ex = VW::read_example(*vw_new, "1 | c");
+    VW::setup_example(*vw_new, ex);
+    vw_new->learn(*ex);
+    vw_new->finish_example(*ex);
+  }
+
+  // Test that (base + (new - base)) == new
+  auto delta = *vw_new - *vw_base;
+  auto base_plus_delta = *vw_base + delta;
+  const auto* sd1 = vw_new->sd;
+  const auto* sd2 = base_plus_delta->sd;
+  EXPECT_FLOAT_EQ(sd1->weighted_labeled_examples, sd2->weighted_labeled_examples);
+  EXPECT_FLOAT_EQ(sd1->weighted_unlabeled_examples, sd2->weighted_unlabeled_examples);
+  EXPECT_FLOAT_EQ(sd1->weighted_labels, sd2->weighted_labels);
+  EXPECT_FLOAT_EQ(sd1->sum_loss, sd2->sum_loss);
+  EXPECT_FLOAT_EQ(sd1->example_number, sd2->example_number);
+  EXPECT_FLOAT_EQ(sd1->total_features, sd2->total_features);
+
+  auto backing_buffer = std::make_shared<std::vector<char>>();
+  auto writer = VW::io::create_vector_writer(backing_buffer);
+  delta.serialize(*writer);
+
+  writer->flush();
+  auto reader = VW::io::create_buffer_view(backing_buffer->data(), backing_buffer->size());
+  auto deserialized_delta = VW::model_delta::deserialize(*reader);
+
+  EXPECT_FLOAT_EQ(delta.unsafe_get_workspace_ptr()->sd->weighted_labeled_examples,
+      deserialized_delta->unsafe_get_workspace_ptr()->sd->weighted_labeled_examples);
+  EXPECT_FLOAT_EQ(delta.unsafe_get_workspace_ptr()->sd->weighted_unlabeled_examples,
+      deserialized_delta->unsafe_get_workspace_ptr()->sd->weighted_unlabeled_examples);
+  EXPECT_FLOAT_EQ(delta.unsafe_get_workspace_ptr()->sd->weighted_labels,
+      deserialized_delta->unsafe_get_workspace_ptr()->sd->weighted_labels);
+  EXPECT_FLOAT_EQ(
+      delta.unsafe_get_workspace_ptr()->sd->sum_loss, deserialized_delta->unsafe_get_workspace_ptr()->sd->sum_loss);
+  EXPECT_FLOAT_EQ(delta.unsafe_get_workspace_ptr()->sd->example_number,
+      deserialized_delta->unsafe_get_workspace_ptr()->sd->example_number);
+  EXPECT_FLOAT_EQ(delta.unsafe_get_workspace_ptr()->sd->total_features,
+      deserialized_delta->unsafe_get_workspace_ptr()->sd->total_features);
 }
