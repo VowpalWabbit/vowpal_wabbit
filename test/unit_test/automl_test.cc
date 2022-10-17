@@ -21,6 +21,21 @@ using simulator::callback_map;
 using simulator::cb_sim;
 using namespace VW::reductions::automl;
 
+namespace std
+{
+template<typename T>
+std::ostream& operator<<(std::ostream& o, std::vector<T> const& vec)
+{
+  o << '[';
+  for (const auto& item : vec)
+  {
+    o << ' ' << item;
+  }
+  o << ']';
+  return o;
+}
+}
+
 namespace aml_test
 {
 template <typename T>
