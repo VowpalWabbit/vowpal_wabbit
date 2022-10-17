@@ -23,7 +23,7 @@ enum class label_type_t : uint32_t
   SLATES,
   NOLABEL,
   CONTINUOUS,  // continuous actions
-// clang-format off
+  // clang-format off
   simple VW_DEPRECATED("VW::label_type_t::simple has been renamed to VW::label_type_t::SIMPLE") = SIMPLE, // NOLINT
   cb VW_DEPRECATED("VW::label_type_t::cb has been renamed to VW::label_type_t::CB") = CB, // NOLINT
   cb_eval VW_DEPRECATED("VW::label_type_t::cb_eval has been renamed to VW::label_type_t::CB_EVAL") = CB_EVAL, // NOLINT
@@ -34,7 +34,7 @@ enum class label_type_t : uint32_t
   slates VW_DEPRECATED("VW::label_type_t::slates has been renamed to VW::label_type_t::SLATES") = SLATES, // NOLINT
   nolabel VW_DEPRECATED("VW::label_type_t::nolabel has been renamed to VW::label_type_t::NOLABEL") = NOLABEL, // NOLINT
   continuous VW_DEPRECATED("VW::label_type_t::continuous has been renamed to VW::label_type_t::CONTINUOUS") = CONTINUOUS // NOLINT
-// clang-format on
+  // clang-format on
 };
 string_view to_string(VW::label_type_t);
 }  // namespace VW
