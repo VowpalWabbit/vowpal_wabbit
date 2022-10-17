@@ -193,10 +193,12 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
   // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
   // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later
   // if the --full_predictions flag is supplied.
+  auto best_action = preds[0].action;
+
   auto it = preds.begin();
   while (it != preds.end())
   {
-    if (!spanner_state.is_action_in_spanner(it->action)) { preds.erase(it); }
+    if (!spanner_state.is_action_in_spanner(it->action) && it->action != best_action) { it = preds.erase(it); }
     else
     {
       it++;
