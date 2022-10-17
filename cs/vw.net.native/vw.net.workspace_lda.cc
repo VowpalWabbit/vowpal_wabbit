@@ -25,7 +25,7 @@ int64_t fill_topic_allocation(vw_net_native::workspace_context* workspace, T& we
 
   for (auto iter = weights.begin(); iter != weights.end(); ++iter)
   {
-    weight* wp = &(*iter);
+    VW::weight* wp = &(*iter);
     for (uint64_t k = 0; k < topic_count; k++) topic_weight_buffers[(int)k][(int)iter.index()] = wp[k] + lda_rho;
   }
 

@@ -168,12 +168,12 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     if (second_best_cost < FLT_MAX)
     {
       float margin = second_best_cost - ec.partial_prediction;
-      add_passthrough_feature(ec, constant * 2, margin);
-      add_passthrough_feature(ec, constant * 2 + 1 + second_best, 1.);
+      add_passthrough_feature(ec, VW::details::CONSTANT * 2, margin);
+      add_passthrough_feature(ec, VW::details::CONSTANT * 2 + 1 + second_best, 1.);
     }
     else
     {
-      add_passthrough_feature(ec, constant * 3, 1.);
+      add_passthrough_feature(ec, VW::details::CONSTANT * 3, 1.);
     }
   }
 

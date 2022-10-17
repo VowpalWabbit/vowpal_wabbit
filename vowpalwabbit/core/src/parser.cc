@@ -804,10 +804,12 @@ VW::example* read_example(VW::workspace& all, const std::string& example_line)
 
 void add_constant_feature(VW::workspace& vw, VW::example* ec)
 {
-  ec->indices.push_back(constant_namespace);
-  ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
+  ec->indices.push_back(VW::details::CONSTANT_NAMESPACE);
+  ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(
+      1, VW::details::CONSTANT, VW::details::CONSTANT_NAMESPACE);
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) { ec->feature_space[constant_namespace].space_names.emplace_back("", "Constant"); }
+  if (vw.audit || vw.hash_inv)
+  { ec->feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "Constant"); }
 }
 
 void add_label(VW::example* ec, float label, float weight, float base)

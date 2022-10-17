@@ -341,6 +341,6 @@ void binary_print_result_by_ref(
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);
 void compile_gram(
-    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
-void compile_limits(
-    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet, VW::io::logger& logger);
+    std::vector<std::string> grams, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool quiet,
+    VW::io::logger& logger);

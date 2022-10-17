@@ -103,7 +103,7 @@ public:
   double* rho = nullptr;
   double* alpha = nullptr;
 
-  weight* regularizers = nullptr;
+  VW::weight* regularizers = nullptr;
   // the below needs to be included when resetting, in addition to preconditioner and derivative
   int lastj = 0;
   int origin = 0;
@@ -487,7 +487,7 @@ double add_regularization(VW::workspace& all, bfgs& b, float regularization, T& 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
       uint64_t i = w.index() >> weights.stride_shift();
-      weight delta_weight = *w - b.regularizers[2 * i + 1];
+      VW::weight delta_weight = *w - b.regularizers[2 * i + 1];
       (&(*w))[W_GT] += b.regularizers[2 * i] * delta_weight;
       ret += 0.5 * b.regularizers[2 * i] * delta_weight * delta_weight;
     }
@@ -499,14 +499,16 @@ double add_regularization(VW::workspace& all, bfgs& b, float regularization, T& 
   {
     if (b.regularizers == nullptr)
     {
-      (&weights.strided_index(constant))[W_GT] -= regularization * (weights.strided_index(constant));
-      ret -= 0.5 * regularization * (weights.strided_index(constant)) * (weights.strided_index(constant));
+      (&weights.strided_index(VW::details::CONSTANT))[W_GT] -=
+          regularization * (weights.strided_index(VW::details::CONSTANT));
+      ret -= 0.5 * regularization * (weights.strided_index(VW::details::CONSTANT)) *
+          (weights.strided_index(VW::details::CONSTANT));
     }
     else
     {
-      uint64_t i = constant >> weights.stride_shift();
-      weight delta_weight = (weights.strided_index(constant)) - b.regularizers[2 * i + 1];
-      (&weights.strided_index(constant))[W_GT] -= b.regularizers[2 * i] * delta_weight;
+      uint64_t i = VW::details::CONSTANT >> weights.stride_shift();
+      VW::weight delta_weight = (weights.strided_index(VW::details::CONSTANT)) - b.regularizers[2 * i + 1];
+      (&weights.strided_index(VW::details::CONSTANT))[W_GT] -= b.regularizers[2 * i] * delta_weight;
       ret -= 0.5 * b.regularizers[2 * i] * delta_weight * delta_weight;
     }
   }
@@ -570,7 +572,7 @@ void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regulariza
 
   if (b.regularizers == nullptr)
   {
-    b.regularizers = calloc_or_throw<weight>(2 * length);
+    b.regularizers = calloc_or_throw<VW::weight>(2 * length);
 
     if (b.regularizers == nullptr) THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
@@ -1026,7 +1028,7 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool
   do
   {
     brw = 1;
-    weight* v;
+    VW::weight* v;
     if (read)
     {
       c++;
@@ -1069,7 +1071,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     initialize_regressor(*all);
     if (all->per_feature_regularizer_input != "")
     {
-      b.regularizers = calloc_or_throw<weight>(2 * length);
+      b.regularizers = calloc_or_throw<VW::weight>(2 * length);
       if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
     }
     int m = b.m;
@@ -1083,7 +1085,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
     b.all->logger.err_info("m = {}, allocated {}M for weights and mem", m,
         static_cast<long unsigned int>(all->length()) *
-                (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
+                (sizeof(float) * (b.mem_stride) + (sizeof(VW::weight) << stride_shift)) >>
             20);
 
     b.net_time = 0.0;

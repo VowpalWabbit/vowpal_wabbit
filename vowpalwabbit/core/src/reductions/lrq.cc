@@ -112,7 +112,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
           if (!do_dropout || cheesyrbit(lrq.seed))
           {
             uint64_t lwindex = (lindex + (static_cast<uint64_t>(n) << stride_shift));
-            weight* lw = &lrq.all->weights[lwindex];
+            VW::weight* lw = &lrq.all->weights[lwindex];
 
             // perturb away from saddle point at (0, 0)
             if (is_learn)

@@ -36,8 +36,10 @@ extern VW::label_parser the_label_parser;
 
 }  // namespace cb_continuous
 
-std::string to_string(const cb_continuous::continuous_label_elm& elm, int decimal_precision = DEFAULT_FLOAT_PRECISION);
-std::string to_string(const cb_continuous::continuous_label& lbl, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+std::string to_string(
+    const cb_continuous::continuous_label_elm& elm, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
+std::string to_string(
+    const cb_continuous::continuous_label& lbl, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
 
 namespace model_utils
 {

@@ -756,7 +756,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f),
         all.random_weights, all.lda, all.weights.stride()};
 
-    auto initial_lda_weight_initializer = [init](weight* weights, uint64_t index) {
+    auto initial_lda_weight_initializer = [init](VW::weight* weights, uint64_t index) {
       uint32_t lda = init.lda;
       weight initial_random = init.initial_random;
       if (init.random)
@@ -793,10 +793,10 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 
       if (brw != 0)
       {
-        weight* w = &(all.weights.strided_index(i));
+        VW::weight* w = &(all.weights.strided_index(i));
         for (uint64_t k = 0; k < K; k++)
         {
-          weight* v = w + k;
+          VW::weight* v = w + k;
           if (!read && text) { msg << *v + l.lda_rho << " "; }
           brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
@@ -865,7 +865,7 @@ void learn_batch(lda& l)
     size_t stride = weights.stride();
     for (size_t i = 0; i <= weights.mask(); i += stride)
     {
-      weight* w = &(weights[i]);
+      VW::weight* w = &(weights[i]);
       for (size_t k = 0; k < l.all->lda; k++) { l.total_lambda[k] += w[k]; }
     }
   }
@@ -1236,7 +1236,7 @@ void end_examples(lda& l, T& weights)
         l.decay_levels.back() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
     float decay = std::fmin(1.f, correctedExp(decay_component));
 
-    weight* wp = &(*iter);
+    VW::weight* wp = &(*iter);
     for (size_t i = 0; i < l.all->lda; ++i) { wp[i] *= decay; }
   }
 }

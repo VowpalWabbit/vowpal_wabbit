@@ -38,7 +38,8 @@ void print_action_score(
     VW::io::writer* f, const VW::v_array<action_score>& a_s, const VW::v_array<char>&, VW::io::logger& logger);
 }
 
-std::string to_string(const action_scores& action_scores_or_probs, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+std::string to_string(
+    const action_scores& action_scores_or_probs, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
 
 class action_scores_score_iterator
 {

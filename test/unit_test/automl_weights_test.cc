@@ -5,7 +5,7 @@
 #include "simulator.h"
 #include "test_common.h"
 #include "vw/core/array_parameters_dense.h"
-#include "vw/core/constant.h"  // FNV_prime
+#include "vw/core/constant.h"  // FNV_PRIME
 #include "vw/core/vw_math.h"
 
 #include <boost/test/test_tools.hpp>
@@ -47,8 +47,8 @@ size_t hash_to_index(parameters& weights, size_t hash)
 // see: interactions_predict.h:process_quadratic_interaction(..)
 size_t interaction_to_index(parameters& weights, size_t one, size_t two)
 {
-  // FNV_prime from constant.h
-  return hash_to_index(weights, (FNV_prime * one) ^ two);
+  // FNV_PRIME from constant.h
+  return hash_to_index(weights, (VW::details::FNV_PRIME * one) ^ two);
 }
 }  // namespace vw_hash_helpers
 
