@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
 
       examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
-      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));      
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
       examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_7:0.9 a_8:0.05 a_9:0.45"));
       examples.push_back(VW::read_example(vw, "| a_10:5.9 a_11:5.05 a_12:5.45"));
 
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
 
       examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
-      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));      
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
       examples.push_back(VW::read_example(vw, "| a_7:0.9 a_8:0.05 a_9:0.45"));
       examples.push_back(VW::read_example(vw, "0:0.1:0.5 | a_10:5.9 a_11:5.05 a_12:5.45"));
 
@@ -149,9 +149,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -266,9 +264,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -289,7 +285,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
       const auto& preds = examples[0]->pred.a_s;
       // Only d actions have non-zero scores.
       if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else { BOOST_CHECK_EQUAL(preds.size(), d); }
+      else
+      {
+        BOOST_CHECK_EQUAL(preds.size(), d);
+      }
 
       size_t num_actions_non_zeroed = d;
       float epsilon_ur = epsilon / num_actions_non_zeroed;
@@ -399,9 +398,7 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  {
-    BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-  }
+  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -444,9 +441,7 @@ static std::vector<std::string> gen_cb_examples(
 
     action_ss << "| ";
     for (int action_feat = 0; action_feat < coordinates; ++action_feat)
-    {
-      action_ss << "x" << action_feat << ":" << (drand48() * scale) << " ";
-    }
+    { action_ss << "x" << action_feat << ":" << (drand48() * scale) << " "; }
 
     examples.push_back(action_ss.str());
   }
@@ -498,9 +493,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -530,7 +523,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
         if (a_s.action < K - d)
         {
           if (a_s.score == 0.f) { count_zero_scores++; }
-          else { count_non_zero_scores++; }
+          else
+          {
+            count_non_zero_scores++;
+          }
         }
         else
         {
@@ -539,7 +535,10 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
             count_non_zero_scores++;
             last_5_actions_non_zero++;
           }
-          else { count_zero_scores++; }
+          else
+          {
+            count_zero_scores++;
+          }
         }
       }
 
@@ -582,12 +581,18 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
             count_non_zero_scores++;
             first_5_actions_non_zero++;
           }
-          else { count_zero_scores++; }
+          else
+          {
+            count_zero_scores++;
+          }
         }
         else
         {
           if (a_s.score == 0.f) { count_zero_scores++; }
-          else { count_non_zero_scores++; }
+          else
+          {
+            count_non_zero_scores++;
+          }
         }
       }
 
@@ -654,9 +659,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_same_actions)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -724,9 +727,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_with_actions_that_are_linear_combinations_of_
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
