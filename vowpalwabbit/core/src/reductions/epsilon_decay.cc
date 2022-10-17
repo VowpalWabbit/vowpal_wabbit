@@ -121,11 +121,11 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
             if (model_ind != model_count - 1)
             {
               _audit_msg << "challenger[" << (model_ind + 1) << "] ";
-            
+
               _audit_msg << "update_count: " << conf_seq_estimators[model_ind][model_ind].update_count
-                        << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
-                        << " champ_ub: " << conf_seq_estimators[model_count - 1][model_ind].upper_bound() << " p_pred: " << a_s.score
-                        << "\n";
+                         << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
+                         << " champ_ub: " << conf_seq_estimators[model_count - 1][model_ind].upper_bound()
+                         << " p_pred: " << a_s.score << "\n";
             }
           }
           break;
