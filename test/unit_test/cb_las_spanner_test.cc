@@ -87,6 +87,8 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
       examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
       examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
+      examples.push_back(VW::read_example(vw, "| a_7:0.9 a_8:0.05 a_9:0.45"));
+      examples.push_back(VW::read_example(vw, "| a_10:5.9 a_11:5.05 a_12:5.45"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -98,6 +100,8 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
       examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1:0.5 a_2:0.65 a_3:0.12"));
       examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
+      examples.push_back(VW::read_example(vw, "| a_7:0.9 a_8:0.05 a_9:0.45"));
+      examples.push_back(VW::read_example(vw, "| a_10:5.9 a_11:5.05 a_12:5.45"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -109,6 +113,34 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
       examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
       examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4:0.8 a_5:0.32 a_6:0.15"));
+      examples.push_back(VW::read_example(vw, "| a_7:0.9 a_8:0.05 a_9:0.45"));
+      examples.push_back(VW::read_example(vw, "| a_10:5.9 a_11:5.05 a_12:5.45"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));      
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_7:0.9 a_8:0.05 a_9:0.45"));
+      examples.push_back(VW::read_example(vw, "| a_10:5.9 a_11:5.05 a_12:5.45"));
+
+      vw.learn(examples);
+      vw.finish_example(examples);
+    }
+
+    {
+      VW::multi_ex examples;
+
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));      
+      examples.push_back(VW::read_example(vw, "| a_7:0.9 a_8:0.05 a_9:0.45"));
+      examples.push_back(VW::read_example(vw, "0:0.1:0.5 | a_10:5.9 a_11:5.05 a_12:5.45"));
 
       vw.learn(examples);
       vw.finish_example(examples);
@@ -117,7 +149,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -131,6 +165,8 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
       examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
       examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
       examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
+      examples.push_back(VW::read_example(vw, "| a_7:0.9 a_8:0.05 a_9:0.45"));
+      examples.push_back(VW::read_example(vw, "| a_10:5.9 a_11:5.05 a_12:5.45"));
 
       vw.predict(examples);
 
@@ -141,18 +177,27 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
       if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
       else
       {
-        BOOST_CHECK_EQUAL(preds.size(), d);
+        // either VW's prediction was in the spanner and so we have exactly d non-zero scores
+        // or it was not in the spanner so got forcefully added before returning the predictions so we have d + 1
+        // non-zero scores
+        BOOST_CHECK_GE(preds.size(), d);
+        BOOST_CHECK_LE(preds.size(), d + 1);
       }
-      BOOST_CHECK_SMALL(preds[0].score - 0.693350017f, FLOAT_TOL);
-      BOOST_CHECK_EQUAL(preds[0].action, 0);
 
-      BOOST_CHECK_SMALL(preds[1].score - 0.306649983f, FLOAT_TOL);
-      BOOST_CHECK_EQUAL(preds[1].action, 2);
+      // max should be in place 0
+      float max_prob = preds[0].score;
+      for (size_t i = 1; i < preds.size(); i++) { BOOST_CHECK_LT(preds[i].score, max_prob); }
 
       if (full_preds)
       {
-        BOOST_CHECK_SMALL(preds[2].score, FLOAT_TOL);
-        BOOST_CHECK_EQUAL(preds[2].action, 1);
+        size_t count_zero_scores = 0;
+        for (const auto& as : preds)
+        {
+          if (as.score == 0.f) { count_zero_scores++; }
+        }
+
+        BOOST_CHECK_LE(count_zero_scores, num_actions - d);
+        BOOST_CHECK_GE(count_zero_scores, num_actions - (d + 1));
       }
 
       vw.finish_example(examples);
@@ -221,7 +266,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -242,10 +289,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
       const auto& preds = examples[0]->pred.a_s;
       // Only d actions have non-zero scores.
       if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else
-      {
-        BOOST_CHECK_EQUAL(preds.size(), d);
-      }
+      else { BOOST_CHECK_EQUAL(preds.size(), d); }
 
       size_t num_actions_non_zeroed = d;
       float epsilon_ur = epsilon / num_actions_non_zeroed;
@@ -355,7 +399,9 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+  {
+    BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+  }
 
   VW::LEARNER::multi_learner* learner =
       as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -398,7 +444,9 @@ static std::vector<std::string> gen_cb_examples(
 
     action_ss << "| ";
     for (int action_feat = 0; action_feat < coordinates; ++action_feat)
-    { action_ss << "x" << action_feat << ":" << (drand48() * scale) << " "; }
+    {
+      action_ss << "x" << action_feat << ":" << (drand48() * scale) << " ";
+    }
 
     examples.push_back(action_ss.str());
   }
@@ -450,7 +498,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -471,14 +521,39 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
       const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
 
+      size_t count_non_zero_scores = 0;
+      size_t count_zero_scores = 0;
+      size_t last_5_actions_non_zero = 0;
+
       for (auto a_s : preds)
       {
-        if (a_s.action < K - d) { BOOST_CHECK_EQUAL(a_s.score, 0.f); }
+        if (a_s.action < K - d)
+        {
+          if (a_s.score == 0.f) { count_zero_scores++; }
+          else { count_non_zero_scores++; }
+        }
         else
         {
-          BOOST_CHECK_NE(a_s.score, 0.f);
+          if (a_s.score != 0.f)
+          {
+            count_non_zero_scores++;
+            last_5_actions_non_zero++;
+          }
+          else { count_zero_scores++; }
         }
       }
+
+      BOOST_CHECK_EQUAL(last_5_actions_non_zero, d);
+
+      // either VW's prediction was in the spanner and so we have exactly d non-zero scores
+      // or it was not in the spanner so got forcefully added before returning the predictions so we have d + 1 non-zero
+      // scores
+
+      BOOST_CHECK_LE(count_non_zero_scores, d + 1);
+      BOOST_CHECK_GE(count_non_zero_scores, d);
+
+      BOOST_CHECK_LE(count_zero_scores, preds.size() - d);
+      BOOST_CHECK_GE(count_zero_scores, preds.size() - (d + 1));
 
       vw.finish_example(examples);
     }
@@ -495,14 +570,38 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
       const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
 
+      size_t count_non_zero_scores = 0;
+      size_t count_zero_scores = 0;
+      size_t first_5_actions_non_zero = 0;
       for (auto a_s : preds)
       {
-        if (a_s.action < d) { BOOST_CHECK_NE(a_s.score, 0.f); }
+        if (a_s.action < d)
+        {
+          if (a_s.score != 0.f)
+          {
+            count_non_zero_scores++;
+            first_5_actions_non_zero++;
+          }
+          else { count_zero_scores++; }
+        }
         else
         {
-          BOOST_CHECK_EQUAL(a_s.score, 0.f);
+          if (a_s.score == 0.f) { count_zero_scores++; }
+          else { count_non_zero_scores++; }
         }
       }
+
+      BOOST_CHECK_EQUAL(first_5_actions_non_zero, d);
+
+      // either VW's prediction was in the spanner and so we have exactly d non-zero scores
+      // or it was not in the spanner so got forcefully added before returning the predictions so we have d + 1 non-zero
+      // scores
+
+      BOOST_CHECK_LE(count_non_zero_scores, d + 1);
+      BOOST_CHECK_GE(count_non_zero_scores, d);
+
+      BOOST_CHECK_LE(count_zero_scores, preds.size() - d);
+      BOOST_CHECK_GE(count_zero_scores, preds.size() - (d + 1));
 
       vw.finish_example(examples);
     }
@@ -555,7 +654,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_same_actions)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -623,7 +724,9 @@ BOOST_AUTO_TEST_CASE(check_spanner_with_actions_that_are_linear_combinations_of_
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
