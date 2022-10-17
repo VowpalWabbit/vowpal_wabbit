@@ -44,44 +44,6 @@ jobs:
         with:
           name: manylinux_amd64_${{ matrix.config.version }}
           path: audit_output/
-  linux-python-test:
-    name: manylinux.amd64.py${{ matrix.version }}.test
-    needs: linux-python-build
-    container:
-      image: python:${{ matrix.version }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version: ["3.8"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: recursive
-      - uses: actions/download-artifact@v1
-        with:
-          name: manylinux_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Test wheel
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install pytest twine
-          pip install built_wheel/*.whl
-          twine check built_wheel/*.whl
-          python -m pytest ./python/tests/
-          python ./python/tests/run_doctest.py
-      - name: Run vw tests as Python module
-        shell: bash
-        # Onethread is not supported in the Python wrapper so those tests must be skipped
-        # Stdin is not supported
-        # Help output tests assume --onthread is in the output
-        # Fail tests are not included because the python stack trace causes the output to differ
-        # Daemon tests are skipped
-        # Tests without datafiles are skipped
-        run: |
-          cd test
-          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.8.sdist-bundle
     runs-on: ubuntu-latest
@@ -102,35 +64,3 @@ jobs:
           name: python_source_distribution
           path: dist/*.tar.gz
           if-no-files-found: error
-  linux-python-sdist-build-test:
-    name: ubuntu-latest.amd64.py3.8.sdist-build-test
-    needs: linux-python-sdist-bundle
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8'
-          architecture: 'x64'
-      - uses: actions/download-artifact@v1
-        with:
-          name: python_source_distribution
-      - name: Install dependencies
-        shell: bash
-        run: |
-          sudo apt update
-          sudo apt install libboost-test-dev libboost-python-dev zlib1g-dev cmake g++
-      - name: Install source dist
-        shell: bash
-        run: pip install python_source_distribution/*.tar.gz
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Install dependencies
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install pytest
-      - name: Run unit tests
-        shell: bash
-        run: |
-          python -m pytest ./python/tests/
