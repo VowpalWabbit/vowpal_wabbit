@@ -23,18 +23,15 @@ using namespace VW::reductions::automl;
 
 namespace std
 {
-template<typename T>
+template <typename T>
 std::ostream& operator<<(std::ostream& o, std::vector<T> const& vec)
 {
   o << '[';
-  for (const auto& item : vec)
-  {
-    o << ' ' << item;
-  }
+  for (const auto& item : vec) { o << ' ' << item; }
   o << ']';
   return o;
 }
-}
+}  // namespace std
 
 namespace aml_test
 {
