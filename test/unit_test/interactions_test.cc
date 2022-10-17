@@ -361,7 +361,8 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   {
     auto a = parse_full_name_interactions(*vw, "art|:|and");
     std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
-        extent_term{wildcard_namespace, wildcard_namespace}, extent_term{'a', VW::hash_space(*vw, "and")}};
+        extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE},
+        extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 

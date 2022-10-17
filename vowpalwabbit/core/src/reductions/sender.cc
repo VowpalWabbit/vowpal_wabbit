@@ -72,7 +72,7 @@ void send_features(io_buf* b, VW::example& ec, uint32_t mask)
 
   for (VW::namespace_index ns : ec.indices)
   {
-    if (ns == constant_namespace) { continue; }
+    if (ns == VW::details::CONSTANT_NAMESPACE) { continue; }
     VW::details::cache_index(*b, ns);
     VW::details::cache_features(*b, ec.feature_space[ns], mask);
   }

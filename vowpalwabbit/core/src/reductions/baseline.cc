@@ -21,18 +21,18 @@ constexpr float MAX_MULTIPLIER = 1000.f;
 
 void VW::reductions::baseline::set_baseline_enabled(VW::example* ec)
 {
-  if (!baseline_enabled(ec)) { ec->indices.push_back(baseline_enabled_message_namespace); }
+  if (!baseline_enabled(ec)) { ec->indices.push_back(VW::details::BASELINE_ENABLED_MESSAGE_NAMESPACE); }
 }
 
 void VW::reductions::baseline::reset_baseline_disabled(VW::example* ec)
 {
-  const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
+  const auto it = std::find(ec->indices.begin(), ec->indices.end(), VW::details::BASELINE_ENABLED_MESSAGE_NAMESPACE);
   if (it != ec->indices.end()) { ec->indices.erase(it); }
 }
 
 bool VW::reductions::baseline::baseline_enabled(const VW::example* ec)
 {
-  const auto it = std::find(ec->indices.begin(), ec->indices.end(), baseline_enabled_message_namespace);
+  const auto it = std::find(ec->indices.begin(), ec->indices.end(), VW::details::BASELINE_ENABLED_MESSAGE_NAMESPACE);
   return it != ec->indices.end();
 }
 
@@ -52,10 +52,11 @@ void init_global(baseline_data& data)
 {
   if (!data.global_only) { return; }
   // use a separate global constant
-  data.ec.indices.push_back(constant_namespace);
+  data.ec.indices.push_back(VW::details::CONSTANT_NAMESPACE);
   // different index from constant to avoid conflicts
-  data.ec.feature_space[constant_namespace].push_back(
-      1, ((constant - 17) * data.all->wpp) << data.all->weights.stride_shift(), constant_namespace);
+  data.ec.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1,
+      ((VW::details::CONSTANT - 17) * data.all->wpp) << data.all->weights.stride_shift(),
+      VW::details::CONSTANT_NAMESPACE);
   data.ec.reset_total_sum_feat_sq();
   data.ec.num_features++;
 }
@@ -103,7 +104,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     {
       // move label & constant features data over to baseline example
       VW::copy_example_metadata(&data.ec, &ec);
-      VW::move_feature_namespace(&data.ec, &ec, constant_namespace);
+      VW::move_feature_namespace(&data.ec, &ec, VW::details::CONSTANT_NAMESPACE);
     }
 
     // regress baseline on label
@@ -132,7 +133,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     if (!data.global_only)
     {
       // move feature data back to the original example
-      VW::move_feature_namespace(&ec, &data.ec, constant_namespace);
+      VW::move_feature_namespace(&ec, &data.ec, VW::details::CONSTANT_NAMESPACE);
     }
 
     // return the safe prediction

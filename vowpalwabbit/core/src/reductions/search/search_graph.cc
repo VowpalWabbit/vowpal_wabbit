@@ -254,7 +254,7 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
   for (size_t k = 0; k < D.numN; k++)
   {
     if (D.neighbor_predictions[k] == 0.) { continue; }
-    node->feature_space[neighbor_namespace].push_back(
+    node->feature_space[VW::details::NEIGHBOR_NAMESPACE].push_back(
         fv * D.neighbor_predictions[k], static_cast<uint64_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
   }
 }
@@ -262,7 +262,7 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
 void add_edge_features_single_fn(task_data& D, float fv, uint64_t fx)
 {
   VW::example* node = D.cur_node;
-  features& fs = node->feature_space[neighbor_namespace];
+  features& fs = node->feature_space[VW::details::NEIGHBOR_NAMESPACE];
   uint64_t fx2 = fx / D.multiplier;
   size_t k = static_cast<size_t>(D.neighbor_predictions[0]);
   fs.push_back(fv, static_cast<uint32_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
@@ -334,9 +334,9 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
       GD::foreach_feature<task_data, uint64_t, add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
     }
   }
-  ec[n]->indices.push_back(neighbor_namespace);
+  ec[n]->indices.push_back(VW::details::NEIGHBOR_NAMESPACE);
   ec[n]->reset_total_sum_feat_sq();
-  ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
+  ec[n]->num_features += ec[n]->feature_space[VW::details::NEIGHBOR_NAMESPACE].size();
 
   VW::workspace& all = sch.get_vw_pointer_unsafe();
   for (const auto& i : all.interactions)
@@ -344,7 +344,8 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
     if (i.size() != 2) { continue; }
     int i0 = static_cast<int>(i[0]);
     int i1 = static_cast<int>(i[1]);
-    if ((i0 == static_cast<int>(neighbor_namespace)) || (i1 == static_cast<int>(neighbor_namespace)))
+    if ((i0 == static_cast<int>(VW::details::NEIGHBOR_NAMESPACE)) ||
+        (i1 == static_cast<int>(VW::details::NEIGHBOR_NAMESPACE)))
     { ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size(); }
   }
 }
@@ -352,7 +353,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
 void del_edge_features(task_data& /*D*/, uint32_t n, VW::multi_ex& ec)
 {
   ec[n]->indices.pop_back();
-  features& fs = ec[n]->feature_space[neighbor_namespace];
+  features& fs = ec[n]->feature_space[VW::details::NEIGHBOR_NAMESPACE];
   ec[n]->num_features -= fs.size();
   fs.clear();
 }

@@ -832,13 +832,13 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
   if (all.add_constant)
   {
-    ae->feature_space[constant_namespace].clear();
+    ae->feature_space[VW::details::CONSTANT_NAMESPACE].clear();
     int hit_constant = -1;
     size_t N = ae->indices.size();
     for (size_t i = 0; i < N; i++)
     {
       int j = (int)(N - 1 - i);
-      if (ae->indices[j] == constant_namespace)
+      if (ae->indices[j] == VW::details::CONSTANT_NAMESPACE)
       {
         if (hit_constant >= 0) { THROW("Constant namespace was found twice. It can only exist 1 or 0 times."); }
         hit_constant = j;

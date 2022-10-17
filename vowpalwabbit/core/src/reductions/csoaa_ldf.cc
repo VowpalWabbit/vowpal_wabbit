@@ -61,20 +61,21 @@ void compute_wap_values(std::vector<VW::cs_class*> costs)
 
 // Substract a given feature from example ec.
 // Rather than finding the corresponding namespace and feature in ec,
-// add a new feature with opposite value (but same index) to ec to a special wap_ldf_namespace.
+// add a new feature with opposite value (but same index) to ec to a special VW::details::WAP_LDF_NAMESPACE.
 // This is faster and allows fast undo in unsubtract_example().
 void subtract_feature(VW::example& ec, float feature_value_x, uint64_t weight_index)
 {
-  ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index, wap_ldf_namespace);
+  ec.feature_space[VW::details::WAP_LDF_NAMESPACE].push_back(
+      -feature_value_x, weight_index, VW::details::WAP_LDF_NAMESPACE);
 }
 
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
 void subtract_example(VW::workspace& all, VW::example* ec, VW::example* ecsub)
 {
-  features& wap_fs = ec->feature_space[wap_ldf_namespace];
+  features& wap_fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   wap_fs.sum_feat_sq = 0;
   GD::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
-  ec->indices.push_back(wap_ldf_namespace);
+  ec->indices.push_back(VW::details::WAP_LDF_NAMESPACE);
   ec->num_features += wap_fs.size();
   ec->reset_total_sum_feat_sq();
 }
@@ -87,7 +88,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
     return;
   }
 
-  if (ec->indices.back() != wap_ldf_namespace)
+  if (ec->indices.back() != VW::details::WAP_LDF_NAMESPACE)
   {
     logger.err_error(
         "Internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
@@ -95,7 +96,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
     return;
   }
 
-  features& fs = ec->feature_space[wap_ldf_namespace];
+  features& fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   ec->num_features -= fs.size();
   ec->reset_total_sum_feat_sq();
   fs.clear();
@@ -425,7 +426,7 @@ void output_example(
   if (VW::is_cs_example_header(ec))
   {
     all.sd->total_features +=
-        (ec_seq->size() - 1) * (ec.get_num_features() - ec.feature_space[constant_namespace].size());
+        (ec_seq->size() - 1) * (ec.get_num_features() - ec.feature_space[VW::details::CONSTANT_NAMESPACE].size());
     return;
   }
   else

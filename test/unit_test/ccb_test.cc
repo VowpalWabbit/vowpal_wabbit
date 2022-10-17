@@ -105,20 +105,20 @@ BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
 
 std::string ns_to_str(unsigned char ns)
 {
-  if (ns == constant_namespace) { return "[constant]"; }
-  else if (ns == ccb_slot_namespace)
+  if (ns == VW::details::CONSTANT_NAMESPACE) { return "[constant]"; }
+  else if (ns == VW::details::CCB_SLOT_NAMESPACE)
   {
     return "[ccbslot]";
   }
-  else if (ns == ccb_id_namespace)
+  else if (ns == VW::details::CCB_ID_NAMESPACE)
   {
     return "[ccbid]";
   }
-  else if (ns == wildcard_namespace)
+  else if (ns == VW::details::WILDCARD_NAMESPACE)
   {
     return "[wild]";
   }
-  else if (ns == default_namespace)
+  else if (ns == VW::details::DEFAULT_NAMESPACE)
   {
     return "[default]";
   }

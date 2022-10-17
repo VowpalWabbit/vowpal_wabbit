@@ -641,7 +641,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
       priv.dat_new_feature_ec = &me;
       priv.dat_new_feature_value = 1.;
       priv.dat_new_feature_idx = static_cast<uint64_t>(priv.neighbor_features[n_id]) * static_cast<uint64_t>(13748127);
-      priv.dat_new_feature_namespace = neighbor_namespace;
+      priv.dat_new_feature_namespace = VW::details::NEIGHBOR_NAMESPACE;
       if (priv.all->audit)
       {
         priv.dat_new_feature_feature_space = &neighbor_feature_space;
@@ -665,11 +665,11 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
       }
     }
 
-    features& fs = me.feature_space[neighbor_namespace];
+    features& fs = me.feature_space[VW::details::NEIGHBOR_NAMESPACE];
     size_t sz = fs.size();
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
     {
-      me.indices.push_back(neighbor_namespace);
+      me.indices.push_back(VW::details::NEIGHBOR_NAMESPACE);
       me.reset_total_sum_feat_sq();
       me.num_features += sz;
     }
@@ -683,7 +683,8 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
 void del_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
 {
   if (priv.neighbor_features.size() == 0) { return; }
-  for (size_t n = 0; n < ec_seq.size(); n++) { del_features_in_top_namespace(priv, *ec_seq[n], neighbor_namespace); }
+  for (size_t n = 0; n < ec_seq.size(); n++)
+  { del_features_in_top_namespace(priv, *ec_seq[n], VW::details::NEIGHBOR_NAMESPACE); }
 }
 
 void reset_search_structure(search_private& priv)
@@ -809,8 +810,8 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
       fid = fid * 328901 + 71933 * ((condition_on_actions[i + n].a + 349101) * (name + 38490137));
 
       priv.dat_new_feature_ec = &ec;
-      priv.dat_new_feature_idx = fid * quadratic_constant;
-      priv.dat_new_feature_namespace = conditioning_namespace;
+      priv.dat_new_feature_idx = fid * VW::details::QUADRATIC_CONSTANT;
+      priv.dat_new_feature_namespace = VW::details::CONDITIONING_NAMESPACE;
       priv.dat_new_feature_value = priv.acset.feature_value;
 
       if (priv.all->audit)
@@ -855,7 +856,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
 
           priv.dat_new_feature_ec = &ec;
           priv.dat_new_feature_idx = fid;
-          priv.dat_new_feature_namespace = conditioning_namespace;
+          priv.dat_new_feature_namespace = VW::details::CONDITIONING_NAMESPACE;
           priv.dat_new_feature_value = fs.values[k];
           add_new_feature(priv, 1., static_cast<uint64_t>(4398201) << priv.all->weights.stride_shift());
         }
@@ -864,10 +865,10 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
     cdbg << "END adding passthrough features" << endl;
   }
 
-  features& con_fs = ec.feature_space[conditioning_namespace];
+  features& con_fs = ec.feature_space[VW::details::CONDITIONING_NAMESPACE];
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
   {
-    ec.indices.push_back(conditioning_namespace);
+    ec.indices.push_back(VW::details::CONDITIONING_NAMESPACE);
     ec.reset_total_sum_feat_sq();
     ec.num_features += con_fs.size();
   }
@@ -879,8 +880,8 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
 
 void del_example_conditioning(search_private& priv, VW::example& ec)
 {
-  if ((ec.indices.size() > 0) && (ec.indices.back() == conditioning_namespace))
-  { del_features_in_top_namespace(priv, ec, conditioning_namespace); }
+  if ((ec.indices.size() > 0) && (ec.indices.back() == VW::details::CONDITIONING_NAMESPACE))
+  { del_features_in_top_namespace(priv, ec, VW::details::CONDITIONING_NAMESPACE); }
 }
 
 inline size_t cs_get_costs_size(bool is_cb, VW::polylabel& ld)

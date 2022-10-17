@@ -35,7 +35,7 @@
 #include <numeric>
 #include <utility>
 
-void initialize_weights_as_polar_normal(weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
+void initialize_weights_as_polar_normal(VW::weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
 
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
@@ -82,22 +82,25 @@ void initialize_regressor(VW::workspace& all, T& weights)
   else if (all.initial_weight != 0.)
   {
     auto initial_weight = all.initial_weight;
-    auto initial_value_weight_initializer = [initial_weight](
-                                                weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
+    auto initial_value_weight_initializer = [initial_weight](VW::weight* weights, uint64_t /*index*/) {
+      weights[0] = initial_weight;
+    };
     weights.set_default(initial_value_weight_initializer);
   }
   else if (all.random_positive_weights)
   {
     auto rand_state = *all.get_random_state();
-    auto random_positive = [&rand_state](
-                               weight* weights, uint64_t) { weights[0] = 0.1f * rand_state.get_and_update_random(); };
+    auto random_positive = [&rand_state](VW::weight* weights, uint64_t) {
+      weights[0] = 0.1f * rand_state.get_and_update_random();
+    };
     weights.set_default(random_positive);
   }
   else if (all.random_weights)
   {
     auto rand_state = *all.get_random_state();
-    auto random_neg_pos = [&rand_state](
-                              weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_random() - 0.5f; };
+    auto random_neg_pos = [&rand_state](VW::weight* weights, uint64_t) {
+      weights[0] = rand_state.get_and_update_random() - 0.5f;
+    };
     weights.set_default(random_neg_pos);
   }
   else if (all.normal_weights)
