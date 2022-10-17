@@ -13,7 +13,7 @@
 
 // The reason for this implementation is that for specific scenarios using a
 // lookup table can drastically improve performance over the generic std::pow
-// implemenation. In the parseFloat function there is a place where we raise 10
+// implemenation. In the parse_float function there is a place where we raise 10
 // to some whole number and store the result in a float. This means there can
 // only be approximately 80 values possible for this calculation. This can
 // result in approximately a 50% reduction in runtime, which is why all of this
@@ -79,9 +79,9 @@ constexpr std::array<float, ArrayLength> gen_positive_pow10s(index_sequence<Inte
   return {constexpr_int_pow10(IntegerSequence)...};
 }
 
-static constexpr std::array<float, VALUES_ABOVE_AND_INCLUDING_ZERO> pow_10_positive_lookup_table =
+static constexpr std::array<float, VALUES_ABOVE_AND_INCLUDING_ZERO> POW_10_POSITIVE_LOOKUP_TABLE =
     gen_positive_pow10s<VALUES_ABOVE_AND_INCLUDING_ZERO>(make_index_sequence<VALUES_ABOVE_AND_INCLUDING_ZERO>{});
-static constexpr std::array<float, VALUES_BELOW_ZERO> pow_10_negative_lookup_table =
+static constexpr std::array<float, VALUES_BELOW_ZERO> POW_10_NEGATIVE_LOOKUP_TABLE =
     gen_negative_pow10s<VALUES_BELOW_ZERO>(make_index_sequence<VALUES_BELOW_ZERO>{});
 
 }  // namespace details
@@ -94,8 +94,8 @@ VW_STD14_CONSTEXPR inline float fast_pow10(int8_t exponent)
   return exponent > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
                                                : (exponent < -1 * details::VALUES_BELOW_ZERO)
           ? 0.f
-          : exponent >= 0 ? details::pow_10_positive_lookup_table[static_cast<std::size_t>(exponent)]
-                          : details::pow_10_negative_lookup_table[static_cast<std::size_t>(exponent) +
+          : exponent >= 0 ? details::POW_10_POSITIVE_LOOKUP_TABLE[static_cast<std::size_t>(exponent)]
+                          : details::POW_10_NEGATIVE_LOOKUP_TABLE[static_cast<std::size_t>(exponent) +
                                 static_cast<std::size_t>(details::VALUES_BELOW_ZERO)];
 }
 

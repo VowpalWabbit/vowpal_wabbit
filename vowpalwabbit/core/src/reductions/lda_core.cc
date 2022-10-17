@@ -1345,7 +1345,7 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
     bool previous_strict_parse = all.example_parser->strict_parse;
     delete all.example_parser;
     all.example_parser = new parser{minibatch2, previous_strict_parse};
-    all.example_parser->_shared_data = all.sd;
+    all.example_parser->shared_data_obj = all.sd;
   }
 
   ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);

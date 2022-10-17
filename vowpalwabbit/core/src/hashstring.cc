@@ -8,7 +8,7 @@
 
 #include <string>
 
-hash_func_t getHasher(const std::string& s)
+hash_func_t get_hasher(const std::string& s)
 {
   if (s == "strings") { return hashstring; }
   else if (s == "all")

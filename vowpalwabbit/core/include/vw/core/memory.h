@@ -79,10 +79,10 @@ std::unique_ptr<T> make_unique(Args&&... params)
 #endif
 }  // namespace VW
 
-#ifdef MADV_MERGEABLE
 template <class T>
 T* calloc_mergable_or_throw(size_t nmemb)
 {
+#ifdef MADV_MERGEABLE
   if (nmemb == 0) { return nullptr; }
   size_t length = nmemb * sizeof(T);
 #  if defined(ANDROID)
@@ -122,10 +122,10 @@ T* calloc_mergable_or_throw(size_t nmemb)
     fputs(msg, stderr);
   }
   return (T*)data;
-}
 #else
-#  define calloc_mergable_or_throw calloc_or_throw
+  return calloc_or_throw<T>(nmemb);
 #endif
+}
 
 inline void free_it(void* ptr)
 {

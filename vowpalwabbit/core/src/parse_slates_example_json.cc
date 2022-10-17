@@ -172,11 +172,11 @@ void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_p
   {
     auto slot_id = context["_slot_id"].GetInt();
     examples[0]->l.slates.slot_id = slot_id;
-    examples[0]->l.slates.type = VW::slates::example_type::action;
+    examples[0]->l.slates.type = VW::slates::example_type::ACTION;
   }
   else
   {
-    examples[0]->l.slates.type = VW::slates::example_type::shared;
+    examples[0]->l.slates.type = VW::slates::example_type::SHARED;
   }
 
   assert(namespaces.size() == 0);
@@ -189,7 +189,7 @@ void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_p
     {
       auto ex = &(*example_factory)(ex_factory_context);
       lbl_parser.default_label(ex->l);
-      ex->l.slates.type = VW::slates::example_type::action;
+      ex->l.slates.type = VW::slates::example_type::ACTION;
       examples.push_back(ex);
       if (dedup_examples && !dedup_examples->empty() && obj.HasMember("__aid"))
       {
@@ -220,7 +220,7 @@ void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_p
     {
       auto ex = &(*example_factory)(ex_factory_context);
       lbl_parser.default_label(ex->l);
-      ex->l.slates.type = VW::slates::example_type::slot;
+      ex->l.slates.type = VW::slates::example_type::SLOT;
       examples.push_back(ex);
       slot_examples.push_back(ex);
       handle_features_value(" ", slot_object, ex, namespaces, hash_func, hash_seed, parse_mask, chain_hash);

@@ -29,6 +29,8 @@
 #    define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #  endif
 
+#  include "vw/common/future_compat.h"
+
 namespace VW
 {
 class VW_EXPORT_EXCEPTION vw_exception : public std::exception
@@ -45,8 +47,12 @@ public:
   ~vw_exception() noexcept override = default;
 
   const char* what() const noexcept override { return _message.c_str(); }
-  const char* Filename() const { return _file; }
-  int LineNumber() const { return _line_number; }
+  VW_DEPRECATED("VW::vw_exception::Filename renamed to VW::vw_exception::filename")
+  const char* Filename() const { return _file; }  // NOLINT
+  const char* filename() const { return _file; }
+  VW_DEPRECATED("VW::vw_exception::LineNumber renamed to VW::vw_exception::line_number")
+  int LineNumber() const { return _line_number; }  // NOLINT
+  int line_number() const { return _line_number; }
 
 private:
   // Source file exception was thrown in.
@@ -136,7 +142,7 @@ public:
 inline std::string strerror_to_string(int error_number)
 {
 #  ifdef _WIN32
-  constexpr auto BUFFER_SIZE = 256;
+  static constexpr auto BUFFER_SIZE = 256;
   std::array<char, BUFFER_SIZE> error_message_buffer;
   auto result = strerror_s(error_message_buffer.data(), error_message_buffer.size() - 1, error_number);
   if (result != 0) { return "unknown message for errno: " + std::to_string(error_number); }
@@ -144,7 +150,7 @@ inline std::string strerror_to_string(int error_number)
   auto length = std::strlen(error_message_buffer.data());
   return std::string(error_message_buffer.data(), length);
 #  elif __APPLE__
-  constexpr auto BUFFER_SIZE = 256;
+  static constexpr auto BUFFER_SIZE = 256;
   std::array<char, BUFFER_SIZE> error_message_buffer;
 #    if defined(__GLIBC__) && defined(_GNU_SOURCE)
   // You must use the returned buffer and not the passed in buffer the GNU version.
@@ -251,4 +257,4 @@ inline std::string strerror_to_string(int error_number)
     } while (0)
 
 #endif
-#define _UNUSED(x) ((void)(x))
+#define _UNUSED(x) ((void)(x))  // NOLINT

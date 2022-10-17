@@ -126,15 +126,15 @@ public:
   void reset_total_sum_feat_sq()
   {
     total_sum_feat_sq = 0.f;
-    total_sum_feat_sq_calculated = false;
+    _total_sum_feat_sq_calculated = false;
   }
 
   friend void VW::copy_example_data(example* dst, const example* src);
   friend void VW::setup_example(VW::workspace& all, example* ae);
 
 private:
-  bool total_sum_feat_sq_calculated = false;
-  bool use_permutations = false;
+  bool _total_sum_feat_sq_calculated = false;
+  bool _use_permutations = false;
 };
 
 class workspace;

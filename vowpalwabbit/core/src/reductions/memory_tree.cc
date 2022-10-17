@@ -1108,49 +1108,49 @@ void end_pass(memory_tree& b)
 void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
 {  // deal with tag
    // deal with labels:
-  writeit(ec->num_features, "num_features");
-  writeit(ec->total_sum_feat_sq, "total_sum_features");
-  writeit(ec->weight, "example_weight");
-  writeit(ec->loss, "loss");
-  writeit(ec->ft_offset, "ft_offset");
+  WRITEIT(ec->num_features, "num_features");
+  WRITEIT(ec->total_sum_feat_sq, "total_sum_features");
+  WRITEIT(ec->weight, "example_weight");
+  WRITEIT(ec->loss, "loss");
+  WRITEIT(ec->ft_offset, "ft_offset");
   if (oas == false)
   {  // multi-class
-    writeit(ec->l.multi.label, "multiclass_label");
-    writeit(ec->l.multi.weight, "multiclass_weight");
+    WRITEIT(ec->l.multi.label, "multiclass_label");
+    WRITEIT(ec->l.multi.weight, "multiclass_weight");
   }
   else
   {  // multi-label
-    writeitvar(ec->l.multilabels.label_v.size(), "label_size", label_size);
+    WRITEITVAR(ec->l.multilabels.label_v.size(), "label_size", label_size);
     if (read)
     {
       ec->l.multilabels.label_v.clear();
       for (uint32_t i = 0; i < label_size; i++) { ec->l.multilabels.label_v.push_back(0); }
     }
-    for (uint32_t i = 0; i < label_size; i++) writeit(ec->l.multilabels.label_v[i], "ec_label");
+    for (uint32_t i = 0; i < label_size; i++) WRITEIT(ec->l.multilabels.label_v[i], "ec_label");
   }
 
-  writeitvar(ec->tag.size(), "tags", tag_number);
+  WRITEITVAR(ec->tag.size(), "tags", tag_number);
   if (read)
   {
     ec->tag.clear();
     for (uint32_t i = 0; i < tag_number; i++) { ec->tag.push_back('a'); }
   }
-  for (uint32_t i = 0; i < tag_number; i++) writeit(ec->tag[i], "tag");
+  for (uint32_t i = 0; i < tag_number; i++) WRITEIT(ec->tag[i], "tag");
 
   // deal with tag:
-  writeitvar(ec->indices.size(), "namespaces", namespace_size);
+  WRITEITVAR(ec->indices.size(), "namespaces", namespace_size);
   if (read)
   {
     ec->indices.clear();
     for (uint32_t i = 0; i < namespace_size; i++) { ec->indices.push_back('\0'); }
   }
-  for (uint32_t i = 0; i < namespace_size; i++) writeit(ec->indices[i], "VW::namespace_index");
+  for (uint32_t i = 0; i < namespace_size; i++) WRITEIT(ec->indices[i], "VW::namespace_index");
 
   // deal with features
   for (VW::namespace_index nc : ec->indices)
   {
     features* fs = &ec->feature_space[nc];
-    writeitvar(fs->size(), "features_", feat_size);
+    WRITEITVAR(fs->size(), "features_", feat_size);
     if (read)
     {
       fs->clear();
@@ -1158,28 +1158,28 @@ void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& te
       fs->indices.clear();
       for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs->push_back(0, 0); }
     }
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->values[f_i], "value");
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) writeit(fs->indices[f_i], "index");
+    for (uint32_t f_i = 0; f_i < feat_size; f_i++) WRITEIT(fs->values[f_i], "value");
+    for (uint32_t f_i = 0; f_i < feat_size; f_i++) WRITEIT(fs->indices[f_i], "index");
   }
 }
 
 void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
-  writeit(cn.parent, "parent");
-  writeit(cn.internal, "internal");
-  writeit(cn.depth, "depth");
-  writeit(cn.base_router, "base_router");
-  writeit(cn.left, "left");
-  writeit(cn.right, "right");
-  writeit(cn.nl, "nl");
-  writeit(cn.nr, "nr");
-  writeitvar(cn.examples_index.size(), "leaf_n_examples", leaf_n_examples);
+  WRITEIT(cn.parent, "parent");
+  WRITEIT(cn.internal, "internal");
+  WRITEIT(cn.depth, "depth");
+  WRITEIT(cn.base_router, "base_router");
+  WRITEIT(cn.left, "left");
+  WRITEIT(cn.right, "right");
+  WRITEIT(cn.nl, "nl");
+  WRITEIT(cn.nr, "nr");
+  WRITEITVAR(cn.examples_index.size(), "leaf_n_examples", leaf_n_examples);
   if (read)
   {
     cn.examples_index.clear();
     for (uint32_t k = 0; k < leaf_n_examples; k++) { cn.examples_index.push_back(0); }
   }
-  for (uint32_t k = 0; k < leaf_n_examples; k++) writeit(cn.examples_index[k], "example_location");
+  for (uint32_t k = 0; k < leaf_n_examples; k++) WRITEIT(cn.examples_index[k], "example_location");
 }
 
 void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
@@ -1192,21 +1192,21 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     if (read)
     {
       uint32_t ss = 0;
-      writeit(ss, "stride_shift");
+      WRITEIT(ss, "stride_shift");
       b.all->weights.stride_shift(ss);
     }
     else
     {
       uint32_t ss = b.all->weights.stride_shift();
-      writeit(ss, "stride_shift");
+      WRITEIT(ss, "stride_shift");
     }
 
-    writeit(b.max_nodes, "max_nodes");
-    writeit(b.learn_at_leaf, "learn_at_leaf");
-    writeit(b.oas, "oas");
-    // writeit(b.leaf_example_multiplier, "leaf_example_multiplier")
-    writeitvar(b.nodes.size(), "nodes", n_nodes);
-    writeit(b.max_num_labels, "max_number_of_labels");
+    WRITEIT(b.max_nodes, "max_nodes");
+    WRITEIT(b.learn_at_leaf, "learn_at_leaf");
+    WRITEIT(b.oas, "oas");
+    // WRITEIT(b.leaf_example_multiplier, "leaf_example_multiplier")
+    WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
+    WRITEIT(b.max_num_labels, "max_number_of_labels");
 
     if (read)
     {
@@ -1217,7 +1217,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     // node
     for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text, msg); }
     // deal with examples:
-    writeitvar(b.examples.size(), "examples", n_examples);
+    WRITEITVAR(b.examples.size(), "examples", n_examples);
     if (read)
     {
       b.examples.clear();

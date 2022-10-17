@@ -443,9 +443,9 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
   {
     std::stringstream msg;
 
-    writeit(b.k, "k");
-    writeit(b.node_only, "node_only");
-    writeitvar(b.nodes.size(), "nodes", n_nodes);
+    WRITEIT(b.k, "k");
+    WRITEIT(b.node_only, "node_only");
+    WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
 
     if (read)
     {
@@ -453,25 +453,25 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
       for (uint32_t j = 0; j < n_nodes; ++j) { b.nodes.push_back(node()); }
     }
 
-    writeit(b.max_candidates, "max_candidates");
-    writeit(b.max_depth, "max_depth");
+    WRITEIT(b.max_candidates, "max_candidates");
+    WRITEIT(b.max_depth, "max_depth");
 
     for (uint32_t j = 0; j < n_nodes; ++j)
     {
       node* cn = &b.nodes[j];
 
-      writeit(cn->parent, "parent");
-      writeit(cn->recall_lbest, "recall_lbest");
-      writeit(cn->internal, "internal");
-      writeit(cn->depth, "depth");
-      writeit(cn->base_router, "base_router");
-      writeit(cn->left, "left");
-      writeit(cn->right, "right");
-      writeit(cn->n, "n");
-      writeit(cn->entropy, "entropy");
-      writeit(cn->passes, "passes");
+      WRITEIT(cn->parent, "parent");
+      WRITEIT(cn->recall_lbest, "recall_lbest");
+      WRITEIT(cn->internal, "internal");
+      WRITEIT(cn->depth, "depth");
+      WRITEIT(cn->base_router, "base_router");
+      WRITEIT(cn->left, "left");
+      WRITEIT(cn->right, "right");
+      WRITEIT(cn->n, "n");
+      WRITEIT(cn->entropy, "entropy");
+      WRITEIT(cn->passes, "passes");
 
-      writeitvar(cn->preds.size(), "n_preds", n_preds);
+      WRITEITVAR(cn->preds.size(), "n_preds", n_preds);
 
       if (read)
       {
@@ -484,8 +484,8 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
       {
         node_pred* pred = &cn->preds[k];
 
-        writeit(pred->label, "label");
-        writeit(pred->label_count, "label_count");
+        WRITEIT(pred->label, "label");
+        WRITEIT(pred->label_count, "label_count");
       }
 
       if (read) { compute_recall_lbest(b, cn); }

@@ -19,10 +19,10 @@ namespace slates
 {
 enum class example_type : uint8_t
 {
-  unset = 0,
-  shared = 1,
-  action = 2,
-  slot = 3
+  UNSET = 0,
+  SHARED = 1,
+  ACTION = 2,
+  SLOT = 3
 };
 
 class label
@@ -51,7 +51,7 @@ public:
 
   void reset_to_default()
   {
-    type = example_type::unset;
+    type = example_type::UNSET;
     weight = 1.f;
     labeled = false;
     cost = 0.f;

@@ -97,6 +97,6 @@ int main(int argc, char* argv[])
   }
   catch (VW::vw_exception& e)
   {
-    std::cerr << "spanning tree (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
+    std::cerr << "spanning tree (" << e.filename() << ":" << e.line_number() << "): " << e.what() << std::endl;
   }
 }

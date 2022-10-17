@@ -113,19 +113,19 @@ public:
   custom_builder()
   {
     // this is the reduction stack of function pointers
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[0]), "gd");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[1]), "ksvm");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[2]), "ftrl");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[0]), "gd");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[1]), "ksvm");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[2]), "ftrl");
 
-    BOOST_CHECK_GT(reduction_stack.size(), 77);
+    BOOST_CHECK_GT(_reduction_stack.size(), 77);
     // erase "ksvm" just as a proof of concept
     // see custom_reduction_builder_check_throw below
-    reduction_stack.erase(reduction_stack.begin() + 1);
+    _reduction_stack.erase(_reduction_stack.begin() + 1);
 
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[0]), "gd");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[1]), "ftrl");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[0]), "gd");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[1]), "ftrl");
 
-    reduction_stack.emplace_back("test_reduction_name", toy_reduction::test_reduction_setup<true>);
+    _reduction_stack.emplace_back("test_reduction_name", toy_reduction::test_reduction_setup<true>);
   }
 };
 
