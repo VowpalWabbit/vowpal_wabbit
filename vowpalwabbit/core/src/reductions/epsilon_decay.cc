@@ -380,7 +380,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
       .add(make_option("shift_model_bounds", shift_model_bounds)
                .default_value(0)
                .keep()
-               .help("Shift maximum update_count for model i from champ_update_count^(i / num_models) to champ_update_count^((i + shift) / (num_models + shift))")
+               .help("Shift maximum update_count for model i from champ_update_count^(i / num_models) to "
+                     "champ_update_count^((i + shift) / (num_models + shift))")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -391,7 +392,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.wpp, lb_trick, min_champ_examples, initial_epsilon, shift_model_bounds);
+      epsilon_decay_audit_str, constant_epsilon, all.wpp, lb_trick, min_champ_examples, initial_epsilon,
+      shift_model_bounds);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

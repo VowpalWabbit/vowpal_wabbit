@@ -24,8 +24,8 @@ cb_sim::cb_sim(uint64_t seed)
   callback_count = 0;
 }
 
-float cb_sim::get_reaction(
-    const std::map<std::string, std::string>& context, const std::string& action, bool add_noise, bool swap_reward, float scale_reward)
+float cb_sim::get_reaction(const std::map<std::string, std::string>& context, const std::string& action, bool add_noise,
+    bool swap_reward, float scale_reward)
 {
   float like_reward = USER_LIKED_ARTICLE;
   float dislike_reward = USER_DISLIKED_ARTICLE;
@@ -53,10 +53,7 @@ float cb_sim::get_reaction(
     }
   }
 
-  if (swap_reward)
-  {
-    return scale_reward * ((reward == like_reward) ? dislike_reward : like_reward);
-  }
+  if (swap_reward) { return scale_reward * ((reward == like_reward) ? dislike_reward : like_reward); }
   return reward;
 }
 
@@ -134,7 +131,8 @@ void cb_sim::call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_
 }
 
 std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_iterations, callback_map& callbacks,
-    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features, const std::vector<uint64_t>& swap_after, float scale_reward)
+    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features, const std::vector<uint64_t>& swap_after,
+    float scale_reward)
 {
   // check if there's a callback for the first possible element,
   // in this case most likely 0th event

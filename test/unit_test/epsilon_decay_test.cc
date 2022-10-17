@@ -66,7 +66,8 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --epsilon_decay_significance_level .9 --model_count 2 --cb_explore_adf --quiet  -q :: --shift_model_bounds 10",
+      "--epsilon_decay --epsilon_decay_significance_level .9 --model_count 2 --cb_explore_adf --quiet  -q :: "
+      "--shift_model_bounds 10",
       test_hooks, num_iterations, seed, swap_after, scale_reward);
 
   BOOST_CHECK_GT(ctr.back(), 0.6f);
