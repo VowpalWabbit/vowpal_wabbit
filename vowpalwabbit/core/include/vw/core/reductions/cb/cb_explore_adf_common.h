@@ -29,29 +29,28 @@ namespace VW
 namespace cb_explore_adf
 {
 // Free functions
-inline void sort_action_probs(v_array<ACTION_SCORE::action_score>& probs, const std::vector<float>& scores)
+inline void sort_action_probs(v_array<VW::action_score>& probs, const std::vector<float>& scores)
 {
   // We want to preserve the score order in the returned action_probs if possible.  To do this,
   // sort top_actions and action_probs by the order induced in scores.
-  std::sort(probs.begin(), probs.end(),
-      [&scores](const ACTION_SCORE::action_score& as1, const ACTION_SCORE::action_score& as2) {
-        if (as1.score > as2.score) { return true; }
-        else if (as1.score < as2.score)
-        {
-          return false;
-        }
-        // equal probabilities
-        if (scores[as1.action] < scores[as2.action]) { return true; }
-        else if (scores[as1.action] > scores[as2.action])
-        {
-          return false;
-        }
-        // equal probabilities and equal cost estimates
-        return as1.action < as2.action;
-      });
+  std::sort(probs.begin(), probs.end(), [&scores](const VW::action_score& as1, const VW::action_score& as2) {
+    if (as1.score > as2.score) { return true; }
+    else if (as1.score < as2.score)
+    {
+      return false;
+    }
+    // equal probabilities
+    if (scores[as1.action] < scores[as2.action]) { return true; }
+    else if (scores[as1.action] > scores[as2.action])
+    {
+      return false;
+    }
+    // equal probabilities and equal cost estimates
+    return as1.action < as2.action;
+  });
 }
 
-inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
+inline size_t fill_tied(const v_array<VW::action_score>& preds)
 {
   if (preds.size() == 0) { return 0; }
 
@@ -67,8 +66,9 @@ inline size_t fill_tied(const v_array<ACTION_SCORE::action_score>& preds)
   return ret;
 }
 
-struct cb_explore_metrics
+class cb_explore_metrics
 {
+public:
   size_t metric_labeled = 0;
   size_t metric_predict_in_learn = 0;
   float metric_sum_cost = 0.0;
@@ -86,16 +86,8 @@ struct cb_explore_metrics
 // Object
 template <typename ExploreType>
 // data common to all cb_explore_adf reductions
-struct cb_explore_adf_base
+class cb_explore_adf_base
 {
-private:
-  CB::cb_class _known_cost;
-  // used in output_example
-  CB::label _action_label;
-  CB::label _empty_label;
-  ACTION_SCORE::action_scores _saved_pred;
-  std::unique_ptr<cb_explore_metrics> _metrics;
-
 public:
   template <typename... Args>
   cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
@@ -111,10 +103,15 @@ public:
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-public:
   ExploreType explore;
 
 private:
+  CB::cb_class _known_cost;
+  // used in output_example
+  CB::label _action_label;
+  CB::label _empty_label;
+  VW::action_scores _saved_pred;
+  std::unique_ptr<cb_explore_metrics> _metrics;
   void output_example_seq(VW::workspace& all, const multi_ex& ec_seq);
   void output_example(VW::workspace& all, const multi_ex& ec_seq);
 };
@@ -199,8 +196,8 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
   {
     if (CB::ec_is_example_header(*example))
     {
-      num_features +=
-          (ec_seq.size() - 1) * (example->get_num_features() - example->feature_space[constant_namespace].size());
+      num_features += (ec_seq.size() - 1) *
+          (example->get_num_features() - example->feature_space[VW::details::CONSTANT_NAMESPACE].size());
       num_namespaces += (ec_seq.size() - 1) * example->indices.size();
     }
     else
@@ -236,20 +233,20 @@ void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { ACTION_SCORE::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
+  { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost); }

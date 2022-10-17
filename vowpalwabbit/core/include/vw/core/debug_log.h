@@ -7,8 +7,9 @@
 #include "vw/common/future_compat.h"
 #include "vw/core/debug_print.h"
 
-struct vw_dbg
+class vw_dbg
 {
+public:
   // clang-format off
   static constexpr bool default_log =         false;
   static constexpr bool learner =             false;

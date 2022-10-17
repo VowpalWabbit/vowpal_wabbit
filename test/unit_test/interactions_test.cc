@@ -28,8 +28,9 @@ std::ostream& operator<<(std::ostream& os, const std::pair<VW::namespace_index, 
 }
 }  // namespace std
 
-struct eval_gen_data
+class eval_gen_data
 {
+public:
   size_t& new_features_cnt;
   float& new_features_value;
   eval_gen_data(size_t& features_cnt, float& features_value)
@@ -360,7 +361,8 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   {
     auto a = parse_full_name_interactions(*vw, "art|:|and");
     std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
-        extent_term{wildcard_namespace, wildcard_namespace}, extent_term{'a', VW::hash_space(*vw, "and")}};
+        extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE},
+        extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 

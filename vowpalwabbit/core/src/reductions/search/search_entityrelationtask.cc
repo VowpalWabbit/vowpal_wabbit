@@ -4,6 +4,7 @@
 #include "vw/core/reductions/search/search_entityrelationtask.h"
 
 #include "vw/config/options.h"
+#include "vw/core/cost_sensitive.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
@@ -23,12 +24,12 @@ Search::search_task task = {"entity_relation", run, initialize, nullptr, nullptr
 namespace EntityRelationTask
 {
 using namespace Search;
-namespace CS = COST_SENSITIVE;
 
 void update_example_indices(bool audit, VW::example* ec, uint64_t mult_amount, uint64_t plus_amount);
 
-struct task_data
+class task_data
 {
+public:
   float relation_none_cost;
   float entity_cost;
   float relation_cost;
@@ -81,7 +82,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   if (my_task_data->search_order != 3 && my_task_data->search_order != 4) { sch.set_options(0); }
   else
   {
-    CS::wclass default_wclass = {0., 0, 0., 0.};
+    VW::cs_class default_wclass = {0., 0, 0., 0.};
     for (size_t a = 0; a < NUM_LDF_ENTITY_EXAMPLES; a++)
     {
       my_task_data->ldf_entity[a].l.cs.costs.push_back(default_wclass);
@@ -154,7 +155,7 @@ size_t predict_entity(
       {
         VW::copy_example_data(&my_task_data->ldf_entity[a], ex);
         update_example_indices(true, &my_task_data->ldf_entity[a], 28904713, 4832917 * static_cast<uint64_t>(a + 1));
-        CS::label& lab = my_task_data->ldf_entity[a].l.cs;
+        VW::cs_label& lab = my_task_data->ldf_entity[a].l.cs;
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = a;
         lab.costs[0].partial_prediction = 0.f;
@@ -241,7 +242,7 @@ size_t predict_relation(
         VW::copy_example_data(&my_task_data->ldf_relation[a], ex);
         update_example_indices(true, &my_task_data->ldf_relation[a], 28904713,
             4832917 * static_cast<uint64_t>(constrained_relation_labels[a]));
-        CS::label& lab = my_task_data->ldf_relation[a].l.cs;
+        VW::cs_label& lab = my_task_data->ldf_relation[a].l.cs;
         lab.costs[0].x = 0.f;
         lab.costs[0].class_index = constrained_relation_labels[a];
         lab.costs[0].partial_prediction = 0.f;

@@ -37,10 +37,10 @@ VW::example::~example()
 
 float VW::example::get_total_sum_feat_sq()
 {
-  if (!total_sum_feat_sq_calculated)
+  if (!_total_sum_feat_sq_calculated)
   {
-    total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
-    total_sum_feat_sq_calculated = true;
+    total_sum_feat_sq = calculate_total_sum_features_squared(_use_permutations, *this);
+    _total_sum_feat_sq_calculated = true;
   }
   return total_sum_feat_sq;
 }
@@ -113,11 +113,11 @@ void copy_example_data(example* dst, const example* src)
   for (namespace_index c : src->indices) { dst->feature_space[c] = src->feature_space[c]; }
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
-  dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
-  dst->use_permutations = src->use_permutations;
+  dst->_total_sum_feat_sq_calculated = src->_total_sum_feat_sq_calculated;
+  dst->_use_permutations = src->_use_permutations;
   dst->interactions = src->interactions;
   dst->extent_interactions = src->extent_interactions;
-  dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
+  dst->debug_current_reduction_depth = src->debug_current_reduction_depth;
 }
 
 void copy_example_data_with_label(example* dst, const example* src)
@@ -146,8 +146,9 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
 
 }  // namespace VW
 
-struct features_and_source
+class features_and_source
 {
+public:
   VW::v_array<feature> feature_map;  // map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
@@ -174,8 +175,9 @@ feature* get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
 void return_features(feature* f) { free_it(f); }
 }  // namespace VW
 
-struct full_features_and_source
+class full_features_and_source
 {
+public:
   features fs;
   uint32_t stride_shift;
   uint64_t mask;

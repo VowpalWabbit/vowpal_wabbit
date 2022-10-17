@@ -25,8 +25,9 @@ using namespace VW::config;
 
 namespace
 {
-struct node_pred
+class node_pred
 {
+public:
   uint32_t label;
   double label_count;
 
@@ -36,8 +37,9 @@ struct node_pred
 
 static_assert(std::is_trivial<node_pred>::value, "To be used in VW::v_array node_pred must be trivial");
 
-struct node
+class node
 {
+public:
   uint32_t parent;
   float recall_lbest;
 
@@ -68,10 +70,11 @@ struct node
   }
 };
 
-struct recall_tree
+class recall_tree
 {
+public:
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   uint32_t k = 0;
   bool node_only = false;
 
@@ -222,8 +225,8 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
   uint64_t mask = all->weights.mask();
   size_t ss = all->weights.stride_shift();
 
-  ec.indices.push_back(node_id_namespace);
-  features& fs = ec.feature_space[node_id_namespace];
+  ec.indices.push_back(VW::details::NODE_ID_NAMESPACE);
+  features& fs = ec.feature_space[VW::details::NODE_ID_NAMESPACE];
 
   if (b.node_only) { fs.push_back(1., ((static_cast<uint64_t>(868771) * cn) << ss) & mask); }
   else
@@ -241,21 +244,21 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
 
 void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, VW::example& ec)
 {
-  features& fs = ec.feature_space[node_id_namespace];
+  features& fs = ec.feature_space[VW::details::NODE_ID_NAMESPACE];
   fs.clear();
   ec.indices.pop_back();
 }
 
 uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, VW::example& ec)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
+  VW::multiclass_label mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
   uint32_t amaxscore = 0;
 
   add_node_id_feature(b, cn, ec);
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   float maxscore = std::numeric_limits<float>::lowest();
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -289,8 +292,9 @@ bool is_candidate(recall_tree& b, uint32_t cn, VW::example& ec)
 
 inline uint32_t descend(node& n, float prediction) { return prediction < 0 ? n.left : n.right; }
 
-struct predict_type
+class predict_type
 {
+public:
   uint32_t node_id;
   uint32_t class_prediction;
 
@@ -304,11 +308,11 @@ bool stop_recurse_check(recall_tree& b, uint32_t parent, uint32_t child)
 
 predict_type predict_from(recall_tree& b, single_learner& base, VW::example& ec, uint32_t cn)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
+  VW::multiclass_label mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -335,7 +339,7 @@ void predict(recall_tree& b, single_learner& base, VW::example& ec)
 
 float train_node(recall_tree& b, single_learner& base, VW::example& ec, uint32_t cn)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
+  VW::multiclass_label mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
 
   // minimize entropy
@@ -356,7 +360,7 @@ float train_node(recall_tree& b, single_learner& base, VW::example& ec, uint32_t
   // float imp_weight = fabs((float)(delta_left - delta_right));
 
   ec.l.simple = {route_label};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   // Bug?
   // Notes: looks like imp_weight was not used since ec.l.simple.weight is not
   // used in gd.
@@ -390,7 +394,7 @@ void learn(recall_tree& b, single_learner& base, VW::example& ec)
     {
       float which = train_node(b, base, ec, cn);
 
-      if (b.randomized_routing) { which = (b._random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f); }
+      if (b.randomized_routing) { which = (b.random_state->get_and_update_random() > to_prob(which) ? -1.f : 1.f); }
 
       uint32_t newcn = descend(b.nodes[cn], which);
       bool cond = stop_recurse_check(b, cn, newcn);
@@ -409,13 +413,13 @@ void learn(recall_tree& b, single_learner& base, VW::example& ec)
 
     if (is_candidate(b, cn, ec))
     {
-      MULTICLASS::label_t mc = ec.l.multi;
+      VW::multiclass_label mc = ec.l.multi;
       uint32_t save_pred = ec.pred.multiclass;
 
       add_node_id_feature(b, cn, ec);
 
       ec.l.simple = {1.f};
-      ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+      ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
       base.learn(ec, b.max_routers + mc.label - 1);
       ec.l.simple = {-1.f};
 
@@ -439,9 +443,9 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
   {
     std::stringstream msg;
 
-    writeit(b.k, "k");
-    writeit(b.node_only, "node_only");
-    writeitvar(b.nodes.size(), "nodes", n_nodes);
+    WRITEIT(b.k, "k");
+    WRITEIT(b.node_only, "node_only");
+    WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
 
     if (read)
     {
@@ -449,25 +453,25 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
       for (uint32_t j = 0; j < n_nodes; ++j) { b.nodes.push_back(node()); }
     }
 
-    writeit(b.max_candidates, "max_candidates");
-    writeit(b.max_depth, "max_depth");
+    WRITEIT(b.max_candidates, "max_candidates");
+    WRITEIT(b.max_depth, "max_depth");
 
     for (uint32_t j = 0; j < n_nodes; ++j)
     {
       node* cn = &b.nodes[j];
 
-      writeit(cn->parent, "parent");
-      writeit(cn->recall_lbest, "recall_lbest");
-      writeit(cn->internal, "internal");
-      writeit(cn->depth, "depth");
-      writeit(cn->base_router, "base_router");
-      writeit(cn->left, "left");
-      writeit(cn->right, "right");
-      writeit(cn->n, "n");
-      writeit(cn->entropy, "entropy");
-      writeit(cn->passes, "passes");
+      WRITEIT(cn->parent, "parent");
+      WRITEIT(cn->recall_lbest, "recall_lbest");
+      WRITEIT(cn->internal, "internal");
+      WRITEIT(cn->depth, "depth");
+      WRITEIT(cn->base_router, "base_router");
+      WRITEIT(cn->left, "left");
+      WRITEIT(cn->right, "right");
+      WRITEIT(cn->n, "n");
+      WRITEIT(cn->entropy, "entropy");
+      WRITEIT(cn->passes, "passes");
 
-      writeitvar(cn->preds.size(), "n_preds", n_preds);
+      WRITEITVAR(cn->preds.size(), "n_preds", n_preds);
 
       if (read)
       {
@@ -480,8 +484,8 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
       {
         node_pred* pred = &cn->preds[k];
 
-        writeit(pred->label, "label");
-        writeit(pred->label_count, "label_count");
+        WRITEIT(pred->label, "label");
+        WRITEIT(pred->label_count, "label_count");
       }
 
       if (read) { compute_recall_lbest(b, cn); }
@@ -509,7 +513,7 @@ base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   tree->all = &all;
-  tree->_random_state = all.get_random_state();
+  tree->random_state = all.get_random_state();
   tree->max_candidates = options.was_supplied("max_candidates")
       ? VW::cast_to_smaller_type<size_t>(max_candidates)
       : std::min(tree->k, 4 * static_cast<uint32_t>(ceil(log(tree->k) / log(2.0))));
@@ -533,13 +537,13 @@ base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(recall_tree_setup))
                 .set_params_per_weight(ws)
-                .set_finish_example(MULTICLASS::finish_example<recall_tree&>)
+                .set_finish_example(VW::details::finish_multiclass_example<recall_tree&>)
                 .set_save_load(save_load_tree)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_input_label_type(VW::label_type_t::multiclass)
                 .build();
 
-  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   return make_base(*l);
 }

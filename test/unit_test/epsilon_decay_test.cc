@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_save_load)
 
 BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
 {
-  // Initialize epsilon_decay_data struct with 5 models
+  // Initialize epsilon_decay_data class with 5 models
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
 
 BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
 {
-  // Initialize epsilon_decay_data struct with 5 models
+  // Initialize epsilon_decay_data class with 5 models
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);

@@ -4,6 +4,7 @@
 
 #include "../large_action_space.h"
 #include "vw/core/cb.h"
+#include "vw/core/label_dictionary.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/reductions/gd.h"
 
@@ -11,16 +12,8 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-struct Y_constructor
+class Y_constructor
 {
-  uint64_t _weights_mask;
-  dense_parameters& _weights;
-  uint64_t _row_index;
-  uint64_t _column_index;
-  uint64_t _seed;
-  std::set<uint64_t>& _non_zero_rows;
-  const std::vector<float>& _shrink_factors;
-
 public:
   Y_constructor(uint64_t weights_mask, dense_parameters& weights, uint64_t row_index, uint64_t column_index,
       uint64_t seed, std::set<uint64_t>& _non_zero_rows, const std::vector<float>& shrink_factors)
@@ -45,14 +38,19 @@ public:
       _weights[strided_index] += calc;
     }
   }
-};
 
-struct Y_destructor
-{
+private:
   uint64_t _weights_mask;
   dense_parameters& _weights;
+  uint64_t _row_index;
   uint64_t _column_index;
+  uint64_t _seed;
+  std::set<uint64_t>& _non_zero_rows;
+  const std::vector<float>& _shrink_factors;
+};
 
+class Y_destructor
+{
 public:
   Y_destructor(uint64_t weights_mask, dense_parameters& weights, uint64_t column_index)
       : _weights_mask(weights_mask), _weights(weights), _column_index(column_index)
@@ -67,16 +65,15 @@ public:
       _weights[strided_index] = 0.f;  // TODO initial weight defined by cli
     }
   }
-};
 
-struct Y_triplet_populator
-{
+private:
   uint64_t _weights_mask;
   dense_parameters& _weights;
-  std::vector<Eigen::Triplet<float>>& _triplets;
   uint64_t _column_index;
-  uint64_t& _max_col;
+};
 
+class Y_triplet_populator
+{
 public:
   Y_triplet_populator(uint64_t weights_mask, dense_parameters& weights, std::vector<Eigen::Triplet<float>>& triplets,
       uint64_t column_index, uint64_t& max_col)
@@ -97,16 +94,17 @@ public:
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
   }
-};
 
-struct A_times_Y_dot_product
-{
 private:
   uint64_t _weights_mask;
   dense_parameters& _weights;
+  std::vector<Eigen::Triplet<float>>& _triplets;
   uint64_t _column_index;
-  float& _final_dot_product;
+  uint64_t& _max_col;
+};
 
+class A_times_Y_dot_product
+{
 public:
   A_times_Y_dot_product(
       uint64_t weights_mask, dense_parameters& weights, uint64_t column_index, float& final_dot_product)
@@ -123,6 +121,12 @@ public:
     auto strided_index = (index & _weights_mask) + _column_index;
     _final_dot_product += feature_value * _weights[strided_index];
   }
+
+private:
+  uint64_t _weights_mask;
+  dense_parameters& _weights;
+  uint64_t _column_index;
+  float& _final_dot_product;
 };
 
 bool model_weight_rand_svd_impl::generate_model_weight_Y(
@@ -134,7 +138,10 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
@@ -162,6 +169,9 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
             _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
       }
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+
     row_index++;
   }
 
@@ -194,7 +204,9 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
     for (uint64_t col = 0; col < max_existing_column; ++col)
     {
@@ -222,6 +234,9 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
 
       B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+
     row_index++;
   }
 }
@@ -234,7 +249,10 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
@@ -260,6 +278,7 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
             _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
       }
     }
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
   }
 
   Y.resize(max_non_zero_col + 1, _d);
@@ -277,7 +296,10 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+
     for (uint64_t col = 0; col < _d; col++)
     {
       if (_all->weights.sparse)
@@ -301,6 +323,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
             _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
       }
     }
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
   }
 }
 

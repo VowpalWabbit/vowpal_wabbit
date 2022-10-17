@@ -17,8 +17,9 @@ using std::vector;
 
 namespace
 {
-struct reduction_test_harness
+class reduction_test_harness
 {
+public:
   reduction_test_harness() : _curr_idx(0) {}
 
   void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }
@@ -27,7 +28,7 @@ struct reduction_test_harness
   {
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
-    { ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second}); }
+    { ec.pred.a_s.push_back(VW::action_score{_predictions[i].first, _predictions[i].second}); }
   }
 
   void test_learn(base_learner& base, VW::example& ec)

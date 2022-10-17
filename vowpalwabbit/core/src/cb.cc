@@ -121,7 +121,7 @@ std::string known_cost_to_str(const CB::cb_class* known_cost)
   if (known_cost == nullptr) { return " known"; }
 
   std::stringstream label_string;
-  label_string.precision(VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION);
+  label_string.precision(VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION);
   label_string << known_cost->action << ":" << known_cost->cost << ":" << known_cost->probability;
   return label_string.str();
 }
@@ -143,7 +143,7 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
         if (CB::ec_is_example_header(*(*ec_seq)[i]))
         {
           num_features += (ec_seq->size() - 1) *
-              ((*ec_seq)[i]->get_num_features() - (*ec_seq)[i]->feature_space[constant_namespace].size());
+              ((*ec_seq)[i]->get_num_features() - (*ec_seq)[i]->feature_space[VW::details::CONSTANT_NAMESPACE].size());
         }
         else
         {
@@ -164,7 +164,7 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
       if (!ec.pred.a_s.empty())
       {
         pred_buf << fmt::format("{}:{}", ec.pred.a_s[0].action,
-            VW::fmt_float(ec.pred.a_s[0].score, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
+            VW::fmt_float(ec.pred.a_s[0].score, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
       }
       else
       {

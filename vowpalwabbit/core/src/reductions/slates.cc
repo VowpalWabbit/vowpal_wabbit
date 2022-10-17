@@ -31,7 +31,7 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   for (auto& example : examples) { _stashed_labels.push_back(std::move(example->l.slates)); }
 
   const size_t num_slots = std::count_if(examples.begin(), examples.end(),
-      [](const example* example) { return example->l.slates.type == VW::slates::example_type::slot; });
+      [](const example* example) { return example->l.slates.type == VW::slates::example_type::SLOT; });
 
   float global_cost = 0.f;
   bool global_cost_found = false;
@@ -40,34 +40,34 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   std::vector<std::vector<uint32_t>> slot_action_pools(num_slots);
   for (size_t i = 0; i < examples.size(); i++)
   {
-    CCB::label ccb_label;
-    CCB::default_label(ccb_label);
+    VW::ccb_label ccb_label;
+    VW::default_ccb_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
-    if (slates_label.type == slates::example_type::shared)
+    if (slates_label.type == slates::example_type::SHARED)
     {
-      ccb_label.type = CCB::example_type::shared;
+      ccb_label.type = VW::ccb_example_type::SHARED;
       if (slates_label.labeled)
       {
         global_cost_found = true;
         global_cost = slates_label.cost;
       }
     }
-    else if (slates_label.type == slates::example_type::action)
+    else if (slates_label.type == slates::example_type::ACTION)
     {
       if (slates_label.slot_id >= num_slots) { THROW("slot_id cannot be larger than or equal to the number of slots"); }
-      ccb_label.type = CCB::example_type::action;
+      ccb_label.type = VW::ccb_example_type::ACTION;
       slot_action_pools[slates_label.slot_id].push_back(action_index);
       action_index++;
     }
-    else if (slates_label.type == slates::example_type::slot)
+    else if (slates_label.type == slates::example_type::SLOT)
     {
-      ccb_label.type = CCB::example_type::slot;
+      ccb_label.type = VW::ccb_example_type::SLOT;
       ccb_label.explicit_included_actions.clear();
       for (const auto index : slot_action_pools[slot_index]) { ccb_label.explicit_included_actions.push_back(index); }
 
       if (global_cost_found)
       {
-        ccb_label.outcome = new CCB::conditional_contextual_bandit_outcome();
+        ccb_label.outcome = new VW::ccb_outcome();
         ccb_label.outcome->cost = global_cost;
         ccb_label.outcome->probabilities.clear();
 
@@ -145,8 +145,7 @@ namespace
 // the case for a Cartesian product when the logging policy is a product
 // distribution. This can be seen in example 4 of the paper.
 // https://arxiv.org/abs/1605.04812
-float get_estimate(
-    const ACTION_SCORE::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
+float get_estimate(const VW::action_scores& label_probs, float cost, const VW::decision_scores_t& prediction_probs)
 {
   assert(!label_probs.empty());
   assert(!prediction_probs.empty());
@@ -166,15 +165,15 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   VW::multi_ex slots;
   size_t num_features = 0;
   float loss = 0.;
-  bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
-  float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
-  v_array<ACTION_SCORE::action_score> label_probs;
+  bool is_labelled = ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.labeled;
+  float cost = is_labelled ? ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.cost : 0.f;
+  v_array<VW::action_score> label_probs;
 
   for (auto* ec : ec_seq)
   {
     num_features += ec->get_num_features();
 
-    if (ec->l.slates.type == VW::slates::example_type::slot)
+    if (ec->l.slates.type == VW::slates::example_type::SLOT)
     {
       slots.push_back(ec);
       if (is_labelled)
@@ -198,10 +197,10 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
     for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
   }
 
-  all.sd->update(holdout_example, is_labelled, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
+  all.sd->update(holdout_example, is_labelled, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
+  { VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
 
   VW::print_update_slates(all, slots, predictions, num_features);
 }

@@ -8,6 +8,7 @@
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/global_data.h"
+#include "vw/core/memory.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -29,21 +30,20 @@ std::string get_keep_command_line(const VW::workspace& workspace)
   return serializer.str();
 }
 
-void validate_compatibility(const VW::workspace* base_workspace,
-    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
+void validate_compatibility(const std::vector<const VW::workspace*>& workspaces, VW::io::logger* logger)
 {
-  if (workspaces_to_merge.size() < 2) { THROW("Must specify at least two model files to merge."); }
+  if (workspaces.size() < 2) { THROW("Must specify at least two model files to merge."); }
 
-  const auto& ref_model = base_workspace != nullptr ? *base_workspace : *workspaces_to_merge[0];
-  for (const auto& model : workspaces_to_merge)
+  const auto& ref_model = *workspaces[0];
+  for (auto model_it = workspaces.begin() + 1; model_it != workspaces.end(); model_it++)
   {
-    const auto* incompatible = VW::are_features_compatible(ref_model, *model);
+    const auto* incompatible = VW::are_features_compatible(ref_model, **model_it);
     if (incompatible != nullptr)
     { THROW("Model is incompatible with the destination model. Reason: " << incompatible); }
   }
 
   bool at_least_one_has_no_preserve = false;
-  for (const auto* model : workspaces_to_merge)
+  for (const auto* model : workspaces)
   {
     if ((!model->preserve_performance_counters) && (model->sd->weighted_labeled_examples == 0.f))
     {
@@ -62,7 +62,7 @@ void validate_compatibility(const VW::workspace* base_workspace,
 
   std::vector<std::string> destination_enabled_reductions;
   ref_model.l->get_enabled_reductions(destination_enabled_reductions);
-  for (const auto& model : workspaces_to_merge)
+  for (const auto* model : workspaces)
   {
     std::vector<std::string> source_enabled_reductions;
     model->l->get_enabled_reductions(source_enabled_reductions);
@@ -75,7 +75,7 @@ void validate_compatibility(const VW::workspace* base_workspace,
   }
 
   auto destination_command_line = get_keep_command_line(ref_model);
-  for (const auto& model : workspaces_to_merge)
+  for (const auto* model : workspaces)
   {
     auto src_command_line = get_keep_command_line(*model);
     if (destination_command_line != src_command_line)
@@ -86,42 +86,21 @@ void validate_compatibility(const VW::workspace* base_workspace,
   }
 }
 
-void merge_shared_data(
-    const shared_data& base, shared_data& destination, const std::vector<const shared_data*>& sources)
+std::unique_ptr<VW::workspace> copy_workspace(const VW::workspace* ws, VW::io::logger* logger = nullptr)
 {
-  for (const auto* source : sources)
+  assert(ws != nullptr);
+  auto command_line = VW::split_command_line(get_keep_command_line(*ws));
+  if (logger == nullptr) { command_line.emplace_back("--quiet"); }
+  else
   {
-    destination.sum_loss += (source->sum_loss - base.sum_loss);
-    destination.weighted_labeled_examples += (source->weighted_labeled_examples - base.weighted_labeled_examples);
-    destination.weighted_labels += (source->weighted_labels - base.weighted_labels);
-    destination.weighted_unlabeled_examples += (source->weighted_unlabeled_examples - base.weighted_unlabeled_examples);
-    destination.example_number += (source->example_number - base.example_number);
-    destination.total_features += (source->total_features - base.total_features);
+    command_line.emplace_back("--driver_output_off");
   }
+  command_line.emplace_back("--preserve_performance_counters");
 
-  destination.sum_loss += base.sum_loss;
-  destination.weighted_labeled_examples += base.weighted_labeled_examples;
-  destination.weighted_labels += base.weighted_labels;
-  destination.weighted_unlabeled_examples += base.weighted_unlabeled_examples;
-  destination.example_number += base.example_number;
-  destination.total_features += base.total_features;
-}
-}  // namespace
-
-std::unique_ptr<VW::workspace> get_beginning_destination_workspace(
-    const VW::workspace* optional_base_workspace, const std::vector<std::string>& command_line, VW::io::logger* logger)
-{
-  if (optional_base_workspace == nullptr)
-  {
-    return VW::initialize_experimental(
-        VW::make_unique<VW::config::options_cli>(command_line), nullptr, nullptr, nullptr, logger);
-  }
-
-  // If we were given a base workspace, we need to make a copy of it.
   auto backing_vector = std::make_shared<std::vector<char>>();
   io_buf temp_buffer;
   temp_buffer.add_file(VW::io::create_vector_writer(backing_vector));
-  VW::save_predictor(*const_cast<VW::workspace*>(optional_base_workspace), temp_buffer);
+  VW::save_predictor(*const_cast<VW::workspace*>(ws), temp_buffer);
   return VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(command_line),
       VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()), nullptr, nullptr, logger);
 }
@@ -134,57 +113,92 @@ std::vector<float> calc_per_model_weighting(const std::vector<float>& example_co
   return per_model_weighting;
 }
 
+}  // namespace
+
+namespace
+{
+// These are a bit risky, but it feels like a much nicer user interface for a
+// user to be able to pass a ref to a writer to a function rather than require a
+// unique pointer especially since we do not take ownership.
+class reader_ref_adapter : public VW::io::reader
+{
+public:
+  reader_ref_adapter(VW::io::reader& ref) : VW::io::reader(false), _inner_ref(ref) {}
+  ssize_t read(char* buffer, size_t num_bytes) override { return _inner_ref.read(buffer, num_bytes); }
+
+private:
+  VW::io::reader& _inner_ref;
+};
+
+class writer_ref_adapter : public VW::io::writer
+{
+public:
+  writer_ref_adapter(VW::io::writer& ref) : _inner_ref(ref) {}
+  ssize_t write(const char* buffer, size_t num_bytes) override { return _inner_ref.write(buffer, num_bytes); }
+  void flush() override { _inner_ref.flush(); }
+
+private:
+  VW::io::writer& _inner_ref;
+};
+
+}  // namespace
+
 namespace VW
 {
-// Experimental.
-std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
-    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
+void model_delta::serialize(VW::io::writer& output) const
 {
-  validate_compatibility(base_workspace, workspaces_to_merge, logger);
+  io_buf buffer;
+  buffer.add_file(VW::make_unique<writer_ref_adapter>(output));
+  VW::save_predictor(*_ws, buffer);
+}
 
-  auto dest_command_line = VW::split_command_line(get_keep_command_line(*workspaces_to_merge[0]));
-  if (logger == nullptr) { dest_command_line.emplace_back("--quiet"); }
+std::unique_ptr<model_delta> model_delta::deserialize(VW::io::reader& input)
+{
+  return VW::make_unique<model_delta>(VW::initialize_experimental(
+      VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--preserve_performance_counters"}),
+      VW::make_unique<reader_ref_adapter>(input)));
+}
+
+VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger)
+{
+  // Get workspace pointers from deltas
+  std::vector<const VW::workspace*> workspaces_to_merge;
+  workspaces_to_merge.reserve(deltas_to_merge.size());
+  for (const auto delta_ptr : deltas_to_merge) { workspaces_to_merge.push_back(delta_ptr->unsafe_get_workspace_ptr()); }
+  validate_compatibility(workspaces_to_merge, logger);
+
+  // Get VW command line and create output workspace
+  auto command_line = VW::split_command_line(get_keep_command_line(*workspaces_to_merge[0]));
+  if (logger == nullptr) { command_line.emplace_back("--quiet"); }
   else
   {
-    dest_command_line.emplace_back("--driver_output_off");
+    command_line.emplace_back("--driver_output_off");
   }
-  dest_command_line.emplace_back("--preserve_performance_counters");
+  command_line.emplace_back("--preserve_performance_counters");
+  auto dest_workspace = VW::initialize_experimental(
+      VW::make_unique<VW::config::options_cli>(command_line), nullptr, nullptr, nullptr, logger);
 
-  auto base_workspace_concrete = get_beginning_destination_workspace(base_workspace, dest_command_line, nullptr);
-  auto dest_workspace = get_beginning_destination_workspace(base_workspace, dest_command_line, logger);
-
-  auto destination_workspace = VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, logger);
-
-  float base_example_count = base_workspace_concrete->sd->weighted_labeled_examples;
-  if (VW::math::are_same(base_example_count, 0.f) && base_workspace != nullptr && logger != nullptr)
-  {
-    logger->warn(
-        "Base model has no examples, ensure it was loaded in using --preserve_performance_counters. If this is an "
-        "empty model, then the base model doesnt need to be passed.");
-  }
-
+  // Get example counts and compute weighting of models
   std::vector<float> example_counts;
   example_counts.reserve(workspaces_to_merge.size());
-  for (const auto& model : workspaces_to_merge) { example_counts.push_back(model->sd->weighted_labeled_examples); }
+  for (const auto* delta : workspaces_to_merge) { example_counts.push_back(delta->sd->weighted_labeled_examples); }
   const auto per_model_weighting = calc_per_model_weighting(example_counts);
 
-  auto* target_learner = destination_workspace->l;
+  // Iterate through learners and merge each one
+  auto* target_learner = dest_workspace->l;
   while (target_learner != nullptr)
   {
     if (target_learner->has_merge())
     {
-      std::vector<const LEARNER::base_learner*> source_learners;
-      for (const auto& model : workspaces_to_merge)
+      std::vector<const LEARNER::base_learner*> learners_to_merge;
+      for (const auto* delta : workspaces_to_merge)
       {
-        auto* source_data = model->l->get_learner_by_name_prefix(target_learner->get_name());
-        source_learners.push_back(source_data);
+        auto* source_data = delta->l->get_learner_by_name_prefix(target_learner->get_name());
+        learners_to_merge.push_back(source_data);
       }
 
-      auto* base_workspace_learner = base_workspace_concrete->l->get_learner_by_name_prefix(target_learner->get_name());
-
-      target_learner->merge(per_model_weighting, *base_workspace_concrete, workspaces_to_merge, base_workspace_learner,
-          source_learners, *destination_workspace, target_learner);
+      target_learner->merge(
+          per_model_weighting, workspaces_to_merge, learners_to_merge, *dest_workspace, *target_learner);
     }
     // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
     // not going to work.
@@ -207,14 +221,138 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
     target_learner = target_learner->get_learn_base();
   }
 
-  std::vector<const shared_data*> shared_datas;
-  shared_datas.reserve(workspaces_to_merge.size());
-  for (const auto& model : workspaces_to_merge) { shared_datas.push_back(model->sd); }
+  // Merge shared data
+  for (const auto* delta : workspaces_to_merge)
+  {
+    dest_workspace->sd->sum_loss += delta->sd->sum_loss;
+    dest_workspace->sd->weighted_labeled_examples += delta->sd->weighted_labeled_examples;
+    dest_workspace->sd->weighted_labels += delta->sd->weighted_labels;
+    dest_workspace->sd->weighted_unlabeled_examples += delta->sd->weighted_unlabeled_examples;
+    dest_workspace->sd->example_number += delta->sd->example_number;
+    dest_workspace->sd->total_features += delta->sd->total_features;
+  }
 
-  // Merge shared data too
-  merge_shared_data(*base_workspace_concrete->sd, *destination_workspace->sd, shared_datas);
+  return VW::model_delta(std::move(dest_workspace));
+}
+
+std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
+    const std::vector<const VW::workspace*>& workspaces_to_merge, VW::io::logger* logger)
+{
+  std::vector<VW::model_delta> deltas;
+  deltas.reserve(workspaces_to_merge.size());
+
+  if (base_workspace != nullptr)
+  {
+    for (const auto* ws : workspaces_to_merge) { deltas.emplace_back(*ws - *base_workspace); }
+  }
+  else
+  {
+    for (const auto* ws : workspaces_to_merge)
+    {
+      // No base workspace to subtract, but we must make a copy of workspace to give delta ownership of it
+      deltas.emplace_back(copy_workspace(ws, logger));
+    }
+  }
+
+  std::vector<const VW::model_delta*> delta_ptrs;
+  delta_ptrs.reserve(deltas.size());
+  for (const auto& d : deltas) { delta_ptrs.push_back(&d); }
+  VW::model_delta merged = merge_deltas(delta_ptrs, logger);
+
+  if (base_workspace != nullptr) { return *base_workspace + merged; }
+  return std::unique_ptr<VW::workspace>(merged.unsafe_release_workspace_ptr());
+}
+}  // namespace VW
+
+std::unique_ptr<VW::workspace> operator+(const VW::workspace& base, const VW::model_delta& md)
+{
+  const VW::workspace* delta = md.unsafe_get_workspace_ptr();
+  validate_compatibility(std::vector<const VW::workspace*>{&base, delta}, nullptr);
+  auto dest_command_line = VW::split_command_line(get_keep_command_line(base));
+  dest_command_line.emplace_back("--quiet");
+  dest_command_line.emplace_back("--preserve_performance_counters");
+
+  auto destination_workspace = VW::initialize_experimental(
+      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
+
+  auto* target_learner = destination_workspace->l;
+  while (target_learner != nullptr)
+  {
+    if (target_learner->has_add())
+    {
+      auto learner_name = target_learner->get_name();
+      const LEARNER::base_learner* base_learner = base.l->get_learner_by_name_prefix(learner_name);
+      const LEARNER::base_learner* delta_learner = delta->l->get_learner_by_name_prefix(learner_name);
+
+      target_learner->add(base, *delta, base_learner, delta_learner, *destination_workspace, target_learner);
+    }
+    // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
+    // not going to work.
+    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    {
+      THROW("Base learner '" << target_learner->get_name()
+                             << "' does not have a merge function defined. Since it is a base learner, merging will "
+                                "not work as expected.");
+    }
+    // Skip the save-load case for now
+
+    target_learner = target_learner->get_learn_base();
+  }
+
+  // Add shared data
+  auto& output_sd = *destination_workspace->sd;
+  output_sd.sum_loss = base.sd->sum_loss + delta->sd->sum_loss;
+  output_sd.weighted_labeled_examples = base.sd->weighted_labeled_examples + delta->sd->weighted_labeled_examples;
+  output_sd.weighted_labels = base.sd->weighted_labels + delta->sd->weighted_labels;
+  output_sd.weighted_unlabeled_examples = base.sd->weighted_unlabeled_examples + delta->sd->weighted_unlabeled_examples;
+  output_sd.example_number = base.sd->example_number + delta->sd->example_number;
+  output_sd.total_features = base.sd->total_features + delta->sd->total_features;
 
   return destination_workspace;
 }
 
-}  // namespace VW
+VW::model_delta operator-(const VW::workspace& ws1, const VW::workspace& ws2)
+{
+  validate_compatibility(std::vector<const VW::workspace*>{&ws1, &ws2}, nullptr);
+  auto dest_command_line = VW::split_command_line(get_keep_command_line(ws1));
+  dest_command_line.emplace_back("--quiet");
+  dest_command_line.emplace_back("--preserve_performance_counters");
+
+  auto destination_workspace = VW::initialize_experimental(
+      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
+
+  auto* target_learner = destination_workspace->l;
+  while (target_learner != nullptr)
+  {
+    if (target_learner->has_subtract())
+    {
+      auto learner_name = target_learner->get_name();
+      const LEARNER::base_learner* ws1_learner = ws1.l->get_learner_by_name_prefix(learner_name);
+      const LEARNER::base_learner* ws2_learner = ws2.l->get_learner_by_name_prefix(learner_name);
+
+      target_learner->subtract(ws1, ws2, ws1_learner, ws2_learner, *destination_workspace, target_learner);
+    }
+    // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
+    // not going to work.
+    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    {
+      THROW("Base learner '" << target_learner->get_name()
+                             << "' does not have a merge function defined. Since it is a base learner, merging will "
+                                "not work as expected.");
+    }
+    // Skip the save-load case for now
+
+    target_learner = target_learner->get_learn_base();
+  }
+
+  // Subtract shared data
+  auto& output_sd = *destination_workspace->sd;
+  output_sd.sum_loss = ws1.sd->sum_loss - ws2.sd->sum_loss;
+  output_sd.weighted_labeled_examples = ws1.sd->weighted_labeled_examples - ws2.sd->weighted_labeled_examples;
+  output_sd.weighted_labels = ws1.sd->weighted_labels - ws2.sd->weighted_labels;
+  output_sd.weighted_unlabeled_examples = ws1.sd->weighted_unlabeled_examples - ws2.sd->weighted_unlabeled_examples;
+  output_sd.example_number = ws1.sd->example_number - ws2.sd->example_number;
+  output_sd.total_features = ws1.sd->total_features - ws2.sd->total_features;
+
+  return VW::model_delta(std::move(destination_workspace));
+}

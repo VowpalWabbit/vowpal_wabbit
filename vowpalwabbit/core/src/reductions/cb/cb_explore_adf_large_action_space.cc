@@ -7,6 +7,7 @@
 #include "details/large_action_space.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
+#include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
@@ -26,14 +27,8 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-struct A_triplet_constructor
+class A_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _row_index;
-  std::vector<Eigen::Triplet<float>>& _triplets;
-  uint64_t& _max_col;
-
 public:
   A_triplet_constructor(
       uint64_t weights_mask, uint64_t row_index, std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col)
@@ -49,6 +44,12 @@ public:
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _row_index;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t& _max_col;
 };
 
 bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::vector<Eigen::Triplet<float>>& _triplets,
@@ -61,7 +62,9 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
     if (_all->weights.sparse)
     {
@@ -84,6 +87,8 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
                                                       : *ex->extent_interactions),
           _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
 
     row_index++;
   }
@@ -188,10 +193,12 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
   // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
   // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later
   // if the --full_predictions flag is supplied.
+  auto best_action = preds[0].action;
+
   auto it = preds.begin();
   while (it != preds.end())
   {
-    if (!spanner_state.is_action_in_spanner(it->action)) { preds.erase(it); }
+    if (!spanner_state.is_action_in_spanner(it->action) && it->action != best_action) { it = preds.erase(it); }
     else
     {
       it++;
@@ -261,12 +268,12 @@ shrink_factor_config::shrink_factor_config(float gamma_scale, float gamma_expone
 }
 
 void shrink_factor_config::calculate_shrink_factor(
-    size_t counter, size_t max_actions, const ACTION_SCORE::action_scores& preds, std::vector<float>& shrink_factors)
+    size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors)
 {
   if (_apply_shrink_factor)
   {
     shrink_factors.clear();
-    float min_ck = std::min_element(preds.begin(), preds.end(), VW::action_score_compare_lt)->score;
+    float min_ck = std::min_element(preds.begin(), preds.end())->score;
     float gamma = _gamma_scale * static_cast<float>(std::pow(counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
     {
@@ -279,9 +286,9 @@ void shrink_factor_config::calculate_shrink_factor(
   }
 }
 
-template struct cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
-template struct cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
-template struct cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -330,8 +337,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool model_weight_impl = false;
   bool use_vanilla_impl = false;
   bool full_spanner = false;
-  size_t thread_pool_size = 0;
-  size_t block_size = 0;
+  uint64_t thread_pool_size = 0;
+  uint64_t block_size = 0;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");

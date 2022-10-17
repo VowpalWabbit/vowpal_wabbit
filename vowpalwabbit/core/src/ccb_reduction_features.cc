@@ -4,19 +4,19 @@
 
 #include "vw/core/ccb_reduction_features.h"
 
-const char* VW::to_string(CCB::example_type ex_type)
+const char* VW::to_string(VW::ccb_example_type ex_type)
 {
 #define CASE(type) \
   case type:       \
     return #type;
 
-  using namespace CCB;
+  using namespace VW;
   switch (ex_type)
   {
-    CASE(example_type::unset)
-    CASE(example_type::shared)
-    CASE(example_type::action)
-    CASE(example_type::slot)
+    CASE(ccb_example_type::UNSET)
+    CASE(ccb_example_type::SHARED)
+    CASE(ccb_example_type::ACTION)
+    CASE(ccb_example_type::SLOT)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`

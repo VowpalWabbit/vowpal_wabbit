@@ -10,9 +10,9 @@
 class io_buf;
 namespace VW
 {
-struct workspace;
-struct example;
-struct polylabel;
+class workspace;
+class example;
+class polylabel;
 class reduction_features;
 }  // namespace VW
 

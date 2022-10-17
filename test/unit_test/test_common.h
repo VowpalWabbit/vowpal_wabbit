@@ -7,6 +7,7 @@
 #include "vw/core/action_score.h"
 #include "vw/core/ccb_reduction_features.h"
 #include "vw/core/parse_example_json.h"
+#include "vw/core/shared_data.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
 
@@ -18,7 +19,7 @@
 constexpr float FLOAT_TOL = 0.0001f;
 
 inline void compare(float l, float r, float tol) { BOOST_CHECK_CLOSE(l, r, tol); }
-inline void compare(const ACTION_SCORE::action_score& l, const ACTION_SCORE::action_score& r, float float_tolerance)
+inline void compare(const VW::action_score& l, const VW::action_score& r, float float_tolerance)
 {
   BOOST_CHECK_EQUAL(l.action, r.action);
   BOOST_CHECK_CLOSE(l.score, r.score, float_tolerance);
@@ -71,7 +72,7 @@ inline std::ostream& operator<<(std::ostream& os, VW::slates::example_type ex_ty
   return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, CCB::example_type ex_type)
+inline std::ostream& operator<<(std::ostream& os, VW::ccb_example_type ex_type)
 {
   os << VW::to_string(ex_type);
   return os;

@@ -435,10 +435,10 @@ bool config_oracle<oracle_impl>::repopulate_index_queue(const std::map<namespace
   return !index_queue.empty();
 }
 
-template struct config_oracle<oracle_rand_impl>;
-template struct config_oracle<one_diff_impl>;
-template struct config_oracle<champdupe_impl>;
-template struct config_oracle<one_diff_inclusion_impl>;
+template class config_oracle<oracle_rand_impl>;
+template class config_oracle<one_diff_impl>;
+template class config_oracle<champdupe_impl>;
+template class config_oracle<one_diff_inclusion_impl>;
 
 }  // namespace automl
 }  // namespace reductions

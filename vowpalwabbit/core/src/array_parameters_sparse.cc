@@ -11,13 +11,13 @@
 #include <functional>
 #include <unordered_map>
 
-weight* sparse_parameters::get_or_default_and_get(size_t i) const
+VW::weight* sparse_parameters::get_or_default_and_get(size_t i) const
 {
   uint64_t index = i & _weight_mask;
   auto iter = _map.find(index);
   if (iter == _map.end())
   {
-    _map.insert(std::make_pair(index, calloc_mergable_or_throw<weight>(stride())));
+    _map.insert(std::make_pair(index, calloc_mergable_or_throw<VW::weight>(stride())));
     iter = _map.find(index);
     if (_default_func != nullptr) { _default_func(iter->second, index); }
   }
@@ -54,7 +54,7 @@ sparse_parameters::~sparse_parameters()
 
 void sparse_parameters::shallow_copy(const sparse_parameters& input)
 {
-  // TODO: this is level-1 copy (weight* are stilled shared)
+  // TODO: this is level-1 copy (VW::weight* are stilled shared)
   if (!_seeded)
   {
     for (auto& iter : _map)

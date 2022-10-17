@@ -26,8 +26,8 @@ using namespace VW::reductions;
 
 namespace VW
 {
-struct discounted_expectation;
-struct baseline_challenger_data;
+class discounted_expectation;
+class baseline_challenger_data;
 namespace model_utils
 {
 size_t read_model_field(io_buf&, VW::discounted_expectation&);
@@ -35,30 +35,32 @@ size_t write_model_field(io_buf&, const VW::discounted_expectation&, const std::
 size_t read_model_field(io_buf&, VW::baseline_challenger_data&);
 size_t write_model_field(io_buf&, const VW::baseline_challenger_data&, const std::string&, bool);
 }  // namespace model_utils
-struct discounted_expectation
+class discounted_expectation
 {
-  discounted_expectation(double tau) : tau(tau), sum(0), n(0) {}
+public:
+  discounted_expectation(double tau) : _tau(tau), _sum(0), _n(0) {}
 
   void update(double w, double r)
   {
-    sum = tau * sum + w * r;
-    n = tau * n + w;
+    _sum = _tau * _sum + w * r;
+    _n = _tau * _n + w;
   }
 
-  double current() const { return n == 0 ? 0 : sum / n; }
+  double current() const { return _n == 0 ? 0 : _sum / _n; }
 
   friend size_t VW::model_utils::read_model_field(io_buf&, VW::discounted_expectation&);
   friend size_t VW::model_utils::write_model_field(
       io_buf&, const VW::discounted_expectation&, const std::string&, bool);
 
 private:
-  double tau;
-  double sum;
-  double n;
+  double _tau;
+  double _sum;
+  double _n;
 };
 
-struct baseline_challenger_data
+class baseline_challenger_data
 {
+public:
   distributionally_robust::ChiSquared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;
@@ -69,7 +71,7 @@ struct baseline_challenger_data
   {
   }
 
-  static int get_chosen_action(const ACTION_SCORE::action_scores& action_scores) { return action_scores[0].action; }
+  static int get_chosen_action(const VW::action_scores& action_scores) { return action_scores[0].action; }
 
   template <bool is_learn>
   inline void learn_or_predict(multi_learner& base, multi_ex& examples)
@@ -130,16 +132,16 @@ namespace model_utils
 size_t read_model_field(io_buf& io, VW::discounted_expectation& de)
 {
   size_t bytes = 0;
-  bytes += read_model_field(io, de.sum);
-  bytes += read_model_field(io, de.n);
+  bytes += read_model_field(io, de._sum);
+  bytes += read_model_field(io, de._n);
   return bytes;
 }
 
 size_t write_model_field(io_buf& io, const VW::discounted_expectation& de, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, de.sum, upstream_name + "_expectation_sum", text);
-  bytes += write_model_field(io, de.n, upstream_name + "_expectation_n", text);
+  bytes += write_model_field(io, de._sum, upstream_name + "_expectation_sum", text);
+  bytes += write_model_field(io, de._n, upstream_name + "_expectation_n", text);
   return bytes;
 }
 

@@ -352,10 +352,10 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   }
 }
 
-template struct interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence>;
-template struct interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence>;
-template struct interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence>;
-template struct interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>;
+template class interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence>;
+template class interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence>;
+template class interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence>;
+template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>;
 
 template <typename CMType>
 void automl<CMType>::one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action)
@@ -422,10 +422,10 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   }
 }
 
-template struct automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence>>;
-template struct automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence>>;
-template struct automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence>>;
-template struct automl<interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>>;
+template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence>>;
+template class automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence>>;
+template class automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::confidence_sequence>>;
+template class automl<interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>>;
 
 }  // namespace automl
 }  // namespace reductions

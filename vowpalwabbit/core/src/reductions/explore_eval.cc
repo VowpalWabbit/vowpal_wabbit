@@ -28,11 +28,12 @@ using namespace VW::config;
 
 namespace
 {
-struct explore_eval
+class explore_eval
 {
+public:
   CB::cb_class known_cost;
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   uint64_t offset = 0;
   CB::label action_label;
   CB::label empty_label;
@@ -66,7 +67,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
   size_t num_features = 0;
 
   float loss = 0.;
-  ACTION_SCORE::action_scores preds = (*ec_seq)[0]->pred.a_s;
+  VW::action_scores preds = (*ec_seq)[0]->pred.a_s;
   VW::label_type_t label_type = all.example_parser->lbl_parser.label_type;
 
   for (size_t i = 0; i < (*ec_seq).size(); i++)
@@ -94,20 +95,21 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
 
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
-  for (auto& sink : all.final_prediction_sink) { print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   CB::print_update(all, !labeled_example, ec, ec_seq, true, nullptr);
@@ -155,7 +157,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
   data.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
   if (label_example != nullptr && is_learn)
   {
-    ACTION_SCORE::action_scores& a_s = ec_seq[0]->pred.a_s;
+    VW::action_scores& a_s = ec_seq[0]->pred.a_s;
 
     float action_probability = 0;
     for (size_t i = 0; i < a_s.size(); i++)
@@ -173,7 +175,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     if (threshold > 1. + 1e-6) { data.violations++; }
 
-    if (data._random_state->get_and_update_random() < threshold)
+    if (data.random_state->get_and_update_random() < threshold)
     {
       VW::example* ec_found = nullptr;
       for (VW::example*& ec : ec_seq)
@@ -216,7 +218,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
 
   if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
   else

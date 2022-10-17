@@ -40,7 +40,7 @@ void add_example_namespaces_from_example(VW::example& target, VW::example& sourc
 {
   for (VW::namespace_index idx : source.indices)
   {
-    if (idx == constant_namespace) { continue; }
+    if (idx == VW::details::CONSTANT_NAMESPACE) { continue; }
     add_example_namespace(target, idx, source.feature_space[idx]);
   }
 }
@@ -55,7 +55,7 @@ void del_example_namespaces_from_example(VW::example& target, VW::example& sourc
   idx--;
   for (; idx >= source.indices.begin(); idx--)
   {
-    if (*idx == constant_namespace) { continue; }
+    if (*idx == VW::details::CONSTANT_NAMESPACE) { continue; }
     del_example_namespace(target, *idx, source.feature_space[*idx]);
   }
 }

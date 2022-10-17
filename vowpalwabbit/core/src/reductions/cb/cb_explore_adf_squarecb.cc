@@ -38,8 +38,18 @@ using namespace VW::LEARNER;
 
 namespace
 {
-struct cb_explore_adf_squarecb
+class cb_explore_adf_squarecb
 {
+public:
+  cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
+      float max_cb_cost, VW::version_struct model_file_version);
+  ~cb_explore_adf_squarecb() = default;
+
+  // Should be called through cb_explore_adf_base for pre/post-processing
+  void predict(multi_learner& base, VW::multi_ex& examples);
+  void learn(multi_learner& base, VW::multi_ex& examples);
+  void save_load(io_buf& io, bool read, bool text);
+
 private:
   // size_t _counter;
   size_t _counter;
@@ -58,20 +68,8 @@ private:
   VW::version_struct _model_file_version;
 
   // for backing up cb example data when computing sensitivities
-  std::vector<ACTION_SCORE::action_scores> _ex_as;
+  std::vector<VW::action_scores> _ex_as;
   std::vector<std::vector<CB::cb_class>> _ex_costs;
-
-public:
-  cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
-      float max_cb_cost, VW::version_struct model_file_version);
-  ~cb_explore_adf_squarecb() = default;
-
-  // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples);
-  void learn(multi_learner& base, VW::multi_ex& examples);
-  void save_load(io_buf& io, bool read, bool text);
-
-private:
   void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
@@ -191,7 +189,7 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& example
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   // The actual parameter $\gamma$ used in the SquareCB.
@@ -272,7 +270,7 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& example
 
 void cb_explore_adf_squarecb::learn(multi_learner& base, VW::multi_ex& examples)
 {
-  v_array<ACTION_SCORE::action_score> preds = std::move(examples[0]->pred.a_s);
+  v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
     CB::label& ld = examples[i]->l.cb;

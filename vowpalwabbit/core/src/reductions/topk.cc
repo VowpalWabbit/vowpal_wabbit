@@ -21,9 +21,8 @@ namespace
 {
 class topk
 {
-  using container_t = std::multimap<float, v_array<char>>;
-
 public:
+  using container_t = std::multimap<float, v_array<char>>;
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 
@@ -97,12 +96,12 @@ void print_result(VW::io::writer* file_descriptor,
 
 void output_example(VW::workspace& all, const VW::example& ec)
 {
-  const label_data& ld = ec.l.simple;
+  const auto& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX) { all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight; }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 template <bool is_learn>
@@ -128,13 +127,13 @@ void finish_example(VW::workspace& all, topk& d, VW::multi_ex& ec_seq)
 VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  uint32_t K;
+  uint32_t k;
   option_group_definition new_options("[Reduction] Top K");
-  new_options.add(make_option("top", K).keep().necessary().help("Top k recommendation"));
+  new_options.add(make_option("top", k).keep().necessary().help("Top k recommendation"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  auto data = VW::make_unique<topk>(K);
+  auto data = VW::make_unique<topk>(k);
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
                 .set_learn_returns_prediction(true)

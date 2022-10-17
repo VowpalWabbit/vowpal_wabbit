@@ -35,7 +35,7 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <sys/timeb.h>
 
 // port is already in network order
-socket_t VW::AllReduceSockets::sock_connect(const uint32_t ip, const int port, VW::io::logger& logger)
+socket_t VW::all_reduce_sockets::sock_connect(const uint32_t ip, const int port, VW::io::logger& logger)
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
   if (sock == -1) THROWERRNO("socket");
@@ -52,9 +52,9 @@ socket_t VW::AllReduceSockets::sock_connect(const uint32_t ip, const int port, V
     if (nullptr == inet_ntop(AF_INET, &(far_end.sin_addr), dotted_quad, INET_ADDRSTRLEN)) THROWERRNO("inet_ntop");
 
     char hostname[NI_MAXHOST];
-    char servInfo[NI_MAXSERV];
-    if (getnameinfo(reinterpret_cast<sockaddr*>(&far_end), sizeof(sockaddr), hostname, NI_MAXHOST, servInfo, NI_MAXSERV,
-            NI_NUMERICSERV))
+    char serv_info[NI_MAXSERV];
+    if (getnameinfo(reinterpret_cast<sockaddr*>(&far_end), sizeof(sockaddr), hostname, NI_MAXHOST, serv_info,
+            NI_MAXSERV, NI_NUMERICSERV))
       THROWERRNO("getnameinfo(" << dotted_quad << ")");
 
     logger.err_info("connecting to {0} = {1}:{2}", dotted_quad, hostname, ntohs(static_cast<u_short>(port)));
@@ -76,7 +76,7 @@ socket_t VW::AllReduceSockets::sock_connect(const uint32_t ip, const int port, V
   return sock;
 }
 
-socket_t VW::AllReduceSockets::getsock(VW::io::logger& logger)
+socket_t VW::all_reduce_sockets::getsock(VW::io::logger& logger)
 {
   socket_t sock = socket(PF_INET, SOCK_STREAM, 0);
 #ifdef _WIN32
@@ -95,14 +95,14 @@ socket_t VW::AllReduceSockets::getsock(VW::io::logger& logger)
 #endif
 
   // Enable TCP Keep Alive to prevent socket leaks
-  int enableTKA = 1;
-  if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA), sizeof(enableTKA)) < 0)
+  int enable_tka = 1;
+  if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enable_tka), sizeof(enable_tka)) < 0)
   { logger.err_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno)); }
 
   return sock;
 }
 
-void VW::AllReduceSockets::all_reduce_init(VW::io::logger& logger)
+void VW::all_reduce_sockets::all_reduce_init(VW::io::logger& logger)
 {
 #ifdef _WIN32
   WSAData wsaData;
@@ -110,7 +110,7 @@ void VW::AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
 
-  struct hostent* master = gethostbyname(_span_server.c_str());
+  class hostent* master = gethostbyname(_span_server.c_str());
 
   if (master == nullptr) THROWERRNO("gethostbyname(" << _span_server << ")");
 
@@ -259,7 +259,7 @@ void VW::AllReduceSockets::all_reduce_init(VW::io::logger& logger)
   if (kid_count > 0) { CLOSESOCK(sock); }
 }
 
-void VW::AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos)
+void VW::all_reduce_sockets::pass_down(char* buffer, const size_t parent_read_pos, size_t& children_sent_pos)
 {
   size_t my_bufsize = std::min(details::AR_BUF_SIZE, (parent_read_pos - children_sent_pos));
 
@@ -279,7 +279,7 @@ void VW::AllReduceSockets::pass_down(char* buffer, const size_t parent_read_pos,
   }
 }
 
-void VW::AllReduceSockets::broadcast(char* buffer, const size_t n)
+void VW::all_reduce_sockets::broadcast(char* buffer, const size_t n)
 {
   size_t parent_read_pos = 0;    // First unread float from parent
   size_t children_sent_pos = 0;  // First unsent float to children

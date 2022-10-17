@@ -35,7 +35,7 @@
 #include <numeric>
 #include <utility>
 
-void initialize_weights_as_polar_normal(weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
+void initialize_weights_as_polar_normal(VW::weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
 
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
@@ -82,22 +82,25 @@ void initialize_regressor(VW::workspace& all, T& weights)
   else if (all.initial_weight != 0.)
   {
     auto initial_weight = all.initial_weight;
-    auto initial_value_weight_initializer = [initial_weight](
-                                                weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
+    auto initial_value_weight_initializer = [initial_weight](VW::weight* weights, uint64_t /*index*/) {
+      weights[0] = initial_weight;
+    };
     weights.set_default(initial_value_weight_initializer);
   }
   else if (all.random_positive_weights)
   {
     auto rand_state = *all.get_random_state();
-    auto random_positive = [&rand_state](
-                               weight* weights, uint64_t) { weights[0] = 0.1f * rand_state.get_and_update_random(); };
+    auto random_positive = [&rand_state](VW::weight* weights, uint64_t) {
+      weights[0] = 0.1f * rand_state.get_and_update_random();
+    };
     weights.set_default(random_positive);
   }
   else if (all.random_weights)
   {
     auto rand_state = *all.get_random_state();
-    auto random_neg_pos = [&rand_state](
-                              weight* weights, uint64_t) { weights[0] = rand_state.get_and_update_random() - 0.5f; };
+    auto random_neg_pos = [&rand_state](VW::weight* weights, uint64_t) {
+      weights[0] = rand_state.get_and_update_random() - 0.5f;
+    };
     weights.set_default(random_neg_pos);
   }
   else if (all.normal_weights)
@@ -120,7 +123,10 @@ void initialize_regressor(VW::workspace& all)
   }
 }
 
-constexpr size_t default_buf_size = 512;
+namespace
+{
+constexpr size_t DEFAULT_BUF_SIZE = 512;
+}
 
 // file_options will be written to when reading
 void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options,
@@ -128,18 +134,18 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 {
   if (model_file.num_files() > 0)
   {
-    std::vector<char> buff2(default_buf_size);
+    std::vector<char> buff2(DEFAULT_BUF_SIZE);
 
     size_t bytes_read_write = 0;
 
-    size_t v_length = static_cast<uint32_t>(VW::version.to_string().length()) + 1;
+    size_t v_length = static_cast<uint32_t>(VW::VERSION.to_string().length()) + 1;
     std::stringstream msg;
-    msg << "Version " << VW::version.to_string() << "\n";
-    memcpy(buff2.data(), VW::version.to_string().c_str(), std::min(v_length, buff2.size()));
+    msg << "Version " << VW::VERSION.to_string() << "\n";
+    memcpy(buff2.data(), VW::VERSION.to_string().c_str(), std::min(v_length, buff2.size()));
     if (read)
     {
       v_length = buff2.size();
-      buff2[std::min(v_length, default_buf_size) - 1] = '\0';
+      buff2[std::min(v_length, DEFAULT_BUF_SIZE) - 1] = '\0';
     }
     bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
     all.model_file_ver = VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
@@ -153,8 +159,8 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
       v_length = all.id.length() + 1;
 
       msg << "Id " << all.id << "\n";
-      memcpy(buff2.data(), all.id.c_str(), std::min(v_length, default_buf_size));
-      if (read) { v_length = default_buf_size; }
+      memcpy(buff2.data(), all.id.c_str(), std::min(v_length, DEFAULT_BUF_SIZE));
+      if (read) { v_length = DEFAULT_BUF_SIZE; }
       bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
       all.id = buff2.data();
 
