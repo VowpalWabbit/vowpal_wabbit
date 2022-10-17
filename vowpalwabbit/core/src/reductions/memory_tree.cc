@@ -1307,14 +1307,14 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
     num_learners = tree->max_nodes + 1;
     all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     pred_type = VW::prediction_type_t::multiclass;
-    label_type = VW::label_type_t::multiclass;
+    label_type = VW::label_type_t::MULTICLASS;
   }  // multi-label classification
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
     all.example_parser->lbl_parser = MULTILABEL::multilabel;
     pred_type = VW::prediction_type_t::multilabels;
-    label_type = VW::label_type_t::multilabel;
+    label_type = VW::label_type_t::MULTILABEL;
   }
 
   auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,

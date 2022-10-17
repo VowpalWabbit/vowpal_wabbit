@@ -93,7 +93,7 @@ VW::label_parser multiclass_label_parser_global = {
     // test_label
     [](const VW::polylabel& label) { return test_multiclass_label(label.multi); },
     // label type
-    VW::label_type_t::multiclass};
+    VW::label_type_t::MULTICLASS};
 }
 
 namespace

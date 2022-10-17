@@ -190,7 +190,7 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_pdf_setup))
                 .set_output_prediction_type(VW::prediction_type_t::pdf)
                 .set_finish_example(::finish_example)
-                .set_input_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
