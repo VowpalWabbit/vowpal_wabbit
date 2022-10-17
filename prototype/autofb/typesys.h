@@ -73,15 +73,25 @@ namespace typesys
   property_info(property_info& other) = default;
 };
 
+  using activator_f = void(*)();
+
   struct type_info
   {
     const versioned_name name;
     const type_index index;
-
-    type_info(versioned_name name, type_index index) : name{name}, index{index} {}
+    
+    type_info(versioned_name name, type_index index) : name{name}, index{index}, base_index{index} {}
     type_info(type_info& other) = default;
 
     inline void add_property(property_info pi) { properties.push_back(property_info{pi}); }
+    inline void set_base(type_index base_index) { this->base_index = base_index; }
+    inline void set_activator(activator_f activator) { this->activator = activator; }
+
+    inline bool has_base() const { return base_index != index; }
+    inline type_index base() const { return base_index; }
+
+    inline bool has_activator() const { return activator != nullptr; }
+    inline void* activate() const { if (activator) activator(); }
     
     using props_iter = std::vector<property_info>::const_iterator;
 
@@ -90,6 +100,8 @@ namespace typesys
 
   private:
     std::vector<property_info> properties;
+    type_index base_index;
+    activator_f activator;
   };
 
 // todo: rearrange detail types
@@ -109,11 +121,6 @@ class universe
     inline type_map_iter find_type(const versioned_name& name) const
     {
       return typemap.find(name);
-    }
-
-    inline type_index register_type(name_t name, version_t version) 
-    {
-      return register_type({name, version});
     }
 
     inline type_index register_type(const versioned_name& name)
@@ -152,11 +159,11 @@ class universe
     // template <typename T, typename = std::enable_if<!std::is_literal_type<T>::value>::type>
     // inline type_index register_builtin() { static_assert("only literal types are allowed"); }
 
-    template <typename T, typename = std::enable_if<std::is_literal_type<T>::value>::type>
-    inline type_index register_builtin() 
-    {
-      register_type_internal({typeid(T).name(), 0}, TK_BUILTIN); 
-    }
+    // template <typename T, typename = std::enable_if<std::is_literal_type<T>::value>::type>
+    // inline type_index register_builtin() 
+    // {
+    //   register_type_internal({typeid(T).name(), 0}, TK_BUILTIN); 
+    // }
 
     inline type_index register_type_internal(const versioned_name& name)
     {
@@ -175,8 +182,6 @@ class universe
     type_map_t typemap;
 };
 
-
-
 namespace detail
 {
   // template <typename concrete_t, typename base_t, int = base_t::version + 1>
@@ -184,8 +189,6 @@ namespace detail
   // {
   //   using base_type_identity = type_identity<base_t, base_t::version>;
   // };
-
-
 
   template <typename T, typename container_t>
   class property
@@ -218,7 +221,7 @@ namespace detail
     {
     }
 
-    template <name_t N, version_t V>
+    template <name_t, version_t>
     friend class registration;
 
   public:
@@ -290,20 +293,25 @@ namespace detail
 
         property_witness(const char* name) : info{name, type<T>::erase()} 
         {
-          std::cout << "in prop witness" << std::endl;
+          //std::cout << "in prop witness" << std::endl;
           universe::instance().get_type(rw._name).add_property(info);
-          //props.push_back(property_info(info));
         }
       };
   };
 
-  template <typename concrete_t, const registration_witness& rw, typename base_t>
+  template <typename concrete_t, const registration_witness& rw, typename base_t, const registration_witness& base_rw>
   DATA_KIND extension : private data<concrete_t, rw>, public base_t
   {
     //using data<concrete_t, rw>::version;
-
     using data<concrete_t, rw>::__;
-    using data<concrete_t, rw>::property_info;
+    using data<concrete_t, rw>::property_witness;
+
+    extension()
+    {
+      // TODO: staticize this
+      type_info& ti = universe::instance().get_type(rw._type_index);
+      ti.set_base(base_rw._type_index);
+    }
   };
 
 } // namespace detail
@@ -324,4 +332,4 @@ namespace detail
    DATA_KIND type_name : private detail::data<type_name, details(type_name)::witness>
 #define extension(type_name) register_type(type_name, 1) \
    DATA_KIND type_name : detail::extension<type_name, details(type_name)::witness
-#define of(base_type) , base_type>
+#define of(base_type) , base_type, details(base_type)::witness>
