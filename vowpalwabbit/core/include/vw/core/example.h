@@ -115,8 +115,8 @@ public:
       nullptr;  // if a higher-up reduction wants access to internal state of lower-down reductions, they go here
 
   bool test_only = false;
-  bool end_pass = false;   // special example indicating end of pass.
-  bool sorted = false;     // Are the features sorted or not?
+  bool end_pass = false;  // special example indicating end of pass.
+  bool sorted = false;    // Are the features sorted or not?
   bool is_newline = false;
 
   size_t get_num_features() const noexcept { return num_features + num_features_from_interactions; }

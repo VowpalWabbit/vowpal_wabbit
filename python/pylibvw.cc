@@ -1537,7 +1537,7 @@ BOOST_PYTHON_MODULE(pylibvw)
           "Assuming a multiclass label type, get the importance weight")
       .def("get_multiclass_prediction", &ex_get_multiclass_prediction,
           "Assuming a multiclass label type, get the prediction")
-      .def("get_confidence", &ex_get_confidence,"Get the confidence from the example")
+      .def("get_confidence", &ex_get_confidence, "Get the confidence from the example")
       .def("get_prob", &ex_get_prob, "Get probability from example prediction")
       .def("get_scalars", &ex_get_scalars, "Get scalar values from example prediction")
       .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")

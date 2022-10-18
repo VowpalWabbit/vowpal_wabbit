@@ -47,21 +47,18 @@ float VW::example::get_total_sum_feat_sq()
 
 float collision_cleanup(features& fs)
 {
-  //this loops over all feature values and their indexes
-  //when there are repeated indexes it combines them and adds their values
-  //we have two pointers looping over our arrays so that we don't have
-  //to allocate new memory for our collapsed array
+  // this loops over all feature values and their indexes
+  // when there are repeated indexes it combines them and adds their values
+  // we have two pointers looping over our arrays so that we don't have
+  // to allocate new memory for our collapsed array
 
   features::iterator p1 = fs.begin();
   uint64_t last_index = p1.index();
   float sum_sq = 0.f;
 
-  for (features::iterator p2 = (fs.begin()+1); p2 != fs.end(); ++p2)
+  for (features::iterator p2 = (fs.begin() + 1); p2 != fs.end(); ++p2)
   {
-    if (last_index == p2.index())
-    {
-      p1.value() += p2.value();
-    }
+    if (last_index == p2.index()) { p1.value() += p2.value(); }
     else
     {
       sum_sq += p1.value() * p1.value();
@@ -74,7 +71,7 @@ float collision_cleanup(features& fs)
 
   sum_sq += p1.value() * p1.value();
   ++p1;
-  
+
   fs.truncate_to(p1, 0);
   fs.sum_feat_sq = sum_sq;
 
@@ -100,10 +97,7 @@ void copy_example_metadata(example* dst, const example* src)
 
   dst->partial_prediction = src->partial_prediction;
   if (src->passthrough == nullptr) { dst->passthrough = nullptr; }
-  else
-  {
-    dst->passthrough = new features(*src->passthrough);
-  }
+  else { dst->passthrough = new features(*src->passthrough); }
   dst->loss = src->loss;
   dst->weight = src->weight;
   dst->confidence = src->confidence;
@@ -221,10 +215,7 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
   {  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
-  else
-  {
-    ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift();
-  }
+  else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);

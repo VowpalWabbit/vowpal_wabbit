@@ -10,8 +10,8 @@
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
-#include <vector>
 #include <string>
+#include <vector>
 
 using namespace VW::reductions::eigen_memory;
 
@@ -114,11 +114,11 @@ BOOST_AUTO_TEST_CASE(emt_bounding)
     vw.learn(*examples[i]);
   }
 
-  BOOST_CHECK_EQUAL(tree.bounder->list.size(),5);
+  BOOST_CHECK_EQUAL(tree.bounder->list.size(), 5);
   BOOST_CHECK_EQUAL(tree.root->examples.size(), 5);
   BOOST_CHECK_EQUAL(tree.root->router_weights, nullptr);
 
-  for (int i = 0; i < 10; i++) { vw.finish_example(*examples[i]);}
+  for (int i = 0; i < 10; i++) { vw.finish_example(*examples[i]); }
   VW::finish(vw);
 }
 
