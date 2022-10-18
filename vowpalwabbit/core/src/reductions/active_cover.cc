@@ -269,8 +269,8 @@ base_learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder
                 .set_params_per_weight(saved_cover_size + 1)
                 .set_input_prediction_type(VW::prediction_type_t::scalar)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_label_type(VW::label_type_t::simple)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
                 .build();
   return make_base(*l);
 }

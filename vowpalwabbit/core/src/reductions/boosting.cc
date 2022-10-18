@@ -448,7 +448,7 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
       pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_save_load(save_load_fn)
                 .set_finish_example(return_example)
                 .build();

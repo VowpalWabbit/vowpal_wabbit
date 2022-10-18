@@ -106,7 +106,7 @@ VW::label_parser cb_label = {
     // test_label
     [](const VW::polylabel& label) { return CB::is_test_label(label.cb); },
     // Label type
-    VW::label_type_t::cb};
+    VW::label_type_t::CB};
 
 bool ec_is_example_header(VW::example const& ec)  // example headers just have "shared"
 {
@@ -226,7 +226,7 @@ VW::label_parser cb_eval = {
     // test_label
     [](const VW::polylabel& label) { return CB_EVAL::test_label(label.cb_eval); },
     // Label type
-    VW::label_type_t::cb_eval};
+    VW::label_type_t::CB_EVAL};
 
 }  // namespace CB_EVAL
 

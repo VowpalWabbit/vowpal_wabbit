@@ -92,7 +92,7 @@ VW::label_parser simple_label_parser_global = {
     // test_label
     [](const VW::polylabel& label) { return test_label(label.simple); },
     // label type
-    VW::label_type_t::simple};
+    VW::label_type_t::SIMPLE};
 
 namespace model_utils
 {

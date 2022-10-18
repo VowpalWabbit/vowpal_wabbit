@@ -234,7 +234,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
       stack_builder.get_setupfn_name(explore_eval_setup))
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
-                .set_input_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
                 .set_finish_example(finish_multiline_example)
                 .set_finish(::finish)
                 .build();
