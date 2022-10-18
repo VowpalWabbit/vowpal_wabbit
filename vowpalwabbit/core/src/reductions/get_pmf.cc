@@ -6,10 +6,12 @@
 
 #include "vw/config/options.h"
 #include "vw/core/api_status.h"
+#include "vw/core/cb_continuous_label.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
 #include "vw/core/guard.h"
+#include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 
 // Aliases
@@ -28,8 +30,9 @@ namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN sample_pdf reduction and reduction methods
-struct get_pmf
+class get_pmf
 {
+public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 

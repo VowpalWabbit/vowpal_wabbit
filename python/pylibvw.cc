@@ -91,7 +91,7 @@ public:
       , m_option_group_dic(options.get_collection_of_options())
       , m_py_opt_class(py_class)
   {
-    default_group_name = options.m_default_tint;
+    default_group_name = options.DEFAULT_TINT;
     m_visitor_output_var = nullptr;
   }
 
@@ -101,19 +101,19 @@ public:
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, false, true));
+            opt.m_allow_override, opt.value(), true, false, true, opt.m_experimental));
     }
     else
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, false, false, false, true));
+            opt.m_allow_override, false, false, false, true, opt.m_experimental));
     }
   }
 
@@ -126,19 +126,19 @@ public:
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, not_supplied, false));
+            opt.m_allow_override, opt.value(), true, not_supplied, false, opt.m_experimental));
     }
     else
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, py::object(), false, not_supplied, false));
+            opt.m_allow_override, py::object(), false, not_supplied, false, opt.m_experimental));
     }
   }
 
@@ -156,8 +156,9 @@ public:
       }
     }
 
-    return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-        opt.m_allow_override, values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied()));
+    return new py::object(
+        m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary, opt.m_allow_override,
+            values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied(), opt.m_experimental));
   }
 
   template <typename T>
@@ -307,6 +308,13 @@ struct python_dict_writer : VW::metric_sink_visitor
   void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
   void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
   void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+  void sink_metric(const std::string& key, const VW::metric_sink& value)
+  {
+    py::dict nested;
+    auto nested_py = python_dict_writer(nested);
+    value.visit(nested_py);
+    _dest_dict[key] = nested;
+  }
 
 private:
   py::dict& _dest_dict;
@@ -373,9 +381,9 @@ py::list get_enabled_reductions(vw_ptr all)
   return py_enabled_reductions;
 }
 
-predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
+predictor_ptr get_predictor(search_ptr _sch, ptag my_tag)
 {
-  Search::predictor* P = new Search::predictor(*sch, my_tag);
+  Search::predictor* P = new Search::predictor(*_sch, my_tag);
   return boost::shared_ptr<Search::predictor>(P);
 }
 
@@ -386,15 +394,15 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lDEFAULT:
       return all ? &all->example_parser->lbl_parser : NULL;
     case lBINARY:  // or #lSIMPLE
-      return &simple_label_parser;
+      return &VW::simple_label_parser_global;
     case lMULTICLASS:
-      return &MULTICLASS::mc_label;
+      return &VW::multiclass_label_parser_global;
     case lCOST_SENSITIVE:
-      return &COST_SENSITIVE::cs_label;
+      return &VW::cs_label_parser_global;
     case lCONTEXTUAL_BANDIT:
       return &CB::cb_label;
     case lCONDITIONAL_CONTEXTUAL_BANDIT:
-      return &CCB::ccb_label_parser;
+      return &VW::ccb_label_parser_global;
     case lSLATES:
       return &VW::slates::slates_label_parser;
     case lCONTINUOUS:
@@ -411,12 +419,12 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 size_t my_get_label_type(VW::workspace* all)
 {
   VW::label_parser* lp = &all->example_parser->lbl_parser;
-  if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
-  else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
+  if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
+  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label)
   {
     return lMULTICLASS;
   }
-  else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label)
+  else if (lp->parse_label == VW::cs_label_parser_global.parse_label)
   {
     return lCOST_SENSITIVE;
   }
@@ -428,7 +436,7 @@ size_t my_get_label_type(VW::workspace* all)
   {
     return lCONTEXTUAL_BANDIT_EVAL;
   }
-  else if (lp->parse_label == CCB::ccb_label_parser.parse_label)
+  else if (lp->parse_label == VW::ccb_label_parser_global.parse_label)
   {
     return lCONDITIONAL_CONTEXTUAL_BANDIT;
   }
@@ -824,13 +832,13 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
   if (all.add_constant)
   {
-    ae->feature_space[constant_namespace].clear();
+    ae->feature_space[VW::details::CONSTANT_NAMESPACE].clear();
     int hit_constant = -1;
     size_t N = ae->indices.size();
     for (size_t i = 0; i < N; i++)
     {
       int j = (int)(N - 1 - i);
-      if (ae->indices[j] == constant_namespace)
+      if (ae->indices[j] == VW::details::CONSTANT_NAMESPACE)
       {
         if (hit_constant >= 0) { THROW("Constant namespace was found twice. It can only exist 1 or 0 times."); }
         hit_constant = j;
@@ -862,7 +870,7 @@ float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->weight; }
 float ex_get_simplelabel_initial(example_ptr ec)
 {
-  return ec->_reduction_features.template get<simple_label_reduction_features>().initial;
+  return ec->_reduction_features.template get<VW::simple_label_reduction_features>().initial;
 }
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
@@ -1020,11 +1028,11 @@ size_t ex_get_slates_type(example_ptr ec)
 {
   switch (ec->l.slates.type)
   {
-    case VW::slates::example_type::shared:
+    case VW::slates::example_type::SHARED:
       return tSHARED;
-    case VW::slates::example_type::action:
+    case VW::slates::example_type::ACTION:
       return tACTION;
-    case VW::slates::example_type::slot:
+    case VW::slates::example_type::SLOT:
       return tSLOT;
     default:
       return tUNSET;
@@ -1050,11 +1058,11 @@ size_t ex_get_ccb_type(example_ptr ec)
 {
   switch (ec->l.conditional_contextual_bandit.type)
   {
-    case CCB::example_type::shared:
+    case VW::ccb_example_type::SHARED:
       return tSHARED;
-    case CCB::example_type::action:
+    case VW::ccb_example_type::ACTION:
       return tACTION;
-    case CCB::example_type::slot:
+    case VW::ccb_example_type::SLOT:
       return tSLOT;
     default:
       return tUNSET;
@@ -1124,63 +1132,63 @@ double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
-bool search_should_output(search_ptr sch) { return sch->output().good(); }
-void search_output(search_ptr sch, std::string s) { sch->output() << s; }
+bool search_should_output(search_ptr _sch) { return _sch->output().good(); }
+void search_output(search_ptr _sch, std::string s) { _sch->output() << s; }
 
 /*
-uint32_t search_predict_one_all(search_ptr sch, example_ptr ec, uint32_t one_ystar) {
-  return sch->predict(ec.get(), one_ystar, NULL);
+uint32_t search_predict_one_all(search_ptr _sch, example_ptr ec, uint32_t one_ystar) {
+  return _sch->predict(ec.get(), one_ystar, NULL);
 }
 
-uint32_t search_predict_one_some(search_ptr sch, example_ptr ec, uint32_t one_ystar, std::vector<uint32_t>& yallowed) {
+uint32_t search_predict_one_some(search_ptr _sch, example_ptr ec, uint32_t one_ystar, std::vector<uint32_t>& yallowed) {
   v_array<uint32_t> yallowed_va;
   yallowed_va.begin       = yallowed.data();
   yallowed_va.end         = yallowed_va.begin + yallowed.size();
   yallowed_va.end_array   = yallowed_va.end;
   yallowed_va.erase_count = 0;
-  return sch->predict(ec.get(), one_ystar, &yallowed_va);
+  return _sch->predict(ec.get(), one_ystar, &yallowed_va);
 }
 
-uint32_t search_predict_many_all(search_ptr sch, example_ptr ec, std::vector<uint32_t>& ystar) {
+uint32_t search_predict_many_all(search_ptr _sch, example_ptr ec, std::vector<uint32_t>& ystar) {
   v_array<uint32_t> ystar_va;
   ystar_va.begin       = ystar.data();
   ystar_va.end         = ystar_va.begin + ystar.size();
   ystar_va.end_array   = ystar_va.end;
   ystar_va.erase_count = 0;
-  return sch->predict(ec.get(), &ystar_va, NULL);
+  return _sch->predict(ec.get(), &ystar_va, NULL);
 }
 
-uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<uint32_t>& ystar, std::vector<uint32_t>&
+uint32_t search_predict_many_some(search_ptr _sch, example_ptr ec, std::vector<uint32_t>& ystar, std::vector<uint32_t>&
 yallowed) { v_array<uint32_t> ystar_va; ystar_va.begin       = ystar.data(); ystar_va.end         = ystar_va.begin +
 ystar.size(); ystar_va.end_array   = ystar_va.end; ystar_va.erase_count = 0; v_array<uint32_t> yallowed_va;
   yallowed_va.begin       = yallowed.data();
   yallowed_va.end         = yallowed_va.begin + yallowed.size();
   yallowed_va.end_array   = yallowed_va.end;
   yallowed_va.erase_count = 0;
-  return sch->predict(ec.get(), &ystar_va, &yallowed_va);
+  return _sch->predict(ec.get(), &ystar_va, &yallowed_va);
 }
 */
 
-void verify_search_set_properly(search_ptr sch)
+void verify_search_set_properly(search_ptr _sch)
 {
-  if (sch->task_name == nullptr) { THROW("set_structured_predict_hook: search task not initialized properly"); }
+  if (_sch->task_name == nullptr) { THROW("set_structured_predict_hook: search task not initialized properly"); }
 
-  if (std::strcmp(sch->task_name, "hook") != 0)
+  if (std::strcmp(_sch->task_name, "hook") != 0)
   { THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'."); }
 }
 
-uint32_t search_get_num_actions(search_ptr sch)
+uint32_t search_get_num_actions(search_ptr _sch)
 {
-  verify_search_set_properly(sch);
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  verify_search_set_properly(_sch);
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   return (uint32_t)d->num_actions;
 }
 
-void search_run_fn(Search::search& sch)
+void search_run_fn(Search::search& _sch)
 {
   try
   {
-    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
     py::object run = *static_cast<py::object*>(d->run_object.get());
     run.attr("__call__")();
   }
@@ -1193,11 +1201,11 @@ void search_run_fn(Search::search& sch)
   }
 }
 
-void search_setup_fn(Search::search& sch)
+void search_setup_fn(Search::search& _sch)
 {
   try
   {
-    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
     py::object run = *static_cast<py::object*>(d->setup_object.get());
     run.attr("__call__")();
   }
@@ -1210,11 +1218,11 @@ void search_setup_fn(Search::search& sch)
   }
 }
 
-void search_takedown_fn(Search::search& sch)
+void search_takedown_fn(Search::search& _sch)
 {
   try
   {
-    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
     py::object run = *static_cast<py::object*>(d->takedown_object.get());
     run.attr("__call__")();
   }
@@ -1233,21 +1241,21 @@ void py_delete_run_object(void* pyobj)
   delete o;
 }
 
-void set_force_oracle(search_ptr sch, bool useOracle)
+void set_force_oracle(search_ptr _sch, bool useOracle)
 {
-  verify_search_set_properly(sch);
-  sch->set_force_oracle(useOracle);
+  verify_search_set_properly(_sch);
+  _sch->set_force_oracle(useOracle);
 }
 
 void set_structured_predict_hook(
-    search_ptr sch, py::object run_object, py::object setup_object, py::object takedown_object)
+    search_ptr _sch, py::object run_object, py::object setup_object, py::object takedown_object)
 {
-  verify_search_set_properly(sch);
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  verify_search_set_properly(_sch);
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   d->run_object = nullptr;
   d->setup_object = nullptr;
   d->takedown_object = nullptr;
-  sch->set_force_oracle(false);
+  _sch->set_force_oracle(false);
 
   d->run_f = &search_run_fn;
   d->run_object = std::make_shared<py::object>(run_object);
@@ -1265,21 +1273,21 @@ void set_structured_predict_hook(
 
 void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
 
-bool po_exists(search_ptr sch, std::string arg)
+bool po_exists(search_ptr _sch, std::string arg)
 {
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   return d->arg->was_supplied(arg);
 }
 
-std::string po_get_string(search_ptr sch, std::string arg)
+std::string po_get_string(search_ptr _sch, std::string arg)
 {
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   return d->arg->get_typed_option<std::string>(arg).value();
 }
 
-int32_t po_get_int(search_ptr sch, std::string arg)
+int32_t po_get_int(search_ptr _sch, std::string arg)
 {
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   try
   {
     return d->arg->get_typed_option<int32_t>(arg).value();
@@ -1313,18 +1321,18 @@ int32_t po_get_int(search_ptr sch, std::string arg)
   return d->arg->get_typed_option<int32_t>(arg).value();
 }
 
-PyObject* po_get(search_ptr sch, std::string arg)
+PyObject* po_get(search_ptr _sch, std::string arg)
 {
   try
   {
-    return py::incref(py::object(po_get_string(sch, arg)).ptr());
+    return py::incref(py::object(po_get_string(_sch, arg)).ptr());
   }
   catch (...)
   {
   }
   try
   {
-    return py::incref(py::object(po_get_int(sch, arg)).ptr());
+    return py::incref(py::object(po_get_int(_sch, arg)).ptr());
   }
   catch (...)
   {
@@ -1675,10 +1683,11 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("is_ldf", &Search::search::is_ldf, "check whether this search task is running in LDF mode")
 
       .def("po_exists", &po_exists,
-          "For program (cmd line) options, check to see if a given option was specified; eg sch.po_exists(\"search\") "
+          "For program (cmd line) options, check to see if a given option was specified; eg _sch.po_exists(\"search\") "
           "should be True")
       .def("po_get", &po_get,
-          "For program (cmd line) options, if an option was specified, get its value; eg sch.po_get(\"search\") should "
+          "For program (cmd line) options, if an option was specified, get its value; eg _sch.po_get(\"search\") "
+          "should "
           "return the # of actions (returns either int or string)")
       .def("po_get_str", &po_get_string, "Same as po_get, but specialized for string return values.")
       .def("po_get_int", &po_get_int, "Same as po_get, but specialized for integer return values.")

@@ -23,7 +23,6 @@
 #define B_SEARCH_MAX_ITER 20
 
 using namespace VW::LEARNER;
-using namespace COST_SENSITIVE;
 using namespace VW::config;
 
 using std::endl;
@@ -33,8 +32,9 @@ using std::endl;
 
 namespace
 {
-struct lq_data
+class lq_data
 {
+public:
   // The following are used by cost-sensitive active learning
   float max_pred;            // The max cost for this label predicted by the current set of good regressors
   float min_pred;            // The min cost for this label predicted by the current set of good regressors
@@ -42,11 +42,12 @@ struct lq_data
   bool is_range_overlapped;  // Indicator of whether this label's cost range overlaps with the cost range that has the
                              // minimum max_pred
   bool query_needed;         // Used in reduction mode: tell upper-layer whether a query is needed for this label
-  COST_SENSITIVE::wclass* cl;
+  VW::cs_class* cl;
 };
 
-struct cs_active
+class cs_active
 {
+public:
   // active learning algorithm parameters
   float c0 = 0.f;        // mellowness controlling the width of the set of good functions
   float c1 = 0.f;        // multiplier on the threshold for the cost range test
@@ -76,7 +77,7 @@ struct cs_active
   float range = 0.f;
 };
 
-float binarySearch(float fhat, float delta, float sens, float tol)
+float binary_search(float fhat, float delta, float sens, float tol)
 {
   float maxw = std::min(fhat / sens, FLT_MAX);
 
@@ -178,10 +179,10 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& 
   else
   {
     // finding max_pred and min_pred by binary search
-    max_pred =
-        std::min(ec.pred.scalar + sens * binarySearch(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
-    min_pred =
-        std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
+    max_pred = std::min(
+        ec.pred.scalar + sens * binary_search(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
+    min_pred = std::max(
+        ec.pred.scalar - sens * binary_search(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
     {
@@ -194,7 +195,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& 
 template <bool is_learn, bool is_simulation>
 void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
 {
-  COST_SENSITIVE::label ld = ec.l.cs;
+  VW::cs_label ld = ec.l.cs;
 
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
   {
@@ -226,7 +227,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
   uint32_t prediction = 1;
   float score = FLT_MAX;
   ec.l.simple = {0.f};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   float min_max_cost = FLT_MAX;
   float t = static_cast<float>(cs_a.t);  // ec.example_t;  // current round
@@ -239,7 +240,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
   if (ld.costs.size() > 0)
   {
     // Create metadata structure
-    for (COST_SENSITIVE::wclass& cl : ld.costs)
+    for (VW::cs_class& cl : ld.costs)
     {
       lq_data f = {0.0, 0.0, 0, 0, 0, &cl};
       cs_a.query_data.push_back(f);
@@ -307,7 +308,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
 
 void finish_example(VW::workspace& all, cs_active&, VW::example& ec)
 {
-  COST_SENSITIVE::output_example(all, ec, ec.l.cs, ec.pred.active_multiclass.predicted_class);
+  VW::details::output_cs_example(all, ec, ec.l.cs, ec.pred.active_multiclass.predicted_class);
   VW::finish_example(all, ec);
 }
 
@@ -398,12 +399,12 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::active_multiclass)
-                .set_input_label_type(VW::label_type_t::cs)
+                .set_input_label_type(VW::label_type_t::CS)
                 .set_finish_example(::finish_example)
                 .build();
 
   // Label parser set to cost sensitive label parser
-  all.example_parser->lbl_parser = cs_label;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   base_learner* b = make_base(*l);
   all.cost_sensitive = b;
   return b;

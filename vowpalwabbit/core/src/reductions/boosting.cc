@@ -38,14 +38,15 @@ using namespace VW::reductions;
 
 using std::endl;
 
-struct boosting
+class boosting
 {
-  int N = 0;
+public:
+  int N = 0;  // NOLINT
   float gamma = 0.f;
   std::string alg = "";
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
-  std::vector<std::vector<int64_t> > C;
+  std::shared_ptr<VW::rand_state> random_state;
+  std::vector<std::vector<int64_t> > C;  // NOLINT
   std::vector<float> alpha;
   std::vector<float> v;
   int t = 0;
@@ -60,7 +61,7 @@ struct boosting
 template <bool is_learn>
 void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
 
   float final_prediction = 0;
 
@@ -133,7 +134,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::exampl
 template <bool is_learn>
 void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
 
   float final_prediction = 0;
 
@@ -189,7 +190,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
 template <bool is_learn>
 void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
 
   float final_prediction = 0, partial_prediction = 0;
 
@@ -200,7 +201,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   if (is_learn) { o.t++; }
   float eta = 4.f / sqrtf(static_cast<float>(o.t));
 
-  float stopping_point = o._random_state->get_and_update_random();
+  float stopping_point = o.random_state->get_and_update_random();
 
   for (int i = 0; i < o.N; i++)
   {
@@ -327,7 +328,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
 
 void return_example(VW::workspace& all, boosting& /* a */, VW::example& ec)
 {
-  output_and_account_example(all, ec);
+  VW::details::output_and_account_example(all, ec);
   VW::finish_example(all, ec);
 }
 
@@ -406,7 +407,7 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
   data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
   data->t = 0;
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
 
@@ -446,7 +447,7 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
       pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_save_load(save_load_fn)
                 .set_finish_example(return_example)
                 .build();

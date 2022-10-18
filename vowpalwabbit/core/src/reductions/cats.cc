@@ -160,9 +160,10 @@ void reduction_output::print_update_cb_cont(VW::workspace& all, const VW::exampl
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown"
-                     : VW::to_string(ec.l.cb_cont.costs[0], VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
-        VW::to_string(ec.pred.pdf_value, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
+        ec.test_only
+            ? "unknown"
+            : VW::to_string(ec.l.cb_cont.costs[0], VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
+        VW::to_string(ec.pred.pdf_value, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
@@ -222,7 +223,7 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
                 .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
                 .set_finish_example(::finish_example)
-                .set_input_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 
   return make_base(*l);

@@ -15,6 +15,7 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <cfloat>
 #include <cstdio>
@@ -25,8 +26,9 @@ using namespace VW::config;
 
 namespace
 {
-struct gdmf
+class gdmf
 {
+public:
   VW::workspace* all = nullptr;  // regressor, printing
   VW::v_array<float> scalars;
   uint32_t rank = 0;
@@ -88,8 +90,9 @@ void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
   mf_print_offset_features(d, ec, offset);
 }
 
-struct pred_offset
+class pred_offset
 {
+public:
   float p;
   uint64_t offset;
 };
@@ -100,7 +103,7 @@ template <class T>
 float mf_predict(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
   ec.num_features_from_interactions = 0;
@@ -195,7 +198,7 @@ template <class T>
 void mf_train(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
-  label_data& ld = ec.l.simple;
+  VW::simple_label& ld = ec.l.simple;
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
@@ -244,7 +247,7 @@ void mf_train(gdmf& d, VW::example& ec)
   }
 }
 
-void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
+void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
 {
   for (size_t i = 0; i != stride; ++i, ++index)
   {
@@ -263,8 +266,9 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
-      auto weight_initializer = [stride](
-                                    weight* weights, uint64_t index) { initialize_weights(weights, index, stride); };
+      auto weight_initializer = [stride](VW::weight* weights, uint64_t index) {
+        initialize_weights(weights, index, stride);
+      };
 
       all.weights.set_default(weight_initializer);
     }
@@ -279,16 +283,16 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     do
     {
       brw = 0;
-      size_t K = d.rank * 2 + 1;
+      size_t K = d.rank * 2 + 1;  // NOLINT
       std::stringstream msg;
       msg << i << " ";
       brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
-        weight* w_i = &(all.weights.strided_index(i));
+        VW::weight* w_i = &(all.weights.strided_index(i));
         for (uint64_t k = 0; k < K; k++)
         {
-          weight* v = w_i + k;
+          VW::weight* v = w_i + k;
           msg << v << " ";
           brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
@@ -313,7 +317,8 @@ void end_pass(gdmf& d)
 
   if (!all->holdout_set_off)
   {
-    if (summarize_holdout_set(*all, d.no_win_counter)) { finalize_regressor(*all, all->final_regressor_name); }
+    if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
+    { finalize_regressor(*all, all->final_regressor_name); }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
     { set_done(*all); }
@@ -379,7 +384,7 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
   auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)

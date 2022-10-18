@@ -24,9 +24,7 @@
 #include <cmath>
 
 using namespace VW::LEARNER;
-using namespace COST_SENSITIVE;
 using namespace VW::config;
-using namespace ACTION_SCORE;
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::csoaa_ldf
@@ -34,8 +32,9 @@ using namespace ACTION_SCORE;
 namespace
 {
 // TODO: passthrough for ldf
-struct ldf
+class ldf
 {
+public:
   LabelDict::label_feature_map label_features;
 
   bool is_wap = false;
@@ -44,15 +43,15 @@ struct ldf
   VW::workspace* all = nullptr;
 
   bool rank = false;
-  action_scores a_s;
+  VW::action_scores a_s;
   uint64_t ft_offset = 0;
 
-  std::vector<action_scores> stored_preds;
+  std::vector<VW::action_scores> stored_preds;
 };
 
-inline bool cmp_wclass_ptr(const COST_SENSITIVE::wclass* a, const COST_SENSITIVE::wclass* b) { return a->x < b->x; }
+inline bool cmp_wclass_ptr(const VW::cs_class* a, const VW::cs_class* b) { return a->x < b->x; }
 
-void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
+void compute_wap_values(std::vector<VW::cs_class*> costs)
 {
   std::sort(costs.begin(), costs.end(), cmp_wclass_ptr);
   costs[0]->wap_value = 0.;
@@ -62,20 +61,21 @@ void compute_wap_values(std::vector<COST_SENSITIVE::wclass*> costs)
 
 // Substract a given feature from example ec.
 // Rather than finding the corresponding namespace and feature in ec,
-// add a new feature with opposite value (but same index) to ec to a special wap_ldf_namespace.
+// add a new feature with opposite value (but same index) to ec to a special VW::details::WAP_LDF_NAMESPACE.
 // This is faster and allows fast undo in unsubtract_example().
 void subtract_feature(VW::example& ec, float feature_value_x, uint64_t weight_index)
 {
-  ec.feature_space[wap_ldf_namespace].push_back(-feature_value_x, weight_index, wap_ldf_namespace);
+  ec.feature_space[VW::details::WAP_LDF_NAMESPACE].push_back(
+      -feature_value_x, weight_index, VW::details::WAP_LDF_NAMESPACE);
 }
 
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
 void subtract_example(VW::workspace& all, VW::example* ec, VW::example* ecsub)
 {
-  features& wap_fs = ec->feature_space[wap_ldf_namespace];
+  features& wap_fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   wap_fs.sum_feat_sq = 0;
   GD::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
-  ec->indices.push_back(wap_ldf_namespace);
+  ec->indices.push_back(VW::details::WAP_LDF_NAMESPACE);
   ec->num_features += wap_fs.size();
   ec->reset_total_sum_feat_sq();
 }
@@ -88,7 +88,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
     return;
   }
 
-  if (ec->indices.back() != wap_ldf_namespace)
+  if (ec->indices.back() != VW::details::WAP_LDF_NAMESPACE)
   {
     logger.err_error(
         "Internal error (bug): trying to unsubtract_example, but either it wasn't added, or something was added "
@@ -96,7 +96,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
     return;
   }
 
-  features& fs = ec->feature_space[wap_ldf_namespace];
+  features& fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   ec->num_features -= fs.size();
   ec->reset_total_sum_feat_sq();
   fs.clear();
@@ -119,8 +119,8 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
     LabelDict::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
   });
 
-  ec.l.simple = label_data{FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.l.simple = VW::simple_label{FLT_MAX};
+  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
@@ -128,43 +128,43 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
 
 bool test_ldf_sequence(ldf& /*data*/, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  bool isTest;
-  if (ec_seq.empty()) { isTest = true; }
+  bool is_test;
+  if (ec_seq.empty()) { is_test = true; }
   else
   {
-    isTest = COST_SENSITIVE::cs_label.test_label(ec_seq[0]->l);
+    is_test = VW::cs_label_parser_global.test_label(ec_seq[0]->l);
   }
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
 
-    if (COST_SENSITIVE::cs_label.test_label(ec->l) != isTest)
+    if (VW::cs_label_parser_global.test_label(ec->l) != is_test)
     {
-      isTest = true;
+      is_test = true;
       logger.err_warn("ldf example has mix of train/test data; assuming test");
     }
   }
-  return isTest;
+  return is_test;
 }
 
 void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
 
-  size_t K = ec_seq.size();
-  std::vector<COST_SENSITIVE::wclass*> all_costs;
+  size_t num_classes = ec_seq.size();
+  std::vector<VW::cs_class*> all_costs;
   for (const auto& example : ec_seq) { all_costs.push_back(&example->l.cs.costs[0]); }
   compute_wap_values(all_costs);
 
-  for (size_t k1 = 0; k1 < K; k1++)
+  for (size_t k1 = 0; k1 < num_classes; k1++)
   {
     VW::example* ec1 = ec_seq[k1];
 
     // save original variables
-    COST_SENSITIVE::label save_cs_label = ec1->l.cs;
-    label_data& simple_lbl = ec1->l.simple;
-    auto& simple_red_features = ec1->_reduction_features.template get<simple_label_reduction_features>();
+    VW::cs_label save_cs_label = ec1->l.cs;
+    auto& simple_lbl = ec1->l.simple;
+    auto& simple_red_features = ec1->_reduction_features.template get<VW::simple_label_reduction_features>();
 
     auto costs1 = save_cs_label.costs;
     if (costs1[0].class_index == static_cast<uint32_t>(-1)) { continue; }
@@ -179,7 +179,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
       ec1->l.cs = save_cs_label;
     });
 
-    for (size_t k2 = k1 + 1; k2 < K; k2++)
+    for (size_t k2 = k1 + 1; k2 < num_classes; k2++)
     {
       VW::example* ec2 = ec_seq[k2];
       auto costs2 = ec2->l.cs.costs;
@@ -233,11 +233,11 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
   for (const auto& ec : ec_seq)
   {
     // save original variables
-    label save_cs_label = std::move(ec->l.cs);
+    VW::cs_label save_cs_label = std::move(ec->l.cs);
     const auto& costs = save_cs_label.costs;
 
     // build example for the base learner
-    label_data simple_lbl;
+    VW::simple_label simple_lbl;
 
     float old_weight = ec->weight;
     if (!data.treat_as_classifier)
@@ -257,7 +257,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+    auto& simple_red_features = ec->_reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = 0.;
     ec->l.simple = simple_lbl;
 
@@ -338,14 +338,14 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
 
   data.ft_offset = ec_seq_all[0]->ft_offset;
 
-  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
-  uint32_t predicted_K = 0;
+  uint32_t num_classes = static_cast<uint32_t>(ec_seq_all.size());
+  uint32_t predicted_class = 0;
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K, &predicted_K] {
+  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, num_classes, &predicted_class] {
     // Mark the predicted sub-example with its class_index, all other with 0
-    for (size_t k = 0; k < K; k++)
+    for (size_t k = 0; k < num_classes; k++)
     {
-      if (k == predicted_K) { ec_seq_all[k]->pred.multiclass = ec_seq_all[k]->l.cs.costs[0].class_index; }
+      if (k == predicted_class) { ec_seq_all[k]->pred.multiclass = ec_seq_all[k]->l.cs.costs[0].class_index; }
       else
       {
         ec_seq_all[k]->pred.multiclass = 0;
@@ -358,14 +358,14 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
 
   /////////////////////// do prediction
   float min_score = FLT_MAX;
-  for (uint32_t k = 0; k < K; k++)
+  for (uint32_t k = 0; k < num_classes; k++)
   {
     VW::example* ec = ec_seq_all[k];
     make_single_prediction(data, base, *ec);
     if (ec->partial_prediction < min_score)
     {
       min_score = ec->partial_prediction;
-      predicted_K = k;
+      predicted_class = k;
     }
   }
 }
@@ -383,17 +383,17 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
     return;  // nothing more to do
   }
 
-  uint32_t K = static_cast<uint32_t>(ec_seq_all.size());
+  uint32_t num_classes = static_cast<uint32_t>(ec_seq_all.size());
 
   /////////////////////// do prediction
   data.a_s.clear();
   data.stored_preds.clear();
 
-  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, K] {
-    std::sort(data.a_s.begin(), data.a_s.end(), VW::action_score_compare_lt);
+  auto restore_guard = VW::scope_exit([&data, &ec_seq_all, num_classes] {
+    std::sort(data.a_s.begin(), data.a_s.end());
 
     data.stored_preds[0].clear();
-    for (size_t k = 0; k < K; k++)
+    for (size_t k = 0; k < num_classes; k++)
     {
       ec_seq_all[k]->pred.a_s = std::move(data.stored_preds[k]);
       ec_seq_all[0]->pred.a_s.push_back(data.a_s[k]);
@@ -403,12 +403,12 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
     if (data.is_probabilities) { convert_to_probabilities(ec_seq_all); }
   });
 
-  for (uint32_t k = 0; k < K; k++)
+  for (uint32_t k = 0; k < num_classes; k++)
   {
     VW::example* ec = ec_seq_all[k];
     data.stored_preds.emplace_back(std::move(ec->pred.a_s));
     make_single_prediction(data, base, *ec);
-    action_score s;
+    VW::action_score s;
     s.score = ec->partial_prediction;
     s.action = ec->l.cs.costs[0].class_index;
     data.a_s.push_back(s);
@@ -418,15 +418,15 @@ void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_se
 void output_example(
     VW::workspace& all, const VW::example& ec, bool& hit_loss, const VW::multi_ex* ec_seq, const ldf& data)
 {
-  const label& ld = ec.l.cs;
+  const auto& ld = ec.l.cs;
   const auto& costs = ld.costs;
 
   if (VW::example_is_newline(ec)) { return; }
 
-  if (COST_SENSITIVE::ec_is_example_header(ec))
+  if (VW::is_cs_example_header(ec))
   {
     all.sd->total_features +=
-        (ec_seq->size() - 1) * (ec.get_num_features() - ec.feature_space[constant_namespace].size());
+        (ec_seq->size() - 1) * (ec.get_num_features() - ec.feature_space[VW::details::CONSTANT_NAMESPACE].size());
     return;
   }
   else
@@ -439,10 +439,10 @@ void output_example(
   uint32_t predicted_class = 0;
   if (data.is_probabilities)
   {
-    // predicted_K was already computed in do_actual_learning(),
+    // predicted_class was already computed in do_actual_learning(),
     // but we cannot store it in ec.pred union because we store ec.pred.prob there.
     // So we must compute it again.
-    uint32_t predicted_K = 0;
+    uint32_t predicted_k = 0;
     float min_score = FLT_MAX;
     for (size_t k = 0; k < ec_seq->size(); k++)
     {
@@ -450,17 +450,17 @@ void output_example(
       if (ec_k->partial_prediction < min_score)
       {
         min_score = ec_k->partial_prediction;
-        predicted_K = static_cast<uint32_t>(k);
+        predicted_k = static_cast<uint32_t>(k);
       }
     }
-    predicted_class = (*ec_seq)[predicted_K]->l.cs.costs[0].class_index;
+    predicted_class = (*ec_seq)[predicted_k]->l.cs.costs[0].class_index;
   }
   else
   {
     predicted_class = ec.pred.multiclass;
   }
 
-  if (!COST_SENSITIVE::cs_label.test_label(ec.l))
+  if (!VW::cs_label_parser_global.test_label(ec.l))
   {
     for (auto const& cost : costs)
     {
@@ -484,18 +484,18 @@ void output_example(
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(ec.l), ec, ec_seq, false, predicted_class);
+  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(ec.l), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_loss, VW::multi_ex* ec_seq)
@@ -503,14 +503,14 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   const auto& costs = head_ec.l.cs.costs;
 
   if (VW::example_is_newline(head_ec)) { return; }
-  if (COST_SENSITIVE::ec_is_example_header(head_ec)) { return; }
+  if (VW::is_cs_example_header(head_ec)) { return; }
 
   all.sd->total_features += head_ec.get_num_features();
 
   float loss = 0.;
-  VW::v_array<action_score>& preds = head_ec.pred.a_s;
+  VW::v_array<VW::action_score>& preds = head_ec.pred.a_s;
 
-  if (!COST_SENSITIVE::cs_label.test_label(head_ec.l))
+  if (!VW::cs_label_parser_global.test_label(head_ec.l))
   {
     for (VW::example* ex : *ec_seq)
     {
@@ -527,28 +527,28 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   }
 
   for (auto& sink : all.final_prediction_sink)
-  { print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger); }
+  { VW::details::print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger); }
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].class_index << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].class_index << ':' << costs[i].partial_prediction;
     }
     // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), head_ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), head_ec.tag, all.logger);
   }
 
-  COST_SENSITIVE::print_update(all, COST_SENSITIVE::cs_label.test_label(head_ec.l), head_ec, ec_seq, true, 0);
+  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(head_ec.l), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
 {
-  size_t K = ec_seq.size();
-  if (K > 0)
+  size_t num_classes = ec_seq.size();
+  if (num_classes > 0)
   {
     if (test_ldf_sequence(data, ec_seq, all.logger)) { all.sd->weighted_unlabeled_examples += ec_seq[0]->weight; }
     else
@@ -575,7 +575,7 @@ void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
       float min_cost = FLT_MAX;
       size_t correct_class_k = 0;
 
-      for (size_t k = 0; k < K; k++)
+      for (size_t k = 0; k < num_classes; k++)
       {
         float ec_cost = ec_seq[k]->l.cs.costs[0].x;
         if (ec_cost < min_cost)
@@ -609,13 +609,13 @@ void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_se
 {
   if (!ec_seq.empty())
   {
-    if (ec_seq.size() > 1 && COST_SENSITIVE::ec_is_example_header(*ec_seq[0]))
+    if (ec_seq.size() > 1 && VW::is_cs_example_header(*ec_seq[0]))
     {
       std::swap(ec_seq[0]->pred, ec_seq[1]->pred);
       std::swap(ec_seq[0]->tag, ec_seq[1]->tag);
     }
     output_example_seq(all, data, ec_seq);
-    if (ec_seq.size() > 1 && COST_SENSITIVE::ec_is_example_header(*ec_seq[0]))
+    if (ec_seq.size() > 1 && VW::is_cs_example_header(*ec_seq[0]))
     {
       std::swap(ec_seq[0]->pred, ec_seq[1]->pred);
       std::swap(ec_seq[0]->tag, ec_seq[1]->tag);
@@ -742,11 +742,11 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
-                .set_input_label_type(VW::label_type_t::cs)
+                .set_input_label_type(VW::label_type_t::CS)
                 .set_output_prediction_type(pred_type)
                 .build();
 
-  all.example_parser->lbl_parser = COST_SENSITIVE::cs_label;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }

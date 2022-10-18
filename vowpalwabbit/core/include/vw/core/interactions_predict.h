@@ -3,11 +3,11 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "object_pool.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/constant.h"
 #include "vw/core/example_predict.h"
 #include "vw/core/feature_group.h"
+#include "vw/core/object_pool.h"
 
 #include <cstdint>
 #include <stack>
@@ -19,19 +19,21 @@ const static VW::audit_strings EMPTY_AUDIT_STRINGS;
 
 namespace INTERACTIONS
 {
-struct feature_gen_data;
+class feature_gen_data;
 using features_range_t = std::pair<features::const_audit_iterator, features::const_audit_iterator>;
 
-struct extent_interaction_expansion_stack_item
+class extent_interaction_expansion_stack_item
 {
+public:
   size_t current_term;
   size_t prev_term;
   size_t offset;
   std::vector<features_range_t> so_far;
 };
 
-struct generate_interactions_object_cache
+class generate_interactions_object_cache
 {
+public:
   std::vector<feature_gen_data> state_data;
   VW::moved_object_pool<extent_interaction_expansion_stack_item> frame_pool;
   std::stack<extent_interaction_expansion_stack_item> in_process_frames;
@@ -67,8 +69,9 @@ inline void call_FuncT(DataT& dat, WeightsT& /*weights*/, const float ft_value, 
 
 // state data used in non-recursive feature generation algorithm
 // contains N feature_gen_data records (where N is length of interaction)
-struct feature_gen_data
+class feature_gen_data
 {
+public:
   uint64_t hash = 0;              // hash of feature interactions of previous namespaces in the list
   float x = 1.f;                  // value of feature interactions of previous namespaces in the list
                                   // than once calculated at preprocessing together with same_ns
@@ -83,19 +86,19 @@ struct feature_gen_data
   }
 };
 
-inline bool term_is_empty(VW::namespace_index term, const std::array<features, NUM_NAMESPACES>& feature_groups)
+inline bool term_is_empty(VW::namespace_index term, const std::array<features, VW::NUM_NAMESPACES>& feature_groups)
 {
   return feature_groups[term].empty();
 }
 
-inline bool has_empty_interaction_quadratic(const std::array<features, NUM_NAMESPACES>& feature_groups,
+inline bool has_empty_interaction_quadratic(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
     const std::vector<VW::namespace_index>& namespace_indexes)
 {
   assert(namespace_indexes.size() == 2);
   return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups);
 }
 
-inline bool has_empty_interaction_cubic(const std::array<features, NUM_NAMESPACES>& feature_groups,
+inline bool has_empty_interaction_cubic(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
     const std::vector<VW::namespace_index>& namespace_indexes)
 {
   assert(namespace_indexes.size() == 3);
@@ -104,14 +107,14 @@ inline bool has_empty_interaction_cubic(const std::array<features, NUM_NAMESPACE
   ;
 }
 
-inline bool has_empty_interaction(const std::array<features, NUM_NAMESPACES>& feature_groups,
+inline bool has_empty_interaction(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
     const std::vector<VW::namespace_index>& namespace_indexes)
 {
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
       [&](VW::namespace_index idx) { return term_is_empty(idx, feature_groups); });
 }
 inline bool has_empty_interaction(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& namespace_indexes)
+    const std::array<features, VW::NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& namespace_indexes)
 {
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(), [&](extent_term idx) {
     return std::find_if(feature_groups[idx.first].namespace_extents.begin(),
@@ -133,7 +136,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1 * val
 // #define GEN_INTER_LOOP
 
 std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
+    const std::array<features, VW::NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
     VW::namespace_index ns_idx2)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
@@ -141,7 +144,7 @@ std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_co
 }
 
 template <typename DispatchCombinationFuncT>
-void generate_generic_extent_combination_iterative(const std::array<features, NUM_NAMESPACES>& feature_groups,
+void generate_generic_extent_combination_iterative(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
     const std::vector<extent_term>& terms, const DispatchCombinationFuncT& dispatch_combination_func,
     std::stack<extent_interaction_expansion_stack_item>& in_process_frames,
     VW::moved_object_pool<extent_interaction_expansion_stack_item>& frame_pool)
@@ -211,7 +214,7 @@ void generate_generic_extent_combination_iterative(const std::array<features, NU
 }
 
 std::tuple<features_range_t, features_range_t, features_range_t> inline generate_cubic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
+    const std::array<features, VW::NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
     VW::namespace_index ns_idx2, VW::namespace_index ns_idx3)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
@@ -220,7 +223,7 @@ std::tuple<features_range_t, features_range_t, features_range_t> inline generate
 }
 
 std::vector<features_range_t> inline generate_generic_char_combination(
-    const std::array<features, NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& terms)
+    const std::array<features, VW::NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& terms)
 {
   std::vector<features_range_t> inter;
   inter.reserve(terms.size());
@@ -268,7 +271,7 @@ size_t process_quadratic_interaction(const std::tuple<features_range_t, features
   size_t i = 0;
   for (; first_begin != first_end; ++first_begin)
   {
-    feature_index halfhash = FNV_prime * first_begin.index();
+    feature_index halfhash = VW::details::FNV_PRIME * first_begin.index();
     if (Audit) { audit_func(first_begin.audit() != nullptr ? first_begin.audit() : &EMPTY_AUDIT_STRINGS); }
     // next index differs for permutations and simple combinations
     auto begin = second_begin;
@@ -302,7 +305,7 @@ size_t process_cubic_interaction(const std::tuple<features_range_t, features_ran
   {
     if (Audit) { audit_func(first_begin.audit() != nullptr ? first_begin.audit() : &EMPTY_AUDIT_STRINGS); }
 
-    const uint64_t halfhash1 = FNV_prime * first_begin.index();
+    const uint64_t halfhash1 = VW::details::FNV_PRIME * first_begin.index();
     const float first_ft_value = first_begin.value();
     size_t j = 0;
     if (same_namespace1)  // next index differs for permutations and simple combinations
@@ -313,7 +316,7 @@ size_t process_cubic_interaction(const std::tuple<features_range_t, features_ran
       // f3 x k*(f2 x k*f1)
       if (Audit)
       { audit_func(inner_second_begin.audit() != nullptr ? inner_second_begin.audit() : &EMPTY_AUDIT_STRINGS); }
-      feature_index halfhash = FNV_prime * (halfhash1 ^ inner_second_begin.index());
+      feature_index halfhash = VW::details::FNV_PRIME * (halfhash1 ^ inner_second_begin.index());
       feature_value ft_value = INTERACTION_VALUE(first_ft_value, inner_second_begin.value());
 
       auto begin = third_begin;
@@ -384,12 +387,12 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
 
       if (cur_data == gen_data_head)  // first namespace
       {
-        next_data->hash = FNV_prime * (*cur_data->current_it).index();
+        next_data->hash = VW::details::FNV_PRIME * (*cur_data->current_it).index();
         next_data->x = (*cur_data->current_it).value();  // data->x == 1.
       }
       else
       {  // feature2 xor (16777619*feature1)
-        next_data->hash = FNV_prime * (cur_data->hash ^ (*cur_data->current_it).index());
+        next_data->hash = VW::details::FNV_PRIME * (cur_data->hash ^ (*cur_data->current_it).index());
         next_data->x = INTERACTION_VALUE((*cur_data->current_it).value(), cur_data->x);
       }
       ++cur_data;
@@ -484,7 +487,8 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
   for (const auto& ns : extent_interactions)
   {
     if (has_empty_interaction(ec.feature_space, ns)) { continue; }
-    if (std::any_of(ns.begin(), ns.end(), [](const extent_term& term) { return term.first == wildcard_namespace; }))
+    if (std::any_of(ns.begin(), ns.end(),
+            [](const extent_term& term) { return term.first == VW::details::WILDCARD_NAMESPACE; }))
     { continue; }
 
     generate_generic_extent_combination_iterative(

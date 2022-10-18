@@ -277,25 +277,25 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
     "--ccb_explore_adf --quiet -q ::")
     ->MinTime(15.0);
-#ifdef BUILD_LARGE_ACTION_SPACE
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_onestep,
-    gen_cb_examples(1, 50, 10, 300, 1, 1, 20, 10, false),
+#ifdef BUILD_LARGE_ACTION_SPACE
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_onestep,
+    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_onestep_max_threads,
-    gen_cb_examples(1, 50, 10, 300, 1, 1, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_onestep_max_threads,
+    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_plaincb,
-    gen_cb_examples(1, 50, 10, 300, 1, 1, 20, 10, false), "--cb_explore_adf -q :: --quiet")
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_plaincb,
+    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
@@ -342,6 +342,27 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_1k_plaincb,
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_onestep,
+    gen_cb_examples(1, 50, 20, 300, 5, 5, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
+    ->MinTime(15.0)
+    ->UseRealTime()
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_onestep_max_threads,
+    gen_cb_examples(1, 50, 20, 300, 5, 5, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
+        std::to_string(std::thread::hardware_concurrency()))
+    ->MinTime(15.0)
+    ->UseRealTime()
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_plaincb,
+    gen_cb_examples(1, 50, 20, 300, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
+    ->MinTime(15.0)
+    ->UseRealTime()
+    ->Unit(benchmark::kMillisecond);
+
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_500_onestep,
     gen_cb_examples(1, 50, 20, 500, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
@@ -380,6 +401,27 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_1k_onestep_max_threads,
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_1k_plaincb,
     gen_cb_examples(1, 50, 20, 1000, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
+    ->MinTime(15.0)
+    ->UseRealTime()
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_300_onestep,
+    gen_cb_examples(1, 50, 50, 300, 5, 5, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
+    ->MinTime(15.0)
+    ->UseRealTime()
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_300_onestep_max_threads,
+    gen_cb_examples(1, 50, 50, 300, 5, 5, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
+        std::to_string(std::thread::hardware_concurrency()))
+    ->MinTime(15.0)
+    ->UseRealTime()
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_300_plaincb,
+    gen_cb_examples(1, 50, 50, 300, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);

@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "generic_range.h"
 #include "vw/common/future_compat.h"
+#include "vw/core/generic_range.h"
 #include "vw/core/v_array.h"
 
 #include <algorithm>
@@ -26,8 +26,9 @@ using namespace_index = unsigned char;
 namespace VW
 
 {
-struct audit_strings
+class audit_strings
 {
+public:
   std::string ns;
   std::string name;
 
@@ -59,12 +60,13 @@ using audit_strings VW_DEPRECATED("Moved into VW namespace") = VW::audit_strings
 // First: character based feature group, second: hash of extent
 using extent_term = std::pair<namespace_index, uint64_t>;
 
-struct features;
-struct features_value_index_audit_range;
+class features;
+class features_value_index_audit_range;
 
 // sparse feature definition for the library interface
-struct feature
+class feature
 {
+public:
   float x;
   uint64_t weight_index;
 
@@ -81,8 +83,9 @@ static_assert(std::is_trivial<feature>::value, "To be used in v_array feature mu
 
 namespace VW
 {
-struct namespace_extent
+class namespace_extent
 {
+public:
   namespace_extent() = default;
 
   namespace_extent(size_t begin_index, size_t end_index, uint64_t hash)
@@ -114,11 +117,6 @@ std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std:
 template <typename feature_value_type_t, typename feature_index_type_t, typename audit_type_t>
 class audit_features_iterator final
 {
-private:
-  feature_value_type_t* _begin_values;
-  feature_index_type_t* _begin_indices;
-  audit_type_t* _begin_audit;
-
 public:
   using iterator_category = std::random_access_iterator_tag;
   using difference_type = std::ptrdiff_t;
@@ -240,7 +238,12 @@ public:
     std::swap(lhs._begin_indices, rhs._begin_indices);
     std::swap(lhs._begin_audit, rhs._begin_audit);
   }
-  friend struct features;
+  friend class features;
+
+private:
+  feature_value_type_t* _begin_values;
+  feature_index_type_t* _begin_indices;
+  audit_type_t* _begin_audit;
 };
 
 template <typename features_t, typename audit_features_iterator_t, typename extent_it>
@@ -255,12 +258,6 @@ public:
     { ++_index_current; }
   }
 
-private:
-  features_t* _feature_group;
-  uint64_t _hash;
-  extent_it _index_current;
-
-public:
   using iterator_category = std::forward_iterator_tag;
   using difference_type = std::ptrdiff_t;
   using value_type = std::pair<audit_features_iterator_t, audit_features_iterator_t>;
@@ -294,16 +291,17 @@ public:
   }
 
   friend bool operator!=(const ns_extent_iterator& lhs, const ns_extent_iterator& rhs) { return !(lhs == rhs); }
-  friend struct features;
+  friend class features;
+
+private:
+  features_t* _feature_group;
+  uint64_t _hash;
+  extent_it _index_current;
 };
 
 template <typename feature_value_type_t, typename feature_index_type_t>
 class features_iterator final
 {
-private:
-  feature_value_type_t* _begin_values;
-  feature_index_type_t* _begin_indices;
-
 public:
   using iterator_category = std::random_access_iterator_tag;
   using difference_type = std::ptrdiff_t;
@@ -403,12 +401,17 @@ public:
     std::swap(lhs._begin_values, rhs._begin_values);
     std::swap(lhs._begin_indices, rhs._begin_indices);
   }
-  friend struct features;
+  friend class features;
+
+private:
+  feature_value_type_t* _begin_values;
+  feature_index_type_t* _begin_indices;
 };
 
 /// the core definition of a set of features.
-struct features
+class features
 {
+public:
   using iterator = features_iterator<feature_value, feature_index>;
   using const_iterator = features_iterator<const feature_value, const feature_index>;
   using audit_iterator = audit_features_iterator<feature_value, feature_index, VW::audit_strings>;

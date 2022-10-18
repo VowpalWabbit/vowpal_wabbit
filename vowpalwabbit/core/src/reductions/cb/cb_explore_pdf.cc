@@ -9,6 +9,7 @@
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 
 // Aliases
@@ -26,8 +27,9 @@ namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN sample_pdf reduction and reduction methods
-struct cb_explore_pdf
+class cb_explore_pdf
 {
+public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 
@@ -67,9 +69,9 @@ int cb_explore_pdf::predict(VW::example& ec, VW::experimental::api_status*)
 
   _base->predict(ec);
 
-  VW::continuous_actions::probability_density_function& _pred_pdf = ec.pred.pdf;
-  for (uint32_t i = 0; i < _pred_pdf.size(); i++)
-  { _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value); }
+  auto& pred_pdf = ec.pred.pdf;
+  for (uint32_t i = 0; i < pred_pdf.size(); i++)
+  { pred_pdf[i].pdf_value = pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value); }
   return VW::experimental::error_code::success;
 }
 
@@ -138,8 +140,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cb_explore_pdf_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CONTINUOUS)
                 .set_input_prediction_type(VW::prediction_type_t::pdf)
                 .set_output_prediction_type(VW::prediction_type_t::pdf)
                 .build(&all.logger);

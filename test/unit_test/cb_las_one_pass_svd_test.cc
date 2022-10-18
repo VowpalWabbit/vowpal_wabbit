@@ -57,6 +57,7 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
     {
       VW::multi_ex examples;
 
+      examples.push_back(VW::read_example(vw, "shared |U b c"));
       examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
       // duplicates start
       examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12 a100:4 a200:33"));
@@ -117,6 +118,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     {
       VW::multi_ex examples;
 
+      examples.push_back(VW::read_example(vw, "shared |U b c"));
       examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
 
       examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12 a100:4 a200:33"));
@@ -145,6 +147,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     {
       VW::multi_ex examples;
 
+      examples.push_back(VW::read_example(vw, "shared |U b c"));
       examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
 
       examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12 a100:4 a200:33"));

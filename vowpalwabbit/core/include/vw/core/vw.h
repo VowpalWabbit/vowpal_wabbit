@@ -26,10 +26,11 @@
 #  endif
 #endif
 
-#include "compat.h"
-#include "hashstring.h"
+#include "vw/common/future_compat.h"
 #include "vw/common/hash.h"
+#include "vw/core/compat.h"
 #include "vw/core/global_data.h"
+#include "vw/core/hashstring.h"
 #include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_fwd.h"
@@ -111,8 +112,9 @@ void start_parser(VW::workspace& all);
 void end_parser(VW::workspace& all);
 bool is_ring_example(const VW::workspace& all, const example* ae);
 
-struct primitive_feature_space  // just a helper definition.
+class primitive_feature_space  // just a helper definition.
 {
+public:
   unsigned char name;
   feature* fs;
   size_t len;
@@ -175,7 +177,12 @@ void copy_example_data_with_label(example* dst, const example* src);
 
 // after export_example, must call releaseFeatureSpace to free native memory
 primitive_feature_space* export_example(VW::workspace& all, example* e, size_t& len);
-void releaseFeatureSpace(primitive_feature_space* features, size_t len);
+void release_feature_space(primitive_feature_space* features, size_t len);
+VW_DEPRECATED("VW::releaseFeatureSpace renamed to VW::release_feature_space")
+inline void releaseFeatureSpace(primitive_feature_space* features, size_t len)  // NOLINT
+{
+  release_feature_space(features, len);
+}
 
 void save_predictor(VW::workspace& all, const std::string& reg_name);
 void save_predictor(VW::workspace& all, io_buf& buf);
@@ -189,7 +196,7 @@ inline uint64_t hash_space(VW::workspace& all, const std::string& s)
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
-  return getHasher(hash)(s.data(), s.length(), 0);
+  return get_hasher(hash)(s.data(), s.length(), 0);
 }
 inline uint64_t hash_space_cstr(VW::workspace& all, const char* fstr)
 {
@@ -203,7 +210,7 @@ inline uint64_t hash_feature(VW::workspace& all, const std::string& s, uint64_t 
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
   size_t parse_mark = (1 << num_bits) - 1;
-  return getHasher(h)(s.data(), s.length(), u) & parse_mark;
+  return get_hasher(h)(s.data(), s.length(), u) & parse_mark;
 }
 
 inline uint64_t hash_feature_cstr(VW::workspace& all, const char* fstr, uint64_t u)

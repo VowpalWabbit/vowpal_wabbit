@@ -8,31 +8,31 @@ Implementation by Miro Dudik.
  */
 #include "vw/core/reductions/bfgs.h"
 
-#include "vw/core/learner.h"
-#include "vw/core/setup_base.h"
-
-#include <cfloat>
-#include <cmath>
-#include <fstream>
-#ifndef _WIN32
-#  include <netdb.h>
-#endif
 #include "vw/common/vw_exception.h"
 #include "vw/core/accumulate.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/reductions/gd.h"
+#include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 
 #include <sys/timeb.h>
 
 #include <cassert>
+#include <cfloat>
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <fstream>
+
+#ifndef _WIN32
+#  include <netdb.h>
+#endif
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -68,10 +68,11 @@ class curv_exception : public std::exception
 // w[2] = step direction
 // w[3] = preconditioner
 
-constexpr float max_precond_ratio = 10000.f;
+constexpr float MAX_PRECOND_RATIO = 10000.f;
 
-struct bfgs
+class bfgs
 {
+public:
   VW::workspace* all = nullptr;  // prediction, regressor
   int m = 0;
   float rel_threshold = 0.f;  // termination threshold
@@ -102,7 +103,7 @@ struct bfgs
   double* rho = nullptr;
   double* alpha = nullptr;
 
-  weight* regularizers = nullptr;
+  VW::weight* regularizers = nullptr;
   // the below needs to be included when resetting, in addition to preconditioner and derivative
   int lastj = 0;
   int origin = 0;
@@ -125,7 +126,7 @@ struct bfgs
   }
 };
 
-constexpr const char* curv_message =
+constexpr const char* CURV_MESSAGE =
     "Zero or negative curvature detected.\n"
     "To increase curvature you can increase regularization or rescale features.\n"
     "It is also possible that you have reached numerical accuracy\n"
@@ -169,7 +170,7 @@ inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
 float predict_and_gradient(VW::workspace& all, VW::example& ec)
 {
   float fp = bfgs_predict(all, ec);
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   all.set_minmax(all.sd, ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
@@ -186,13 +187,13 @@ void update_preconditioner(VW::workspace& all, VW::example& ec)
   GD::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
-inline void add_DIR(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * fx; }
+inline void add_dir(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * fx; }
 
 float dot_with_direction(VW::workspace& all, VW::example& ec)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   float temp = simple_red_features.initial;
-  GD::foreach_feature<float, add_DIR>(all, ec, temp);
+  GD::foreach_feature<float, add_dir>(all, ec, temp);
   return temp;
 }
 
@@ -255,7 +256,7 @@ template <class T>
 void bfgs_iter_start(
     VW::workspace& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int& origin, T& weights)
 {
-  double g1_Hg1 = 0.;
+  double g1_Hg1 = 0.;  // NOLINT
   double g1_g1 = 0.;
 
   origin = 0;
@@ -295,8 +296,8 @@ void bfgs_iter_middle(
   // implement conjugate gradient
   if (b.m == 0)
   {
-    double g_Hy = 0.;
-    double g_Hg = 0.;
+    double g_Hy = 0.;  // NOLINT
+    double g_Hg = 0.;  // NOLINT
     double y = 0.;
 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
@@ -332,7 +333,7 @@ void bfgs_iter_middle(
 
   // implement bfgs
   double y_s = 0.;
-  double y_Hy = 0.;
+  double y_Hy = 0.;  // NOLINT
   double s_q = 0.;
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
@@ -428,7 +429,7 @@ double wolfe_eval(VW::workspace& all, bfgs& b, float* mem, double loss_sum, doub
 {
   double g0_d = 0.;
   double g1_d = 0.;
-  double g1_Hg1 = 0.;
+  double g1_Hg1 = 0.;  // NOLINT
   double g1_g1 = 0.;
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
@@ -486,7 +487,7 @@ double add_regularization(VW::workspace& all, bfgs& b, float regularization, T& 
     for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
     {
       uint64_t i = w.index() >> weights.stride_shift();
-      weight delta_weight = *w - b.regularizers[2 * i + 1];
+      VW::weight delta_weight = *w - b.regularizers[2 * i + 1];
       (&(*w))[W_GT] += b.regularizers[2 * i] * delta_weight;
       ret += 0.5 * b.regularizers[2 * i] * delta_weight * delta_weight;
     }
@@ -498,14 +499,16 @@ double add_regularization(VW::workspace& all, bfgs& b, float regularization, T& 
   {
     if (b.regularizers == nullptr)
     {
-      (&weights.strided_index(constant))[W_GT] -= regularization * (weights.strided_index(constant));
-      ret -= 0.5 * regularization * (weights.strided_index(constant)) * (weights.strided_index(constant));
+      (&weights.strided_index(VW::details::CONSTANT))[W_GT] -=
+          regularization * (weights.strided_index(VW::details::CONSTANT));
+      ret -= 0.5 * regularization * (weights.strided_index(VW::details::CONSTANT)) *
+          (weights.strided_index(VW::details::CONSTANT));
     }
     else
     {
-      uint64_t i = constant >> weights.stride_shift();
-      weight delta_weight = (weights.strided_index(constant)) - b.regularizers[2 * i + 1];
-      (&weights.strided_index(constant))[W_GT] -= b.regularizers[2 * i] * delta_weight;
+      uint64_t i = VW::details::CONSTANT >> weights.stride_shift();
+      VW::weight delta_weight = (weights.strided_index(VW::details::CONSTANT)) - b.regularizers[2 * i + 1];
+      (&weights.strided_index(VW::details::CONSTANT))[W_GT] -= b.regularizers[2 * i] * delta_weight;
       ret -= 0.5 * b.regularizers[2 * i] * delta_weight * delta_weight;
     }
   }
@@ -546,7 +549,7 @@ void finalize_preconditioner(VW::workspace& /* all */, bfgs& b, float regulariza
     }
   }
 
-  float max_precond = (max_hessian == 0.f) ? 0.f : max_precond_ratio / max_hessian;
+  float max_precond = (max_hessian == 0.f) ? 0.f : MAX_PRECOND_RATIO / max_hessian;
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
   {
@@ -569,7 +572,7 @@ void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regulariza
 
   if (b.regularizers == nullptr)
   {
-    b.regularizers = calloc_or_throw<weight>(2 * length);
+    b.regularizers = calloc_or_throw<VW::weight>(2 * length);
 
     if (b.regularizers == nullptr) THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
@@ -811,7 +814,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       }
       catch (const curv_exception&)
       {
-        fprintf(stdout, "In bfgs_iter_middle: %s", curv_message);
+        fprintf(stdout, "In bfgs_iter_middle: %s", CURV_MESSAGE);
         b.step_size = 0.0;
         status = LEARN_CURV;
       }
@@ -847,7 +850,7 @@ int process_pass(VW::workspace& all, bfgs& b)
     float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
     if (b.curvature == 0. && dd != 0.)
     {
-      fprintf(stdout, "%s", curv_message);
+      fprintf(stdout, "%s", CURV_MESSAGE);
       b.step_size = 0.0;
       status = LEARN_CURV;
     }
@@ -896,7 +899,7 @@ int process_pass(VW::workspace& all, bfgs& b)
 
 void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
   if (b.first_pass) { b.importance_weight_sum += ec.weight; }
 
   /********************************************************************/
@@ -968,7 +971,8 @@ void end_pass(bfgs& b)
       }
       if (!all->holdout_set_off)
       {
-        if (summarize_holdout_set(*all, b.no_win_counter)) { finalize_regressor(*all, all->final_regressor_name); }
+        if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
+        { finalize_regressor(*all, all->final_regressor_name); }
         if (b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
@@ -1024,7 +1028,7 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool
   do
   {
     brw = 1;
-    weight* v;
+    VW::weight* v;
     if (read)
     {
       c++;
@@ -1067,7 +1071,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     initialize_regressor(*all);
     if (all->per_feature_regularizer_input != "")
     {
-      b.regularizers = calloc_or_throw<weight>(2 * length);
+      b.regularizers = calloc_or_throw<VW::weight>(2 * length);
       if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
     }
     int m = b.m;
@@ -1081,7 +1085,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
     b.all->logger.err_info("m = {}, allocated {}M for weights and mem", m,
         static_cast<long unsigned int>(all->length()) *
-                (sizeof(float) * (b.mem_stride) + (sizeof(weight) << stride_shift)) >>
+                (sizeof(float) * (b.mem_stride) + (sizeof(VW::weight) << stride_shift)) >>
             20);
 
     b.net_time = 0.0;
@@ -1221,7 +1225,7 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
   }
 
   return make_base(*make_base_learner(
-      std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                         .set_params_per_weight(all.weights.stride())
                         .set_save_load(save_load)
                         .set_init_driver(init_driver)

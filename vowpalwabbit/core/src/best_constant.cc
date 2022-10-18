@@ -45,19 +45,19 @@ bool VW::get_best_constant(
 
   if ((label1_cnt + label2_cnt) <= 0.) { return false; }
 
-  auto funcName = loss_func.get_type();
-  if (funcName == "squared" || funcName == "Huber" || funcName == "classic")
+  auto func_name = loss_func.get_type();
+  if (func_name == "squared" || func_name == "Huber" || func_name == "classic")
   { best_constant = static_cast<float>(sd.weighted_labels) / static_cast<float>(sd.weighted_labeled_examples); }
   else if (sd.is_more_than_two_labels_observed)
   {
     // loss functions below don't have generic formuas for constant yet.
     return false;
   }
-  else if (funcName == "hinge")
+  else if (func_name == "hinge")
   {
     best_constant = label2_cnt <= label1_cnt ? -1.f : 1.f;
   }
-  else if (funcName == "logistic")
+  else if (func_name == "logistic")
   {
     label1 = -1.;  // override {-50, 50} to get proper loss
     label2 = 1.;
@@ -72,7 +72,7 @@ bool VW::get_best_constant(
       best_constant = std::log(label2_cnt / label1_cnt);
     }
   }
-  else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
+  else if (func_name == "quantile" || func_name == "pinball" || func_name == "absolute")
   {
     float tau = loss_func.get_parameter();
     float q = tau * (label1_cnt + label2_cnt);

@@ -16,7 +16,7 @@
 
 namespace VW
 {
-struct workspace;
+class workspace;
 }
 
 namespace simulator

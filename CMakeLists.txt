@@ -57,6 +57,11 @@ if(BUILD_TESTING)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
 endif()
 
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+if(BUILD_BENCHMARKS)
+  list(APPEND VCPKG_MANIFEST_FEATURES "benchmarks")
+endif()
+
 # CMake project() does not support semantic versioning
 project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
@@ -110,7 +115,6 @@ option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 option(VW_INSTALL "Add install targets." OFF)
-option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
@@ -200,19 +204,6 @@ endif()
 
 if(VW_GCOV AND (NOT CMAKE_BUILD_TYPE STREQUAL "Debug"))
   message(FATAL_ERROR "VW_GCOV requires Debug build type.")
-endif()
-
-# When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
-# Use this option to force color output in these modes.
-option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
-if(FORCE_COLORED_OUTPUT)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-fdiagnostics-color=always)
-  elseif((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
-    add_compile_options(-fcolor-diagnostics)
-  else()
-    message(WARNING "Unsupported compiler for FORCE_COLORED_OUTPUT: ${CMAKE_CXX_COMPILER_ID}")
-  endif()
 endif()
 
 if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA OR VW_GOV))

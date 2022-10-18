@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "interactions_predict.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/example_predict.h"
+#include "vw/core/interactions_predict.h"
 #include "vw/core/v_array.h"
 
 #undef VW_DEBUG_LOG
@@ -26,7 +26,7 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
 {
   for (const auto& f : fs)
   {
-    weight& w = weights[(f.index() + offset)];
+    VW::weight& w = weights[(f.index() + offset)];
     FuncT(dat, mult * f.value(), w);
   }
 }
@@ -61,7 +61,8 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
 // iterate through all namespaces and quadratic&cubic features, callback function FuncT(some_data_R, feature_value_x,
 // WeightOrIndexT) where WeightOrIndexT is EITHER float& feature_weight OR uint64_t feature_index
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), class WeightsT>
-inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
+inline void foreach_feature(WeightsT& weights, bool ignore_some_linear,
+    std::array<bool, VW::NUM_NAMESPACES>& ignore_linear,
     const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
     DataT& dat, size_t& num_interacted_features, INTERACTIONS::generate_interactions_object_cache& cache)
@@ -88,7 +89,8 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), class WeightsT>
-inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
+inline void foreach_feature(WeightsT& weights, bool ignore_some_linear,
+    std::array<bool, VW::NUM_NAMESPACES>& ignore_linear,
     const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
     DataT& dat, INTERACTIONS::generate_interactions_object_cache& cache)
@@ -101,7 +103,8 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
 inline void vec_add(float& p, float fx, float fw) { p += fw * fx; }
 
 template <class WeightsT>
-inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
+inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
+    std::array<bool, VW::NUM_NAMESPACES>& ignore_linear,
     const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
     INTERACTIONS::generate_interactions_object_cache& cache, float initial = 0.f)
@@ -112,7 +115,8 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::arr
 }
 
 template <class WeightsT>
-inline float inline_predict(WeightsT& weights, bool ignore_some_linear, std::array<bool, NUM_NAMESPACES>& ignore_linear,
+inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
+    std::array<bool, VW::NUM_NAMESPACES>& ignore_linear,
     const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
     size_t& num_interacted_features, INTERACTIONS::generate_interactions_object_cache& cache, float initial = 0.f)

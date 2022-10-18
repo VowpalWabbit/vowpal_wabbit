@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/allreduce/allreduce.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/array_parameters.h"
@@ -36,35 +37,34 @@
 #  include <thread>
 #endif
 
-using weight = float;
-
 using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
-struct shared_data;
+class shared_data;
 
 namespace VW
 {
-struct workspace;
-}
+class workspace;
+
+class all_reduce_base;
+enum class all_reduce_type;
+}  // namespace VW
 
 using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
 
-struct dictionary_info
+class dictionary_info
 {
+public:
   std::string name;
   uint64_t file_hash;
   std::shared_ptr<feature_dict> dict;
 };
 
-class AllReduce;
-enum class AllReduceType;
-
 namespace VW
 {
-struct default_reduction_stack_setup;
+class default_reduction_stack_setup;
 namespace parsers
 {
 namespace flatbuffer
@@ -74,13 +74,14 @@ class parser;
 
 #ifdef VW_BUILD_CSV
 class csv_parser;
-struct csv_parser_options;
+class csv_parser_options;
 #endif
 }  // namespace parsers
 }  // namespace VW
 
-struct trace_message_wrapper
+class trace_message_wrapper
 {
+public:
   void* _inner_context;
   trace_message_t _trace_message;
 
@@ -95,26 +96,24 @@ namespace VW
 {
 namespace details
 {
-struct invert_hash_info
+class invert_hash_info
 {
+public:
   std::vector<VW::audit_strings> weight_components;
   uint64_t offset;
   uint64_t stride_shift;
 };
 }  // namespace details
-struct workspace
+class workspace
 {
-private:
-  std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
-
 public:
   shared_data* sd;
 
   parser* example_parser;
   std::thread parse_thread;
 
-  AllReduceType all_reduce_type;
-  AllReduce* all_reduce;
+  all_reduce_type selected_all_reduce_type;
+  all_reduce_base* all_reduce;
 
   bool chain_hash_json = false;
 
@@ -330,6 +329,7 @@ public:
 
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
+  std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
 };
 }  // namespace VW
 
@@ -341,6 +341,6 @@ void binary_print_result_by_ref(
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);
 void compile_gram(
-    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
-void compile_limits(
-    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet, VW::io::logger& logger);
+    std::vector<std::string> grams, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool quiet,
+    VW::io::logger& logger);

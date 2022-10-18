@@ -8,6 +8,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/model_utils.h"
+#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -124,7 +125,7 @@ void active_print_result(
 
 void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)
 {
-  const label_data& ld = ec.l.simple;
+  const auto& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
@@ -137,13 +138,13 @@ void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
   for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, all.logger); }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 template <bool simulation>
 void return_active_example(VW::workspace& all, active& a, VW::example& ec)
 {
-  if (simulation) { output_and_account_example(all, ec); }
+  if (simulation) { VW::details::output_and_account_example(all, ec); }
   else
   {
     output_and_account_example(all, a, ec);
@@ -215,7 +216,7 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
 
   // Create new learner
   auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_learn_returns_prediction(learn_returns_prediction)
                 .set_save_load(save_load)

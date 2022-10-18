@@ -60,8 +60,9 @@ inline uint64_t zig_zag_encode(int64_t n)
   return ret;
 }
 
-struct one_float
+class one_float
 {
+public:
   float f;
 }
 #ifndef _WIN32
@@ -189,8 +190,8 @@ void VW::details::cache_features(io_buf& cache, const features& feats, uint64_t 
 void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parser& lbl_parser, uint64_t parse_mask,
     VW::details::cache_temp_buffer& temp_buffer)
 {
-  temp_buffer._backing_buffer->clear();
-  io_buf& temp_cache = temp_buffer._temporary_cache_buffer;
+  temp_buffer.backing_buffer->clear();
+  io_buf& temp_cache = temp_buffer.temporary_cache_buffer;
   lbl_parser.cache_label(ex_ptr->l, ex_ptr->_reduction_features, temp_cache, "_label", false);
   details::cache_tag(temp_cache, ex_ptr->tag);
   temp_cache.write_value<unsigned char>(ex_ptr->is_newline ? NEWLINE_EXAMPLE_INDICATOR : NON_NEWLINE_EXAMPLE_INDICATOR);
@@ -203,9 +204,9 @@ void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parse
   }
   temp_cache.flush();
 
-  uint64_t example_size = temp_buffer._backing_buffer->size();
+  uint64_t example_size = temp_buffer.backing_buffer->size();
   output.write_value(example_size);
-  output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
+  output.bin_write_fixed(temp_buffer.backing_buffer->data(), temp_buffer.backing_buffer->size());
 }
 
 int VW::read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples)

@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
   }
 
   // write constant
-  constant << weights[ec->feature_space[constant_namespace].indices[0]] << std::endl;
+  constant << weights[ec->feature_space[VW::details::CONSTANT_NAMESPACE].indices[0]] << std::endl;
 
   // clean up
   VW::finish(*model);

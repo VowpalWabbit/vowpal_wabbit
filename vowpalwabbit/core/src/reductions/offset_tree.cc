@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/offset_tree.h"
 
+#include "vw/config/options.h"
 #include "vw/core/action_score.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
@@ -112,20 +113,21 @@ int32_t offset_tree::learner_count() const { return binary_tree.internal_node_co
 
 // Helper to deal with collections that don't start with an index of 0
 template <typename T>
-struct offset_helper
+class offset_helper
 {
+public:
   // typedef verbose prediction buffer type
-  offset_helper(T& b, uint32_t index_offset) : start_index_offset{index_offset}, collection(b) {}
+  offset_helper(T& b, uint32_t index_offset) : _start_index_offset{index_offset}, _collection(b) {}
 
   // intercept index operator to adjust the offset before
   // passing to underlying collection
-  typename T::const_reference operator[](size_t idx) const { return collection[idx - start_index_offset]; }
+  typename T::const_reference operator[](size_t idx) const { return _collection[idx - _start_index_offset]; }
 
-  typename T::reference operator[](size_t idx) { return collection[idx - start_index_offset]; }
+  typename T::reference operator[](size_t idx) { return _collection[idx - _start_index_offset]; }
 
 private:
-  uint32_t start_index_offset = 0;
-  T& collection;
+  uint32_t _start_index_offset = 0;
+  T& _collection;
 };
 
 const offset_tree::scores_t& offset_tree::predict(LEARNER::single_learner& base, example& ec)
@@ -231,7 +233,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
 namespace
 {
 inline void copy_to_action_scores(
-    const VW::reductions::offset_tree::offset_tree::scores_t& scores, ACTION_SCORE::action_scores& a_s)
+    const VW::reductions::offset_tree::offset_tree::scores_t& scores, VW::action_scores& a_s)
 {
   a_s.clear();
   for (uint32_t idx = 0; idx < scores.size(); ++idx) { a_s.push_back({idx, scores[idx]}); }
@@ -285,7 +287,7 @@ VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& s
       std::move(otree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(offset_tree_setup))
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(prediction_type_t::action_probs)
-                .set_input_label_type(label_type_t::cb)
+                .set_input_label_type(label_type_t::CB)
                 .build();
 
   return make_base(*l);

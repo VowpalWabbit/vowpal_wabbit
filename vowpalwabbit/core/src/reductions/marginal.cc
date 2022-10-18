@@ -9,6 +9,7 @@
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/interactions.h"
+#include "vw/core/io_buf.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
@@ -21,8 +22,9 @@
 using namespace VW::config;
 namespace
 {
-struct expert
+class expert
 {
+public:
   expert() = default;
   expert(float regret, float abs_regret, float weight) : regret(regret), abs_regret(abs_regret), weight(weight) {}
 
@@ -34,8 +36,9 @@ struct expert
 using marginal = std::pair<double, double>;
 using expert_pair = std::pair<expert, expert>;
 
-struct data
+class data
 {
+public:
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
       bool unweighted_marginals, bool compete, VW::workspace* all)
       : initial_numerator(initial_numerator)
@@ -421,7 +424,7 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)

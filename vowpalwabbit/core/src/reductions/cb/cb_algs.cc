@@ -33,14 +33,14 @@ void generic_output_example(
 
   if (all.raw_prediction != nullptr)
   {
-    std::stringstream outputStringStream;
+    std::stringstream output_string_stream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       cb_class cl = ld.costs[i];
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << cl.action << ':' << cl.partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   bool is_ld_test_label = CB::is_test_label(ld);
@@ -53,8 +53,9 @@ void generic_output_example(
 }  // namespace CB_ALGS
 namespace
 {
-struct cb
+class cb
 {
+public:
   cb_to_cs cbcs;
   VW::io::logger logger;
 
@@ -213,13 +214,13 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   std::string name_addition = eval ? "-eval" : "";
   auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
   auto predict_ptr = eval ? predict_eval : predict_or_learn<false>;
-  auto label_type = eval ? VW::label_type_t::cb_eval : VW::label_type_t::cb;
+  auto label_type = eval ? VW::label_type_t::CB_EVAL : VW::label_type_t::CB;
   auto finish_ex = eval ? eval_finish_example : ::finish_example;
 
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
                 .set_input_label_type(label_type)
-                .set_output_label_type(VW::label_type_t::cs)
+                .set_output_label_type(VW::label_type_t::CS)
                 .set_input_prediction_type(VW::prediction_type_t::multiclass)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
                 .set_params_per_weight(problem_multiplier)

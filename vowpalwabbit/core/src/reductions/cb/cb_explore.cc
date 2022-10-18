@@ -23,7 +23,6 @@
 #include <utility>
 
 using namespace VW::LEARNER;
-using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace exploration;
@@ -36,16 +35,17 @@ using std::endl;
 
 namespace
 {
-struct cb_explore
+class cb_explore
 {
-  std::shared_ptr<VW::rand_state> _random_state;
+public:
+  std::shared_ptr<VW::rand_state> random_state;
   cb_to_cs cbcs;
   VW::v_array<uint32_t> preds;
   VW::v_array<float> cover_probs;
 
   CB::label cb_label;
-  COST_SENSITIVE::label cs_label;
-  COST_SENSITIVE::label second_cs_label;
+  VW::cs_label cs_label;
+  VW::cs_label second_cs_label;
 
   learner<cb_explore, VW::example>* cs = nullptr;
 
@@ -75,7 +75,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, VW::example&
     base.predict(ec);
   }
 
-  action_scores& probs = ec.pred.a_s;
+  auto& probs = ec.pred.a_s;
   probs.clear();
   if (data.tau > 0)
   {
@@ -103,7 +103,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example
     base.predict(ec);
   }
 
-  action_scores& probs = ec.pred.a_s;
+  auto& probs = ec.pred.a_s;
   probs.clear();
 
   // pre-allocate pdf
@@ -121,14 +121,14 @@ template <bool is_learn>
 void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& ec)
 {
   // Randomize over predictions from a base set of predictors
-  action_scores& probs = ec.pred.a_s;
+  auto& probs = ec.pred.a_s;
   probs.clear();
 
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) { probs.push_back({i, 0.}); }
   float prob = 1.f / static_cast<float>(data.bag_size);
   for (size_t i = 0; i < data.bag_size; i++)
   {
-    uint32_t count = VW::reductions::bs::weight_gen(data._random_state);
+    uint32_t count = VW::reductions::bs::weight_gen(data.random_state);
     bool learn = is_learn && count > 0;
     if (learn) { base.learn(ec, i); }
     else
@@ -145,7 +145,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
 }
 
 void get_cover_probabilities(
-    cb_explore& data, single_learner& /* base */, VW::example& ec, VW::v_array<action_score>& probs, float min_prob)
+    cb_explore& data, single_learner& /* base */, VW::example& ec, VW::action_scores& probs, float min_prob)
 {
   float additive_probability = 1.f / static_cast<float>(data.cover_size);
   data.preds.clear();
@@ -248,7 +248,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
     data.second_cs_label = std::move(ec.l.cs);
   }
 
-  ec.l.cs = COST_SENSITIVE::label{};
+  ec.l.cs = VW::cs_label{};
 }
 
 void print_update_cb_explore(VW::workspace& all, bool is_test, VW::example& ec, std::stringstream& pred_string)
@@ -363,7 +363,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("indexing"))
   { THROW("--indexing is not compatible with contextual bandits, please remove this option") }
 
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;
 
   // If neither cb nor cats_tree are present on the reduction stack then
@@ -402,7 +402,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
       data->epsilon_decay = true;
     }
     data->cs = reinterpret_cast<learner<cb_explore, VW::example>*>(as_singleline(all.cost_sensitive));
-    for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(COST_SENSITIVE::wclass{}); }
+    for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(VW::cs_class{}); }
     data->cover_probs.resize_but_with_stl_behavior(num_actions);
     data->preds.reserve(data->cover_size);
     learn_ptr = predict_or_learn_cover<true>;
@@ -433,8 +433,8 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   }
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::multiclass)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_params_per_weight(params_per_weight)

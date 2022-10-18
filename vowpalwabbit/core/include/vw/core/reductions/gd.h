@@ -24,13 +24,15 @@ VW::LEARNER::base_learner* gd_setup(VW::setup_base_i& stack_builder);
 }  // namespace VW
 namespace GD
 {
-struct per_model_state
+class per_model_state
 {
+public:
   double normalized_sum_norm_x = 0.0;
   double total_weight = 0.0;
 };
-struct gd
+class gd
 {
+public:
   std::vector<per_model_state> per_model_states;
   size_t no_win_counter = 0;
   size_t early_stop_thres = 0;
@@ -59,8 +61,9 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
     double& normalized_sum_norm_x, GD::gd* g = nullptr, uint32_t ftrl_size = 0);
 
 template <class T>
-struct multipredict_info
+class multipredict_info
 {
+public:
   size_t count;
   size_t step;
   VW::polyprediction* pred;
@@ -151,7 +154,7 @@ inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, siz
 
 inline float inline_predict(VW::workspace& all, VW::example& ec)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   return all.weights.sparse ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
                                   all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
                                   all._generate_interactions_object_cache, simple_red_features.initial)
@@ -162,7 +165,7 @@ inline float inline_predict(VW::workspace& all, VW::example& ec)
 
 inline float inline_predict(VW::workspace& all, VW::example& ec, size_t& num_generated_features)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
   return all.weights.sparse
       ? inline_predict<sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
             *ec.interactions, *ec.extent_interactions, all.permutations, ec, num_generated_features,

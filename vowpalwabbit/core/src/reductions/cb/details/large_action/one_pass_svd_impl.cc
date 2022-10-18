@@ -4,6 +4,7 @@
 
 #include "../large_action_space.h"
 #include "vw/core/cb.h"
+#include "vw/core/label_dictionary.h"
 #include "vw/core/reductions/gd.h"
 #ifdef _MSC_VER
 #  include <intrin.h>
@@ -47,23 +48,11 @@ namespace cb_explore_adf
  * (row's cell) on the fly, and adding the product to the final dotproduct corresponding to that example-row)
  */
 
-struct AO_triplet_constructor
+class AO_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _row_index;
-  uint64_t _column_index;
-  uint64_t _seed;
-  float& _final_dot_product;
-
 public:
-  AO_triplet_constructor(
-      uint64_t weights_mask, uint64_t row_index, uint64_t column_index, uint64_t seed, float& final_dot_product)
-      : _weights_mask(weights_mask)
-      , _row_index(row_index)
-      , _column_index(column_index)
-      , _seed(seed)
-      , _final_dot_product(final_dot_product)
+  AO_triplet_constructor(uint64_t weights_mask, uint64_t column_index, uint64_t seed, float& final_dot_product)
+      : _weights_mask(weights_mask), _column_index(column_index), _seed(seed), _final_dot_product(final_dot_product)
   {
   }
 
@@ -82,6 +71,12 @@ public:
 #endif
     _final_dot_product += feature_value * val;
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _column_index;
+  uint64_t _seed;
+  float& _final_dot_product;
 };
 
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
@@ -91,36 +86,55 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   // this constant factor should be enough, we need a higher probability that we get a fair coin flip in the Omega
   // matrix
   const uint64_t sampling_slack = 10;
-  auto p = std::min(num_actions, _d + sampling_slack);
+  auto p = std::min(num_actions, static_cast<size_t>(_d + sampling_slack));
   AOmega.resize(num_actions, p);
 
-  auto calculate_aomega_row = [](uint64_t row_index, uint64_t p, VW::workspace* _all, uint64_t _seed, VW::example* ex,
-                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors) -> void {
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
-
-    for (uint64_t col = 0; col < p; ++col)
+  auto calculate_aomega_row = [](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
+                                  uint64_t _seed, const multi_ex& examples, Eigen::MatrixXf& AOmega,
+                                  const std::vector<float>& shrink_factors) -> void {
+    for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
-      float final_dot_prod = 0.f;
+      VW::example* ex = examples[row_index];
 
-      AO_triplet_constructor tc(_all->weights.mask(), row_index, col, _seed, final_dot_prod);
+      auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+      auto* shared_example = red_features.shared_example;
+      if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
-      GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-          _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-          (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
-          (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
-                                                      : *ex->extent_interactions),
-          _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+      for (uint64_t col = 0; col < p; ++col)
+      {
+        float final_dot_prod = 0.f;
 
-      AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
+        AO_triplet_constructor tc(_all->weights.mask(), col, _seed, final_dot_prod);
+
+        GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                        : *ex->extent_interactions),
+            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+
+        AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
+      }
+
+      if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
     }
   };
 
-  uint64_t row_index = 0;
-  for (auto* ex : examples)
+  if (_block_size == 0)
   {
-    _futures.emplace_back(_thread_pool.submit(
-        calculate_aomega_row, row_index, p, _all, _seed, ex, std::ref(AOmega), std ::ref(shrink_factors)));
-    row_index++;
+    // Compute block_size if not specified.
+    const size_t num_blocks = std::max(size_t(1), this->_thread_pool.size());
+    _block_size = examples.size() / num_blocks;  // Evenly split the examples into blocks
+  }
+  for (size_t row_index_begin = 0; row_index_begin < examples.size();)
+  {
+    size_t row_index_end = row_index_begin + _block_size;
+    if ((row_index_end + _block_size) > examples.size()) { row_index_end = examples.size(); }
+
+    _futures.emplace_back(_thread_pool.submit(calculate_aomega_row, row_index_begin, row_index_end, p, _all, _seed,
+        std::cref(examples), std::ref(AOmega), std::cref(shrink_factors)));
+
+    row_index_begin = row_index_end;
   }
 
   for (auto& ft : _futures) { ft.get(); }
@@ -142,8 +156,9 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
   }
 }
 
-one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size)
-    : _all(all), _d(d), _seed(seed), _thread_pool(thread_pool_size)
+one_pass_svd_impl::one_pass_svd_impl(
+    VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size, size_t block_size)
+    : _all(all), _d(d), _seed(seed), _thread_pool(thread_pool_size), _block_size(block_size)
 {
 }
 

@@ -45,15 +45,17 @@ void MWT::print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_ar
 
 namespace
 {
-struct policy_data
+class policy_data
 {
+public:
   double cost = 0.0;
   uint32_t action = 0;
   bool seen = false;
 };
 
-struct mwt
+class mwt
 {
+public:
   bool namespaces[256];            // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
@@ -298,7 +300,7 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
       stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::scalars)
-                .set_input_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
                 .set_save_load(save_load)
                 .set_finish_example(::finish_example)
                 .build();

@@ -64,7 +64,7 @@ if(VW_BUILD_LARGE_ACTION_SPACE)
 endif()
 
 # Add the include directories from vw target for testing
-target_link_libraries(vw-unit-test.out PRIVATE vw_core RapidJSON Boost::unit_test_framework)
+target_link_libraries(vw-unit-test.out PRIVATE vw_core Boost::unit_test_framework)
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
 
 # Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.

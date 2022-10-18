@@ -4,6 +4,7 @@
 
 #include "../large_action_space.h"
 #include "vw/core/cb.h"
+#include "vw/core/label_dictionary.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/reductions/gd.h"
 
@@ -11,18 +12,8 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-struct Y_triplet_constructor
+class Y_triplet_constructor
 {
-private:
-  uint64_t _weights_mask;
-  uint64_t _row_index;
-  uint64_t _column_index;
-  uint64_t _seed;
-  std::vector<Eigen::Triplet<float>>& _triplets;
-  uint64_t& _max_col;
-  std::set<uint64_t>& _non_zero_rows;
-  const std::vector<float>& _shrink_factors;
-
 public:
   Y_triplet_constructor(uint64_t weights_mask, uint64_t row_index, uint64_t column_index, uint64_t seed,
       std::vector<Eigen::Triplet<float>>& triplets, uint64_t& max_col, std::set<uint64_t>& non_zero_rows,
@@ -42,7 +33,7 @@ public:
   {
     if (feature_value != 0.f)
     {
-      _non_zero_rows.emplace((index & _weights_mask));
+      _non_zero_rows.emplace(index);
       auto combined_index = _row_index + _column_index + _seed;
       // index is the equivalent of going over A's rows which turn out to be A.transpose()'s columns
       auto calc = feature_value * merand48_boxmuller(combined_index) * _shrink_factors[_row_index];
@@ -50,16 +41,20 @@ public:
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
   }
-};
 
-struct B_triplet_constructor
-{
 private:
   uint64_t _weights_mask;
+  uint64_t _row_index;
   uint64_t _column_index;
-  Eigen::SparseMatrix<float>& _Y;
-  float& _final_dot_product;
+  uint64_t _seed;
+  std::vector<Eigen::Triplet<float>>& _triplets;
+  uint64_t& _max_col;
+  std::set<uint64_t>& _non_zero_rows;
+  const std::vector<float>& _shrink_factors;
+};
 
+class B_triplet_constructor
+{
 public:
   B_triplet_constructor(
       uint64_t weights_mask, uint64_t column_index, Eigen::SparseMatrix<float>& Y, float& final_dot_product)
@@ -72,6 +67,12 @@ public:
     if (feature_value == 0.f) { return; }
     _final_dot_product += feature_value * _Y.coeffRef((index & _weights_mask), _column_index);
   }
+
+private:
+  uint64_t _weights_mask;
+  uint64_t _column_index;
+  Eigen::SparseMatrix<float>& _Y;
+  float& _final_dot_product;
 };
 
 bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors)
@@ -80,11 +81,14 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
   _triplets.clear();
   uint64_t row_index = 0;
   std::set<uint64_t> non_zero_rows;
+
   for (auto* ex : examples)
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
     for (uint64_t col = 0; col < _d; col++)
     {
@@ -111,6 +115,9 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
             _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
       }
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+
     row_index++;
   }
 
@@ -135,7 +142,9 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
     for (Eigen::Index col = 0; col < Y.outerSize(); ++col)
     {
@@ -163,6 +172,9 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
 
       B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+
     row_index++;
   }
 }
@@ -199,7 +211,7 @@ void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<floa
   }
 }
 
-vanilla_rand_svd_impl::vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t)
+vanilla_rand_svd_impl::vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t, size_t)
     : _all(all), _d(d), _seed(seed)
 {
 }

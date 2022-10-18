@@ -16,8 +16,9 @@ using namespace VW::config;
 
 namespace
 {
-struct mf
+class mf
 {
+public:
   size_t rank = 0;
 
   uint32_t increment = 0;

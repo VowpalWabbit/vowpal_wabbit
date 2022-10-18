@@ -28,21 +28,10 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_bag
+class cb_explore_adf_bag
 {
-private:
-  float _epsilon;
-  size_t _bag_size;
-  bool _greedify;
-  bool _first_only;
-  std::shared_ptr<VW::rand_state> _random_state;
-
-  v_array<ACTION_SCORE::action_score> _action_probs;
-  std::vector<float> _scores;
-  std::vector<float> _top_actions;
-
 public:
-  using PredictionT = v_array<ACTION_SCORE::action_score>;
+  using PredictionT = v_array<VW::action_score>;
 
   cb_explore_adf_bag(
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state);
@@ -54,6 +43,15 @@ public:
   const PredictionT& get_cached_prediction() { return _action_probs; };
 
 private:
+  float _epsilon;
+  size_t _bag_size;
+  bool _greedify;
+  bool _first_only;
+  std::shared_ptr<VW::rand_state> _random_state;
+
+  v_array<VW::action_score> _action_probs;
+  std::vector<float> _scores;
+  std::vector<float> _top_actions;
   uint32_t get_bag_learner_update_count(uint32_t learner_index);
 };
 
@@ -81,7 +79,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
 void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
@@ -196,8 +194,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
       with_metrics, epsilon, VW::cast_to_smaller_type<size_t>(bag_size), greedify, first_only, all.get_random_state());
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_bag_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_params_per_weight(problem_multiplier)

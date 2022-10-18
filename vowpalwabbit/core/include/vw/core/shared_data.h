@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/named_labels.h"
 #include "vw/core/vw_fwd.h"
 
 #include <cfloat>
@@ -11,10 +10,11 @@
 #include <memory>
 #include <string>
 
-struct shared_data
+class shared_data
 {
-  shared_data() = default;
-  ~shared_data() = default;
+public:
+  shared_data();
+  ~shared_data();
   shared_data(const shared_data& other);
   shared_data& operator=(const shared_data& other);
   shared_data(shared_data&& other) noexcept;

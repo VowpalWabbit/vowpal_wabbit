@@ -14,6 +14,7 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>
@@ -33,8 +34,9 @@ using namespace VW::math;
 
 namespace
 {
-struct ftrl_update_data
+class ftrl_update_data
 {
+public:
   float update = 0.f;
   float ftrl_alpha = 0.f;
   float ftrl_beta = 0.f;
@@ -45,8 +47,9 @@ struct ftrl_update_data
   float average_squared_norm_x = 0.f;
 };
 
-struct ftrl
+class ftrl
 {
+public:
   VW::workspace* all = nullptr;  // features, finalize, l1, l2,
   float ftrl_alpha = 0.f;
   float ftrl_beta = 0.f;
@@ -58,8 +61,9 @@ struct ftrl
   double normalized_sum_norm_x = 0.0;
 };
 
-struct uncertainty
+class uncertainty
 {
+public:
   float pred;
   float score;
   ftrl& b;
@@ -102,7 +106,7 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   VW::workspace& all = *b.all;
   for (size_t c = 0; c < count; c++)
   {
-    const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
     pred[c].scalar = simple_red_features.initial;
   }
   size_t num_features_from_interactions = 0;
@@ -147,7 +151,7 @@ void inner_update_proximal(ftrl_update_data& d, float x, float& wref)
   float gradient = d.update * x;
   float ng2 = w[W_G2] + gradient * gradient;
   float sqrt_ng2 = sqrtf(ng2);
-  float sqrt_wW_G2 = sqrtf(w[W_G2]);
+  float sqrt_wW_G2 = sqrtf(w[W_G2]);  // NOLINT
   float sigma = (sqrt_ng2 - sqrt_wW_G2) / d.ftrl_alpha;
   w[W_ZT] += gradient - sigma * w[W_XT];
   w[W_G2] = ng2;
@@ -352,7 +356,8 @@ void end_pass(ftrl& g)
 
   if (!all.holdout_set_off)
   {
-    if (summarize_holdout_set(all, g.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
+    if (VW::details::summarize_holdout_set(all, g.no_win_counter))
+    { finalize_regressor(all, all.final_regressor_name); }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
     { set_done(all); }
@@ -470,7 +475,7 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
 
   auto l = VW::LEARNER::make_base_learner(std::move(b), learn_ptr, predict_ptr,
       stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::scalar,
-      VW::label_type_t::simple)
+      VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(learn_returns_prediction)
                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                .set_sensitivity(sensitivity)

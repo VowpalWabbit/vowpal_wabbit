@@ -25,8 +25,9 @@ using namespace VW::config;
 namespace
 {
 // cb_sample is used to automatically sample and swap from a cb explore pdf.
-struct cb_sample_data
+class cb_sample_data
 {
+public:
   explicit cb_sample_data(std::shared_ptr<VW::rand_state>& random_state) : _random_state(random_state) {}
   explicit cb_sample_data(std::shared_ptr<VW::rand_state>&& random_state) : _random_state(random_state) {}
 
@@ -80,7 +81,7 @@ struct cb_sample_data
 
       // Sampling is done after the base learner has generated a pdf.
       auto result = exploration::sample_after_normalizing(
-          seed, ACTION_SCORE::begin_scores(action_scores), ACTION_SCORE::end_scores(action_scores), chosen_action);
+          seed, VW::begin_scores(action_scores), VW::end_scores(action_scores), chosen_action);
       assert(result == S_EXPLORATION_OK);
       _UNUSED(result);
 
@@ -97,7 +98,7 @@ struct cb_sample_data
     _UNUSED(result);
   }
 
-  static std::string cb_decision_to_string(const ACTION_SCORE::action_scores& action_scores)
+  static std::string cb_decision_to_string(const VW::action_scores& action_scores)
   {
     std::ostringstream ostrm;
     if (action_scores.empty()) { return ""; }
@@ -131,8 +132,8 @@ base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(cb_sample_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::action_probs)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_learn_returns_prediction(true)
