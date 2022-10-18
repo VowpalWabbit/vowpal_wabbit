@@ -40,8 +40,8 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
   // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
 
   // The size of U is K x d, where K is the total number of all actions.
-  assert(static_cast<uint64_t>(U.cols()) == _d);
-  _X.setIdentity(_d, _d);
+  assert(static_cast<uint64_t>(U.cols()) >= _d);
+  _X.setIdentity(_d, U.cols());
 
   // Compute a basis contained in U.
   for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)

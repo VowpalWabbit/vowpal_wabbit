@@ -39,7 +39,7 @@ public:
 
   vanilla_rand_svd_impl(
       VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
-  void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
+  void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
   void generate_B(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -64,7 +64,7 @@ public:
   model_weight_rand_svd_impl(
       VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
 
-  void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
+  void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
       Eigen::MatrixXf& _V);
   bool generate_model_weight_Y(
       const multi_ex& examples, uint64_t& max_existing_column, const std::vector<float>& shrink_factors);
@@ -90,7 +90,7 @@ public:
   Eigen::MatrixXf AOmega;
   one_pass_svd_impl(
       VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
-  void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& _S,
+  void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
       Eigen::MatrixXf& _V);
   void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
   // for testing purposes only
@@ -182,10 +182,10 @@ public:
   randomized_svd_impl impl;
   Eigen::MatrixXf U;
   std::vector<float> shrink_factors;
+  Eigen::VectorXf S;
 
   // the below matrixes are used only during unit testing and are not set otherwise
   Eigen::SparseMatrix<float> _A;
-  Eigen::VectorXf _S;
   Eigen::MatrixXf _V;
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,

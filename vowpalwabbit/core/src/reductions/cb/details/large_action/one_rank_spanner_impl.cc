@@ -100,9 +100,9 @@ void one_rank_spanner_state::compute_spanner(
    */
 
   // The size of U is K x d, where K is the total number of all actions
-  assert(static_cast<uint64_t>(U.cols()) == _d);
-  _X.setIdentity(_d, _d);
-  _X_inv.setIdentity(_d, _d);
+  assert(static_cast<uint64_t>(U.cols()) >= _d);
+  _X.setIdentity(_d, U.cols());
+  _X_inv.setIdentity(_d, U.cols());
   _log_determinant_factor = 0;
 
   float max_volume{};

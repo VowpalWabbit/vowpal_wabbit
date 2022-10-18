@@ -137,21 +137,21 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::save_
 template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::randomized_SVD(const multi_ex& examples)
 {
-  impl.run(examples, shrink_factors, U, _S, _V);
+  impl.run(examples, shrink_factors, U, S, _V);
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
 size_t cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::number_of_non_degenerate_singular_values()
 {
   _non_degenerate_singular_values = 0;
-  if (_S.size() > 0)
+  if (S.size() > 0)
   {
     // sum the singular values
-    auto sum_of_sv = _S.sum();
+    auto sum_of_sv = S.sum();
 
     // how many singular values represent 99% of the total sum of the singular values
     float current_sum_sv = 0;
-    for (auto val : _S)
+    for (auto val : S)
     {
       _non_degenerate_singular_values++;
       current_sum_sv += val;
@@ -182,7 +182,8 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
       return;
     }
 
-    spanner_state.compute_spanner(U, _d, shrink_factors);
+    auto non_degen = std::min(_d, static_cast<uint64_t>(number_of_non_degenerate_singular_values() + 1));
+    spanner_state.compute_spanner(U, non_degen, shrink_factors);
 
     assert(spanner_state.spanner_size() == preds.size());
   }
@@ -339,7 +340,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool model_weight_impl = false;
   bool use_vanilla_impl = false;
   bool full_spanner = false;
-  uint64_t thread_pool_size = 0;
+  // leave some resources available in the case of few core's (for parser)
+  uint64_t thread_pool_size = (std::thread::hardware_concurrency() - 1) / 2;
   uint64_t block_size = 0;
 
   config::option_group_definition new_options(
@@ -353,9 +355,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
       .add(make_option("vanilla", use_vanilla_impl))
       .add(make_option("full_spanner", full_spanner))
       .add(make_option("thread_pool_size", thread_pool_size)
-               .default_value(0)
                .help("number of threads in the thread pool that will be used when running with one pass svd "
-                     "implementation (default svd implementation option)"))
+                     "implementation (default svd implementation option). Default thread pool size will be half of the "
+                     "available hardware threads"))
       .add(make_option("block_size", block_size)
                .default_value(0)
                .help("number of actions in a block to be scheduled for multithreading when using one pass svd "

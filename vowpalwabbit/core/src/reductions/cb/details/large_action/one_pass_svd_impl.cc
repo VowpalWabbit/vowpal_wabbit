@@ -126,6 +126,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     const size_t num_blocks = std::max(size_t(1), this->_thread_pool.size());
     _block_size = examples.size() / num_blocks;  // Evenly split the examples into blocks
   }
+
   for (size_t row_index_begin = 0; row_index_begin < examples.size();)
   {
     size_t row_index_end = row_index_begin + _block_size;
@@ -144,16 +145,14 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
 void one_pass_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }
 
 void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,
-    Eigen::VectorXf& _S, Eigen::MatrixXf& _V)
+    Eigen::VectorXf& S, Eigen::MatrixXf& _V)
 {
   generate_AOmega(examples, shrink_factors);
   _svd.compute(AOmega, Eigen::ComputeThinU | Eigen::ComputeThinV);
   U = _svd.matrixU().leftCols(_d);
-  if (_set_testing_components)
-  {
-    _S = _svd.singularValues();
-    _V = _svd.matrixV();
-  }
+  S = _svd.singularValues();
+
+  if (_set_testing_components) { _V = _svd.matrixV(); }
 }
 
 one_pass_svd_impl::one_pass_svd_impl(
