@@ -1063,7 +1063,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
       }
       else
       {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << ", avg f1 score: " << b.F1_score * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << ", avg f1 score: " << b.f1_score * 1. / b.iter << std::endl;
       }
     }
 
@@ -1099,7 +1099,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
       { std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl; }
       else
       {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << ", avg f1 score: " << b.F1_score * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << ", avg f1 score: " << b.f1_score * 1. / b.iter << std::endl;
       }
     }
   }
@@ -1117,7 +1117,7 @@ void end_pass(memory_tree& b)
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, int& oas)
+void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
 {  // deal with tag
    // deal with labels:
   WRITEIT(ec->num_features, "num_features");

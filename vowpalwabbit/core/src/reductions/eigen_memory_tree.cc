@@ -399,11 +399,11 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
 /// <summary>
 /// Initialize an example to be used either for learning or predicting with the scorer
 /// </summary>
-/// <param name="ec1">memory 1 to use for constructing the scorer example</param>
-/// <param name="ec2">memory 2 to use for constructing the scorer example</param>
+/// <param name="ex1">memory 1 to use for constructing the scorer example</param>
+/// <param name="ex2">memory 2 to use for constructing the scorer example</param>
 /// <param name="out">the examples object which we are initializing</param>
 /// <param name="example_type">The type of example to create. 1--self-consistent 2--polynomial</param>
-void scorer_example(tree&b, tree_example& ec1, tree_example& ec2, example& out, int example_type)
+void scorer_example(tree&b, tree_example& ex1, tree_example& ex2, example& out, int example_type)
 {
   if (example_type == 1 || example_type == 2)
   {
@@ -415,7 +415,7 @@ void scorer_example(tree&b, tree_example& ec1, tree_example& ec2, example& out, 
     out.feature_space['x'].clear();
     out.feature_space['z'].clear();
 
-    scorer_features(ec1.full->fs, ec2.full->fs, out.feature_space['x'], 1);
+    scorer_features(ex1.full->fs, ex2.full->fs, out.feature_space['x'], 1);
 
     out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
     out.num_features = out.feature_space['x'].size();
@@ -437,10 +437,10 @@ void scorer_example(tree&b, tree_example& ec1, tree_example& ec2, example& out, 
     b.all->ignore_linear['z'] = true;
 
     // creates a copy
-    out.feature_space['x'] = ec1.full->fs;
-    out.feature_space['z'] = ec2.full->fs;
+    out.feature_space['x'] = ex1.full->fs;
+    out.feature_space['z'] = ex2.full->fs;
 
-    // when we receive ec1 and ec2 their features are indexed on top of eachother. In order
+    // when we receive ex1 and ex2 their features are indexed on top of eachother. In order
     // to make sure VW recognizes the features from the two examples as separate features
     // we apply a map of multiplying by 2 and then offseting by 1 on the second example.
     for (auto& j : out.feature_space['x'].indices) { j = j * 2; }
@@ -468,7 +468,7 @@ void scorer_example(tree&b, tree_example& ec1, tree_example& ec2, example& out, 
   }
 }
 
-float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_example& leaf_ec)
+float scorer_predict(tree& b, single_learner& base, tree_example& pred_ex, tree_example& leaf_ex)
 {
   if (b.scorer_type == 1)  // random scorer
   {
@@ -477,7 +477,7 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_
 
   if (b.scorer_type == 2)  // dist scorer
   {
-    scorer_example(b, pred_ec, leaf_ec, *b.ex, 1);
+    scorer_example(b, pred_ex, leaf_ex, *b.ex, 1);
     return b.ex->total_sum_feat_sq;
   }
 
@@ -485,9 +485,10 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ec, tree_
   {
     int example_type = (b.scorer_type == 3) ? 1 : 2;
 
-    scorer_example(b, pred_ec, leaf_ec, *b.ex, example_type);
+    scorer_example(b, pred_ex, leaf_ex, *b.ex, example_type);
 
-    if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return 0; }
+    //The features matched exactly. Return max negative to make sure it is picked.
+    if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return -FLT_MAX; }
 
     b.ex->l.simple = {FLT_MAX};
     base.predict(*b.ex);
@@ -507,7 +508,7 @@ void scorer_learn(tree& b, single_learner& base, example& ex, float label, float
   }
 }
 
-void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, float weight)
+void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ex, float weight)
 {
   // random and dist scorer has nothing to learsn
   if (b.scorer_type == 1 || b.scorer_type == 2) { return; }
@@ -532,13 +533,13 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, flo
 
     for (tree_example* example : cn.examples)
     {
-      float score = scorer_predict(b, base, ec, *example);
+      float score = scorer_predict(b, base, ex, *example);
 
       if (score < preferred_score)
       {
         preferred_score = score;
         preferred_ex = example;
-        preferred_error = (example->label == ec.label) ? 0.f : 1.f;
+        preferred_error = (example->label == ex.label) ? 0.f : 1.f;
       }
     }
 
@@ -548,7 +549,7 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, flo
         continue;
       }
 
-      float error = (example->label == ec.label) ? 0.f : 1.f;
+      float error = (example->label == ex.label) ? 0.f : 1.f;
       if (error < alternative_error)
       {
         alternative_error = error;
@@ -568,24 +569,24 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, flo
     {
       if (b._random_state->get_and_update_random() < .5)
       {
-        scorer_example(b, ec, *preferred_ex, b.ex[0], example_type);
+        scorer_example(b, ex, *preferred_ex, b.ex[0], example_type);
         scorer_learn(b, base, b.ex[0], int(preferred_error > alternative_error), weight);
 
-        scorer_example(b, ec, *alternative_ex, b.ex[0], example_type);
+        scorer_example(b, ex, *alternative_ex, b.ex[0], example_type);
         scorer_learn(b, base, b.ex[0], int(alternative_error > preferred_error), weight);
       }
       else
       {
-        scorer_example(b, ec, *alternative_ex, b.ex[0], example_type);
+        scorer_example(b, ex, *alternative_ex, b.ex[0], example_type);
         scorer_learn(b, base, b.ex[0], int(alternative_error > preferred_error), weight);
 
-        scorer_example(b, ec, *preferred_ex, b.ex[0], example_type);
+        scorer_example(b, ex, *preferred_ex, b.ex[0], example_type);
         scorer_learn(b, base, b.ex[0], int(preferred_error > alternative_error), weight);
       }
 
       //doing the trick below doesn't work as well as the two separate updates. Why? It does seem to be faster.
-      //scorer_example(ec, *preferred_ex, b.ex[0]);
-      //scorer_example(ec, *alternative_ex, b.ex[1]);
+      //scorer_example(ex, *preferred_ex, b.ex[0]);
+      //scorer_example(ex, *alternative_ex, b.ex[1]);
       //scorer_features(b.ex[0].feature_space[0], b.ex[1].feature_space[0], b.ex[2].feature_space[0], 2);
 
       //b.ex[2].total_sum_feat_sq = b.ex[2].feature_space[0].sum_feat_sq;
@@ -600,6 +601,8 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ec, flo
 
 void node_split(tree& b, single_learner& base, node& cn)
 {
+  if (cn.examples.size() <= b.leaf_split) { return; }
+
   uint64_t bits = static_cast<uint64_t>(1) << (b.all->num_bits);
 
   sparse_parameters* best_projector;
@@ -732,20 +735,18 @@ void node_split(tree& b, single_learner& base, node& cn)
   cn.examples.clear();
 }
 
-void node_insert(tree& b, single_learner& base, node& cn, tree_example& ec)
+void node_insert(tree& b, single_learner& base, node& cn, tree_example& ex)
 {
   for (auto example : cn.examples)
   {
-    scorer_example(b, ec, *example, b.ex[0], 1);
+    scorer_example(b, ex, *example, b.ex[0], 1);
     if (b.ex[0].total_sum_feat_sq == 0) { return; }
   }
 
-  cn.examples.push_back(&ec);
-
-  if (cn.examples.size() >= b.leaf_split) { node_split(b, base, cn); }
+  cn.examples.push_back(&ex);
 }
 
-tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& ec)
+tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& ex)
 {
   if (cn.examples.size() == 0) { return nullptr; }
 
@@ -754,7 +755,7 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
 
   for (auto example: cn.examples)
   {
-    example->score = scorer_predict(b, base, ec, *example);
+    example->score = scorer_predict(b, base, ex, *example);
 
     if (example->score == best_score) {
       best_examples.push_back(example);
@@ -771,19 +772,22 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
   return best_examples[0];
 }
 
+void node_predict(tree& b, single_learner& base, node& cn, tree_example& ex, example& ec) {
+  auto closest_ex = node_pick(b, base, cn, ex);
+
+  ec.confidence = (closest_ex != nullptr) ? (1 - exp(-closest_ex->score)) : 0;
+  ec.pred.multiclass = (closest_ex != nullptr) ? closest_ex->label : 0;
+  ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
+}
+
 void predict(tree& b, single_learner& base, example& ec)
 {
   b.all->ignore_some_linear = false;
   tree_example ex(*b.all, &ec);
 
   node& cn = tree_route(b, base, ex);
-  auto closest_ec = node_pick(b, base, cn, ex);
-
-  ec.confidence = (closest_ec != nullptr) ? (1-exp(-closest_ec->score)): 0;
-  ec.pred.multiclass = (closest_ec != nullptr) ? closest_ec->label : 0;
-  ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
-
-  tree_bound(b, base, closest_ec);
+  node_predict(b, base, cn, ex, ec);
+  tree_bound(b, base, &ex);
 }
 
 void learn(tree& b, single_learner& base, example& ec)
@@ -799,10 +803,13 @@ void learn(tree& b, single_learner& base, example& ec)
 
   node& cn = tree_route(b, base, ex);
   scorer_learn(b, base, cn, ex, ec.weight);
+  node_predict(b, base, cn, ex, ec); // vw learners predict and learn
 
-  if (b.pass == 0) { node_insert(b, base, cn, ex); }
-
-  tree_bound(b, base, &ex);
+  if (b.pass == 0) {
+    node_insert(b, base, cn, ex);
+    tree_bound(b, base, &ex);
+    node_split(b, base, cn);
+  }
 }
 
 void end_pass(tree& b)
@@ -821,7 +828,7 @@ void end_pass(tree& b)
 ////////////////////////////////////////////////////////////////////
 void save_load_examples(tree& b, node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
-  writeitvar(n.examples.size(), "n_examples", n_examples);
+  WRITEITVAR(n.examples.size(), "n_examples", n_examples);
 
   auto parser = b.all->example_parser->lbl_parser;
   auto mask = b.all->parse_mask;
@@ -830,12 +837,12 @@ void save_load_examples(tree& b, node& n, io_buf& model_file, bool& read, bool& 
 
   for (auto e : n.examples) {
     if (read) {
-      writeit(e->label, "example_label")
+      WRITEIT(e->label, "example_label")
       VW::model_utils::read_model_field(model_file, *e->base, parser);
       VW::model_utils::read_model_field(model_file, *e->full, parser);
     }
     else {
-      writeit(e->label, "example_label");
+      WRITEIT(e->label, "example_label");
       VW::model_utils::write_model_field(model_file, *e->base, "_memory_base", false, parser, mask);
       VW::model_utils::write_model_field(model_file, *e->full, "_memory_full", false, parser, mask);
     }
@@ -860,10 +867,10 @@ void save_load_weights(tree& b, node& n, io_buf& model_file, bool& read, bool& t
     router_length = (n.router_weights->mask() + 1) >> router_shift;
   }
 
-  writeit(n.router_decision, "router_decision");
-  writeit(router_dims, "router_dims");
-  writeit(router_length, "router_length");
-  writeit(router_shift, "router_shift");
+  WRITEIT(n.router_decision, "router_decision");
+  WRITEIT(router_dims, "router_dims");
+  WRITEIT(router_length, "router_length");
+  WRITEIT(router_shift, "router_shift");
 
   if (read)
   {
@@ -872,8 +879,8 @@ void save_load_weights(tree& b, node& n, io_buf& model_file, bool& read, bool& t
     {
       uint64_t index = 0;
       float value = 0;
-      writeit(index, "router_index");
-      writeit(value, "router_value");
+      WRITEIT(index, "router_index");
+      WRITEIT(value, "router_value");
 
       (*n.router_weights)[index] = value;
     }
@@ -886,8 +893,8 @@ void save_load_weights(tree& b, node& n, io_buf& model_file, bool& read, bool& t
       float value = (*i);
       if (value != 0)
       {
-        writeit(index, "router_index");
-        writeit(value, "router_value");
+        WRITEIT(index, "router_index");
+        WRITEIT(value, "router_value");
       }
     }
   }
@@ -895,14 +902,14 @@ void save_load_weights(tree& b, node& n, io_buf& model_file, bool& read, bool& t
 
 node* save_load_node(tree& b, node* n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg) {
 
-  writeitvar(!read && !n, "is_null", is_null);
+  WRITEITVAR(!read && !n, "is_null", is_null);
   if (is_null) { return nullptr; }
 
   if (!n) { n = new node(); }
 
-  writeit(n->depth, "depth");
-  writeit(n->internal, "internal");
-  writeit(n->router_decision, "decision");
+  WRITEIT(n->depth, "depth");
+  WRITEIT(n->internal, "internal");
+  WRITEIT(n->router_decision, "decision");
 
   save_load_examples(b, *n, model_file, read, text, msg);
   save_load_weights(b, *n, model_file, read, text, msg);
@@ -924,14 +931,14 @@ void save_load_tree(tree& b, io_buf& model_file, bool read, bool text)
     if (read) { b.test_only = true; }
 
     uint32_t ss = b.all->weights.stride_shift();
-    writeit(ss, "stride_shift");
+    WRITEIT(ss, "stride_shift");
 
     //this could likely be faster with a stack, if it is every a problem
     b.all->weights.stride_shift(ss);
  
-    writeit(b.tree_bound, "tree_bound");
-    writeit(b.leaf_split, "leaf_split");
-    writeit(b.scorer_type, "scorer_type");
+    WRITEIT(b.tree_bound, "tree_bound");
+    WRITEIT(b.leaf_split, "leaf_split");
+    WRITEIT(b.scorer_type, "scorer_type");
 
     b.root = save_load_node(b, b.root, model_file, read, text, msg);
     if (!b.all->quiet) { std::cout << "done loading...." << std::endl; }
@@ -983,18 +990,20 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
   VW::label_type_t label_type;
 
   // multi-class classification
-  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
   pred_type = VW::prediction_type_t::multiclass;
   label_type = VW::label_type_t::multiclass;
 
   auto l = make_reduction_learner(std::move(t), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(eigen_memory_tree_setup))
+               .set_learn_returns_prediction(true) // we set this to true otherwise bounding doesn't work as well
                .set_end_pass(end_pass)
                .set_save_load(save_load_tree)
                .set_output_prediction_type(pred_type)
                .set_input_label_type(label_type);
+               
 
-  l.set_finish_example(MULTICLASS::finish_example<tree&>);
+  l.set_finish_example(VW::details::finish_multiclass_example<tree&>);
 
   return make_base(*l.build());
 }

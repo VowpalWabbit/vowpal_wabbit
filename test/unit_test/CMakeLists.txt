@@ -19,6 +19,7 @@ add_executable(vw-unit-test.out
   custom_reduction_test.cc
   distributionally_robust_test.cc
   dsjson_parser_test.cc
+  eigen_memory_tree_test.cc
   epsilon_test.cc
   error_test.cc
   example_header_test.cc
