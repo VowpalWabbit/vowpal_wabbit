@@ -527,7 +527,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 
     {
       uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
-      
+
       VW::multi_ex examples;
 
       examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
