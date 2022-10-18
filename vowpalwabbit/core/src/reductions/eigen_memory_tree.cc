@@ -436,17 +436,18 @@ void scorer_example(tree&b, tree_example& ec1, tree_example& ec2, example& out, 
     b.all->ignore_linear['x'] = true;
     b.all->ignore_linear['z'] = true;
 
-    out.feature_space['x'].clear();
-    out.feature_space['z'].clear();
+    // creates a copy
+    out.feature_space['x'] = ec1.full->fs;
+    out.feature_space['z'] = ec2.full->fs;
 
-    //when we receive ec1 and ec2 their features are indexed on top of eachother. In order
-    //to make sure VW recognizes the features from the two examples as separate features
-    //we apply a map of multiplying by 2 and then offseting by 1 on the second example.
-    for (auto f : ec1.full->fs) { out.feature_space['x'].push_back(f.value(), f.index()*2); }
-    for (auto f : ec2.full->fs) { out.feature_space['z'].push_back(f.value(), f.index()*2+1); }
+    // when we receive ec1 and ec2 their features are indexed on top of eachother. In order
+    // to make sure VW recognizes the features from the two examples as separate features
+    // we apply a map of multiplying by 2 and then offseting by 1 on the second example.
+    for (auto& j : out.feature_space['x'].indices) { j = j * 2; }
+    for (auto& j : out.feature_space['z'].indices) { j = j * 2 + 1; }
 
-    out.total_sum_feat_sq = ec1.base->total_sum_feat_sq + ec2.base->total_sum_feat_sq;
-    out.num_features = ec1.base->num_features + ec2.base->num_features; 
+    out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq + out.feature_space['z'].sum_feat_sq;
+    out.num_features = out.feature_space['x'].size() + out.feature_space['z'].size();
   }
 
   //We cache metadata about model weights adjacent to them. For example if we have
