@@ -3,6 +3,7 @@
 #include "vw/allreduce/allreduce.h"
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
+#include "vw/core/learner.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 
