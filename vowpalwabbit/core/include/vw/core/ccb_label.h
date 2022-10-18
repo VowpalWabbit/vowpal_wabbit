@@ -136,7 +136,7 @@ template <>
 class formatter<VW::ccb_example_type> : public formatter<std::string>
 {
 public:
-  auto format(VW::ccb_example_type c, format_context& ctx) -> decltype(ctx.out())
+  auto format(const VW::ccb_example_type& c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }
