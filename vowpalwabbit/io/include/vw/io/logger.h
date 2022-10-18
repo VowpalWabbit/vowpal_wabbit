@@ -7,7 +7,6 @@
 #include "vw/common/string_view.h"
 
 #include <fmt/core.h>
-#include <fmt/ostream.h>
 
 #include <memory>
 
