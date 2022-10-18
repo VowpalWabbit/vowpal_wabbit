@@ -956,7 +956,7 @@ public:
     this->learner_ptr->_learn_fd.data = this->learner_ptr->_learner_data.get();
 
     super::set_input_label_type(in_label_type);
-    super::set_output_label_type(label_type_t::nolabel);
+    super::set_output_label_type(label_type_t::NOLABEL);
     super::set_input_prediction_type(prediction_type_t::nopred);
     super::set_output_prediction_type(out_pred_type);
 

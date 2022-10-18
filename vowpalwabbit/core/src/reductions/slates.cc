@@ -253,8 +253,8 @@ VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_prediction_type(VW::prediction_type_t::decision_probs)
                 .set_output_prediction_type(VW::prediction_type_t::decision_probs)
-                .set_input_label_type(VW::label_type_t::slates)
-                .set_output_label_type(VW::label_type_t::ccb)
+                .set_input_label_type(VW::label_type_t::SLATES)
+                .set_output_label_type(VW::label_type_t::CCB)
                 .set_finish_example(finish_multiline_example)
                 .build();
   return VW::LEARNER::make_base(*l);

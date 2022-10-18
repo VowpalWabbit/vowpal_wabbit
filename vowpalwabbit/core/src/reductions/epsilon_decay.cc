@@ -406,8 +406,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
-                        .set_input_label_type(VW::label_type_t::cb)
-                        .set_output_label_type(VW::label_type_t::cb)
+                        .set_input_label_type(VW::label_type_t::CB)
+                        .set_output_label_type(VW::label_type_t::CB)
                         .set_input_prediction_type(VW::prediction_type_t::action_scores)
                         .set_output_prediction_type(VW::prediction_type_t::action_scores)
                         .set_params_per_weight(model_count)
