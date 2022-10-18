@@ -9,6 +9,7 @@
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/guard.h"
+#include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"

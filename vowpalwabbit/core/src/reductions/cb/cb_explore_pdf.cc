@@ -10,6 +10,7 @@
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
+#include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
 
 // Aliases

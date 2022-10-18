@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/constant.h"
 #include "vw/core/guard.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/rand48.h"

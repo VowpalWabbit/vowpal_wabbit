@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/learner.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"

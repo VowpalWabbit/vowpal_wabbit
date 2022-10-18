@@ -12,7 +12,6 @@
 #include "vw/core/v_array.h"
 
 #include <fmt/core.h>
-#include <fmt/format.h>
 
 #include <cstdint>
 #include <string>

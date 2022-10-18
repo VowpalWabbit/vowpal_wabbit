@@ -8,6 +8,7 @@
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/learner.h"
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD

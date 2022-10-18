@@ -11,7 +11,7 @@ vw_add_library(
     NAME "io"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_io_sources}
-    PUBLIC_DEPS vw_common ${spdlog_target} fmt::fmt
+    PUBLIC_DEPS vw_common fmt::fmt
     PRIVATE_DEPS ZLIB::ZLIB
     DESCRIPTION "Utilities for input and output"
     EXCEPTION_DESCRIPTION "Yes"

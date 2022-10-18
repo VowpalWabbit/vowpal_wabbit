@@ -6,6 +6,7 @@
 
 #include "test_common.h"
 #include "vw/core/cb_label_parser.h"
+#include "vw/core/learner.h"
 
 #include <boost/test/unit_test.hpp>
 #include <utility>

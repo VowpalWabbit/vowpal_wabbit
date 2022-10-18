@@ -5,6 +5,7 @@
 #include "vw/core/reductions/multilabel_oaa.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"

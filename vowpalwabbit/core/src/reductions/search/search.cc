@@ -7,6 +7,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/label_dictionary.h"
+#include "vw/core/learner.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parse_primitives.h"

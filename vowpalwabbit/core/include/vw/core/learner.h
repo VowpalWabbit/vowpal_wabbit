@@ -4,8 +4,6 @@
 #pragma once
 // This is the interface for a learning algorithm
 
-#include "vw/core/global_data.h"
-
 #include <iostream>
 #include <memory>
 
@@ -17,25 +15,25 @@
 //     'fmt.v7.format_system_error(fmt.v7.detail.buffer<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>*!System.Runtime.CompilerServices.IsImplicitlyDereferenced,System.Int32,fmt.v7.basic_string_view<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>)':
 //     badly-formed XML: Invalid at the top level of the document.
 #endif
-#include "fmt/format.h"
+#include "fmt/core.h"
 #ifdef _WIN32
 #  pragma warning(pop)
 #endif
 
-#include "vw/core/debug_log.h"
-#include "vw/core/memory.h"
-
-#undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::learner
-
 #include "vw/core/vw_string_view_fmt.h"
 
 #include "vw/common/future_compat.h"
+#include "vw/common/string_view.h"
+#include "vw/core/debug_log.h"
 #include "vw/core/example.h"
 #include "vw/core/label_type.h"
+#include "vw/core/memory.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/scope_exit.h"
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::learner
 
 namespace VW
 {
@@ -150,60 +148,18 @@ inline float noop_sensitivity(void*, base_learner&, example&) { return 0.; }
 inline float noop_sensitivity_base(void*, example&) { return 0.; }
 float recur_sensitivity(void*, base_learner&, example&);
 
-inline void debug_increment_depth(example& ex)
-{
-  if (vw_dbg::track_stack) { ++ex.debug_current_reduction_depth; }
-}
+void debug_increment_depth(example& ex);
+void debug_increment_depth(multi_ex& ec_seq);
+void debug_decrement_depth(example& ex);
+void debug_decrement_depth(multi_ex& ec_seq);
+void increment_offset(example& ex, const size_t increment, const size_t i);
+void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i);
+void decrement_offset(example& ex, const size_t increment, const size_t i);
+void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i);
 
-inline void debug_increment_depth(multi_ex& ec_seq)
-{
-  if (vw_dbg::track_stack)
-  {
-    for (auto& ec : ec_seq) { ++ec->debug_current_reduction_depth; }
-  }
-}
-
-inline void debug_decrement_depth(example& ex)
-{
-  if (vw_dbg::track_stack) { --ex.debug_current_reduction_depth; }
-}
-
-inline void debug_decrement_depth(multi_ex& ec_seq)
-{
-  if (vw_dbg::track_stack)
-  {
-    for (auto& ec : ec_seq) { --ec->debug_current_reduction_depth; }
-  }
-}
-
-inline void increment_offset(example& ex, const size_t increment, const size_t i)
-{
-  ex.ft_offset += static_cast<uint32_t>(increment * i);
-  debug_increment_depth(ex);
-}
-
-inline void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
-{
-  for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
-  debug_increment_depth(ec_seq);
-}
-
-inline void decrement_offset(example& ex, const size_t increment, const size_t i)
-{
-  assert(ex.ft_offset >= increment * i);
-  ex.ft_offset -= static_cast<uint32_t>(increment * i);
-  debug_decrement_depth(ex);
-}
-
-inline void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
-{
-  for (auto ec : ec_seq)
-  {
-    assert(ec->ft_offset >= increment * i);
-    ec->ft_offset -= static_cast<uint32_t>(increment * i);
-  }
-  debug_decrement_depth(ec_seq);
-}
+void learner_build_diagnostic(VW::io::logger& logger, VW::string_view this_name, VW::string_view base_name,
+    prediction_type_t in_pred_type, prediction_type_t base_out_pred_type, label_type_t out_label_type,
+    label_type_t base_in_label_type, details::merge_fn merge_fn_ptr, details::merge_with_all_fn merge_with_all_fn_ptr);
 }  // namespace details
 
 bool ec_is_example_header(example const& ec, label_type_t label_type);
@@ -857,25 +813,10 @@ public:
       prediction_type_t base_out_pred_type = this->learner_ptr->_learn_fd.base->get_output_prediction_type();
       label_type_t out_label_type = this->learner_ptr->get_output_label_type();
       label_type_t base_in_label_type = this->learner_ptr->_learn_fd.base->get_input_label_type();
-      if (in_pred_type != base_out_pred_type)
-      {
-        logger->err_warn(
-            "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
-            "reduction: {}.",
-            to_string(in_pred_type), this->learner_ptr->_name, to_string(base_out_pred_type),
-            this->learner_ptr->_learn_fd.base->get_name());
-      }
-      if (out_label_type != base_in_label_type)
-      {
-        logger->err_warn(
-            "Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
-            to_string(out_label_type), this->learner_ptr->_name, to_string(base_in_label_type),
-            this->learner_ptr->_learn_fd.base->get_name());
-      }
+      details::learner_build_diagnostic(*logger, this->learner_ptr->get_name(),
+          this->learner_ptr->get_learn_base()->get_name(), in_pred_type, base_out_pred_type, out_label_type,
+          base_in_label_type, this->learner_ptr->_merge_fn, this->learner_ptr->_merge_with_all_fn);
     }
-
-    if (this->learner_ptr->_merge_fn != nullptr && this->learner_ptr->_merge_with_all_fn != nullptr)
-    { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
 
     return this->learner_ptr;
   }

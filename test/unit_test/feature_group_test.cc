@@ -5,6 +5,7 @@
 #include "vw/core/feature_group.h"
 
 #include "test_common.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/unique_sort.h"
 
 #include <boost/test/test_tools.hpp>

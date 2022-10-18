@@ -7,7 +7,9 @@
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/setup_base.h"
 
 #include <cfloat>

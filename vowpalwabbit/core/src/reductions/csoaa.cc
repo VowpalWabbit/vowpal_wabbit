@@ -5,6 +5,8 @@
 
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
