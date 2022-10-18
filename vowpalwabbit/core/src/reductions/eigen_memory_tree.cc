@@ -270,9 +270,9 @@ public:
   rng(std::shared_ptr<VW::rand_state> state) { this->state = state; }
 
   typedef size_t result_type;
-  static size_t min() { return 0; }
-  static size_t max() { return 1; }
-  size_t operator()() { return state->get_and_update_random(); }
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return 1; }
+  result_type operator()() { return state->get_and_update_random(); }
 };
 
 node* node_route(tree& b, single_learner& base, node& cn, tree_example& ec)

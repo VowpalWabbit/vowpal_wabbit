@@ -88,18 +88,6 @@ struct tree
   void deallocate_node(node* n);
 };
 
-struct rng
-{
-  std::shared_ptr<VW::rand_state> state;
-
-  rng(std::shared_ptr<VW::rand_state> state);
-
-  typedef size_t result_type;
-  static size_t min();
-  static size_t max();
-  size_t operator()();
-};
-
 }  // namespace eigen_memory
 }  // namespace reductions
 }  // namespace VW
