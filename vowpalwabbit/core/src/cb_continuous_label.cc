@@ -34,7 +34,7 @@ void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
   {
-    if (words[i] == CHOSEN_ACTION) { break; /* no more pdf to parse*/ }
+    if (words[i] == VW::details::CHOSEN_ACTION) { break; /* no more pdf to parse*/ }
     VW::tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 3) { continue; }
     VW::continuous_actions::pdf_segment seg;
@@ -72,16 +72,16 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
   if (words.empty()) { return; }
 
-  if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
+  if (!(words[0] == VW::details::CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
 
   for (size_t i = 1; i < words.size(); i++)
   {
-    if (words[i] == PDF) { parse_pdf(words, i + 1, reuse_mem, red_features, logger); }
-    else if (words[i] == CHOSEN_ACTION)
+    if (words[i] == VW::details::PDF) { parse_pdf(words, i + 1, reuse_mem, red_features, logger); }
+    else if (words[i] == VW::details::CHOSEN_ACTION)
     {
       parse_chosen_action(words, i + 1, reuse_mem, red_features, logger);
     }
-    else if (words[i - 1] == CA_LABEL)
+    else if (words[i - 1] == VW::details::CA_LABEL)
     {
       continuous_label_elm f{0.f, FLT_MAX, 0.f};
       VW::tokenize(':', words[i], reuse_mem.tokens);
@@ -144,7 +144,7 @@ label_parser the_label_parser = {
     // test_label
     [](const polylabel& label) { return CB::is_test_label<continuous_label, continuous_label_elm>(label.cb_cont); },
     // label type
-    VW::label_type_t::continuous};
+    VW::label_type_t::CONTINUOUS};
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////

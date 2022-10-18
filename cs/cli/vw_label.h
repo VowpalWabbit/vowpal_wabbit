@@ -70,7 +70,7 @@ public:
     void set(float value)
     { if (value < 0 || value >1)
       {
-        if (value > 1 && value - 1 < probability_tolerance)
+        if (value > 1 && value - 1 < VW::details::PROBABILITY_TOLERANCE)
           m_probability = 1.0f;
         else
           throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);

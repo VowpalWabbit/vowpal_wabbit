@@ -5,6 +5,7 @@
 #include "vw/core/reductions/nn.h"
 
 #include "vw/config/options.h"
+#include "vw/core/constant.h"
 #include "vw/core/guard.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
@@ -66,8 +67,6 @@ public:
   }
 };
 
-#define cast_uint32_t static_cast<uint32_t>
-
 static inline float fastpow2(float p)
 {
   float offset = (p < 0) ? 1.0f : 0.0f;
@@ -78,7 +77,7 @@ static inline float fastpow2(float p)
   {
     uint32_t i;
     float f;
-  } v = {cast_uint32_t((1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z))};
+  } v = {static_cast<uint32_t>((1 << 23) * (clipp + 121.2740575f + 27.7280233f / (4.84252568f - z) - 1.49012907f * z))};
 
   return v.f;
 }
@@ -93,10 +92,10 @@ void finish_setup(nn& n, VW::workspace& all)
 
   n.output_layer.interactions = &all.interactions;
   n.output_layer.extent_interactions = &all.extent_interactions;
-  n.output_layer.indices.push_back(nn_output_namespace);
+  n.output_layer.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   uint64_t nn_index = NN_CONSTANT << all.weights.stride_shift();
 
-  features& fs = n.output_layer.feature_space[nn_output_namespace];
+  features& fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
@@ -120,21 +119,21 @@ void finish_setup(nn& n, VW::workspace& all)
   // TODO: not correct if --noconstant
   n.hiddenbias.interactions = &all.interactions;
   n.hiddenbias.extent_interactions = &all.extent_interactions;
-  n.hiddenbias.indices.push_back(constant_namespace);
-  n.hiddenbias.feature_space[constant_namespace].push_back(1, constant);
+  n.hiddenbias.indices.push_back(VW::details::CONSTANT_NAMESPACE);
+  n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1, VW::details::CONSTANT);
   if (all.audit || all.hash_inv)
-  { n.hiddenbias.feature_space[constant_namespace].space_names.emplace_back("", "HiddenBias"); }
+  { n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "HiddenBias"); }
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
   n.outputweight.interactions = &all.interactions;
   n.outputweight.extent_interactions = &all.extent_interactions;
-  n.outputweight.indices.push_back(nn_output_namespace);
-  features& outfs = n.output_layer.feature_space[nn_output_namespace];
-  n.outputweight.feature_space[nn_output_namespace].push_back(outfs.values[0], outfs.indices[0]);
+  n.outputweight.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
+  features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+  n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
-  { n.outputweight.feature_space[nn_output_namespace].space_names.emplace_back("", "OutputWeight"); }
-  n.outputweight.feature_space[nn_output_namespace].values[0] = 1;
+  { n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].space_names.emplace_back("", "OutputWeight"); }
+  n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
   n.outputweight._reduction_features.template get<VW::simple_label_reduction_features>().initial = 0.f;
@@ -236,7 +235,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
   CONVERSE:  // That's right, I'm using goto.  So sue me.
 
     n.output_layer.reset_total_sum_feat_sq();
-    n.output_layer.feature_space[nn_output_namespace].sum_feat_sq = 1;
+    n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE].sum_feat_sq = 1;
 
     n.outputweight.ft_offset = ec.ft_offset;
 
@@ -250,11 +249,11 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     for (unsigned int i = 0; i < n.k; ++i)
     {
       float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
-      features& out_fs = n.output_layer.feature_space[nn_output_namespace];
+      features& out_fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
       out_fs.values[i] = sigmah;
       out_fs.sum_feat_sq += sigmah * sigmah;
 
-      n.outputweight.feature_space[nn_output_namespace].indices[0] = out_fs.indices[i];
+      n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].indices[0] = out_fs.indices[i];
       base.predict(n.outputweight, n.k);
       float wf = n.outputweight.pred.scalar;
 
@@ -276,9 +275,9 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     if (n.inpass)
     {
       // TODO: this is not correct if there is something in the
-      // nn_output_namespace but at least it will not leak memory
+      // VW::details::NN_OUTPUT_NAMESPACE but at least it will not leak memory
       // in that case
-      ec.indices.push_back(nn_output_namespace);
+      ec.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
 
       /*
        * Features shuffling:
@@ -289,8 +288,9 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
        * save_nn_output_namespace contains the COPIED value
        * save_nn_output_namespace is destroyed
        */
-      features save_nn_output_namespace = std::move(ec.feature_space[nn_output_namespace]);
-      ec.feature_space[nn_output_namespace] = n.output_layer.feature_space[nn_output_namespace];
+      features save_nn_output_namespace = std::move(ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE]);
+      ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE] =
+          n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
 
       if (is_learn) { base.learn(ec, n.k); }
       else
@@ -299,8 +299,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       }
       n.output_layer.partial_prediction = ec.partial_prediction;
       n.output_layer.loss = ec.loss;
-      ec.feature_space[nn_output_namespace].sum_feat_sq = 0;
-      std::swap(ec.feature_space[nn_output_namespace], save_nn_output_namespace);
+      ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE].sum_feat_sq = 0;
+      std::swap(ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE], save_nn_output_namespace);
       ec.indices.pop_back();
     }
     else
@@ -348,10 +348,10 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
           {
             if (!dropped_out[i])
             {
-              float sigmah = n.output_layer.feature_space[nn_output_namespace].values[i] / dropscale;
+              float sigmah = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE].values[i] / dropscale;
               float sigmahprime = dropscale * (1.0f - sigmah * sigmah);
-              n.outputweight.feature_space[nn_output_namespace].indices[0] =
-                  n.output_layer.feature_space[nn_output_namespace].indices[i];
+              n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].indices[0] =
+                  n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE].indices[i];
               base.predict(n.outputweight, n.k);
               float nu = n.outputweight.pred.scalar;
               float gradhw = 0.5f * nu * gradient * sigmahprime;
@@ -489,7 +489,7 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(true)
                 .set_multipredict(multipredict_f)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_finish_example(::finish_example)
                 .set_end_pass(end_pass)
                 .build();

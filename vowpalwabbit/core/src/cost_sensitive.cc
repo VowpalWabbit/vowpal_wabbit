@@ -147,8 +147,8 @@ void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::ex
       {
         if (VW::is_cs_example_header(*ecc))
         {
-          num_current_features +=
-              (ec_seq->size() - 1) * (ecc->get_num_features() - ecc->feature_space[constant_namespace].size());
+          num_current_features += (ec_seq->size() - 1) *
+              (ecc->get_num_features() - ecc->feature_space[VW::details::CONSTANT_NAMESPACE].size());
         }
         else
         {
@@ -277,7 +277,7 @@ VW::label_parser cs_label_parser_global = {
     // test_label
     [](const VW::polylabel& label) { return test_label(label.cs); },
     // label type
-    VW::label_type_t::cs};
+    VW::label_type_t::CS};
 
 namespace model_utils
 {

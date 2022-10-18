@@ -193,10 +193,10 @@ int main(int argc, char* argv[])
 
   rapidjson::Value version_object(rapidjson::kObjectType);
   rapidjson::Value version_text;
-  version_text.SetString(VW::version.to_string(), allocator);
+  version_text.SetString(VW::VERSION.to_string(), allocator);
   version_object.AddMember("version", version_text, allocator);
   rapidjson::Value git_commit_text;
-  git_commit_text.SetString(VW::git_commit, allocator);
+  git_commit_text.SetString(VW::GIT_COMMIT, allocator);
   version_object.AddMember("git_commit", git_commit_text, allocator);
   doc.AddMember("version_info", version_object, allocator);
 

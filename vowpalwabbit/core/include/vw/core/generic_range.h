@@ -13,7 +13,6 @@ namespace VW
 template <typename IteratorT, typename dummy = void>
 class generic_range
 {
-public:
 };
 
 template <typename IteratorT>

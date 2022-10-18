@@ -85,7 +85,7 @@ public:
 
       for (uint32_t i = 0; i < length; i++)
       {
-        weight& w = weights.strided_index(i);
+        VW::weight& w = weights.strided_index(i);
         float r1, r2;
         for (int j = 1; j <= m; j++)
         {
@@ -289,7 +289,7 @@ public:
     uint32_t length = 1 << all->num_bits;
     for (uint32_t i = 0; i < length; i++)
     {
-      weight& w = all->weights.strided_index(i);
+      VW::weight& w = all->weights.strided_index(i);
       for (int j = 1; j <= m; j++) { w += (&w)[j] * b[j] * D[j]; }
     }
 
@@ -301,7 +301,7 @@ public:
     for (uint32_t i = 0; i < length; ++i)
     {
       memset(tmp, 0, sizeof(float) * (m + 1));
-      weight& w = all->weights.strided_index(i);
+      VW::weight& w = all->weights.strided_index(i);
       for (int j = 1; j <= m; j++)
       {
         for (int h = 1; h <= m; ++h) { tmp[j] += A[j][h] * D[h] * (&w)[h]; }
@@ -568,7 +568,7 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(oja_newton_ptr->m + 2))));
 
   auto* l = make_base_learner(std::move(oja_newton_ptr), learn, predict,
-      stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(all.weights.stride())
                 .set_save_load(save_load)
                 .set_finish_example(keep_example)

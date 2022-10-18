@@ -57,7 +57,7 @@ inline void set_weight(VW::workspace& all, uint64_t index, uint32_t offset, floa
 
 float l1_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.no_bias && fi == constant) { return 0.0f; }
+  if (all.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
   float fw = get_weight(all, fi, 0);
   return fw >= 0.0f ? all.l1_lambda : -all.l1_lambda;
@@ -65,7 +65,7 @@ float l1_grad(VW::workspace& all, uint64_t fi)
 
 float l2_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.no_bias && fi == constant) { return 0.0f; }
+  if (all.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
   float fw = get_weight(all, fi, 0);
   return all.l2_lambda * fw;
@@ -75,7 +75,7 @@ inline void accumulate_dotprod(float& dotprod, float x, float& fw) { dotprod += 
 
 inline float constant_inference(VW::workspace& all)
 {
-  float wt = get_weight(all, constant, 0);
+  float wt = get_weight(all, VW::details::CONSTANT, 0);
   return wt;
 }
 
@@ -103,14 +103,15 @@ float inference(VW::workspace& all, VW::example& ec)
 template <bool feature_mask_off>
 void constant_update(cbzo& data, VW::example& ec)
 {
-  float fw = get_weight(*data.all, constant, 0);
+  float fw = get_weight(*data.all, VW::details::CONSTANT, 0);
   if (feature_mask_off || fw != 0.0f)
   {
     float action_centroid = inference<CONSTANT_POLICY>(*data.all, ec);
     float grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
-    float update = -data.all->eta * (grad + l1_grad(*data.all, constant) + l2_grad(*data.all, constant));
+    float update =
+        -data.all->eta * (grad + l1_grad(*data.all, VW::details::CONSTANT) + l2_grad(*data.all, VW::details::CONSTANT));
 
-    set_weight(*data.all, constant, 0, fw + update);
+    set_weight(*data.all, VW::details::CONSTANT, 0, fw + update);
   }
 }
 
@@ -240,7 +241,7 @@ void save_load(cbzo& data, io_buf& model_file, bool read, bool text)
   if (read)
   {
     initialize_regressor(all);
-    if (data.all->initial_constant != 0.0f) { set_weight(all, constant, 0, data.all->initial_constant); }
+    if (data.all->initial_constant != 0.0f) { set_weight(all, VW::details::CONSTANT, 0, data.all->initial_constant); }
   }
   if (model_file.num_files() > 0) { save_load_regressor(all, model_file, read, text); }
 }
@@ -257,7 +258,7 @@ void report_progress(VW::workspace& all, VW::example& ec)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : VW::to_string(costs[0]),
-        VW::to_string(ec.pred.pdf, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
+        VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
         all.progress_add, all.progress_arg);
   }
 }
@@ -395,7 +396,7 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
   auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
-      stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::pdf, label_type_t::continuous)
+      stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::pdf, label_type_t::CONTINUOUS)
                 .set_params_per_weight(0)
                 .set_save_load(save_load)
                 .set_finish_example(::finish_example)

@@ -17,7 +17,7 @@ public:
   dense_parameters dense_weights;
   sparse_parameters sparse_weights;
 
-  inline weight& operator[](size_t i)
+  inline VW::weight& operator[](size_t i)
   {
     if (sparse) { return sparse_weights[i]; }
     else
@@ -111,7 +111,7 @@ public:
     }
   }
 
-  inline weight& strided_index(size_t index)
+  inline VW::weight& strided_index(size_t index)
   {
     if (sparse) { return sparse_weights.strided_index(index); }
     else

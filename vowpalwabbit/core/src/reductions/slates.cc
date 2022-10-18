@@ -31,7 +31,7 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   for (auto& example : examples) { _stashed_labels.push_back(std::move(example->l.slates)); }
 
   const size_t num_slots = std::count_if(examples.begin(), examples.end(),
-      [](const example* example) { return example->l.slates.type == VW::slates::example_type::slot; });
+      [](const example* example) { return example->l.slates.type == VW::slates::example_type::SLOT; });
 
   float global_cost = 0.f;
   bool global_cost_found = false;
@@ -43,7 +43,7 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
     VW::ccb_label ccb_label;
     VW::default_ccb_label(ccb_label);
     const auto& slates_label = _stashed_labels[i];
-    if (slates_label.type == slates::example_type::shared)
+    if (slates_label.type == slates::example_type::SHARED)
     {
       ccb_label.type = VW::ccb_example_type::SHARED;
       if (slates_label.labeled)
@@ -52,14 +52,14 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
         global_cost = slates_label.cost;
       }
     }
-    else if (slates_label.type == slates::example_type::action)
+    else if (slates_label.type == slates::example_type::ACTION)
     {
       if (slates_label.slot_id >= num_slots) { THROW("slot_id cannot be larger than or equal to the number of slots"); }
       ccb_label.type = VW::ccb_example_type::ACTION;
       slot_action_pools[slates_label.slot_id].push_back(action_index);
       action_index++;
     }
-    else if (slates_label.type == slates::example_type::slot)
+    else if (slates_label.type == slates::example_type::SLOT)
     {
       ccb_label.type = VW::ccb_example_type::SLOT;
       ccb_label.explicit_included_actions.clear();
@@ -165,15 +165,15 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   VW::multi_ex slots;
   size_t num_features = 0;
   float loss = 0.;
-  bool is_labelled = ec_seq[SHARED_EX_INDEX]->l.slates.labeled;
-  float cost = is_labelled ? ec_seq[SHARED_EX_INDEX]->l.slates.cost : 0.f;
+  bool is_labelled = ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.labeled;
+  float cost = is_labelled ? ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.cost : 0.f;
   v_array<VW::action_score> label_probs;
 
   for (auto* ec : ec_seq)
   {
     num_features += ec->get_num_features();
 
-    if (ec->l.slates.type == VW::slates::example_type::slot)
+    if (ec->l.slates.type == VW::slates::example_type::SLOT)
     {
       slots.push_back(ec);
       if (is_labelled)
@@ -197,10 +197,10 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
     for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
   }
 
-  all.sd->update(holdout_example, is_labelled, loss, ec_seq[SHARED_EX_INDEX]->weight, num_features);
+  all.sd->update(holdout_example, is_labelled, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::print_decision_scores(sink.get(), ec_seq[SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
+  { VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
 
   VW::print_update_slates(all, slots, predictions, num_features);
 }
@@ -253,8 +253,8 @@ VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_prediction_type(VW::prediction_type_t::decision_probs)
                 .set_output_prediction_type(VW::prediction_type_t::decision_probs)
-                .set_input_label_type(VW::label_type_t::slates)
-                .set_output_label_type(VW::label_type_t::ccb)
+                .set_input_label_type(VW::label_type_t::SLATES)
+                .set_output_label_type(VW::label_type_t::CCB)
                 .set_finish_example(finish_multiline_example)
                 .build();
   return VW::LEARNER::make_base(*l);

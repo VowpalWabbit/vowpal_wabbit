@@ -247,7 +247,7 @@ void mf_train(gdmf& d, VW::example& ec)
   }
 }
 
-void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
+void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
 {
   for (size_t i = 0; i != stride; ++i, ++index)
   {
@@ -266,8 +266,9 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
-      auto weight_initializer = [stride](
-                                    weight* weights, uint64_t index) { initialize_weights(weights, index, stride); };
+      auto weight_initializer = [stride](VW::weight* weights, uint64_t index) {
+        initialize_weights(weights, index, stride);
+      };
 
       all.weights.set_default(weight_initializer);
     }
@@ -288,10 +289,10 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
-        weight* w_i = &(all.weights.strided_index(i));
+        VW::weight* w_i = &(all.weights.strided_index(i));
         for (uint64_t k = 0; k < K; k++)
         {
-          weight* v = w_i + k;
+          VW::weight* v = w_i + k;
           msg << v << " ";
           brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
@@ -383,7 +384,7 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
   auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)

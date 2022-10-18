@@ -7,6 +7,7 @@
 #include "details/large_action_space.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
+#include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
@@ -61,7 +62,9 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto* shared_example = red_features.shared_example;
+    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
     if (_all->weights.sparse)
     {
@@ -84,6 +87,8 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
                                                       : *ex->extent_interactions),
           _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
     }
+
+    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
 
     row_index++;
   }
@@ -188,10 +193,12 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
   // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
   // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later
   // if the --full_predictions flag is supplied.
+  auto best_action = preds[0].action;
+
   auto it = preds.begin();
   while (it != preds.end())
   {
-    if (!spanner_state.is_action_in_spanner(it->action)) { preds.erase(it); }
+    if (!spanner_state.is_action_in_spanner(it->action) && it->action != best_action) { it = preds.erase(it); }
     else
     {
       it++;

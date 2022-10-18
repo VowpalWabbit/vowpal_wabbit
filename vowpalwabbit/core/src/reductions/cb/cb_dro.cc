@@ -169,8 +169,8 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), as_multiline(base), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(pred_type)
                 .set_output_prediction_type(pred_type)
                 .build(&all.logger);

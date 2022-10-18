@@ -260,8 +260,9 @@ public:
     if (!_no_constant)
     {
       // add constant feature
-      ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(ex, constant_namespace));
-      ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex.ft_offset);
+      ns_copy_guard =
+          std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(ex, VW::details::CONSTANT_NAMESPACE));
+      ns_copy_guard->feature_push_back(1.f, (VW::details::CONSTANT << _stride_shift) + ex.ft_offset);
     }
 
     if (_contains_wildcard)
@@ -477,7 +478,7 @@ private:
   INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
   INTERACTIONS::interactions_generator _generate_interactions;
   bool _contains_wildcard;
-  std::array<bool, NUM_NAMESPACES> _ignore_linear;
+  std::array<bool, VW::NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
 
   vw_predict_exploration _exploration;

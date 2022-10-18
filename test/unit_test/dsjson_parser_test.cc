@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
-  constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
+  static constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
   const size_t num_probabilities = interaction.probabilities.size();
   BOOST_CHECK_EQUAL(num_probabilities, 2);
   for (size_t i = 0; i < num_probabilities; ++i)
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
-  constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
+  static constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
   const size_t num_probabilities = interaction.probabilities.size();
   BOOST_CHECK_EQUAL(num_probabilities, 2);
   for (size_t i = 0; i < num_probabilities; ++i)
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
   VW::finish(*vw);
 
   // Use the latest "p" or "_p" field provided. The "_p" is ignored when it's inside "c".
-  constexpr float EXPECTED_PDF[2] = {0.5f, 0.5f};
+  static constexpr float EXPECTED_PDF[2] = {0.5f, 0.5f};
   const size_t num_probabilities = interaction.probabilities.size();
   BOOST_CHECK_EQUAL(num_probabilities, 2);
   for (size_t i = 0; i < num_probabilities; ++i)
@@ -747,14 +747,14 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
   auto examples = parse_dsjson(*vw, json_text, &ds_interaction);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
-  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::SLOT);
 
   const auto& label0 = examples[0]->l.slates;
   BOOST_CHECK_CLOSE(label0.cost, 1.f, FLOAT_TOL);

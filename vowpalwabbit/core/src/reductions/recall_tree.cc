@@ -225,8 +225,8 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
   uint64_t mask = all->weights.mask();
   size_t ss = all->weights.stride_shift();
 
-  ec.indices.push_back(node_id_namespace);
-  features& fs = ec.feature_space[node_id_namespace];
+  ec.indices.push_back(VW::details::NODE_ID_NAMESPACE);
+  features& fs = ec.feature_space[VW::details::NODE_ID_NAMESPACE];
 
   if (b.node_only) { fs.push_back(1., ((static_cast<uint64_t>(868771) * cn) << ss) & mask); }
   else
@@ -244,7 +244,7 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
 
 void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, VW::example& ec)
 {
-  features& fs = ec.feature_space[node_id_namespace];
+  features& fs = ec.feature_space[VW::details::NODE_ID_NAMESPACE];
   fs.clear();
   ec.indices.pop_back();
 }
@@ -443,9 +443,9 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
   {
     std::stringstream msg;
 
-    writeit(b.k, "k");
-    writeit(b.node_only, "node_only");
-    writeitvar(b.nodes.size(), "nodes", n_nodes);
+    WRITEIT(b.k, "k");
+    WRITEIT(b.node_only, "node_only");
+    WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
 
     if (read)
     {
@@ -453,25 +453,25 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
       for (uint32_t j = 0; j < n_nodes; ++j) { b.nodes.push_back(node()); }
     }
 
-    writeit(b.max_candidates, "max_candidates");
-    writeit(b.max_depth, "max_depth");
+    WRITEIT(b.max_candidates, "max_candidates");
+    WRITEIT(b.max_depth, "max_depth");
 
     for (uint32_t j = 0; j < n_nodes; ++j)
     {
       node* cn = &b.nodes[j];
 
-      writeit(cn->parent, "parent");
-      writeit(cn->recall_lbest, "recall_lbest");
-      writeit(cn->internal, "internal");
-      writeit(cn->depth, "depth");
-      writeit(cn->base_router, "base_router");
-      writeit(cn->left, "left");
-      writeit(cn->right, "right");
-      writeit(cn->n, "n");
-      writeit(cn->entropy, "entropy");
-      writeit(cn->passes, "passes");
+      WRITEIT(cn->parent, "parent");
+      WRITEIT(cn->recall_lbest, "recall_lbest");
+      WRITEIT(cn->internal, "internal");
+      WRITEIT(cn->depth, "depth");
+      WRITEIT(cn->base_router, "base_router");
+      WRITEIT(cn->left, "left");
+      WRITEIT(cn->right, "right");
+      WRITEIT(cn->n, "n");
+      WRITEIT(cn->entropy, "entropy");
+      WRITEIT(cn->passes, "passes");
 
-      writeitvar(cn->preds.size(), "n_preds", n_preds);
+      WRITEITVAR(cn->preds.size(), "n_preds", n_preds);
 
       if (read)
       {
@@ -484,8 +484,8 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
       {
         node_pred* pred = &cn->preds[k];
 
-        writeit(pred->label, "label");
-        writeit(pred->label_count, "label_count");
+        WRITEIT(pred->label, "label");
+        WRITEIT(pred->label_count, "label_count");
       }
 
       if (read) { compute_recall_lbest(b, cn); }
@@ -540,7 +540,7 @@ base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(VW::details::finish_multiclass_example<recall_tree&>)
                 .set_save_load(save_load_tree)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_input_label_type(VW::label_type_t::multiclass)
+                .set_input_label_type(VW::label_type_t::MULTICLASS)
                 .build();
 
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;

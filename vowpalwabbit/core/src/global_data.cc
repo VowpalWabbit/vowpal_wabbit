@@ -322,9 +322,9 @@ std::string workspace::dump_weights_to_json_experimental()
   // This could be extended to other base learners reasonably. Since this is new and experimental though keep the scope
   // small.
   while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
-  if (current->get_name() != "gd" && current->get_name() != "ftrl")
+  if (current->get_name() == "ksvm")
   {
-    THROW("dump_weights_to_json is currently only supported for GD or FTRL base learners. The current base learner is "
+    THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
         << current->get_name());
   }
   if (dump_json_weights_include_feature_names && !hash_inv)
@@ -341,8 +341,8 @@ std::string workspace::dump_weights_to_json_experimental()
 }
 }  // namespace VW
 
-void compile_limits(
-    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/, VW::io::logger& logger)
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool /*quiet*/,
+    VW::io::logger& logger)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {

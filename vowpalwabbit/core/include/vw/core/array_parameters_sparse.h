@@ -12,7 +12,7 @@
 #include <unordered_map>
 
 class sparse_parameters;
-using weight_map = std::unordered_map<uint64_t, weight*>;
+using weight_map = std::unordered_map<uint64_t, VW::weight*>;
 
 template <typename T>
 class sparse_iterator
@@ -52,8 +52,8 @@ private:
 class sparse_parameters
 {
 public:
-  using iterator = sparse_iterator<weight>;
-  using const_iterator = sparse_iterator<const weight>;
+  using iterator = sparse_iterator<VW::weight>;
+  using const_iterator = sparse_iterator<const VW::weight>;
 
   sparse_parameters(size_t length, uint32_t stride_shift = 0);
   sparse_parameters();
@@ -65,7 +65,7 @@ public:
   sparse_parameters(sparse_parameters&&) noexcept = delete;
 
   bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
-  weight* first() { THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr); }
+  VW::weight* first() { THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr); }
 
   // iterator with stride
   iterator begin() { return iterator(_map.begin(), stride()); }
@@ -75,12 +75,12 @@ public:
   const_iterator cbegin() const { return const_iterator(_map.begin(), stride()); }
   const_iterator cend() const { return const_iterator(_map.begin(), stride()); }
 
-  inline weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
+  inline VW::weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
 
-  inline const weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
+  inline const VW::weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
 
-  inline weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
-  inline const weight& strided_index(size_t index) const { return operator[](index << _stride_shift); }
+  inline VW::weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
+  inline const VW::weight& strided_index(size_t index) const { return operator[](index << _stride_shift); }
 
   void shallow_copy(const sparse_parameters& input);
 
@@ -112,9 +112,9 @@ private:
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
   bool _delete;
-  std::function<void(weight*, uint64_t)> _default_func;
+  std::function<void(VW::weight*, uint64_t)> _default_func;
 
   // It is marked const so it can be used from both const and non const operator[]
   // The map itself is mutable to facilitate this
-  weight* get_or_default_and_get(size_t i) const;
+  VW::weight* get_or_default_and_get(size_t i) const;
 };

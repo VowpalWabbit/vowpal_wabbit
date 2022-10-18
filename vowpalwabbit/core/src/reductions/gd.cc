@@ -140,7 +140,7 @@ VW_WARNING_DISABLE_COND_CONST_EXPR
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 inline void update_feature(float& update, float x, float& fw)
 {
-  weight* w = &fw;
+  VW::weight* w = &fw;
   bool modify = x < FLT_MAX && x > -FLT_MAX && (feature_mask_off || fw != 0.);
   if (modify)
   {
@@ -583,7 +583,7 @@ public:
 template <bool sqrt_rate, size_t adaptive, size_t normalized>
 inline float compute_rate_decay(power_data& s, float& fw)
 {
-  weight* w = &fw;
+  VW::weight* w = &fw;
   float rate_decay = 1.f;
   if (adaptive)
   {
@@ -633,7 +633,7 @@ inline void pred_per_update_feature(norm_data& nd, float x, float& fw)
   bool modify = feature_mask_off || fw != 0.;
   if (modify)
   {
-    weight* w = &fw;
+    VW::weight* w = &fw;
     float x2 = x * x;
     if (x2 < X2_MIN)
     {
@@ -837,12 +837,12 @@ void sync_weights(VW::workspace& all)
 
   if (all.weights.sparse)
   {
-    for (weight& w : all.weights.sparse_weights)
+    for (VW::weight& w : all.weights.sparse_weights)
     { w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction); }
   }
   else
   {
-    for (weight& w : all.weights.dense_weights)
+    for (VW::weight& w : all.weights.dense_weights)
     { w = trunc_weight(w, static_cast<float>(all.sd->gravity)) * static_cast<float>(all.sd->contraction); }
   }
 
@@ -938,7 +938,7 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
         if (i >= length)
           THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
                                                                    << length);
-        weight* v = &weights.strided_index(i);
+        VW::weight* v = &weights.strided_index(i);
         brw += model_file.bin_read_fixed(reinterpret_cast<char*>(&(*v)), sizeof(*v));
       }
     } while (brw > 0);
@@ -997,7 +997,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
         if (i >= length)
           THROW("Model content is corrupted, weight vector index " << i << " must be less than total vector length "
                                                                    << length);
-        weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+        VW::weight buff[8] = {0, 0, 0, 0, 0, 0, 0, 0};
         if (ftrl_size > 0)
         { brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * ftrl_size); }
         else if (g == nullptr || (!g->adaptive_input && !g->normalized_input))
@@ -1013,7 +1013,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
           brw += model_file.bin_read_fixed(reinterpret_cast<char*>(buff), sizeof(buff[0]) * 3);
         }
         uint32_t stride = 1 << weights.stride_shift();
-        weight* v = &weights.strided_index(i);
+        VW::weight* v = &weights.strided_index(i);
         for (size_t j = 0; j < stride; j++) { v[j] = buff[j]; }
       }
     } while (brw > 0);
@@ -1251,7 +1251,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     {
       float init_weight = all.initial_weight;
       float init_t = all.initial_t;
-      auto initial_gd_weight_initializer = [init_weight, init_t](weight* weights, uint64_t /*index*/) {
+      auto initial_gd_weight_initializer = [init_weight, init_t](VW::weight* weights, uint64_t /*index*/) {
         weights[0] = init_weight;
         weights[1] = init_t;
       };
@@ -1265,7 +1265,7 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
       // stored in memory at each update, and always start sum of gradients to 0, at the price of additional additions
       // and multiplications during the update...
     }
-    if (g.initial_constant != 0.0) { VW::set_weight(all, constant, 0, g.initial_constant); }
+    if (g.initial_constant != 0.0) { VW::set_weight(all, VW::details::CONSTANT, 0, g.initial_constant); }
   }
 
   if (model_file.num_files() > 0)
@@ -1536,7 +1536,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 
   auto* bare = g.get();
   learner<GD::gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
-      stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                                         .set_learn_returns_prediction(true)
                                         .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                                         .set_sensitivity(bare->sensitivity)

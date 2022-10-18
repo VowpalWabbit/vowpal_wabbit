@@ -75,7 +75,7 @@ public:
   char nopred = static_cast<char>(0);
 };
 
-std::string to_string(const v_array<float>& scalars, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+std::string to_string(const v_array<float>& scalars, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
 
 class example : public example_predict  // core example datatype.
 {
@@ -126,15 +126,15 @@ public:
   void reset_total_sum_feat_sq()
   {
     total_sum_feat_sq = 0.f;
-    total_sum_feat_sq_calculated = false;
+    _total_sum_feat_sq_calculated = false;
   }
 
   friend void VW::copy_example_data(example* dst, const example* src);
   friend void VW::setup_example(VW::workspace& all, example* ae);
 
 private:
-  bool total_sum_feat_sq_calculated = false;
-  bool use_permutations = false;
+  bool _total_sum_feat_sq_calculated = false;
+  bool _use_permutations = false;
 };
 
 class workspace;
@@ -167,7 +167,7 @@ inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
 inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 {
-  if (ec.passthrough) { ec.passthrough->push_back(x, (FNV_prime * magic) ^ i); }
+  if (ec.passthrough) { ec.passthrough->push_back(x, (VW::details::FNV_PRIME * magic) ^ i); }
 }
 
 #define add_passthrough_feature(ec, i, x) \

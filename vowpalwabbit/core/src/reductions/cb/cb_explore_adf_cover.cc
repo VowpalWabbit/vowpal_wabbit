@@ -55,7 +55,7 @@ private:
   size_t _counter;
 
   VW::LEARNER::multi_learner* _cs_ldf_learner;
-  GEN_CS::cb_to_cs_adf _gen_cs;
+  GEN_CS::cb_to_cs_adf gen_cs;
 
   VW::version_struct _model_file_version;
   VW::io::logger _logger;
@@ -84,28 +84,28 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _model_file_version(model_file_version)
     , _logger(std::move(logger))
 {
-  _gen_cs.cb_type = cb_type;
-  _gen_cs.scorer = scorer;
+  gen_cs.cb_type = cb_type;
+  gen_cs.scorer = scorer;
 }
 
 template <bool is_learn>
 void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
-  _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
+  gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
 
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
-  const bool is_mtr = _gen_cs.cb_type == VW::cb_type_t::mtr;
+  const bool is_mtr = gen_cs.cb_type == VW::cb_type_t::mtr;
   if (is_learn)
   {
     if (is_mtr)
     {  // use DR estimates for non-ERM policies in MTR
-      GEN_CS::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels);
+      GEN_CS::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels);
     }
     else
     {
-      GEN_CS::gen_cs_example<false>(_gen_cs, examples, _cs_labels, _logger);
+      GEN_CS::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger);
     }
 
     if (base.learn_returns_prediction)
@@ -336,8 +336,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
           epsilon_decay, first_only, as_multiline(all.cost_sensitive), scorer, cb_type, all.model_file_ver, all.logger);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_learn_returns_prediction(true)

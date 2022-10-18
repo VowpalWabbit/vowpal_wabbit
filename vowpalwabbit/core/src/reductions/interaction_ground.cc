@@ -104,8 +104,8 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   auto* l = make_reduction_learner(
       std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_input_label_type(label_type_t::cb)
-                .set_output_label_type(label_type_t::cb)
+                .set_input_label_type(label_type_t::CB)
+                .set_output_label_type(label_type_t::CB)
                 .set_output_prediction_type(prediction_type_t::action_scores)
                 .set_input_prediction_type(prediction_type_t::action_scores)
                 .build();

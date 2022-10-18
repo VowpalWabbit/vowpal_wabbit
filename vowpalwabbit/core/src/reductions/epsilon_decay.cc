@@ -398,16 +398,16 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
   data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
   data->_gd_total_weight = &(gd.per_model_states[0].total_weight);
-  data->_cb_adf_event_sum = &(adf_data._gen_cs.event_sum);
-  data->_cb_adf_action_sum = &(adf_data._gen_cs.action_sum);
+  data->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
+  data->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
   data->_sd_gravity = &(all.sd->gravity);
 
   if (base_learner->is_multiline())
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
-                        .set_input_label_type(VW::label_type_t::cb)
-                        .set_output_label_type(VW::label_type_t::cb)
+                        .set_input_label_type(VW::label_type_t::CB)
+                        .set_output_label_type(VW::label_type_t::CB)
                         .set_input_prediction_type(VW::prediction_type_t::action_scores)
                         .set_output_prediction_type(VW::prediction_type_t::action_scores)
                         .set_params_per_weight(model_count)

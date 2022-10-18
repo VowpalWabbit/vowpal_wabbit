@@ -458,7 +458,7 @@ bool update(svm_params& params, size_t pos)
   auto& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
   float* inprods = fec->krow.begin();
-  float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
+  float alphaKi = dense_dot(inprods, model->alpha, model->num_support);  // NOLINT
   model->delta[pos] = alphaKi * ld.label / params.lambda - 1;
   float alpha_old = model->alpha[pos];
   alphaKi -= model->alpha[pos] * inprods[pos];
@@ -813,7 +813,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   params->all->weights.stride_shift(0);
 
   auto* l = make_base_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                 .set_save_load(save_load)
                 .set_finish(finish_kernel_svm)
                 .build();

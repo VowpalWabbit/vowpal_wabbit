@@ -5,7 +5,7 @@
 #include "simulator.h"
 #include "test_common.h"
 #include "vw/core/array_parameters_dense.h"
-#include "vw/core/constant.h"  // FNV_prime
+#include "vw/core/constant.h"  // FNV_PRIME
 #include "vw/core/vw_math.h"
 
 #include <boost/test/test_tools.hpp>
@@ -47,8 +47,8 @@ size_t hash_to_index(parameters& weights, size_t hash)
 // see: interactions_predict.h:process_quadratic_interaction(..)
 size_t interaction_to_index(parameters& weights, size_t one, size_t two)
 {
-  // FNV_prime from constant.h
-  return hash_to_index(weights, (FNV_prime * one) ^ two);
+  // FNV_PRIME from constant.h
+  return hash_to_index(weights, (VW::details::FNV_PRIME * one) ^ two);
 }
 }  // namespace vw_hash_helpers
 
@@ -74,10 +74,10 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   const size_t interaction_index = interaction_to_index(all.weights,
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "Action", "article=sports"));
 
-  const float expected_w0 = 0.0259284f;
-  const float expected_w1 = 0.00720719;
-  const float expected_w2 = -0.0374119f;
-  const float ZERO = 0.f;
+  static const float EXPECTED_W0 = 0.0259284f;
+  static const float EXPECTED_W1 = 0.00720719;
+  static const float EXPECTED_W2 = -0.0374119f;
+  static const float ZERO = 0.f;
 
   for (auto index : feature_indexes)
   {
@@ -88,9 +88,9 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
     BOOST_CHECK_NE(ZERO, w2);
   }
 
-  ARE_SAME(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
-  ARE_SAME(expected_w1, weights.strided_index(interaction_index + offset_to_clear), AUTO_ML_FLOAT_TOL);
-  ARE_SAME(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
+  ARE_SAME(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
+  ARE_SAME(EXPECTED_W1, weights.strided_index(interaction_index + offset_to_clear), AUTO_ML_FLOAT_TOL);
+  ARE_SAME(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // all weights of offset 1 will be set to zero
   weights.clear_offset(offset_to_clear, all.wpp);
@@ -105,9 +105,9 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
     BOOST_CHECK_NE(w1, w2);
   }
 
-  ARE_SAME(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
+  ARE_SAME(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
   BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index + offset_to_clear));
-  ARE_SAME(expected_w2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
+  ARE_SAME(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // copy from offset 2 to offset 1
   weights.move_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
@@ -122,11 +122,11 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
     BOOST_CHECK_EQUAL(w1, w2);
   }
 
-  ARE_SAME(expected_w0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
+  ARE_SAME(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
   float actual_w1 = weights.strided_index(interaction_index + offset_to_clear);
   float actual_w2 = weights.strided_index(interaction_index + offset_to_clear + 1);
-  ARE_SAME(expected_w2, actual_w1, AUTO_ML_FLOAT_TOL);
-  ARE_SAME(expected_w2, actual_w2, AUTO_ML_FLOAT_TOL);
+  ARE_SAME(EXPECTED_W2, actual_w1, AUTO_ML_FLOAT_TOL);
+  ARE_SAME(EXPECTED_W2, actual_w2, AUTO_ML_FLOAT_TOL);
   BOOST_CHECK_EQUAL(actual_w1, actual_w2);
 
   // Ensure weights are non-zero for another live interaction
@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
   // a switch happens around ~1756
   size_t num_iterations = 1700;
   // this has to match with --automl 4 above
-  size_t AUTOML_MODELS = 4;
+  static const size_t AUTOML_MODELS = 4;
 
   auto* vw_qcolcol = VW::initialize(vw_arg + "-b 18 --invert_hash without_automl.vw -q ::");
   auto* vw_automl = VW::initialize(

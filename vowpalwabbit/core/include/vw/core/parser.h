@@ -39,12 +39,12 @@ namespace details
 class cache_temp_buffer
 {
 public:
-  std::shared_ptr<std::vector<char>> _backing_buffer;
-  io_buf _temporary_cache_buffer;
+  std::shared_ptr<std::vector<char>> backing_buffer;
+  io_buf temporary_cache_buffer;
   cache_temp_buffer()
   {
-    _backing_buffer = std::make_shared<std::vector<char>>();
-    _temporary_cache_buffer.add_file(VW::io::create_vector_writer(_backing_buffer));
+    backing_buffer = std::make_shared<std::vector<char>>();
+    temporary_cache_buffer.add_file(VW::io::create_vector_writer(backing_buffer));
   }
 };
 }  // namespace details
@@ -80,12 +80,12 @@ public:
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(VW::workspace*, const char*, size_t, VW::multi_ex&);
 
-  shared_data* _shared_data = nullptr;
+  shared_data* shared_data_obj = nullptr;
 
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
   io_buf output;    // Where to output the cache.
-  VW::details::cache_temp_buffer _cache_temp_buffer;
+  VW::details::cache_temp_buffer cache_temp_buffer_obj;
   std::string currentname;
   std::string finalname;
 
@@ -122,19 +122,19 @@ public:
 class dsjson_metrics
 {
 public:
-  size_t NumberOfSkippedEvents = 0;
-  size_t NumberOfEventsZeroActions = 0;
-  size_t LineParseError = 0;
-  float DsjsonSumCostOriginal = 0.f;
-  float DsjsonSumCostOriginalFirstSlot = 0.f;
-  float DsjsonSumCostOriginalBaseline = 0.f;
-  size_t DsjsonNumberOfLabelEqualBaselineFirstSlot = 0;
-  size_t DsjsonNumberOfLabelNotEqualBaselineFirstSlot = 0;
-  float DsjsonSumCostOriginalLabelEqualBaselineFirstSlot = 0.f;
-  std::string FirstEventId;
-  std::string FirstEventTime;
-  std::string LastEventId;
-  std::string LastEventTime;
+  size_t number_of_skipped_events = 0;
+  size_t number_of_events_zero_actions = 0;
+  size_t line_parse_error = 0;
+  float dsjson_sum_cost_original = 0.f;
+  float dsjson_sum_cost_original_first_slot = 0.f;
+  float dsjson_sum_cost_original_baseline = 0.f;
+  size_t dsjson_number_of_label_equal_baseline_first_slot = 0;
+  size_t dsjson_number_of_label_not_equal_baseline_first_slot = 0;
+  float dsjson_sum_cost_original_label_equal_baseline_first_slot = 0.f;
+  std::string first_event_id;
+  std::string first_event_time;
+  std::string last_event_id;
+  std::string last_event_time;
 };
 
 void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options);

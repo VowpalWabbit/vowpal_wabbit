@@ -34,6 +34,7 @@
 #include "vw/core/reductions/metrics.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/text_utils.h"
+#include "vw/core/version.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_allreduce.h"
 #include "vw/core/vw_validate.h"
@@ -337,7 +338,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
-    std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
+    std::cout << VW::VERSION.to_string() << " (git commit: " << VW::GIT_COMMIT << ")\n";
     exit(0);
   }
 
@@ -580,7 +581,7 @@ std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::st
             "A wildcard term in --experimental_full_name_interactions cannot contain characters other than ':'. Found: "
             << token)
       }
-      result.emplace_back(wildcard_namespace, wildcard_namespace);
+      result.emplace_back(VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE);
     }
     else
     {
@@ -687,7 +688,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.example_parser->hasher = getHasher(hash_function);
+  all.example_parser->hasher = get_hasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -861,7 +862,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
   }
 
-  for (size_t i = 0; i < NUM_NAMESPACES; i++)
+  for (size_t i = 0; i < VW::NUM_NAMESPACES; i++)
   {
     all.ignore[i] = false;
     all.ignore_linear[i] = false;
@@ -882,7 +883,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "ignoring namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (all.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -903,7 +904,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (all.ignore_linear[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -932,7 +933,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.ignore[i] = true; }
+    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.ignore[i] = true; }
 
     all.ignore_some = true;
 
@@ -945,7 +946,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "using namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (!all.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -959,7 +960,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   if (options.was_supplied("redefine"))
   {
     // initial values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.redefine[i] = static_cast<unsigned char>(i); }
+    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.redefine[i] = static_cast<unsigned char>(i); }
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -1018,7 +1019,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t j = 0; j < NUM_NAMESPACES; j++) { all.redefine[j] = new_namespace; }
+            for (size_t j = 0; j < VW::NUM_NAMESPACES; j++) { all.redefine[j] = new_namespace; }
             break;  // break processing S
           }
         }
@@ -1528,7 +1529,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   }
 
   all->example_parser = new parser{final_example_queue_limit, strict_parse};
-  all->example_parser->_shared_data = all->sd;
+  all->example_parser->shared_data_obj = all->sd;
 
   option_group_definition weight_args("Weight");
   weight_args
@@ -1869,7 +1870,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
   catch (VW::save_load_model_exception& e)
   {
     auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all->initial_regressors, ", "));
-    throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
+    throw save_load_model_exception(e.filename(), e.line_number(), msg);
   }
 
   if (!all->quiet)
@@ -2069,7 +2070,7 @@ VW::workspace* seed_vw_model(
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
-  new_model->example_parser->_shared_data = new_model->sd;
+  new_model->example_parser->shared_data_obj = new_model->sd;
 
   return new_model;
 }

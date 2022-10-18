@@ -30,27 +30,27 @@ void insert_dsjson_metrics(
   // ds_metrics is nullptr when --dsjson is disabled
   if (ds_metrics != nullptr)
   {
-    metrics.set_uint("number_skipped_events", ds_metrics->NumberOfSkippedEvents);
-    metrics.set_uint("number_events_zero_actions", ds_metrics->NumberOfEventsZeroActions);
-    metrics.set_uint("line_parse_error", ds_metrics->LineParseError);
-    metrics.set_string("first_event_id", ds_metrics->FirstEventId);
-    metrics.set_string("first_event_time", ds_metrics->FirstEventTime);
-    metrics.set_string("last_event_id", ds_metrics->LastEventId);
-    metrics.set_string("last_event_time", ds_metrics->LastEventTime);
-    metrics.set_float("dsjson_sum_cost_original", ds_metrics->DsjsonSumCostOriginal);
+    metrics.set_uint("number_skipped_events", ds_metrics->number_of_skipped_events);
+    metrics.set_uint("number_events_zero_actions", ds_metrics->number_of_events_zero_actions);
+    metrics.set_uint("line_parse_error", ds_metrics->line_parse_error);
+    metrics.set_string("first_event_id", ds_metrics->first_event_id);
+    metrics.set_string("first_event_time", ds_metrics->first_event_time);
+    metrics.set_string("last_event_id", ds_metrics->last_event_id);
+    metrics.set_string("last_event_time", ds_metrics->last_event_time);
+    metrics.set_float("dsjson_sum_cost_original", ds_metrics->dsjson_sum_cost_original);
     if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
     {
-      metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->DsjsonSumCostOriginalFirstSlot);
-      metrics.set_uint(
-          "dsjson_number_label_equal_baseline_first_slot", ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
+      metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->dsjson_sum_cost_original_first_slot);
+      metrics.set_uint("dsjson_number_label_equal_baseline_first_slot",
+          ds_metrics->dsjson_number_of_label_equal_baseline_first_slot);
       metrics.set_uint("dsjson_number_label_not_equal_baseline_first_slot",
-          ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+          ds_metrics->dsjson_number_of_label_not_equal_baseline_first_slot);
       metrics.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
-          ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
+          ds_metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot);
     }
     else
     {
-      metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->DsjsonSumCostOriginalBaseline);
+      metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->dsjson_sum_cost_original_baseline);
     }
   }
 }

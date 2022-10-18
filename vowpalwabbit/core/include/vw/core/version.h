@@ -45,6 +45,11 @@ public:
   static version_struct from_string(const char* str);
 };
 
-constexpr version_struct version(VW_VERSION_MAJOR, VW_VERSION_MINOR, VW_VERSION_PATCH);
-extern const std::string git_commit;
+constexpr version_struct VERSION(VW_VERSION_MAJOR, VW_VERSION_MINOR, VW_VERSION_PATCH);
+VW_DEPRECATED("VW::version renamed to VW::VERSION")
+constexpr version_struct version(VW_VERSION_MAJOR, VW_VERSION_MINOR, VW_VERSION_PATCH);  // NOLINT
+
+extern const std::string GIT_COMMIT;
+VW_DEPRECATED("VW::git_commit renamed to VW::GIT_COMMIT")
+extern const std::string git_commit;  // NOLINT
 }  // namespace VW

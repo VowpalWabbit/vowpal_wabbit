@@ -72,7 +72,7 @@ void send_features(io_buf* b, VW::example& ec, uint32_t mask)
 
   for (VW::namespace_index ns : ec.indices)
   {
-    if (ns == constant_namespace) { continue; }
+    if (ns == VW::details::CONSTANT_NAMESPACE) { continue; }
     VW::details::cache_index(*b, ns);
     VW::details::cache_features(*b, ec.feature_space[ns], mask);
   }
@@ -134,7 +134,7 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
   s->delay_ring = calloc_or_throw<VW::example*>(all.example_parser->example_queue_limit);
 
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, learn, stack_builder.get_setupfn_name(sender_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                 .set_finish_example(finish_example)
                 .set_end_examples(end_examples)
                 .build();

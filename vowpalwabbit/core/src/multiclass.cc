@@ -93,7 +93,7 @@ VW::label_parser multiclass_label_parser_global = {
     // test_label
     [](const VW::polylabel& label) { return test_multiclass_label(label.multi); },
     // label type
-    VW::label_type_t::multiclass};
+    VW::label_type_t::MULTICLASS};
 }
 
 namespace
@@ -111,8 +111,8 @@ void print_probability(VW::workspace& all, VW::example& ec, uint32_t prediction)
 {
   std::stringstream pred_ss;
   uint32_t pred_ind = (all.indexing == 0) ? prediction : prediction - 1;
-  pred_ss << prediction << "(" << std::setw(VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION) << std::setprecision(0)
-          << std::fixed << 100 * ec.pred.scalars[pred_ind] << "%)";
+  pred_ss << prediction << "(" << std::setw(VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION)
+          << std::setprecision(0) << std::fixed << 100 * ec.pred.scalars[pred_ind] << "%)";
 
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;

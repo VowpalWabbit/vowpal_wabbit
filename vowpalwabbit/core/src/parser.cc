@@ -146,12 +146,12 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   if (static_cast<size_t>(cache_reader.read(version_buffer.data(), version_buffer_length)) < version_buffer_length)
   { THROW("failed to read: version buffer"); }
   VW::version_struct cache_version(version_buffer.data());
-  if (cache_version != VW::version)
+  if (cache_version != VW::VERSION)
   {
     auto msg = fmt::format(
         "Cache file version does not match current VW version. Cache files must be produced by the version consuming "
         "them. Cache version: {} VW version: {}",
-        cache_version.to_string(), VW::version.to_string());
+        cache_version.to_string(), VW::VERSION.to_string());
     THROW(msg);
   }
 
@@ -325,10 +325,10 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
     return;
   }
 
-  size_t v_length = static_cast<uint64_t>(VW::version.to_string().length()) + 1;
+  size_t v_length = static_cast<uint64_t>(VW::VERSION.to_string().length()) + 1;
 
   output.bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
-  output.bin_write_fixed(VW::version.to_string().c_str(), v_length);
+  output.bin_write_fixed(VW::VERSION.to_string().c_str(), v_length);
   output.bin_write_fixed("c", 1);
   output.bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
   output.flush();
@@ -480,7 +480,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       new (sd) shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
-      all.example_parser->_shared_data = sd;
+      all.example_parser->shared_data_obj = sd;
 
       // create children
       size_t num_children = VW::cast_to_smaller_type<size_t>(all.num_children);
@@ -703,7 +703,7 @@ void setup_example(VW::workspace& all, VW::example* ae)
   if (all.example_parser->write_cache)
   {
     VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask,
-        all.example_parser->_cache_temp_buffer);
+        all.example_parser->cache_temp_buffer_obj);
   }
 
   // Require all extents to be complete in an VW::example.
@@ -715,8 +715,8 @@ void setup_example(VW::workspace& all, VW::example* ae)
   ae->num_features = 0;
   ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
-  ae->_debug_current_reduction_depth = 0;
-  ae->use_permutations = all.permutations;
+  ae->debug_current_reduction_depth = 0;
+  ae->_use_permutations = all.permutations;
 
   all.example_parser->num_setup_examples++;
   if (!all.example_parser->emptylines_separate_examples) { all.example_parser->in_pass_counter++; }
@@ -729,7 +729,7 @@ void setup_example(VW::workspace& all, VW::example* ae)
 
   if (all.example_parser->emptylines_separate_examples &&
       (example_is_newline(*ae) &&
-          (all.example_parser->lbl_parser.label_type != label_type_t::ccb ||
+          (all.example_parser->lbl_parser.label_type != label_type_t::CCB ||
               VW::reductions::ccb::ec_is_example_unset(*ae))))
   { all.example_parser->in_pass_counter++; }
 
@@ -804,10 +804,12 @@ VW::example* read_example(VW::workspace& all, const std::string& example_line)
 
 void add_constant_feature(VW::workspace& vw, VW::example* ec)
 {
-  ec->indices.push_back(constant_namespace);
-  ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
+  ec->indices.push_back(VW::details::CONSTANT_NAMESPACE);
+  ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(
+      1, VW::details::CONSTANT, VW::details::CONSTANT_NAMESPACE);
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) { ec->feature_space[constant_namespace].space_names.emplace_back("", "Constant"); }
+  if (vw.audit || vw.hash_inv)
+  { ec->feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "Constant"); }
 }
 
 void add_label(VW::example* ec, float label, float weight, float base)
@@ -865,7 +867,7 @@ primitive_feature_space* export_example(VW::workspace& all, VW::example* ec, siz
   return fs_ptr;
 }
 
-void releaseFeatureSpace(primitive_feature_space* features, size_t len)
+void release_feature_space(primitive_feature_space* features, size_t len)
 {
   for (size_t i = 0; i < len; i++) { delete[] features[i].fs; }
   delete (features);

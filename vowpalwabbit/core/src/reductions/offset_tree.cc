@@ -304,7 +304,7 @@ VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& s
       stack_builder.get_setupfn_name(offset_tree_setup))
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(prediction_type_t::action_probs)
-                .set_input_label_type(label_type_t::cb)
+                .set_input_label_type(label_type_t::CB)
                 .build();
 
   return make_base(*l);
