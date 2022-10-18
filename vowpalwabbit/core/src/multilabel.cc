@@ -67,7 +67,7 @@ VW::label_parser multilabel = {
     // test_label
     [](const VW::polylabel& label) { return test_label(label.multilabels); },
     // label type
-    VW::label_type_t::multilabel};
+    VW::label_type_t::MULTILABEL};
 
 void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
 {

@@ -78,3 +78,14 @@ inline std::ostream& operator<<(std::ostream& os, VW::ccb_example_type ex_type)
   return os;
 }
 }  // namespace std
+
+template <>
+struct boost::test_tools::tt_detail::print_log_value<std::vector<float>>
+{
+  void operator()(std::ostream& os, std::vector<float> const& value)
+  {
+    os << '[';
+    for (auto x : value) os << x << ' ';
+    os << ']';
+  }
+};

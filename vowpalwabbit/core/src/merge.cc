@@ -69,8 +69,9 @@ void validate_compatibility(const std::vector<const VW::workspace*>& workspaces,
 
     if (source_enabled_reductions != destination_enabled_reductions)
     {
-      THROW("Enabled reductions are not identical between models.\n One: " << source_enabled_reductions << "\n Other: "
-                                                                           << destination_enabled_reductions);
+      auto message = fmt::format("Enabled reductions are not identical between models.\n One: {}\n Other:{} ",
+          fmt::join(source_enabled_reductions, ", "), fmt::join(destination_enabled_reductions, ", "));
+      THROW(message);
     }
   }
 
