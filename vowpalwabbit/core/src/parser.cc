@@ -8,8 +8,6 @@
 #include "vw/core/numeric_casts.h"
 #include "vw/io/logger.h"
 
-#include <sys/types.h>
-
 #ifndef _WIN32
 #  include <netinet/tcp.h>
 #  include <sys/mman.h>
@@ -29,9 +27,9 @@
 #    define NOMINMAX
 #  endif
 
+#  include <winsock2.h>
 #  include <Windows.h>
 #  include <io.h>
-#  include <winsock2.h>
 typedef int socklen_t;
 // windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
 #  define SOL_TCP IPPROTO_TCP
