@@ -225,7 +225,7 @@ API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(
     {
       workspace->vw->do_reset_source = true;
       VW::start_parser(*workspace->vw);
-      LEARNER::generic_driver(*workspace->vw);
+      VW::LEARNER::generic_driver(*workspace->vw);
       VW::end_parser(*workspace->vw);
     }
     CATCH_RETURN_STATUS
