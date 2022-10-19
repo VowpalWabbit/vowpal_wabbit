@@ -117,7 +117,7 @@ struct tree_example
     score = 0;
 
     auto full_interactions = ex->interactions;
-    auto base_interactions = new std::vector<std::vector<namespace_index>>();
+    auto base_interactions = new std::vector<std::vector<VW::namespace_index>>();
 
     ex->interactions = base_interactions;
     base = VW::flatten_sort_example(all, ex);
@@ -135,10 +135,10 @@ struct LRU
   std::list<K> list;
   std::unordered_map<K, V> map;
 
-  int max_size;
+  unsigned long max_size;
 
 public:
-  LRU(int max_size) { (*this).max_size = max_size; }
+  LRU(unsigned long max_size) { (*this).max_size = max_size; }
 
   K bound(K item)
   {
@@ -205,17 +205,17 @@ struct tree
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
 
-  int iter;        // how many times we've 'learned'
-  int depth;       // how deep the tree is
-  int pass;        // what pass we are on for the data
+  uint32_t iter;  // how many times we've 'learned'
+  uint32_t depth;  // how deep the tree is
+  uint32_t pass;   // what pass we are on for the data
   bool test_only;  // indicates that learning should not occur
 
   int32_t tree_bound;   // how many memories before bounding the tree
-  int32_t leaf_split;   // how many memories before splitting a leaf node
+  uint32_t leaf_split;   // how many memories before splitting a leaf node
   int32_t scorer_type;  // 1: random, 2: distance, 3: self-consistent rank, 4: not self-consistent rank
   int32_t router_type;  // 1: random approximation, 2: oja method
 
-  example* ex = nullptr;  // we create one of these which we re-use so we don't have to reallocate examples
+  VW::example* ex = nullptr;  // we create one of these which we re-use so we don't have to reallocate examples
 
   clock_t begin;  // for timing performance
   float time;     // for timing performance
@@ -275,7 +275,7 @@ public:
   result_type operator()() { return state->get_and_update_random(); }
 };
 
-node* node_route(tree& b, single_learner& base, node& cn, tree_example& ec)
+node* node_route(node& cn, tree_example& ec)
 {
   return inner(*ec.base, *cn.router_weights) < cn.router_decision ? cn.left : cn.right;
 }
@@ -301,20 +301,20 @@ void tree_init(tree& b)
   }
 }
 
-node& tree_route(tree& b, single_learner& base, tree_example& ec)
+node& tree_route(tree& b, tree_example& ec)
 {
   node* cn = b.root;
-  while (cn->internal) { cn = node_route(b, base, *cn, ec); }
+  while (cn->internal) { cn = node_route(*cn, ec); }
   return *cn;
 }
 
-void tree_bound(tree& b, single_learner& base, tree_example* ec)
+void tree_bound(tree& b, tree_example* ec)
 {
   auto to_delete = b.bounder->bound(ec);
 
   if (to_delete == nullptr) { return; }
 
-  node& cn = tree_route(b, base, *to_delete);
+  node& cn = tree_route(b, *to_delete);
 
   for (auto iter = cn.examples.begin(); iter != cn.examples.end(); iter++)
   {
@@ -375,9 +375,10 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
 
     if (f1_val != f2_val)
     {
-      float value;
+      float value = 0;
       if (feature_type == 1) { value = my_abs(f1_val - f2_val); }
       else if (feature_type == 2) { value = f1_val - f2_val; }
+      else { THROW("An unrecognized feature type was provided.") }
 
       out.values.push_back(value);
       out.indices.push_back(index);
@@ -393,7 +394,7 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
 /// <param name="ex2">memory 2 to use for constructing the scorer example</param>
 /// <param name="out">the examples object which we are initializing</param>
 /// <param name="example_type">The type of example to create. 1--self-consistent 2--polynomial</param>
-void scorer_example(tree& b, tree_example& ex1, tree_example& ex2, example& out, int example_type)
+void scorer_example(tree& b, tree_example& ex1, tree_example& ex2, VW::example& out, int example_type)
 {
   if (example_type == 1 || example_type == 2)
   {
@@ -410,7 +411,7 @@ void scorer_example(tree& b, tree_example& ex1, tree_example& ex2, example& out,
     out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
     out.num_features = out.feature_space['x'].size();
 
-    out._reduction_features.template get<simple_label_reduction_features>().initial = scorer_initial(out);
+    out._reduction_features.template get<VW::simple_label_reduction_features>().initial = scorer_initial(out);
   }
 
   if (example_type == 2)
@@ -479,7 +480,7 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ex, tree_
     scorer_example(b, pred_ex, leaf_ex, *b.ex, example_type);
 
     // The features matched exactly. Return max negative to make sure it is picked.
-    if (b.ex->_reduction_features.template get<simple_label_reduction_features>().initial == 0) { return -FLT_MAX; }
+    if (b.ex->_reduction_features.template get<VW::simple_label_reduction_features>().initial == 0) { return -FLT_MAX; }
 
     b.ex->l.simple = {FLT_MAX};
     base.predict(*b.ex);
@@ -488,7 +489,7 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ex, tree_
   }
 }
 
-void scorer_learn(tree& b, single_learner& base, example& ex, float label, float weight)
+void scorer_learn(tree& b, single_learner& base, VW::example& ex, float label, float weight)
 {
   if (ex.total_sum_feat_sq != 0)
   {
@@ -595,7 +596,7 @@ void node_split(tree& b, single_learner& base, node& cn)
 
   uint64_t bits = static_cast<uint64_t>(1) << (b.all->num_bits);
 
-  sparse_parameters* best_projector;
+  sparse_parameters* best_projector = nullptr;
   float best_decision = 0;
   float best_variance = 0;
 
@@ -718,7 +719,7 @@ void node_split(tree& b, single_learner& base, node& cn)
   cn.router_weights = best_projector;
   cn.router_decision = best_decision;
 
-  for (auto example : cn.examples) { node_route(b, base, cn, *example)->examples.push_back(example); }
+  for (auto example : cn.examples) { node_route(cn, *example)->examples.push_back(example); }
   cn.examples.clear();
 }
 
@@ -771,9 +772,9 @@ void predict(tree& b, single_learner& base, example& ec)
   b.all->ignore_some_linear = false;
   tree_example ex(*b.all, &ec);
 
-  node& cn = tree_route(b, base, ex);
+  node& cn = tree_route(b, ex);
   node_predict(b, base, cn, ex, ec);
-  tree_bound(b, base, &ex);
+  tree_bound(b, &ex);
 }
 
 void learn(tree& b, single_learner& base, example& ec)
@@ -787,14 +788,14 @@ void learn(tree& b, single_learner& base, example& ec)
 
   if (b.test_only) { return; }
 
-  node& cn = tree_route(b, base, ex);
+  node& cn = tree_route(b, ex);
   scorer_learn(b, base, cn, ex, ec.weight);
   node_predict(b, base, cn, ex, ec);  // vw learners predict and learn
 
   if (b.pass == 0)
   {
     node_insert(b, base, cn, ex);
-    tree_bound(b, base, &ex);
+    tree_bound(b, &ex);
     node_split(b, base, cn);
   }
 }

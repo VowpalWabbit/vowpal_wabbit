@@ -28,7 +28,7 @@ struct tree_example
   float score;
 
   tree_example();
-  tree_example(VW::workspace& all, example* ex);
+  tree_example(VW::workspace& all, VW::example* ex);
 };
 
 struct LRU
@@ -66,17 +66,17 @@ struct tree
   VW::workspace* all;
   std::shared_ptr<VW::rand_state> _random_state;
 
-  int iter;        // how many times we've 'learned'
-  int depth;       // how deep the tree is
-  int pass;        // what pass we are on for the data
+  uint32_t iter;   // how many times we've 'learned'
+  uint32_t depth;  // how deep the tree is
+  uint32_t pass;   // what pass we are on for the data
   bool test_only;  // indicates that learning should not occur
 
   int32_t tree_bound;   // how many memories before bounding the tree
-  int32_t leaf_split;   // how many memories before splitting a leaf node
+  uint32_t leaf_split;   // how many memories before splitting a leaf node
   int32_t scorer_type;  // 1: random, 2: distance, 3: self-consistent rank, 4: not self-consistent rank
   int32_t router_type;  // 1: random approximation, 2: oja method
 
-  example* ex;  // we create one of these which we re-use so we don't have to reallocate examples
+  VW::example* ex;  // we create one of these which we re-use so we don't have to reallocate examples
 
   clock_t begin;  // for timing performance
   float time;     // for timing performance
