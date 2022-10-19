@@ -6,8 +6,10 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -425,7 +427,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
                .set_params_per_weight(k_value)
-               .set_input_label_type(VW::label_type_t::multiclass)
+               .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_prediction_type(pred_type)
                .set_finish_example(finish_ptr)
                .build();

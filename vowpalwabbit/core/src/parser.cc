@@ -8,8 +8,6 @@
 #include "vw/core/numeric_casts.h"
 #include "vw/io/logger.h"
 
-#include <sys/types.h>
-
 #ifndef _WIN32
 #  include <netinet/tcp.h>
 #  include <sys/mman.h>
@@ -29,9 +27,9 @@
 #    define NOMINMAX
 #  endif
 
+#  include <WinSock2.h>
 #  include <Windows.h>
 #  include <io.h>
-#  include <winsock2.h>
 typedef int socklen_t;
 // windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
 #  define SOL_TCP IPPROTO_TCP
@@ -729,7 +727,7 @@ void setup_example(VW::workspace& all, VW::example* ae)
 
   if (all.example_parser->emptylines_separate_examples &&
       (example_is_newline(*ae) &&
-          (all.example_parser->lbl_parser.label_type != label_type_t::ccb ||
+          (all.example_parser->lbl_parser.label_type != label_type_t::CCB ||
               VW::reductions::ccb::ec_is_example_unset(*ae))))
   { all.example_parser->in_pass_counter++; }
 

@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/constant.h"
 #include "vw/core/guard.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/rand48.h"
@@ -489,7 +490,7 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(true)
                 .set_multipredict(multipredict_f)
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_finish_example(::finish_example)
                 .set_end_pass(end_pass)
                 .build();

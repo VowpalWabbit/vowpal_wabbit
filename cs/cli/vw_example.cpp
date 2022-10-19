@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#define NOMINMAX
+
 #include "vowpalwabbit.h"
 #include "vw_example.h"
 #include "vw_prediction.h"

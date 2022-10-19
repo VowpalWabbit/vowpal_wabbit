@@ -5,6 +5,7 @@
 #include "vw/core/reductions/baseline.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -200,7 +201,7 @@ base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(VW::reductions::baseline_setup))
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_sensitivity(sensitivity)
                 .build();
 

@@ -9,7 +9,9 @@
 #include "vw/core/correctedMath.h"
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/label_dictionary.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/print_utils.h"
 #include "vw/core/reductions/gd.h"  // GD::foreach_feature() needed in subtract_example()
 #include "vw/core/scope_exit.h"
@@ -742,7 +744,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
-                .set_input_label_type(VW::label_type_t::cs)
+                .set_input_label_type(VW::label_type_t::CS)
                 .set_output_prediction_type(pred_type)
                 .build();
 

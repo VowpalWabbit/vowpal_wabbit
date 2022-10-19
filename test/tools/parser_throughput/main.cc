@@ -3,6 +3,7 @@
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/io_buf.h"
+#include "vw/core/learner.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"

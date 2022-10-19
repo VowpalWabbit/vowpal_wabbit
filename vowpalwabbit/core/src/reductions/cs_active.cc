@@ -7,6 +7,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/debug_log.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/csoaa.h"
@@ -399,7 +400,7 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::active_multiclass)
-                .set_input_label_type(VW::label_type_t::cs)
+                .set_input_label_type(VW::label_type_t::CS)
                 .set_finish_example(::finish_example)
                 .build();
 

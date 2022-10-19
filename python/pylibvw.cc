@@ -10,6 +10,7 @@
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/global_data.h"
 #include "vw/core/kskip_ngram_transformer.h"
+#include "vw/core/learner.h"
 #include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"

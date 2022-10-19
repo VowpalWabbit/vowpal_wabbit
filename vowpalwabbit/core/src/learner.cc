@@ -321,12 +321,12 @@ void generic_driver_onethread(VW::workspace& all)
 float VW::LEARNER::details::recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
-  if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
-  else if (label_type == VW::label_type_t::ccb)
+  if (label_type == VW::label_type_t::CB) { return CB::ec_is_example_header(ec); }
+  else if (label_type == VW::label_type_t::CCB)
   {
     return reductions::ccb::ec_is_example_header(ec);
   }
-  else if (label_type == VW::label_type_t::cs)
+  else if (label_type == VW::label_type_t::CS)
   {
     return VW::is_cs_example_header(ec);
   }
@@ -335,3 +335,72 @@ bool ec_is_example_header(const example& ec, label_type_t label_type)
 
 }  // namespace LEARNER
 }  // namespace VW
+
+void VW::LEARNER::details::learner_build_diagnostic(VW::io::logger& logger, VW::string_view this_name,
+    VW::string_view base_name, prediction_type_t in_pred_type, prediction_type_t base_out_pred_type,
+    label_type_t out_label_type, label_type_t base_in_label_type, details::merge_fn merge_fn_ptr,
+    details::merge_with_all_fn merge_with_all_fn_ptr)
+{
+  if (in_pred_type != base_out_pred_type)
+  {
+    logger.err_warn(
+        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
+        "reduction: {}.",
+        to_string(in_pred_type), this_name, to_string(base_out_pred_type), base_name);
+  }
+  if (out_label_type != base_in_label_type)
+  {
+    logger.err_warn("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
+        to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
+  }
+
+  if (merge_fn_ptr != nullptr && merge_with_all_fn_ptr != nullptr)
+  { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
+}
+void VW::LEARNER::details::debug_increment_depth(example& ex)
+{
+  if (vw_dbg::track_stack) { ++ex.debug_current_reduction_depth; }
+}
+void VW::LEARNER::details::debug_increment_depth(multi_ex& ec_seq)
+{
+  if (vw_dbg::track_stack)
+  {
+    for (auto& ec : ec_seq) { ++ec->debug_current_reduction_depth; }
+  }
+}
+void VW::LEARNER::details::debug_decrement_depth(example& ex)
+{
+  if (vw_dbg::track_stack) { --ex.debug_current_reduction_depth; }
+}
+void VW::LEARNER::details::debug_decrement_depth(multi_ex& ec_seq)
+{
+  if (vw_dbg::track_stack)
+  {
+    for (auto& ec : ec_seq) { --ec->debug_current_reduction_depth; }
+  }
+}
+void VW::LEARNER::details::increment_offset(example& ex, const size_t increment, const size_t i)
+{
+  ex.ft_offset += static_cast<uint32_t>(increment * i);
+  debug_increment_depth(ex);
+}
+void VW::LEARNER::details::increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
+{
+  for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
+  debug_increment_depth(ec_seq);
+}
+void VW::LEARNER::details::decrement_offset(example& ex, const size_t increment, const size_t i)
+{
+  assert(ex.ft_offset >= increment * i);
+  ex.ft_offset -= static_cast<uint32_t>(increment * i);
+  debug_decrement_depth(ex);
+}
+void VW::LEARNER::details::decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
+{
+  for (auto ec : ec_seq)
+  {
+    assert(ec->ft_offset >= increment * i);
+    ec->ft_offset -= static_cast<uint32_t>(increment * i);
+  }
+  debug_decrement_depth(ec_seq);
+}

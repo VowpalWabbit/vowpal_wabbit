@@ -5,6 +5,8 @@
 
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
@@ -207,7 +209,7 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_input_label_type(VW::label_type_t::cs)
+                .set_input_label_type(VW::label_type_t::CS)
                 .set_finish_example(::finish_example)
                 .build();
 

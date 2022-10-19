@@ -8,6 +8,7 @@
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -223,7 +224,7 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
                 .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
                 .set_finish_example(::finish_example)
-                .set_input_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 
   return make_base(*l);

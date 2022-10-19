@@ -6,6 +6,7 @@
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"

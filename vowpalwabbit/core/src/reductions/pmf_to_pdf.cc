@@ -9,6 +9,7 @@
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/guard.h"
+#include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -250,7 +251,7 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
                 .set_output_prediction_type(VW::prediction_type_t::pdf)
-                .set_input_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 // .set_output_label_type(label_type_t::cb)
                 // .set_input_prediction_type(prediction_type_t::action_scores)
                 .build();

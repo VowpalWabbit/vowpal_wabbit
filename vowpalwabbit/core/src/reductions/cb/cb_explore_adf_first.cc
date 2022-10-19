@@ -6,8 +6,10 @@
 
 #include "vw/config/options.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -132,8 +134,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_first_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
                 .set_output_prediction_type(VW::prediction_type_t::action_probs)
                 .set_params_per_weight(problem_multiplier)

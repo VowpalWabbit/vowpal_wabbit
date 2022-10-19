@@ -7,7 +7,9 @@
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/setup_base.h"
 
 #include <cfloat>
@@ -1536,7 +1538,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 
   auto* bare = g.get();
   learner<GD::gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
-      stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                                         .set_learn_returns_prediction(true)
                                         .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                                         .set_sensitivity(bare->sensitivity)

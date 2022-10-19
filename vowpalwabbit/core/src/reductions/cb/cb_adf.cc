@@ -90,6 +90,8 @@ VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
   return ret;
 }
 
+const VW::version_struct* cb_adf::get_model_file_ver() const { return &_all->model_file_ver; }
+
 void cb_adf::learn_ips(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_ips(examples, _cs_labels, _all->logger, _clip_p);
@@ -522,8 +524,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   CB_ADF::cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
   auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cs)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CS)
                 .set_input_prediction_type(VW::prediction_type_t::action_scores)
                 .set_output_prediction_type(VW::prediction_type_t::action_scores)
                 .set_learn_returns_prediction(lrp)

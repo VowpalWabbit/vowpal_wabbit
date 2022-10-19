@@ -3,8 +3,10 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/oja_newton.h"
 
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/gd.h"
@@ -568,7 +570,7 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(oja_newton_ptr->m + 2))));
 
   auto* l = make_base_learner(std::move(oja_newton_ptr), learn, predict,
-      stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::scalar, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(all.weights.stride())
                 .set_save_load(save_load)
                 .set_finish_example(keep_example)
