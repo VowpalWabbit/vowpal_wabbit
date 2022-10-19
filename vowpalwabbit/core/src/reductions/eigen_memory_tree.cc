@@ -103,8 +103,8 @@ struct tree_example
 
   tree_example()
   {
-    base = new flat_example();
-    full = new flat_example();
+    base = nullptr;
+    full = nullptr;
     score = 0;
     label = 0;
     tag = -1;
