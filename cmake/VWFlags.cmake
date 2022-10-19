@@ -12,7 +12,7 @@ if(LTO)
   set(VW_LINUX_FLAGS ${VW_LINUX_FLAGS} -flto=thin)
 endif()
 
-if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" AND NOT "arm64" IN_LIST ${CMAKE_TOOLCHAIN_FILE} )
   set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
 endif()
 
