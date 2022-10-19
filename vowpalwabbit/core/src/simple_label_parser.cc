@@ -86,7 +86,9 @@ VW::label_parser simple_label_parser_global = {
       return bytes;
     },
     // get_weight
-    [](const VW::polylabel& /*label*/, const VW::reduction_features& red_features) { return get_weight(red_features); },
+    [](const VW::polylabel& /*label*/, const VW::reduction_features& red_features) {
+      return ::get_weight(red_features);
+    },
     // test_label
     [](const VW::polylabel& label) { return test_label(label.simple); },
     // label type

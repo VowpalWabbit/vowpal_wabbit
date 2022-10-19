@@ -173,8 +173,6 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 #define add_passthrough_feature(ec, i, x) \
   VW::add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
 
-using multi_ex = std::vector<example*>;
-
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
 using example_factory_t = example& (*)(void*);

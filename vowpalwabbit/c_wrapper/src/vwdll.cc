@@ -4,6 +4,7 @@
 
 #include "vw/c_wrapper/vwdll.h"
 
+#include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parser.h"

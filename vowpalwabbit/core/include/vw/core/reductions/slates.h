@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "vw/core/learner_fwd.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw_fwd.h"
 

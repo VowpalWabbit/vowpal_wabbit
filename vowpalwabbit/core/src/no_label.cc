@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/no_label.h"
+#include "vw/core/vw_string_view_fmt.h"
 
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"

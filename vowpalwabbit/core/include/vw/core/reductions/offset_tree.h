@@ -4,7 +4,10 @@
 
 #pragma once
 
+#include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
+
+#include <cstdint>
 
 namespace VW
 {

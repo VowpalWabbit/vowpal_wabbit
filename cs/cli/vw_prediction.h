@@ -6,6 +6,8 @@
 
 #include "vw_clr.h"
 
+#include "vw/core/prediction_type.h"
+
 namespace VW
 {
 ref class VowpalWabbitExample;

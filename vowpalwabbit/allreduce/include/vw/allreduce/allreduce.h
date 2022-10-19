@@ -45,6 +45,7 @@ using socket_t = int;
 #  include <future>
 #endif
 
+#include "vw/allreduce/allreduce_type.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/vw_exception.h"
 #include "vw/io/logger.h"
@@ -93,12 +94,6 @@ void addbufs(T* buf1, const T* buf2, const size_t n)
 }
 
 }  // namespace details
-
-enum class all_reduce_type
-{
-  SOCKET,
-  THREAD
-};
 
 class all_reduce_base
 {

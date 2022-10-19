@@ -6,8 +6,10 @@
 
 #include "vw/config/options.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"

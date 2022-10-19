@@ -13,6 +13,8 @@
 #include "vw/core/text_utils.h"
 #include "vw/io/logger.h"
 
+#include <fmt/ostream.h>
+
 #include <iostream>
 
 template <typename LabelPrintFunc>

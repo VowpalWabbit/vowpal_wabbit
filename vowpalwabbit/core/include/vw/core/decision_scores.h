@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "vw/core/action_score.h"
 #include "vw/core/constant.h"
 #include "vw/core/v_array.h"
 

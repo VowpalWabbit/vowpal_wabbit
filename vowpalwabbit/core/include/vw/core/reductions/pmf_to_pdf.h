@@ -6,6 +6,7 @@
 
 #include "vw/core/action_score.h"
 #include "vw/core/cb.h"
+#include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
 namespace VW
