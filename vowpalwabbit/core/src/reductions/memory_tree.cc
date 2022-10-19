@@ -1062,7 +1062,8 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
       }
       else
       {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << ", avg f1 score: " << b.f1_score * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter
+                  << ", avg f1 score: " << b.f1_score * 1. / b.iter << std::endl;
       }
     }
 
@@ -1076,7 +1077,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
       if (b.online == 1)
       {
         update_rew(b, base, static_cast<uint32_t>(b.examples.size() - 1),
-          *b.examples[b.examples.size() - 1]);  // query and learn
+            *b.examples[b.examples.size() - 1]);  // query and learn
       }
 
       insert_example(b, base, static_cast<uint32_t>(b.examples.size() - 1));  // unsupervised learning.
