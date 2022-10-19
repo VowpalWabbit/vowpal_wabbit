@@ -72,7 +72,7 @@ struct tree
   bool test_only;  // indicates that learning should not occur
 
   int32_t tree_bound;   // how many memories before bounding the tree
-  uint32_t leaf_split;   // how many memories before splitting a leaf node
+  uint32_t leaf_split;  // how many memories before splitting a leaf node
   int32_t scorer_type;  // 1: random, 2: distance, 3: self-consistent rank, 4: not self-consistent rank
   int32_t router_type;  // 1: random approximation, 2: oja method
 

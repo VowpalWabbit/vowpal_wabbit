@@ -22,9 +22,7 @@ tree* get_emt_tree(VW::workspace& all)
   std::vector<std::string> e_r;
   all.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "eigen_memory_tree") == e_r.end())
-  {
-    BOOST_FAIL("Eigen memory tree not found in enabled reductions");
-  }
+  { BOOST_FAIL("Eigen memory tree not found in enabled reductions"); }
 
   VW::LEARNER::single_learner* emt = as_singleline(all.l->get_learner_by_name_prefix("eigen_memory_tree"));
 

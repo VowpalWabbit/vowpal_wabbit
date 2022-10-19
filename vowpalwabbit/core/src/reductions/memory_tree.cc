@@ -644,7 +644,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW
 
       if (score > max_score)
       {
-        b.examples[loc]->confidence = 1-exp(-score);
+        b.examples[loc]->confidence = 1 - exp(-score);
         max_score = score;
         max_pos = static_cast<int64_t>(loc);
       }
@@ -719,7 +719,8 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
   if (b.oas == 0)
   {
     closest_ec = pick_nearest(b, base, cn, ec);
-    if (closest_ec != -1) {
+    if (closest_ec != -1)
+    {
       ec.confidence = b.examples[closest_ec]->confidence;
       ec.pred.multiclass = b.examples[closest_ec]->l.multi.label;
     }
@@ -734,8 +735,6 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
       ec.loss = ec.weight;
       b.num_mistakes++;
     }
-
-    
   }
   else
   {
@@ -1076,7 +1075,8 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
       b.examples.push_back(new_ec);
       if (b.online == 1)
       {
-        update_rew(b, base, static_cast<uint32_t>(b.examples.size() - 1), *b.examples[b.examples.size() - 1]);  // query and learn
+        update_rew(b, base, static_cast<uint32_t>(b.examples.size() - 1),
+          *b.examples[b.examples.size() - 1]);  // query and learn
       }
 
       insert_example(b, base, static_cast<uint32_t>(b.examples.size() - 1));  // unsupervised learning.
@@ -1099,7 +1099,8 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
       { std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl; }
       else
       {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << ", avg f1 score: " << b.f1_score * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter
+                  << ", avg f1 score: " << b.f1_score * 1. / b.iter << std::endl;
       }
     }
   }
@@ -1109,9 +1110,7 @@ void end_pass(memory_tree& b)
 {
   b.current_pass++;
   if (!b.all->quiet)
-  {
-    std::cout << "##### Pass: " << b.current_pass << ", with " << b.examples.size() << " memories." << std::endl;
-  }
+  { std::cout << "##### Pass: " << b.current_pass << ", with " << b.examples.size() << " memories." << std::endl; }
 }
 
 ///////////////////Save & Load//////////////////////////////////////

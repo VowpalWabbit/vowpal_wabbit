@@ -41,7 +41,10 @@ float median(std::vector<float>& array)
   std::sort(array.begin(), array.end());
 
   if (size % 2 == 0) { return (array[size / 2 - 1] + array[size / 2]) / 2; }
-  else { return array[size / 2]; }
+  else
+  {
+    return array[size / 2];
+  }
 }
 
 float variance(std::vector<float>& array)
@@ -155,11 +158,9 @@ public:
     // item is in map already so we move it to the front of the line
     else
     {
-      auto item_list_reference = (*item_map_reference).second;
+      V item_list_reference = (*item_map_reference).second;
       if (item_list_reference != list.begin())
-      {
-        list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference));
-      }
+      { list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference)); }
     }
 
     if (list.size() > max_size)
@@ -169,7 +170,10 @@ public:
       map.erase(last_value);
       return last_value;
     }
-    else { return nullptr; }
+    else
+    {
+      return nullptr;
+    }
   }
 };
 
@@ -205,13 +209,13 @@ struct tree
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
 
-  uint32_t iter;  // how many times we've 'learned'
+  uint32_t iter;   // how many times we've 'learned'
   uint32_t depth;  // how deep the tree is
   uint32_t pass;   // what pass we are on for the data
   bool test_only;  // indicates that learning should not occur
 
   int32_t tree_bound;   // how many memories before bounding the tree
-  uint32_t leaf_split;   // how many memories before splitting a leaf node
+  uint32_t leaf_split;  // how many memories before splitting a leaf node
   int32_t scorer_type;  // 1: random, 2: distance, 3: self-consistent rank, 4: not self-consistent rank
   int32_t router_type;  // 1: random approximation, 2: oja method
 
@@ -377,8 +381,14 @@ void scorer_features(features& f1, features& f2, features& out, int feature_type
     {
       float value = 0;
       if (feature_type == 1) { value = my_abs(f1_val - f2_val); }
-      else if (feature_type == 2) { value = f1_val - f2_val; }
-      else { THROW("An unrecognized feature type was provided.") }
+      else if (feature_type == 2)
+      {
+        value = f1_val - f2_val;
+      }
+      else
+      {
+        THROW("An unrecognized feature type was provided.")
+      }
 
       out.values.push_back(value);
       out.indices.push_back(index);
@@ -463,9 +473,7 @@ void scorer_example(tree& b, tree_example& ex1, tree_example& ex2, VW::example& 
 float scorer_predict(tree& b, single_learner& base, tree_example& pred_ex, tree_example& leaf_ex)
 {
   if (b.scorer_type == 1)  // random scorer
-  {
-    return b._random_state->get_and_update_random();
-  }
+  { return b._random_state->get_and_update_random(); }
 
   if (b.scorer_type == 2)  // dist scorer
   {
@@ -699,7 +707,10 @@ void node_split(tree& b, single_learner& base, node& cn)
     best_decision = median(projs);
   }
 
-  else { THROW("An unrecognized router type was provided.") }
+  else
+  {
+    THROW("An unrecognized router type was provided.")
+  }
 
   auto left = new node();
   auto right = new node();
