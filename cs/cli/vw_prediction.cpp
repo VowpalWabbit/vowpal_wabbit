@@ -6,6 +6,7 @@
 #include "vw_example.h"
 #include "vw_base.h"
 #include "vowpalwabbit.h"
+#include "vw/core/learner.h"
 
 namespace VW
 {
