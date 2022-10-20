@@ -143,8 +143,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i
       predict_or_learn<false>, stack_builder.get_setupfn_name(cb_explore_pdf_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CONTINUOUS)
-                .set_input_prediction_type(VW::prediction_type_t::pdf)
-                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_input_prediction_type(VW::prediction_type_t::PDF)
+                .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .build(&all.logger);
   return make_base(*l);
 }

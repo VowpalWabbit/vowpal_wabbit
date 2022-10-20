@@ -374,7 +374,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   void (*finish_ptr)(VW::workspace&, oaa&, VW::example&);
   if (probabilities || scores)
   {
-    pred_type = VW::prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::SCALARS;
     if (probabilities)
     {
       auto loss_function_type = all.loss->get_type();
@@ -400,7 +400,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   }
   else
   {
-    pred_type = VW::prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::MULTICLASS;
     finish_ptr = VW::details::finish_multiclass_example<oaa>;
     if (all.raw_prediction != nullptr)
     {
