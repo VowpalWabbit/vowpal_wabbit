@@ -142,8 +142,6 @@ std::unique_ptr<options_cb_to_cb_adf_v1> get_cb_to_cb_adf_options_instance(
 
   options.add_and_parse(new_options);
 
-  if (cb_to_cb_adf_opts->num_actions <= 0) { THROW("cb num actions must be positive"); }
-
   if (options.was_supplied("cb_to_cbadf"))
   {
     logger.out_warn(
@@ -201,6 +199,9 @@ std::unique_ptr<options_cb_to_cb_adf_v1> get_cb_to_cb_adf_options_instance(
     // force cb_adf; cb_adf will pick up cb_type
     options.insert("cb_adf", "");
   }
+
+  if (cb_to_cb_adf_opts->num_actions <= 0) { THROW("cb num actions must be positive"); }
+
   return cb_to_cb_adf_opts;
 }
 
