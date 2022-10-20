@@ -15,25 +15,25 @@ VW::string_view VW::to_string(VW::label_type_t label_type)
   switch (label_type)
   {
     case label_type_t::SIMPLE:
-      return "label_type_t::simple";
+      return "label_type_t::SIMPLE";
     case label_type_t::CB:
-      return "label_type_t::cb";
+      return "label_type_t::CB";
     case label_type_t::CB_EVAL:
-      return "label_type_t::cb_eval";
+      return "label_type_t::CB_EVAL";
     case label_type_t::CS:
-      return "label_type_t::cs";
+      return "label_type_t::CS";
     case label_type_t::MULTILABEL:
-      return "label_type_t::multilabel";
+      return "label_type_t::MULTILABEL";
     case label_type_t::MULTICLASS:
-      return "label_type_t::multiclass";
+      return "label_type_t::MULTICLASS";
     case label_type_t::CCB:
-      return "label_type_t::ccb";
+      return "label_type_t::CCB";
     case label_type_t::SLATES:
-      return "label_type_t::slates";
+      return "label_type_t::SLATES";
     case label_type_t::NOLABEL:
-      return "label_type_t::nolabel";
+      return "label_type_t::NOLABEL";
     case label_type_t::CONTINUOUS:
-      return "label_type_t::continuous";
+      return "label_type_t::CONTINUOUS";
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`

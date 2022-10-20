@@ -8,7 +8,7 @@ learning rate = 0.5
 initial_t = 20
 power_t = 0.5
 Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger, search_task
-Input label = multiclass
+Input label = MULTICLASS
 Output pred = multiclass
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
