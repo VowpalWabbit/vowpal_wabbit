@@ -11,7 +11,7 @@ power_t = 0.5
 decay_learning_rate = 1
 Enabled reductions: bfgs, scorer-identity, count_label
 Input label = SIMPLE
-Output pred = scalar
+Output pred = SCALAR
  1 0.00000   	0.00000   	0.00000   	          	          	          	0.00000   	0.00000   	0.00000
 
 finished run

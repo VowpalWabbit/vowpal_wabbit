@@ -250,10 +250,10 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
-                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 // .set_output_label_type(label_type_t::CB)
-                // .set_input_prediction_type(prediction_type_t::action_scores)
+                // .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
                 .build();
   return make_base(*l);
 }

@@ -11,7 +11,7 @@ initial_t = 0
 power_t = 0.5
 Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, cb_explore-greedy, cbify-reg-discrete, count_label
 Input label = SIMPLE
-Output pred = scalar
+Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.155380 0.155380            1            1.0      3879.0000       185.0000       10

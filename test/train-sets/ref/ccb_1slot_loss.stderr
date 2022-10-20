@@ -8,7 +8,7 @@ power_t = 0.5
 cb_type = ips
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
 Input label = CCB
-Output pred = decision_probs
+Output pred = DECISION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 -2.00000 -2.00000            1            1.0      2:-3,0:-1            2,0       30

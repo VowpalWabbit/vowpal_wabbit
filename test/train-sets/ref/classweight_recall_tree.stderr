@@ -8,7 +8,7 @@ initial_t = 0
 power_t = 0.5
 Enabled reductions: gd, scorer-identity, recall_tree, classweight-multi
 Input label = MULTICLASS
-Output pred = multiclass
+Output pred = MULTICLASS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 1.000000 1.000000            1            1.0              1              0        2

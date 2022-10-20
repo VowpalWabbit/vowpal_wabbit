@@ -725,19 +725,19 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   if (ld->rank)
   {
     name_addition = "-rank";
-    pred_type = VW::prediction_type_t::action_scores;
+    pred_type = VW::prediction_type_t::ACTION_SCORES;
     pred_ptr = predict_csoaa_ldf_rank;
   }
   else if (ld->is_probabilities)
   {
     name_addition = "-prob";
-    pred_type = VW::prediction_type_t::prob;
+    pred_type = VW::prediction_type_t::PROB;
     pred_ptr = predict_csoaa_ldf;
   }
   else
   {
     name_addition = "";
-    pred_type = VW::prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::MULTICLASS;
     pred_ptr = predict_csoaa_ldf;
   }
 

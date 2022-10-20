@@ -11,7 +11,7 @@ power_t = 0.5
 decay_learning_rate = 1
 Enabled reductions: freegrad, scorer-identity, count_label
 Input label = SIMPLE
-Output pred = scalar
+Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 1.000000 1.000000            1            1.0         1.0000         0.0000       51

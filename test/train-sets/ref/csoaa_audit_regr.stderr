@@ -8,7 +8,7 @@ learning rate = 0.5
 initial_t = 60
 power_t = 0.5
 Input label = CS
-Output pred = multiclass
+Output pred = MULTICLASS
 Regressor contains 18 values
 example     values        total
 counter    audited     progress

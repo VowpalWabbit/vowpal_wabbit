@@ -282,7 +282,7 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(::finish_example)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .build();
 
   return make_base(*l);

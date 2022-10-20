@@ -8,7 +8,7 @@ power_t = 0.5
 decay_learning_rate = 1
 Enabled reductions: lda
 Input label = NOLABEL
-Output pred = scalars
+Output pred = SCALARS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 12.81377 12.81377            1            1.0           none              0      201

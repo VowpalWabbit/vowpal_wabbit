@@ -9,7 +9,7 @@ power_t = 0.5
 decay_learning_rate = 1
 Enabled reductions: gd, generate_interactions, scorer-identity, bootstrap, oaa
 Input label = MULTICLASS
-Output pred = multiclass
+Output pred = MULTICLASS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.000000 0.000000            1            1.0              1              1        3

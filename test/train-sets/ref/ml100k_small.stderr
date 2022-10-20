@@ -11,7 +11,7 @@ power_t = 0
 decay_learning_rate = 0.97
 Enabled reductions: rank, scorer-identity, count_label
 Input label = SIMPLE
-Output pred = scalar
+Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 3.295105 3.295105            1            1.0         2.0000         0.1848       23

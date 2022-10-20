@@ -78,8 +78,8 @@ VW::LEARNER::base_learner* VW::reductions::binary_setup(setup_base_i& stack_buil
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(binary_setup))
                  .set_input_label_type(label_type_t::SIMPLE)
                  .set_output_label_type(label_type_t::SIMPLE)
-                 .set_input_prediction_type(prediction_type_t::scalar)
-                 .set_output_prediction_type(prediction_type_t::scalar)
+                 .set_input_prediction_type(prediction_type_t::SCALAR)
+                 .set_output_prediction_type(prediction_type_t::SCALAR)
                  .set_learn_returns_prediction(true)
                  .build();
 

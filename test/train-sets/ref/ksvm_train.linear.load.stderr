@@ -10,7 +10,7 @@ initial_t = 0
 power_t = 0.5
 Enabled reductions: ksvm, scorer-identity, count_label
 Input label = SIMPLE
-Output pred = scalar
+Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.000000 0.000000            1            1.0         1.0000         1.0701       50

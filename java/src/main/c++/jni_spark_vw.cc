@@ -1000,7 +1000,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
   jmethodID ctr;
   switch (all->l->get_output_prediction_type())
   {
-    case VW::prediction_type_t::scalar:
+    case VW::prediction_type_t::SCALAR:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -1009,7 +1009,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
 
-    case VW::prediction_type_t::prob:
+    case VW::prediction_type_t::PROB:
       predClass = env->FindClass("java/lang/Float");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -1018,7 +1018,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.prob);
 
-    case VW::prediction_type_t::multiclass:
+    case VW::prediction_type_t::MULTICLASS:
       predClass = env->FindClass("java/lang/Integer");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -1027,25 +1027,25 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.multiclass);
 
-    case VW::prediction_type_t::scalars:
+    case VW::prediction_type_t::SCALARS:
       return scalars_predictor(ex, env);
 
-    case VW::prediction_type_t::action_probs:
+    case VW::prediction_type_t::ACTION_PROBS:
       return action_probs_prediction(ex, env);
 
-    case VW::prediction_type_t::action_scores:
+    case VW::prediction_type_t::ACTION_SCORES:
       return action_scores_prediction(ex, env);
 
-    case VW::prediction_type_t::multilabels:
+    case VW::prediction_type_t::MULTILABELS:
       return multilabel_predictor(ex, env);
 
-    case VW::prediction_type_t::decision_probs:
+    case VW::prediction_type_t::DECISION_PROBS:
       return decision_scores_prediction(ex, env);
 
-    case VW::prediction_type_t::pdf:
+    case VW::prediction_type_t::PDF:
       return probability_density_function(ex, env);
 
-    case VW::prediction_type_t::action_pdf_value:
+    case VW::prediction_type_t::ACTION_PDF_VALUE:
       return probability_density_function_value(ex, env);
 
     default:

@@ -6,7 +6,7 @@ learning rate = 0.5
 initial_t = 200
 power_t = 0.5
 Input label = SIMPLE
-Output pred = scalar
+Output pred = SCALAR
 Regressor contains 4287 values
 example     values        total
 counter    audited     progress
