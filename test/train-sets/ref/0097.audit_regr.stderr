@@ -5,7 +5,7 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 200
 power_t = 0.5
-Input label = simple
+Input label = SIMPLE
 Output pred = SCALAR
 Regressor contains 4287 values
 example     values        total

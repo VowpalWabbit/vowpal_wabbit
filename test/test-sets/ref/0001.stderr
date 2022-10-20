@@ -8,7 +8,7 @@ learning rate = 20
 initial_t = 129600
 power_t = 1
 Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
+Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features

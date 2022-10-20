@@ -6,7 +6,7 @@ learning rate = 1
 initial_t = 0
 power_t = 0.5
 Enabled reductions: lda
-Input label = nolabel
+Input label = NOLABEL
 Output pred = SCALARS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features

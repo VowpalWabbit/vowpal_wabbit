@@ -10,7 +10,7 @@ initial_t = 1
 power_t = 0
 decay_learning_rate = 0.97
 Enabled reductions: rank, scorer-identity, count_label
-Input label = simple
+Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
