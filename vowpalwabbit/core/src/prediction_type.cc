@@ -16,19 +16,19 @@ VW::string_view VW::to_string(prediction_type_t prediction_type)
 
   switch (prediction_type)
   {
-    CASE(prediction_type_t::scalar) // NOLINT
-    CASE(prediction_type_t::scalars) // NOLINT
-    CASE(prediction_type_t::action_scores) // NOLINT
-    CASE(prediction_type_t::pdf) // NOLINT
-    CASE(prediction_type_t::action_probs) // NOLINT
-    CASE(prediction_type_t::multiclass) // NOLINT
-    CASE(prediction_type_t::multilabels) // NOLINT
-    CASE(prediction_type_t::prob) // NOLINT
-    CASE(prediction_type_t::multiclassprobs) // NOLINT
-    CASE(prediction_type_t::decision_probs) // NOLINT
-    CASE(prediction_type_t::action_pdf_value) // NOLINT
-    CASE(prediction_type_t::active_multiclass) // NOLINT
-    CASE(prediction_type_t::nopred) // NOLINT
+    CASE(prediction_type_t::scalar)             // NOLINT
+    CASE(prediction_type_t::scalars)            // NOLINT
+    CASE(prediction_type_t::action_scores)      // NOLINT
+    CASE(prediction_type_t::pdf)                // NOLINT
+    CASE(prediction_type_t::action_probs)       // NOLINT
+    CASE(prediction_type_t::multiclass)         // NOLINT
+    CASE(prediction_type_t::multilabels)        // NOLINT
+    CASE(prediction_type_t::prob)               // NOLINT
+    CASE(prediction_type_t::multiclassprobs)    // NOLINT
+    CASE(prediction_type_t::decision_probs)     // NOLINT
+    CASE(prediction_type_t::action_pdf_value)   // NOLINT
+    CASE(prediction_type_t::active_multiclass)  // NOLINT
+    CASE(prediction_type_t::nopred)             // NOLINT
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`
