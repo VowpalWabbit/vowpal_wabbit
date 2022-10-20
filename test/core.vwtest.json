@@ -3144,7 +3144,7 @@
   },
   {
     "id": 244,
-    "desc": "Flatbuffer CB_eval test",
+    "desc": "Flatbuffer CB_EVAL test",
     "vw_command": "-d train-sets/rcv1_cb_eval.fb --cb 2 --eval --flatbuffer",
     "diff_files": {
       "stderr": "train-sets/ref/rcv1_cb_eval_fb.stderr",
