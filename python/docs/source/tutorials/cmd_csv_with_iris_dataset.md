@@ -88,7 +88,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 Enabled reductions: gd, scorer-identity, oaa
-Input label = multiclass
+Input label = MULTICLASS
 Output pred = multiclass
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
@@ -164,7 +164,7 @@ learning rate = 0.5
 initial_t = 150
 power_t = 0.5
 Enabled reductions: gd, scorer-identity, oaa
-Input label = multiclass
+Input label = MULTICLASS
 Output pred = multiclass
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
