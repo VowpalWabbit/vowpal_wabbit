@@ -107,8 +107,10 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+
   VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(
-      &vw, d, 50, 1 << vw.num_bits, /*thread_pool_size*/ 0, /*block_size*/ 0);
+      &vw, d, seed, 1 << vw.num_bits, /*thread_pool_size*/ 0, /*block_size*/ 0);
 
   {
     VW::multi_ex examples;
@@ -157,8 +159,10 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+
   VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(
-      &vw, d, 50, 1 << vw.num_bits, /*thread_pool_size*/ 0, /*block_size*/ 0);
+      &vw, d, seed, 1 << vw.num_bits, /*thread_pool_size*/ 0, /*block_size*/ 0);
 
   {
     VW::multi_ex examples;
@@ -364,6 +368,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
       // Generate Omega
       std::vector<Eigen::Triplet<float>> omega_triplets;
       uint64_t max_ft_index = 0;
+
       uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
 
       for (uint64_t action_index = 0; action_index < num_actions; action_index++)
@@ -375,7 +380,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
         {
           for (uint64_t col = 0; col < d; col++)
           {
-            auto combined_index = action_index + col + seed;
+            uint64_t combined_index = action_index + col + seed;
             auto mm = merand48_boxmuller(combined_index);
             omega_triplets.push_back(Eigen::Triplet<float>(action_index, col, mm));
           }
@@ -521,6 +526,8 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
     BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
     {
+      uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+
       VW::multi_ex examples;
 
       examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
@@ -533,17 +540,15 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
       VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore.impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore.impl.generate_B(examples, action_space->explore.shrink_factors);
-      VW::cb_explore_adf::generate_Z(examples, action_space->explore.impl.Z, action_space->explore.impl.B, d, 50);
+      VW::cb_explore_adf::generate_Z(examples, action_space->explore.impl.Z, action_space->explore.impl.B, d, seed);
 
       Eigen::MatrixXf P(d, d);
-
-      uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
 
       for (size_t row = 0; row < d; row++)
       {
         for (size_t col = 0; col < d; col++)
         {
-          auto combined_index = row + col + seed;
+          auto combined_index = row + col + static_cast<uint64_t>(seed);
           auto mm = merand48_boxmuller(combined_index);
           P(row, col) = mm;
         }
@@ -632,7 +637,7 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
 
     BOOST_CHECK_SMALL(
         ((diag_M * action_space->explore._A) -
-            action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
+            action_space->explore.U * action_space->explore.S.asDiagonal() * action_space->explore._V.transpose())
             .norm(),
         FLOAT_TOL);
 
@@ -641,8 +646,8 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
     Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Eigen::VectorXf S = svd.singularValues();
 
-    for (size_t i = 0; i < action_space->explore._S.rows(); i++)
-    { BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL); }
+    for (size_t i = 0; i < action_space->explore.S.rows(); i++)
+    { BOOST_CHECK_SMALL(S(i) - action_space->explore.S(i), FLOAT_TOL); }
 
     vw.finish_example(examples);
   }

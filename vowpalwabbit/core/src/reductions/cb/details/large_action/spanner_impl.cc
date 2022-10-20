@@ -34,17 +34,17 @@ void spanner_state::find_max_volume(
   assert(max_volume >= 0.0f);
 }
 
-void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>&)
+void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t num_actions_in_spanner, const std::vector<float>&)
 {
   // Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
   // Awerbuch & Kleinberg STOC'04: https://www.cs.cornell.edu/~rdk/papers/OLSP.pdf
 
   // The size of U is K x d, where K is the total number of all actions.
-  assert(static_cast<uint64_t>(U.cols()) == _d);
-  _X.setIdentity(_d, _d);
+  assert(static_cast<uint64_t>(U.cols()) >= num_actions_in_spanner);
+  _X.setIdentity(num_actions_in_spanner, U.cols());
 
   // Compute a basis contained in U.
-  for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
+  for (uint64_t X_rid = 0; X_rid < num_actions_in_spanner; ++X_rid)
   {
     float max_volume = -1.0f;
     uint64_t U_rid = 0;
@@ -55,14 +55,14 @@ void spanner_state::compute_spanner(const Eigen::MatrixXf& U, size_t _d, const s
 
   // Transform the basis into C-approximate spanner.
   // According to the paper, the total number of iterations needed is O(d*log_c(d)).
-  const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
+  const int max_iterations = static_cast<int>(num_actions_in_spanner * std::log(num_actions_in_spanner) / std::log(_c));
   float X_volume = std::abs(_X.determinant());
   for (int iter = 0; iter < max_iterations; ++iter)
   {
     bool found_larger_volume = false;
 
     // If replacing some row in X results in larger volume, replace it with the row from U.
-    for (uint64_t X_rid = 0; X_rid < _d; ++X_rid)
+    for (uint64_t X_rid = 0; X_rid < num_actions_in_spanner; ++X_rid)
     {
       float max_volume = -1.0f;
       uint64_t U_rid = 0;

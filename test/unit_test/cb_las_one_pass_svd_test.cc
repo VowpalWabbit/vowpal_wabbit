@@ -25,16 +25,16 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
   std::vector<VW::workspace*> vws;
 
   auto* vw_zero_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+          std::to_string(d) + " --quiet --random_seed 5 --thread_pool_size 0",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_zero_threads);
 
-  auto* vw_2_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --thread_pool_size 2",
+  auto* vw_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back(vw_2_threads);
+  vws.push_back(vw_threads);
 
   for (auto* vw_ptr : vws)
   {
@@ -86,16 +86,16 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
   std::vector<VW::workspace*> vws;
 
   auto* vw_zero_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --noconstant",
+          std::to_string(d) + " --quiet --random_seed 5 --thread_pool_size 0 --noconstant",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_zero_threads);
 
-  auto* vw_2_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --noconstant --thread_pool_size 2",
+  auto* vw_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --noconstant",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back(vw_2_threads);
+  vws.push_back(vw_threads);
 
   for (auto* vw_ptr : vws)
   {
@@ -137,12 +137,6 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 
       vw.finish_example(examples);
     }
-
-    // After the decomposition, the linear combination in the representation of the action in U is maintained for the
-    // number of columns that have a non-close-to-zero singular value, and then the linear combination in the
-    // representation breaks
-    auto non_degenerate_singular_values = action_space->explore.number_of_non_degenerate_singular_values();
-    action_space->explore._test_only_set_rank(non_degenerate_singular_values);
 
     {
       VW::multi_ex examples;
