@@ -8,7 +8,7 @@ initial_t = 8
 power_t = 0.5
 cb_type = mtr
 Enabled reductions: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
-Input label = ccb
+Input label = CCB
 Output pred = decision_probs
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
