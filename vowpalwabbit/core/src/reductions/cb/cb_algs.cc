@@ -198,6 +198,7 @@ std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(
     case VW::cb_type_t::sm:
       logger.err_warn(
           "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", cb_algs_opts->type_string);
+      cb_algs_opts->type_string = "dr";
       break;
   }
 
