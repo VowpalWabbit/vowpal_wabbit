@@ -88,13 +88,8 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 Enabled reductions: gd, scorer-identity, oaa
-<<<<<<< HEAD
-Input label = multiclass
-Output pred = MULTICLASS
-=======
 Input label = MULTICLASS
-Output pred = multiclass
->>>>>>> upstream/master
+Output pred = MULTICLASS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.000000 0.000000            1            1.0         setosa         setosa        5
@@ -169,13 +164,8 @@ learning rate = 0.5
 initial_t = 150
 power_t = 0.5
 Enabled reductions: gd, scorer-identity, oaa
-<<<<<<< HEAD
-Input label = multiclass
-Output pred = MULTICLASS
-=======
 Input label = MULTICLASS
-Output pred = multiclass
->>>>>>> upstream/master
+Output pred = MULTICLASS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 [warning] No '_label' column found in the header/CSV first line!

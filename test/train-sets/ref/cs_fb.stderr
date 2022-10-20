@@ -6,13 +6,8 @@ learning rate = 10
 initial_t = 1
 power_t = 0.5
 Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger
-<<<<<<< HEAD
-Input label = cs
-Output pred = MULTICLASS
-=======
 Input label = CS
-Output pred = multiclass
->>>>>>> upstream/master
+Output pred = MULTICLASS
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 1.000000 1.000000            1            1.0    known        1       12

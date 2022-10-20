@@ -7,13 +7,8 @@ initial_t = 0
 power_t = 0.5
 cb_type = dr
 Enabled reductions: gd, scorer-identity, csoaa, cb
-<<<<<<< HEAD
-Input label = cb
-Output pred = MULTICLASS
-=======
 Input label = CB
-Output pred = multiclass
->>>>>>> upstream/master
+Output pred = MULTICLASS
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 2.000000 2.000000            1            1.0  1:1:0.5        1       50
