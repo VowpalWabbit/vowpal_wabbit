@@ -104,24 +104,23 @@ void finish_example(VW::workspace& all, cb_to_cb_adf& c, VW::example& ec)
   VW::finish_example(all, ec);
 }
 
-struct cb_to_cb_adf_options_instance_v1
+struct options_cb_to_cb_adf_v1
 {
   bool compat_old_cb = false;
   bool force_legacy = false;
   uint32_t num_actions;
   uint32_t cbx_num_actions;
   uint32_t cbi_num_actions;
-  bool cb_to_cbadf_supplied;
   bool eval_supplied;
   bool override_cb_explore;
   bool override_cbify;
   bool override_cb;
 };
 
-std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_instance(
-    const VW::workspace& all, options_i& options)
+std::unique_ptr<options_cb_to_cb_adf_v1> get_cb_to_cb_adf_options_instance(
+    const VW::workspace& all, VW::io::logger& logger, options_i& options)
 {
-  auto cb_to_cb_adf_opts = VW::make_unique<cb_to_cb_adf_options_instance_v1>();
+  auto cb_to_cb_adf_opts = VW::make_unique<options_cb_to_cb_adf_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit: cb -> cb_adf");
   new_options
       .add(make_option("cb_to_cbadf", cb_to_cb_adf_opts->num_actions)
@@ -142,6 +141,16 @@ std::unique_ptr<cb_to_cb_adf_options_instance_v1> get_cb_to_cb_adf_options_insta
                .help("Default to non-adf cb implementation (cb_algs)"));
 
   options.add_and_parse(new_options);
+
+  if (cb_to_cb_adf_opts->num_actions <= 0) { THROW("cb num actions must be positive"); }
+
+  if (options.was_supplied("cb_to_cbadf"))
+  {
+    logger.out_warn(
+        "The flag --cb_to_cbadf has no effect and should not be supplied. The cb_to_cbadf reduction is automatically "
+        "enabled if cb, cb_explore or cbify are used. The cb_to_cbadf reduction can be force disabled with "
+        "--cb_force_legacy. This flag will be removed in a future release but not the functionality.");
+  }
 
   if (options.was_supplied("eval")) { return nullptr; }
 
@@ -210,16 +219,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cb_to_cb_adf_opts = get_cb_to_cb_adf_options_instance(all, options);
+  auto cb_to_cb_adf_opts = get_cb_to_cb_adf_options_instance(all, all.logger, options);
   if (cb_to_cb_adf_opts == nullptr) { return nullptr; }
-
-  if (cb_to_cb_adf_opts->cb_to_cbadf_supplied)
-  {
-    all.logger.out_warn(
-        "The flag --cb_to_cbadf has no effect and should not be supplied. The cb_to_cbadf reduction is automatically "
-        "enabled if cb, cb_explore or cbify are used. The cb_to_cbadf reduction can be force disabled with "
-        "--cb_force_legacy. This flag will be removed in a future release but not the functionality.");
-  }
 
   if (cb_to_cb_adf_opts->override_cbify)
   {
@@ -232,8 +233,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
   data->weights = &(all.weights);
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-
-  if (cb_to_cb_adf_opts->num_actions <= 0) { THROW("cb num actions must be positive"); }
 
   data->adf_data.init_adf_data(
       cb_to_cb_adf_opts->num_actions, base->increment, all.interactions, all.extent_interactions);

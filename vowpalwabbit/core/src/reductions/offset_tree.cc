@@ -261,15 +261,15 @@ void learn(VW::reductions::offset_tree::offset_tree& tree, single_learner& base,
   copy_to_action_scores(saved_scores, ec.pred.a_s);
 }
 
-struct offset_tree_options_instance_v1
+struct options_offset_tree_v1
 {
   uint32_t num_actions;
 };
 
-std::unique_ptr<offset_tree_options_instance_v1> get_offset_tree_options_instance(
-    const VW::workspace&, options_i& options)
+std::unique_ptr<options_offset_tree_v1> get_offset_tree_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
 {
-  auto offset_tree_opts = VW::make_unique<offset_tree_options_instance_v1>();
+  auto offset_tree_opts = VW::make_unique<options_offset_tree_v1>();
   option_group_definition new_options("[Reduction] Offset Tree");
 
   new_options.add(
@@ -291,7 +291,7 @@ VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& s
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto offset_tree_opts = get_offset_tree_options_instance(all, options);
+  auto offset_tree_opts = get_offset_tree_options_instance(all, all.logger, options);
   if (offset_tree_opts == nullptr) { return nullptr; }
 
   auto offset_tree_data = VW::make_unique<VW::reductions::offset_tree::offset_tree>(offset_tree_opts->num_actions);

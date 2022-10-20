@@ -136,17 +136,18 @@ void eval_finish_example(VW::workspace& all, cb& c, VW::example& ec)
   VW::finish_example(all, ec);
 }
 
-struct cb_algs_options_instance_v1
+struct options_cb_algs_v1
 {
   uint32_t num_actions;
   std::string type_string = "dr";
   bool eval = false;
   bool force_legacy = true;
+  size_t problem_multiplier = 2;  // default for DR
 };
 
-std::unique_ptr<cb_algs_options_instance_v1> get_cb_algs_options_instance(const VW::workspace&, options_i& options)
+std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(const VW::workspace&, VW::io::logger& logger, options_i& options)
 {
-  auto cb_algs_opts = VW::make_unique<cb_algs_options_instance_v1>();
+  auto cb_algs_opts = VW::make_unique<options_cb_algs_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit");
   new_options
       .add(make_option("cb", cb_algs_opts->num_actions)
@@ -180,6 +181,25 @@ std::unique_ptr<cb_algs_options_instance_v1> get_cb_algs_options_instance(const 
     ss << cb_algs_opts->num_actions;
     options.insert("csoaa", ss.str());
   }
+
+  switch (VW::cb_type_from_string(cb_algs_opts->type_string))
+  {
+    case VW::cb_type_t::dr:
+      break;
+    case VW::cb_type_t::dm:
+      if (cb_algs_opts->eval) THROW("direct method can not be used for evaluation --- it is biased.");
+      cb_algs_opts->problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::ips:
+      cb_algs_opts->problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::mtr:
+    case VW::cb_type_t::sm:
+    logger.err_warn(
+        "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", cb_algs_opts->type_string);
+      break;
+  }
+
   return cb_algs_opts;
 }
 
@@ -189,33 +209,14 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cb_algs_opts = get_cb_algs_options_instance(all, options);
+  auto cb_algs_opts = get_cb_algs_options_instance(all, all.logger, options);
   if (cb_algs_opts == nullptr) { return nullptr; }
   auto cb_algs_data = VW::make_unique<cb>(all.logger);
   cb_algs_data->cbcs.num_actions = cb_algs_opts->num_actions;
 
   cb_to_cs& c = cb_algs_data->cbcs;
 
-  size_t problem_multiplier = 2;  // default for DR
   c.cb_type = VW::cb_type_from_string(cb_algs_opts->type_string);
-  switch (c.cb_type)
-  {
-    case VW::cb_type_t::dr:
-      break;
-    case VW::cb_type_t::dm:
-      if (cb_algs_opts->eval) THROW("direct method can not be used for evaluation --- it is biased.");
-      problem_multiplier = 1;
-      break;
-    case VW::cb_type_t::ips:
-      problem_multiplier = 1;
-      break;
-    case VW::cb_type_t::mtr:
-    case VW::cb_type_t::sm:
-      cb_algs_data->logger.err_warn(
-          "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", VW::to_string(c.cb_type));
-      c.cb_type = VW::cb_type_t::dr;
-      break;
-  }
 
   auto base = as_singleline(stack_builder.setup_base_learner());
   if (cb_algs_opts->eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
@@ -228,7 +229,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   std::string name_addition = cb_algs_opts->eval ? "-eval" : "";
   auto learn_ptr = cb_algs_opts->eval ? learn_eval : predict_or_learn<true>;
   auto predict_ptr = cb_algs_opts->eval ? predict_eval : predict_or_learn<false>;
-  auto label_type = cb_algs_opts->eval ? VW::label_type_t::cb_eval : VW::label_type_t::cb;
+  auto label_type = cb_algs_opts->eval ? VW::label_type_t::CB_EVAL : VW::label_type_t::CB;
   auto finish_ex = cb_algs_opts->eval ? eval_finish_example : ::finish_example;
 
   auto* l = make_reduction_learner(std::move(cb_algs_data), base, learn_ptr, predict_ptr,
@@ -237,7 +238,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
                 .set_output_label_type(VW::label_type_t::CS)
                 .set_input_prediction_type(VW::prediction_type_t::multiclass)
                 .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_params_per_weight(problem_multiplier)
+                .set_params_per_weight(cb_algs_opts->problem_multiplier)
                 .set_learn_returns_prediction(cb_algs_opts->eval)
                 .set_finish_example(finish_ex)
                 .build(&all.logger);

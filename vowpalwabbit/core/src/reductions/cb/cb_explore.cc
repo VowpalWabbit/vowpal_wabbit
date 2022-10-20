@@ -330,7 +330,7 @@ void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB:
   print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
 }
 
-struct cb_explore_options_instance_v1
+struct options_cb_explore_v1
 {
   uint32_t num_actions;
   uint64_t tau;
@@ -345,10 +345,10 @@ struct cb_explore_options_instance_v1
   bool first_supplied;
 };
 
-std::unique_ptr<cb_explore_options_instance_v1> get_cb_explore_options_instance(
-    const VW::workspace&, options_i& options)
+std::unique_ptr<options_cb_explore_v1> get_cb_explore_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
 {
-  auto cb_explore_opts = VW::make_unique<cb_explore_options_instance_v1>();
+  auto cb_explore_opts = VW::make_unique<options_cb_explore_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit Exploration");
   new_options
       .add(make_option("cb_explore", cb_explore_opts->num_actions)
@@ -389,6 +389,8 @@ std::unique_ptr<cb_explore_options_instance_v1> get_cb_explore_options_instance(
   cb_explore_opts->epsilon_supplied = options.was_supplied("epsilon");
   cb_explore_opts->bag_supplied = options.was_supplied("bag");
   cb_explore_opts->first_supplied = options.was_supplied("first");
+  if (cb_explore_opts->epsilon < 0.0 || cb_explore_opts->epsilon > 1.0)
+  { THROW("The value of epsilon must be in [0,1]"); }
   return cb_explore_opts;
 }
 
@@ -398,7 +400,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cb_explore_opts = CB_EXPLORE::get_cb_explore_options_instance(all, options);
+  auto cb_explore_opts = CB_EXPLORE::get_cb_explore_options_instance(all, all.logger, options);
   if (cb_explore_opts == nullptr) { return nullptr; }
   auto cb_explore_data = VW::make_unique<cb_explore>(all.logger);
   cb_explore_data->cbcs.num_actions = cb_explore_opts->num_actions;
@@ -411,9 +413,6 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
 
   cb_explore_data->random_state = all.get_random_state();
   uint32_t num_actions = cb_explore_data->cbcs.num_actions;
-
-  if (cb_explore_data->epsilon < 0.0 || cb_explore_data->epsilon > 1.0)
-  { THROW("The value of epsilon must be in [0,1]"); }
 
   cb_explore_data->cbcs.cb_type = VW::cb_type_t::dr;
   cb_explore_data->model_file_version = all.model_file_ver;
