@@ -21,7 +21,7 @@ enum class prediction_type_t : uint32_t
   MULTICLASS,
   MULTILABELS,
   PROB,
-  MULICLASS_PROBS,  // not in use (technically oaa.cc)
+  MULTICLASS_PROBS,  // not in use (technically oaa.cc)
   DECISION_PROBS,
   ACTION_PDF_VALUE,
   ACTIVE_MULTICLASS,
@@ -35,7 +35,7 @@ enum class prediction_type_t : uint32_t
   multiclass VW_DEPRECATED("VW::prediction_type_t::multiclass has been renamed to VW::prediction_type_t::MULTICLASS") = MULTICLASS, // NOLINT
   multilabels VW_DEPRECATED("VW::prediction_type_t::multilabels has been renamed to VW::prediction_type_t::MULTILABELS") = MULTILABELS, // NOLINT
   prob VW_DEPRECATED("VW::prediction_type_t::prob has been renamed to VW::prediction_type_t::PROB") = PROB, // NOLINT
-  multiclassprobs VW_DEPRECATED("VW::prediction_type_t::multiclassprobs has been renamed to VW::prediction_type_t::MULICLASS_PROBS") = MULICLASS_PROBS, // NOLINT
+  multiclassprobs VW_DEPRECATED("VW::prediction_type_t::multiclassprobs has been renamed to VW::prediction_type_t::MULTICLASS_PROBS") = MULTICLASS_PROBS, // NOLINT
   decision_probs VW_DEPRECATED("VW::prediction_type_t::decision_probs has been renamed to VW::prediction_type_t::DECISION_PROBS") = DECISION_PROBS, // NOLINT
   action_pdf_value VW_DEPRECATED("VW::prediction_type_t::action_pdf_value has been renamed to VW::prediction_type_t::ACTION_PDF_VALUE") = ACTION_PDF_VALUE, // NOLINT
   active_multiclass VW_DEPRECATED("VW::prediction_type_t::active_multiclass has been renamed to VW::prediction_type_t::ACTIVE_MULTICLASS") = ACTIVE_MULTICLASS, // NOLINT
