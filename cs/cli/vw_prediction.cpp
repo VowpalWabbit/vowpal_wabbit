@@ -198,7 +198,7 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(VW::workspace* vw, 
       return VowpalWabbitPredictionType::ActionProbabilities->Create(vw, ex);
     case prediction_type_t::PROB:
       return VowpalWabbitPredictionType::Probability->Create(vw, ex);
-    case prediction_type_t::MULTICLASSprobs:
+    case prediction_type_t::MULTICLASS_PROBS:
       return VowpalWabbitPredictionType::MultiClassProbabilities->Create(vw, ex);
     case prediction_type_t::ACTIVE_MULTICLASS:
       return VowpalWabbitPredictionType::ActiveMulticlass->Create(vw, ex);

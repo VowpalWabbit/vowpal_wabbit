@@ -9,7 +9,7 @@ initial_t = 4
 power_t = 0.5
 Enabled reductions: gd, nn, lrqfa, scorer-logistic, count_label
 Input label = simple
-Output pred = scalar
+Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.126977 0.126977            1            1.0         1.0000         0.6556        6

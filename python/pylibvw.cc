@@ -477,7 +477,7 @@ size_t my_get_prediction_type(vw_ptr all)
       return pMULTILABELS;
     case VW::prediction_type_t::PROB:
       return pPROB;
-    case VW::prediction_type_t::MULTICLASSprobs:
+    case VW::prediction_type_t::MULTICLASS_PROBS:
       return pMULTICLASSPROBS;
     case VW::prediction_type_t::DECISION_PROBS:
       return pDECISION_SCORES;

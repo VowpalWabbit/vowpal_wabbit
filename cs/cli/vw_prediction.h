@@ -202,7 +202,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::MULTICLASSprobs; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::MULTICLASS_PROBS; }
   }
 };
 

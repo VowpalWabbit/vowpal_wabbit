@@ -9,7 +9,7 @@ power_t = 0.5
 cb_type = dm
 Enabled reductions: gd, scorer-identity, csoaa, cb
 Input label = cb
-Output pred = multiclass
+Output pred = MULTICLASS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 2.000000 2.000000            1            1.0        1:1:0.5              1      280
