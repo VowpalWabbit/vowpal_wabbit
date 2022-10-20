@@ -90,6 +90,8 @@ VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
   return ret;
 }
 
+const VW::version_struct* cb_adf::get_model_file_ver() const { return &_all->model_file_ver; }
+
 void cb_adf::learn_ips(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_ips(examples, _cs_labels, _all->logger, _clip_p);

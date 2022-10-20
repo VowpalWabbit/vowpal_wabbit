@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "vw/core/feature_group.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
 #include <vector>

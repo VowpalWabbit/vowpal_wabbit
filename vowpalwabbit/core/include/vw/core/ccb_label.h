@@ -11,7 +11,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/v_array.h"
 
-#include <fmt/core.h>
 #include <fmt/format.h>
 
 #include <cstdint>

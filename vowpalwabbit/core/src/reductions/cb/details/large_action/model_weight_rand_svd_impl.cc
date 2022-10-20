@@ -330,7 +330,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
 void model_weight_rand_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }
 
 void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors,
-    Eigen::MatrixXf& U, Eigen::VectorXf& _S, Eigen::MatrixXf& _V)
+    Eigen::MatrixXf& U, Eigen::VectorXf& S, Eigen::MatrixXf& _V)
 {
   uint64_t max_existing_column = 0;
   if (!generate_model_weight_Y(examples, max_existing_column, shrink_factors))
@@ -351,11 +351,11 @@ void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
   U = Z * svd.matrixU();
+  S = svd.singularValues();
 
   if (_set_testing_components)
   {
     _V = Y * svd.matrixV();
-    _S = svd.singularValues();
   }
 }
 

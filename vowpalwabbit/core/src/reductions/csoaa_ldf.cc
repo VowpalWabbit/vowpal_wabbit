@@ -9,7 +9,9 @@
 #include "vw/core/correctedMath.h"
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/label_dictionary.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/print_utils.h"
 #include "vw/core/reductions/gd.h"  // GD::foreach_feature() needed in subtract_example()
 #include "vw/core/scope_exit.h"

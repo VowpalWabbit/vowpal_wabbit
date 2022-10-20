@@ -1,12 +1,14 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
 #pragma once
 
 #include "vw/common/vw_exception.h"
 #include "vw/core/constant.h"
 #include "vw/core/example_predict.h"
 #include "vw/core/feature_group.h"
+#include "vw/core/interaction_generation_state.h"
 #include "vw/core/object_pool.h"
 
 #include <cstdint>
@@ -19,26 +21,6 @@ const static VW::audit_strings EMPTY_AUDIT_STRINGS;
 
 namespace INTERACTIONS
 {
-class feature_gen_data;
-using features_range_t = std::pair<features::const_audit_iterator, features::const_audit_iterator>;
-
-class extent_interaction_expansion_stack_item
-{
-public:
-  size_t current_term;
-  size_t prev_term;
-  size_t offset;
-  std::vector<features_range_t> so_far;
-};
-
-class generate_interactions_object_cache
-{
-public:
-  std::vector<feature_gen_data> state_data;
-  VW::moved_object_pool<extent_interaction_expansion_stack_item> frame_pool;
-  std::stack<extent_interaction_expansion_stack_item> in_process_frames;
-};
-
 /*
  * By default include interactions of feature with itself.
  * This approach produces slightly more interactions but it's safer
@@ -66,25 +48,6 @@ inline void call_FuncT(DataT& dat, WeightsT& /*weights*/, const float ft_value, 
 {
   FuncT(dat, ft_value, ft_idx);
 }
-
-// state data used in non-recursive feature generation algorithm
-// contains N feature_gen_data records (where N is length of interaction)
-class feature_gen_data
-{
-public:
-  uint64_t hash = 0;              // hash of feature interactions of previous namespaces in the list
-  float x = 1.f;                  // value of feature interactions of previous namespaces in the list
-                                  // than once calculated at preprocessing together with same_ns
-  bool self_interaction = false;  // namespace interacting with itself
-  features::const_audit_iterator begin_it;
-  features::const_audit_iterator current_it;
-  features::const_audit_iterator end_it;
-
-  feature_gen_data(features::const_audit_iterator begin, features::const_audit_iterator end)
-      : begin_it(begin), current_it(begin), end_it(end)
-  {
-  }
-};
 
 inline bool term_is_empty(VW::namespace_index term, const std::array<features, VW::NUM_NAMESPACES>& feature_groups)
 {
@@ -135,7 +98,7 @@ inline float INTERACTION_VALUE(float value1, float value2) { return value1 * val
 
 // #define GEN_INTER_LOOP
 
-std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_combination(
+std::tuple<VW::details::features_range_t, VW::details::features_range_t> inline generate_quadratic_char_combination(
     const std::array<features, VW::NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
     VW::namespace_index ns_idx2)
 {
@@ -146,8 +109,8 @@ std::tuple<features_range_t, features_range_t> inline generate_quadratic_char_co
 template <typename DispatchCombinationFuncT>
 void generate_generic_extent_combination_iterative(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
     const std::vector<extent_term>& terms, const DispatchCombinationFuncT& dispatch_combination_func,
-    std::stack<extent_interaction_expansion_stack_item>& in_process_frames,
-    VW::moved_object_pool<extent_interaction_expansion_stack_item>& frame_pool)
+    std::stack<VW::details::extent_interaction_expansion_stack_item>& in_process_frames,
+    VW::moved_object_pool<VW::details::extent_interaction_expansion_stack_item>& frame_pool)
 {
   while (!in_process_frames.empty()) { in_process_frames.pop(); }
 
@@ -213,19 +176,20 @@ void generate_generic_extent_combination_iterative(const std::array<features, VW
   }
 }
 
-std::tuple<features_range_t, features_range_t, features_range_t> inline generate_cubic_char_combination(
-    const std::array<features, VW::NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
-    VW::namespace_index ns_idx2, VW::namespace_index ns_idx3)
+std::tuple<VW::details::features_range_t, VW::details::features_range_t,
+    VW::details::features_range_t> inline generate_cubic_char_combination(const std::array<features,
+                                                                              VW::NUM_NAMESPACES>& feature_groups,
+    VW::namespace_index ns_idx1, VW::namespace_index ns_idx2, VW::namespace_index ns_idx3)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
       std::make_pair(feature_groups[ns_idx2].audit_begin(), feature_groups[ns_idx2].audit_end()),
       std::make_pair(feature_groups[ns_idx3].audit_begin(), feature_groups[ns_idx3].audit_end()))};
 }
 
-std::vector<features_range_t> inline generate_generic_char_combination(
+std::vector<VW::details::features_range_t> inline generate_generic_char_combination(
     const std::array<features, VW::NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& terms)
 {
-  std::vector<features_range_t> inter;
+  std::vector<VW::details::features_range_t> inter;
   inter.reserve(terms.size());
   for (const auto& term : terms)
   { inter.emplace_back(feature_groups[term].audit_begin(), feature_groups[term].audit_end()); }
@@ -258,7 +222,8 @@ void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::c
 }
 
 template <bool Audit, typename KernelFuncT, typename AuditFuncT>
-size_t process_quadratic_interaction(const std::tuple<features_range_t, features_range_t>& range, bool permutations,
+size_t process_quadratic_interaction(
+    const std::tuple<VW::details::features_range_t, VW::details::features_range_t>& range, bool permutations,
     const KernelFuncT& kernel_func, const AuditFuncT& audit_func)
 {
   size_t num_features = 0;
@@ -285,7 +250,9 @@ size_t process_quadratic_interaction(const std::tuple<features_range_t, features
 }
 
 template <bool Audit, typename KernelFuncT, typename AuditFuncT>
-size_t process_cubic_interaction(const std::tuple<features_range_t, features_range_t, features_range_t>& range,
+size_t process_cubic_interaction(
+    const std::tuple<VW::details::features_range_t, VW::details::features_range_t, VW::details::features_range_t>&
+        range,
     bool permutations, const KernelFuncT& kernel_func, const AuditFuncT& audit_func)
 {
   size_t num_features = 0;
@@ -334,8 +301,9 @@ size_t process_cubic_interaction(const std::tuple<features_range_t, features_ran
 }
 
 template <bool Audit, typename KernelFuncT, typename AuditFuncT>
-size_t process_generic_interaction(const std::vector<features_range_t>& range, bool permutations,
-    const KernelFuncT& kernel_func, const AuditFuncT& audit_func, std::vector<feature_gen_data>& state_data)
+size_t process_generic_interaction(const std::vector<VW::details::features_range_t>& range, bool permutations,
+    const KernelFuncT& kernel_func, const AuditFuncT& audit_func,
+    std::vector<VW::details::feature_gen_data>& state_data)
 {
   size_t num_features = 0;
   state_data.clear();
@@ -360,7 +328,7 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
   const auto gen_data_head = state_data.data();                            // always equal to first ns
   const auto gen_data_last = state_data.data() + (state_data.size() - 1);  // always equal to last ns
 
-  feature_gen_data* cur_data = gen_data_head;
+  VW::details::feature_gen_data* cur_data = gen_data_head;
 
   // generic feature generation cycle for interactions of any length
   bool do_it = true;
@@ -368,7 +336,7 @@ size_t process_generic_interaction(const std::vector<features_range_t>& range, b
   {
     if (cur_data < gen_data_last)  // can go further through the list of namespaces in interaction
     {
-      feature_gen_data* next_data = cur_data + 1;
+      VW::details::feature_gen_data* next_data = cur_data + 1;
 
       if (next_data->self_interaction)
       {  // if next namespace is same, we should start with loop_idx + 1 to avoid feature interaction with itself
@@ -438,7 +406,8 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
 inline void generate_interactions(const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
     DataT& dat, WeightsT& weights, size_t& num_features,
-    generate_interactions_object_cache& cache)  // default value removed to eliminate ambiguity in old complers
+    VW::details::generate_interactions_object_cache&
+        cache)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
   // often used values
@@ -493,7 +462,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
 
     generate_generic_extent_combination_iterative(
         ec.feature_space, ns,
-        [&](const std::vector<features_range_t>& combination) {
+        [&](const std::vector<VW::details::features_range_t>& combination) {
           const size_t len = ns.size();
           if (len == 2)
           {

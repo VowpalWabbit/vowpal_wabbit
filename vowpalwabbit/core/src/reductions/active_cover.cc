@@ -5,6 +5,7 @@
 #include "vw/core/reductions/active_cover.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"

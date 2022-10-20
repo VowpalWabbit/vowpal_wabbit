@@ -12,11 +12,12 @@ set(vw_core_headers
   include/vw/core/cached_learner.h
   include/vw/core/cb_continuous_label.h
   include/vw/core/cb_label_parser.h
+  include/vw/core/multi_ex.h
+  include/vw/core/learner_fwd.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
-  include/vw/core/compat.h
   include/vw/core/confidence_sequence.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
@@ -366,7 +367,7 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE

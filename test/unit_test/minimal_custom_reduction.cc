@@ -8,6 +8,7 @@
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
 
+#include "vw/core/learner.h"
 #include "vw/core/reduction_stack.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
