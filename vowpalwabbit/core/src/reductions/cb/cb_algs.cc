@@ -145,7 +145,8 @@ struct options_cb_algs_v1
   size_t problem_multiplier = 2;  // default for DR
 };
 
-std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(const VW::workspace&, VW::io::logger& logger, options_i& options)
+std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(
+    const VW::workspace&, VW::io::logger& logger, options_i& options)
 {
   auto cb_algs_opts = VW::make_unique<options_cb_algs_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit");
@@ -195,8 +196,8 @@ std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(const VW::works
       break;
     case VW::cb_type_t::mtr:
     case VW::cb_type_t::sm:
-    logger.err_warn(
-        "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", cb_algs_opts->type_string);
+      logger.err_warn(
+          "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", cb_algs_opts->type_string);
       break;
   }
 
