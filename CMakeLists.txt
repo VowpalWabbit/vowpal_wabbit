@@ -131,7 +131,6 @@ option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instea
 option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(VW_BUILD_CSV "Build csv parser" OFF)
-option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)

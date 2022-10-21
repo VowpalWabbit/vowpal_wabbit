@@ -31,10 +31,8 @@
 #include "vw/core/reductions/cb/cb_explore_adf_cover.h"
 #include "vw/core/reductions/cb/cb_explore_adf_first.h"
 #include "vw/core/reductions/cb/cb_explore_adf_greedy.h"
-#ifdef BUILD_LARGE_ACTION_SPACE
-#  include "vw/core/reductions/cb/cb_actions_mask.h"
-#  include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
-#endif
+#include "vw/core/reductions/cb/cb_actions_mask.h"
+#include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/reductions/cb/cb_explore_adf_regcb.h"
 #include "vw/core/reductions/cb/cb_explore_adf_rnd.h"
 #include "vw/core/reductions/cb/cb_explore_adf_softmax.h"
@@ -106,11 +104,8 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
       {VW::reductions::cb_explore_adf_regcb_setup, "cb_explore_adf_regcb"},
       {VW::reductions::shared_feature_merger_setup, "shared_feature_merger"},
       {VW::reductions::generate_interactions_setup, "generate_interactions"},
-      {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"}
-#ifdef BUILD_LARGE_ACTION_SPACE
-      ,
+      {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"},
       {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}
-#endif
   };
 
   auto name_extractor = VW::config::options_name_extractor();
@@ -197,9 +192,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::baseline_challenger_cb_setup);
   reductions.push_back(VW::reductions::automl_setup);
   reductions.push_back(VW::reductions::cb_explore_setup);
-#ifdef BUILD_LARGE_ACTION_SPACE
   reductions.push_back(VW::reductions::cb_explore_adf_large_action_space_setup);
-#endif
   reductions.push_back(VW::reductions::cb_explore_adf_greedy_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_softmax_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_rnd_setup);
@@ -213,9 +206,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);
   reductions.push_back(VW::reductions::epsilon_decay_setup);
-#ifdef BUILD_LARGE_ACTION_SPACE
   reductions.push_back(VW::reductions::cb_actions_mask_setup);
-#endif
   reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
   reductions.push_back(VW::reductions::slates_setup);

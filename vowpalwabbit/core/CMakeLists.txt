@@ -75,6 +75,7 @@ set(vw_core_headers
   include/vw/core/prediction_type.h
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
+   include/vw/core/qr_decomposition.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
@@ -94,6 +95,7 @@ set(vw_core_headers
   include/vw/core/reductions/cats_pdf.h
   include/vw/core/reductions/cats_tree.h
   include/vw/core/reductions/cats.h
+  include/vw/core/reductions/cb/cb_actions_mask.h
   include/vw/core/reductions/cb/cb_adf.h
   include/vw/core/reductions/cb/cb_algs.h
   include/vw/core/reductions/cb/cb_dro.h
@@ -102,6 +104,7 @@ set(vw_core_headers
   include/vw/core/reductions/cb/cb_explore_adf_cover.h
   include/vw/core/reductions/cb/cb_explore_adf_first.h
   include/vw/core/reductions/cb/cb_explore_adf_greedy.h
+  include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
   include/vw/core/reductions/cb/cb_explore_adf_regcb.h
   include/vw/core/reductions/cb/cb_explore_adf_rnd.h
   include/vw/core/reductions/cb/cb_explore_adf_softmax.h
@@ -239,6 +242,7 @@ set(vw_core_sources
   src/prediction_type.cc
   src/print_utils.cc
   src/prob_dist_cont.cc
+  src/qr_decomposition.cc
   src/rand48.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
@@ -255,6 +259,10 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/details/large_action/one_pass_svd_impl.cc
+  src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
+  src/reductions/cb/details/large_action/two_pass_svd_impl.cc
+  src/reductions/cb/cb_actions_mask.cc
   src/reductions/cb/cb_adf.cc
   src/reductions/cb/cb_algs.cc
   src/reductions/cb/cb_dro.cc
@@ -262,6 +270,7 @@ set(vw_core_sources
   src/reductions/cb/cb_explore_adf_cover.cc
   src/reductions/cb/cb_explore_adf_first.cc
   src/reductions/cb/cb_explore_adf_greedy.cc
+  src/reductions/cb/cb_explore_adf_large_action_space.cc
   src/reductions/cb/cb_explore_adf_regcb.cc
   src/reductions/cb/cb_explore_adf_rnd.cc
   src/reductions/cb/cb_explore_adf_softmax.cc
@@ -343,28 +352,11 @@ set(vw_core_sources
   src/vw_validate.cc
 )
 
-if(VW_BUILD_LARGE_ACTION_SPACE)
-  set(vw_core_headers
-    ${vw_core_headers}
-    include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
-    include/vw/core/reductions/cb/cb_actions_mask.h include/vw/core/qr_decomposition.h
-  )
-
-  set(vw_core_sources
-    ${vw_core_sources}
-    src/reductions/cb/cb_explore_adf_large_action_space.cc
-    src/reductions/cb/details/large_action/one_pass_svd_impl.cc
-    src/reductions/cb/details/large_action/two_pass_svd_impl.cc
-    src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
-    src/reductions/cb/cb_actions_mask.cc src/qr_decomposition.cc
-  )
-endif()
-
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt $<BUILD_INTERFACE:eigen>
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
@@ -385,11 +377,6 @@ endif()
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
   target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)
-endif()
-
-if(VW_BUILD_LARGE_ACTION_SPACE)
-  target_link_libraries(vw_core PUBLIC $<BUILD_INTERFACE:eigen>)
-  target_compile_definitions(vw_core PUBLIC BUILD_LARGE_ACTION_SPACE)
 endif()
 
 # Handle generated header
