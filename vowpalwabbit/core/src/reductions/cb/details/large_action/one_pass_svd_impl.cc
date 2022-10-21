@@ -77,16 +77,16 @@ public:
 
 #ifdef _MSC_VER
     size_t select_sparsity = __popcnt((index & _weights_mask) + _column_index) & 1;
-    auto sparsity_index = index_map[select_sparsity];
+    auto sparsity_index = INDEX_MAP[select_sparsity];
     size_t select_sign = (__popcnt((index & _weights_mask) + _column_index + _seed) & 1);
     auto value_index = sparsity_index + select_sign;
-    float val = value_map[value_index];
+    float val = VALUE_MAP[value_index];
 #else
     size_t select_sparsity = __builtin_parity((index & _weights_mask) + _column_index);
-    auto sparsity_index = index_map[select_sparsity];
+    auto sparsity_index = INDEX_MAP[select_sparsity];
     size_t select_sign = (__builtin_parity((index & _weights_mask) + _column_index + _seed));
     auto value_index = sparsity_index + select_sign;
-    float val = value_map[value_index];
+    float val = VALUE_MAP[value_index];
 #endif
     _final_dot_product += feature_value * val;
   }
@@ -97,13 +97,13 @@ private:
   uint64_t _seed;
   float& _final_dot_product;
   // index mapped used to select sparsity or not from value map
-  constexpr static std::array<size_t, 2> index_map = {0, 2};
-  constexpr static std::array<float, 4> value_map = {0.f, 0.f, 1.f, -1.f};
+  constexpr static std::array<size_t, 2> INDEX_MAP = {0, 2};
+  constexpr static std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
 };
 
 // definition at namespace scope
-constexpr std::array<size_t, 2> AO_triplet_constructor::index_map;
-constexpr std::array<float, 4> AO_triplet_constructor::value_map;
+constexpr std::array<size_t, 2> AO_triplet_constructor::INDEX_MAP;
+constexpr std::array<float, 4> AO_triplet_constructor::VALUE_MAP;
 
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
