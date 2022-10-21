@@ -1,0 +1,8 @@
+(Version)
+  + since version V, use schematized file
+---
+Id
+'m'
+MinLabel(float)
+MaxLabel(float)
+Bits(uint32)

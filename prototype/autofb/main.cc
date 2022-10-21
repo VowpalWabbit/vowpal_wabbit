@@ -1,10 +1,10 @@
 #include "prelude.h"
 #include "autofb.h"
 
-#include <algorithm>
-#include <functional>
-
 #include "typeerase.h"
+
+#include "reductions.h"
+#include "kernel_svm.h"
 
 using namespace typesys;
 
@@ -28,82 +28,12 @@ extension(derived) of (base)
 // a type erased object needs to have the following capabilities
 //  - sized storage that can be 
 
-#define REDUCTION_SIGNATURE typename init_params_t, typename predict_params_t, typename learn_params_t
-#define REDUCTION_PARAMS init_params_t, predict_params_t, learn_params_t
-
-template <REDUCTION_SIGNATURE>
-struct reduction_data 
+int main(int argc, char** argv)
 {
-  init_params_t init_params;
-  predict_params_t predict_params;
-  learn_params_t learn_params;
-};
-
-struct empty_t {};
-
-using stack_builder_t = void*;
-using options_t = void*;
-using learner_t = void*;
-
-inline options_t get_options_from_builder(stack_builder_t stack_builder) { return nullptr; }
-
-template <REDUCTION_SIGNATURE>
-struct reduction_descriptor
-{
-  using data_t = reduction_data<init_params_t, predict_params_t, learn_params_t>;
-
-  using parse_options_fn = bool(*)(options_t options, init_params_t const& init_params);
-  using init_reduction_fn = learner_t(*)(stack_builder_t stack_builder, data_t const& data);
-};
-
-template <REDUCTION_SIGNATURE>
-using _enable_reduction_fn = bool(*)(options_t options, init_params_t const& init_params);
-#define enable_reduction_fn _enable_reduction_fn<REDUCTION_PARAMS>
-
-template <REDUCTION_SIGNATURE>
-using _init_reduction_fn = learner_t(*)(stack_builder_t, reduction_data<init_params_t, predict_params_t, learn_params_t> const&);
-#define init_reduction_fn _init_reduction_fn<REDUCTION_PARAMS>
-
-
-
-template <REDUCTION_SIGNATURE, init_reduction_fn init_reduction, enable_reduction_fn enable_reduction>
-struct reduction_factory
-{
-  using data_t = reduction_data<init_params_t, predict_params_t, learn_params_t>;
-
-  struct init_closure
-  {
-    data_t data;
-
-    learner_t invoke(stack_builder_t stack_builder) { return init_reduction(stack_builder, data); };
-  };
-
-  void setup_erased()
-  {
-    stack_builder_t stack_builder;
-
-    // the goal here is to do the following:
-    //   parse the options into a closure for the initialization
-    init_closure closure;
-
-    //std::function fn = std::bind(&init_closure::invoke, closure, stack_builder);
-  }
-
-  static learner_t setup(void* stack_builder)
-  {
-    options_t options = get_options_from_builder(stack_builder);
-
-    init_params_t init_params;
-    if (!enable_reduction(options, init_params))
-      return nullptr;
-
-    data_t data{init_params};
-    return init_reduction(stack_builder, data);
-  }
-};
-
-bool enable_reduction (options_t options, empty_t const& init_params) { return true; }
-learner_t init_reduction (stack_builder_t stack_builder, reduction_data<empty_t, empty_t, empty_t> const& data) { return nullptr; }
+  //test();
+  //test_autofb();
+  kernel_svm_test();
+}
 
 template <typename builtin>
 void print_type()
@@ -111,7 +41,7 @@ void print_type()
   std::cout << typeid(builtin).name() << std::endl;
 }
 
-int main(int argc, char** argv)
+void test()
 {
   using empty_reduction_factory = reduction_factory<empty_t, empty_t, empty_t, init_reduction, enable_reduction>;
   auto legacy_setup_fn = &empty_reduction_factory::setup;
@@ -140,11 +70,15 @@ int main(int argc, char** argv)
     .add<unsigned char, print_type<unsigned char>>()
     .add<double, print_type<double>>();
   
+  {
 
   base b; // unfortunately, due to static lifetime initialization, we must construct a prototype of the object
           // before we can reflect over its properties
           // the expectation is that all of these objects need to be trivially constructable
   derived d;
+  
+  } // note, however, that we do NOT need to have these objects still be live to make use of the reflection information
+
   std::for_each(types.types_begin(), types.types_end(), [&dt](const typesys::type_info& type_info)
   {
     cout << "Type: " << type_info.name.name << "_V" << type_info.name.version;

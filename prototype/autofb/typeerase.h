@@ -5,15 +5,20 @@
 #include <typeindex>
 #include <utility>
 
+#include "type_activation.h"
+
+
 using typeinfo_predicate_f = bool(*)(const std::type_info);
 using dispatch_f = void(*)();
 
 using erased_dispatch = std::pair<typeinfo_predicate_f, dispatch_f>;
 
+
 struct erased_type
 {
   const std::type_index tindex;
   const size_t size;
+  const activator_f activator;
 
   template <typename T>
   bool is() const
@@ -28,7 +33,7 @@ struct type
 public:
   inline static erased_type erase()
   {
-    return erased_type{typeid(T), sizeof(T)};
+    return erased_type{typeid(T), sizeof(T), &default_activator<T>::activate};
   }
 };
 
@@ -84,6 +89,31 @@ class erased_dispatch_table
     std::unordered_map<std::type_index, erased_dispatch> dispatch_table;
 };
 
+// HACK!
+struct erased_data
+{
+  activation _data;
+  erased_type _type;
+  //const typesys::type_info& _type_info;
+};
 
+class erased_lvalue
+{
+public:
+  template <typename T>
+  erased_lvalue(T& data) : _type(type<T>::erase())
+  {
+    _data_slot = &data;
+  }
+
+  erased_type _type;
+
+  // TODO: this really should be more similar to how property<T> works
+  void* get() {}
+  void set(void*&& data) {}
+
+private:
+  void* data_slot;
+};
 
 // TODO: Extend the mechanism to support output? (No, because it is just a dispatch over the types to copy them out)

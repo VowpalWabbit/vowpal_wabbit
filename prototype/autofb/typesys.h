@@ -1,12 +1,15 @@
+#include "prelude.h"
+
 #pragma once
 
-#include <vector>
-#include <unordered_map>
-#include <functional>
-
+#include "staticinit.h"
 #include "typeerase.h"
+#include "type_activation.h"
 
 #define DATA_KIND struct
+
+
+struct erased_type;
 
 namespace typesys
 {
@@ -46,7 +49,9 @@ namespace typesys
   };
 
   using type_index = std::uint32_t;
+
   
+
   template <name_t N, version_t V>
   struct type_identity
   {
@@ -60,20 +65,29 @@ namespace typesys
 
     inline static type_index register_type()
     {
-      return universe::instance().register_type(versioned_name());
+      type_index index = universe::instance().register_type(versioned_name());
+      return index;
     }
   };
 
+  using property_index_t = size_t;
+
   struct property_info
-{
-  const char* name;
-  const erased_type etype;
+  {
+    const char* name;
+    const erased_type etype;
 
-  property_info(const char* name, erased_type etype) : name(name), etype(etype) {};
-  property_info(property_info& other) = default;
-};
+    property_info(const char* name, erased_type etype) : name(name), etype(etype) {};
+    property_info(property_info& other) = default;
+  };
 
-  using activator_f = void(*)();
+  template <typename T>
+  void basic_activator() 
+  { 
+    static_assert(std::is_trivially_constructible<T>::value, "basic_activator only supports trivially constructible types"); 
+    //static_assert(std::is_base_of<>); TODO: Add a "data" base tag, and "extension" base tag
+    T activation_witness {};
+  };
 
   struct type_info
   {
@@ -91,7 +105,7 @@ namespace typesys
     inline type_index base() const { return base_index; }
 
     inline bool has_activator() const { return activator != nullptr; }
-    inline void* activate() const { if (activator) activator(); }
+    inline activation activate() const { return activator(); }
     
     using props_iter = std::vector<property_info>::const_iterator;
 
@@ -194,7 +208,7 @@ namespace detail
   class property
   {
     public:
-      property(const char* name, const property_info&)
+      property(const char* name, const property_info&) : _value{}
       {
         //TODO: register property location with reflector
       }
@@ -202,6 +216,11 @@ namespace detail
       // TODO: Rest of Rule of N
 
       void operator=(const T& value) { _value = value; }
+      property& operator=(T&& value) 
+      {
+        _value = std::move(value);
+        return *this;
+      }
 
       operator T() const { return _value; }
       operator T&() { return _value; }
@@ -269,15 +288,21 @@ namespace detail
     registration_witness _witness;
   };
 
-  template <typename concrete_t, const registration_witness& rw>
+  using activation_witness = staticinit::evidence<erased_type>;
+
+  template <typename concrete_t, const registration_witness& rw, const activation_witness& aw>
   DATA_KIND data
   {
     public:
       //static const int version = rw._name.version;
+      static const erased_type& get_erased_type() { return aw._value; }
+      static const typesys::type_info& get_tstype() { return universe::instance().get_type(rw._type_index); }
 
     public:
       data()
-      {}
+      {
+        //std::cout << "intializing " << rw._name.name << std::endl;
+      }
 
       ~data()
       {}
@@ -294,17 +319,21 @@ namespace detail
         property_witness(const char* name) : info{name, type<T>::erase()} 
         {
           //std::cout << "in prop witness" << std::endl;
-          universe::instance().get_type(rw._name).add_property(info);
+          universe::instance().get_type(rw._type_index).add_property(info);
+
+          // here is where we can register the property with the reflection
+          // infrastructure
+          
         }
       };
   };
 
-  template <typename concrete_t, const registration_witness& rw, typename base_t, const registration_witness& base_rw>
-  DATA_KIND extension : private data<concrete_t, rw>, public base_t
+  template <typename concrete_t, const registration_witness& rw, const activation_witness& aw, typename base_t, const registration_witness& base_rw, const activation_witness& base_aw>
+  DATA_KIND extension : private data<concrete_t, rw, aw>, public base_t
   {
     //using data<concrete_t, rw>::version;
-    using data<concrete_t, rw>::__;
-    using data<concrete_t, rw>::property_witness;
+    using data<concrete_t, rw, aw>::__;
+    using data<concrete_t, rw, aw>::property_witness;
 
     extension()
     {
@@ -323,13 +352,33 @@ namespace detail
 // TODO: Versions
 #define details(type_name) __ ## type_name ## _details
 
+template <typename T, const typesys::detail::registration_witness& rw>
+erased_type attach_activator()
+{
+  //std::cout << "attaching activator for " << rw._name.name << std::endl;
+  erased_type etype = type<T>::erase();
+  typesys::universe::instance().get_type(rw._type_index).set_activator(etype.activator);
+  return etype;
+}
+
 #define register_type(type_name, version) namespace details(type_name) { \
   extern const char name[] = #type_name; \
-  using type_reg = detail::registration<name, version>; \
-  static const detail::registration_witness witness = type_reg::witness(); }
+  using type_reg = typesys::detail::registration<name, version>; \
+  static const typesys::detail::registration_witness witness_tag = type_reg::witness(); \
+  static const staticinit::evidence<erased_type> actw(&attach_activator<type_name, witness_tag>); \
+  }
 
-#define data(type_name) register_type(type_name, 1) \
-   DATA_KIND type_name : private detail::data<type_name, details(type_name)::witness>
-#define extension(type_name) register_type(type_name, 1) \
-   DATA_KIND type_name : detail::extension<type_name, details(type_name)::witness
-#define of(base_type) , base_type, details(base_type)::witness>
+
+#define data(type_name) DATA_KIND type_name; \
+   register_type(type_name, 1) \
+   DATA_KIND type_name : private typesys::detail::data<type_name, details(type_name)::witness_tag, details(type_name)::actw>
+#define extension(type_name) DATA_KIND type_name; \
+   register_type(type_name, 1) \
+   DATA_KIND type_name : typesys::detail::extension<type_name, details(type_name)::witness_tag, details(type_name)::actw
+#define of(base_type) , base_type, details(base_type)::witness_tag, details(base_type)::actw>
+
+// ostream operator for printing the versioned_name
+inline std::ostream& operator<<(std::ostream& os, const typesys::versioned_name& vn)
+{
+  return (os << vn.name << "V" << vn.version);
+}
