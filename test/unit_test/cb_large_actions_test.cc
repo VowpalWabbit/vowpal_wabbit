@@ -305,7 +305,7 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
     }
     VW::finish(vw);
   }
-  BOOST_CHECK_EQUAL(B_interactions.isApprox(B_non_interactions, FLOAT_TOL), false);
+  BOOST_CHECK_EQUAL(B_interactions.isApprox(B_non_interactions), false);
 }
 
 BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
