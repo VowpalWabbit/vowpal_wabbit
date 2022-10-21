@@ -97,9 +97,13 @@ private:
   uint64_t _seed;
   float& _final_dot_product;
   // index mapped used to select sparsity or not from value map
-  const std::array<size_t, 2> index_map = {0, 2};
-  const std::array<float, 4> value_map = {0.f, 0.f, 1.f, -1.f};
+  constexpr static std::array<size_t, 2> index_map = {0, 2};
+  constexpr static std::array<float, 4> value_map = {0.f, 0.f, 1.f, -1.f};
 };
+
+// definition at namespace scope
+constexpr std::array<size_t, 2> AO_triplet_constructor::index_map;
+constexpr std::array<float, 4> AO_triplet_constructor::value_map;
 
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
