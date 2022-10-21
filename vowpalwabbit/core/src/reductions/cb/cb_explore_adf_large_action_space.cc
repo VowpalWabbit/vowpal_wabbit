@@ -364,7 +364,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
       .add(make_option("max_actions", d)
                .keep()
                .allow_override()
-               .default_value(50)
+               .default_value(20)
                .help("Max number of actions to explore over")
                .experimental())
       .add(make_option("spanner_c", c)
