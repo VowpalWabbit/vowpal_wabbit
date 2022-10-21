@@ -500,12 +500,6 @@ BOOST_AUTO_TEST_CASE(check_spanner_chooses_actions_that_clearly_maximise_volume)
 
   vws.push_back(vw_squarecb_zs);
 
-  auto* vw_egreedy = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 7",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back(vw_egreedy);
-
   for (auto* vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
@@ -665,12 +659,6 @@ BOOST_AUTO_TEST_CASE(check_spanner_rejects_same_actions)
 
   vws.push_back(vw_squarecb_zs);
 
-  auto* vw_egreedy = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 9",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back(vw_egreedy);
-
   for (auto* vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
@@ -758,12 +746,6 @@ BOOST_AUTO_TEST_CASE(check_spanner_with_actions_that_are_linear_combinations_of_
           nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_squarecb_zs);
-
-  auto* vw_egreedy = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 11 --noconstant",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back(vw_egreedy);
 
   for (auto* vw_ptr : vws)
   {
