@@ -16,7 +16,7 @@
 #include <utility>
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::binary
+#define VW_DEBUG_LOG vw_dbg::BINARY
 
 using namespace VW::config;
 using namespace VW::reductions;

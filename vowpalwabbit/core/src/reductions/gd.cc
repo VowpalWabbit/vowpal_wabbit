@@ -36,7 +36,7 @@
 #include "vw/core/vw_versions.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::gd
+#define VW_DEBUG_LOG vw_dbg::GD
 #include "vw/io/logger.h"
 
 using namespace VW::LEARNER;

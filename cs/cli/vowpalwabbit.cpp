@@ -317,7 +317,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			pin_ptr<unsigned char> data = &json[0];
 			data += offset;
 
-			DecisionServiceInteraction interaction;
+			VW::details::DecisionServiceInteraction interaction;
 
 			if (m_vw->audit)
 				VW::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);

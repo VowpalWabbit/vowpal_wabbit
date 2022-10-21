@@ -15,7 +15,7 @@
 #include <cfloat>
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::scorer
+#define VW_DEBUG_LOG vw_dbg::SCORER
 
 using namespace VW::config;
 

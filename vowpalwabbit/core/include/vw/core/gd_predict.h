@@ -9,7 +9,7 @@
 #include "vw/core/v_array.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::gd_predict
+#define VW_DEBUG_LOG vw_dbg::GD_PREDICT
 
 namespace GD
 {

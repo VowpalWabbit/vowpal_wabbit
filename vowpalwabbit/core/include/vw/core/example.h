@@ -170,7 +170,7 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
   if (ec.passthrough) { ec.passthrough->push_back(x, (VW::details::FNV_PRIME * magic) ^ i); }
 }
 
-#define add_passthrough_feature(ec, i, x) \
+#define ADD_PASSTHROUGH_FEATURE(ec, i, x) \
   VW::add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
 
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);

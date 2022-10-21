@@ -17,7 +17,7 @@
 #include "vw/explore/explore.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_adf
+#define VW_DEBUG_LOG vw_dbg::CB_ADF
 
 #include "vw/io/logger.h"
 
@@ -243,23 +243,23 @@ void cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
     gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
     switch (gen_cs.cb_type)
     {
-      case VW::cb_type_t::dr:
+      case VW::cb_type_t::DR:
         learn_dr(base, ec_seq);
         break;
-      case VW::cb_type_t::dm:
+      case VW::cb_type_t::DM:
         learn_dm(base, ec_seq);
         break;
-      case VW::cb_type_t::ips:
+      case VW::cb_type_t::IPS:
         learn_ips(base, ec_seq);
         break;
-      case VW::cb_type_t::mtr:
+      case VW::cb_type_t::MTR:
         if (_no_predict) { learn_mtr<false>(base, ec_seq); }
         else
         {
           learn_mtr<true>(base, ec_seq);
         }
         break;
-      case VW::cb_type_t::sm:
+      case VW::cb_type_t::SM:
         learn_sm(base, ec_seq);
         break;
     }
@@ -492,17 +492,17 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   {
     all.logger.err_warn(
         "cb_type must be in {{'ips','dr','mtr','dm','sm'}}; resetting to mtr. Input was: '{}'", type_string);
-    cb_type = VW::cb_type_t::mtr;
+    cb_type = VW::cb_type_t::MTR;
   }
 
-  if (cb_type == VW::cb_type_t::dr)
+  if (cb_type == VW::cb_type_t::DR)
   {
     problem_multiplier = 2;
     // only use baseline when manually enabled for loss estimation
     check_baseline_enabled = true;
   }
 
-  if (clip_p > 0.f && cb_type == VW::cb_type_t::sm)
+  if (clip_p > 0.f && cb_type == VW::cb_type_t::SM)
   { all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped."); }
 
   // Push necessary flags.

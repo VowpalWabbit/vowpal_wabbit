@@ -206,8 +206,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       {
         for (unsigned int i = 0; i < n.k; ++i)
         {
-          add_passthrough_feature(ec, i * 2, hiddenbias_pred[i].scalar);
-          add_passthrough_feature(ec, i * 2 + 1, hidden_units[i].scalar);
+          ADD_PASSTHROUGH_FEATURE(ec, i * 2, hiddenbias_pred[i].scalar);
+          ADD_PASSTHROUGH_FEATURE(ec, i * 2 + 1, hidden_units[i].scalar);
         }
       }
     }
