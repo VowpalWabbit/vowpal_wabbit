@@ -182,7 +182,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
       return;
     }
 
-    auto non_degen = std::min(_d, static_cast<uint64_t>(number_of_non_degenerate_singular_values() + 1));
+    auto non_degen = std::min(_d, static_cast<uint64_t>(number_of_non_degenerate_singular_values()));
     spanner_state.compute_spanner(U, non_degen, shrink_factors);
 
     assert(spanner_state.spanner_size() == preds.size());
@@ -304,7 +304,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
 
   size_t problem_multiplier = 1;
 
-  uint64_t seed = all.get_random_state()->get_current_state() * 10.f;
+  float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
   auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all,
       seed, 1 << all.num_bits, thread_pool_size, block_size, impl_type);

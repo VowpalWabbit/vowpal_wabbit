@@ -25,13 +25,19 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
   std::vector<VW::workspace*> vws;
 
   auto* vw_zero_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --thread_pool_size 0",
+          std::to_string(d) + " --quiet --random_seed 1 --thread_pool_size 0",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_zero_threads);
 
+  auto* vw_zero_threads_zs = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 0 --thread_pool_size 0",
+      nullptr, false, nullptr, nullptr);
+
+  vws.push_back(vw_zero_threads_zs);
+
   auto* vw_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+          std::to_string(d) + " --quiet --random_seed 2",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_threads);
@@ -72,7 +78,7 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
       vw.predict(examples);
 
       // representation of actions 2 and 3 (duplicates) should be the same in U
-      BOOST_CHECK_EQUAL(action_space->explore.U.row(1).isApprox(action_space->explore.U.row(2)), true);
+      BOOST_CHECK_EQUAL(action_space->explore.U.row(1).isApprox(action_space->explore.U.row(2), FLOAT_TOL), true);
 
       vw.finish_example(examples);
     }
@@ -86,13 +92,19 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
   std::vector<VW::workspace*> vws;
 
   auto* vw_zero_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --thread_pool_size 0 --noconstant",
+          std::to_string(d) + " --quiet --random_seed 3 --thread_pool_size 0 --noconstant",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_zero_threads);
 
+  auto* vw_zero_threads_zs = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 0 --thread_pool_size 0 --noconstant",
+      nullptr, false, nullptr, nullptr);
+
+  vws.push_back(vw_zero_threads_zs);
+
   auto* vw_threads = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --noconstant",
+          std::to_string(d) + " --quiet --random_seed 4 --noconstant",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_threads);
@@ -156,7 +168,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
       examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
       examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18:0.2"));
 
-      vw.predict(examples);
+      vw.learn(examples);
 
       // check that the representation of the fourth action is the same linear combination of the representation of the
       // 2nd and 3rd actions
@@ -166,7 +178,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 
       Eigen::VectorXf action_lin_rep = action_2 + 2.f * action_3;
 
-      BOOST_CHECK_EQUAL(action_lin_rep.isApprox(action_4), true);
+      BOOST_CHECK_EQUAL(action_lin_rep.isApprox(action_4, FLOAT_TOL), true);
 
       vw.finish_example(examples);
     }
