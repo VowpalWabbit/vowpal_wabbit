@@ -25,19 +25,18 @@ namespace cb_explore_adf
 {
 enum class implementation_type
 {
-  vanilla_rand_svd,
-  model_weight_rand_svd,
+  two_pass_svd,
   one_pass_svd
 };
 
-class vanilla_rand_svd_impl
+class two_pass_svd_impl
 {
 public:
   Eigen::MatrixXf B;
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
 
-  vanilla_rand_svd_impl(
+  two_pass_svd_impl(
       VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
       Eigen::MatrixXf& _V);
@@ -52,36 +51,6 @@ private:
   uint64_t _d;
   uint64_t _seed;
   std::vector<Eigen::Triplet<float>> _triplets;
-};
-
-class model_weight_rand_svd_impl
-{
-public:
-  Eigen::MatrixXf B;
-  Eigen::SparseMatrix<float> Y;
-  Eigen::MatrixXf Z;
-
-  model_weight_rand_svd_impl(
-      VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
-
-  void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
-      Eigen::MatrixXf& _V);
-  bool generate_model_weight_Y(
-      const multi_ex& examples, uint64_t& max_existing_column, const std::vector<float>& shrink_factors);
-  void generate_B_model_weight(
-      const multi_ex& examples, uint64_t max_existing_column, const std::vector<float>& shrink_factors);
-
-  // the below methods are used only during unit testing and are not called otherwise
-  void _test_only_populate_from_model_weight_Y(const multi_ex& examples);
-  void _test_only_set_rank(uint64_t rank);
-  bool _set_testing_components = false;
-
-private:
-  VW::workspace* _all;
-  uint64_t _d;
-  uint64_t _seed;
-  dense_parameters _internal_weights;
-  void cleanup_model_weight_Y(const multi_ex& examples);
 };
 
 class one_pass_svd_impl
@@ -117,26 +86,6 @@ public:
 
   void calculate_shrink_factor(
       size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors);
-};
-
-class spanner_state
-{
-public:
-  spanner_state(float c, uint64_t d) : _c(c), _action_indices(d){};
-
-  void compute_spanner(const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors);
-  void find_max_volume(
-      const Eigen::MatrixXf& U, uint64_t X_rid, Eigen::MatrixXf& X, float& max_volume, uint64_t& U_rid);
-  bool is_action_in_spanner(uint32_t action);
-  size_t spanner_size();
-
-  void _test_only_set_rank(uint64_t rank);
-
-private:
-  const float _c = 2;
-  std::vector<uint64_t> _action_indices;
-  Eigen::MatrixXf _X;
-  std::vector<bool> _spanner_bitvec;
 };
 
 class one_rank_spanner_state
