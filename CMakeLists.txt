@@ -129,6 +129,7 @@ option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Inste
 option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
 option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Instead will use find_package" OFF)
+option(VW_EIGEN_SYS_DEP "Override using the submodule for Eigen3 dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(VW_BUILD_CSV "Build csv parser" OFF)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)

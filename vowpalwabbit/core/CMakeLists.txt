@@ -356,12 +356,13 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt $<BUILD_INTERFACE:eigen>
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
         ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
+         eigen
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
