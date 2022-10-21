@@ -138,7 +138,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
   }
 
   ec.l.simple = {1.f};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   for (auto& n : p.positive_nodes) { learn_node(p, n, base, ec); }
 
   ec.l.simple.label = -1.f;
@@ -154,7 +154,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
 inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
 {
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   base.predict(ec, n);
   return 1.0f / (1.0f + std::exp(-ec.partial_prediction));
 }
@@ -195,7 +195,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
 
       uint32_t n_child = p.kary * node.n + 1;
       ec.l.simple = {FLT_MAX};
-      ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+      ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
       base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
@@ -243,7 +243,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       {
         uint32_t n_child = p.kary * node.n + 1;
         ec.l.simple = {FLT_MAX};
-        ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+        ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
         base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 

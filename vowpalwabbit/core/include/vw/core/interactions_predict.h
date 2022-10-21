@@ -32,19 +32,19 @@ namespace INTERACTIONS
 // 3 template functions to pass FuncT() proper argument (feature idx in regressor, or its coefficient)
 
 template <class DataT, void (*FuncT)(DataT&, const float, float&), class WeightsT>
-inline void call_FuncT(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
+inline void call_func_t(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
   FuncT(dat, ft_value, weights[ft_idx]);
 }
 
 template <class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT>
-inline void call_FuncT(DataT& dat, const WeightsT& weights, const float ft_value, const uint64_t ft_idx)
+inline void call_func_t(DataT& dat, const WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
   FuncT(dat, ft_value, weights[static_cast<size_t>(ft_idx)]);
 }
 
 template <class DataT, void (*FuncT)(DataT&, float, uint64_t), class WeightsT>
-inline void call_FuncT(DataT& dat, WeightsT& /*weights*/, const float ft_value, const uint64_t ft_idx)
+inline void call_func_t(DataT& dat, WeightsT& /*weights*/, const float ft_value, const uint64_t ft_idx)
 {
   FuncT(dat, ft_value, ft_idx);
 }
@@ -91,7 +91,7 @@ inline bool has_empty_interaction(
 // synthetic (interaction) features' values are calculated, e.g.,
 // fabs(value1-value2) or even value1>value2?1.0:-1.0
 // Beware - its result must be non-zero.
-inline float INTERACTION_VALUE(float value1, float value2) { return value1 * value2; }
+constexpr inline float interaction_value(float value1, float value2) { return value1 * value2; }
 
 // uncomment line below to disable usage of inner 'for' loops for pair and triple interactions
 // end switch to usage of non-recursive feature generation algorithm for interactions of any length
@@ -206,8 +206,8 @@ void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::c
     for (; begin != end; ++begin)
     {
       audit_func(dat, begin.audit() == nullptr ? &EMPTY_AUDIT_STRINGS : begin.audit());
-      call_FuncT<DataT, FuncT>(
-          dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
+      call_func_t<DataT, FuncT>(
+          dat, weights, interaction_value(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
       audit_func(dat, nullptr);
     }
   }
@@ -215,8 +215,8 @@ void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::c
   {
     for (; begin != end; ++begin)
     {
-      call_FuncT<DataT, FuncT>(
-          dat, weights, INTERACTION_VALUE(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
+      call_func_t<DataT, FuncT>(
+          dat, weights, interaction_value(ft_value, begin.value()), (begin.index() ^ halfhash) + offset);
     }
   }
 }
@@ -284,7 +284,7 @@ size_t process_cubic_interaction(
       if (Audit)
       { audit_func(inner_second_begin.audit() != nullptr ? inner_second_begin.audit() : &EMPTY_AUDIT_STRINGS); }
       feature_index halfhash = VW::details::FNV_PRIME * (halfhash1 ^ inner_second_begin.index());
-      feature_value ft_value = INTERACTION_VALUE(first_ft_value, inner_second_begin.value());
+      feature_value ft_value = interaction_value(first_ft_value, inner_second_begin.value());
 
       auto begin = third_begin;
       // next index differs for permutations and simple combinations
@@ -361,7 +361,7 @@ size_t process_generic_interaction(const std::vector<VW::details::features_range
       else
       {  // feature2 xor (16777619*feature1)
         next_data->hash = VW::details::FNV_PRIME * (cur_data->hash ^ (*cur_data->current_it).index());
-        next_data->x = INTERACTION_VALUE((*cur_data->current_it).value(), cur_data->x);
+        next_data->x = interaction_value((*cur_data->current_it).value(), cur_data->x);
       }
       ++cur_data;
     }

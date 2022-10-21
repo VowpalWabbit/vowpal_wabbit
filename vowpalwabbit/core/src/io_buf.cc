@@ -3,8 +3,6 @@
 // license as described in the file LICENSE.
 #include "vw/core/io_buf.h"
 
-#include "vw/io/logger.h"
-
 size_t io_buf::buf_read(char*& pointer, size_t n)
 {
   // return a pointer to the next n bytes.  n must be smaller than the maximum size.

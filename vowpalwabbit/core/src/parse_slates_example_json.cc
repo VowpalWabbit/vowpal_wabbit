@@ -45,7 +45,7 @@ inline float get_number(const rapidjson::Value& value)
 
 template <bool audit>
 void handle_features_value(const char* key_namespace, const Value& value, VW::example* current_example,
-    std::vector<VW::details::Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed,
+    std::vector<VW::details::namespace_builder<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash)
 {
   assert(key_namespace != nullptr);
@@ -66,7 +66,7 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
       break;
     case rapidjson::kTrueType:
       assert(!namespaces.empty());
-      namespaces.back().AddFeature(key_namespace, hash_func, parse_mask);
+      namespaces.back().add_feature(key_namespace, hash_func, parse_mask);
       break;
     case rapidjson::kObjectType:
     {
@@ -95,11 +95,11 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
             {
               std::stringstream str;
               str << '[' << (array_hash - namespaces.back().namespace_hash) << ']';
-              namespaces.back().AddFeature(number, array_hash, str.str().c_str());
+              namespaces.back().add_feature(number, array_hash, str.str().c_str());
             }
             else
             {
-              namespaces.back().AddFeature(number, array_hash, nullptr);
+              namespaces.back().add_feature(number, array_hash, nullptr);
             }
             array_hash++;
           }
@@ -135,12 +135,12 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
         }
       }
 
-      if (chain_hash) { namespaces.back().AddFeature(key_namespace, str, hash_func, parse_mask); }
+      if (chain_hash) { namespaces.back().add_feature(key_namespace, str, hash_func, parse_mask); }
       else
       {
         char* prepend = const_cast<char*>(str) - key_namespace_length;
         std::memmove(prepend, key_namespace, key_namespace_length);
-        namespaces.back().AddFeature(prepend, hash_func, parse_mask);
+        namespaces.back().add_feature(prepend, hash_func, parse_mask);
       }
     }
 
@@ -150,7 +150,7 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
       assert(!namespaces.empty());
       float number = get_number(value);
       auto hash_index = hash_func(key_namespace, strlen(key_namespace), namespaces.back().namespace_hash) & parse_mask;
-      namespaces.back().AddFeature(number, hash_index, key_namespace);
+      namespaces.back().add_feature(number, hash_index, key_namespace);
     }
     break;
     default:
@@ -165,7 +165,7 @@ void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_p
     VW::example_factory_t example_factory, void* ex_factory_context, VW::multi_ex& slot_examples,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
-  std::vector<VW::details::Namespace<audit>> namespaces;
+  std::vector<VW::details::namespace_builder<audit>> namespaces;
   handle_features_value(" ", context, examples[0], namespaces, hash_func, hash_seed, parse_mask, chain_hash);
   lbl_parser.default_label(examples[0]->l);
   if (context.HasMember("_slot_id"))
@@ -256,7 +256,7 @@ void parse_slates_example_json(const VW::workspace& all, VW::multi_ex& examples,
 
 template <bool audit>
 void parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, char* line, size_t /*length*/,
-    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::DecisionServiceInteraction* data,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::decision_service_interaction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   Document document;
@@ -274,13 +274,13 @@ void parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, cha
     for (auto ex : examples) { ex->l.slates.labeled = true; }
   }
 
-  if (document.HasMember("EventId")) { data->eventId = document["EventId"].GetString(); }
+  if (document.HasMember("EventId")) { data->event_id = document["EventId"].GetString(); }
 
   if (document.HasMember("Timestamp")) { data->timestamp = document["Timestamp"].GetString(); }
 
-  if (document.HasMember("_skipLearn")) { data->skipLearn = document["_skipLearn"].GetBool(); }
+  if (document.HasMember("_skipLearn")) { data->skip_learn = document["_skipLearn"].GetBool(); }
 
-  if (document.HasMember("pdrop")) { data->probabilityOfDrop = document["pdrop"].GetFloat(); }
+  if (document.HasMember("pdrop")) { data->probability_of_drop = document["pdrop"].GetFloat(); }
 
   if (document.HasMember("_outcomes"))
   {
@@ -323,7 +323,7 @@ void parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, cha
       if (current_obj.HasMember("_original_label_cost"))
       {
         assert(current_obj["_original_label_cost"].IsFloat());
-        data->originalLabelCost = current_obj["_original_label_cost"].GetFloat();
+        data->original_label_cost = current_obj["_original_label_cost"].GetFloat();
       }
     }
 
@@ -357,10 +357,10 @@ template void parse_slates_example_json<false>(const VW::workspace& all, VW::mul
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void parse_slates_example_dsjson<true>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::DecisionServiceInteraction* data,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::decision_service_interaction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void parse_slates_example_dsjson<false>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::DecisionServiceInteraction* data,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::decision_service_interaction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 #ifdef VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF

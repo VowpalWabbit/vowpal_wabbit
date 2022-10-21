@@ -52,7 +52,7 @@ void check_vector_of_vectors_exact(const std::vector<std::vector<T>>& lhs, const
 VW::multi_ex parse_json(VW::workspace& all, const std::string& line);
 
 VW::multi_ex parse_dsjson(
-    VW::workspace& all, std::string line, VW::details::DecisionServiceInteraction* interaction = nullptr);
+    VW::workspace& all, std::string line, VW::details::decision_service_interaction* interaction = nullptr);
 
 bool is_invoked_with(const std::string& arg);
 

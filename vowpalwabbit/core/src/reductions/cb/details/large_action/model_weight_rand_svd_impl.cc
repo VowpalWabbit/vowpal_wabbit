@@ -138,7 +138,7 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
     if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
@@ -154,7 +154,7 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc_sparse, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc_sparse, _all->generate_interactions_object_cache_state);
       }
       else
       {
@@ -166,7 +166,7 @@ bool model_weight_rand_svd_impl::generate_model_weight_Y(
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc_dense, _all->generate_interactions_object_cache_state);
       }
     }
 
@@ -204,7 +204,7 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
     if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
@@ -219,7 +219,7 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc, _all->generate_interactions_object_cache_state);
       }
       else
       {
@@ -229,7 +229,7 @@ void model_weight_rand_svd_impl::generate_B_model_weight(
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc, _all->generate_interactions_object_cache_state);
       }
 
       B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
@@ -249,7 +249,7 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
     if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
@@ -264,7 +264,7 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc_sparse, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc_sparse, _all->generate_interactions_object_cache_state);
       }
       else
       {
@@ -275,7 +275,7 @@ void model_weight_rand_svd_impl::_test_only_populate_from_model_weight_Y(const m
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc_dense, _all->generate_interactions_object_cache_state);
       }
     }
     if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
@@ -296,7 +296,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
     if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
@@ -310,7 +310,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc_sparse, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc_sparse, _all->generate_interactions_object_cache_state);
       }
       else
       {
@@ -320,7 +320,7 @@ void model_weight_rand_svd_impl::cleanup_model_weight_Y(const multi_ex& examples
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc_dense, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc_dense, _all->generate_interactions_object_cache_state);
       }
     }
     if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }

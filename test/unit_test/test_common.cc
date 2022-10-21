@@ -18,12 +18,12 @@ VW::multi_ex parse_json(VW::workspace& all, const std::string& line)
   return result;
 }
 
-VW::multi_ex parse_dsjson(VW::workspace& all, std::string line, VW::details::DecisionServiceInteraction* interaction)
+VW::multi_ex parse_dsjson(VW::workspace& all, std::string line, VW::details::decision_service_interaction* interaction)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(&all));
 
-  VW::details::DecisionServiceInteraction local_interaction;
+  VW::details::decision_service_interaction local_interaction;
   if (interaction == nullptr) { interaction = &local_interaction; }
 
   VW::read_line_decision_service_json<true>(all, examples, (char*)line.c_str(), line.size(), false,

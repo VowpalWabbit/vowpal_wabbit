@@ -143,7 +143,7 @@ class flat_example
 {
 public:
   polylabel l;
-  reduction_features _reduction_features;
+  reduction_features ex_reduction_features;
 
   size_t tag_len;
   char* tag;  // An identifier for the example.

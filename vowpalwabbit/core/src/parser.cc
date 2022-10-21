@@ -111,7 +111,7 @@ void parse_example_label(string_view label, const VW::label_parser& lbl_parser, 
 {
   std::vector<string_view> words;
   VW::tokenize(' ', label, words);
-  lbl_parser.parse_label(ec.l, ec._reduction_features, reuse_mem, ldict, words, logger);
+  lbl_parser.parse_label(ec.l, ec.ex_reduction_features, reuse_mem, ldict, words, logger);
 }
 }  // namespace VW
 
@@ -731,7 +731,7 @@ void setup_example(VW::workspace& all, VW::example* ae)
               VW::reductions::ccb::ec_is_example_unset(*ae))))
   { all.example_parser->in_pass_counter++; }
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->_reduction_features);
+  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->ex_reduction_features);
 
   if (all.ignore_some)
   {
@@ -813,7 +813,7 @@ void add_constant_feature(VW::workspace& vw, VW::example* ec)
 void add_label(VW::example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  auto& simple_red_features = ec->_reduction_features.template get<VW::simple_label_reduction_features>();
+  auto& simple_red_features = ec->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   simple_red_features.initial = base;
   ec->weight = weight;
 }
@@ -875,8 +875,8 @@ void parse_example_label(VW::workspace& all, example& ec, const std::string& lab
 {
   std::vector<VW::string_view> words;
   VW::tokenize(' ', label, words);
-  all.example_parser->lbl_parser.parse_label(
-      ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words, all.logger);
+  all.example_parser->lbl_parser.parse_label(ec.l, ec.ex_reduction_features, all.example_parser->parser_memory_to_reuse,
+      all.sd->ldict.get(), words, all.logger);
 }
 
 void empty_example(VW::workspace& /*all*/, example& ec)
@@ -888,7 +888,7 @@ void empty_example(VW::workspace& /*all*/, example& ec)
   ec.sorted = false;
   ec.end_pass = false;
   ec.is_newline = false;
-  ec._reduction_features.clear();
+  ec.ex_reduction_features.clear();
   ec.num_features_from_interactions = 0;
 }
 
@@ -937,7 +937,7 @@ float get_importance(example* ec) { return ec->weight; }
 
 float get_initial(example* ec)
 {
-  const auto& simple_red_features = ec->_reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& simple_red_features = ec->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   return simple_red_features.initial;
 }
 

@@ -228,7 +228,7 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, V
     case Label_SimpleLabel:
     {
       const SimpleLabel* simple_lbl = static_cast<const SimpleLabel*>(eg->label());
-      parse_simple_label(sd, &(ae->l), &(ae->_reduction_features), simple_lbl);
+      parse_simple_label(sd, &(ae->l), &(ae->ex_reduction_features), simple_lbl);
       break;
     }
     case Label_CBLabel:

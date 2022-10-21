@@ -96,7 +96,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     {
       VW::example* ex = examples[row_index];
 
-      auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+      auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
       auto* shared_example = red_features.shared_example;
       if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
@@ -111,7 +111,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc, _all->generate_interactions_object_cache_state);
 
         AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
       }

@@ -53,7 +53,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
       if (store_shared_ex_in_reduction_features)
       {
         auto& red_features =
-            example->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+            example->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
         red_features.shared_example = shared_example;
       }
     }
@@ -74,7 +74,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
             if (store_shared_ex_in_reduction_features)
             {
               auto& red_features =
-                  example->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+                  example->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
               red_features.reset_to_default();
             }
           }
