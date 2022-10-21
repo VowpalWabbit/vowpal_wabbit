@@ -28,7 +28,7 @@ using VW::cb_continuous::continuous_label;
 using VW::cb_continuous::continuous_label_elm;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cbify
+#define VW_DEBUG_LOG vw_dbg::CBIFY
 
 namespace VW
 {

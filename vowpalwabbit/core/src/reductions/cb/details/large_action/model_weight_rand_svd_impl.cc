@@ -353,10 +353,7 @@ void model_weight_rand_svd_impl::run(const multi_ex& examples, const std::vector
   U = Z * svd.matrixU();
   S = svd.singularValues();
 
-  if (_set_testing_components)
-  {
-    _V = Y * svd.matrixV();
-  }
+  if (_set_testing_components) { _V = Y * svd.matrixV(); }
 }
 
 model_weight_rand_svd_impl::model_weight_rand_svd_impl(

@@ -32,7 +32,7 @@
 #include <unordered_set>
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::ccb
+#define VW_DEBUG_LOG vw_dbg::CCB
 
 using namespace VW::LEARNER;
 using namespace VW;
