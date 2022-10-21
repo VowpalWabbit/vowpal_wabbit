@@ -26,7 +26,7 @@ public:
   {
     for (std::thread& thread : _threads)
     {
-      if (thread.joinable()) { thread.join() };
+      if (thread.joinable()) { thread.join(); }
     }
   }
 
