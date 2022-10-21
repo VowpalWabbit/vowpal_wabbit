@@ -35,7 +35,10 @@ template <bool is_learn>
 void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   if (is_learn) { data.learn(base, examples); }
-  else { data.predict(base, examples); }
+  else
+  {
+    data.predict(base, examples);
+  }
 }
 
 VW::LEARNER::base_learner* VW::reductions::cb_actions_mask_setup(VW::setup_base_i& stack_builder)
@@ -44,7 +47,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_actions_mask_setup(VW::setup_base_
   auto data = VW::make_unique<VW::reductions::cb_actions_mask>();
 
   // squarecb is the default exploration algorithm for large action space
-  if (options.was_supplied("large_action_space") && !options.was_supplied("epsilon")) { options.insert("squarecb", ""); }
+  if (options.was_supplied("large_action_space") && !options.was_supplied("epsilon"))
+  { options.insert("squarecb", ""); }
 
   if (!options.was_supplied("large_action_space") || !options.was_supplied("full_predictions")) { return nullptr; }
 

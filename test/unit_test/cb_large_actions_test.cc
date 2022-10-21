@@ -428,10 +428,9 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 --vanilla",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --vanilla",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
@@ -671,31 +670,31 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   vws.emplace_back(vw_w_interactions, false, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
 
   auto* vw_wo_interactions_sq =
-      VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 --vanilla",
+      VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " + std::to_string(d) +
+              " --quiet --random_seed 5 --vanilla",
           nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(vw_wo_interactions_sq, true, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
 
   auto* vw_w_interactions_sq =
-      VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 -q :: --vanilla",
+      VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " + std::to_string(d) +
+              " --quiet --random_seed 5 -q :: --vanilla",
           nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(vw_w_interactions_sq, true, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
 
   auto* vw_model_weight_w_interactions_sq =
-      VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 -q :: --model_weight",
+      VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " + std::to_string(d) +
+              " --quiet --random_seed 5 -q :: --model_weight",
           nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(
       vw_model_weight_w_interactions_sq, true, VW::cb_explore_adf::implementation_type::model_weight_rand_svd);
 
-  auto* vw_w_interactions_sq_sparse_weights = VW::initialize(
-      "--cb_explore_adf --sparse_weights --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q :: --vanilla",
-      nullptr, false, nullptr, nullptr);
+  auto* vw_w_interactions_sq_sparse_weights =
+      VW::initialize("--cb_explore_adf --sparse_weights --large_action_space --full_predictions --max_actions " +
+              std::to_string(d) + " --quiet --random_seed 5 -q :: --vanilla",
+          nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(
       vw_w_interactions_sq_sparse_weights, true, VW::cb_explore_adf::implementation_type::vanilla_rand_svd);
@@ -746,10 +745,9 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 --vanilla",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --vanilla",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
