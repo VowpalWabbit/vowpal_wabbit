@@ -583,8 +583,7 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
           std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
-  vws.emplace_back(
-      vw_w_interactions_sq_sparse_weights, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
+  vws.emplace_back(vw_w_interactions_sq_sparse_weights, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
   for (auto& vw_pair : vws)
   {
