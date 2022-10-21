@@ -6,7 +6,6 @@ set(vw_core_headers
   include/vw/core/array_parameters_dense.h
   include/vw/core/array_parameters_sparse.h
   include/vw/core/array_parameters.h
-  include/vw/core/beam.h
   include/vw/core/best_constant.h
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
