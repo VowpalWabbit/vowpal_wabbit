@@ -584,25 +584,26 @@ Weight Options:
                                             uint, keep, necessary)
     --replay_m_count arg                    How many times (in expectation) should each example be played
                                             (default: 1 = permuting) (type: uint, default: 1)
-[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space Options:
+[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
-    --large_action_space                    Large action space exploration (type: bool, keep, necessary,
+    --large_action_space                    Large action space filtering (type: bool, keep, necessary, experimental)
+    --max_actions arg                       Max number of actions to hold (type: uint, default: 20, keep,
                                             experimental)
-    --max_actions arg                       Max number of actions to explore over (type: uint, default: 20,
-                                            keep, experimental)
     --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:
                                             2, keep, experimental)
-    --full_predictions                      Full representation of the prediction's action probabilities
-                                            (type: bool, experimental)
-    --thread_pool_size arg                  number of threads in the thread pool that will be used when running
+    --full_predictions                      Full representation of the prediction's action probabilities,
+                                            if not specified filtered out actions will not appear in the
+                                            final predictions. If specified, filtered out actions will appear
+                                            with a probability of zero (type: bool, experimental)
+    --thread_pool_size arg                  Number of threads in the thread pool that will be used when running
                                             with one pass svd implementation (default svd implementation
                                             option). Default thread pool size will be half of the available
                                             hardware threads (type: uint)
-    --block_size arg                        number of actions in a block to be scheduled for multithreading
+    --block_size arg                        Number of actions in a block to be scheduled for multithreading
                                             when using one pass svd implementation (by default, block_size
                                             = num_actions / thread_pool_size) (type: uint, default: 0)
-    --two_pass_svd                          a more accurate svd that is much slower than the default (one
+    --two_pass_svd                          A more accurate svd that is much slower than the default (one
                                             pass svd) (type: bool, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)

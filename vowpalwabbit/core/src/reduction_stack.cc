@@ -23,6 +23,7 @@
 #include "vw/core/reductions/cats.h"
 #include "vw/core/reductions/cats_pdf.h"
 #include "vw/core/reductions/cats_tree.h"
+#include "vw/core/reductions/cb/cb_actions_mask.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/reductions/cb/cb_dro.h"
@@ -31,7 +32,6 @@
 #include "vw/core/reductions/cb/cb_explore_adf_cover.h"
 #include "vw/core/reductions/cb/cb_explore_adf_first.h"
 #include "vw/core/reductions/cb/cb_explore_adf_greedy.h"
-#include "vw/core/reductions/cb/cb_actions_mask.h"
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/reductions/cb/cb_explore_adf_regcb.h"
 #include "vw/core/reductions/cb/cb_explore_adf_rnd.h"
@@ -96,17 +96,16 @@
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
 {
-  std::map<reduction_setup_fn, std::string> allowlist = {
-      {VW::reductions::gd_setup, "gd"}, {VW::reductions::ftrl_setup, "ftrl"}, {VW::reductions::sender_setup, "sender"},
-      {VW::reductions::nn_setup, "nn"}, {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
+  std::map<reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
+      {VW::reductions::ftrl_setup, "ftrl"}, {VW::reductions::sender_setup, "sender"}, {VW::reductions::nn_setup, "nn"},
+      {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
       {VW::reductions::csldf_setup, "csoaa_ldf"},
       {VW::reductions::cb_explore_adf_greedy_setup, "cb_explore_adf_greedy"},
       {VW::reductions::cb_explore_adf_regcb_setup, "cb_explore_adf_regcb"},
       {VW::reductions::shared_feature_merger_setup, "shared_feature_merger"},
       {VW::reductions::generate_interactions_setup, "generate_interactions"},
       {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"},
-      {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}
-  };
+      {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}};
 
   auto name_extractor = VW::config::options_name_extractor();
   VW::workspace dummy_all(VW::io::create_null_logger());
