@@ -24,7 +24,7 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_explore_get_pmf
+#define VW_DEBUG_LOG vw_dbg::CB_EXPLORE_GET_PMF
 
 namespace
 {

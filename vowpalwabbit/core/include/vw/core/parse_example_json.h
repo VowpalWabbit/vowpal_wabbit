@@ -34,7 +34,8 @@ void read_line_json_s(VW::workspace& all, VW::multi_ex& examples, char* line, si
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
 bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data);
+    bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    VW::details::DecisionServiceInteraction* data);
 }  // namespace VW
 
 template <bool audit>
@@ -70,10 +71,10 @@ extern template void VW::read_line_json_s<false>(VW::workspace& all, VW::multi_e
 
 extern template bool VW::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    DecisionServiceInteraction* data);
+    VW::details::DecisionServiceInteraction* data);
 extern template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    DecisionServiceInteraction* data);
+    VW::details::DecisionServiceInteraction* data);
 
 extern template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 extern template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);

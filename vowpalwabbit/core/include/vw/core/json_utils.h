@@ -9,6 +9,10 @@
 #include <string>
 #include <vector>
 
+namespace VW
+{
+namespace details
+{
 // Decision Service JSON header information - required to construct final label
 class DecisionServiceInteraction
 {
@@ -107,3 +111,5 @@ void pop_ns(VW::example* ex, std::vector<Namespace<audit>>& namespaces)
     top.ftrs->start_ns_extent(top.namespace_hash);
   }
 }
+}  // namespace details
+}  // namespace VW

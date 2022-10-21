@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  DecisionServiceInteraction interaction;
+  VW::details::DecisionServiceInteraction interaction;
 
   auto examples = parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
@@ -41,7 +41,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  DecisionServiceInteraction interaction;
+  VW::details::DecisionServiceInteraction interaction;
 
   auto examples = parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
@@ -69,7 +69,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  DecisionServiceInteraction interaction;
+  VW::details::DecisionServiceInteraction interaction;
 
   auto examples = parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_float)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  DecisionServiceInteraction interaction;
+  VW::details::DecisionServiceInteraction interaction;
 
   auto examples = parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_uint)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  DecisionServiceInteraction interaction;
+  VW::details::DecisionServiceInteraction interaction;
 
   auto examples = parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
@@ -743,7 +743,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
 })";
 
   auto vw = VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  DecisionServiceInteraction ds_interaction;
+  VW::details::DecisionServiceInteraction ds_interaction;
   auto examples = parse_dsjson(*vw, json_text, &ds_interaction);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
@@ -772,7 +772,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
   check_collections_with_float_tolerance(
       label7.probabilities, std::vector<VW::action_score>{{0, 0.6f}, {1, 0.4f}}, FLOAT_TOL);
 
-  // Check values in DecisionServiceInteraction
+  // Check values in VW::details::DecisionServiceInteraction
   BOOST_CHECK_EQUAL(ds_interaction.eventId, "test_id");
   BOOST_CHECK_CLOSE(ds_interaction.probabilityOfDrop, 0.1, FLOAT_TOL);
   BOOST_CHECK_EQUAL(ds_interaction.skipLearn, true);

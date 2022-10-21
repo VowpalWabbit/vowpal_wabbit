@@ -26,7 +26,7 @@ using CB::cb_class;
 using std::vector;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cats_tree
+#define VW_DEBUG_LOG vw_dbg::CATS_TREE
 
 namespace VW
 {

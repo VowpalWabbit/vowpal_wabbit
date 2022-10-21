@@ -359,22 +359,22 @@ void VW::LEARNER::details::learner_build_diagnostic(VW::io::logger& logger, VW::
 }
 void VW::LEARNER::details::debug_increment_depth(example& ex)
 {
-  if (vw_dbg::track_stack) { ++ex.debug_current_reduction_depth; }
+  if (vw_dbg::TRACK_STACK) { ++ex.debug_current_reduction_depth; }
 }
 void VW::LEARNER::details::debug_increment_depth(multi_ex& ec_seq)
 {
-  if (vw_dbg::track_stack)
+  if (vw_dbg::TRACK_STACK)
   {
     for (auto& ec : ec_seq) { ++ec->debug_current_reduction_depth; }
   }
 }
 void VW::LEARNER::details::debug_decrement_depth(example& ex)
 {
-  if (vw_dbg::track_stack) { --ex.debug_current_reduction_depth; }
+  if (vw_dbg::TRACK_STACK) { --ex.debug_current_reduction_depth; }
 }
 void VW::LEARNER::details::debug_decrement_depth(multi_ex& ec_seq)
 {
-  if (vw_dbg::track_stack)
+  if (vw_dbg::TRACK_STACK)
   {
     for (auto& ec : ec_seq) { --ec->debug_current_reduction_depth; }
   }

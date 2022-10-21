@@ -29,7 +29,7 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::csoaa_ldf
+#define VW_DEBUG_LOG vw_dbg::CSOAA_LDF
 
 namespace
 {

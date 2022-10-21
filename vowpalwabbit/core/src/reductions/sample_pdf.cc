@@ -26,7 +26,7 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_sample_pdf
+#define VW_DEBUG_LOG vw_dbg::CB_SAMPLE_PDF
 
 namespace
 {
