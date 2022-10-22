@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
   std::vector<std::pair<VW::workspace*, bool>> vws;
 
   auto* vw_full_preds = VW::initialize("--cb_explore_adf --epsilon " + std::to_string(epsilon) +
-          " --large_action_space --full_predictions --max_actions " + std::to_string(d) + " --quiet --random_seed 3",
+          " --large_action_space --full_predictions --max_actions " + std::to_string(d) + " --quiet --random_seed 3 --thread_pool_size 4",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_full_preds, true});
