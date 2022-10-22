@@ -177,6 +177,15 @@ void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
 using example_factory_t = example& (*)(void*);
 
+namespace details
+{
+void append_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+
+void append_example_namespaces_from_example(VW::example& target, const VW::example& source);
+void truncate_example_namespaces_from_example(VW::example& target, const VW::example& source);
+}  // namespace details
+
 namespace model_utils
 {
 size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser);
