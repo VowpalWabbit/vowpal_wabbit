@@ -149,7 +149,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   return true;
 }
 
-BOOST_AUTO_TEST_CASE(automl_weight_operations)
+BOOST_AUTO_TEST_CASE(automl_weight_operations_w_iterations)
 {
   const size_t seed = 10;
   const size_t num_iterations = 1331;
@@ -193,7 +193,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   return true;
 }
 
-BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
+BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig_w_iterations)
 {
   const size_t seed = 10;
   const size_t num_iterations = 1742;
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig)
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
 
-BOOST_AUTO_TEST_CASE(automl_learn_order)
+BOOST_AUTO_TEST_CASE(automl_learn_order_w_iterations)
 {
   callback_map test_hooks;
 
@@ -260,7 +260,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order)
   BOOST_CHECK_EQUAL(ctr1, ctr2);
 }
 
-BOOST_AUTO_TEST_CASE(automl_equal_no_automl)
+BOOST_AUTO_TEST_CASE(automl_equal_no_automl_w_iterations)
 {
   callback_map test_hooks;
 
