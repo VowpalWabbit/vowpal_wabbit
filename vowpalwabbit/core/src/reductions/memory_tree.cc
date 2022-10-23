@@ -202,10 +202,10 @@ public:
   size_t final_pass = 0;
 
   int top_k;         // commands:
-  bool oas = false;  // indicator for multi-label classification (oas = 1)
+  bool oas = false;  // indicator for multi-label classification
   int dream_at_update = 0;
 
-  int online = 0;  // indicator for running CMT in online fashion
+  bool online = 0;  // indicator for running CMT in online fashion
 
   float f1_score = 0.f;
   float hamming_loss = 0.f;

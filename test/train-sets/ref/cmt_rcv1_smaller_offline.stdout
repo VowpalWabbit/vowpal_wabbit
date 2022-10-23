@@ -8,5 +8,5 @@ current_pass: 0
 oas: 0
 depth 1
 depth 2
-######### Current Pass: 1, with number of memories strored so far: 114
-######### Current Pass: 2, with number of memories strored so far: 114
+##### Pass: 1, with 114 memories.
+##### Pass: 2, with 114 memories.

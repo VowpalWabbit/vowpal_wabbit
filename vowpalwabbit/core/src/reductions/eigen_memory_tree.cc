@@ -78,7 +78,10 @@ float inner(VW::flat_example& example, sparse_parameters& weights) { return inne
 
 void scale(sparse_parameters& weights, float scalar)
 {
-  for (auto i = weights.begin(); i != weights.end(); ++i) { weights[i.index()] = weights[i.index()] * scalar; }
+  for (sparse_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
+  {
+    weights[i.index()] = weights[i.index()] * scalar;
+  }
 }
 
 float norm(sparse_parameters& weights)
