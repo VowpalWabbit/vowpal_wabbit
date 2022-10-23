@@ -62,7 +62,7 @@ float my_abs(float value) { return (value < 0) ? -value : value; }
 
 void rng_init(sparse_parameters& weights, std::vector<VW::flat_example*> examples, std::shared_ptr<VW::rand_state> rng)
 {
-  for (flat_example* ex : examples)
+  for (VW::flat_example* ex : examples)
   {
     for (auto& f : ex->fs) { weights[f.index()] = rng->get_and_update_random(); }
   }
@@ -628,7 +628,7 @@ void node_split(tree& b, single_learner& base, node& cn)
       scale(*new_weights, 1 / norm(*new_weights));
 
       projs.clear();
-      for (flat_example* example : examples) { projs.push_back(inner(*example, *new_weights)); }
+      for (VW::flat_example* example : examples) { projs.push_back(inner(*example, *new_weights)); }
       float new_variance = variance(projs);
 
       if (new_variance > best_variance)
@@ -666,7 +666,7 @@ void node_split(tree& b, single_learner& base, node& cn)
     float n_examples = examples.size();
 
     std::unordered_map<int, float> mean_map;
-    for (flat_example* ex : examples)
+    for (VW::flat_example* ex : examples)
     {
       for (auto& f : ex->fs) { mean_map[f.index()] += (1 / n_examples) * f.value(); }
     }
@@ -705,7 +705,7 @@ void node_split(tree& b, single_learner& base, node& cn)
     }
 
     std::vector<float> projs;
-    for (flat_example* example : examples) { projs.push_back(inner(*example, *weights)); }
+    for (VW::flat_example* example : examples) { projs.push_back(inner(*example, *weights)); }
 
     best_projector = weights;
     best_decision = median(projs);
