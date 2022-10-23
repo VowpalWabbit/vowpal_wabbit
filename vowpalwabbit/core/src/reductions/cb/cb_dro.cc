@@ -155,14 +155,14 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
     learn_ptr = learn_or_predict<true, true>;
     pred_ptr = learn_or_predict<false, true>;
     name_addition = "-cb_explore_adf";
-    pred_type = VW::prediction_type_t::action_probs;
+    pred_type = VW::prediction_type_t::ACTION_PROBS;
   }
   else
   {
     learn_ptr = learn_or_predict<true, false>;
     pred_ptr = learn_or_predict<false, false>;
     name_addition = "";
-    pred_type = VW::prediction_type_t::action_scores;
+    pred_type = VW::prediction_type_t::ACTION_SCORES;
   }
 
   auto* base = stack_builder.setup_base_learner();

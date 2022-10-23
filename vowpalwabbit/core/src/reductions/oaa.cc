@@ -6,8 +6,10 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -189,12 +191,12 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   {
     if (o.indexing == 0)
     {
-      add_passthrough_feature(ec, 0, o.pred[o.k - 1].scalar);
-      for (uint32_t i = 0; i < o.k - 1; i++) { add_passthrough_feature(ec, (i + 1), o.pred[i].scalar); }
+      ADD_PASSTHROUGH_FEATURE(ec, 0, o.pred[o.k - 1].scalar);
+      for (uint32_t i = 0; i < o.k - 1; i++) { ADD_PASSTHROUGH_FEATURE(ec, (i + 1), o.pred[i].scalar); }
     }
     else
     {
-      for (uint32_t i = 1; i <= o.k; i++) { add_passthrough_feature(ec, i, o.pred[i - 1].scalar); }
+      for (uint32_t i = 1; i <= o.k; i++) { ADD_PASSTHROUGH_FEATURE(ec, i, o.pred[i - 1].scalar); }
     }
   }
 
@@ -372,7 +374,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   void (*finish_ptr)(VW::workspace&, oaa&, VW::example&);
   if (probabilities || scores)
   {
-    pred_type = VW::prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::SCALARS;
     if (probabilities)
     {
       auto loss_function_type = all.loss->get_type();
@@ -398,7 +400,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   }
   else
   {
-    pred_type = VW::prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::MULTICLASS;
     finish_ptr = VW::details::finish_multiclass_example<oaa>;
     if (all.raw_prediction != nullptr)
     {

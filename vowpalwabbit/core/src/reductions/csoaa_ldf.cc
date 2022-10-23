@@ -9,7 +9,9 @@
 #include "vw/core/correctedMath.h"
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/label_dictionary.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/print_utils.h"
 #include "vw/core/reductions/gd.h"  // GD::foreach_feature() needed in subtract_example()
 #include "vw/core/scope_exit.h"
@@ -27,7 +29,7 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::csoaa_ldf
+#define VW_DEBUG_LOG vw_dbg::CSOAA_LDF
 
 namespace
 {
@@ -723,19 +725,19 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   if (ld->rank)
   {
     name_addition = "-rank";
-    pred_type = VW::prediction_type_t::action_scores;
+    pred_type = VW::prediction_type_t::ACTION_SCORES;
     pred_ptr = predict_csoaa_ldf_rank;
   }
   else if (ld->is_probabilities)
   {
     name_addition = "-prob";
-    pred_type = VW::prediction_type_t::prob;
+    pred_type = VW::prediction_type_t::PROB;
     pred_ptr = predict_csoaa_ldf;
   }
   else
   {
     name_addition = "";
-    pred_type = VW::prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::MULTICLASS;
     pred_ptr = predict_csoaa_ldf;
   }
 

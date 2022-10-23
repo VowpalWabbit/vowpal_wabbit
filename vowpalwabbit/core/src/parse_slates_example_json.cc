@@ -45,8 +45,8 @@ inline float get_number(const rapidjson::Value& value)
 
 template <bool audit>
 void handle_features_value(const char* key_namespace, const Value& value, VW::example* current_example,
-    std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
-    bool chain_hash)
+    std::vector<VW::details::Namespace<audit>>& namespaces, hash_func_t hash_func, uint64_t hash_seed,
+    uint64_t parse_mask, bool chain_hash)
 {
   assert(key_namespace != nullptr);
   assert(std::strlen(key_namespace) != 0);
@@ -165,7 +165,7 @@ void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_p
     VW::example_factory_t example_factory, void* ex_factory_context, VW::multi_ex& slot_examples,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
-  std::vector<Namespace<audit>> namespaces;
+  std::vector<VW::details::Namespace<audit>> namespaces;
   handle_features_value(" ", context, examples[0], namespaces, hash_func, hash_seed, parse_mask, chain_hash);
   lbl_parser.default_label(examples[0]->l);
   if (context.HasMember("_slot_id"))
@@ -256,7 +256,7 @@ void parse_slates_example_json(const VW::workspace& all, VW::multi_ex& examples,
 
 template <bool audit>
 void parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, char* line, size_t /*length*/,
-    VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::DecisionServiceInteraction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   Document document;
@@ -357,10 +357,10 @@ template void parse_slates_example_json<false>(const VW::workspace& all, VW::mul
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void parse_slates_example_dsjson<true>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::DecisionServiceInteraction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void parse_slates_example_dsjson<false>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    VW::example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::DecisionServiceInteraction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 #ifdef VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF

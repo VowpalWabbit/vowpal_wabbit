@@ -6,8 +6,10 @@
 
 #include "vw/config/options.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -96,7 +98,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
 
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
-  const bool is_mtr = gen_cs.cb_type == VW::cb_type_t::mtr;
+  const bool is_mtr = gen_cs.cb_type == VW::cb_type_t::MTR;
   if (is_learn)
   {
     if (is_mtr)
@@ -290,18 +292,18 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   auto cb_type = VW::cb_type_from_string(type_string);
   switch (cb_type)
   {
-    case VW::cb_type_t::dr:
-    case VW::cb_type_t::ips:
+    case VW::cb_type_t::DR:
+    case VW::cb_type_t::IPS:
       break;
-    case VW::cb_type_t::mtr:
+    case VW::cb_type_t::MTR:
       all.logger.err_warn("currently, mtr is only used for the first policy in cover, other policies use dr");
       break;
-    case VW::cb_type_t::dm:
-    case VW::cb_type_t::sm:
+    case VW::cb_type_t::DM:
+    case VW::cb_type_t::SM:
       all.logger.err_warn(
           "cb_type must be in {{'ips','dr','mtr'}}; resetting to mtr. Input received: {}", VW::to_string(cb_type));
       options.replace("cb_type", "mtr");
-      cb_type = VW::cb_type_t::mtr;
+      cb_type = VW::cb_type_t::MTR;
       break;
   }
 
@@ -309,7 +311,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   size_t problem_multiplier = cover_size + 1;
 
   // Cover is using doubly robust without the cooperation of the base reduction
-  if (cb_type == VW::cb_type_t::mtr) { problem_multiplier *= 2; }
+  if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
@@ -338,8 +340,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)

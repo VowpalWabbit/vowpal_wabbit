@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/learner.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
@@ -705,7 +706,7 @@ base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_build
   auto* l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
       learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
                 .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_save_load(save_load)
                 .set_finish_example(::finish_example)
                 .set_end_pass(end_pass)

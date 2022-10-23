@@ -5,6 +5,7 @@
 #include "vw/core/reductions/multilabel_oaa.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
@@ -132,7 +133,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
       options.replace("link", "logistic");
       data->link = "logistic";
     }
-    pred_type = VW::prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::SCALARS;
     auto loss_function_type = all.loss->get_type();
     if (loss_function_type != "logistic")
     {
@@ -145,7 +146,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
   else
   {
     name_addition = "";
-    pred_type = VW::prediction_type_t::multilabels;
+    pred_type = VW::prediction_type_t::MULTILABELS;
   }
 
   auto* l =

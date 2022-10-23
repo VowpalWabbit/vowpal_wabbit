@@ -8,8 +8,8 @@ learning rate = 0.5
 initial_t = 4
 power_t = 0.5
 Enabled reductions: gd, nn, lrqfa, scorer-logistic, count_label
-Input label = simple
-Output pred = scalar
+Input label = SIMPLE
+Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.859992 0.859992            1            1.0        -1.0000         0.4818        6

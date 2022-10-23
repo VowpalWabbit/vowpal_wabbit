@@ -5,7 +5,9 @@
 #include "vw/core/reductions/cbzo.h"
 
 #include "vw/core/io_buf.h"
+#include "vw/core/learner.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/prob_dist_cont.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
@@ -396,7 +398,7 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
   auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
-      stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::pdf, label_type_t::CONTINUOUS)
+      stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
                 .set_params_per_weight(0)
                 .set_save_load(save_load)
                 .set_finish_example(::finish_example)

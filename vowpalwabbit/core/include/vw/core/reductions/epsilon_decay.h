@@ -4,6 +4,7 @@
 #pragma once
 
 #include "vw/core/confidence_sequence.h"
+#include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
 namespace VW

@@ -182,7 +182,7 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
 void vanilla_rand_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }
 
 void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,
-    Eigen::VectorXf& _S, Eigen::MatrixXf& _V)
+    Eigen::VectorXf& S, Eigen::MatrixXf& _V)
 {
   // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
   // It has been adapted so that all the matrixes do not need to be materialized and so that the implementation is
@@ -203,12 +203,9 @@ void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<floa
   Eigen::JacobiSVD<Eigen::MatrixXf> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
 
   U = Z * svd.matrixU();
+  S = svd.singularValues();
 
-  if (_set_testing_components)
-  {
-    _V = Y * svd.matrixV();
-    _S = svd.singularValues();
-  }
+  if (_set_testing_components) { _V = Y * svd.matrixV(); }
 }
 
 vanilla_rand_svd_impl::vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t, size_t)

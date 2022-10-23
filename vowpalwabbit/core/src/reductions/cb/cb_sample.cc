@@ -16,7 +16,7 @@
 #include "vw/explore/explore.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_sample
+#define VW_DEBUG_LOG vw_dbg::CB_SAMPLE
 
 using namespace VW::LEARNER;
 using namespace VW;
@@ -134,8 +134,8 @@ base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(cb_sample_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::action_probs)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_learn_returns_prediction(true)
                 .build(&all.logger);
   return make_base(*l);

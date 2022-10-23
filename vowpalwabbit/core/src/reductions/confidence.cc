@@ -145,7 +145,7 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
       stack_builder.get_setupfn_name(confidence_setup))
                 .set_learn_returns_prediction(true)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_finish_example(return_confidence_example)
                 .build();
 

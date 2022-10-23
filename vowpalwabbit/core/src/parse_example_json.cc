@@ -8,6 +8,7 @@
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/learner.h"
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
@@ -1310,7 +1311,7 @@ template <bool audit>
 class SlotOutcomeList : public BaseState<audit>
 {
 public:
-  DecisionServiceInteraction* interactions;
+  VW::details::DecisionServiceInteraction* interactions;
 
   SlotOutcomeList() : BaseState<audit>("SlotOutcomeList") {}
 
@@ -1395,7 +1396,7 @@ class DecisionServiceState : public BaseState<audit>
 public:
   DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
-  DecisionServiceInteraction* data;
+  VW::details::DecisionServiceInteraction* data;
 
   BaseState<audit>* StartObject(Context<audit>& /* ctx */) override
   {
@@ -1534,7 +1535,7 @@ public:
   BaseState<audit>* previous_state;
 
   // the path of namespaces
-  std::vector<Namespace<audit>> namespace_path;
+  std::vector<VW::details::Namespace<audit>> namespace_path;
   std::vector<BaseState<audit>*> return_path;
 
   std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr;
@@ -1551,7 +1552,7 @@ public:
   // TODO: This shouldn't really exist in the Context. Once the JSON parser
   // gets refactored to separate the VWJson/DSJson concepts, this should
   // be moved into the DSJson version of the context
-  DecisionServiceInteraction* decision_service_data = nullptr;
+  VW::details::DecisionServiceInteraction* decision_service_data = nullptr;
 
   // states
   DefaultState<audit> default_state;
@@ -1613,7 +1614,7 @@ public:
     return *error_ptr;
   }
 
-  void SetStartStateToDecisionService(DecisionServiceInteraction* data)
+  void SetStartStateToDecisionService(VW::details::DecisionServiceInteraction* data)
   {
     decision_service_state.data = data;
     current_state = root_state = &decision_service_state;
@@ -1633,7 +1634,7 @@ public:
     return return_state;
   }
 
-  Namespace<audit>& CurrentNamespace() { return namespace_path.back(); }
+  VW::details::Namespace<audit>& CurrentNamespace() { return namespace_path.back(); }
 
   bool TransitionState(BaseState<audit>* next_state)
   {
@@ -1795,7 +1796,8 @@ inline bool apply_pdrop(label_type_t label_type, float pdrop, VW::multi_ex& exam
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
 bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+    bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    VW::details::DecisionServiceInteraction* data)
 {
   if (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
   {
@@ -1859,7 +1861,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     // Skip lines that do not start with "{"
     if (line[0] != '{') { return false; }
 
-    DecisionServiceInteraction interaction;
+    VW::details::DecisionServiceInteraction interaction;
     bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
@@ -2037,10 +2039,10 @@ template void VW::read_line_json_s<false>(VW::workspace& all, VW::multi_ex& exam
 
 template bool VW::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    DecisionServiceInteraction* data);
+    VW::details::DecisionServiceInteraction* data);
 template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    DecisionServiceInteraction* data);
+    VW::details::DecisionServiceInteraction* data);
 
 template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);

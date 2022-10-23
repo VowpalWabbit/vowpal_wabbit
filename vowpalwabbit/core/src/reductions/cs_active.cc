@@ -7,6 +7,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/debug_log.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/csoaa.h"
@@ -28,7 +29,7 @@ using namespace VW::config;
 using std::endl;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cs_active
+#define VW_DEBUG_LOG vw_dbg::CS_ACTIVE
 
 namespace
 {
@@ -154,7 +155,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
     score = ec.partial_prediction;
     prediction = i;
   }
-  add_passthrough_feature(ec, i, ec.partial_prediction);
+  ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
 }
 
 inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float delta, float eta,
@@ -398,7 +399,7 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
       predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
-                .set_output_prediction_type(VW::prediction_type_t::active_multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)
                 .set_input_label_type(VW::label_type_t::CS)
                 .set_finish_example(::finish_example)
                 .build();

@@ -475,7 +475,7 @@ private:
   std::string _command_line_arguments;
   std::vector<std::vector<VW::namespace_index>> _interactions;
   std::vector<std::vector<extent_term>> _unused_extent_interactions;
-  INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
+  VW::details::generate_interactions_object_cache _generate_interactions_object_cache;
   INTERACTIONS::interactions_generator _generate_interactions;
   bool _contains_wildcard;
   std::array<bool, VW::NUM_NAMESPACES> _ignore_linear;

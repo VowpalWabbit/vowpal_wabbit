@@ -6,23 +6,23 @@
 
 extern "C"
 {
-  API DecisionServiceInteraction* CreateDecisionServiceInteraction();
-  API void DeleteDecisionServiceInteraction(DecisionServiceInteraction* interaction);
+  API VW::details::DecisionServiceInteraction* CreateDecisionServiceInteraction();
+  API void DeleteDecisionServiceInteraction(VW::details::DecisionServiceInteraction* interaction);
 
-  API char* GetDSInteractionEventIdDup(DecisionServiceInteraction* interaction);
-  API char* GetDSInteractionTimestampDup(DecisionServiceInteraction* interaction);
-  API size_t GetDSInteractionActionsCount(DecisionServiceInteraction* interaction);
-  API vw_net_native::dotnet_size_t GetDSInteractionActions(
-      DecisionServiceInteraction* interaction, unsigned int* values, vw_net_native::dotnet_size_t buffer_size);
-  API size_t GetDSInteractionProbabilitiesCount(DecisionServiceInteraction* interaction);
+  API char* GetDSInteractionEventIdDup(VW::details::DecisionServiceInteraction* interaction);
+  API char* GetDSInteractionTimestampDup(VW::details::DecisionServiceInteraction* interaction);
+  API size_t GetDSInteractionActionsCount(VW::details::DecisionServiceInteraction* interaction);
+  API vw_net_native::dotnet_size_t GetDSInteractionActions(VW::details::DecisionServiceInteraction* interaction,
+      unsigned int* values, vw_net_native::dotnet_size_t buffer_size);
+  API size_t GetDSInteractionProbabilitiesCount(VW::details::DecisionServiceInteraction* interaction);
   API vw_net_native::dotnet_size_t GetDSInteractionProbabilities(
-      DecisionServiceInteraction* interaction, float* values, vw_net_native::dotnet_size_t buffer_size);
-  API size_t GetDSInteractionBaselineActionsCount(DecisionServiceInteraction* interaction);
-  API vw_net_native::dotnet_size_t GetDSInteractionBaselineActions(
-      DecisionServiceInteraction* interaction, unsigned int* values, vw_net_native::dotnet_size_t buffer_size);
+      VW::details::DecisionServiceInteraction* interaction, float* values, vw_net_native::dotnet_size_t buffer_size);
+  API size_t GetDSInteractionBaselineActionsCount(VW::details::DecisionServiceInteraction* interaction);
+  API vw_net_native::dotnet_size_t GetDSInteractionBaselineActions(VW::details::DecisionServiceInteraction* interaction,
+      unsigned int* values, vw_net_native::dotnet_size_t buffer_size);
 
-  API float GetDSInteractionProbabilityOfDrop(DecisionServiceInteraction* interaction);
-  API float GetDSInteractionOriginalLabelCost(DecisionServiceInteraction* interaction);
-  API float GetDSInteractionOriginalLabelCostFirstSlot(DecisionServiceInteraction* interaction);
-  API int GetDSInteractionSkipLearn(DecisionServiceInteraction* interaction);
+  API float GetDSInteractionProbabilityOfDrop(VW::details::DecisionServiceInteraction* interaction);
+  API float GetDSInteractionOriginalLabelCost(VW::details::DecisionServiceInteraction* interaction);
+  API float GetDSInteractionOriginalLabelCostFirstSlot(VW::details::DecisionServiceInteraction* interaction);
+  API int GetDSInteractionSkipLearn(VW::details::DecisionServiceInteraction* interaction);
 }

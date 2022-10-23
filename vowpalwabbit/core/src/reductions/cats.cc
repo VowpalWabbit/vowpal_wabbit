@@ -8,6 +8,7 @@
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -26,7 +27,7 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cats
+#define VW_DEBUG_LOG vw_dbg::CATS
 
 namespace VW
 {
@@ -221,7 +222,7 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
-                .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
                 .set_finish_example(::finish_example)
                 .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();

@@ -45,24 +45,24 @@ public:
   const GEN_CS::cb_to_cs_adf& get_gen_cs() const { return gen_cs; }
   GEN_CS::cb_to_cs_adf& get_gen_cs() { return gen_cs; }
 
-  const VW::version_struct* get_model_file_ver() const { return &_all->model_file_ver; }
+  const VW::version_struct* get_model_file_ver() const;
 
   bool learn_returns_prediction() const
   {
-    return ((gen_cs.cb_type == VW::cb_type_t::mtr) && !_no_predict) || gen_cs.cb_type == VW::cb_type_t::ips ||
-        gen_cs.cb_type == VW::cb_type_t::dr || gen_cs.cb_type == VW::cb_type_t::dm ||
-        gen_cs.cb_type == VW::cb_type_t::sm;
+    return ((gen_cs.cb_type == VW::cb_type_t::MTR) && !_no_predict) || gen_cs.cb_type == VW::cb_type_t::IPS ||
+        gen_cs.cb_type == VW::cb_type_t::DR || gen_cs.cb_type == VW::cb_type_t::DM ||
+        gen_cs.cb_type == VW::cb_type_t::SM;
   }
 
   CB::cb_class* known_cost() { return &gen_cs.known_cost; }
 
 private:
-  void learn_ips(LEARNER::multi_learner& base, VW::multi_ex& examples);
-  void learn_dr(LEARNER::multi_learner& base, VW::multi_ex& examples);
-  void learn_dm(LEARNER::multi_learner& base, VW::multi_ex& examples);
-  void learn_sm(LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void learn_ips(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void learn_dr(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void learn_dm(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void learn_sm(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   template <bool predict>
-  void learn_mtr(LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void learn_mtr(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 
 private:
   std::vector<CB::label> _cb_labels;
