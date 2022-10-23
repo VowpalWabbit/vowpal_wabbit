@@ -32,8 +32,8 @@ tree* get_emt_tree(VW::workspace& all)
 
 BOOST_AUTO_TEST_CASE(emt_params_test)
 {
-  auto vw = VW::initialize("--eigen_memory_tree --quiet");
-  auto tree = get_emt_tree(*vw);
+  auto* vw = VW::initialize("--eigen_memory_tree --quiet");
+  auto* tree = get_emt_tree(*vw);
 
   BOOST_CHECK_EQUAL(tree->tree_bound, 0);
   BOOST_CHECK_EQUAL(tree->leaf_split, 100);
@@ -55,7 +55,6 @@ BOOST_AUTO_TEST_CASE(emt_params_test)
 BOOST_AUTO_TEST_CASE(emt_exact_match_sans_router_test)
 {
   auto& vw = *VW::initialize("--eigen_memory_tree --quiet");
-  auto tree = *get_emt_tree(vw);
 
   VW::example& ex1 = *VW::read_example(vw, "1 | 1 2 3");
   VW::example& ex2 = *VW::read_example(vw, "2 | 2 3 4");
@@ -80,7 +79,6 @@ BOOST_AUTO_TEST_CASE(emt_exact_match_sans_router_test)
 BOOST_AUTO_TEST_CASE(emt_exact_match_with_router_test)
 {
   auto& vw = *VW::initialize("--eigen_memory_tree --quiet --leaf 5");
-  auto tree = *get_emt_tree(vw);
 
   std::vector<VW::example*> examples;
 
@@ -103,7 +101,7 @@ BOOST_AUTO_TEST_CASE(emt_exact_match_with_router_test)
 BOOST_AUTO_TEST_CASE(emt_bounding)
 {
   auto& vw = *VW::initialize("--eigen_memory_tree --quiet --tree 5");
-  auto tree = *get_emt_tree(vw);
+  auto& tree = *get_emt_tree(vw);
 
   std::vector<VW::example*> examples;
 
@@ -124,7 +122,7 @@ BOOST_AUTO_TEST_CASE(emt_bounding)
 BOOST_AUTO_TEST_CASE(emt_split)
 {
   auto& vw = *VW::initialize("--eigen_memory_tree --quiet --leaf 3 --tree 10");
-  auto tree = *get_emt_tree(vw);
+  auto& tree = *get_emt_tree(vw);
 
   std::vector<VW::example*> examples;
 

@@ -60,7 +60,7 @@ float variance(std::vector<float>& array)
 /// </summary>
 float my_abs(float value) { return (value < 0) ? -value : value; }
 
-void rng_init(sparse_parameters& weights, std::vector<VW::flat_example*> examples, std::shared_ptr<VW::rand_state> rng)
+void rng_init(sparse_parameters& weights, const std::vector<VW::flat_example*>& examples, const std::shared_ptr<VW::rand_state>& rng)
 {
   for (VW::flat_example* ex : examples)
   {
@@ -89,7 +89,7 @@ float norm(sparse_parameters& weights)
 
   for (auto& w : weights) { sum_weights_sq += w * w; }
 
-  return sqrt(sum_weights_sq);
+  return std::sqrt(sum_weights_sq);
 }
 ////////////////////////////end of helper/////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -134,8 +134,8 @@ struct tree_example
 
 struct LRU
 {
-  typedef tree_example* K;
-  typedef std::list<K>::iterator V;
+  using K = tree_example*;
+  using V = std::list<K>::iterator;
 
   std::list<K> list;
   std::unordered_map<K, V> map;
@@ -189,7 +189,7 @@ struct node
 
   std::vector<tree_example*> examples;
 
-  double router_decision;
+  float router_decision;
   sparse_parameters* router_weights = nullptr;
 
   node()  // construct:
@@ -273,9 +273,9 @@ struct rng
   std::shared_ptr<VW::rand_state> state;
 
 public:
-  rng(std::shared_ptr<VW::rand_state> state) { this->state = state; }
+  rng(std::shared_ptr<VW::rand_state> state) { this->state = std::move(state); }
 
-  typedef size_t result_type;
+  using result_type = size_t;
   static constexpr result_type min() { return 0; }
   static constexpr result_type max() { return 1; }
   result_type operator()() { return state->get_and_update_random(); }
@@ -332,7 +332,7 @@ void tree_bound(tree& b, tree_example* ec)
   }
 }
 
-float scorer_initial(VW::example& ex) { return 1 - exp(-sqrt(ex.total_sum_feat_sq)); }
+float scorer_initial(VW::example& ex) { return 1 - std::exp(-std::sqrt(ex.total_sum_feat_sq)); }
 
 /// <summary>
 /// Calculate pairwise difference features for a scorer example
@@ -705,6 +705,7 @@ void node_split(tree& b, node& cn)
     }
 
     std::vector<float> projs;
+    projs.reserve(examples.size());
     for (VW::flat_example* example : examples) { projs.push_back(inner(*example, *weights)); }
 
     best_projector = weights;
@@ -716,8 +717,8 @@ void node_split(tree& b, node& cn)
     THROW("An unrecognized router type was provided.")
   }
 
-  auto left = new node();
-  auto right = new node();
+  auto* left = new node();
+  auto* right = new node();
   auto depth = cn.depth + 1;
 
   cn.internal = true;
@@ -777,7 +778,7 @@ void node_predict(tree& b, single_learner& base, node& cn, tree_example& ex, VW:
 {
   auto closest_ex = node_pick(b, base, cn, ex);
 
-  ec.confidence = (closest_ex != nullptr) ? (1 - exp(-closest_ex->score)) : 0;
+  ec.confidence = (closest_ex != nullptr) ? (1 - std::exp(-closest_ex->score)) : 0;
   ec.pred.multiclass = (closest_ex != nullptr) ? closest_ex->label : 0;
   ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
 }
