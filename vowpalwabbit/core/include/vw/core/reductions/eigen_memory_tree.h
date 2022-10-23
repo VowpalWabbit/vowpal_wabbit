@@ -10,6 +10,7 @@
 #include <list>
 #include <unordered_map>
 #include <vector>
+#include <ctime>
 
 namespace VW
 {
