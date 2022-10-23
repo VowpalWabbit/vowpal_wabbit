@@ -62,16 +62,16 @@ float my_abs(float value) { return (value < 0) ? -value : value; }
 
 void rng_init(sparse_parameters& weights, std::vector<VW::flat_example*> examples, std::shared_ptr<VW::rand_state> rng)
 {
-  for (auto ex : examples)
+  for (flat_example* ex : examples)
   {
-    for (auto f : ex->fs) { weights[f.index()] = rng->get_and_update_random(); }
+    for (auto& f : ex->fs) { weights[f.index()] = rng->get_and_update_random(); }
   }
 }
 
 float inner(features& fs, sparse_parameters& weights)
 {
   float inner = 0;
-  for (auto f : fs) { inner += weights[f.index()] * f.value(); }
+  for (auto& f : fs) { inner += weights[f.index()] * f.value(); }
   return inner;
 }
 
@@ -89,7 +89,7 @@ float norm(sparse_parameters& weights)
 {
   float sum_weights_sq = 0;
 
-  for (auto w : weights) { sum_weights_sq += w * w; }
+  for (auto& w : weights) { sum_weights_sq += w * w; }
 
   return sqrt(sum_weights_sq);
 }
@@ -117,7 +117,7 @@ struct tree_example
     tag = -1;
   }
 
-  tree_example(VW::workspace& all, example* ex)
+  tree_example(VW::workspace& all, VW::example* ex)
   {
     label = ex->l.multi.label;
     tag = -1;
@@ -254,7 +254,7 @@ struct tree
   void deallocate_node(node* n)
   {
     if (!n) { return; }
-    for (auto e : n->examples)
+    for (tree_example* e : n->examples)
     {
       VW::free_flatten_example(e->base);
       VW::free_flatten_example(e->full);
@@ -318,7 +318,7 @@ node& tree_route(tree& b, tree_example& ec)
 
 void tree_bound(tree& b, tree_example* ec)
 {
-  auto to_delete = b.bounder->bound(ec);
+  tree_example* to_delete = b.bounder->bound(ec);
 
   if (to_delete == nullptr) { return; }
 
@@ -334,7 +334,7 @@ void tree_bound(tree& b, tree_example* ec)
   }
 }
 
-float scorer_initial(example& ex) { return 1 - exp(-sqrt(ex.total_sum_feat_sq)); }
+float scorer_initial(VW::example& ex) { return 1 - exp(-sqrt(ex.total_sum_feat_sq)); }
 
 /// <summary>
 /// Calculate pairwise difference features for a scorer example
@@ -613,7 +613,7 @@ void node_split(tree& b, single_learner& base, node& cn)
   float best_variance = 0;
 
   std::vector<VW::flat_example*> examples;
-  for (auto example : cn.examples) { examples.push_back(example->base); }
+  for (tree_example* example : cn.examples) { examples.push_back(example->base); }
 
   if (b.router_type == 1)
   {
@@ -628,7 +628,7 @@ void node_split(tree& b, single_learner& base, node& cn)
       scale(*new_weights, 1 / norm(*new_weights));
 
       projs.clear();
-      for (auto example : examples) { projs.push_back(inner(*example, *new_weights)); }
+      for (flat_example* example : examples) { projs.push_back(inner(*example, *new_weights)); }
       float new_variance = variance(projs);
 
       if (new_variance > best_variance)
@@ -666,13 +666,13 @@ void node_split(tree& b, single_learner& base, node& cn)
     float n_examples = examples.size();
 
     std::unordered_map<int, float> mean_map;
-    for (auto ex : examples)
+    for (flat_example* ex : examples)
     {
-      for (auto f : ex->fs) { mean_map[f.index()] += (1 / n_examples) * f.value(); }
+      for (auto& f : ex->fs) { mean_map[f.index()] += (1 / n_examples) * f.value(); }
     }
 
     features feature_means;
-    for (auto map : mean_map) { feature_means.push_back(map.second, map.first); }
+    for (auto& map : mean_map) { feature_means.push_back(map.second, map.first); }
 
     std::vector<features> centered_features;
     for (int i = 0; i < n_examples; i++)
@@ -698,14 +698,14 @@ void node_split(tree& b, single_learner& base, node& cn)
         // in notation closer to matrix multiplication this looks like:
         // weights = weights + (1/n) * inner(outer(example->fs,example->fs), weights)
         float scalar = (1 / n) * inner(fs, *weights);
-        for (auto f : fs) { (*weights)[f.index()] += f.value() * scalar; }
+        for (auto& f : fs) { (*weights)[f.index()] += f.value() * scalar; }
         scale(*weights, 1 / norm(*weights));
         n += 1;
       }
     }
 
     std::vector<float> projs;
-    for (auto example : examples) { projs.push_back(inner(*example, *weights)); }
+    for (flat_example* example : examples) { projs.push_back(inner(*example, *weights)); }
 
     best_projector = weights;
     best_decision = median(projs);
@@ -734,13 +734,13 @@ void node_split(tree& b, single_learner& base, node& cn)
   cn.router_weights = best_projector;
   cn.router_decision = best_decision;
 
-  for (auto example : cn.examples) { node_route(cn, *example)->examples.push_back(example); }
+  for (tree_example* example : cn.examples) { node_route(cn, *example)->examples.push_back(example); }
   cn.examples.clear();
 }
 
 void node_insert(tree& b, single_learner& base, node& cn, tree_example& ex)
 {
-  for (auto example : cn.examples)
+  for (tree_example* example : cn.examples)
   {
     scorer_example(b, ex, *example, b.ex[0], 1);
     if (b.ex[0].total_sum_feat_sq == 0) { return; }
@@ -756,7 +756,7 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
   float best_score = FLT_MAX;
   std::vector<tree_example*> best_examples;
 
-  for (auto example : cn.examples)
+  for (tree_example* example : cn.examples)
   {
     example->score = scorer_predict(b, base, ex, *example);
 
@@ -773,7 +773,7 @@ tree_example* node_pick(tree& b, single_learner& base, node& cn, tree_example& e
   return best_examples[0];
 }
 
-void node_predict(tree& b, single_learner& base, node& cn, tree_example& ex, example& ec)
+void node_predict(tree& b, single_learner& base, node& cn, tree_example& ex, VW::example& ec)
 {
   auto closest_ex = node_pick(b, base, cn, ex);
 
@@ -782,7 +782,7 @@ void node_predict(tree& b, single_learner& base, node& cn, tree_example& ex, exa
   ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
 }
 
-void predict(tree& b, single_learner& base, example& ec)
+void predict(tree& b, single_learner& base, VW::example& ec)
 {
   b.all->ignore_some_linear = false;
   tree_example ex(*b.all, &ec);
@@ -792,7 +792,7 @@ void predict(tree& b, single_learner& base, example& ec)
   tree_bound(b, &ex);
 }
 
-void learn(tree& b, single_learner& base, example& ec)
+void learn(tree& b, single_learner& base, VW::example& ec)
 {
   b.all->ignore_some_linear = false;
   tree_example& ex = *new tree_example(*b.all, &ec);
@@ -841,7 +841,7 @@ void save_load_examples(tree& b, node& n, io_buf& model_file, bool& read, bool& 
     for (uint32_t i = 0; i < n_examples; i++) { n.examples.push_back(new tree_example()); }
   }
 
-  for (auto e : n.examples)
+  for (tree_example* e : n.examples)
   {
     if (read)
     {
@@ -1003,7 +1003,7 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
   pred_type = VW::prediction_type_t::multiclass;
   label_type = VW::label_type_t::multiclass;
 
-  auto l = make_reduction_learner(std::move(t), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+  auto& l = make_reduction_learner(std::move(t), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(eigen_memory_tree_setup))
                .set_learn_returns_prediction(true)  // we set this to true otherwise bounding doesn't work as well
                .set_end_pass(end_pass)
