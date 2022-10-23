@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE(emt_params_test)
   auto vw = VW::initialize("--eigen_memory_tree --quiet");
   auto tree = get_emt_tree(*vw);
 
-  BOOST_CHECK_EQUAL(tree->tree_bound, -1);
+  BOOST_CHECK_EQUAL(tree->tree_bound, 0);
   BOOST_CHECK_EQUAL(tree->leaf_split, 100);
   BOOST_CHECK_EQUAL(tree->scorer_type, 3);
   BOOST_CHECK_EQUAL(tree->router_type, 1);

@@ -80,9 +80,7 @@ float inner(VW::flat_example& example, sparse_parameters& weights) { return inne
 void scale(sparse_parameters& weights, float scalar)
 {
   for (sparse_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
-  {
-    weights[i.index()] = weights[i.index()] * scalar;
-  }
+  { weights[i.index()] = weights[i.index()] * scalar; }
 }
 
 float norm(sparse_parameters& weights)
@@ -142,14 +140,14 @@ struct LRU
   std::list<K> list;
   std::unordered_map<K, V> map;
 
-  unsigned long max_size;
+  size_t max_size;
 
 public:
   LRU(unsigned long max_size) { (*this).max_size = max_size; }
 
   K bound(K item)
   {
-    if (max_size == -1) { return nullptr; }
+    if (max_size == 0) { return nullptr; }
 
     auto item_map_reference = map.find(item);
 
@@ -501,7 +499,7 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ex, tree_
   }
 }
 
-void scorer_learn(tree& b, single_learner& base, VW::example& ex, float label, float weight)
+void scorer_learn(single_learner& base, VW::example& ex, float label, float weight)
 {
   if (ex.total_sum_feat_sq != 0)
   {
@@ -573,18 +571,18 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ex, flo
       if (b._random_state->get_and_update_random() < .5)
       {
         scorer_example(b, ex, *preferred_ex, b.ex[0], example_type);
-        scorer_learn(b, base, b.ex[0], int(preferred_error > alternative_error), weight);
+        scorer_learn(base, b.ex[0], int(preferred_error > alternative_error), weight);
 
         scorer_example(b, ex, *alternative_ex, b.ex[0], example_type);
-        scorer_learn(b, base, b.ex[0], int(alternative_error > preferred_error), weight);
+        scorer_learn(base, b.ex[0], int(alternative_error > preferred_error), weight);
       }
       else
       {
         scorer_example(b, ex, *alternative_ex, b.ex[0], example_type);
-        scorer_learn(b, base, b.ex[0], int(alternative_error > preferred_error), weight);
+        scorer_learn(base, b.ex[0], int(alternative_error > preferred_error), weight);
 
         scorer_example(b, ex, *preferred_ex, b.ex[0], example_type);
-        scorer_learn(b, base, b.ex[0], int(preferred_error > alternative_error), weight);
+        scorer_learn(base, b.ex[0], int(preferred_error > alternative_error), weight);
       }
 
       // doing the trick below doesn't work as well as the two separate updates. Why? It does seem to be faster.
@@ -602,7 +600,7 @@ void scorer_learn(tree& b, single_learner& base, node& cn, tree_example& ex, flo
   }
 }
 
-void node_split(tree& b, single_learner& base, node& cn)
+void node_split(tree& b, node& cn)
 {
   if (cn.examples.size() <= b.leaf_split) { return; }
 
@@ -738,7 +736,7 @@ void node_split(tree& b, single_learner& base, node& cn)
   cn.examples.clear();
 }
 
-void node_insert(tree& b, single_learner& base, node& cn, tree_example& ex)
+void node_insert(tree& b, node& cn, tree_example& ex)
 {
   for (tree_example* example : cn.examples)
   {
@@ -809,9 +807,9 @@ void learn(tree& b, single_learner& base, VW::example& ec)
 
   if (b.pass == 0)
   {
-    node_insert(b, base, cn, ex);
+    node_insert(b, cn, ex);
     tree_bound(b, &ex);
-    node_split(b, base, cn);
+    node_split(b, cn);
   }
 }
 
@@ -858,7 +856,7 @@ void save_load_examples(tree& b, node& n, io_buf& model_file, bool& read, bool& 
   }
 }
 
-void save_load_weights(tree& b, node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+void save_load_weights(node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
   if (!n.internal) { return; }
 
@@ -884,7 +882,7 @@ void save_load_weights(tree& b, node& n, io_buf& model_file, bool& read, bool& t
   if (read)
   {
     n.router_weights = new sparse_parameters(router_length, router_shift);
-    for (int i = 0; i < router_dims; i++)
+    for (uint32_t i = 0; i < router_dims; i++)
     {
       uint64_t index = 0;
       float value = 0;
@@ -921,7 +919,7 @@ node* save_load_node(tree& b, node* n, io_buf& model_file, bool& read, bool& tex
   WRITEIT(n->router_decision, "decision");
 
   save_load_examples(b, *n, model_file, read, text, msg);
-  save_load_weights(b, *n, model_file, read, text, msg);
+  save_load_weights(*n, model_file, read, text, msg);
 
   n->left = save_load_node(b, n->left, model_file, read, text, msg);
   n->right = save_load_node(b, n->right, model_file, read, text, msg);
@@ -973,7 +971,7 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
                .help("Make an eigen memory tree with at most <n> memories"))
       .add(make_option("tree", t->tree_bound)
                .keep()
-               .default_value(-1)
+               .default_value(0)
                .help("Indicates the maximum number of memories the tree can have."))
       .add(make_option("leaf", t->leaf_split)
                .keep()
@@ -1000,16 +998,16 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
 
   // multi-class classification
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-  pred_type = VW::prediction_type_t::multiclass;
-  label_type = VW::label_type_t::multiclass;
+  pred_type = VW::prediction_type_t::MULTICLASS;
+  label_type = VW::label_type_t::MULTICLASS;
 
   auto& l = make_reduction_learner(std::move(t), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(eigen_memory_tree_setup))
-               .set_learn_returns_prediction(true)  // we set this to true otherwise bounding doesn't work as well
-               .set_end_pass(end_pass)
-               .set_save_load(save_load_tree)
-               .set_output_prediction_type(pred_type)
-               .set_input_label_type(label_type);
+                .set_learn_returns_prediction(true)  // we set this to true otherwise bounding doesn't work as well
+                .set_end_pass(end_pass)
+                .set_save_load(save_load_tree)
+                .set_output_prediction_type(pred_type)
+                .set_input_label_type(label_type);
 
   l.set_finish_example(VW::details::finish_multiclass_example<tree&>);
 
