@@ -78,7 +78,7 @@ struct tree
 
   VW::example* ex;  // we create one of these which we re-use so we don't have to reallocate examples
 
-  clock_t begin;  // for timing performance
+  std::clock_t begin;  // for timing performance
   float time;     // for timing performance
 
   node* root;
