@@ -497,6 +497,8 @@ float scorer_predict(tree& b, single_learner& base, tree_example& pred_ex, tree_
 
     return b.ex->pred.scalar;
   }
+
+  THROW("An unrecognized scorer type was provided.")
 }
 
 void scorer_learn(single_learner& base, VW::example& ex, float label, float weight)
