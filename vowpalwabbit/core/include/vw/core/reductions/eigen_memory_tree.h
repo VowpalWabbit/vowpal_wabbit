@@ -7,10 +7,10 @@
 #include "vw/core/example.h"
 #include "vw/core/vw_fwd.h"
 
+#include <ctime>
 #include <list>
 #include <unordered_map>
 #include <vector>
-#include <ctime>
 
 namespace VW
 {
@@ -34,8 +34,8 @@ struct tree_example
 
 struct LRU
 {
-  typedef tree_example* K;
-  typedef std::list<K>::iterator V;
+  using K = tree_example*;
+  using V = std::list<K>::iterator;
 
   std::list<K> list;
   std::unordered_map<K, V> map;

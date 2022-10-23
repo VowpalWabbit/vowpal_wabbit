@@ -60,7 +60,8 @@ float variance(std::vector<float>& array)
 /// </summary>
 float my_abs(float value) { return (value < 0) ? -value : value; }
 
-void rng_init(sparse_parameters& weights, const std::vector<VW::flat_example*>& examples, const std::shared_ptr<VW::rand_state>& rng)
+void rng_init(sparse_parameters& weights, const std::vector<VW::flat_example*>& examples,
+    const std::shared_ptr<VW::rand_state>& rng)
 {
   for (VW::flat_example* ex : examples)
   {

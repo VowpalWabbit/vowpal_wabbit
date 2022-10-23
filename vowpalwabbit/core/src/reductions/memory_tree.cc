@@ -645,7 +645,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW
 
       if (score > max_score)
       {
-        b.examples[loc]->confidence = 1 - exp(-score);
+        b.examples[loc]->confidence = 1 - std::exp(-score);
         max_score = score;
         max_pos = static_cast<int64_t>(loc);
       }
