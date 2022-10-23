@@ -6,6 +6,7 @@
 
 #include "test_common.h"
 #include "vw/core/example.h"
+#include "vw/core/learner.h"
 #include "vw/core/vw.h"
 
 #include <boost/test/test_tools.hpp>
