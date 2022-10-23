@@ -1,4 +1,4 @@
-memory_tree: max_nodes = 10 max_leaf_examples = 33 alpha = 0.1 oas = 0 online =1 
+memory_tree: max_nodes = 10 max_leaf_examples = 33 alpha = 0.1 oas = 0 online = 1 
 using no cache
 Reading datafile = train-sets/rcv1_smaller.dat
 num sources = 1

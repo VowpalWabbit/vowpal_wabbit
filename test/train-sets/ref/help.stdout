@@ -556,7 +556,7 @@ Weight Options:
     --eigen_memory_tree                     Make an eigen memory tree with at most <n> memories (type: bool,
                                             keep, necessary)
     --tree arg                              Indicates the maximum number of memories the tree can have. (type:
-                                            int, default: -1, keep)
+                                            int, default: 0, keep)
     --leaf arg                              Indicates the maximum number of memories a leaf can have. (type:
                                             uint, default: 100, keep)
     --scorer arg                            Indicates the type of scorer to use (1=random,2=distance,3=rank)
