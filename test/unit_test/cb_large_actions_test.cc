@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE(test_two_Ys_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
-  uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+  float seed = (vw.get_random_state()->get_random() + 1) * 10.f;
 
   VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(
       &vw, d, seed, 1 << vw.num_bits, /*thread_pool_size*/ 0, /*block_size*/ 0);
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(test_two_Bs_are_equal)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
-  uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+  float seed = (vw.get_random_state()->get_random() + 1) * 10.f;
 
   VW::cb_explore_adf::model_weight_rand_svd_impl _model_weight_rand_svd_impl(
       &vw, d, seed, 1 << vw.num_bits, /*thread_pool_size*/ 0, /*block_size*/ 0);
@@ -369,7 +369,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
       std::vector<Eigen::Triplet<float>> omega_triplets;
       uint64_t max_ft_index = 0;
 
-      uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+      float seed = (vw.get_random_state()->get_random() + 1) * 10.f;
 
       for (uint64_t action_index = 0; action_index < num_actions; action_index++)
       {
@@ -526,7 +526,7 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
     BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
     {
-      uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+      float seed = (vw.get_random_state()->get_random() + 1) * 10.f;
 
       VW::multi_ex examples;
 
