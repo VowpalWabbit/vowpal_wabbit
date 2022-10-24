@@ -37,7 +37,7 @@ namespace
 class ldf
 {
 public:
-  LabelDict::label_feature_map label_features;
+  VW::details::label_feature_map label_features;
 
   bool is_wap = false;
   bool treat_as_classifier = false;
@@ -109,7 +109,7 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
 {
   uint64_t old_offset = ec.ft_offset;
 
-  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
+  VW::details::add_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
 
   auto restore_guard = VW::scope_exit([&data, old_offset, &ec] {
     ec.ft_offset = old_offset;
@@ -118,7 +118,7 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
     ec.l.cs.costs[0].partial_prediction = ec.partial_prediction;
     // WARNING: Access of label information when making prediction is
     // problematic.
-    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
+    VW::details::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
   });
 
   ec.l.simple = VW::simple_label{FLT_MAX};
@@ -171,11 +171,11 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
     auto costs1 = save_cs_label.costs;
     if (costs1[0].class_index == static_cast<uint32_t>(-1)) { continue; }
 
-    LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
+    VW::details::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
     // Guard example state restore against throws
     auto restore_guard = VW::scope_exit([&data, &save_cs_label, &costs1, &ec1] {
-      LabelDict::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
+      VW::details::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
       // restore original cost-sensitive label, sum of importance weights
       ec1->l.cs = save_cs_label;
@@ -192,7 +192,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
       if (value_diff < 1e-6) { continue; }
 
       // Prepare example for learning
-      LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
+      VW::details::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
 
       // learn
       float old_weight = ec1->weight;
@@ -209,7 +209,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
         ec1->ft_offset = old_offset;
         ec1->weight = old_weight;
         unsubtract_example(ec1, data.all->logger);
-        LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
+        VW::details::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
       });
 
       base.learn(*ec1);
@@ -264,14 +264,14 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
     ec->l.simple = simple_lbl;
 
     // Prepare examples for learning
-    LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
+    VW::details::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     uint64_t old_offset = ec->ft_offset;
     ec->ft_offset = data.ft_offset;
 
     // Guard example state restore against throws
     auto restore_guard = VW::scope_exit([&save_cs_label, &data, &costs, old_offset, old_weight, &ec] {
       ec->ft_offset = old_offset;
-      LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
+      VW::details::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
       ec->weight = old_weight;
       ec->partial_prediction = costs[0].partial_prediction;
       // restore original cost-sensitive label, sum of importance weights and partial_prediction

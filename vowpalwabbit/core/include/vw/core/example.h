@@ -35,6 +35,12 @@ namespace VW
 void copy_example_data(example* dst, const example* src);
 void setup_example(VW::workspace& all, example* ae);
 
+void add_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+void del_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+
+void add_example_namespaces_from_example(VW::example& target, const VW::example& source);
+void del_example_namespaces_from_example(VW::example& target, const VW::example& source);
+
 class polylabel
 {
 public:
