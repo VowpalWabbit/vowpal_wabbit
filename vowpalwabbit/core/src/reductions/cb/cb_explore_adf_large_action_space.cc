@@ -290,8 +290,7 @@ void shrink_factor_config::calculate_shrink_factor(
 }
 
 template class cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
-template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
-template class cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<two_pass_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -337,9 +336,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float c;
   bool apply_shrink_factor = false;
   bool full_predictions = false;
-  bool model_weight_impl = false;
-  bool use_vanilla_impl = false;
-  bool full_spanner = false;
+  bool use_two_pass_svd_impl = false;
   // leave some resources available in the case of few core's (for parser)
   uint64_t thread_pool_size = (std::thread::hardware_concurrency() - 1) / 2;
   uint64_t block_size = 0;
@@ -351,9 +348,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("model_weight", model_weight_impl))
-      .add(make_option("vanilla", use_vanilla_impl))
-      .add(make_option("full_spanner", full_spanner))
+      .add(make_option("two_pass_svd", use_two_pass_svd_impl)
+               .experimental()
+               .help("a more accurate svd that is much slower than the default (one pass svd)"))
       .add(make_option("thread_pool_size", thread_pool_size)
                .help("number of threads in the thread pool that will be used when running with one pass svd "
                      "implementation (default svd implementation option). Default thread pool size will be half of the "
@@ -373,8 +370,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
       .add(make_option("max_actions", d)
                .keep()
                .allow_override()
-               .default_value(50)
-               .help("Max number of actions to explore")
+               .default_value(20)
+               .help("Max number of actions to explore over")
                .experimental())
       .add(make_option("spanner_c", c)
                .keep()
@@ -410,46 +407,16 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
-  if (model_weight_impl)
+  if (use_two_pass_svd_impl)
   {
-    auto impl_type = implementation_type::model_weight_rand_svd;
-    if (full_spanner)
-    {
-      return make_las_with_impl<model_weight_rand_svd_impl, spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
-    else
-    {
-      return make_las_with_impl<model_weight_rand_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
-  }
-  else if (use_vanilla_impl)
-  {
-    auto impl_type = implementation_type::vanilla_rand_svd;
-    if (full_spanner)
-    {
-      return make_las_with_impl<vanilla_rand_svd_impl, spanner_state>(stack_builder, base, impl_type, all, with_metrics,
-          d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
-    else
-    {
-      return make_las_with_impl<vanilla_rand_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
+    auto impl_type = implementation_type::two_pass_svd;
+    return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
+        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
-    if (full_spanner)
-    {
-      return make_las_with_impl<one_pass_svd_impl, spanner_state>(stack_builder, base, impl_type, all, with_metrics, d,
-          gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
-    else
-    {
-      return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
+    return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
+        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
   }
 }

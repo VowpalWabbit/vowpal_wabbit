@@ -338,14 +338,14 @@ BOOST_AUTO_TEST_CASE(check_uniform_probabilities_before_learning)
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
   auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --noconstant --vanilla",
+          std::to_string(d) + " --quiet --noconstant --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
   auto* vw_squarecb =
       VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --noconstant --vanilla",
+              std::to_string(d) + " --quiet --noconstant --two_pass_svd",
           nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
