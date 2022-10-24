@@ -79,7 +79,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec
   }
 
   ec.l.simple.label = 1.;  // truth
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   uint32_t lbl_ind = (o.indexing == 0) ? ld.label : ld.label - 1;
 
   base.learn(ec, lbl_ind);
@@ -146,7 +146,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   }
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   for (uint32_t i = 0; i < o.k; i++)
   {

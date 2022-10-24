@@ -241,7 +241,7 @@ private:
 
     if (!_all->example_parser->words.empty())
     {
-      _all->example_parser->lbl_parser.parse_label(_ae->l, _ae->_reduction_features,
+      _all->example_parser->lbl_parser.parse_label(_ae->l, _ae->ex_reduction_features,
           _all->example_parser->parser_memory_to_reuse, _all->sd->ldict.get(), _all->example_parser->words,
           _all->logger);
     }

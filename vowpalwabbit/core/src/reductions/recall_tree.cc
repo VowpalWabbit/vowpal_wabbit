@@ -258,7 +258,7 @@ uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, VW::exam
 
   add_node_id_feature(b, cn, ec);
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   float maxscore = std::numeric_limits<float>::lowest();
   for (node_pred* ls = b.nodes[cn].preds.begin();
        ls != b.nodes[cn].preds.end() && ls < b.nodes[cn].preds.begin() + b.max_candidates; ++ls)
@@ -312,7 +312,7 @@ predict_type predict_from(recall_tree& b, single_learner& base, VW::example& ec,
   uint32_t save_pred = ec.pred.multiclass;
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_router);
@@ -360,7 +360,7 @@ float train_node(recall_tree& b, single_learner& base, VW::example& ec, uint32_t
   // float imp_weight = fabs((float)(delta_left - delta_right));
 
   ec.l.simple = {route_label};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   // Bug?
   // Notes: looks like imp_weight was not used since ec.l.simple.weight is not
   // used in gd.
@@ -419,7 +419,7 @@ void learn(recall_tree& b, single_learner& base, VW::example& ec)
       add_node_id_feature(b, cn, ec);
 
       ec.l.simple = {1.f};
-      ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+      ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
       base.learn(ec, b.max_routers + mc.label - 1);
       ec.l.simple = {-1.f};
 
