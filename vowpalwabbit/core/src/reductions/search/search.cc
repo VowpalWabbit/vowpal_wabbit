@@ -1329,7 +1329,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
   for (action a = static_cast<uint32_t>(start_K); a < ec_cnt; a++)
   {
     cdbg << "== single_prediction_ldf a=" << a << "==" << endl;
-    if (start_K > 0) { VW::add_example_namespaces_from_example(ecs[a], ecs[0]); }
+    if (start_K > 0) { VW::details::append_example_namespaces_from_example(ecs[a], ecs[0]); }
 
     VW::polylabel old_label = ecs[a].l;
     ecs[a].l.cs = priv.ldf_test_label;
@@ -1358,7 +1358,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
 
     priv.num_features += ecs[a].get_num_features();
     ecs[a].l = old_label;
-    if (start_K > 0) { VW::del_example_namespaces_from_example(ecs[a], ecs[0]); }
+    if (start_K > 0) { VW::details::truncate_example_namespaces_from_example(ecs[a], ecs[0]); }
   }
   if (override_action != static_cast<action>(-1)) { best_action = override_action; }
   else

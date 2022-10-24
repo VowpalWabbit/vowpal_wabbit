@@ -13,7 +13,7 @@ namespace VW
 namespace details
 {
 using label_feature_map = std::unordered_map<size_t, features>;
-void add_example_namespace_from_memory(const label_feature_map& lfm, VW::example& ec, size_t lab);
-void del_example_namespace_from_memory(const label_feature_map& lfm, VW::example& ec, size_t lab);
+void append_example_namespace_from_memory(const label_feature_map& lfm, VW::example& ec, size_t lab);
+void truncate_example_namespace_from_memory(const label_feature_map& lfm, VW::example& ec, size_t lab);
 }  // namespace details
 }  // namespace VW

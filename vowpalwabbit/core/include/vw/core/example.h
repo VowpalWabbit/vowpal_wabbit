@@ -35,12 +35,6 @@ namespace VW
 void copy_example_data(example* dst, const example* src);
 void setup_example(VW::workspace& all, example* ae);
 
-void add_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
-void del_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
-
-void add_example_namespaces_from_example(VW::example& target, const VW::example& source);
-void del_example_namespaces_from_example(VW::example& target, const VW::example& source);
-
 class polylabel
 {
 public:
@@ -182,6 +176,15 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
 using example_factory_t = example& (*)(void*);
+
+namespace details
+{
+void append_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+
+void append_example_namespaces_from_example(VW::example& target, const VW::example& source);
+void truncate_example_namespaces_from_example(VW::example& target, const VW::example& source);
+}  // namespace details
 
 namespace model_utils
 {

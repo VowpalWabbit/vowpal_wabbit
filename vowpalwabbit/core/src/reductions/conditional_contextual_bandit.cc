@@ -228,12 +228,12 @@ void inject_slot_features(VW::example* shared, VW::example* slot)
 
     if (index == VW::details::DEFAULT_NAMESPACE)  // slot default namespace has a special namespace in shared
     {
-      VW::add_example_namespace(
+      VW::details::append_example_namespace(
           *shared, VW::details::CCB_SLOT_NAMESPACE, slot->feature_space[VW::details::DEFAULT_NAMESPACE]);
     }
     else
     {
-      VW::add_example_namespace(*shared, index, slot->feature_space[index]);
+      VW::details::append_example_namespace(*shared, index, slot->feature_space[index]);
     }
   }
 }
@@ -288,12 +288,12 @@ void remove_slot_features(VW::example* shared, VW::example* slot)
 
     if (index == VW::details::DEFAULT_NAMESPACE)  // slot default namespace has a special namespace in shared
     {
-      VW::del_example_namespace(
+      VW::details::truncate_example_namespace(
           *shared, VW::details::CCB_SLOT_NAMESPACE, slot->feature_space[VW::details::DEFAULT_NAMESPACE]);
     }
     else
     {
-      VW::del_example_namespace(*shared, index, slot->feature_space[index]);
+      VW::details::truncate_example_namespace(*shared, index, slot->feature_space[index]);
     }
   }
 }

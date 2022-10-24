@@ -88,7 +88,7 @@ bool two_pass_svd_impl::generate_Y(const multi_ex& examples, const std::vector<f
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
-    if (shared_example != nullptr) { VW::del_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
     for (uint64_t col = 0; col < _d; col++)
     {
@@ -116,7 +116,7 @@ bool two_pass_svd_impl::generate_Y(const multi_ex& examples, const std::vector<f
       }
     }
 
-    if (shared_example != nullptr) { VW::add_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
 
     row_index++;
   }
@@ -144,7 +144,7 @@ void two_pass_svd_impl::generate_B(const multi_ex& examples, const std::vector<f
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
-    if (shared_example != nullptr) { VW::del_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
     for (Eigen::Index col = 0; col < Y.outerSize(); ++col)
     {
@@ -173,7 +173,7 @@ void two_pass_svd_impl::generate_B(const multi_ex& examples, const std::vector<f
       B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
     }
 
-    if (shared_example != nullptr) { VW::add_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
 
     row_index++;
   }
