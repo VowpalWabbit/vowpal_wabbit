@@ -124,7 +124,8 @@ void generate_universe_types_internal(
       std::fstream* fs = nullptr;
       if (!write_to_cout)
       {
-        fs = new std::fstream(schema_path);
+        fs = new std::fstream();
+        fs->open(schema_path, std::ios::out);
       }
 
       std::ostream& os = write_to_cout ? std::cout : *fs;
