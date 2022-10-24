@@ -192,7 +192,7 @@ void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parse
 {
   temp_buffer.backing_buffer->clear();
   io_buf& temp_cache = temp_buffer.temporary_cache_buffer;
-  lbl_parser.cache_label(ex_ptr->l, ex_ptr->_reduction_features, temp_cache, "_label", false);
+  lbl_parser.cache_label(ex_ptr->l, ex_ptr->ex_reduction_features, temp_cache, "_label", false);
   details::cache_tag(temp_cache, ex_ptr->tag);
   temp_cache.write_value<unsigned char>(ex_ptr->is_newline ? NEWLINE_EXAMPLE_INDICATOR : NON_NEWLINE_EXAMPLE_INDICATOR);
   assert(ex_ptr->indices.size() < 256);
@@ -220,7 +220,7 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex&
 
   all->example_parser->lbl_parser.default_label(examples[0]->l);
   size_t total =
-      all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->_reduction_features, input);
+      all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->ex_reduction_features, input);
   if (total == 0) { THROW("Ran out of cache while reading example. File may be truncated."); }
 
   size_t tag_size = details::read_cached_tag(input, examples[0]->tag);

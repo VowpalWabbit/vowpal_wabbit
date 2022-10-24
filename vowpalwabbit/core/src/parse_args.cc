@@ -1401,7 +1401,7 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
 {
   auto* wrapper_context = reinterpret_cast<trace_message_wrapper*>(context);
   const std::string str(buffer, num_bytes);
-  wrapper_context->_trace_message(wrapper_context->_inner_context, str);
+  wrapper_context->trace_message(wrapper_context->inner_context, str);
   return static_cast<ssize_t>(num_bytes);
 }
 

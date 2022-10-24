@@ -548,7 +548,7 @@ void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view e
 
   if (!all->example_parser->words.empty())
   {
-    all->example_parser->lbl_parser.parse_label(ae->l, ae->_reduction_features,
+    all->example_parser->lbl_parser.parse_label(ae->l, ae->ex_reduction_features,
         all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words, all->logger);
   }
 

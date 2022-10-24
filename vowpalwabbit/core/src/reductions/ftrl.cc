@@ -106,7 +106,7 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   VW::workspace& all = *b.all;
   for (size_t c = 0; c < count; c++)
   {
-    const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+    const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     pred[c].scalar = simple_red_features.initial;
   }
   size_t num_features_from_interactions = 0;

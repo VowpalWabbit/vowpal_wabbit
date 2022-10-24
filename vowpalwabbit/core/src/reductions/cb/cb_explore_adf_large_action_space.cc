@@ -64,7 +64,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
     if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
 
@@ -76,7 +76,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
+          _all->permutations, *ex, w, _all->generate_interactions_object_cache_state);
     }
     else
     {
@@ -87,7 +87,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
+          _all->permutations, *ex, w, _all->generate_interactions_object_cache_state);
     }
 
     if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }

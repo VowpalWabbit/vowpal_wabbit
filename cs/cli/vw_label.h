@@ -225,7 +225,7 @@ public:
 
     m_label = ld->label;
 
-    const auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+    const auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
     m_weight = red_fts.weight;
     m_initial = red_fts.initial;
   }
@@ -239,7 +239,7 @@ public:
 
     if (m_initial.HasValue)
     {
-      auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       red_fts.initial = m_initial.Value;
     }
 

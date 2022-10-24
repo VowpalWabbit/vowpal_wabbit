@@ -36,7 +36,8 @@ TEST(csv_parser_tests, test_complex_csv_simple_label_examples)
 
   // Check example 1 label and tag
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 1.f);
-  const auto& red_features_exp1 = examples[0]->_reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& red_features_exp1 =
+      examples[0]->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   EXPECT_FLOAT_EQ(red_features_exp1.weight, 2.f);
   EXPECT_EQ(examples[0]->tag.size(), 11);
   std::string example1_tag = {examples[0]->tag.data(), examples[0]->tag.size()};
@@ -96,7 +97,8 @@ TEST(csv_parser_tests, test_complex_csv_simple_label_examples)
 
   // Check example 2 label and tag
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 2.f);
-  const auto& red_features_exp2 = examples[0]->_reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& red_features_exp2 =
+      examples[0]->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   EXPECT_FLOAT_EQ(red_features_exp2.weight, 1.f);
   EXPECT_EQ(examples[0]->tag.size(), 6);
   std::string example2_tag = {examples[0]->tag.data(), examples[0]->tag.size()};
@@ -309,7 +311,8 @@ TEST(csv_parser_tests, test_replace_header)
 
   // Check example 1 label
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 3.f);
-  const auto& red_features_exp1 = examples[0]->_reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& red_features_exp1 =
+      examples[0]->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   EXPECT_FLOAT_EQ(red_features_exp1.weight, 1.f);
 
   // Check example 1 feature numbers
@@ -356,7 +359,8 @@ TEST(csv_parser_tests, test_no_header)
 
   // Check example 1 label
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 2.f);
-  const auto& red_features_exp1 = examples[0]->_reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& red_features_exp1 =
+      examples[0]->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   EXPECT_FLOAT_EQ(red_features_exp1.weight, 1.f);
 
   // Check example 1 feature numbers

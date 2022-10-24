@@ -77,7 +77,7 @@ namespace VW
 void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylabel*))
 {
   dst->l = src->l;
-  dst->_reduction_features = src->_reduction_features;
+  dst->ex_reduction_features = src->ex_reduction_features;
 }
 
 void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
@@ -193,7 +193,7 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec._reduction_features = ec->_reduction_features;
+  fec.ex_reduction_features = ec->ex_reduction_features;
 
   fec.tag_len = ec->tag.size();
   if (fec.tag_len > 0)
@@ -277,7 +277,7 @@ size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_pars
   size_t bytes = 0;
   bool tag_is_null;
   lbl_parser.default_label(fe.l);
-  bytes += lbl_parser.read_cached_label(fe.l, fe._reduction_features, io);
+  bytes += lbl_parser.read_cached_label(fe.l, fe.ex_reduction_features, io);
   bytes += read_model_field(io, fe.tag_len);
   bytes += read_model_field(io, tag_is_null);
   if (!tag_is_null) { bytes += read_model_field(io, *fe.tag); }
@@ -296,7 +296,7 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
     VW::label_parser& lbl_parser, uint64_t parse_mask)
 {
   size_t bytes = 0;
-  lbl_parser.cache_label(fe.l, fe._reduction_features, io, upstream_name + "_label", text);
+  lbl_parser.cache_label(fe.l, fe.ex_reduction_features, io, upstream_name + "_label", text);
   bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
   bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
   if (!(fe.tag == nullptr)) { bytes += write_model_field(io, *fe.tag, upstream_name + "_tag", text); }

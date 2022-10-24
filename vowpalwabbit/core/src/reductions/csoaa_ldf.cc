@@ -122,7 +122,7 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
   });
 
   ec.l.simple = VW::simple_label{FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
@@ -166,7 +166,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
     // save original variables
     VW::cs_label save_cs_label = ec1->l.cs;
     auto& simple_lbl = ec1->l.simple;
-    auto& simple_red_features = ec1->_reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& simple_red_features = ec1->ex_reduction_features.template get<VW::simple_label_reduction_features>();
 
     auto costs1 = save_cs_label.costs;
     if (costs1[0].class_index == static_cast<uint32_t>(-1)) { continue; }
@@ -259,7 +259,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    auto& simple_red_features = ec->_reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& simple_red_features = ec->ex_reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = 0.;
     ec->l.simple = simple_lbl;
 
