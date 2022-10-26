@@ -118,9 +118,7 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
 
   auto data = VW::make_unique<sfm_data>();
   if (options.was_supplied("extra_metrics")) { data->metrics = VW::make_unique<sfm_metrics>(); }
-#ifdef BUILD_LARGE_ACTION_SPACE
   if (options.was_supplied("large_action_space")) { data->store_shared_ex_in_reduction_features = true; }
-#endif
 
   auto* multi_base = VW::LEARNER::as_multiline(base);
   data->label_type = all.example_parser->lbl_parser.label_type;

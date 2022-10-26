@@ -342,43 +342,45 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   uint64_t block_size = 0;
 
   config::option_group_definition new_options(
-      "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
+      "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("two_pass_svd", use_two_pass_svd_impl)
-               .experimental()
-               .help("a more accurate svd that is much slower than the default (one pass svd)"))
-      .add(make_option("thread_pool_size", thread_pool_size)
-               .help("number of threads in the thread pool that will be used when running with one pass svd "
-                     "implementation (default svd implementation option). Default thread pool size will be half of the "
-                     "available hardware threads"))
-      .add(make_option("block_size", block_size)
-               .default_value(0)
-               .help("number of actions in a block to be scheduled for multithreading when using one pass svd "
-                     "implementation (by default, block_size = num_actions / thread_pool_size)"))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
-               .help("Large action space exploration")
-               .experimental())
-      .add(make_option("full_predictions", full_predictions)
-               .help("Full representation of the prediction's action probabilities")
+               .help("Large action space filtering")
                .experimental())
       .add(make_option("max_actions", d)
                .keep()
                .allow_override()
                .default_value(20)
-               .help("Max number of actions to explore over")
+               .help("Max number of actions to hold")
                .experimental())
       .add(make_option("spanner_c", c)
                .keep()
                .allow_override()
                .default_value(2)
                .help("Parameter for computing c-approximate spanner")
-               .experimental());
+               .experimental())
+      .add(make_option("full_predictions", full_predictions)
+               .help("Full representation of the prediction's action probabilities, if not specified filtered out "
+                     "actions will not appear in the final predictions. If specified, filtered out actions will appear "
+                     "with a probability of zero")
+               .experimental())
+      .add(make_option("thread_pool_size", thread_pool_size)
+               .help("Number of threads in the thread pool that will be used when running with one pass svd "
+                     "implementation (default svd implementation option). Default thread pool size will be half of the "
+                     "available hardware threads"))
+      .add(make_option("block_size", block_size)
+               .default_value(0)
+               .help("Number of actions in a block to be scheduled for multithreading when using one pass svd "
+                     "implementation (by default, block_size = num_actions / thread_pool_size)"))
+      .add(make_option("two_pass_svd", use_two_pass_svd_impl)
+               .experimental()
+               .help("A more accurate svd that is much slower than the default (one pass svd)"));
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }

@@ -465,7 +465,7 @@ static std::vector<std::string> gen_cb_examples(
 
     action_ss << "| ";
     for (int action_feat = 0; action_feat < coordinates; ++action_feat)
-    { action_ss << "x" << action_feat << ":" << (drand48() * scale) << " "; }
+    { action_ss << "x" << action_feat << ":" << ((static_cast<double>(std::rand()) / RAND_MAX) * scale) << " "; }
 
     examples.push_back(action_ss.str());
   }

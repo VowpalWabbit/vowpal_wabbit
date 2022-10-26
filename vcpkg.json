@@ -4,6 +4,7 @@
   "version": "9.5.0",
   "dependencies": [
     "boost-math",
+    "eigen3",
     "flatbuffers",
     "fmt",
     "rapidjson",

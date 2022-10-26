@@ -91,10 +91,12 @@ if(BUILD_FLATBUFFERS)
   include(FlatbufferUtils)
 endif()
 
-if(VW_BUILD_LARGE_ACTION_SPACE)
+if(VW_EIGEN_SYS_DEP)
+  # Since EXACT is not specified, any version compatible with 3.4.0 is accepted (>= 3.4.0)
+  find_package(Eigen3 3.4.0 CONFIG REQUIRED)
   add_library(eigen INTERFACE)
-  target_include_directories(eigen SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
+  target_include_directories(eigen INTERFACE ${EIGEN3_INCLUDE_DIR})
+else()
+  add_library(eigen INTERFACE)
+  target_include_directories(eigen SYSTEM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>)
 endif()
