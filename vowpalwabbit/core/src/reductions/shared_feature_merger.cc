@@ -49,7 +49,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
     // merge sequences
     for (auto& example : ec_seq)
     {
-      LabelDict::add_example_namespaces_from_example(*example, *shared_example);
+      VW::details::append_example_namespaces_from_example(*example, *shared_example);
       if (store_shared_ex_in_reduction_features)
       {
         auto& red_features =
@@ -69,7 +69,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
         {
           for (auto& example : ec_seq)
           {
-            LabelDict::del_example_namespaces_from_example(*example, *shared_example);
+            VW::details::truncate_example_namespaces_from_example(*example, *shared_example);
 
             if (store_shared_ex_in_reduction_features)
             {
