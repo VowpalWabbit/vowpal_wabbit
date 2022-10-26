@@ -97,11 +97,19 @@ if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 else()
-  add_test(
-    NAME vw_unit_test
-    COMMAND $<TARGET_FILE:vw-unit-test.out>
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  )
+  if (VW_USE_ASAN OR VW_USE_ASAN)
+    add_test(
+      NAME vw_unit_test
+      COMMAND $<TARGET_FILE:vw-unit-test.out> "--run_test=!*w_iterations*"
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  else()
+    add_test(
+        NAME vw_unit_test
+        COMMAND $<TARGET_FILE:vw-unit-test.out>
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      )
+  endif()
 endif()
 
 set_tests_properties(vw_unit_test PROPERTIES LABELS "VWTestList")
