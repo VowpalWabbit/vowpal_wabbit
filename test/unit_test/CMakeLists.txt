@@ -93,7 +93,7 @@ endif()
 if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
   add_test(
     NAME vw_unit_test
-    COMMAND ${VALGRIND} --error-exitcode=100 --track-origins=yes --leak-check=full $<TARGET_FILE:vw-unit-test.out>
+    COMMAND ${VALGRIND} --error-exitcode=100 --track-origins=yes --leak-check=full $<TARGET_FILE:vw-unit-test.out> "--run_test=!*w_iterations*"
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 else()
