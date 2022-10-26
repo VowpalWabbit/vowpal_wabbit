@@ -151,7 +151,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   {
     // Compute block_size if not specified.
     const size_t num_blocks = std::max(size_t(1), this->_thread_pool.size());
-    _block_size = examples.size() / num_blocks;  // Evenly split the examples into blocks
+    _block_size = std::max(size_t(1), examples.size() / num_blocks);  // Evenly split the examples into blocks
   }
 
   for (size_t row_index_begin = 0; row_index_begin < examples.size();)
