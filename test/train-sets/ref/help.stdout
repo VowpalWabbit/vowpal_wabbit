@@ -607,10 +607,6 @@ Weight Options:
                                             experimental)
     --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:
                                             2, keep, experimental)
-    --full_predictions                      Full representation of the prediction's action probabilities,
-                                            if not specified filtered out actions will not appear in the
-                                            final predictions. If specified, filtered out actions will appear
-                                            with a probability of zero (type: bool, experimental)
     --thread_pool_size arg                  Number of threads in the thread pool that will be used when running
                                             with one pass svd implementation (default svd implementation
                                             option). Default thread pool size will be half of the available
