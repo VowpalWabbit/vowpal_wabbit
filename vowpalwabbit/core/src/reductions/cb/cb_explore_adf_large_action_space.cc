@@ -195,7 +195,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
 
   // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
   // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later
-  // if the --full_predictions flag is supplied.
+
   auto best_action = preds[0].action;
 
   auto it = preds.begin();
@@ -335,7 +335,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float gamma_exponent = 0.f;
   float c;
   bool apply_shrink_factor = false;
-  bool full_predictions = false;
   bool use_two_pass_svd_impl = false;
   // leave some resources available in the case of few core's (for parser)
   uint64_t thread_pool_size = (std::thread::hardware_concurrency() - 1) / 2;
@@ -364,11 +363,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .allow_override()
                .default_value(2)
                .help("Parameter for computing c-approximate spanner")
-               .experimental())
-      .add(make_option("full_predictions", full_predictions)
-               .help("Full representation of the prediction's action probabilities, if not specified filtered out "
-                     "actions will not appear in the final predictions. If specified, filtered out actions will appear "
-                     "with a probability of zero")
                .experimental())
       .add(make_option("thread_pool_size", thread_pool_size)
                .help("Number of threads in the thread pool that will be used when running with one pass svd "

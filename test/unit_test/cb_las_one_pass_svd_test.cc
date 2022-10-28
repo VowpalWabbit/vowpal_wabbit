@@ -24,13 +24,13 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
   auto d = 3;
   std::vector<VW::workspace*> vws;
 
-  auto* vw_rs = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+  auto* vw_rs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
           std::to_string(d) + " --quiet --random_seed 1",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_rs);
 
-  auto* vw_zs = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+  auto* vw_zs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
           std::to_string(d) + " --quiet --random_seed 0",
       nullptr, false, nullptr, nullptr);
 
@@ -85,13 +85,13 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
   auto d = 3;
   std::vector<VW::workspace*> vws;
 
-  auto* vw_rs = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+  auto* vw_rs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
           std::to_string(d) + " --quiet --random_seed 3 --noconstant",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back(vw_rs);
 
-  auto* vw_zero_threads_zs = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
+  auto* vw_zero_threads_zs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
           std::to_string(d) + " --quiet --random_seed 0 --noconstant",
       nullptr, false, nullptr, nullptr);
 
