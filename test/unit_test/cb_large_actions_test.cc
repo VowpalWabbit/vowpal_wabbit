@@ -26,8 +26,8 @@ BOOST_AUTO_TEST_SUITE(test_suite_las)
 BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 {
   auto d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   std::vector<std::string> e_r;
@@ -89,8 +89,8 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_no_interactions, false});
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_no_interactions, false});
@@ -206,16 +206,15 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
@@ -316,16 +315,15 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
@@ -389,16 +387,15 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
   auto d = 2;
 
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
@@ -552,36 +549,34 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   auto d = 3;
 
   std::vector<std::tuple<VW::workspace*, bool, VW::cb_explore_adf::implementation_type>> vws;
-  auto* vw_wo_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+  auto* vw_wo_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(vw_wo_interactions, false, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
-  auto* vw_w_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
+  auto* vw_w_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 -q :: --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(vw_w_interactions, false, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
-  auto* vw_wo_interactions_sq =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_wo_interactions_sq = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(vw_wo_interactions_sq, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
-  auto* vw_w_interactions_sq =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_w_interactions_sq = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(vw_w_interactions_sq, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
-  auto* vw_w_interactions_sq_sparse_weights = VW::initialize(
-      "--cb_explore_adf --squarecb --sparse_weights --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto* vw_w_interactions_sq_sparse_weights =
+      VW::initialize("--cb_explore_adf --squarecb --sparse_weights --large_action_space --max_actions " +
+              std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
+          nullptr, false, nullptr, nullptr);
 
   vws.emplace_back(vw_w_interactions_sq_sparse_weights, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
@@ -619,16 +614,15 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
