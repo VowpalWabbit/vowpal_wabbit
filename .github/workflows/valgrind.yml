@@ -5,7 +5,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -20,7 +20,9 @@ jobs:
         with:
           submodules: recursive
       - name: Build C++ VW binary
-        run: ./.scripts/linux/build-minimal.sh Release
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On -DVW_UNIT_TEST_WITH_VALGRIND_INTERNAL=On
+          cmake --build build
       - name: Upload vw binary
         uses: actions/upload-artifact@v2
         with:
@@ -40,7 +42,9 @@ jobs:
           path: build/utl/flatbuffer/to_flatbuff
           if-no-files-found: error
       - name: Run unit tests with Valgrind
-        run: ./.scripts/linux/unit-tests-valgrind.sh
+        run: ctest -T memcheck --verbose --output-on-failure --overwrite MemoryCheckCommandOptions="--leak-check=full --error-exitcode=100" --label-regex VWTestList --timeout 2400
+        env:
+          BOOST_TEST_LOG_LEVEL: unit_scope
   run-valgrind-tests:
     name: ubuntu2004.amd64.valgrind-test.[${{ matrix.test-segment }}]
     needs: build-valgrind
