@@ -1,7 +1,3 @@
-if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
-  find_program(VALGRIND "valgrind" REQUIRED)
-endif()
-
 add_executable(vw-unit-test.out
   epsilon_decay_test.cc
   automl_test.cc
@@ -90,26 +86,20 @@ elseif(boost_test_target_type STREQUAL UNKNOWN_LIBRARY)
   endif()
 endif()
 
-if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
+
+if (VW_USE_ASAN OR VW_USE_ASAN OR VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
   add_test(
     NAME vw_unit_test
-    COMMAND ${VALGRIND} --error-exitcode=100 --track-origins=yes --leak-check=full $<TARGET_FILE:vw-unit-test.out> "--run_test=!*w_iterations*"
+    COMMAND $<TARGET_FILE:vw-unit-test.out> "--run_test=!*w_iterations*"
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 else()
-  if (VW_USE_ASAN OR VW_USE_ASAN)
-    add_test(
+  add_test(
       NAME vw_unit_test
-      COMMAND $<TARGET_FILE:vw-unit-test.out> "--run_test=!*w_iterations*"
+      COMMAND $<TARGET_FILE:vw-unit-test.out>
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
-  else()
-    add_test(
-        NAME vw_unit_test
-        COMMAND $<TARGET_FILE:vw-unit-test.out>
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-      )
-  endif()
 endif()
+
 
 set_tests_properties(vw_unit_test PROPERTIES LABELS "VWTestList")
