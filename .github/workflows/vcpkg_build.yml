@@ -9,7 +9,10 @@ on:
     branches:
       - '*'
 
-concurrency: 
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -27,10 +30,21 @@ jobs:
         with:
           submodules: true
       - uses: lukka/get-cmake@latest
-      - uses: lukka/run-vcpkg@main
+      - name: Setup vcpkg
+        shell: bash
+        id: setup-vcpkg-cache
+        run: |
+          mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $env:GITHUB_OUTPUT
+
+      - name: Cache vcpkg
+        uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ steps.setup-vcpkg-cache.outputs.VCPKG_COMMIT }}"
+
       - uses: lukka/run-cmake@v10
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
