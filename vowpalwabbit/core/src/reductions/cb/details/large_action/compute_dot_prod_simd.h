@@ -22,8 +22,10 @@ constexpr std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
 const __m512 value_maps = _mm512_setr4_ps(0, 0, 1.f, -1.f);
 const __m512i perm_idx = _mm512_setr_epi32(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
 
+/*
+// Alternative implementation of _mm512_popcnt_epi64
 // https://github.com/WojciechMula/sse-popcount/blob/master/popcnt-avx512-harley-seal.cpp
-inline __m512i popcount(const __m512i v)
+inline __m512i popcount64(const __m512i v)
 {
   const __m512i m1 = _mm512_set1_epi8(0x55);
   const __m512i m2 = _mm512_set1_epi8(0x33);
@@ -34,6 +36,7 @@ inline __m512i popcount(const __m512i v)
   const __m512i t3 = _mm512_add_epi8(t2, _mm512_srli_epi16(t2, 4)) & m4;
   return _mm512_sad_epu8(t3, _mm512_setzero_si512());
 }
+*/
 
 inline float compute_dot_prod_simd(uint64_t column_index_, VW::workspace* _all, uint64_t seed_, VW::example* ex,
     const VW::large_action_space::las_reduction_features& red_features)
@@ -62,22 +65,18 @@ inline float compute_dot_prod_simd(uint64_t column_index_, VW::workspace* _all, 
 
       indices1 = _mm512_and_epi64(_mm512_add_epi64(indices1, offset), weights_mask);
       indices1 = _mm512_add_epi64(indices1, column_index);
-      //   __m512i popcounts1 = _mm512_popcnt_epi64(indices1);
-      __m512i popcounts1 = popcount(indices1);
+      __m512i popcounts1 = _mm512_popcnt_epi64(indices1);
       indices2 = _mm512_and_epi64(_mm512_add_epi64(indices2, offset), weights_mask);
       indices2 = _mm512_add_epi64(indices2, column_index);
-      //   __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
-      __m512i popcounts2 = popcount(indices2);
+      __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
 
       __m512i popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
       __m512i sparsity_indices = _mm512_slli_epi32(_mm512_and_epi32(popcounts, all_ones), 1);
 
       indices1 = _mm512_add_epi64(indices1, seed);
-      //   popcounts1 = _mm512_popcnt_epi64(indices1);
-      popcounts1 = popcount(indices1);
+      popcounts1 = _mm512_popcnt_epi64(indices1);
       indices2 = _mm512_add_epi64(indices2, seed);
-      //   popcounts2 = _mm512_popcnt_epi64(indices2);
-      popcounts2 = popcount(indices2);
+      popcounts2 = _mm512_popcnt_epi64(indices2);
 
       popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
       __m512i value_indices = _mm512_add_epi32(sparsity_indices, _mm512_and_epi32(popcounts, all_ones));
@@ -127,23 +126,19 @@ inline float compute_dot_prod_simd(uint64_t column_index_, VW::workspace* _all, 
         indices1 = _mm512_xor_epi64(indices1, halfhashes);
         indices1 = _mm512_and_epi64(_mm512_add_epi64(indices1, offset), weights_mask);
         indices1 = _mm512_add_epi64(indices1, column_index);
-        // __m512i popcounts1 = _mm512_popcnt_epi64(indices1);
-        __m512i popcounts1 = popcount(indices1);
+        __m512i popcounts1 = _mm512_popcnt_epi64(indices1);
         indices2 = _mm512_xor_epi64(indices2, halfhashes);
         indices2 = _mm512_and_epi64(_mm512_add_epi64(indices2, offset), weights_mask);
         indices2 = _mm512_add_epi64(indices2, column_index);
-        // __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
-        __m512i popcounts2 = popcount(indices2);
+        __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
 
         __m512i popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
         __m512i sparsity_indices = _mm512_slli_epi32(_mm512_and_epi32(popcounts, all_ones), 1);
 
         indices1 = _mm512_add_epi64(indices1, seed);
-        // popcounts1 = _mm512_popcnt_epi64(indices1);
-        popcounts1 = popcount(indices1);
+        popcounts1 = _mm512_popcnt_epi64(indices1);
         indices2 = _mm512_add_epi64(indices2, seed);
-        // popcounts2 = _mm512_popcnt_epi64(indices2);
-        popcounts2 = popcount(indices2);
+        popcounts2 = _mm512_popcnt_epi64(indices2);
 
         popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
         __m512i value_indices = _mm512_add_epi32(sparsity_indices, _mm512_and_epi32(popcounts, all_ones));

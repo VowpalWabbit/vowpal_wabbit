@@ -134,6 +134,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   const float scaling_factor = 1.f / std::sqrt(p);
   AOmega.resize(num_actions, p);
 
+  // TODO: Expose this parameter.
   bool use_simd = true;
   auto compute_dot_prod = use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
 

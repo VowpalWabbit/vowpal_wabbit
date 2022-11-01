@@ -278,21 +278,28 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examp
     "--ccb_explore_adf --quiet -q ::")
     ->MinTime(15.0);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_onestep_1thread,
-    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size 0")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_onestep,
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_10features_1thread,
     gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_onestep_max_threads,
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_20features_1thread,
+    gen_cb_examples(1, 50000, 20, 300, 5, 5, 20000, 20, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size 0")
+    ->MinTime(15.0)
+    ->UseRealTime()
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300,
+    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
+    ->MinTime(15.0)
+    ->UseRealTime()
+    ->Unit(benchmark::kMillisecond);
+
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_max_threads,
     gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
@@ -306,14 +313,14 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_300_plaincb,
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_onestep,
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500,
     gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_onestep_max_threads,
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_max_threads,
     gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))

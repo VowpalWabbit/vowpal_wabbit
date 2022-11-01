@@ -15,8 +15,7 @@ endif()
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
   if(NOT "arm64" STREQUAL "${CMAKE_OSX_ARCHITECTURES}")
     #set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
-    set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse -mfma -mavx512f -mavx512bw -mavx512vl)
-    #-mavx512vpopcntdq
+    set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse -mfma -mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq)
   endif()
 endif()
 
