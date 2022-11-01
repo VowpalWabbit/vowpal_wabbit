@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "../large_action_space.h"
+#include "compute_dot_prod_simd.h"
 #include "vw/core/cb.h"
 #include "vw/core/label_dictionary.h"
 #include "vw/core/reductions/gd.h"
@@ -105,6 +106,23 @@ private:
 constexpr std::array<size_t, 2> AO_triplet_constructor::INDEX_MAP;
 constexpr std::array<float, 4> AO_triplet_constructor::VALUE_MAP;
 
+inline float compute_dot_prod_scalar(uint64_t col, VW::workspace* _all, uint64_t _seed, VW::example* ex,
+    const VW::large_action_space::las_reduction_features& red_features)
+{
+  float final_dot_prod = 0.f;
+
+  AO_triplet_constructor tc(_all->weights.mask(), col, _seed, final_dot_prod);
+
+  GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+      _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+      (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
+      (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
+                                                  : *ex->extent_interactions),
+      _all->permutations, *ex, tc, _all->generate_interactions_object_cache_state);
+
+  return final_dot_prod;
+}
+
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   auto num_actions = examples[0]->pred.a_s.size();
@@ -116,9 +134,14 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   const float scaling_factor = 1.f / std::sqrt(p);
   AOmega.resize(num_actions, p);
 
-  auto calculate_aomega_row = [](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
-                                  uint64_t _seed, const multi_ex& examples, Eigen::MatrixXf& AOmega,
-                                  const std::vector<float>& shrink_factors, float scaling_factor) -> void {
+  bool use_simd = true;
+  auto compute_dot_prod = use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
+
+  auto calculate_aomega_row = [compute_dot_prod](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p,
+                                  VW::workspace* _all, uint64_t _seed, const multi_ex& examples,
+                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors,
+                                  float scaling_factor) -> void
+  {
     for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
       VW::example* ex = examples[row_index];
@@ -127,21 +150,14 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
       auto* shared_example = red_features.shared_example;
       if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
+      // float sum = 0.f;
       for (uint64_t col = 0; col < p; ++col)
       {
-        float final_dot_prod = 0.f;
-
-        AO_triplet_constructor tc(_all->weights.mask(), col, _seed, final_dot_prod);
-
-        GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-            _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-            (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
-            (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
-                                                        : *ex->extent_interactions),
-            _all->permutations, *ex, tc, _all->generate_interactions_object_cache_state);
-
+        float final_dot_prod = compute_dot_prod(col, _all, _seed, ex, red_features);
         AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index] * scaling_factor;
+        // sum += final_dot_prod;
       }
+      // printf("%d\t%f\n", (int)row_index, sum);
 
       if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
     }
