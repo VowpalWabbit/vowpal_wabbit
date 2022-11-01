@@ -27,15 +27,14 @@ jobs:
         preset: [vcpkg-debug, vcpkg-release]
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: true
+      - run: git submodule update --init ext_libs/vcpkg
       - uses: lukka/get-cmake@latest
       - name: Setup vcpkg
         shell: bash
         id: setup-vcpkg-cache
         run: |
           mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $env:GITHUB_OUTPUT
+          echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $env:GITHUB_OUTPUT
 
       - name: Cache vcpkg
         uses: actions/cache@v3
