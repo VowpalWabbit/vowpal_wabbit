@@ -31,10 +31,9 @@ jobs:
       - uses: lukka/get-cmake@latest
       - name: Setup vcpkg
         shell: bash
-        id: setup-vcpkg-cache
         run: |
           mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $env:GITHUB_OUTPUT
+          echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
 
       - name: Cache vcpkg
         uses: actions/cache@v3
@@ -42,7 +41,7 @@ jobs:
           cache-name: vcpkg-cache
         with:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ steps.setup-vcpkg-cache.outputs.VCPKG_COMMIT }}"
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
 
       - uses: lukka/run-cmake@v10
         with:
