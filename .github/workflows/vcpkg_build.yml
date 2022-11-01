@@ -10,7 +10,7 @@ on:
       - '*'
 
 env:
-  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+  VCPKG_DEFAULT_BINARY_CACHE: vcpkg_binary_cache
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
