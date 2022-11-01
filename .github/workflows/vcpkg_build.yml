@@ -30,7 +30,6 @@ jobs:
       - run: git submodule update --init ext_libs/vcpkg
       - uses: lukka/get-cmake@latest
       - name: Setup vcpkg
-        shell: bash
         run: |
           mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
