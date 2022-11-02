@@ -165,7 +165,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       if (data.known_cost.action == a_s[i].action) { action_probability = a_s[i].score; }
     }
 
-    if (action_probability == 0) { return; }
+    if (action_probability == 0.f) { return; }
 
     float threshold = action_probability / data.known_cost.probability;
 
