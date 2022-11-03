@@ -321,7 +321,6 @@ namespace model_utils
 size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser)
 {
   size_t bytes = 0;
-  bool tag_is_null;
   lbl_parser.default_label(fe.l);
   bytes += lbl_parser.read_cached_label(fe.l, fe.ex_reduction_features, io);
   bytes += read_model_field(io, fe.tag);
