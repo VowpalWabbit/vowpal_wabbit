@@ -49,7 +49,7 @@ float collision_cleanup(features& fs)
 {
   // This loops over the sequence of feature values and their indexes
   // when an index is repeated this combines them by adding their values.
-  // This assumes that fs is sorted (which is the case in `flatten_sort_example`.
+  // This assumes that fs is sorted (which is the case in `flatten_sort_example`).
 
   features::iterator p1 = fs.begin();
   uint64_t last_index = p1.index();
