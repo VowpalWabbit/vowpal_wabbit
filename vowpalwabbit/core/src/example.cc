@@ -357,10 +357,7 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
   lbl_parser.cache_label(fe.l, fe.ex_reduction_features, io, upstream_name + "_label", text);
   bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
   bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
-  if (!(fe.tag == nullptr))
-  {
-    bytes += io.bin_write_fixed(fe.tag, fe.tag_len);
-  }
+  if (!(fe.tag == nullptr)) { bytes += io.bin_write_fixed(fe.tag, fe.tag_len); }
   bytes += write_model_field(io, fe.example_counter, upstream_name + "_example_counter", text);
   bytes += write_model_field(io, fe.ft_offset, upstream_name + "_ft_offset", text);
   bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
