@@ -311,7 +311,6 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
     VW::finish(vw);
   }
 }
-*/
 
 BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 {
@@ -383,6 +382,7 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
     VW::finish(vw);
   }
 }
+*/
 
 BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 {

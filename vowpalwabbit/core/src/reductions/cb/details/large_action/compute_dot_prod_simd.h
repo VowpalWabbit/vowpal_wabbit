@@ -105,8 +105,8 @@ inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, u
     for (; i + 16 <= num_features; i += 16)
     {
       // Unroll the 64-bit indices twice to align with 32-bit values.
-      __m512i indices1 = _mm512_loadu_si512(&features.indices[i]);
-      __m512i indices2 = _mm512_loadu_si512(&features.indices[i + 8]);
+      __m512i indices1 = _mm512_loadu_epi64(&features.indices[i]);
+      __m512i indices2 = _mm512_loadu_epi64(&features.indices[i + 8]);
       // If indices fit into 32 bits, convert indices to 32-bit here can speed up further.
 
       __m512 values = _mm512_loadu_ps(&features.values[i]);
@@ -137,8 +137,8 @@ inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, u
       size_t j = same_namespace ? i : 0;
       for (; j + 16 <= num_features_ns1; j += 16)
       {
-        __m512i indices1 = _mm512_loadu_si512(&ns1_indices[j]);
-        __m512i indices2 = _mm512_loadu_si512(&ns1_indices[j + 8]);
+        __m512i indices1 = _mm512_loadu_epi64(&ns1_indices[j]);
+        __m512i indices2 = _mm512_loadu_epi64(&ns1_indices[j + 8]);
         indices1 = _mm512_xor_epi64(indices1, halfhashes);
         indices2 = _mm512_xor_epi64(indices2, halfhashes);
 
