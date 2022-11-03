@@ -124,6 +124,7 @@ set(vw_core_headers
   include/vw/core/reductions/csoaa_ldf.h
   include/vw/core/reductions/csoaa.h
   include/vw/core/reductions/ect.h
+  include/vw/core/reductions/eigen_memory_tree.h
   include/vw/core/reductions/epsilon_decay.h
   include/vw/core/reductions/explore_eval.h
   include/vw/core/reductions/expreplay.h
@@ -295,6 +296,7 @@ set(vw_core_sources
   src/reductions/details/automl/automl_oracle.cc
   src/reductions/details/automl/automl_util.cc
   src/reductions/ect.cc
+  src/reductions/eigen_memory_tree.cc
   src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
   src/reductions/freegrad.cc
@@ -411,9 +413,10 @@ vw_add_test_executable(
     FOR_LIB "core"
     SOURCES
       tests/cache_test.cc
+      tests/eigen_memory_tree_test.cc
+      tests/main.cc
       tests/merge_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
       tests/thread_pool_test.cc
-      tests/main.cc
 )
