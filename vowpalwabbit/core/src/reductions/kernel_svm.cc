@@ -145,7 +145,6 @@ svm_example::~svm_example()
   // VW::flat_example* fec = &calloc_or_throw<VW::flat_example>();
   //*fec = ex;
   // free_flatten_example(fec);  // free contents of flat example and frees fec.
-  if (ex.tag_len > 0) { free(ex.tag); }
 }
 
 float kernel_function(const VW::flat_example* fec1, const VW::flat_example* fec2, void* params, size_t kernel_type);
