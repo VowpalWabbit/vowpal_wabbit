@@ -19,11 +19,11 @@
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
+#include "vw/core/version.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_allreduce.h"
-#include "vw/io/logger.h"
-#include "vw/core/version.h"
 #include "vw/core/vw_versions.h"
+#include "vw/io/logger.h"
 
 #include <cassert>
 #include <cfloat>
@@ -286,7 +286,8 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
     *params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
-  else if (params.all->model_file_ver >  VW::version_definitions::EMPTY_VERSION_FILE && params.all->model_file_ver < VW::version_definitions::VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX)
+  else if (params.all->model_file_ver > VW::version_definitions::EMPTY_VERSION_FILE &&
+      params.all->model_file_ver < VW::version_definitions::VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX)
   {
     THROW("Models using ksvm from before version 9.6 are not compatable with this version of VW.")
   }
