@@ -20,6 +20,7 @@ TEST(flat_example_tests, sans_interaction_test)
 
   EXPECT_THAT(flat.fs.values, testing::UnorderedElementsAre(2, 3));
   EXPECT_EQ(flat.total_sum_feat_sq, 13);
+  delete vw;
 }
 
 TEST(flat_example_tests, with_interaction_test)
