@@ -9,21 +9,19 @@
 #include "vw/core/global_data.h"
 #include "vw/core/large_action_space_reduction_features.h"
 
-#include <x86intrin.h>
+#ifdef _MSC_VER
+#  include <intrin.h>
+#else
+#  include <x86intrin.h>
+#endif
 
 namespace VW
 {
 namespace cb_explore_adf
 {
 
-// TODO: refactor
-constexpr std::array<size_t, 2> INDEX_MAP = {0, 2};
-constexpr std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
-const __m512 value_maps = _mm512_setr4_ps(0, 0, 1.f, -1.f);
-const __m512i perm_idx = _mm512_setr_epi32(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
-
 /*
-// Alternative implementation of _mm512_popcnt_epi64
+// Alternative implementation of 64-bit vpopcnt
 // https://github.com/WojciechMula/sse-popcount/blob/master/popcnt-avx512-harley-seal.cpp
 inline __m512i popcount64(const __m512i v)
 {
@@ -38,19 +36,67 @@ inline __m512i popcount64(const __m512i v)
 }
 */
 
-inline float compute_dot_prod_simd(uint64_t column_index_, VW::workspace* _all, uint64_t seed_, VW::example* ex,
+// TODO: refactor & reuse AO_triplet_constructor
+constexpr std::array<size_t, 2> INDEX_MAP = {0, 2};
+constexpr std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
+
+inline void compute1(float feature_value, uint64_t feature_index, uint64_t offset, uint64_t weights_mask,
+    uint64_t column_index, uint64_t seed, float& sum)
+{
+  uint64_t index = feature_index + offset;
+  size_t select_sparsity = __builtin_parity((index & weights_mask) + column_index);
+  auto sparsity_index = INDEX_MAP[select_sparsity];
+  size_t select_sign = __builtin_parity((index & weights_mask) + column_index + seed);
+  auto value_index = sparsity_index + select_sign;
+  float tmp = VALUE_MAP[value_index];
+  sum += feature_value * tmp;
+  // sum += feature_value * select_sparsity * (1.f - (select_sign << 1));
+}
+
+inline void compute16(const __m512& feature_values, const __m512i& feature_indices1, const __m512i& feature_indices2,
+    const __m512i& offsets, const __m512i& weights_masks, const __m512i& column_indices, const __m512i& seeds,
+    __m512& sums)
+{
+  const __m512 value_maps = _mm512_setr4_ps(0, 0, 1.f, -1.f);
+  const __m512i perm_idx = _mm512_setr_epi32(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
+  const __m512i all_ones = _mm512_set1_epi32(1);
+
+  __m512i indices1 = _mm512_add_epi64(feature_indices1, offsets);
+  __m512i indices2 = _mm512_add_epi64(feature_indices2, offsets);
+
+  indices1 = _mm512_add_epi64(_mm512_and_epi64(indices1, weights_masks), column_indices);
+  __m512i popcounts1 = _mm512_popcnt_epi64(indices1);
+  indices2 = _mm512_add_epi64(_mm512_and_epi64(indices2, weights_masks), column_indices);
+  __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
+
+  // popcounts always fit into 32 bits, so truncate and merge all 16 popcounts.
+  __m512i popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
+  __m512i sparsity_indices = _mm512_slli_epi32(_mm512_and_epi32(popcounts, all_ones), 1);
+
+  indices1 = _mm512_add_epi64(indices1, seeds);
+  popcounts1 = _mm512_popcnt_epi64(indices1);
+  indices2 = _mm512_add_epi64(indices2, seeds);
+  popcounts2 = _mm512_popcnt_epi64(indices2);
+
+  popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
+  __m512i value_indices = _mm512_add_epi32(sparsity_indices, _mm512_and_epi32(popcounts, all_ones));
+
+  __m512 tmp = _mm512_permutexvar_ps(value_indices, value_maps);
+  sums = _mm512_fmadd_ps(feature_values, tmp, sums);
+}
+
+inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex,
     const VW::large_action_space::las_reduction_features& red_features)
 {
   float sum = 0.f;
-  const uint64_t offset_ = ex->ft_offset;
-  const uint64_t weights_mask_ = _all->weights.mask();
+  const uint64_t offset = ex->ft_offset;
+  const uint64_t weights_mask = _all->weights.mask();
 
-  __m512 sum_vec = _mm512_setzero_ps();
-  const __m512i column_index = _mm512_set1_epi64(column_index_);
-  const __m512i seed = _mm512_set1_epi64(seed_);
-  const __m512i weights_mask = _mm512_set1_epi64(weights_mask_);
-  const __m512i offset = _mm512_set1_epi64(offset_);
-  const __m512i all_ones = _mm512_set1_epi32(1);
+  __m512 sums = _mm512_setzero_ps();
+  const __m512i column_indices = _mm512_set1_epi64(column_index);
+  const __m512i seeds = _mm512_set1_epi64(seed);
+  const __m512i weights_masks = _mm512_set1_epi64(weights_mask);
+  const __m512i offsets = _mm512_set1_epi64(offset);
 
   for (const auto& features : *ex)
   {
@@ -59,51 +105,23 @@ inline float compute_dot_prod_simd(uint64_t column_index_, VW::workspace* _all, 
     for (; i + 16 <= num_features; i += 16)
     {
       // Unroll the 64-bit indices twice to align with 32-bit values.
-      __m512i indices1 = _mm512_loadu_epi64(&features.indices[i]);
-      __m512i indices2 = _mm512_loadu_epi64(&features.indices[i + 8]);
-      // TODO: Convert indices to 32-bit here to further speed up.
-
-      indices1 = _mm512_and_epi64(_mm512_add_epi64(indices1, offset), weights_mask);
-      indices1 = _mm512_add_epi64(indices1, column_index);
-      __m512i popcounts1 = _mm512_popcnt_epi64(indices1);
-      indices2 = _mm512_and_epi64(_mm512_add_epi64(indices2, offset), weights_mask);
-      indices2 = _mm512_add_epi64(indices2, column_index);
-      __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
-
-      __m512i popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
-      __m512i sparsity_indices = _mm512_slli_epi32(_mm512_and_epi32(popcounts, all_ones), 1);
-
-      indices1 = _mm512_add_epi64(indices1, seed);
-      popcounts1 = _mm512_popcnt_epi64(indices1);
-      indices2 = _mm512_add_epi64(indices2, seed);
-      popcounts2 = _mm512_popcnt_epi64(indices2);
-
-      popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
-      __m512i value_indices = _mm512_add_epi32(sparsity_indices, _mm512_and_epi32(popcounts, all_ones));
-      __m512 tmp = _mm512_permutexvar_ps(value_indices, value_maps);
+      __m512i indices1 = _mm512_loadu_si512(&features.indices[i]);
+      __m512i indices2 = _mm512_loadu_si512(&features.indices[i + 8]);
+      // If indices fit into 32 bits, convert indices to 32-bit here can speed up further.
 
       __m512 values = _mm512_loadu_ps(&features.values[i]);
-      sum_vec = _mm512_fmadd_ps(values, tmp, sum_vec);
+      compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
     }
     for (; i < num_features; ++i)
     {
-      // TODO: refactor
-      auto index = features.indices[i] + offset_;
-      size_t select_sparsity = __builtin_parity((index & weights_mask_) + column_index_);
-      auto sparsity_index = INDEX_MAP[select_sparsity];
-      size_t select_sign = __builtin_parity((index & weights_mask_) + column_index_ + seed_);
-      auto value_index = sparsity_index + select_sign;
-      float tmp = VALUE_MAP[value_index];
-      sum += features.values[i] * tmp;
-      // sum += feature_values[i][j] * select_sparsity * (1.f - (select_sign << 1));
+      compute1(features.values[i], features.indices[i], offset, weights_mask, column_index, seed, sum);
     }
   }
   // TODO: other interactions, this only handles quadratics
-  // TODO: permutations, return num_features
   for (const auto& ns : *red_features.generated_interactions)
   {
     assert(ns.size() == 2);
-    const bool same_namespace = (ns[0] == ns[1]);
+    const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
     const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
     const size_t num_features_ns1 = ex->feature_space[ns[1]].size();
     const auto& ns0_indices = ex->feature_space[ns[0]].indices;
@@ -119,49 +137,25 @@ inline float compute_dot_prod_simd(uint64_t column_index_, VW::workspace* _all, 
       size_t j = same_namespace ? i : 0;
       for (; j + 16 <= num_features_ns1; j += 16)
       {
-        // Unroll the 64-bit indices twice to align with 32-bit values.
-        __m512i indices1 = _mm512_loadu_epi64(&ns1_indices[j]);
-        __m512i indices2 = _mm512_loadu_epi64(&ns1_indices[j + 8]);
-
+        __m512i indices1 = _mm512_loadu_si512(&ns1_indices[j]);
+        __m512i indices2 = _mm512_loadu_si512(&ns1_indices[j + 8]);
         indices1 = _mm512_xor_epi64(indices1, halfhashes);
-        indices1 = _mm512_and_epi64(_mm512_add_epi64(indices1, offset), weights_mask);
-        indices1 = _mm512_add_epi64(indices1, column_index);
-        __m512i popcounts1 = _mm512_popcnt_epi64(indices1);
         indices2 = _mm512_xor_epi64(indices2, halfhashes);
-        indices2 = _mm512_and_epi64(_mm512_add_epi64(indices2, offset), weights_mask);
-        indices2 = _mm512_add_epi64(indices2, column_index);
-        __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
-
-        __m512i popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
-        __m512i sparsity_indices = _mm512_slli_epi32(_mm512_and_epi32(popcounts, all_ones), 1);
-
-        indices1 = _mm512_add_epi64(indices1, seed);
-        popcounts1 = _mm512_popcnt_epi64(indices1);
-        indices2 = _mm512_add_epi64(indices2, seed);
-        popcounts2 = _mm512_popcnt_epi64(indices2);
-
-        popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
-        __m512i value_indices = _mm512_add_epi32(sparsity_indices, _mm512_and_epi32(popcounts, all_ones));
-        __m512 tmp = _mm512_permutexvar_ps(value_indices, value_maps);
 
         __m512 values = _mm512_loadu_ps(&ns1_values[j]);
         values = _mm512_mul_ps(vals, values);
-        sum_vec = _mm512_fmadd_ps(values, tmp, sum_vec);
+
+        compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
       }
       for (; j < num_features_ns1; ++j)
       {
         float feature_value = val * ns1_values[j];
-        auto index = (ns1_indices[j] ^ halfhash) + offset_;
-        size_t select_sparsity = __builtin_parity((index & weights_mask_) + column_index_);
-        auto sparsity_index = INDEX_MAP[select_sparsity];
-        size_t select_sign = __builtin_parity((index & weights_mask_) + column_index_ + seed_);
-        auto value_index = sparsity_index + select_sign;
-        float tmp = VALUE_MAP[value_index];
-        sum += feature_value * tmp;
+        auto index = (ns1_indices[j] ^ halfhash);
+        compute1(feature_value, index, offset, weights_mask, column_index, seed, sum);
       }
     }
   }
-  return sum + _mm512_reduce_add_ps(sum_vec);
+  return sum + _mm512_reduce_add_ps(sums);
 }
 
 }  // namespace cb_explore_adf
