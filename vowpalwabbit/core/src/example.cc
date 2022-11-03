@@ -334,7 +334,11 @@ size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_pars
   bytes += lbl_parser.read_cached_label(fe.l, fe.ex_reduction_features, io);
   bytes += read_model_field(io, fe.tag_len);
   bytes += read_model_field(io, tag_is_null);
-  if (!tag_is_null) { bytes += read_model_field(io, *fe.tag); }
+  if (!tag_is_null)
+  {
+    fe.tag = calloc_or_throw<char>(fe.tag_len + 1);
+    bytes += io.bin_read_fixed(fe.tag, fe.tag_len);
+  }
   bytes += read_model_field(io, fe.example_counter);
   bytes += read_model_field(io, fe.ft_offset);
   bytes += read_model_field(io, fe.global_weight);
@@ -353,7 +357,10 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
   lbl_parser.cache_label(fe.l, fe.ex_reduction_features, io, upstream_name + "_label", text);
   bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
   bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
-  if (!(fe.tag == nullptr)) { bytes += write_model_field(io, *fe.tag, upstream_name + "_tag", text); }
+  if (!(fe.tag == nullptr))
+  {
+    bytes += io.bin_write_fixed(fe.tag, fe.tag_len);
+  }
   bytes += write_model_field(io, fe.example_counter, upstream_name + "_example_counter", text);
   bytes += write_model_field(io, fe.ft_offset, upstream_name + "_ft_offset", text);
   bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
