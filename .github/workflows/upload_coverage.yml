@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install deps
-        run: sudo apt install -y cmake ninja-build g++ libfmt-dev libspdlog-dev rapidjson-dev zlib1g-dev libboost-test-dev libboost-math-dev libgtest-dev libgmock-dev
+        run: sudo apt install -y cmake ninja-build g++ libfmt-dev libspdlog-dev rapidjson-dev zlib1g-dev libboost-test-dev libboost-math-dev libgtest-dev libgmock-dev libflatbuffers-dev flatbuffers-compiler-dev
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
