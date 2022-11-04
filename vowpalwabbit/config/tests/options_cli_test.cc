@@ -5,6 +5,7 @@
 #include "vw/config/options_cli.h"
 
 #include "vw/config/cli_options_serializer.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -16,8 +17,7 @@ using namespace VW::config;
 
 TEST(options_cli_test, typed_options_parsing)
 {
-  std::vector<std::string> args = {"--str_opt", "test_str", "-i", "5", "--bool_opt", "--float_opt", "4.3"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--str_opt", "test_str", "-i", "5", "--bool_opt", "--float_opt", "4.3");
 
   std::string str_arg;
   int int_opt;
@@ -39,8 +39,7 @@ TEST(options_cli_test, typed_options_parsing)
 
 TEST(options_cli_test, typed_option_collection_parsing)
 {
-  std::vector<std::string> args = {"--str_opt", "test_str", "another"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--str_opt", "test_str", "another");
 
   std::vector<std::string> str_opt;
   option_group_definition arg_group("group");
@@ -53,8 +52,7 @@ TEST(options_cli_test, typed_option_collection_parsing)
 
 TEST(options_cli_test, typed_option_collection_parsing_equals_long_option)
 {
-  std::vector<std::string> args = {"--str_opt=value1", "value2", "--str_opt", "value3"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--str_opt=value1", "value2", "--str_opt", "value3");
 
   std::vector<std::string> str_opt;
   option_group_definition arg_group("group");
@@ -67,8 +65,7 @@ TEST(options_cli_test, typed_option_collection_parsing_equals_long_option)
 
 TEST(options_cli_test, typed_option_collection_parsing_short_option_attached_value)
 {
-  std::vector<std::string> args = {"-svalue1", "value2", "--str_opt", "value3"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("-svalue1", "value2", "--str_opt", "value3");
 
   std::vector<std::string> str_opt;
   option_group_definition arg_group("group");
@@ -81,9 +78,8 @@ TEST(options_cli_test, typed_option_collection_parsing_short_option_attached_val
 
 TEST(options_cli_test, list_consume_until_option_like)
 {
-  std::vector<std::string> args = {
-      "--str_opt", "a", "b", "--unknown", "c", "--str_opt", "d", "e", "f", "--str_opt", "--option_like", "g"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args(
+      "--str_opt", "a", "b", "--unknown", "c", "--str_opt", "d", "e", "f", "--str_opt", "--option_like", "g");
 
   std::vector<std::string> str_opt;
   option_group_definition arg_group("group");
@@ -103,8 +99,7 @@ TEST(options_cli_test, list_consume_until_option_like)
 
 TEST(options_cli_test, list_no_tokens)
 {
-  std::vector<std::string> args = {"--str_opt"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--str_opt");
 
   std::vector<std::string> str_opt;
   option_group_definition arg_group("group");
@@ -125,8 +120,7 @@ TEST(options_cli_test, list_no_tokens)
 
 TEST(options_cli_test, type_conversion_failure)
 {
-  std::vector<std::string> args = {"--int_opt", "4.3", "--float_opt", "1.2a"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "4.3", "--float_opt", "1.2a");
 
   float float_opt;
   option_group_definition arg_group1("group1");
@@ -146,10 +140,8 @@ TEST(options_cli_test, type_conversion_failure)
 // essentially continually adds to a global definition as it goes.
 TEST(options_cli_test, order_of_parsing)
 {
-  std::vector<std::string> args = {"--str_opt", "--bool_opt"};
-
   {
-    auto options = std::unique_ptr<options_cli>(new options_cli(args));
+    auto options = vwtest::make_args("--str_opt", "--bool_opt");
 
     bool bool_opt;
     option_group_definition arg_group1("group1");
@@ -166,7 +158,7 @@ TEST(options_cli_test, order_of_parsing)
   }
 
   {
-    auto options = std::unique_ptr<options_cli>(new options_cli(args));
+    auto options = vwtest::make_args("--str_opt", "--bool_opt");
 
     bool bool_opt = false;
     option_group_definition arg_group1("group1");
@@ -185,8 +177,7 @@ TEST(options_cli_test, order_of_parsing)
 
 TEST(options_cli_test, bool_implicit_and_explicit_options)
 {
-  std::vector<std::string> args = {"--bool_switch"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--bool_switch");
 
   bool bool_switch;
   bool bool_switch_unspecified;
@@ -202,8 +193,7 @@ TEST(options_cli_test, bool_implicit_and_explicit_options)
 
 TEST(options_cli_test, option_missing_required_value)
 {
-  std::vector<std::string> args = {"--str_opt"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--str_opt");
 
   std::string str_arg;
   option_group_definition arg_group("group");
@@ -223,8 +213,7 @@ TEST(options_cli_test, option_missing_required_value)
 
 TEST(options_cli_test, incorrect_option_type_str_for_int)
 {
-  std::vector<std::string> args = {"--int_opt", "str"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "str");
 
   int int_opt;
   option_group_definition arg_group("group");
@@ -235,8 +224,7 @@ TEST(options_cli_test, incorrect_option_type_str_for_int)
 
 TEST(options_cli_test, multiple_locations_one_option)
 {
-  std::vector<std::string> args = {"--str_opt", "value"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--str_opt", "value");
 
   std::string str_opt_1;
   std::string str_opt_2;
@@ -251,8 +239,7 @@ TEST(options_cli_test, multiple_locations_one_option)
 
 TEST(options_cli_test, duplicate_option_clash)
 {
-  std::vector<std::string> args = {"--the_opt", "s"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--the_opt", "s");
 
   int int_opt;
   std::string str_opt;
@@ -265,8 +252,7 @@ TEST(options_cli_test, duplicate_option_clash)
 
 TEST(options_cli_test, mismatched_values_duplicate_command_line)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--int_opt", "5"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "5");
 
   int int_opt;
   option_group_definition arg_group("group");
@@ -277,8 +263,7 @@ TEST(options_cli_test, mismatched_values_duplicate_command_line)
 
 TEST(options_cli_test, get_positional_tokens)
 {
-  std::vector<std::string> args = {"d1", "--int_opt", "1", "d2", "--int_opt", "1", "d3"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("d1", "--int_opt", "1", "d2", "--int_opt", "1", "d3");
 
   int int_opt;
   option_group_definition arg_group("group");
@@ -292,8 +277,7 @@ TEST(options_cli_test, get_positional_tokens)
 
 TEST(options_cli_test, get_positional_tokens_with_terminator)
 {
-  std::vector<std::string> args = {"d1", "--int_opt", "1", "d2", "--int_opt", "1", "d3", "--", "ab", "--help"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("d1", "--int_opt", "1", "d2", "--int_opt", "1", "d3", "--", "ab", "--help");
 
   int int_opt;
   option_group_definition arg_group("group");
@@ -307,8 +291,7 @@ TEST(options_cli_test, get_positional_tokens_with_terminator)
 
 TEST(options_cli_test, matching_values_duplicate_command_line)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--int_opt", "3"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "3");
 
   int int_opt;
   option_group_definition arg_group("group");
@@ -320,8 +303,7 @@ TEST(options_cli_test, matching_values_duplicate_command_line)
 
 TEST(options_cli_test, nonmatching_values_command_line)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--int_opt", "4"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "4");
 
   int int_opt;
   option_group_definition arg_group("group");
@@ -332,8 +314,7 @@ TEST(options_cli_test, nonmatching_values_command_line)
 
 TEST(options_cli_test, nonmatching_values_command_line_with_override)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--int_opt", "4"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "4");
 
   int int_opt;
   option_group_definition arg_group("group");
@@ -345,8 +326,7 @@ TEST(options_cli_test, nonmatching_values_command_line_with_override)
 
 TEST(options_cli_test, add_two_groups)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--str_opt", "test"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test");
 
   int int_opt;
   option_group_definition arg_group1("group1");
@@ -364,8 +344,7 @@ TEST(options_cli_test, add_two_groups)
 
 TEST(options_cli_test, was_supplied_test)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--str_opt", "test"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test");
 
   int int_opt;
   std::string str_opt;
@@ -388,8 +367,7 @@ TEST(options_cli_test, was_supplied_test)
 
 TEST(options_cli_test, kept_command_line)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--str_opt", "test", "--other_bool_opt"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test", "--other_bool_opt");
 
   int int_opt;
   std::string str_opt;
@@ -423,8 +401,7 @@ TEST(options_cli_test, kept_command_line)
 
 TEST(options_cli_test, unregistered_options)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--str_opt", "test"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test");
 
   int int_opt;
   option_group_definition arg_group("group1");
@@ -439,8 +416,7 @@ TEST(options_cli_test, unregistered_options)
 
 TEST(options_cli_test, check_necessary)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--str_opt", "test", "--other_bool_opt"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test", "--other_bool_opt");
 
   int int_opt;
   std::string str_opt;
@@ -471,8 +447,7 @@ TEST(options_cli_test, check_necessary)
 TEST(options_cli_test, check_missing_necessary)
 {
   // "int_opt" is necessary but missing from cmd line
-  std::vector<std::string> args = {"--str_opt", "test", "--other_bool_opt"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--str_opt", "test", "--other_bool_opt");
 
   int int_opt;
   std::string str_opt;
@@ -495,8 +470,7 @@ TEST(options_cli_test, check_missing_necessary)
 
 TEST(options_cli_test, check_multiple_necessary_and_short_name)
 {
-  std::vector<std::string> args = {"-i", "3", "--str_opt", "test", "--other_bool_opt"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("-i", "3", "--str_opt", "test", "--other_bool_opt");
 
   int int_opt;
   std::string str_opt;
@@ -522,8 +496,7 @@ TEST(options_cli_test, check_multiple_necessary_and_short_name)
 
 TEST(options_cli_test, check_multiple_necessary_one_missing)
 {
-  std::vector<std::string> args = {"--int_opt", "3", "--other_bool_opt"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt", "3", "--other_bool_opt");
 
   int int_opt;
   std::string str_opt;
@@ -548,8 +521,7 @@ TEST(options_cli_test, check_multiple_necessary_one_missing)
 
 TEST(options_cli_test, check_was_supplied_common_prefix_before)
 {
-  std::vector<std::string> args = {"--int_opt_two", "3"};
-  auto options = std::unique_ptr<options_cli>(new options_cli(args));
+  auto options = vwtest::make_args("--int_opt_two", "3");
 
   EXPECT_TRUE(!options->was_supplied("int_opt"));
   EXPECT_TRUE(options->was_supplied("int_opt_two"));
