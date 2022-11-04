@@ -2,12 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "test_common.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-
-#include "test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -70,8 +69,9 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   VW::save_predictor(*vw_first_half, io_writer);
   io_writer.flush();
 
-  auto vw_second_half_from_loaded = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
-      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+  auto vw_second_half_from_loaded =
+      VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
+          VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   for (size_t i = 5; i < 10; i++)
   {

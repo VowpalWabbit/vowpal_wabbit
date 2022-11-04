@@ -53,8 +53,8 @@ TEST(merge_tests, add_subtract_model_delta)
 
 TEST(merge_tests, merge_simple_model)
 {
-  auto vw1 =  VW::initialize_experimental(vwtest::make_args("--quiet", "--sgd"));
-  auto vw2 =  VW::initialize_experimental(vwtest::make_args("--quiet", "--sgd"));
+  auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet", "--sgd"));
+  auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet", "--sgd"));
 
   auto* ex1 = VW::read_example(*vw1, "1 | a b");
   VW::setup_example(*vw1, ex1);
@@ -91,9 +91,9 @@ TEST(merge_tests, merge_simple_model)
 
 TEST(merge_tests, merge_simple_model_delta)
 {
-  auto vw_base =  VW::initialize_experimental(vwtest::make_args("--quiet"));
-  auto vw1 =  VW::initialize_experimental(vwtest::make_args("--quiet"));
-  auto vw2 =  VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet"));
 
   // instead of copying base model, we train all models on the same base example
   {
@@ -150,8 +150,8 @@ TEST(merge_tests, merge_simple_model_delta)
 
 TEST(merge_tests, merge_cb_model)
 {
-  auto vw1 =  VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
-  auto vw2 =  VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
 
   VW::multi_ex examples1;
   examples1.push_back(VW::read_example(*vw1, "shared |User user=Tom time_of_day=morning"));
@@ -203,9 +203,9 @@ TEST(merge_tests, merge_cb_model)
 TEST(merge_tests, merge_cb_model_delta)
 {
   auto options_strings = std::vector<std::string>{"--quiet", "--cb_explore_adf"};
-  auto vw_base =  VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
-  auto vw1 =  VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
-  auto vw2 =  VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
 
   {
     VW::multi_ex examples;
@@ -329,8 +329,8 @@ TEST(merge_tests, merge_cb_model_delta)
 
 TEST(merge_tests, serialize_deserialize_delta)
 {
-  auto vw_base =  VW::initialize_experimental(vwtest::make_args("--quiet"));
-  auto vw_new =  VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto vw_new = VW::initialize_experimental(vwtest::make_args("--quiet"));
 
   // Create a base workspace and another workspace trained on additional example
   {
