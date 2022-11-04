@@ -34,5 +34,5 @@ target_include_directories(vw_fb_parser PUBLIC ${FLATBUFFERS_INCLUDE_DIR})
 vw_add_test_executable(
   FOR_LIB "fb_parser"
   SOURCES "tests/flatbuffer_parser_test.cc" "tests/main.cc"
-  EXTRA_DEPS vw_core
+  EXTRA_DEPS vw_core vw_test_common
 )

@@ -4,10 +4,10 @@
 
 #include "vw/core/cache.h"
 
-#include "test_common.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
