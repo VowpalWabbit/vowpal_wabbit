@@ -21,6 +21,7 @@ TEST(flat_example_tests, sans_interaction_test)
   EXPECT_THAT(flat.fs.values, testing::UnorderedElementsAre(2, 3));
   EXPECT_EQ(flat.total_sum_feat_sq, 13);
 
+  VW::free_flatten_example(&flat);
   VW::finish_example(*vw, *ex);
   delete vw;
 }
@@ -35,6 +36,7 @@ TEST(flat_example_tests, with_interaction_test)
   EXPECT_THAT(flat.fs.values, testing::UnorderedElementsAre(2, 3, 6));
   EXPECT_EQ(flat.total_sum_feat_sq, 49);
 
+  VW::free_flatten_example(&flat);
   VW::finish_example(*vw, *ex);
   delete vw;
 }
