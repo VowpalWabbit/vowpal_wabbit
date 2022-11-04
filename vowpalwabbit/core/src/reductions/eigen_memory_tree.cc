@@ -111,9 +111,9 @@ emt_example::emt_example(VW::workspace& all, VW::example* ex)
   full = VW::flatten_sort_example(all, ex);
 }
 
-emt_LRU::emt_LRU(unsigned long max_size) { (*this).max_size = max_size; }
+emt_lru::emt_lru(unsigned long max_size) { (*this).max_size = max_size; }
 
-emt_LRU::K emt_LRU::bound(emt_LRU::K item)
+emt_lru::K emt_lru::bound(emt_lru::K item)
 {
   if (max_size == 0) { return nullptr; }
 
@@ -230,7 +230,7 @@ void tree_init(emt_tree& b)
 
   b.root = new emt_node();
 
-  b.bounder = new emt_LRU(b.tree_bound);
+  b.bounder = new emt_lru(b.tree_bound);
 
   // we set this up for repeated use later in the scorer.
   // we will populate this examples features over and over.

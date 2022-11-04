@@ -60,7 +60,7 @@ struct emt_example
   emt_example(VW::workspace& all, VW::example* ex);
 };
 
-struct emt_LRU
+struct emt_lru
 {
   using K = emt_example*;
   using V = std::list<K>::iterator;
@@ -70,7 +70,7 @@ struct emt_LRU
 
   int max_size;
 
-  emt_LRU(unsigned long max_size);
+  emt_lru(unsigned long max_size);
   K bound(K item);
 };
 
@@ -111,7 +111,7 @@ struct emt_tree
   float time;          // for timing performance
 
   emt_node* root;
-  emt_LRU* bounder;
+  emt_lru* bounder;
 
   emt_tree();
   void deallocate_node(emt_node* n);
