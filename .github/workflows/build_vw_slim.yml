@@ -9,22 +9,23 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
   check:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: recursive
-      - name: Build VW Slim
-        shell: bash
-        run: ./.scripts/linux/build-slim.sh
-      - name: Test VW Slim
-        shell: bash
-        run: ./.scripts/linux/test-slim.sh
+      - uses: actions/checkout@v2
+      # Technically not needed for slim, but to configure the build we need them.
+      - name: Install deps
+        run: sudo apt install -y cmake ninja-build g++ libfmt-dev libspdlog-dev rapidjson-dev zlib1g-dev libboost-test-dev libboost-math-dev libgtest-dev
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+            -DBUILD_TESTING=On
+            -DBUILD_FLATBUFFERS=Off
+      - name: Build
+        run: cmake --build build --target vw_slim vw_slim_test
+      - run: ctest -R vw_slim_test --extra-verbose  --output-on-failure

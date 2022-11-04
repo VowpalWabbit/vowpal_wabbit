@@ -29,6 +29,8 @@ jobs:
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DWARNINGS=On
+          -DWARNING_AS_ERROR=On
+          -DUSE_LATEST_STD=On
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=On
           -DBUILD_EXPERIMENTAL_BINDING=On
