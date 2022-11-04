@@ -28,4 +28,4 @@ jobs:
           -DBUILD_FLATBUFFERS=Off
       - name: Build
         run: cmake --build build --target vw_slim vw_slim_test
-      - run: ctest -R vw_slim_test --extra-verbose  --output-on-failure
+      - run: ctest --test-dir build -R vw_slim_test --extra-verbose --output-on-failure
