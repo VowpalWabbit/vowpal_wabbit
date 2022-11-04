@@ -18,7 +18,7 @@ jobs:
         with:
           submodules: true
       - name: Install deps
-        run: sudo apt install -y cmake ninja-build g++ libfmt-dev libspdlog-dev rapidjson-dev zlib1g-dev libboost-test-dev libboost-math-dev libgtest-dev libgmock-dev libflatbuffers-dev flatbuffers-compiler-dev
+        run: sudo apt install -y cmake valgrind ninja-build g++ libfmt-dev libspdlog-dev rapidjson-dev zlib1g-dev libboost-test-dev libboost-math-dev libgtest-dev libgmock-dev libflatbuffers-dev flatbuffers-compiler-dev
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On -DVW_UNIT_TEST_WITH_VALGRIND_INTERNAL=On
       - name: Build
