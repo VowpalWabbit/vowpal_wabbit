@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -22,14 +22,24 @@ jobs:
         build_type: [Debug, Release]
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: recursive
       - name: Install dependencies
-        run: brew install cmake boost flatbuffers ninja
+        run: brew install cmake ninja rapidjson spdlog fmt boost zlib googletest flatbuffers
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_BUILD_CSV=On -DVW_INSTALL=Off
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+          -DWARNINGS=On
+          -DWARNING_AS_ERROR=On
+          -DVW_BUILD_VW_C_WRAPPER=Off
+          -DBUILD_TESTING=On
+          -DBUILD_EXPERIMENTAL_BINDING=On
+          -DVW_BUILD_CSV=On
+          -DBUILD_FLATBUFFERS=On
+          -DVW_INSTALL=Off
+          -DVW_EIGEN_SYS_DEP=On
+
       - name: Build
-        run: cmake --build build --target all
+        run: cmake --build build
       - name: Test
         run: |
           # Run unit tests
