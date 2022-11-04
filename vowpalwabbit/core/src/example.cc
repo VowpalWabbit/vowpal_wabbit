@@ -198,15 +198,8 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
+  fec.tag = ec->tag;
   fec.ex_reduction_features = ec->ex_reduction_features;
-
-  fec.tag_len = ec->tag.size();
-  if (fec.tag_len > 0)
-  {
-    fec.tag = calloc_or_throw<char>(fec.tag_len + 1);
-    memcpy(fec.tag, ec->tag.begin(), fec.tag_len);
-  }
-
   fec.example_counter = ec->example_counter;
   fec.ft_offset = ec->ft_offset;
   fec.num_features = ec->num_features;
@@ -242,7 +235,6 @@ void free_flatten_example(flat_example* fec)
   if (fec)
   {
     fec->fs.~features();
-    if (fec->tag_len > 0) { free(fec->tag); }
     free(fec);
   }
 }
@@ -334,12 +326,9 @@ namespace model_utils
 size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser)
 {
   size_t bytes = 0;
-  bool tag_is_null;
   lbl_parser.default_label(fe.l);
   bytes += lbl_parser.read_cached_label(fe.l, fe.ex_reduction_features, io);
-  bytes += read_model_field(io, fe.tag_len);
-  bytes += read_model_field(io, tag_is_null);
-  if (!tag_is_null) { bytes += read_model_field(io, *fe.tag); }
+  bytes += read_model_field(io, fe.tag);
   bytes += read_model_field(io, fe.example_counter);
   bytes += read_model_field(io, fe.ft_offset);
   bytes += read_model_field(io, fe.global_weight);
@@ -356,9 +345,7 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
 {
   size_t bytes = 0;
   lbl_parser.cache_label(fe.l, fe.ex_reduction_features, io, upstream_name + "_label", text);
-  bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
-  bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
-  if (!(fe.tag == nullptr)) { bytes += write_model_field(io, *fe.tag, upstream_name + "_tag", text); }
+  bytes += write_model_field(io, fe.tag, upstream_name + "_tag", text);
   bytes += write_model_field(io, fe.example_counter, upstream_name + "_example_counter", text);
   bytes += write_model_field(io, fe.ft_offset, upstream_name + "_ft_offset", text);
   bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);

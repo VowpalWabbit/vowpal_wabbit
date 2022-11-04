@@ -142,7 +142,7 @@ inline size_t read_model_field(io_buf& io, std::string& str)
   bytes += read_model_field(io, str_size);
   char* cs = nullptr;
   bytes += io.buf_read(cs, str_size * sizeof(char));
-  str = std::string(cs);
+  str = std::string(cs, str_size);
   return bytes;
 }
 

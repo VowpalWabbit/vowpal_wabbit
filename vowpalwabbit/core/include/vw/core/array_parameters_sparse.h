@@ -24,7 +24,7 @@ public:
   using pointer = T*;
   using reference = T&;
 
-  sparse_iterator(weight_map::iterator iter, uint64_t stride) : _iter(iter), _stride(stride) {}
+  sparse_iterator(weight_map::iterator iter) : _iter(iter) {}
 
   sparse_iterator& operator=(const sparse_iterator& other) = default;
   sparse_iterator(const sparse_iterator& other) = default;
@@ -46,7 +46,6 @@ public:
 
 private:
   weight_map::iterator _iter;
-  uint32_t _stride;
 };
 
 class sparse_parameters
@@ -68,12 +67,12 @@ public:
   VW::weight* first() { THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr); }
 
   // iterator with stride
-  iterator begin() { return iterator(_map.begin(), stride()); }
-  iterator end() { return iterator(_map.begin(), stride()); }
+  iterator begin() { return iterator(_map.begin()); }
+  iterator end() { return iterator(_map.begin()); }
 
   // const iterator
-  const_iterator cbegin() const { return const_iterator(_map.begin(), stride()); }
-  const_iterator cend() const { return const_iterator(_map.begin(), stride()); }
+  const_iterator cbegin() const { return const_iterator(_map.begin()); }
+  const_iterator cend() const { return const_iterator(_map.begin()); }
 
   inline VW::weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
 
