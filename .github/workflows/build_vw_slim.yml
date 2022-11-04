@@ -24,8 +24,8 @@ jobs:
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
-            -DBUILD_TESTING=On
-            -DBUILD_FLATBUFFERS=Off
+          -DBUILD_TESTING=On
+          -DBUILD_FLATBUFFERS=Off
       - name: Build
         run: cmake --build build --target vw_slim vw_slim_test
       - run: ctest -R vw_slim_test --extra-verbose  --output-on-failure
