@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: brew install cmake ninja rapidjson spdlog fmt boost zlib googletest flatbuffers
+        run: brew install cmake ninja rapidjson spdlog fmt boost zlib googletest flatbuffers eigen
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
