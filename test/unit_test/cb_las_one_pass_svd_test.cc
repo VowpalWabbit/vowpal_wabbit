@@ -19,6 +19,7 @@ using internal_action_space_op =
 
 BOOST_AUTO_TEST_SUITE(test_suite_las_one_pass_svd)
 
+/*
 BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
 {
   auto d = 3;
@@ -79,6 +80,7 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
     VW::finish(vw);
   }
 }
+*/
 
 BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 {
