@@ -20,12 +20,9 @@ else()
 endif()
 
 if(SPDLOG_SYS_DEP)
-  # use header-only mode with system-installed spdlog to ensure a consistent version of fmt is used
-  set(spdlog_target spdlog::spdlog_header_only)
   # spdlog is now built against 1.9.2. Its possible earlier versions will also work, but that needs to be tested
   find_package(spdlog CONFIG REQUIRED)
 else()
-  set(spdlog_target spdlog::spdlog)
   set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "Enable external FMTLIB in spdlog" FORCE)
   if(VW_INSTALL)
     set(SPDLOG_INSTALL ON CACHE BOOL "install spdlog library" FORCE)
@@ -77,7 +74,11 @@ else()
   endif()
 endif()
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+if (VW_STRING_VIEW_LITE_SYS_DEP)
+  find_package(string-view-lite CONFIG REQUIRED)
+else()
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+endif()
 
 if(BUILD_FLATBUFFERS)
   find_package(Flatbuffers CONFIG QUIET)
