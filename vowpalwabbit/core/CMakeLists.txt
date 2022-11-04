@@ -411,9 +411,10 @@ vw_add_test_executable(
     FOR_LIB "core"
     SOURCES
       tests/cache_test.cc
+      tests/main.cc
       tests/merge_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
+      tests/test_common.h
       tests/thread_pool_test.cc
-      tests/main.cc
 )
