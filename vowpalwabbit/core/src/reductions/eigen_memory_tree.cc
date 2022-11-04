@@ -43,10 +43,17 @@ namespace eigen_memory_tree
 float median(std::vector<float>& array)
 {
   int size = array.size();
-  std::sort(array.begin(), array.end());
+  auto nth = array.begin() + size / 2; 
 
-  if (size % 2 == 0) { return (array[size / 2 - 1] + array[size / 2]) / 2; }
-  else { return array[size / 2]; }
+  if (size % 2 == 0) {
+    std::nth_element(array.begin(), nth  , array.end());
+    std::nth_element(array.begin(), nth-1, array.end());
+    return (*(nth-1) + *nth)/2.;
+  }
+  else {
+    std::nth_element(array.begin(), nth, array.end());
+    return *nth;
+  }
 }
 
 float inner(features& fs, sparse_parameters& weights)
