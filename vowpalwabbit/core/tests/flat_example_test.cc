@@ -2,18 +2,18 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/example.h"
-
 #include "vw/config/options_cli.h"
+#include "vw/core/example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 TEST(flat_example_tests, sans_interaction_test)
 {
-  auto* vw = VW::initialize("--quiet --noconstant");
+  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
 
   auto* ex = VW::read_example(*vw, "1 |x a:2 |y b:3");
   auto& flat = *VW::flatten_sort_example(*vw, ex);
@@ -23,12 +23,11 @@ TEST(flat_example_tests, sans_interaction_test)
 
   VW::free_flatten_example(&flat);
   VW::finish_example(*vw, *ex);
-  delete vw;
 }
 
 TEST(flat_example_tests, with_interaction_test)
 {
-  auto* vw = VW::initialize("--interactions xy --quiet --noconstant");
+  auto vw = VW::initialize_experimental(vwtest::make_args("--interactions", "xy", "--quiet", "--noconstant"));
 
   auto* ex = VW::read_example(*vw, "1 |x a:2 |y b:3");
   auto& flat = *VW::flatten_sort_example(*vw, ex);
@@ -38,5 +37,4 @@ TEST(flat_example_tests, with_interaction_test)
 
   VW::free_flatten_example(&flat);
   VW::finish_example(*vw, *ex);
-  delete vw;
 }
