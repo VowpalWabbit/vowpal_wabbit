@@ -10,6 +10,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/parser.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
@@ -129,9 +130,12 @@ template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  std::stringstream msg;
-  if (!read) { msg << "cb large action space storing example counter:  = " << _counter << "\n"; }
-  bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+
+  if (read) { model_utils::read_model_field(io, _counter); }
+  else
+  {
+    model_utils::write_model_field(io, _counter, "cb large action space storing example counter", text);
+  }
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
