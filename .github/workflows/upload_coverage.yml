@@ -9,25 +9,35 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
   upload:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: recursive
-      - name: Build with coverage C++
-        shell: bash
-        run: ./.scripts/linux/build-with-coverage.sh
+      - uses: actions/checkout@v2
+      - name: Install deps
+        run: sudo apt install -y cmake ninja-build g++ libfmt-dev libspdlog-dev rapidjson-dev zlib1g-dev libboost-test-dev libboost-math-dev libgtest-dev libgmock-dev
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Debug
+          -DVW_GCOV=ON
+          -DWARNINGS=OFF
+          -DBUILD_JAVA=Off
+          -DBUILD_PYTHON=Off
+          -DBUILD_TESTING=On
+          -DBUILD_FLATBUFFERS=On
+          -DVW_BUILD_CSV=On
+      - name: Build
+        run: cmake --build build
       - name: Test with coverage C++
-        shell: bash
-        run: ./.scripts/linux/test-with-coverage.sh
+        run: |
+          ctest --test-dir build --verbose --output-on-failure --label-regex VWTestList
+          cd test
+          python3 run_tests.py -f -j $(nproc) --include_flatbuffers --clean_dirty -E 0.001
       - name: Upload to codecov.io
         shell: bash
         run: bash <(curl -s https://codecov.io/bash) -Z
