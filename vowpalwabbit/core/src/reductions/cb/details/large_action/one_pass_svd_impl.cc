@@ -136,7 +136,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
 
 #ifdef _MSC_VER
   // TODO: Make simd work with msvc.
-  auto compute_dot_prod = compute_dot_prod_scalar
+  auto compute_dot_prod = compute_dot_prod_scalar;
 #else
   // TODO: Expose this parameter.
   bool use_simd = true;

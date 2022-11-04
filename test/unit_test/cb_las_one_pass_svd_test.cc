@@ -80,7 +80,6 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
     VW::finish(vw);
   }
 }
-*/
 
 BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 {
@@ -175,5 +174,6 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     VW::finish(vw);
   }
 }
+*/
 
 BOOST_AUTO_TEST_SUITE_END()
