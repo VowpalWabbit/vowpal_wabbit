@@ -34,11 +34,19 @@ enum class emt_router_type
   eigen = 2
 };
 
-enum class emt_scorer_example_type
-{
-  self_consistent,
-  not_self_consistent
-};
+float emt_median(std::vector<float>&);
+
+float emt_inner(emt_feats, emt_feats);
+
+emt_feats emt_scale(emt_feats, float);
+
+float emt_norm(emt_feats);
+
+emt_feats emt_normalize(emt_feats);
+
+emt_feats emt_scale_add(float const, emt_feats const, float const, emt_feats const);
+
+emt_feats emt_abs(emt_feats const);
 
 struct emt_example
 {

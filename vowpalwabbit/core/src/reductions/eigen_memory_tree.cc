@@ -39,17 +39,118 @@ namespace reductions
 {
 namespace eigen_memory_tree
 {
+////////////////////////////definitions/////////////////////
+////////////////////////////////////////////////////////////
+
+emt_example::emt_example() { label = 0; }
+
+emt_example::emt_example(VW::workspace& all, VW::example* ex)
+{
+  label = ex->l.multi.label;
+
+  std::vector<std::vector<VW::namespace_index>>* full_interactions = ex->interactions;
+  std::vector<std::vector<VW::namespace_index>> base_interactions;
+
+  ex->interactions = &base_interactions;
+  auto ex1 = std::unique_ptr<flat_example>(VW::flatten_sort_example(all, ex));
+  for (auto& f : ex1->fs) { base.emplace_back(f.index(), f.value()); }
+  if (ex1->tag_len > 0) { free(ex1->tag); }
+
+  ex->interactions = full_interactions;
+  auto ex2 = std::unique_ptr<flat_example>(VW::flatten_sort_example(all, ex));
+  for (auto& f : ex2->fs) { full.emplace_back(f.index(), f.value()); }
+  if (ex2->tag_len > 0) { free(ex2->tag); }
+}
+
+emt_lru::emt_lru(unsigned long max_size) { (*this).max_size = max_size; }
+
+emt_lru::K emt_lru::bound(emt_lru::K item)
+{
+  if (max_size == 0) { return nullptr; }
+
+  auto item_map_reference = map.find(item);
+
+  // item is not in map so we add it to our list
+  if (item_map_reference == map.end())
+  {
+    list.push_front(item);
+    map.emplace(std::pair<K, V>(item, list.begin()));
+  }
+  // item is in map already so we move it to the front of the line
+  else
+  {
+    V item_list_reference = (*item_map_reference).second;
+    if (item_list_reference != list.begin())
+    {
+      list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference));
+    }
+  }
+
+  if (list.size() > max_size)
+  {
+    K last_value = list.back();
+    list.pop_back();
+    map.erase(last_value);
+    return last_value;
+  }
+  else { return nullptr; }
+}
+
+emt_node::emt_node()
+{
+  left = nullptr;
+  right = nullptr;
+  router_decision = 0;
+}
+
+emt_tree::emt_tree()
+{
+  tree_bound = -1;
+  leaf_split = 100;
+
+  scorer_type = emt_scorer_type::self_consistent_rank;
+  router_type = emt_router_type::eigen;
+
+  begin = 0;
+
+  all = nullptr;
+  ex = nullptr;
+  root = nullptr;
+  bounder = nullptr;
+}
+
+/// <summary>
+/// This has been added so that we can shuffle and have repeatable results based on VW's internal random number
+/// generator and its seed
+/// </summary>
+struct emt_rng
+{
+  VW::rand_state* state;
+
+public:
+  emt_rng(VW::rand_state* state) { (*this).state = state; }
+
+  using result_type = size_t;
+  static constexpr result_type min() { return 0; }
+  static constexpr result_type max() { return 1000; }
+  result_type operator()() { return static_cast<size_t>(state->get_and_update_random() * .999 * emt_rng::max()); }
+};
+////////////////////////end of definitions/////////////////
+///////////////////////////////////////////////////////////
+
 ///////////////////////Helper/////////////////////////////
 //////////////////////////////////////////////////////////
-float median(std::vector<float>& array)
+float emt_median(std::vector<float>& array)
 {
   int size = array.size();
   auto nth = array.begin() + size / 2; 
 
   if (size % 2 == 0) {
     std::nth_element(array.begin(), nth  , array.end());
+    auto v1 = (*nth);
     std::nth_element(array.begin(), nth-1, array.end());
-    return (*(nth-1) + *nth)/2.;
+    auto v2 = *(nth-1);
+    return (v1+v2)/2.;
   }
   else {
     std::nth_element(array.begin(), nth, array.end());
@@ -57,7 +158,7 @@ float median(std::vector<float>& array)
   }
 }
 
-float inner(emt_feats xs, emt_feats ys)
+float emt_inner(emt_feats xs, emt_feats ys)
 {
   float sum = 0;
   int xi = 0;
@@ -77,7 +178,7 @@ float inner(emt_feats xs, emt_feats ys)
   return sum;
 }
 
-emt_feats scale(emt_feats xs, float scalar)
+emt_feats emt_scale(emt_feats xs, float scalar)
 {
   for (auto &x : xs)
   {
@@ -87,7 +188,7 @@ emt_feats scale(emt_feats xs, float scalar)
   return xs;
 }
 
-float norm(emt_feats xs)
+float emt_norm(emt_feats xs)
 {
   float sum_weights_sq = 0;
 
@@ -96,9 +197,9 @@ float norm(emt_feats xs)
   return std::sqrt(sum_weights_sq);
 }
 
-emt_feats normalize(emt_feats xs) { return scale(xs, 1 / norm(xs)); }
+emt_feats emt_normalize(emt_feats xs) { return emt_scale(xs, 1 / emt_norm(xs)); }
 
-emt_feats scale_add(float const s1, emt_feats const f1, float const s2, emt_feats const f2)
+emt_feats emt_scale_add(float const s1, emt_feats const f1, float const s2, emt_feats const f2)
 {
   size_t idx1 = 0;
   size_t idx2 = 0;
@@ -139,119 +240,84 @@ emt_feats scale_add(float const s1, emt_feats const f1, float const s2, emt_feat
   return out;
 }
 
-emt_feats abs(emt_feats const f) {
+emt_feats emt_abs(emt_feats const f) {
   emt_feats out(f);
   for (auto& p : out) { p.second = std::abs(p.second); }
   return out;
 }
-////////////////////////////end of helper/////////////////////////
-//////////////////////////////////////////////////////////////////
 
-////////////////////////////definitions/////////////////////
-////////////////////////////////////////////////////////////
-
-emt_example::emt_example() {
-  label = 0;
-}
-
-emt_example::emt_example(VW::workspace& all, VW::example* ex)
+emt_feats emt_router_random(std::vector<emt_feats>& exs, VW::rand_state& rng)
 {
-  label = ex->l.multi.label;
+  std::set<int> is;
+  emt_feats weights;
 
-  std::vector<std::vector<VW::namespace_index>> *full_interactions = ex->interactions;
-  std::vector<std::vector<VW::namespace_index>> base_interactions;
-
-  ex->interactions = &base_interactions;
-  auto ex1 = std::shared_ptr<flat_example>(VW::flatten_sort_example(all, ex));
-  for (auto& f : ex1->fs) { base.emplace_back(f.index(), f.value()); }
-  if (ex1->tag_len > 0) { free(ex1->tag); }
-
-  ex->interactions = full_interactions;
-  auto ex2 = std::shared_ptr<flat_example>(VW::flatten_sort_example(all, ex));
-  for (auto& f : ex2->fs) { full.emplace_back(f.index(), f.value()); }
-  if (ex2->tag_len > 0) { free(ex2->tag); }
-}
-
-emt_lru::emt_lru(unsigned long max_size) { (*this).max_size = max_size; }
-
-emt_lru::K emt_lru::bound(emt_lru::K item)
-{
-  if (max_size == 0) { return nullptr; }
-
-  auto item_map_reference = map.find(item);
-
-  // item is not in map so we add it to our list
-  if (item_map_reference == map.end())
+  for (auto& e : exs)
   {
-    list.push_front(item);
-    map.emplace(std::pair<K, V>(item, list.begin()));
+    for (auto& f : e) { is.insert(f.first); }
   }
-  // item is in map already so we move it to the front of the line
-  else
+  for (auto& i : is) { weights.emplace_back(i, rng.get_and_update_random()); }
+
+  return emt_normalize(weights);
+}
+
+emt_feats emt_router_top_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
+{
+  auto weights = emt_router_random(exs, rng);
+
+  std::map<int, float> sums;
+  emt_feats means;
+
+  for (auto& ex : exs)
   {
-    V item_list_reference = (*item_map_reference).second;
-    if (item_list_reference != list.begin())
+    for (auto& p : ex) { sums[p.first] += p.second; }
+  }
+  for (auto& p : sums) { means.emplace_back(p.first, p.second / exs.size()); }
+
+  std::vector<emt_feats> centered_exs;
+  for (auto& e : exs) { centered_exs.push_back(emt_scale_add(1, e, -1, means)); }
+
+  int n_epochs = 20;  // the bigger the better eigen approximation
+
+  for (int i = 0; i < n_epochs; i++)
+  {
+    // reseting n on each epoch gives
+    // projectors that are substantially
+    // closer to the true top eigen vector
+    // in experiments
+    float n = 1;
+    std::shuffle(centered_exs.begin(), centered_exs.end(), emt_rng(&rng));
+
+    for (emt_feats fs : centered_exs)
     {
-      list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference));
+      // in matrix multiplication notation this looks like:
+      // weights = weights + (1/n) * inner(outer(fs,fs), weights)
+      //         = weights + (1/n) * fs * inner(fs,weights)
+      //         =          weights+(1/n)*inner(fs,weights)*fs
+      weights = emt_scale_add(1, weights, (1 / n) * emt_inner(fs, weights), fs);
+      weights = emt_normalize(weights);
+      n += 1;
     }
   }
 
-  if (list.size() > max_size)
-  {
-    K last_value = list.back();
-    list.pop_back();
-    map.erase(last_value);
-    return last_value;
-  }
-  else { return nullptr; }
+  return weights;
 }
 
-emt_node::emt_node() {
-  left = nullptr;
-  right = nullptr;
-  router_decision = 0;
-}
-
-emt_tree::emt_tree() {
-
-  tree_bound = -1;
-  leaf_split = 100;
-
-  scorer_type = emt_scorer_type::self_consistent_rank;
-  router_type = emt_router_type::eigen;
-
-  begin = 0;
-
-  all = nullptr;
-  ex = nullptr;
-  root = nullptr;
-  bounder = nullptr;
-}
-
-/// <summary>
-/// This has been added so that we can shuffle and have repeatable results based on VW's internal random number
-/// generator and its seed
-/// </summary>
-struct emt_rng
+emt_feats emt_router(std::vector<emt_feats> exs, emt_router_type router_type, VW::rand_state& rng)
 {
-  std::shared_ptr<VW::rand_state> state;
+  if (router_type == emt_router_type::random) {
+    return emt_router_random(exs, rng);
+  }
+  else { return emt_router_top_eigen(exs, rng); }
+}
 
-public:
-  emt_rng(std::shared_ptr<VW::rand_state> state) { this->state = std::move(state); }
-
-  using result_type = size_t;
-  static constexpr result_type min() { return 0; }
-  static constexpr result_type max() { return 1000; }
-  result_type operator()() { return static_cast<size_t>(state->get_and_update_random() * .999 * emt_rng::max()); }
-};
-////////////////////////end of definitions/////////////////
-///////////////////////////////////////////////////////////
+////////////////////////////end of helper/////////////////////////
+//////////////////////////////////////////////////////////////////
 
 ////////////////////////eigen_memory_tree///////////////////
 ////////////////////////////////////////////////////////////
 emt_node* node_route(emt_node& cn, emt_example& ec)
 {
-  return inner(ec.base, cn.router_weights) < cn.router_decision ? cn.left.get() : cn.right.get();
+  return emt_inner(ec.base, cn.router_weights) < cn.router_decision ? cn.left.get() : cn.right.get();
 }
 
 void tree_init(emt_tree& b)
@@ -300,10 +366,11 @@ void scorer_features(emt_feats const f1, features& out)
   for (auto p : f1) { out.push_back(p.second, p.first); }
 }
 
-void scorer_example(
-    emt_tree& b, emt_example ex1, emt_example ex2, VW::example& out, emt_scorer_example_type example_type)
+void scorer_example(emt_tree& b, emt_example ex1, emt_example ex2)
 {
-  if (example_type == emt_scorer_example_type::self_consistent)
+  VW::example& out = *b.ex;
+
+  if (b.scorer_type == emt_scorer_type::self_consistent_rank)
   {
     out.indices.clear();
     out.indices.push_back('x');
@@ -313,15 +380,15 @@ void scorer_example(
     out.feature_space['x'].clear();
     out.feature_space['z'].clear();
 
-    scorer_features(abs(scale_add(1, ex1.full, -1, ex2.full)), out.feature_space['x']);
+    scorer_features(emt_abs(emt_scale_add(1, ex1.full, -1, ex2.full)), out.feature_space['x']);
 
     out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
     out.num_features = out.feature_space['x'].size();
 
-    out.ex_reduction_features.template get<VW::simple_label_reduction_features>().initial = scorer_initial(out);
+    out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = scorer_initial(out);
   }
 
-  if (example_type == emt_scorer_example_type::not_self_consistent)
+  if (b.scorer_type == emt_scorer_type::not_self_consistent_rank)
   {
     out.indices.clear();
     out.indices.push_back('x');
@@ -373,34 +440,22 @@ float scorer_predict(emt_tree& b, single_learner& base, emt_example& pred_ex, em
     return b._random_state->get_and_update_random();
   }
 
-  if (b.scorer_type == emt_scorer_type::distance)  // dist scorer
+  else if (b.scorer_type == emt_scorer_type::distance)  // dist scorer
   {
-    scorer_example(b, pred_ex, leaf_ex, *b.ex, emt_scorer_example_type::self_consistent);
-    return b.ex->total_sum_feat_sq;
+    return emt_norm(emt_scale_add(1, pred_ex.full, -1, leaf_ex.full));
   }
 
-  if (b.scorer_type == emt_scorer_type::self_consistent_rank ||
-      b.scorer_type == emt_scorer_type::not_self_consistent_rank)  // rank scorer
+  else
   {
-    auto example_type = (b.scorer_type == emt_scorer_type::self_consistent_rank)
-        ? emt_scorer_example_type::self_consistent
-        : emt_scorer_example_type::not_self_consistent;
-
-    scorer_example(b, pred_ex, leaf_ex, *b.ex, example_type);
-
     // The features matched exactly. Return max negative to make sure it is picked.
-    if (b.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>().initial == 0)
-    {
-      return -FLT_MAX;
-    }
+    if (pred_ex.full == leaf_ex.full) { return -FLT_MAX; }
 
+    scorer_example(b, pred_ex, leaf_ex);
     b.ex->l.simple = {FLT_MAX};
     base.predict(*b.ex);
 
     return b.ex->pred.scalar;
   }
-
-  THROW("An unrecognized scorer type was provided.")
 }
 
 void scorer_learn(single_learner& base, VW::example& ex, float label, float weight)
@@ -418,20 +473,13 @@ void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, emt_example& 
 {
   // random and dist scorer has nothing to learsn
   if (b.scorer_type == emt_scorer_type::random || b.scorer_type == emt_scorer_type::distance) { return; }
-
-  if (b.scorer_type == emt_scorer_type::self_consistent_rank ||
-      b.scorer_type == emt_scorer_type::not_self_consistent_rank)
+  else
   {
-    auto example_type = (b.scorer_type == emt_scorer_type::self_consistent_rank)
-        ? emt_scorer_example_type::self_consistent
-        : emt_scorer_example_type::not_self_consistent;
-
     if (weight == 0) { return; }
-
     if (cn.examples.size() < 2) { return; }
 
     // shuffle the examples to break ties randomly
-    std::shuffle(cn.examples.begin(), cn.examples.end(), emt_rng(b._random_state));
+    std::shuffle(cn.examples.begin(), cn.examples.end(), emt_rng(b._random_state.get()));
 
     float preferred_score = FLT_MAX;
     float preferred_error = FLT_MAX;
@@ -477,18 +525,18 @@ void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, emt_example& 
     {
       if (b._random_state->get_and_update_random() < .5)
       {
-        scorer_example(b, ex, *preferred_ex, *b.ex, example_type);
+        scorer_example(b, ex, *preferred_ex);
         scorer_learn(base, *b.ex, int(preferred_error > alternative_error), weight);
 
-        scorer_example(b, ex, *alternative_ex, *b.ex, example_type);
+        scorer_example(b, ex, *alternative_ex);
         scorer_learn(base, *b.ex, int(alternative_error > preferred_error), weight);
       }
       else
       {
-        scorer_example(b, ex, *alternative_ex, *b.ex, example_type);
+        scorer_example(b, ex, *alternative_ex);
         scorer_learn(base, *b.ex, int(alternative_error > preferred_error), weight);
 
-        scorer_example(b, ex, *preferred_ex, *b.ex, example_type);
+        scorer_example(b, ex, *preferred_ex);
         scorer_learn(base, *b.ex, int(preferred_error > alternative_error), weight);
       }
 
@@ -512,58 +560,16 @@ void node_split(emt_tree& b, emt_node& cn)
   if (cn.examples.size() <= b.leaf_split) { return; }
 
   std::vector<emt_feats> exs;
-  for (auto& example : cn.examples) { exs.push_back(example->base); }
-
-  std::set<int> is;
-  emt_feats weights;
-  for (auto& e: exs) { for (auto& f : e) { is.insert(f.first); } }
-  for (auto& i: is ) { weights.emplace_back(i, b._random_state->get_and_update_random()); }
-
-  weights = normalize(weights);
-
-  if (b.router_type == emt_router_type::eigen)
-  {
-    std::map<int, float> sums;
-    emt_feats means;
-    for (auto& ex : exs) { for (auto& p : ex) { sums[p.first] += p.second; } }
-    for (auto& p : sums) { means.emplace_back(p.first, p.second / exs.size()); }
-
-    std::vector<emt_feats> centered_exs;
-    for (auto &e: exs) { centered_exs.push_back(scale_add(1, e, -1, means)); }
-
-    int n_epochs = 20;  // the bigger the better eigen approximation 
-
-    for (int i = 0; i < n_epochs; i++)
-    {
-      // reseting n on each epoch gives
-      // projectors that are substantially
-      // closer to the true top eigen vector
-      // in experiments
-      float n = 1;
-      std::shuffle(centered_exs.begin(), centered_exs.end(), emt_rng(b._random_state));
-
-      for (emt_feats fs : centered_exs)
-      {
-        // in matrix multiplication notation this looks like:
-        // weights = weights + (1/n) * inner(outer(fs,fs), weights)
-        //         = weights + (1/n) * fs * inner(fs,weights)
-        //         =          weights+(1/n)*inner(fs,weights)*fs
-        weights = scale_add(1,weights,(1/n)*inner(fs,weights),fs);
-        weights = normalize(weights);
-        n += 1;
-      }
-    }
-  }
+  for (auto& ex : cn.examples) { exs.push_back(ex->base); }
 
   cn.left = std::move(VW::make_unique<emt_node>());
   cn.right = std::move(VW::make_unique<emt_node>());
+  cn.router_weights = emt_router(exs, b.router_type, *b._random_state);
 
   std::vector<float> projs;
-  projs.reserve(exs.size());
-  for (auto& ex:exs) { projs.push_back(inner(ex, weights)); }
+  for (auto& ex :exs) { projs.push_back(emt_inner(ex, cn.router_weights)); }
 
-  cn.router_weights = weights;
-  cn.router_decision = median(projs);
+  cn.router_decision = emt_median(projs);
 
   for (auto & ex: cn.examples) { node_route(cn, *ex)->examples.push_back(std::move(ex)); }
   cn.examples.clear();
@@ -571,7 +577,7 @@ void node_split(emt_tree& b, emt_node& cn)
 
 void node_insert(emt_tree& b, emt_node& cn, std::unique_ptr<emt_example> ex)
 {
-  for (auto& cn_ex: cn.examples) { if (cn_ex == ex) { return; } }
+  for (auto& cn_ex: cn.examples) { if (cn_ex->full == ex->full) { return; } }
   cn.examples.push_back(std::move(ex));
 }
 
@@ -595,7 +601,7 @@ emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, emt_exam
     }
   }
 
-  std::shuffle(best_examples.begin(), best_examples.end(), emt_rng(b._random_state));
+  std::shuffle(best_examples.begin(), best_examples.end(), emt_rng(b._random_state.get()));
   return best_examples[0];
 }
 

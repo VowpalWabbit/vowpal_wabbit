@@ -147,4 +147,124 @@ TEST(emt_tests, emt_split)
   for (int i = 0; i < 4; i++) { vw.finish_example(*examples[i]); }
   VW::finish(vw);
 }
+
+TEST(emt_tests, test_emt_inner)
+{
+  emt_feats v1;
+  emt_feats v2;
+
+  EXPECT_EQ(emt_inner(v1, v2), 0);
+
+  v1.emplace_back(1, 2);
+  v2.emplace_back(2, 2);
+
+  EXPECT_EQ(emt_inner(v1, v2), 0);
+
+  v1.emplace_back(2, 3);
+
+  EXPECT_EQ(emt_inner(v1, v2), 6);
+
+  v1.emplace_back(3, 2);
+  v2.emplace_back(3, 5);
+
+  EXPECT_EQ(emt_inner(v1, v2), 16);
+}
+
+TEST(emt_tests, test_emt_scale_add)
+{
+  emt_feats v1;
+  emt_feats v2;
+  emt_feats v3;
+
+  EXPECT_EQ(emt_scale_add(1, v1, 1, v2), v3);
+
+  v1.emplace_back(1, 2);
+  v3.emplace_back(1, 2);
+
+  EXPECT_EQ(emt_scale_add(1, v1, 1, v2), v3);
+
+  v3.clear();
+  v3.emplace_back(1, -1);
+
+  EXPECT_EQ(emt_scale_add(-.5, v1, 1, v2), v3);
+
+  v1.clear();
+  v2.clear();
+  v3.clear();
+  v1.emplace_back(1, 2);
+  v2.emplace_back(1, 2.5);
+  v3.emplace_back(1, -.5);
+
+  EXPECT_EQ(emt_scale_add(1, v1, -1, v2), v3);
+
+  v1.clear();
+  v2.clear();
+  v3.clear();
+  v1.emplace_back(1, 2);
+  v2.emplace_back(1, 2.5);
+  v2.emplace_back(5, 1);
+  v3.emplace_back(1, -4.5);
+  v3.emplace_back(5, -1);
+
+  EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
+}
+
+TEST(emt_tests, test_emt_abs)
+{
+  emt_feats v1;
+  emt_feats v2;
+
+  EXPECT_EQ(emt_abs(v1), v2);
+
+  v1.emplace_back(1, -3);
+  v2.emplace_back(1, 3);
+
+  EXPECT_EQ(emt_abs(v1), v2);
+  EXPECT_EQ(v1.at(0).second, -3);
+
+  v1.emplace_back(2, -4);
+  v2.emplace_back(2, 4);
+
+  EXPECT_EQ(emt_abs(v1), v2);
+  EXPECT_EQ(v1.at(0).second, -3);
+  EXPECT_EQ(v1.at(1).second, -4);
+}
+
+TEST(emt_tests, test_emt_normalize)
+{
+  emt_feats v1;
+  emt_feats v2;
+
+  EXPECT_EQ(emt_normalize(v1), v2);
+
+  v1.emplace_back(1, -3);
+  v1.emplace_back(5,  4);
+
+  v2.emplace_back(1, -.6);
+  v2.emplace_back(5,  .8);
+
+  EXPECT_EQ(emt_normalize(v1), v2);
+  EXPECT_EQ(v1.at(0).second, -3);
+  EXPECT_EQ(v1.at(1).second,  4);
+}
+
+TEST(emt_tests, test_emt_median)
+{
+  std::vector<float> v1;
+
+  v1.push_back(3);
+  v1.push_back(1);
+  v1.push_back(2);
+
+  EXPECT_EQ(emt_median(v1), 2);
+
+  v1.clear();
+  v1.push_back(8);
+  v1.push_back(2);
+  v1.push_back(6);
+  v1.push_back(4);
+
+  EXPECT_EQ(emt_median(v1), 5);
+}
+
 }  // namespace eigen_memory_tree_test
