@@ -26,6 +26,7 @@
 #include <list>
 #include <memory>
 #include <sstream>
+#include <type_traits>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -56,30 +57,92 @@ float median(std::vector<float>& array)
   }
 }
 
-float inner(features& fs, sparse_parameters& weights)
+float inner(emt_feats xs, emt_feats ys)
 {
-  float inner = 0;
-  for (auto& f : fs) { inner += weights[f.index()] * f.value(); }
-  return inner;
-}
+  float sum = 0;
+  int xi = 0;
+  int yi = 0;
 
-float inner(VW::flat_example& example, sparse_parameters& weights) { return inner(example.fs, weights); }
-
-void scale(sparse_parameters& weights, float scalar)
-{
-  for (sparse_parameters::iterator i = weights.begin(); i != weights.end(); ++i)
+  while (xi < xs.size() && yi < ys.size())
   {
-    weights[i.index()] = weights[i.index()] * scalar;
+    auto x = xs[xi];
+    auto y = ys[yi];
+
+    if (x.first == y.first) { sum += x.second * y.second; }
+
+    if (x.first <= y.first) { xi += 1; }
+    if (y.first <= x.first) { yi += 1; }
   }
+
+  return sum;
 }
 
-float norm(sparse_parameters& weights)
+emt_feats scale(emt_feats xs, float scalar)
+{
+  for (auto &x : xs)
+  {
+    x.second *= scalar;
+  }
+
+  return xs;
+}
+
+float norm(emt_feats xs)
 {
   float sum_weights_sq = 0;
 
-  for (auto& w : weights) { sum_weights_sq += w * w; }
+  for (auto& x: xs) { sum_weights_sq += x.second * x.second; }
 
   return std::sqrt(sum_weights_sq);
+}
+
+emt_feats normalize(emt_feats xs) { return scale(xs, 1 / norm(xs)); }
+
+emt_feats scale_add(float const s1, emt_feats const f1, float const s2, emt_feats const f2)
+{
+  size_t idx1 = 0;
+  size_t idx2 = 0;
+
+  uint64_t index = 0;
+  uint64_t f1_idx = 0;
+  uint64_t f2_idx = 0;
+
+  float f1_val = 0.f;
+  float f2_val = 0.f;
+
+  emt_feats out;
+
+  while (idx1 < f1.size() || idx2 < f2.size())
+  {
+    f1_idx = (idx1 == f1.size()) ? INT_MAX : f1[idx1].first;
+    f2_idx = (idx2 == f2.size()) ? INT_MAX : f2[idx2].first;
+
+    f1_val = 0.f;
+    f2_val = 0.f;
+
+    if (f1_idx <= f2_idx)
+    {
+      index = f1_idx;
+      f1_val = f1[idx1].second;
+      idx1++;
+    }
+
+    if (f2_idx <= f1_idx)
+    {
+      index = f2_idx;
+      f2_val = f2[idx2].second;
+      idx2++;
+    }
+
+    out.emplace_back(index, f1_val * s1 + f2_val * s2);
+  }
+  return out;
+}
+
+emt_feats abs(emt_feats const f) {
+  emt_feats out(f);
+  for (auto& p : out) { p.second = std::abs(p.second); }
+  return out;
 }
 ////////////////////////////end of helper/////////////////////////
 //////////////////////////////////////////////////////////////////
@@ -88,27 +151,25 @@ float norm(sparse_parameters& weights)
 ////////////////////////////////////////////////////////////
 
 emt_example::emt_example() {
-  base = nullptr;
-  full = nullptr;
-  score = 0;
   label = 0;
-  tag = -1;
 }
 
 emt_example::emt_example(VW::workspace& all, VW::example* ex)
 {
   label = ex->l.multi.label;
-  tag = -1;
-  score = 0;
 
-  auto full_interactions = ex->interactions;
-  auto base_interactions = new std::vector<std::vector<VW::namespace_index>>();
+  std::vector<std::vector<VW::namespace_index>> *full_interactions = ex->interactions;
+  std::vector<std::vector<VW::namespace_index>> base_interactions;
 
-  ex->interactions = base_interactions;
-  base = VW::flatten_sort_example(all, ex);
+  ex->interactions = &base_interactions;
+  auto ex1 = std::shared_ptr<flat_example>(VW::flatten_sort_example(all, ex));
+  for (auto& f : ex1->fs) { base.emplace_back(f.index(), f.value()); }
+  if (ex1->tag_len > 0) { free(ex1->tag); }
 
   ex->interactions = full_interactions;
-  full = VW::flatten_sort_example(all, ex);
+  auto ex2 = std::shared_ptr<flat_example>(VW::flatten_sort_example(all, ex));
+  for (auto& f : ex2->fs) { full.emplace_back(f.index(), f.value()); }
+  if (ex2->tag_len > 0) { free(ex2->tag); }
 }
 
 emt_lru::emt_lru(unsigned long max_size) { (*this).max_size = max_size; }
@@ -146,22 +207,12 @@ emt_lru::K emt_lru::bound(emt_lru::K item)
 }
 
 emt_node::emt_node() {
-  parent = nullptr;
   left = nullptr;
   right = nullptr;
-
-  internal = false;
-  depth = 0;
-
   router_decision = 0;
-  router_weights = nullptr;
 }
 
 emt_tree::emt_tree() {
-  iter = 0;
-  pass = 0;
-  depth = 0;
-  test_only = false;
 
   tree_bound = -1;
   leaf_split = 100;
@@ -169,31 +220,12 @@ emt_tree::emt_tree() {
   scorer_type = emt_scorer_type::self_consistent_rank;
   router_type = emt_router_type::eigen;
 
-  begin = clock();
-  time = 0;
+  begin = 0;
 
   all = nullptr;
   ex = nullptr;
   root = nullptr;
   bounder = nullptr;
-}
-
-void emt_tree::deallocate_node(emt_node* n)
-{
-  if (!n) { return; }
-  for (emt_example* e : n->examples)
-  {
-    VW::free_flatten_example(e->base);
-    VW::free_flatten_example(e->full);
-  }
-  deallocate_node(n->left);
-  deallocate_node(n->right);
-}
-
-emt_tree::~emt_tree()
-{
-  deallocate_node(root);
-  if (ex) { VW::dealloc_examples(ex, 1); }
 }
 
 /// <summary>
@@ -219,35 +251,27 @@ public:
 ////////////////////////////////////////////////////////////
 emt_node* node_route(emt_node& cn, emt_example& ec)
 {
-  return inner(*ec.base, *cn.router_weights) < cn.router_decision ? cn.left : cn.right;
+  return inner(ec.base, cn.router_weights) < cn.router_decision ? cn.left.get() : cn.right.get();
 }
 
 void tree_init(emt_tree& b)
 {
-  b.iter = 0;
-  b.depth = 0;
-  b.pass = 0;
-
-  b.root = new emt_node();
-
+  b.root = VW::make_unique<emt_node>();
   b.bounder = new emt_lru(b.tree_bound);
 
   // we set this up for repeated use later in the scorer.
   // we will populate this examples features over and over.
-  b.ex = ::VW::alloc_examples(1);
-  for (int i = 0; i != 1; i++)
-  {
-    b.ex[i].interactions = new std::vector<std::vector<VW::namespace_index>>();
-    b.ex[i].extent_interactions = new std::vector<std::vector<extent_term>>();
-    b.ex[i].indices.push_back(0);
-  }
+  b.ex = std::move(std::unique_ptr<VW::example>(::VW::alloc_examples(1)));
+  b.ex->interactions = new std::vector<std::vector<VW::namespace_index>>();
+  b.ex->extent_interactions = new std::vector<std::vector<extent_term>>();
+  b.ex->indices.push_back(0);
 }
 
-emt_node& tree_route(emt_tree& b, emt_example& ec)
+emt_node* tree_route(emt_tree& b, emt_example& ec)
 {
-  emt_node* cn = b.root;
-  while (cn->internal) { cn = node_route(*cn, ec); }
-  return *cn;
+  emt_node* cn = b.root.get();
+  while (cn->left != nullptr) { cn = node_route(*cn, ec); }
+  return cn;
 }
 
 void tree_bound(emt_tree& b, emt_example* ec)
@@ -256,11 +280,11 @@ void tree_bound(emt_tree& b, emt_example* ec)
 
   if (to_delete == nullptr) { return; }
 
-  emt_node& cn = tree_route(b, *to_delete);
+  emt_node& cn = *tree_route(b, *to_delete);
 
   for (auto iter = cn.examples.begin(); iter != cn.examples.end(); iter++)
   {
-    if (*iter == to_delete)
+    if (iter->get() == to_delete)
     {
       cn.examples.erase(iter);
       return;
@@ -270,77 +294,16 @@ void tree_bound(emt_tree& b, emt_example* ec)
 
 float scorer_initial(VW::example& ex) { return 1 - std::exp(-std::sqrt(ex.total_sum_feat_sq)); }
 
-/// <summary>
-/// Calculate pairwise difference features for a scorer example
-/// </summary>
-/// <param name="f1">features from scorer example 1</param>
-/// <param name="f2">features from scorer eample 2</param>
-/// <param name="out">the features object calcuated features will be written to</param>
-/// <param name="feature_type"> difference or absolute difference</param>
-void scorer_features(features& f1, features& f2, features& out, emt_scorer_feature_type feature_type)
+void scorer_features(emt_feats const f1, features& out)
 {
-  out.values.clear();
-  out.indices.clear();
-  out.sum_feat_sq = 0;
-
-  size_t idx1 = 0;
-  size_t idx2 = 0;
-
-  uint64_t index = 0;
-  uint64_t f1_idx = 0;
-  uint64_t f2_idx = 0;
-
-  float f1_val = 0.f;
-  float f2_val = 0.f;
-
-  while (idx1 < f1.size() || idx2 < f2.size())
-  {
-    f1_idx = (idx1 == f1.size()) ? INT_MAX : f1.indices[idx1];
-    f2_idx = (idx2 == f2.size()) ? INT_MAX : f2.indices[idx2];
-
-    f1_val = 0.f;
-    f2_val = 0.f;
-
-    if (f1_idx <= f2_idx)
-    {
-      index = f1_idx;
-      f1_val = f1.values[idx1];
-      idx1++;
-    }
-
-    if (f2_idx <= f1_idx)
-    {
-      index = f2_idx;
-      f2_val = f2.values[idx2];
-      idx2++;
-    }
-
-    if (f1_val != f2_val)
-    {
-      float value = 0;
-      if (feature_type == emt_scorer_feature_type::abs_diff) { value = std::abs(f1_val - f2_val); }
-      else if (feature_type == emt_scorer_feature_type::diff) { value = f1_val - f2_val; }
-      else { THROW("An unrecognized feature type was provided.") }
-
-      out.values.push_back(value);
-      out.indices.push_back(index);
-      out.sum_feat_sq += value * value;
-    }
-  }
+  out.clear();
+  for (auto p : f1) { out.push_back(p.second, p.first); }
 }
 
-/// <summary>
-/// Initialize an example to be used either for learning or predicting with the scorer
-/// </summary>
-/// <param name="ex1">memory 1 to use for constructing the scorer example</param>
-/// <param name="ex2">memory 2 to use for constructing the scorer example</param>
-/// <param name="out">the examples object which we are initializing</param>
-/// <param name="example_type">The type of example to create. 1--self-consistent 2--polynomial</param>
 void scorer_example(
-    emt_tree& b, emt_example& ex1, emt_example& ex2, VW::example& out, emt_scorer_example_type example_type)
+    emt_tree& b, emt_example ex1, emt_example ex2, VW::example& out, emt_scorer_example_type example_type)
 {
-  if (example_type == emt_scorer_example_type::self_consistent ||
-      example_type == emt_scorer_example_type::not_self_consistent)
+  if (example_type == emt_scorer_example_type::self_consistent)
   {
     out.indices.clear();
     out.indices.push_back('x');
@@ -350,7 +313,7 @@ void scorer_example(
     out.feature_space['x'].clear();
     out.feature_space['z'].clear();
 
-    scorer_features(ex1.full->fs, ex2.full->fs, out.feature_space['x'], emt_scorer_feature_type::abs_diff);
+    scorer_features(abs(scale_add(1, ex1.full, -1, ex2.full)), out.feature_space['x']);
 
     out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
     out.num_features = out.feature_space['x'].size();
@@ -371,9 +334,8 @@ void scorer_example(
     b.all->ignore_linear['x'] = true;
     b.all->ignore_linear['z'] = true;
 
-    // creates a copy
-    out.feature_space['x'] = ex1.full->fs;
-    out.feature_space['z'] = ex2.full->fs;
+    scorer_features(ex1.full, out.feature_space['x']);
+    scorer_features(ex2.full, out.feature_space['z']);
 
     // when we receive ex1 and ex2 their features are indexed on top of eachother. In order
     // to make sure VW recognizes the features from the two examples as separate features
@@ -478,27 +440,27 @@ void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, emt_example& 
     float alternative_error = FLT_MAX;
     emt_example* alternative_ex = nullptr;
 
-    for (emt_example* example : cn.examples)
+    for (auto& example : cn.examples)
     {
       float score = scorer_predict(b, base, ex, *example);
 
       if (score < preferred_score)
       {
         preferred_score = score;
-        preferred_ex = example;
+        preferred_ex = example.get();
         preferred_error = (example->label == ex.label) ? 0.f : 1.f;
       }
     }
 
-    for (emt_example* example : cn.examples)
+    for (auto& example : cn.examples)
     {
-      if (example == preferred_ex) { continue; }
+      if (example.get() == preferred_ex) { continue; }
 
       float error = (example->label == ex.label) ? 0.f : 1.f;
       if (error < alternative_error)
       {
         alternative_error = error;
-        alternative_ex = example;
+        alternative_ex = example.get();
       }
     }
 
@@ -515,22 +477,22 @@ void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, emt_example& 
     {
       if (b._random_state->get_and_update_random() < .5)
       {
-        scorer_example(b, ex, *preferred_ex, b.ex[0], example_type);
-        scorer_learn(base, b.ex[0], int(preferred_error > alternative_error), weight);
+        scorer_example(b, ex, *preferred_ex, *b.ex, example_type);
+        scorer_learn(base, *b.ex, int(preferred_error > alternative_error), weight);
 
-        scorer_example(b, ex, *alternative_ex, b.ex[0], example_type);
-        scorer_learn(base, b.ex[0], int(alternative_error > preferred_error), weight);
+        scorer_example(b, ex, *alternative_ex, *b.ex, example_type);
+        scorer_learn(base, *b.ex, int(alternative_error > preferred_error), weight);
       }
       else
       {
-        scorer_example(b, ex, *alternative_ex, b.ex[0], example_type);
-        scorer_learn(base, b.ex[0], int(alternative_error > preferred_error), weight);
+        scorer_example(b, ex, *alternative_ex, *b.ex, example_type);
+        scorer_learn(base, *b.ex, int(alternative_error > preferred_error), weight);
 
-        scorer_example(b, ex, *preferred_ex, b.ex[0], example_type);
-        scorer_learn(base, b.ex[0], int(preferred_error > alternative_error), weight);
+        scorer_example(b, ex, *preferred_ex, *b.ex, example_type);
+        scorer_learn(base, *b.ex, int(preferred_error > alternative_error), weight);
       }
 
-      // doing the trick below doesn't work as well as the two separate updates. Why? It does seem to be faster.
+      // this trick gives worse outcomes. Why? It is faster so it'd be nice if it didn't.
       // scorer_example(ex, *preferred_ex, b.ex[0]);
       // scorer_example(ex, *alternative_ex, b.ex[1]);
       // scorer_features(b.ex[0].feature_space[0], b.ex[1].feature_space[0], b.ex[2].feature_space[0], 2);
@@ -549,45 +511,27 @@ void node_split(emt_tree& b, emt_node& cn)
 {
   if (cn.examples.size() <= b.leaf_split) { return; }
 
-  uint64_t bits = static_cast<uint64_t>(1) << (b.all->num_bits);
+  std::vector<emt_feats> exs;
+  for (auto& example : cn.examples) { exs.push_back(example->base); }
 
-  auto& rand_state = *b._random_state;
-  auto random_positive = [&rand_state](VW::weight* weights, uint64_t)
-  { weights[0] = rand_state.get_and_update_random(); };
-  sparse_parameters* weights = new sparse_parameters(bits);
-  weights->set_default(random_positive);
+  std::set<int> is;
+  emt_feats weights;
+  for (auto& e: exs) { for (auto& f : e) { is.insert(f.first); } }
+  for (auto& i: is ) { weights.emplace_back(i, b._random_state->get_and_update_random()); }
 
-  std::vector<VW::flat_example*> examples;
-  for (emt_example* example : cn.examples) { examples.push_back(example->base); }
-
-  for (VW::flat_example* ex : examples)
-  {
-    for (auto& f : ex->fs) { weights[f.index()]; }
-  }
-  scale(*weights, 1 / norm(*weights));
+  weights = normalize(weights);
 
   if (b.router_type == emt_router_type::eigen)
   {
-    float n_examples = examples.size();
+    std::map<int, float> sums;
+    emt_feats means;
+    for (auto& ex : exs) { for (auto& p : ex) { sums[p.first] += p.second; } }
+    for (auto& p : sums) { means.emplace_back(p.first, p.second / exs.size()); }
 
-    std::unordered_map<int, float> mean_map;
-    for (VW::flat_example* ex : examples)
-    {
-      for (auto& f : ex->fs) { mean_map[f.index()] += (1 / n_examples) * f.value(); }
-    }
+    std::vector<emt_feats> centered_exs;
+    for (auto &e: exs) { centered_exs.push_back(scale_add(1, e, -1, means)); }
 
-    features feature_means;
-    for (auto& map : mean_map) { feature_means.push_back(map.second, map.first); }
-
-    std::vector<features> centered_features;
-    for (int i = 0; i < n_examples; i++)
-    {
-      features fs;
-      centered_features.push_back(fs);
-      scorer_features(examples[i]->fs, centered_features[i], feature_means, emt_scorer_feature_type::diff);
-    }
-
-    int n_epochs = 20;  // the bigger the better the top eigen approximation wil
+    int n_epochs = 20;  // the bigger the better eigen approximation 
 
     for (int i = 0; i < n_epochs; i++)
     {
@@ -596,55 +540,39 @@ void node_split(emt_tree& b, emt_node& cn)
       // closer to the true top eigen vector
       // in experiments
       float n = 1;
-      std::shuffle(centered_features.begin(), centered_features.end(), emt_rng(b._random_state));
+      std::shuffle(centered_exs.begin(), centered_exs.end(), emt_rng(b._random_state));
 
-      for (features fs : centered_features)
+      for (emt_feats fs : centered_exs)
       {
         // in matrix multiplication notation this looks like:
-        // weights = weights + (1/n) * inner(outer(example->fs,example->fs), weights)
-        float scalar = (1 / n) * inner(fs, *weights);
-        for (auto& f : fs) { (*weights)[f.index()] += f.value() * scalar; }
-        scale(*weights, 1 / norm(*weights));
+        // weights = weights + (1/n) * inner(outer(fs,fs), weights)
+        //         = weights + (1/n) * fs * inner(fs,weights)
+        //         =          weights+(1/n)*inner(fs,weights)*fs
+        weights = scale_add(1,weights,(1/n)*inner(fs,weights),fs);
+        weights = normalize(weights);
         n += 1;
       }
     }
   }
 
-  auto* left = new emt_node();
-  auto* right = new emt_node();
-  auto depth = cn.depth + 1;
-
-  cn.internal = true;
-  cn.left = left;
-  cn.right = right;
-
-  left->depth = depth;
-  right->depth = depth;
-  left->parent = &cn;
-  right->parent = &cn;
-
-  if (depth > b.depth) { b.depth = depth; }
+  cn.left = std::move(VW::make_unique<emt_node>());
+  cn.right = std::move(VW::make_unique<emt_node>());
 
   std::vector<float> projs;
-  projs.reserve(examples.size());
-  for (VW::flat_example* example : examples) { projs.push_back(inner(*example, *weights)); }
+  projs.reserve(exs.size());
+  for (auto& ex:exs) { projs.push_back(inner(ex, weights)); }
 
   cn.router_weights = weights;
   cn.router_decision = median(projs);
 
-  for (emt_example* example : cn.examples) { node_route(cn, *example)->examples.push_back(example); }
+  for (auto & ex: cn.examples) { node_route(cn, *ex)->examples.push_back(std::move(ex)); }
   cn.examples.clear();
 }
 
-void node_insert(emt_tree& b, emt_node& cn, emt_example& ex)
+void node_insert(emt_tree& b, emt_node& cn, std::unique_ptr<emt_example> ex)
 {
-  for (emt_example* example : cn.examples)
-  {
-    scorer_example(b, ex, *example, b.ex[0], emt_scorer_example_type::self_consistent);
-    if (b.ex[0].total_sum_feat_sq == 0) { return; }
-  }
-
-  cn.examples.push_back(&ex);
+  for (auto& cn_ex: cn.examples) { if (cn_ex == ex) { return; } }
+  cn.examples.push_back(std::move(ex));
 }
 
 emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, emt_example& ex)
@@ -654,16 +582,16 @@ emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, emt_exam
   float best_score = FLT_MAX;
   std::vector<emt_example*> best_examples;
 
-  for (emt_example* example : cn.examples)
+  for (auto const& example : cn.examples)
   {
-    example->score = scorer_predict(b, base, ex, *example);
+    float score = scorer_predict(b, base, ex, *example);
 
-    if (example->score == best_score) { best_examples.push_back(example); }
-    else if (example->score < best_score)
+    if (score == best_score) { best_examples.push_back(example.get()); }
+    else if (score < best_score)
     {
-      best_score = example->score;
+      best_score = score;
       best_examples.clear();
-      best_examples.push_back(example);
+      best_examples.push_back(example.get());
     }
   }
 
@@ -674,8 +602,6 @@ emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, emt_exam
 void node_predict(emt_tree& b, single_learner& base, emt_node& cn, emt_example& ex, VW::example& ec)
 {
   auto closest_ex = node_pick(b, base, cn, ex);
-
-  ec.confidence = (closest_ex != nullptr) ? (1 - std::exp(-closest_ex->score)) : 0;
   ec.pred.multiclass = (closest_ex != nullptr) ? closest_ex->label : 0;
   ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
 }
@@ -685,7 +611,7 @@ void predict(emt_tree& b, single_learner& base, VW::example& ec)
   b.all->ignore_some_linear = false;
   emt_example ex(*b.all, &ec);
 
-  emt_node& cn = tree_route(b, ex);
+  emt_node& cn = *tree_route(b, ex);
   node_predict(b, base, cn, ex, ec);
   tree_bound(b, &ex);
 }
@@ -693,34 +619,22 @@ void predict(emt_tree& b, single_learner& base, VW::example& ec)
 void learn(emt_tree& b, single_learner& base, VW::example& ec)
 {
   b.all->ignore_some_linear = false;
-  emt_example& ex = *new emt_example(*b.all, &ec);
+  auto ex = VW::make_unique<emt_example>(*b.all, &ec);
 
-  ex.tag = b.iter;
+  emt_node& cn = *tree_route(b, *ex);
+  scorer_learn(b, base, cn, *ex, ec.weight);
+  node_predict(b, base, cn, *ex, ec);  // vw learners predict and learn
 
-  b.iter++;
-
-  if (b.test_only) { return; }
-
-  emt_node& cn = tree_route(b, ex);
-  scorer_learn(b, base, cn, ex, ec.weight);
-  node_predict(b, base, cn, ex, ec);  // vw learners predict and learn
-
-  if (b.pass == 0)
-  {
-    node_insert(b, cn, ex);
-    tree_bound(b, &ex);
-    node_split(b, cn);
-  }
+  tree_bound(b, ex.get());
+  node_insert(b, cn, std::move(ex));
+  node_split(b, cn);
 }
 
 void end_pass(emt_tree& b)
 {
   std::cout << "##### pass_time: " << static_cast<float>(clock() - b.begin) / CLOCKS_PER_SEC << std::endl;
 
-  b.time = 0;
   b.begin = clock();
-
-  b.pass++;
 }
 /////////////////end of eigen_memory_tree///////////////////
 ////////////////////////////////////////////////////////////
@@ -731,101 +645,50 @@ void save_load_examples(emt_tree& b, emt_node& n, io_buf& model_file, bool& read
 {
   WRITEITVAR(n.examples.size(), "n_examples", n_examples);
 
-  auto parser = b.all->example_parser->lbl_parser;
-  auto mask = b.all->parse_mask;
-
   if (read)
   {
-    for (uint32_t i = 0; i < n_examples; i++) { n.examples.push_back(new emt_example()); }
+    for (uint32_t i = 0; i < n_examples; i++) { n.examples.push_back(std::move(VW::make_unique<emt_example>())); }
   }
 
-  for (emt_example* e : n.examples)
+  for (auto& e : n.examples)
   {
-    if (read)
-    {
-      WRITEIT(e->label, "example_label")
-      VW::model_utils::read_model_field(model_file, *e->base, parser);
-      VW::model_utils::read_model_field(model_file, *e->full, parser);
+    for (auto& p : e->base) {
+      WRITEIT(p.first, "base_index");
+      WRITEIT(p.second, "base_value");
+
     }
-    else
+    for (auto& p : e->full)
     {
-      WRITEIT(e->label, "example_label");
-      VW::model_utils::write_model_field(model_file, *e->base, "_memory_base", false, parser, mask);
-      VW::model_utils::write_model_field(model_file, *e->full, "_memory_full", false, parser, mask);
+      WRITEIT(p.first, "full_index");
+      WRITEIT(p.second, "full_value");
     }
   }
 }
 
 void save_load_weights(emt_node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
-  if (!n.internal) { return; }
-
   uint32_t router_dims = 0;
-  size_t router_length = 0;
-  uint32_t router_shift = 0;
 
-  if (n.router_weights != nullptr)
-  {
-    for (sparse_parameters::iterator i = n.router_weights->begin(); i != n.router_weights->end(); ++i)
-    {
-      if (*i != 0) { router_dims++; }
-    }
-    router_shift = n.router_weights->stride_shift();
-    router_length = (n.router_weights->mask() + 1) >> router_shift;
-  }
-
-  WRITEIT(n.router_decision, "router_decision");
-  WRITEIT(router_dims, "router_dims");
-  WRITEIT(router_length, "router_length");
-  WRITEIT(router_shift, "router_shift");
-
-  if (read)
-  {
-    n.router_weights = new sparse_parameters(router_length, router_shift);
-    for (uint32_t i = 0; i < router_dims; i++)
-    {
-      uint64_t index = 0;
-      float value = 0;
-      WRITEIT(index, "router_index");
-      WRITEIT(value, "router_value");
-
-      (*n.router_weights)[index] = value;
-    }
-  }
-  else
-  {
-    for (sparse_parameters::iterator i = n.router_weights->begin(); i != n.router_weights->end(); ++i)
-    {
-      uint64_t index = i.index();
-      float value = (*i);
-      if (value != 0)
-      {
-        WRITEIT(index, "router_index");
-        WRITEIT(value, "router_value");
-      }
-    }
+  for (auto& p : n.router_weights) {
+    WRITEIT(p.first, "router_index");
+    WRITEIT(p.second, "router_value");
   }
 }
 
-emt_node* save_load_node(emt_tree& b, emt_node* n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+std::unique_ptr<emt_node> save_load_node(emt_tree& b, std::unique_ptr<emt_node> n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
   WRITEITVAR(!read && !n, "is_null", is_null);
+
   if (is_null) { return nullptr; }
+  if (!n) { n = VW::make_unique<emt_node>(); }
 
-  if (!n) { n = new emt_node(); }
-
-  WRITEIT(n->depth, "depth");
-  WRITEIT(n->internal, "internal");
   WRITEIT(n->router_decision, "decision");
 
   save_load_examples(b, *n, model_file, read, text, msg);
   save_load_weights(*n, model_file, read, text, msg);
 
-  n->left = save_load_node(b, n->left, model_file, read, text, msg);
-  n->right = save_load_node(b, n->right, model_file, read, text, msg);
-
-  if (n->left) { n->left->parent = n; }
-  if (n->right) { n->right->parent = n; }
+  n->left = save_load_node(b, std::move(n->left), model_file, read, text, msg);
+  n->right = save_load_node(b, std::move(n->right), model_file, read, text, msg);
 
   return n;
 }
@@ -835,12 +698,9 @@ void save_load_tree(emt_tree& b, io_buf& model_file, bool read, bool text)
   std::stringstream msg;
   if (model_file.num_files() > 0)
   {
-    if (read) { b.test_only = true; }
-
     uint32_t ss = b.all->weights.stride_shift();
     WRITEIT(ss, "stride_shift");
 
-    // this could likely be faster with a stack, if it is every a problem
     b.all->weights.stride_shift(ss);
 
     int scorer_type = static_cast<int>(b.scorer_type);
@@ -854,7 +714,7 @@ void save_load_tree(emt_tree& b, io_buf& model_file, bool read, bool text)
     b.scorer_type = static_cast<emt_scorer_type>(scorer_type);
     b.router_type = static_cast<emt_router_type>(router_type);
 
-    b.root = save_load_node(b, b.root, model_file, read, text, msg);
+    b.root = std::move(save_load_node(b, std::move(b.root), model_file, read, text, msg));
     if (!b.all->quiet) { std::cout << "done loading...." << std::endl; }
   }
 }
@@ -889,7 +749,7 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
                .help("Indicates the maximum number of memories a leaf can have."))
       .add(make_option("scorer", scorer_type)
                .keep()
-               .one_of({1,2,3})
+               .one_of({1,2,3,4})
                .default_value(3)
                .help("Indicates the type of scorer to use (1=random,2=distance,3=self consistent rank,4=not self consistent rank)"))
       .add(make_option("router", router_type)

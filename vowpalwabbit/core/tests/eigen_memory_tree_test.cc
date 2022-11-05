@@ -53,6 +53,7 @@ TEST(emt_tests, emt_params_test)
 
   VW::finish(*vw);
 }
+
 TEST(emt_tests, emt_exact_match_sans_router_test)
 {
   auto& vw = *VW::initialize("--eigen_memory_tree --quiet");
@@ -114,7 +115,7 @@ TEST(emt_tests, emt_bounding)
 
   EXPECT_EQ(tree.bounder->list.size(), 5);
   EXPECT_EQ(tree.root->examples.size(), 5);
-  EXPECT_EQ(tree.root->router_weights, nullptr);
+  EXPECT_EQ(tree.root->router_weights.size(), 0);
 
   for (int i = 0; i < 10; i++) { vw.finish_example(*examples[i]); }
   VW::finish(vw);
@@ -139,9 +140,9 @@ TEST(emt_tests, emt_split)
   EXPECT_EQ(tree.root->left->examples.size(), 2);
   EXPECT_EQ(tree.root->right->examples.size(), 2);
 
-  EXPECT_NE(tree.root->router_weights, nullptr);
-  EXPECT_EQ(tree.root->right->router_weights, nullptr);
-  EXPECT_EQ(tree.root->left->router_weights, nullptr);
+  EXPECT_GE(tree.root->router_weights.size(), 0);
+  EXPECT_EQ(tree.root->right->router_weights.size(), 0);
+  EXPECT_EQ(tree.root->left->router_weights.size(), 0);
 
   for (int i = 0; i < 4; i++) { vw.finish_example(*examples[i]); }
   VW::finish(vw);
