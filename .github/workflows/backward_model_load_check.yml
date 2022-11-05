@@ -32,7 +32,7 @@ jobs:
         run: |
           git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
           cd vowpal_wabbit
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/';FMT_SYS_DEP=ON;SPDLOG_SYS_DEP=ON" --verbose
+          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/';-DFMT_SYS_DEP=ON;-DSPDLOG_SYS_DEP=ON" --verbose
           cd ..
           auditwheel repair vowpal_wabbit/wheel_last_commit/*whl -w audit_last_commit/
       - name: Upload built wheel
