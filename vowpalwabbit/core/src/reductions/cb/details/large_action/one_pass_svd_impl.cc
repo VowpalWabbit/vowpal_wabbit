@@ -134,20 +134,20 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   const float scaling_factor = 1.f / std::sqrt(p);
   AOmega.resize(num_actions, p);
 
-#ifdef _MSC_VER
-  // TODO: Make simd work with msvc.
-  auto compute_dot_prod = compute_dot_prod_scalar;
-#else
+#ifdef __linux__
+  // Only works for linux for now.
   // TODO: Expose this parameter.
   bool use_simd = true;
   auto compute_dot_prod = use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
+#else
+  // TODO: Make simd work with msvc.
+  auto compute_dot_prod = compute_dot_prod_scalar;
 #endif
 
   auto calculate_aomega_row = [compute_dot_prod](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p,
                                   VW::workspace* _all, uint64_t _seed, const multi_ex& examples,
                                   Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors,
-                                  float scaling_factor) -> void
-  {
+                                  float scaling_factor) -> void {
     for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
       VW::example* ex = examples[row_index];

@@ -61,7 +61,7 @@ inline void compute1(float feature_value, uint64_t feature_index, uint64_t offse
   // sum += feature_value * select_sparsity * (1.f - (select_sign << 1));
 }
 
-#ifndef _MSC_VER
+#ifdef __linux__
 inline void compute16(const __m512& feature_values, const __m512i& feature_indices1, const __m512i& feature_indices2,
     const __m512i& offsets, const __m512i& weights_masks, const __m512i& column_indices, const __m512i& seeds,
     __m512& sums)
