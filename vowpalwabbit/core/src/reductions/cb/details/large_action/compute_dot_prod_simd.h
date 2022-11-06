@@ -62,6 +62,7 @@ inline void compute1(float feature_value, uint64_t feature_index, uint64_t offse
 }
 
 #ifdef __linux__
+// TODO: Add comments.
 inline void compute16(const __m512& feature_values, const __m512i& feature_indices1, const __m512i& feature_indices2,
     const __m512i& offsets, const __m512i& weights_masks, const __m512i& column_indices, const __m512i& seeds,
     __m512& sums)
@@ -123,6 +124,7 @@ inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, u
     }
     for (; i < num_features; ++i)
     {
+      // Handle tail of the loop using scalar implementation.
       compute1(features.values[i], features.indices[i], offset, weights_mask, column_index, seed, sum);
     }
   }
