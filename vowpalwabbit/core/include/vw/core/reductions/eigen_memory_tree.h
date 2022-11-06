@@ -57,7 +57,7 @@ struct emt_example
   uint32_t label;
 
   emt_example();
-  emt_example(VW::workspace& all, VW::example* ex);
+  emt_example(VW::workspace&, VW::example*);
 };
 
 struct emt_lru
@@ -104,7 +104,6 @@ struct emt_tree
   emt_lru* bounder;
 
   emt_tree();
-  void deallocate_node(emt_node* n);
 };
 
 }  // namespace eigen_memory
