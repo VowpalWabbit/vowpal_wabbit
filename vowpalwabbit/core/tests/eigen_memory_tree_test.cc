@@ -7,6 +7,7 @@
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
 #include "vw/core/vw.h"
+#include "vw/core/rand_state.h"
 
 #include <string>
 #include <vector>
@@ -265,6 +266,46 @@ TEST(emt_tests, test_emt_median)
   v1.push_back(4);
 
   EXPECT_EQ(emt_median(v1), 5);
+}
+
+TEST(emt_tests, test_emt_router_eigen)
+{
+  VW::rand_state rng(1);
+
+  emt_feats v1;
+  emt_feats v2;
+  emt_feats v3;
+
+  v1.emplace_back(1, 2);
+  v1.emplace_back(3, 3);
+  v1.emplace_back(5, 2);
+
+  v2.emplace_back(2, 5);
+
+  v3.emplace_back(1, 4);
+  v3.emplace_back(2, 10);
+
+  std::vector<emt_feats> f;
+
+  f.push_back(v1);
+  f.push_back(v2);
+  f.push_back(v3);
+
+  auto weights = emt_router_eigen(f, rng);
+
+  float p1 = emt_inner(v1, weights);
+  float p2 = emt_inner(v2, weights);
+  float p3 = emt_inner(v3, weights);
+
+  float E2  = (p1*p1+p2*p2+p3*p3)/3;
+  float E_2 = (p1+p2+p3)*(p1+p2+p3)/9;
+  float var = E2-E_2;
+
+  // top eigen is [-0.1830,-0.9244,0.2782,0,0.1855]
+  // which has a projection variance of 19.5
+  // our oja method gave us 19.31 variance
+
+  EXPECT_GE(var, 19.3);
 }
 
 }  // namespace eigen_memory_tree_test

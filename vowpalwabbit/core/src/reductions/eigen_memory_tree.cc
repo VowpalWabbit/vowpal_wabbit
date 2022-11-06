@@ -31,8 +31,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-// TODO: This file has several cout print statements. It looks like
-//       they should be using trace_message, but its difficult to tell
 namespace VW
 {
 namespace reductions
@@ -41,7 +39,6 @@ namespace eigen_memory_tree
 {
 ////////////////////////////definitions/////////////////////
 ////////////////////////////////////////////////////////////
-
 emt_example::emt_example() { label = 0; }
 
 emt_example::emt_example(VW::workspace& all, VW::example* ex)
@@ -260,7 +257,7 @@ emt_feats emt_router_random(std::vector<emt_feats>& exs, VW::rand_state& rng)
   return emt_normalize(weights);
 }
 
-emt_feats emt_router_top_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
+emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
 {
   auto weights = emt_router_random(exs, rng);
 
@@ -276,7 +273,7 @@ emt_feats emt_router_top_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
   std::vector<emt_feats> centered_exs;
   for (auto& e : exs) { centered_exs.push_back(emt_scale_add(1, e, -1, means)); }
 
-  int n_epochs = 20;  // the bigger the better eigen approximation
+  int n_epochs = 40;  // the bigger the better eigen approximation
 
   for (int i = 0; i < n_epochs; i++)
   {
@@ -307,7 +304,7 @@ emt_feats emt_router(std::vector<emt_feats> exs, emt_router_type router_type, VW
   if (router_type == emt_router_type::random) {
     return emt_router_random(exs, rng);
   }
-  else { return emt_router_top_eigen(exs, rng); }
+  else { return emt_router_eigen(exs, rng); }
 }
 
 ////////////////////////////end of helper/////////////////////////
@@ -363,7 +360,7 @@ float scorer_initial(VW::example& ex) { return 1 - std::exp(-std::sqrt(ex.total_
 void scorer_features(emt_feats const f1, features& out)
 {
   out.clear();
-  for (auto p : f1) { out.push_back(p.second, p.first); }
+  for (auto p : f1) { if (p.second != 0) {out.push_back(p.second, p.first); } }
 }
 
 void scorer_example(emt_tree& b, emt_example ex1, emt_example ex2)
@@ -517,7 +514,7 @@ void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, emt_example& 
 
     if (alternative_ex == nullptr || preferred_ex == nullptr)
     {
-      std::cout << "ERROR" << std::endl;
+      *(b.all->trace_message) << "ERROR" << std::endl;
       return;
     }
 
@@ -638,7 +635,7 @@ void learn(emt_tree& b, single_learner& base, VW::example& ec)
 
 void end_pass(emt_tree& b)
 {
-  std::cout << "##### pass_time: " << static_cast<float>(clock() - b.begin) / CLOCKS_PER_SEC << std::endl;
+  *(b.all->trace_message) << "##### pass_time: " << static_cast<float>(clock() - b.begin) / CLOCKS_PER_SEC << std::endl;
 
   b.begin = clock();
 }
@@ -721,7 +718,7 @@ void save_load_tree(emt_tree& b, io_buf& model_file, bool read, bool text)
     b.router_type = static_cast<emt_router_type>(router_type);
 
     b.root = std::move(save_load_node(b, std::move(b.root), model_file, read, text, msg));
-    if (!b.all->quiet) { std::cout << "done loading...." << std::endl; }
+    *(b.all->trace_message) << "done loading...." << std::endl;
   }
 }
 /////////////////End of Save & Load/////////////////////////////////

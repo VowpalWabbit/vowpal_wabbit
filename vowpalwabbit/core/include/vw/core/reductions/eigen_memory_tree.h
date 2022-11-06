@@ -48,6 +48,8 @@ emt_feats emt_scale_add(float const, emt_feats const, float const, emt_feats con
 
 emt_feats emt_abs(emt_feats const);
 
+emt_feats emt_router_eigen(std::vector<emt_feats>&, VW::rand_state&);
+
 struct emt_example
 {
   emt_feats base;  // base example only includes the base features without interaction flags
