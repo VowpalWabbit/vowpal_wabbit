@@ -79,13 +79,13 @@ public:
 #ifdef _MSC_VER
     size_t select_sparsity = __popcnt((index & _weights_mask) + _column_index) & 1;
     auto sparsity_index = INDEX_MAP[select_sparsity];
-    size_t select_sign = (__popcnt((index & _weights_mask) + _column_index + _seed) & 1);
+    size_t select_sign = __popcnt((index & _weights_mask) + _column_index + _seed) & 1;
     auto value_index = sparsity_index + select_sign;
     float val = VALUE_MAP[value_index];
 #else
     size_t select_sparsity = __builtin_parity((index & _weights_mask) + _column_index);
     auto sparsity_index = INDEX_MAP[select_sparsity];
-    size_t select_sign = (__builtin_parity((index & _weights_mask) + _column_index + _seed));
+    size_t select_sign = __builtin_parity((index & _weights_mask) + _column_index + _seed);
     auto value_index = sparsity_index + select_sign;
     float val = VALUE_MAP[value_index];
 #endif

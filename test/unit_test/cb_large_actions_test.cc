@@ -85,7 +85,6 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
   VW::finish(vw);
 }
 
-/*
 BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
 {
   auto d = 2;
@@ -382,7 +381,6 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
     VW::finish(vw);
   }
 }
-*/
 
 BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
 {
@@ -546,7 +544,6 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
   }
 }
 
-/*
 BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 {
   auto d = 3;
@@ -612,7 +609,6 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     VW::finish(vw);
   }
 }
-*/
 
 BOOST_AUTO_TEST_CASE(check_shrink_factor)
 {

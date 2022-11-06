@@ -126,41 +126,44 @@ inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, u
       compute1(features.values[i], features.indices[i], offset, weights_mask, column_index, seed, sum);
     }
   }
-  // TODO: other interactions, this only handles quadratics
-  for (const auto& ns : *red_features.generated_interactions)
+  // TODO: other interactions, the following only handles quadratics
+  if (red_features.generated_interactions)
   {
-    assert(ns.size() == 2);
-    const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
-    const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
-    const size_t num_features_ns1 = ex->feature_space[ns[1]].size();
-    const auto& ns0_indices = ex->feature_space[ns[0]].indices;
-    const auto& ns1_indices = ex->feature_space[ns[1]].indices;
-    const auto& ns0_values = ex->feature_space[ns[0]].values;
-    const auto& ns1_values = ex->feature_space[ns[1]].values;
-    for (size_t i = 0; i < num_features_ns0; ++i)
+    for (const auto& ns : *red_features.generated_interactions)
     {
-      const uint64_t halfhash = VW::details::FNV_PRIME * ns0_indices[i];
-      const __m512i halfhashes = _mm512_set1_epi64(halfhash);
-      const float val = ns0_values[i];
-      const __m512 vals = _mm512_set1_ps(val);
-      size_t j = same_namespace ? i : 0;
-      for (; j + 16 <= num_features_ns1; j += 16)
+      assert(ns.size() == 2);
+      const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
+      const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
+      const size_t num_features_ns1 = ex->feature_space[ns[1]].size();
+      const auto& ns0_indices = ex->feature_space[ns[0]].indices;
+      const auto& ns1_indices = ex->feature_space[ns[1]].indices;
+      const auto& ns0_values = ex->feature_space[ns[0]].values;
+      const auto& ns1_values = ex->feature_space[ns[1]].values;
+      for (size_t i = 0; i < num_features_ns0; ++i)
       {
-        __m512i indices1 = _mm512_loadu_si512(&ns1_indices[j]);
-        __m512i indices2 = _mm512_loadu_si512(&ns1_indices[j + 8]);
-        indices1 = _mm512_xor_epi64(indices1, halfhashes);
-        indices2 = _mm512_xor_epi64(indices2, halfhashes);
+        const uint64_t halfhash = VW::details::FNV_PRIME * ns0_indices[i];
+        const __m512i halfhashes = _mm512_set1_epi64(halfhash);
+        const float val = ns0_values[i];
+        const __m512 vals = _mm512_set1_ps(val);
+        size_t j = same_namespace ? i : 0;
+        for (; j + 16 <= num_features_ns1; j += 16)
+        {
+          __m512i indices1 = _mm512_loadu_si512(&ns1_indices[j]);
+          __m512i indices2 = _mm512_loadu_si512(&ns1_indices[j + 8]);
+          indices1 = _mm512_xor_epi64(indices1, halfhashes);
+          indices2 = _mm512_xor_epi64(indices2, halfhashes);
 
-        __m512 values = _mm512_loadu_ps(&ns1_values[j]);
-        values = _mm512_mul_ps(vals, values);
+          __m512 values = _mm512_loadu_ps(&ns1_values[j]);
+          values = _mm512_mul_ps(vals, values);
 
-        compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
-      }
-      for (; j < num_features_ns1; ++j)
-      {
-        float feature_value = val * ns1_values[j];
-        auto index = (ns1_indices[j] ^ halfhash);
-        compute1(feature_value, index, offset, weights_mask, column_index, seed, sum);
+          compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
+        }
+        for (; j < num_features_ns1; ++j)
+        {
+          float feature_value = val * ns1_values[j];
+          auto index = (ns1_indices[j] ^ halfhash);
+          compute1(feature_value, index, offset, weights_mask, column_index, seed, sum);
+        }
       }
     }
   }
