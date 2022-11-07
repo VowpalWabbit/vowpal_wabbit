@@ -12,17 +12,17 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.549445 0.549445            1            1.0         1.0000         0.4506       50
-0.558138 0.566831            2            2.0        -1.0000        -0.4332      103
+0.551845 0.551845            1            1.0         1.0000         0.4482       50
+0.565835 0.579825            2            2.0        -1.0000        -0.4202      103
 
 finished run
 number of examples = 2
 weighted example sum = 2.000000
 weighted label sum = 0.000000
-average loss = 0.558138
+average loss = 0.565835
 best constant = -1.000000
 best constant's loss = 1.000000
 total feature number = 153
 Num support = 4
 Number of kernel evaluations = 5 Number of cache queries = 12
-Total loss = 1.116275
+Total loss = 1.131670
