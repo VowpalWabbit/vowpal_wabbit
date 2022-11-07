@@ -30,6 +30,7 @@ jobs:
         with:
           submodules: true
       - uses: lukka/get-cmake@latest
+      - uses: ilammy/msvc-dev-cmd@v1
       - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
         shell: bash
       - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
