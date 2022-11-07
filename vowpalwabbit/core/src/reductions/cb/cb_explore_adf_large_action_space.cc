@@ -221,10 +221,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::predi
   if (is_learn)
   {
     base.learn(examples);
-    if (base.learn_returns_prediction)
-    {
-      update_example_prediction(examples);
-    }
+    if (base.learn_returns_prediction) { update_example_prediction(examples); }
     ++_counter;
   }
   else
