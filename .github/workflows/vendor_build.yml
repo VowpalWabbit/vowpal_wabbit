@@ -29,7 +29,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Install requirements
-        run: sudo apt-get install -y ninja-build libboost-test-dev
+        run: sudo apt-get install -y ninja-build libboost-test-dev libgtest-dev libgmock-dev
       - name: Configure
         env:
           CC: ${{matrix.compiler.cc}}
@@ -130,7 +130,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Install dependencies
-        run: brew install cmake boost ninja
+        run: brew install cmake boost ninja gtest gmock
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
