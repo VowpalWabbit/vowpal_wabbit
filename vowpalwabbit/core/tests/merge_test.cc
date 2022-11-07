@@ -4,12 +4,12 @@
 
 #include "vw/core/merge.h"
 
-#include "test_common.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
+#include "vw/test_common/test_common.h"
 
 #include <gtest/gtest.h>
 
