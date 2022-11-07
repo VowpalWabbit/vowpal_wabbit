@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency:
+concurrency: 
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -24,9 +24,8 @@ jobs:
         preset: [vcpkg-debug, vcpkg-release]
     steps:
       - uses: actions/checkout@v2
-      - run: |
-          git submodule update --init ext_libs/vcpkg
-      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          submodules: true
       - uses: lukka/get-cmake@latest
       - uses: lukka/run-vcpkg@main
         with:
