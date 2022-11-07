@@ -412,6 +412,7 @@ vw_add_test_executable(
     EXTRA_DEPS vw_test_common
     SOURCES
       tests/cache_test.cc
+      tests/flat_example_test.cc
       tests/main.cc
       tests/merge_test.cc
       tests/parse_args_test.cc

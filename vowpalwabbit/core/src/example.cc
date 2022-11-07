@@ -47,26 +47,31 @@ float VW::example::get_total_sum_feat_sq()
 
 float collision_cleanup(features& fs)
 {
-  uint64_t last_index = static_cast<uint64_t>(-1);
+  // This loops over the sequence of feature values and their indexes
+  // when an index is repeated this combines them by adding their values.
+  // This assumes that fs is sorted (which is the case in `flatten_sort_example`).
+
+  features::iterator p1 = fs.begin();
+  uint64_t last_index = p1.index();
   float sum_sq = 0.f;
-  features::iterator pos = fs.begin();
-  for (features::iterator& f : fs)
+
+  for (features::iterator p2 = (fs.begin() + 1); p2 != fs.end(); ++p2)
   {
-    if (last_index == f.index()) { pos.value() += f.value(); }
+    if (last_index == p2.index()) { p1.value() += p2.value(); }
     else
     {
-      sum_sq += pos.value() * pos.value();
-      ++pos;
-      pos.value() = f.value();
-      pos.index() = f.index();
-      last_index = f.index();
+      sum_sq += p1.value() * p1.value();
+      ++p1;
+      p1.value() = p2.value();
+      p1.index() = p2.index();
+      last_index = p2.index();
     }
   }
 
-  sum_sq += pos.value() * pos.value();
-  ++pos;
-  // Don't change the sum_feat_sq as we will do it manually directly after.
-  fs.truncate_to(pos, 0);
+  sum_sq += p1.value() * p1.value();
+  ++p1;
+
+  fs.truncate_to(p1, 0);
   fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
