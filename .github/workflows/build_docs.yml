@@ -16,6 +16,9 @@ on:
       - published
   workflow_dispatch:
 
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
@@ -42,18 +45,22 @@ jobs:
           name: cxx_docs
           path: doc/html/
   dump-options-build:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
+      - run: "git submodule update --init ext_libs/vcpkg"
+      - uses: lukka/get-cmake@latest
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+        shell: bash
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          submodules: recursive
-      - run: |
-          sudo apt update
-          sudo apt install -y ninja-build
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ubuntu-latest-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF
+        run: cmake --preset=vcpkg-release -DBUILD_TESTING=OFF
       - name: Build dump options
         run: cmake --build build -t vw-dump-options
       - name: Upload vw-dump-options

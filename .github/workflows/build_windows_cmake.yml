@@ -9,6 +9,9 @@ on:
     branches:
       - '*'
 
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
@@ -21,45 +24,33 @@ jobs:
         build_config: ["Debug", "Release"]
         os: ["windows-2019", "windows-2022"]
     runs-on: ${{ matrix.os }}
-    env:
-      CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
-      SOURCE_DIR: ${{ github.workspace }}/vw
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-      VCPKG_REF: 6ca56aeb457f033d344a7106cb3f9f1abf8f4e98
-
     steps:
       - uses: actions/checkout@v2
-        with:
-          path: 'vw'
-          submodules: recursive
-      - uses: actions/checkout@v2
-        with:
-          path: 'vcpkg'
-          repository: 'microsoft/vcpkg'
-          ref: ${{ env.VCPKG_REF }}
-      - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ env.VCPKG_ROOT }}/installed/
-            ${{ env.VCPKG_ROOT }}
-            !${{ env.VCPKG_ROOT }}/buildtrees
-            !${{ env.VCPKG_ROOT }}/packages
-            !${{ env.VCPKG_ROOT }}/downloads
-          key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.os }}-vcpkg-cache-invalidate-0
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Bootstrap vcpkg
-        run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-      - name: Install vcpkg dependencies
-        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost boost-test flatbuffers gtest fmt spdlog rapidjson
+      - uses: lukka/get-cmake@latest
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+        shell: bash
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{matrix.os}}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - name: Generate project files
-        run: |
-          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64" -DVCPKG_MANIFEST_MODE=OFF -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On -Dvw_BUILD_NET_FRAMEWORK=On
+        run: >
+          cmake -S . -B build -A "x64"
+          -DCMAKE_TOOLCHAIN_FILE="ext_libs/scripts/buildsystems/vcpkg.cmake"
+          -DBUILD_FLATBUFFERS=On
+          -DVW_BUILD_CSV=On
+          -Dvw_BUILD_NET_FRAMEWORK=On
+          -DVW_STRING_VIEW_LITE_SYS_DEP=ON
+          -DVW_EIGEN_SYS_DEP=ON
+          -DVW_GTEST_SYS_DEP=ON
       - name: Build project
         run: |
-          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --verbose
+          cmake --build build --config ${{ matrix.build_config }} --verbose
       - name: Run tests
         run: |
-          cd ${{ env.CMAKE_BUILD_DIR }}
+          cd build
           ctest --verbose --output-on-failure -C ${{ matrix.build_config }} --label-regex VWTestList
