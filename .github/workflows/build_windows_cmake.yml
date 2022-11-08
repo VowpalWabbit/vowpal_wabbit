@@ -41,7 +41,7 @@ jobs:
       - name: Generate project files
         run: >
           cmake -S . -B build -A "x64"
-          -DCMAKE_TOOLCHAIN_FILE="ext_libs/scripts/buildsystems/vcpkg.cmake"
+          -DCMAKE_TOOLCHAIN_FILE="ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake"
           -DBUILD_FLATBUFFERS=On
           -DVW_BUILD_CSV=On
           -Dvw_BUILD_NET_FRAMEWORK=On
