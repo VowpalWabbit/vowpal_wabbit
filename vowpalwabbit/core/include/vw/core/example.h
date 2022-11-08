@@ -145,8 +145,7 @@ public:
   polylabel l;
   reduction_features ex_reduction_features;
 
-  size_t tag_len;
-  char* tag;  // An identifier for the example.
+  VW::v_array<char> tag;  // An identifier for the example.
 
   size_t example_counter;
   uint64_t ft_offset;

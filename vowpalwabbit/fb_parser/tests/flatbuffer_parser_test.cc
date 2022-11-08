@@ -7,6 +7,7 @@
 #include "vw/core/parse_example.h"
 #include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -59,7 +60,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
 
 TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
 {
-  auto all = VW::initialize("--no_stdin --quiet --flatbuffer", nullptr, false, nullptr, nullptr);
+  auto all = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
   flatbuffers::FlatBufferBuilder builder;
 
@@ -69,9 +70,9 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
   uint8_t* buf = builder.GetBufferPointer();
 
   VW::multi_ex examples;
-  examples.push_back(&VW::get_unused_example(all));
+  examples.push_back(&VW::get_unused_example(all.get()));
   io_buf unused_buffer;
-  all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
+  all->flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
 
   auto example = all->flat_converter->data()->example_obj_as_Example();
   EXPECT_EQ(example->namespaces()->size(), 1);
@@ -97,12 +98,11 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
       (VW::namespace_extent{0, 1, VW::details::CONSTANT_NAMESPACE}));
 
   VW::finish_example(*all, *examples[0]);
-  VW::finish(*all);
 }
 
 TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
 {
-  auto all = VW::initialize("--no_stdin --quiet --flatbuffer", nullptr, false, nullptr, nullptr);
+  auto all = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
   flatbuffers::FlatBufferBuilder builder;
 
@@ -112,9 +112,9 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
   uint8_t* buf = builder.GetBufferPointer();
 
   VW::multi_ex examples;
-  examples.push_back(&VW::get_unused_example(all));
+  examples.push_back(&VW::get_unused_example(all.get()));
   io_buf unused_buffer;
-  all->flat_converter->parse_examples(all, unused_buffer, examples, buf);
+  all->flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
 
   auto collection_examples = all->flat_converter->data()->example_obj_as_ExampleCollection()->examples();
   EXPECT_EQ(collection_examples->size(), 1);
@@ -141,5 +141,4 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
       (VW::namespace_extent{0, 1, VW::details::CONSTANT_NAMESPACE}));
 
   VW::finish_example(*all, *examples[0]);
-  VW::finish(*all);
 }
