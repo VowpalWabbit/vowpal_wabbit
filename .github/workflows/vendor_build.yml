@@ -130,7 +130,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Install dependencies
-        run: brew install cmake boost ninja gtest gmock
+        run: brew install cmake boost ninja googletest
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
