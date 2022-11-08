@@ -8,6 +8,7 @@
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/learner.h"
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
@@ -170,7 +171,7 @@ public:
   BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
   {
     // check valid pdf else remove
-    auto& red_fts = ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>();
+    auto& red_fts = ctx.ex->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
     if (!VW::continuous_actions::is_valid_pdf(red_fts.pdf)) { red_fts.pdf.clear(); }
     return return_state;
   }
@@ -188,7 +189,7 @@ public:
     }
     else if (!_stricmp(ctx.key, "chosen_action"))
     {
-      ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
+      ctx.ex->ex_reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
     }
     else
     {
@@ -203,7 +204,7 @@ public:
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.push_back(segment);
+    ctx.ex->ex_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.push_back(segment);
     segment = {0., 0., 0.};
     return obj_return_state;
   }
@@ -268,13 +269,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
@@ -317,13 +318,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = v;
       found = true;
     }
@@ -369,7 +370,7 @@ public:
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    if (ctx._label_parser.label_type == VW::label_type_t::ccb)
+    if (ctx._label_parser.label_type == VW::label_type_t::CCB)
     {
       auto& ld = ctx.ex->l.conditional_contextual_bandit;
 
@@ -390,7 +391,7 @@ public:
         cb_label = CB::cb_class{};
       }
     }
-    else if (ctx._label_parser.label_type == VW::label_type_t::slates)
+    else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
     {
       auto& ld = ctx.ex->l.slates;
       if ((actions.size() != 0) && (probs.size() != 0))
@@ -545,7 +546,7 @@ public:
         case ' ':
         case '\t':
           *p = '\0';
-          if (p - start > 0) { ns.AddFeature(start, ctx._hash_func, ctx._parse_mask); }
+          if (p - start > 0) { ns.add_feature(start, ctx._hash_func, ctx._parse_mask); }
 
           start = p + 1;
           break;
@@ -557,7 +558,7 @@ public:
       }
     }
 
-    if (start < end) { ns.AddFeature(start, ctx._hash_func, ctx._parse_mask); }
+    if (start < end) { ns.add_feature(start, ctx._hash_func, ctx._parse_mask); }
 
     return ctx.previous_state;
   }
@@ -586,7 +587,7 @@ public:
   BaseState<audit>* StartArray(Context<audit>& ctx) override
   {
     // mark shared example
-    if (ctx._label_parser.label_type == VW::label_type_t::cb)
+    if (ctx._label_parser.label_type == VW::label_type_t::CB)
     {
       CB::label* ld = &ctx.ex->l.cb;
       CB::cb_class f;
@@ -598,12 +599,12 @@ public:
 
       ld->costs.push_back(f);
     }
-    else if (ctx._label_parser.label_type == VW::label_type_t::ccb)
+    else if (ctx._label_parser.label_type == VW::label_type_t::CCB)
     {
       auto* ld = &ctx.ex->l.conditional_contextual_bandit;
       ld->type = VW::ccb_example_type::SHARED;
     }
-    else if (ctx._label_parser.label_type == VW::label_type_t::slates)
+    else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
     {
       auto& ld = ctx.ex->l.slates;
       ld.type = VW::slates::example_type::SHARED;
@@ -620,9 +621,9 @@ public:
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
-    if (ctx._label_parser.label_type == VW::label_type_t::ccb)
+    if (ctx._label_parser.label_type == VW::label_type_t::CCB)
     { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION; }
-    else if (ctx._label_parser.label_type == VW::label_type_t::slates)
+    else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::ACTION;
     }
@@ -669,9 +670,9 @@ public:
     // allocate new example
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
-    if (ctx._label_parser.label_type == VW::label_type_t::ccb)
+    if (ctx._label_parser.label_type == VW::label_type_t::CCB)
     { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT; }
-    else if (ctx._label_parser.label_type == VW::label_type_t::slates)
+    else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::SLOT;
     }
@@ -728,11 +729,11 @@ public:
       std::stringstream str;
       str << '[' << (array_hash - ctx.CurrentNamespace().namespace_hash) << ']';
 
-      ctx.CurrentNamespace().AddFeature(f, array_hash, str.str().c_str());
+      ctx.CurrentNamespace().add_feature(f, array_hash, str.str().c_str());
     }
     else
     {
-      ctx.CurrentNamespace().AddFeature(f, array_hash, nullptr);
+      ctx.CurrentNamespace().add_feature(f, array_hash, nullptr);
     }
     array_hash++;
 
@@ -932,7 +933,7 @@ public:
 
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
-        if (ctx._label_parser.label_type != VW::label_type_t::slates)
+        if (ctx._label_parser.label_type != VW::label_type_t::SLATES)
         { THROW("Can only use _slot_id with slates examples"); }
         ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
@@ -942,8 +943,8 @@ public:
       else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
         if (!ctx.decision_service_data) { THROW("_original_label_cost is only valid in DSJson"); }
-        ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->originalLabelCost;
-        ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->original_label_cost;
+        ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->original_label_cost_first_slot;
         ctx.original_label_cost_state.return_state = this;
         return &ctx.original_label_cost_state;
       }
@@ -980,13 +981,13 @@ public:
         (ctx.ignore_features->find(ns) == ctx.ignore_features->end() ||
             ctx.ignore_features->at(ns).find(ctx.key) == ctx.ignore_features->at(ns).end()))
     {
-      if (ctx._chain_hash) { ctx.CurrentNamespace().AddFeature(ctx.key, str, ctx._hash_func, ctx._parse_mask); }
+      if (ctx._chain_hash) { ctx.CurrentNamespace().add_feature(ctx.key, str, ctx._hash_func, ctx._parse_mask); }
       else
       {
         char* prepend = const_cast<char*>(str) - ctx.key_length;
         memmove(prepend, ctx.key, ctx.key_length);
 
-        ctx.CurrentNamespace().AddFeature(prepend, ctx._hash_func, ctx._parse_mask);
+        ctx.CurrentNamespace().add_feature(prepend, ctx._hash_func, ctx._parse_mask);
       }
     }
 
@@ -995,7 +996,7 @@ public:
 
   BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
   {
-    if (b) { ctx.CurrentNamespace().AddFeature(ctx.key, ctx._hash_func, ctx._parse_mask); }
+    if (b) { ctx.CurrentNamespace().add_feature(ctx.key, ctx._hash_func, ctx._parse_mask); }
 
     return this;
   }
@@ -1038,7 +1039,7 @@ public:
 
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
-      if (ctx._label_parser.label_type == VW::label_type_t::ccb)
+      if (ctx._label_parser.label_type == VW::label_type_t::CCB)
       {
         auto num_slots = std::count_if(ctx.examples->begin(), ctx.examples->end(),
             [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT; });
@@ -1066,7 +1067,7 @@ public:
   {
     auto& ns = ctx.CurrentNamespace();
     auto hash_index = ctx._hash_func(ctx.key, strlen(ctx.key), ns.namespace_hash) & ctx._parse_mask;
-    ns.AddFeature(f, hash_index, ctx.key);
+    ns.add_feature(f, hash_index, ctx.key);
     return this;
   }
 
@@ -1310,7 +1311,7 @@ template <bool audit>
 class SlotOutcomeList : public BaseState<audit>
 {
 public:
-  DecisionServiceInteraction* interactions;
+  VW::details::decision_service_interaction* interactions;
 
   SlotOutcomeList() : BaseState<audit>("SlotOutcomeList") {}
 
@@ -1321,9 +1322,9 @@ public:
     // Find start index of slot objects by iterating until we find the first slot example.
     for (auto ex : *ctx.examples)
     {
-      if ((ctx._label_parser.label_type == VW::label_type_t::ccb &&
+      if ((ctx._label_parser.label_type == VW::label_type_t::CCB &&
               ex->l.conditional_contextual_bandit.type != VW::ccb_example_type::SLOT) ||
-          (ctx._label_parser.label_type == VW::label_type_t::slates &&
+          (ctx._label_parser.label_type == VW::label_type_t::SLATES &&
               ex->l.slates.type != VW::slates::example_type::SLOT))
       { slot_object_index++; }
     }
@@ -1355,7 +1356,7 @@ public:
     // DSJson requires the interaction object to be filled. After reading all slot outcomes fill out the top actions.
     for (auto ex : *ctx.examples)
     {
-      if (ctx._label_parser.label_type == VW::label_type_t::ccb &&
+      if (ctx._label_parser.label_type == VW::label_type_t::CCB &&
           ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT)
       {
         if (ex->l.conditional_contextual_bandit.outcome)
@@ -1364,7 +1365,7 @@ public:
           interactions->probabilities.push_back(ex->l.conditional_contextual_bandit.outcome->probabilities[0].score);
         }
       }
-      else if (ctx._label_parser.label_type == VW::label_type_t::slates &&
+      else if (ctx._label_parser.label_type == VW::label_type_t::SLATES &&
           ex->l.slates.type == VW::slates::example_type::SLOT)
       {
         if (ex->l.slates.labeled)
@@ -1395,7 +1396,7 @@ class DecisionServiceState : public BaseState<audit>
 public:
   DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
-  DecisionServiceInteraction* data;
+  VW::details::decision_service_interaction* data;
 
   BaseState<audit>* StartObject(Context<audit>& /* ctx */) override
   {
@@ -1437,13 +1438,13 @@ public:
     }
     else if (length == 5 && !strcmp(str, "pdrop"))
     {
-      ctx.float_state.output_float = &data->probabilityOfDrop;
+      ctx.float_state.output_float = &data->probability_of_drop;
       ctx.float_state.return_state = this;
       return &ctx.float_state;
     }
     else if (length == 7 && !strcmp(str, "EventId"))
     {
-      ctx.string_state.output_string = &data->eventId;
+      ctx.string_state.output_string = &data->event_id;
       ctx.string_state.return_state = this;
       return &ctx.string_state;
     }
@@ -1476,7 +1477,7 @@ public:
       }
       else if (length == 10 && !strncmp(str, "_skipLearn", 10))
       {
-        ctx.bool_state.output_bool = &data->skipLearn;
+        ctx.bool_state.output_bool = &data->skip_learn;
         ctx.bool_state.return_state = this;
         return &ctx.bool_state;
       }
@@ -1494,8 +1495,8 @@ public:
       }
       else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        ctx.original_label_cost_state.aggr_float = &data->originalLabelCost;
-        ctx.original_label_cost_state.first_slot_float = &data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.aggr_float = &data->original_label_cost;
+        ctx.original_label_cost_state.first_slot_float = &data->original_label_cost_first_slot;
         ctx.original_label_cost_state.return_state = this;
         return &ctx.original_label_cost_state;
       }
@@ -1534,7 +1535,7 @@ public:
   BaseState<audit>* previous_state;
 
   // the path of namespaces
-  std::vector<Namespace<audit>> namespace_path;
+  std::vector<VW::details::namespace_builder<audit>> namespace_path;
   std::vector<BaseState<audit>*> return_path;
 
   std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr;
@@ -1551,7 +1552,7 @@ public:
   // TODO: This shouldn't really exist in the Context. Once the JSON parser
   // gets refactored to separate the VWJson/DSJson concepts, this should
   // be moved into the DSJson version of the context
-  DecisionServiceInteraction* decision_service_data = nullptr;
+  VW::details::decision_service_interaction* decision_service_data = nullptr;
 
   // states
   DefaultState<audit> default_state;
@@ -1613,7 +1614,7 @@ public:
     return *error_ptr;
   }
 
-  void SetStartStateToDecisionService(DecisionServiceInteraction* data)
+  void SetStartStateToDecisionService(VW::details::decision_service_interaction* data)
   {
     decision_service_state.data = data;
     current_state = root_state = &decision_service_state;
@@ -1633,7 +1634,7 @@ public:
     return return_state;
   }
 
-  Namespace<audit>& CurrentNamespace() { return namespace_path.back(); }
+  VW::details::namespace_builder<audit>& CurrentNamespace() { return namespace_path.back(); }
 
   bool TransitionState(BaseState<audit>* next_state)
   {
@@ -1724,7 +1725,7 @@ void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
-  if (lbl_parser.label_type == VW::label_type_t::slates)
+  if (lbl_parser.label_type == VW::label_type_t::SLATES)
   {
     parse_slates_example_json<audit>(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, examples, line, length,
         example_factory, ex_factory_context, dedup_examples);
@@ -1777,15 +1778,15 @@ inline bool apply_pdrop(label_type_t label_type, float pdrop, VW::multi_ex& exam
   }
   // Event with certain pdrop had (1-pdrop) as probability to survive,
   // so it is one of (1 / (1-pdrop)) events that we should learn on, and weight should be updated accordingly.
-  if (label_type == VW::label_type_t::cb)
+  if (label_type == VW::label_type_t::CB)
   {
     for (auto& e : examples) { e->l.cb.weight /= 1 - pdrop; }
   }
-  else if (label_type == VW::label_type_t::ccb)
+  else if (label_type == VW::label_type_t::CCB)
   {
     for (auto& e : examples) { e->l.conditional_contextual_bandit.weight /= 1 - pdrop; }
   }
-  if (label_type == VW::label_type_t::slates)
+  if (label_type == VW::label_type_t::SLATES)
   {
     // TODO
   }
@@ -1795,12 +1796,13 @@ inline bool apply_pdrop(label_type_t label_type, float pdrop, VW::multi_ex& exam
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
 bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+    bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    VW::details::decision_service_interaction* data)
 {
-  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates)
+  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
-    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples, all.logger);
+    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
   }
 
   std::vector<char> line_vec;
@@ -1847,7 +1849,7 @@ bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples,
     }
   }
 
-  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples, all.logger);
+  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
 }  // namespace VW
 }  // namespace VW
 
@@ -1859,7 +1861,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     // Skip lines that do not start with "{"
     if (line[0] != '{') { return false; }
 
-    DecisionServiceInteraction interaction;
+    VW::details::decision_service_interaction interaction;
     bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
@@ -1873,13 +1875,13 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
 
     if (all->example_parser->metrics)
     {
-      if (!interaction.eventId.empty())
+      if (!interaction.event_id.empty())
       {
         if (all->example_parser->metrics->first_event_id.empty())
-        { all->example_parser->metrics->first_event_id = std::move(interaction.eventId); }
+        { all->example_parser->metrics->first_event_id = std::move(interaction.event_id); }
         else
         {
-          all->example_parser->metrics->last_event_id = std::move(interaction.eventId);
+          all->example_parser->metrics->last_event_id = std::move(interaction.event_id);
         }
       }
 
@@ -1897,13 +1899,13 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
       // but according to Casey, the only operation used is Sum
       // The _original_label_cost element is found either at the top level OR under
       // the _outcomes node (for CCB)
-      all->example_parser->metrics->dsjson_sum_cost_original += interaction.originalLabelCost;
-      all->example_parser->metrics->dsjson_sum_cost_original_first_slot += interaction.originalLabelCostFirstSlot;
+      all->example_parser->metrics->dsjson_sum_cost_original += interaction.original_label_cost;
+      all->example_parser->metrics->dsjson_sum_cost_original_first_slot += interaction.original_label_cost_first_slot;
       if (!interaction.actions.empty())
       {
         // APS requires this metric for CB (baseline action is 1)
         if (interaction.actions[0] == 1)
-        { all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.originalLabelCost; }
+        { all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.original_label_cost; }
 
         if (!interaction.baseline_actions.empty())
         {
@@ -1911,7 +1913,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
           {
             all->example_parser->metrics->dsjson_number_of_label_equal_baseline_first_slot++;
             all->example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
-                interaction.originalLabelCostFirstSlot;
+                interaction.original_label_cost_first_slot;
           }
           else
           {
@@ -1922,9 +1924,9 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
-    // stop suppressing "skipLearn" interactions. Also, not sure if this is the right logic
+    // stop suppressing "skip_learn" interactions. Also, not sure if this is the right logic
     // for counterfactual. (@marco)
-    if (interaction.skipLearn)
+    if (interaction.skip_learn)
     {
       if (all->example_parser->metrics) { all->example_parser->metrics->number_of_skipped_events++; }
       VW::return_multiple_example(*all, examples);
@@ -2037,10 +2039,10 @@ template void VW::read_line_json_s<false>(VW::workspace& all, VW::multi_ex& exam
 
 template bool VW::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    DecisionServiceInteraction* data);
+    VW::details::decision_service_interaction* data);
 template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    DecisionServiceInteraction* data);
+    VW::details::decision_service_interaction* data);
 
 template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);

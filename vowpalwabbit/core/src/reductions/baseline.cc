@@ -5,6 +5,7 @@
 #include "vw/core/reductions/baseline.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -85,7 +86,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     }
     VW::copy_example_metadata(&data.ec, &ec);
     base.predict(data.ec);
-    auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = data.ec.pred.scalar;
     base.predict(ec);
   }
@@ -126,7 +127,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     }
 
     // regress residual
-    auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = data.ec.pred.scalar;
     base.learn(ec);
 
@@ -156,7 +157,7 @@ float sensitivity(baseline_data& data, base_learner& base, VW::example& ec)
 
   // sensitivity of residual
   as_singleline(&base)->predict(data.ec);
-  auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+  auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   simple_red_features.initial = data.ec.pred.scalar;
   const float sens = base.sensitivity(ec);
   return baseline_sens + sens;
@@ -199,8 +200,8 @@ base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
   auto base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(VW::reductions::baseline_setup))
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_sensitivity(sensitivity)
                 .build();
 

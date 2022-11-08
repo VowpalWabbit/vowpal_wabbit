@@ -280,7 +280,7 @@ void predict(log_multi& b, single_learner& base, VW::example& ec)
   VW::multiclass_label mc = ec.l.multi;
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   uint32_t cn = 0;
   uint32_t depth = 0;
@@ -303,7 +303,7 @@ void learn(log_multi& b, single_learner& base, VW::example& ec)
 
     uint32_t class_index = 0;
     ec.l.simple = {FLT_MAX};
-    ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+    ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
     uint32_t cn = 0;
     uint32_t depth = 0;
     while (children(b, cn, class_index, mc.label))
@@ -462,8 +462,8 @@ base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  
                 .set_params_per_weight(ws)
                 .set_finish_example(VW::details::finish_multiclass_example<log_multi&>)
                 .set_save_load(save_load_tree)
-                .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_input_label_type(VW::label_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_input_label_type(VW::label_type_t::MULTICLASS)
                 .build();
 
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;

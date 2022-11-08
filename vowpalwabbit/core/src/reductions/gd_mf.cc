@@ -103,7 +103,7 @@ template <class T>
 float mf_predict(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
-  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
   ec.num_features_from_interactions = 0;
@@ -384,7 +384,7 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
   auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)

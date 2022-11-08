@@ -8,6 +8,8 @@
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
+#include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_algs.h"
@@ -15,6 +17,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/version.h"
+#include "vw/core/vw.h"
 #include "vw/core/vw_versions.h"
 #include "vw/explore/explore.h"
 
@@ -31,7 +34,7 @@ using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_explore
+#define VW_DEBUG_LOG vw_dbg::CB_EXPLORE
 
 namespace
 {
@@ -378,7 +381,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
 
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
-  data->cbcs.cb_type = VW::cb_type_t::dr;
+  data->cbcs.cb_type = VW::cb_type_t::DR;
   data->model_file_version = all.model_file_ver;
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
@@ -433,10 +436,10 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   }
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::multiclass)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(params_per_weight)
                 .set_finish_example(::finish_example)
                 .set_save_load(save_load)

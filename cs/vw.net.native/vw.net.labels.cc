@@ -7,7 +7,7 @@ API float SimpleLabelReadFromExample(example* ex, float& weight, float& initial)
   auto* ld = &ex->l.simple;
   float label = ld->label;
 
-  const auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   weight = red_fts.weight;
   initial = red_fts.initial;
 
@@ -24,7 +24,7 @@ API void SimpleLabelUpdateExample(
 
   if (maybe_initial)
   {
-    auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
     red_fts.initial = *maybe_initial;
   }
 
@@ -69,8 +69,8 @@ API char* ComputeDiffDescriptionSimpleLabels(example* ex1, example* ex2)
 {
   auto* ld1 = &ex1->l.simple;
   auto* ld2 = &ex2->l.simple;
-  auto ex1_initial = ex1->_reduction_features.template get<VW::simple_label_reduction_features>().initial;
-  auto ex2_initial = ex2->_reduction_features.template get<VW::simple_label_reduction_features>().initial;
+  auto ex1_initial = ex1->ex_reduction_features.template get<VW::simple_label_reduction_features>().initial;
+  auto ex2_initial = ex2->ex_reduction_features.template get<VW::simple_label_reduction_features>().initial;
 
   if ((vw_net_native::FloatEqual(ld1->label, ld2->label) && vw_net_native::FloatEqual(ex1_initial, ex2_initial) &&
           vw_net_native::FloatEqual(ex1->weight, ex2->weight)))

@@ -3,6 +3,7 @@
 #include "vw/allreduce/allreduce.h"
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
+#include "vw/core/learner.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 
@@ -224,7 +225,7 @@ API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(
     {
       workspace->vw->do_reset_source = true;
       VW::start_parser(*workspace->vw);
-      LEARNER::generic_driver(*workspace->vw);
+      VW::LEARNER::generic_driver(*workspace->vw);
       VW::end_parser(*workspace->vw);
     }
     CATCH_RETURN_STATUS

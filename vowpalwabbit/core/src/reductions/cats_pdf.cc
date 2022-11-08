@@ -33,7 +33,7 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cats_pdf
+#define VW_DEBUG_LOG vw_dbg::CATS_PDF
 
 namespace
 {
@@ -188,9 +188,9 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_pdf_setup))
-                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .set_finish_example(::finish_example)
-                .set_input_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

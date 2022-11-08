@@ -218,20 +218,20 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
   if (data->explore_mode)
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
-    in_pred_type = VW::prediction_type_t::action_probs;
-    out_pred_type = VW::prediction_type_t::action_probs;
+    in_pred_type = VW::prediction_type_t::ACTION_PROBS;
+    out_pred_type = VW::prediction_type_t::ACTION_PROBS;
   }
   else
   {
     data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
-    in_pred_type = VW::prediction_type_t::action_scores;
-    out_pred_type = VW::prediction_type_t::multiclass;
+    in_pred_type = VW::prediction_type_t::ACTION_SCORES;
+    out_pred_type = VW::prediction_type_t::MULTICLASS;
   }
 
   auto* l = make_reduction_learner(
       std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(in_pred_type)
                 .set_output_prediction_type(out_pred_type)
                 .set_learn_returns_prediction(true)

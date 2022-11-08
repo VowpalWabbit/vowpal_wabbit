@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/no_label.h"
+#include "vw/core/vw_string_view_fmt.h"
 
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
@@ -44,7 +45,7 @@ VW::label_parser no_label_parser_global = {
     // test_label
     [](const VW::polylabel& /* label */) { return false; },
     // label type
-    VW::label_type_t::nolabel};
+    VW::label_type_t::NOLABEL};
 }
 
 void VW::details::print_no_label_update(VW::workspace& all, VW::example& ec)

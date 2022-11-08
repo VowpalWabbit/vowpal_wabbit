@@ -558,7 +558,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
   {
     auto* ld = &ex->l.simple;
     ld->label = label;
-    auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
     red_fts.weight = weight;
 
     VW::count_label(*all->sd, ld->label);
@@ -890,7 +890,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     {
       auto* ld = &ex->l.simple;
-      const auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      const auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       ostr << "simple " << ld->label << ":" << red_fts.weight << ":" << red_fts.initial;
     }
     else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
@@ -1000,7 +1000,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
   jmethodID ctr;
   switch (all->l->get_output_prediction_type())
   {
-    case VW::prediction_type_t::scalar:
+    case VW::prediction_type_t::SCALAR:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -1009,7 +1009,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
 
-    case VW::prediction_type_t::prob:
+    case VW::prediction_type_t::PROB:
       predClass = env->FindClass("java/lang/Float");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -1018,7 +1018,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.prob);
 
-    case VW::prediction_type_t::multiclass:
+    case VW::prediction_type_t::MULTICLASS:
       predClass = env->FindClass("java/lang/Integer");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -1027,25 +1027,25 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.multiclass);
 
-    case VW::prediction_type_t::scalars:
+    case VW::prediction_type_t::SCALARS:
       return scalars_predictor(ex, env);
 
-    case VW::prediction_type_t::action_probs:
+    case VW::prediction_type_t::ACTION_PROBS:
       return action_probs_prediction(ex, env);
 
-    case VW::prediction_type_t::action_scores:
+    case VW::prediction_type_t::ACTION_SCORES:
       return action_scores_prediction(ex, env);
 
-    case VW::prediction_type_t::multilabels:
+    case VW::prediction_type_t::MULTILABELS:
       return multilabel_predictor(ex, env);
 
-    case VW::prediction_type_t::decision_probs:
+    case VW::prediction_type_t::DECISION_PROBS:
       return decision_scores_prediction(ex, env);
 
-    case VW::prediction_type_t::pdf:
+    case VW::prediction_type_t::PDF:
       return probability_density_function(ex, env);
 
-    case VW::prediction_type_t::action_pdf_value:
+    case VW::prediction_type_t::ACTION_PDF_VALUE:
       return probability_density_function_value(ex, env);
 
     default:

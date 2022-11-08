@@ -21,6 +21,18 @@ using simulator::callback_map;
 using simulator::cb_sim;
 using namespace VW::reductions::automl;
 
+namespace std
+{
+template <typename T>
+std::ostream& operator<<(std::ostream& o, std::vector<T> const& vec)
+{
+  o << '[';
+  for (const auto& item : vec) { o << ' ' << item; }
+  o << ']';
+  return o;
+}
+}  // namespace std
+
 namespace aml_test
 {
 template <typename T>
@@ -119,7 +131,7 @@ using aml_onediff_inclusion = VW::reductions::automl::automl<interaction_config_
 
 // Need to add save_load functionality to multiple structs in automl reduction including
 // config_manager and confidence sequence estimator.
-BOOST_AUTO_TEST_CASE(automl_save_load)
+BOOST_AUTO_TEST_CASE(automl_save_load_w_iterations)
 {
   const size_t num_iterations = 1000;
   const size_t split = 690;
@@ -143,7 +155,7 @@ BOOST_AUTO_TEST_CASE(automl_save_load)
   BOOST_CHECK_EQUAL_COLLECTIONS(ctr_no_save.begin(), ctr_no_save.end(), ctr_with_save.begin(), ctr_with_save.end());
 }
 
-BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
+BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl_w_iterations)
 {
   const size_t zero = 0;
   const size_t num_iterations = 10;
@@ -174,7 +186,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_automl)
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
 
-BOOST_AUTO_TEST_CASE(automl_assert_0th_event_metrics)
+BOOST_AUTO_TEST_CASE(automl_assert_0th_event_metrics_w_iterations)
 {
   const auto metric_name = std::string("total_learn_calls");
   const size_t zero = 0;
@@ -206,7 +218,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_0th_event_metrics)
   BOOST_CHECK_GT(ctr.back(), 0.1f);
 }
 
-BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
+BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease_w_iterations)
 {
   const size_t fifteen = 15;
   const size_t thirty_three = 33;
@@ -251,7 +263,7 @@ BOOST_AUTO_TEST_CASE(automl_assert_live_configs_and_lease)
 }
 
 // Note higher ctr compared to cpp_simulator_without_interaction in tutorial_test.cc
-BOOST_AUTO_TEST_CASE(automl_cpp_simulator_automl)
+BOOST_AUTO_TEST_CASE(automl_cpp_simulator_automl_w_iterations)
 {
   auto ctr = simulator::_test_helper(
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
@@ -259,7 +271,7 @@ BOOST_AUTO_TEST_CASE(automl_cpp_simulator_automl)
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
 
-BOOST_AUTO_TEST_CASE(automl_namespace_switch)
+BOOST_AUTO_TEST_CASE(automl_namespace_switch_w_iterations)
 {
   const size_t num_iterations = 1000;
   callback_map test_hooks;
@@ -308,7 +320,7 @@ BOOST_AUTO_TEST_CASE(automl_namespace_switch)
   BOOST_CHECK_GT(ctr.back(), 0.65f);
 }
 
-BOOST_AUTO_TEST_CASE(automl_clear_configs)
+BOOST_AUTO_TEST_CASE(automl_clear_configs_w_iterations)
 {
   const size_t seed = 85;
   const size_t num_iterations = 1000;
@@ -354,7 +366,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs)
   BOOST_CHECK_GT(ctr.back(), 0.4f);
 }
 
-BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
+BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff_w_iterations)
 {
   const size_t num_iterations = 1000;
   const std::vector<uint64_t> swap_after = {500};
@@ -404,7 +416,7 @@ BOOST_AUTO_TEST_CASE(automl_clear_configs_one_diff)
   BOOST_CHECK_GT(ctr.back(), 0.65f);
 }
 
-BOOST_AUTO_TEST_CASE(automl_q_col_consistency)
+BOOST_AUTO_TEST_CASE(automl_q_col_consistency_w_iterations)
 {
   const size_t seed = 88;
   const size_t num_iterations = 1000;
@@ -417,7 +429,7 @@ BOOST_AUTO_TEST_CASE(automl_q_col_consistency)
   BOOST_CHECK_CLOSE(ctr_q_col.back(), ctr_aml.back(), FLOAT_TOL);
 }
 
-BOOST_AUTO_TEST_CASE(one_diff_impl_unittest)
+BOOST_AUTO_TEST_CASE(one_diff_impl_unittest_w_iterations)
 {
   using namespace VW::reductions::automl;
 
@@ -575,7 +587,7 @@ BOOST_AUTO_TEST_CASE(exc_incl_unit_test)
   BOOST_CHECK_EQUAL_COLLECTIONS(interactions.begin(), interactions.end(), expected2.begin(), expected2.end());
 }
 
-BOOST_AUTO_TEST_CASE(automl_insertion_champ_change)
+BOOST_AUTO_TEST_CASE(automl_insertion_champ_change_w_iterations)
 {
   const size_t seed = 85;
   const size_t num_iterations = 4000;

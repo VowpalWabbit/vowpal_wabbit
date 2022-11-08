@@ -16,7 +16,7 @@
 #include <utility>
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::binary
+#define VW_DEBUG_LOG vw_dbg::BINARY
 
 using namespace VW::config;
 using namespace VW::reductions;
@@ -76,10 +76,10 @@ VW::LEARNER::base_learner* VW::reductions::binary_setup(setup_base_i& stack_buil
   auto bin_data = VW::make_unique<binary_data>(stack_builder.get_all_pointer()->logger);
   auto ret = VW::LEARNER::make_reduction_learner(std::move(bin_data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(binary_setup))
-                 .set_input_label_type(label_type_t::simple)
-                 .set_output_label_type(label_type_t::simple)
-                 .set_input_prediction_type(prediction_type_t::scalar)
-                 .set_output_prediction_type(prediction_type_t::scalar)
+                 .set_input_label_type(label_type_t::SIMPLE)
+                 .set_output_label_type(label_type_t::SIMPLE)
+                 .set_input_prediction_type(prediction_type_t::SCALAR)
+                 .set_output_prediction_type(prediction_type_t::SCALAR)
                  .set_learn_returns_prediction(true)
                  .build();
 

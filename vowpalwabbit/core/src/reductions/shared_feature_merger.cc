@@ -28,7 +28,7 @@ class sfm_data
 {
 public:
   std::unique_ptr<sfm_metrics> metrics;
-  VW::label_type_t label_type = VW::label_type_t::cb;
+  VW::label_type_t label_type = VW::label_type_t::CB;
   bool store_shared_ex_in_reduction_features = false;
 };
 
@@ -49,11 +49,11 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
     // merge sequences
     for (auto& example : ec_seq)
     {
-      LabelDict::add_example_namespaces_from_example(*example, *shared_example);
+      VW::details::append_example_namespaces_from_example(*example, *shared_example);
       if (store_shared_ex_in_reduction_features)
       {
         auto& red_features =
-            example->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+            example->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
         red_features.shared_example = shared_example;
       }
     }
@@ -69,12 +69,12 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
         {
           for (auto& example : ec_seq)
           {
-            LabelDict::del_example_namespaces_from_example(*example, *shared_example);
+            VW::details::truncate_example_namespaces_from_example(*example, *shared_example);
 
             if (store_shared_ex_in_reduction_features)
             {
               auto& red_features =
-                  example->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+                  example->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
               red_features.reset_to_default();
             }
           }
@@ -113,14 +113,12 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto* base = stack_builder.setup_base_learner();
   if (base == nullptr) { return nullptr; }
-  std::set<label_type_t> sfm_labels = {label_type_t::cb, label_type_t::cs};
+  std::set<label_type_t> sfm_labels = {label_type_t::CB, label_type_t::CS};
   if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
 
   auto data = VW::make_unique<sfm_data>();
   if (options.was_supplied("extra_metrics")) { data->metrics = VW::make_unique<sfm_metrics>(); }
-#ifdef BUILD_LARGE_ACTION_SPACE
   if (options.was_supplied("large_action_space")) { data->store_shared_ex_in_reduction_features = true; }
-#endif
 
   auto* multi_base = VW::LEARNER::as_multiline(base);
   data->label_type = all.example_parser->lbl_parser.label_type;

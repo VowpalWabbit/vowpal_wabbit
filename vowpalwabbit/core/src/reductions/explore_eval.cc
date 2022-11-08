@@ -5,9 +5,8 @@
 #include "vw/core/reductions/explore_eval.h"
 
 #include "vw/config/options.h"
-#include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/print_utils.h"
-#include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_algs.h"
@@ -145,6 +144,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
     data.action_label = std::move(label_example->l.cb);
     label_example->l.cb = std::move(data.empty_label);
   }
+
   multiline_learn_or_predict<false>(base, ec_seq, data.offset);
 
   if (label_example != nullptr)  // restore label
@@ -160,10 +160,17 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
     VW::action_scores& a_s = ec_seq[0]->pred.a_s;
 
     float action_probability = 0;
+    bool action_found = false;
     for (size_t i = 0; i < a_s.size(); i++)
     {
-      if (data.known_cost.action == a_s[i].action) { action_probability = a_s[i].score; }
+      if (data.known_cost.action == a_s[i].action)
+      {
+        action_probability = a_s[i].score;
+        action_found = true;
+      }
     }
+
+    if (!action_found) { return; }
 
     float threshold = action_probability / data.known_cost.probability;
 
@@ -184,15 +191,18 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
         { ec_found = ec; }
         if (threshold > 1) { ec->weight *= threshold; }
       }
+
       ec_found->l.cb.costs[0].probability = action_probability;
 
       multiline_learn_or_predict<true>(base, ec_seq, data.offset);
 
+      // restore logged example
       if (threshold > 1)
       {
         float inv_threshold = 1.f / threshold;
         for (auto& ec : ec_seq) { ec->weight *= inv_threshold; }
       }
+
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
       data.update_count++;
     }
@@ -234,8 +244,8 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
       stack_builder.get_setupfn_name(explore_eval_setup))
                 .set_learn_returns_prediction(true)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
-                .set_input_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+                .set_input_label_type(VW::label_type_t::CB)
                 .set_finish_example(finish_multiline_example)
                 .set_finish(::finish)
                 .build();

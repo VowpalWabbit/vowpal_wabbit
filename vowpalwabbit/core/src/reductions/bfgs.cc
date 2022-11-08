@@ -191,7 +191,7 @@ inline void add_dir(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * f
 
 float dot_with_direction(VW::workspace& all, VW::example& ec)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   float temp = simple_red_features.initial;
   GD::foreach_feature<float, add_dir>(all, ec, temp);
   return temp;
@@ -1225,7 +1225,7 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
   }
 
   return make_base(*make_base_learner(
-      std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                         .set_params_per_weight(all.weights.stride())
                         .set_save_load(save_load)
                         .set_init_driver(init_driver)

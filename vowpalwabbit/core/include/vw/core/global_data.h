@@ -3,15 +3,15 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/allreduce/allreduce.h"
+#include "vw/allreduce/allreduce_type.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_reporting.h"
 #include "vw/core/input_parser.h"
-#include "vw/core/interactions_predict.h"
-#include "vw/core/metric_sink.h"
+#include "vw/core/interaction_generation_state.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/logger.h"
@@ -82,11 +82,11 @@ class csv_parser_options;
 class trace_message_wrapper
 {
 public:
-  void* _inner_context;
-  trace_message_t _trace_message;
+  void* inner_context;
+  trace_message_t trace_message;
 
   trace_message_wrapper(void* context, trace_message_t trace_message)
-      : _inner_context(context), _trace_message(trace_message)
+      : inner_context(context), trace_message(trace_message)
   {
   }
   ~trace_message_wrapper() = default;
@@ -259,7 +259,7 @@ public:
   size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
                                         // passes learning a single policy
 
-  INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
+  VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
 
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 

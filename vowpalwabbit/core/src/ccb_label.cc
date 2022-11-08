@@ -122,7 +122,7 @@ VW::label_parser ccb_label_parser_global = {
     // test_label
     [](const VW::polylabel& label) { return test_label(label.conditional_contextual_bandit); },
     // label type
-    VW::label_type_t::ccb};
+    VW::label_type_t::CCB};
 
 void default_ccb_label(ccb_label& ld)
 {

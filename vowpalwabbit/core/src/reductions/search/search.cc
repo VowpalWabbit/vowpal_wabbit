@@ -7,6 +7,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/label_dictionary.h"
+#include "vw/core/learner.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parse_primitives.h"
@@ -1328,7 +1329,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
   for (action a = static_cast<uint32_t>(start_K); a < ec_cnt; a++)
   {
     cdbg << "== single_prediction_ldf a=" << a << "==" << endl;
-    if (start_K > 0) { LabelDict::add_example_namespaces_from_example(ecs[a], ecs[0]); }
+    if (start_K > 0) { VW::details::append_example_namespaces_from_example(ecs[a], ecs[0]); }
 
     VW::polylabel old_label = ecs[a].l;
     ecs[a].l.cs = priv.ldf_test_label;
@@ -1357,7 +1358,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
 
     priv.num_features += ecs[a].get_num_features();
     ecs[a].l = old_label;
-    if (start_K > 0) { LabelDict::del_example_namespaces_from_example(ecs[a], ecs[0]); }
+    if (start_K > 0) { VW::details::truncate_example_namespaces_from_example(ecs[a], ecs[0]); }
   }
   if (override_action != static_cast<action>(-1)) { best_action = override_action; }
   else
@@ -3404,7 +3405,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
           .set_finish(search_finish)
           .set_end_pass(end_pass)
           .set_input_label_type(expected_label_type)
-          // .set_output_label(priv.cb_learner ? label_type_t::cb : label_type_t::cs)
+          // .set_output_label(priv.cb_learner ? label_type_t::CB : label_type_t::CS)
           // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
           .build();
 

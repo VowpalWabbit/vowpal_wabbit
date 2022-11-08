@@ -106,7 +106,7 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   VW::workspace& all = *b.all;
   for (size_t c = 0; c < count; c++)
   {
-    const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+    const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     pred[c].scalar = simple_red_features.initial;
   }
   size_t num_features_from_interactions = 0;
@@ -474,8 +474,8 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
   std::string name_addition = (all.audit || all.hash_inv) ? "-audit" : "";
 
   auto l = VW::LEARNER::make_base_learner(std::move(b), learn_ptr, predict_ptr,
-      stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::scalar,
-      VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::SCALAR,
+      VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(learn_returns_prediction)
                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                .set_sensitivity(sensitivity)

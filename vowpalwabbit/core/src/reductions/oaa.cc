@@ -6,8 +6,10 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -77,7 +79,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec
   }
 
   ec.l.simple.label = 1.;  // truth
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   uint32_t lbl_ind = (o.indexing == 0) ? ld.label : ld.label - 1;
 
   base.learn(ec, lbl_ind);
@@ -144,7 +146,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   }
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -189,12 +191,12 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   {
     if (o.indexing == 0)
     {
-      add_passthrough_feature(ec, 0, o.pred[o.k - 1].scalar);
-      for (uint32_t i = 0; i < o.k - 1; i++) { add_passthrough_feature(ec, (i + 1), o.pred[i].scalar); }
+      ADD_PASSTHROUGH_FEATURE(ec, 0, o.pred[o.k - 1].scalar);
+      for (uint32_t i = 0; i < o.k - 1; i++) { ADD_PASSTHROUGH_FEATURE(ec, (i + 1), o.pred[i].scalar); }
     }
     else
     {
-      for (uint32_t i = 1; i <= o.k; i++) { add_passthrough_feature(ec, i, o.pred[i - 1].scalar); }
+      for (uint32_t i = 1; i <= o.k; i++) { ADD_PASSTHROUGH_FEATURE(ec, i, o.pred[i - 1].scalar); }
     }
   }
 
@@ -372,7 +374,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   void (*finish_ptr)(VW::workspace&, oaa&, VW::example&);
   if (probabilities || scores)
   {
-    pred_type = VW::prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::SCALARS;
     if (probabilities)
     {
       auto loss_function_type = all.loss->get_type();
@@ -398,7 +400,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   }
   else
   {
-    pred_type = VW::prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::MULTICLASS;
     finish_ptr = VW::details::finish_multiclass_example<oaa>;
     if (all.raw_prediction != nullptr)
     {
@@ -425,7 +427,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
                .set_params_per_weight(k_value)
-               .set_input_label_type(VW::label_type_t::multiclass)
+               .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_prediction_type(pred_type)
                .set_finish_example(finish_ptr)
                .build();

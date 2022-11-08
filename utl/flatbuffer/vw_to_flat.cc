@@ -96,7 +96,7 @@ void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuil
 
 void to_flat::create_simple_label(VW::example* v, ExampleBuilder& ex_builder)
 {
-  const auto& red_features = v->_reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& red_features = v->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   ex_builder.label =
       VW::parsers::flatbuffer::CreateSimpleLabel(_builder, v->l.simple.label, red_features.weight, red_features.initial)
           .Union();
@@ -373,34 +373,34 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
     switch (all.example_parser->lbl_parser.label_type)
     {
-      case VW::label_type_t::nolabel:
+      case VW::label_type_t::NOLABEL:
         to_flat::create_no_label(ae, ex_builder);
         break;
-      case VW::label_type_t::cb:
+      case VW::label_type_t::CB:
         to_flat::create_cb_label(ae, ex_builder);
         break;
-      case VW::label_type_t::ccb:
+      case VW::label_type_t::CCB:
         to_flat::create_ccb_label(ae, ex_builder);
         break;
-      case VW::label_type_t::multilabel:
+      case VW::label_type_t::MULTILABEL:
         to_flat::create_multi_label(ae, ex_builder);
         break;
-      case VW::label_type_t::multiclass:
+      case VW::label_type_t::MULTICLASS:
         to_flat::create_mc_label(all.sd->ldict.get(), ae, ex_builder);
         break;
-      case VW::label_type_t::cs:
+      case VW::label_type_t::CS:
         to_flat::create_cs_label(ae, ex_builder);
         break;
-      case VW::label_type_t::cb_eval:
+      case VW::label_type_t::CB_EVAL:
         to_flat::create_cb_eval_label(ae, ex_builder);
         break;
-      case VW::label_type_t::slates:
+      case VW::label_type_t::SLATES:
         to_flat::create_slates_label(ae, ex_builder);
         break;
-      case VW::label_type_t::simple:
+      case VW::label_type_t::SIMPLE:
         to_flat::create_simple_label(ae, ex_builder);
         break;
-      case VW::label_type_t::continuous:
+      case VW::label_type_t::CONTINUOUS:
         to_flat::create_continuous_action_label(ae, ex_builder);
         break;
       default:
@@ -441,11 +441,11 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     if (all.l->is_multiline())
     {
       if (!VW::example_is_newline(*ae) ||
-          (all.example_parser->lbl_parser.label_type == VW::label_type_t::cb &&
+          (all.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
               !CB_ALGS::example_is_newline_not_header(*ae)) ||
-          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
+          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
                ae->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT) ||
-              (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
+              (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&
                   ae->l.slates.type == VW::slates::example_type::SLOT)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());

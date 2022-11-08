@@ -38,7 +38,7 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, bool lb_trick,
-    uint64_t min_champ_examples, float initial_epsilon)
+    uint64_t min_champ_examples, float initial_epsilon, uint64_t shift_model_bounds)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -49,6 +49,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _lb_trick(lb_trick)
     , _min_champ_examples(min_champ_examples)
     , _initial_epsilon(initial_epsilon)
+    , _shift_model_bounds(shift_model_bounds)
 {
   _weight_indices.resize(model_count);
   conf_seq_estimators.reserve(model_count);
@@ -79,7 +80,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
                  << " p_log: " << logged.probability << " reward: " << r << "\n";
       ++_global_counter;
     }
-    auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+    auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     // Process each model, then update the upper/lower bounds for each model
     for (int64_t model_ind = 0; model_ind < model_count; ++model_ind)
     {
@@ -117,15 +118,15 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
           }
           if (_epsilon_decay_audit_str != "")
           {
-            if (model_ind == model_count - 1) { _audit_msg << "champ "; }
-            else
+            if (model_ind != model_count - 1)
             {
               _audit_msg << "challenger[" << (model_ind + 1) << "] ";
+
+              _audit_msg << "update_count: " << conf_seq_estimators[model_ind][model_ind].update_count
+                         << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
+                         << " champ_ub: " << conf_seq_estimators[model_count - 1][model_ind].upper_bound()
+                         << " p_pred: " << a_s.score << "\n";
             }
-            _audit_msg << "update_count: " << conf_seq_estimators[model_ind][model_ind].update_count
-                       << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
-                       << " ub: " << conf_seq_estimators[model_ind][model_ind].upper_bound() << " p_pred: " << a_s.score
-                       << "\n";
           }
           break;
         }
@@ -223,7 +224,7 @@ void epsilon_decay_data::check_horizon_bounds()
     if (conf_seq_estimators[i][i].update_count > _min_scope &&
         conf_seq_estimators[i][i].update_count >
             std::pow(conf_seq_estimators[final_model_idx][final_model_idx].update_count,
-                static_cast<float>(i + 1) / model_count))
+                static_cast<float>(i + 1 + _shift_model_bounds) / (model_count + _shift_model_bounds)))
     {
       shift_model(i - 1, 1, model_count);
       break;
@@ -263,7 +264,7 @@ void predict(
   uint64_t final_model_idx = static_cast<uint64_t>(data.conf_seq_estimators.size()) - 1;
   if (!data._constant_epsilon)
   {
-    auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+    auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     const auto& active_estimator = data.conf_seq_estimators[final_model_idx][final_model_idx];
     ep_fts.epsilon =
         VW::reductions::epsilon_decay::decayed_epsilon(data._initial_epsilon, active_estimator.update_count);
@@ -321,6 +322,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   bool fixed_significance_level = false;
   uint64_t min_champ_examples;
   float initial_epsilon;
+  uint64_t shift_model_bounds;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -374,6 +376,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .default_value(1.0)
                .keep()
                .help("Initial epsilon value")
+               .experimental())
+      .add(make_option("shift_model_bounds", shift_model_bounds)
+               .default_value(0)
+               .keep()
+               .help("Shift maximum update_count for model i from champ_update_count^(i / num_models) to "
+                     "champ_update_count^((i + shift) / (num_models + shift))")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -384,7 +392,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.wpp, lb_trick, min_champ_examples, initial_epsilon);
+      epsilon_decay_audit_str, constant_epsilon, all.wpp, lb_trick, min_champ_examples, initial_epsilon,
+      shift_model_bounds);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -406,10 +415,10 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   {
     auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
-                        .set_input_label_type(VW::label_type_t::cb)
-                        .set_output_label_type(VW::label_type_t::cb)
-                        .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                        .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                        .set_input_label_type(VW::label_type_t::CB)
+                        .set_output_label_type(VW::label_type_t::CB)
+                        .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                        .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                         .set_params_per_weight(model_count)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_epsilon_decay)

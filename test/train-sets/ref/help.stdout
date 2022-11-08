@@ -572,6 +572,9 @@ Weight Options:
     --min_champ_examples arg                Minimum number of examples for any challenger to become champion
                                             (type: uint, default: 0, keep, experimental)
     --initial_epsilon arg                   Initial epsilon value (type: float, default: 1, keep, experimental)
+    --shift_model_bounds arg                Shift maximum update_count for model i from champ_update_count^(i
+                                            / num_models) to champ_update_count^((i + shift) / (num_models
+                                            + shift)) (type: uint, default: 0, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -596,6 +599,23 @@ Weight Options:
                                             uint, keep, necessary)
     --replay_m_count arg                    How many times (in expectation) should each example be played
                                             (default: 1 = permuting) (type: uint, default: 1)
+[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --large_action_space                    Large action space filtering (type: bool, keep, necessary, experimental)
+    --max_actions arg                       Max number of actions to hold (type: uint, default: 20, keep,
+                                            experimental)
+    --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:
+                                            2, keep, experimental)
+    --thread_pool_size arg                  Number of threads in the thread pool that will be used when running
+                                            with one pass svd implementation (default svd implementation
+                                            option). Default thread pool size will be half of the available
+                                            hardware threads (type: uint)
+    --block_size arg                        Number of actions in a block to be scheduled for multithreading
+                                            when using one pass svd implementation (by default, block_size
+                                            = num_actions / thread_pool_size) (type: uint, default: 0)
+    --two_pass_svd                          A more accurate svd that is much slower than the default (one
+                                            pass svd) (type: bool, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=

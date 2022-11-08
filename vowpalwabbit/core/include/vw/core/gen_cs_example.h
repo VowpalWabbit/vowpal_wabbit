@@ -5,7 +5,6 @@
 #include "vw/common/vw_exception.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
-#include "vw/core/vw.h"
 
 #include <cfloat>
 
@@ -14,7 +13,7 @@ namespace GEN_CS
 class cb_to_cs
 {
 public:
-  VW::cb_type_t cb_type = VW::cb_type_t::dm;
+  VW::cb_type_t cb_type = VW::cb_type_t::DM;
   uint32_t num_actions = 0;
   VW::cs_label pred_scores;
   VW::LEARNER::single_learner* scorer = nullptr;
@@ -29,7 +28,7 @@ public:
 class cb_to_cs_adf
 {
 public:
-  VW::cb_type_t cb_type = VW::cb_type_t::dm;
+  VW::cb_type_t cb_type = VW::cb_type_t::DM;
 
   // for MTR
   uint64_t action_sum = 0;
@@ -174,13 +173,13 @@ void gen_cs_example(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs_la
 {
   switch (c.cb_type)
   {
-    case VW::cb_type_t::ips:
+    case VW::cb_type_t::IPS:
       gen_cs_example_ips(c, ld, cs_ld, logger);
       break;
-    case VW::cb_type_t::dm:
+    case VW::cb_type_t::DM:
       gen_cs_example_dm<is_learn>(c, ec, ld, cs_ld);
       break;
-    case VW::cb_type_t::dr:
+    case VW::cb_type_t::DR:
       gen_cs_example_dr<is_learn>(c, ec, ld, cs_ld);
       break;
     default:
@@ -243,13 +242,13 @@ void gen_cs_example(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labe
   VW_DBG(*ec_seq[0]) << "gen_cs_example:" << is_learn << std::endl;
   switch (c.cb_type)
   {
-    case VW::cb_type_t::ips:
+    case VW::cb_type_t::IPS:
       gen_cs_example_ips(ec_seq, cs_labels, logger);
       break;
-    case VW::cb_type_t::dr:
+    case VW::cb_type_t::DR:
       gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);
       break;
-    case VW::cb_type_t::mtr:
+    case VW::cb_type_t::MTR:
       gen_cs_example_mtr(c, ec_seq, cs_labels);
       break;
     default:

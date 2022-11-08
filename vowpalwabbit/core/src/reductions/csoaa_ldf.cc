@@ -9,7 +9,9 @@
 #include "vw/core/correctedMath.h"
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/label_dictionary.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/print_utils.h"
 #include "vw/core/reductions/gd.h"  // GD::foreach_feature() needed in subtract_example()
 #include "vw/core/scope_exit.h"
@@ -27,7 +29,7 @@ using namespace VW::LEARNER;
 using namespace VW::config;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::csoaa_ldf
+#define VW_DEBUG_LOG vw_dbg::CSOAA_LDF
 
 namespace
 {
@@ -35,7 +37,7 @@ namespace
 class ldf
 {
 public:
-  LabelDict::label_feature_map label_features;
+  VW::details::label_feature_map label_features;
 
   bool is_wap = false;
   bool treat_as_classifier = false;
@@ -107,7 +109,7 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
 {
   uint64_t old_offset = ec.ft_offset;
 
-  LabelDict::add_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
+  VW::details::append_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
 
   auto restore_guard = VW::scope_exit([&data, old_offset, &ec] {
     ec.ft_offset = old_offset;
@@ -116,11 +118,11 @@ void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
     ec.l.cs.costs[0].partial_prediction = ec.partial_prediction;
     // WARNING: Access of label information when making prediction is
     // problematic.
-    LabelDict::del_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
+    VW::details::truncate_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
   });
 
   ec.l.simple = VW::simple_label{FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   ec.ft_offset = data.ft_offset;
   base.predict(ec);  // make a prediction
@@ -164,16 +166,16 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
     // save original variables
     VW::cs_label save_cs_label = ec1->l.cs;
     auto& simple_lbl = ec1->l.simple;
-    auto& simple_red_features = ec1->_reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& simple_red_features = ec1->ex_reduction_features.template get<VW::simple_label_reduction_features>();
 
     auto costs1 = save_cs_label.costs;
     if (costs1[0].class_index == static_cast<uint32_t>(-1)) { continue; }
 
-    LabelDict::add_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
+    VW::details::append_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
     // Guard example state restore against throws
     auto restore_guard = VW::scope_exit([&data, &save_cs_label, &costs1, &ec1] {
-      LabelDict::del_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
+      VW::details::truncate_example_namespace_from_memory(data.label_features, *ec1, costs1[0].class_index);
 
       // restore original cost-sensitive label, sum of importance weights
       ec1->l.cs = save_cs_label;
@@ -190,7 +192,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
       if (value_diff < 1e-6) { continue; }
 
       // Prepare example for learning
-      LabelDict::add_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
+      VW::details::append_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
 
       // learn
       float old_weight = ec1->weight;
@@ -207,7 +209,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
         ec1->ft_offset = old_offset;
         ec1->weight = old_weight;
         unsubtract_example(ec1, data.all->logger);
-        LabelDict::del_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
+        VW::details::truncate_example_namespace_from_memory(data.label_features, *ec2, costs2[0].class_index);
       });
 
       base.learn(*ec1);
@@ -257,19 +259,19 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
         ec->weight = old_weight * (costs[0].x - min_cost);
       }
     }
-    auto& simple_red_features = ec->_reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& simple_red_features = ec->ex_reduction_features.template get<VW::simple_label_reduction_features>();
     simple_red_features.initial = 0.;
     ec->l.simple = simple_lbl;
 
     // Prepare examples for learning
-    LabelDict::add_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
+    VW::details::append_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
     uint64_t old_offset = ec->ft_offset;
     ec->ft_offset = data.ft_offset;
 
     // Guard example state restore against throws
     auto restore_guard = VW::scope_exit([&save_cs_label, &data, &costs, old_offset, old_weight, &ec] {
       ec->ft_offset = old_offset;
-      LabelDict::del_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
+      VW::details::truncate_example_namespace_from_memory(data.label_features, *ec, costs[0].class_index);
       ec->weight = old_weight;
       ec->partial_prediction = costs[0].partial_prediction;
       // restore original cost-sensitive label, sum of importance weights and partial_prediction
@@ -723,26 +725,26 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   if (ld->rank)
   {
     name_addition = "-rank";
-    pred_type = VW::prediction_type_t::action_scores;
+    pred_type = VW::prediction_type_t::ACTION_SCORES;
     pred_ptr = predict_csoaa_ldf_rank;
   }
   else if (ld->is_probabilities)
   {
     name_addition = "-prob";
-    pred_type = VW::prediction_type_t::prob;
+    pred_type = VW::prediction_type_t::PROB;
     pred_ptr = predict_csoaa_ldf;
   }
   else
   {
     name_addition = "";
-    pred_type = VW::prediction_type_t::multiclass;
+    pred_type = VW::prediction_type_t::MULTICLASS;
     pred_ptr = predict_csoaa_ldf;
   }
 
   auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
-                .set_input_label_type(VW::label_type_t::cs)
+                .set_input_label_type(VW::label_type_t::CS)
                 .set_output_prediction_type(pred_type)
                 .build();
 

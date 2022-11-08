@@ -6,9 +6,11 @@
 #include "vw/core/reductions/svrg.h"
 
 #include "vw/core/crossplat_compat.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
@@ -54,7 +56,7 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(VW::workspace& all, VW::example& ec)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   float acc = simple_red_features.initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
@@ -190,7 +192,7 @@ base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_save_load(save_load)
                 .build();

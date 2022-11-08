@@ -51,7 +51,8 @@ void check_vector_of_vectors_exact(const std::vector<std::vector<T>>& lhs, const
 
 VW::multi_ex parse_json(VW::workspace& all, const std::string& line);
 
-VW::multi_ex parse_dsjson(VW::workspace& all, std::string line, DecisionServiceInteraction* interaction = nullptr);
+VW::multi_ex parse_dsjson(
+    VW::workspace& all, std::string line, VW::details::decision_service_interaction* interaction = nullptr);
 
 bool is_invoked_with(const std::string& arg);
 
@@ -78,3 +79,14 @@ inline std::ostream& operator<<(std::ostream& os, VW::ccb_example_type ex_type)
   return os;
 }
 }  // namespace std
+
+template <>
+struct boost::test_tools::tt_detail::print_log_value<std::vector<float>>
+{
+  void operator()(std::ostream& os, std::vector<float> const& value)
+  {
+    os << '[';
+    for (auto x : value) os << x << ' ';
+    os << ']';
+  }
+};

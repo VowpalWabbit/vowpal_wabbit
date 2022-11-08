@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/constant.h"
 #include "vw/core/guard.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/rand48.h"
@@ -136,7 +137,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
-  n.outputweight._reduction_features.template get<VW::simple_label_reduction_features>().initial = 0.f;
+  n.outputweight.ex_reduction_features.template get<VW::simple_label_reduction_features>().initial = 0.f;
 
   n.finished_setup = true;
 }
@@ -205,8 +206,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       {
         for (unsigned int i = 0; i < n.k; ++i)
         {
-          add_passthrough_feature(ec, i * 2, hiddenbias_pred[i].scalar);
-          add_passthrough_feature(ec, i * 2 + 1, hidden_units[i].scalar);
+          ADD_PASSTHROUGH_FEATURE(ec, i * 2, hiddenbias_pred[i].scalar);
+          ADD_PASSTHROUGH_FEATURE(ec, i * 2 + 1, hidden_units[i].scalar);
         }
       }
     }
@@ -307,8 +308,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     {
       n.output_layer.ft_offset = ec.ft_offset;
       n.output_layer.l.simple = ec.l.simple;
-      n.output_layer._reduction_features.template get<VW::simple_label_reduction_features>().initial =
-          ec._reduction_features.template get<VW::simple_label_reduction_features>().initial;
+      n.output_layer.ex_reduction_features.template get<VW::simple_label_reduction_features>().initial =
+          ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().initial;
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn) { base.learn(n.output_layer, n.k); }
@@ -488,8 +489,8 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_multipredict(multipredict_f)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_finish_example(::finish_example)
                 .set_end_pass(end_pass)
                 .build();

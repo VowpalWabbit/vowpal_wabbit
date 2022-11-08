@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "vw/common/string_view.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
 #include <cstdint>

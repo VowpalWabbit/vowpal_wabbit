@@ -7,7 +7,9 @@
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/setup_base.h"
 
 #include <cfloat>
@@ -34,7 +36,7 @@
 #include "vw/core/vw_versions.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::gd
+#define VW_DEBUG_LOG vw_dbg::GD
 #include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
@@ -465,7 +467,7 @@ inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 
 inline float trunc_predict(VW::workspace& all, VW::example& ec, double gravity, size_t& num_interacted_features)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   trunc_data temp = {simple_red_features.initial, static_cast<float>(gravity)};
   foreach_feature<trunc_data, vec_add_trunc>(all, ec, temp, num_interacted_features);
   return temp.prediction;
@@ -516,7 +518,7 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
   VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
   {
-    const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+    const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     pred[c].scalar = simple_red_features.initial;
   }
 
@@ -1536,7 +1538,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 
   auto* bare = g.get();
   learner<GD::gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
-      stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                                         .set_learn_returns_prediction(true)
                                         .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                                         .set_sensitivity(bare->sensitivity)

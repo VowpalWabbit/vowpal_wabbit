@@ -28,7 +28,6 @@
 
 #include "vw/common/future_compat.h"
 #include "vw/common/hash.h"
-#include "vw/core/compat.h"
 #include "vw/core/global_data.h"
 #include "vw/core/hashstring.h"
 #include "vw/core/parser.h"

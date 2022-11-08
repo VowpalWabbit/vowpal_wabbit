@@ -277,7 +277,7 @@ VW::label_parser cs_label_parser_global = {
     // test_label
     [](const VW::polylabel& label) { return test_label(label.cs); },
     // label type
-    VW::label_type_t::cs};
+    VW::label_type_t::CS};
 
 namespace model_utils
 {

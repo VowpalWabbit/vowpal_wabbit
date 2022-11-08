@@ -7,12 +7,12 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 60
 power_t = 0.5
-Input label = cs
-Output pred = multiclass
+Input label = CS
+Output pred = MULTICLASS
 Regressor contains 18 values
-example      values         total   
-counter      audited        progress
-1                    6           33%
-2                    9           50%
-4                   12           66%
-6                   18          100%
+example     values        total
+counter    audited     progress
+1                6          33%
+2                9          50%
+4               12          66%
+6               18         100%
