@@ -871,4 +871,33 @@ BOOST_AUTO_TEST_CASE(check_singular_value_sum_diff_for_diff_ranks_is_small)
   VW::finish(vw);
 }
 
+BOOST_AUTO_TEST_CASE(check_learn_returns_correct_predictions)
+{
+  auto d = 2;
+  auto& vw = *VW::initialize(
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 12", nullptr,
+      false, nullptr, nullptr);
+
+  VW::multi_ex examples;
+  examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
+  examples.push_back(VW::read_example(vw, "| a_1:0.1 a_2:0.25 a_3:0.12 a100:1 a200:0.1"));
+  examples.push_back(VW::read_example(vw, "| a_1:0.2 a_2:0.32 a_3:0.15 a100:0.2 a200:0.2"));
+  examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.89 a_3:0.42 a100:1.4 a200:0.5"));
+  examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15 d1:0.2 d10: 0.2"));
+  examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9 v1:0.99"));
+  examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
+  examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
+  examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18:0.2"));
+
+  vw.learn(examples);
+
+  const auto& preds = examples[0]->pred.a_s;
+
+  BOOST_CHECK_EQUAL(preds.size(), examples.size());
+
+  vw.finish_example(examples);
+
+  VW::finish(vw);
+}
+
 BOOST_AUTO_TEST_SUITE_END()

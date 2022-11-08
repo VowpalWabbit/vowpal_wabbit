@@ -221,6 +221,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::predi
   if (is_learn)
   {
     base.learn(examples);
+    if (base.learn_returns_prediction) { update_example_prediction(examples); }
     ++_counter;
   }
   else
@@ -323,6 +324,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
                 .build(&all.logger);
   return make_base(*l);
 }
