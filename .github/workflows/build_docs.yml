@@ -80,7 +80,7 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp39-cp39/include/python3.9/'" --verbose
+          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp39-cp39/include/python3.9/';-DFMT_SYS_DEP=OFF;-DSPDLOG_SYS_DEP=OFF;-DRAPIDJSON_SYS_DEP=OFF" --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
