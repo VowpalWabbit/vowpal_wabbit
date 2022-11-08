@@ -8,6 +8,7 @@
 #include "vw/core/rand_state.h"
 
 #include <queue>
+#include <fstream>
 
 using namespace VW::config;
 using namespace VW::LEARNER;
