@@ -13,11 +13,10 @@ namespace reductions
 {
 class cb_actions_mask
 {
-public:
   // this reduction is used to get the actions mask from VW::actions_mask::reduction_features and apply it to the
   // outcoming predictions
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+public:
+  void update_predictions(multi_ex& examples, size_t initial_action_size);
 
 private:
   template <bool is_learn>
