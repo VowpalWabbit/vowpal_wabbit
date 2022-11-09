@@ -96,6 +96,8 @@ std::unique_ptr<options_scorer> get_scorer_options_instance(
                       .one_of({"identity", "logistic", "glf1", "poisson"})
                       .help("Specify the link function"));
   options.add_and_parse(new_options);
+
+  return scorer_opts;
 }
 }  // namespace
 
