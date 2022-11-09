@@ -56,8 +56,7 @@ void finish(explore_eval& data)
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
     if (data.block_size > 1)
     {
-      *(data.all->trace_message) << "targeted update count = " << (data.example_counter / data.block_size)
-                                 << std::endl;
+      *(data.all->trace_message) << "targeted update count = " << (data.example_counter / data.block_size) << std::endl;
     }
   }
 }
@@ -247,10 +246,9 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
       .add(
           make_option("block_size", block_size)
               .default_value(1)
-              .help(
-                  "The examples will be processed in blocks of block_size. If an example update is found in that "
-                  "block no other examples in the block will be used to update the policy. If an example is not used "
-                  "in the block then the quota rolls over and the next block can update more than one examples"));
+              .help("The examples will be processed in blocks of block_size. If an example update is found in that "
+                    "block no other examples in the block will be used to update the policy. If an example is not used "
+                    "in the block then the quota rolls over and the next block can update more than one examples"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
