@@ -7,6 +7,8 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <cstddef>
+
 namespace VW
 {
 namespace reductions
