@@ -23,6 +23,7 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+          fetch-depth: 2
       - uses: lukka/get-cmake@latest
       - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
         shell: bash
@@ -51,5 +52,4 @@ jobs:
           cd test
           python3 run_tests.py -f -j $(nproc) --include_flatbuffers --clean_dirty -E 0.001
       - name: Upload to codecov.io
-        shell: bash
-        run: bash <(curl -s https://codecov.io/bash) -Z
+        uses: codecov/codecov-action@v3
