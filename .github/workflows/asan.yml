@@ -34,6 +34,7 @@ jobs:
       UBSAN_OPTIONS: "print_stacktrace=1"
 
     steps:
+      - uses: actions/checkout@v3
       - run: git submodule update --init ext_libs/vcpkg
       - uses: lukka/get-cmake@latest
       - uses: ilammy/msvc-dev-cmd@v1
