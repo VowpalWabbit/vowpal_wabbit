@@ -90,7 +90,7 @@ std::unique_ptr<options_scorer> get_scorer_options_instance(
 {
   auto scorer_opts = VW::make_unique<options_scorer>();
   option_group_definition new_options("[Reduction] Scorer");
-  new_options.add(make_option("link", scorer_opts->link())
+  new_options.add(make_option("link", scorer_opts->link)
                       .default_value("identity")
                       .keep()
                       .one_of({"identity", "logistic", "glf1", "poisson"})
