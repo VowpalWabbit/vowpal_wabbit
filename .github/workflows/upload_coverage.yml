@@ -53,3 +53,5 @@ jobs:
           python3 run_tests.py -f -j $(nproc) --include_flatbuffers --clean_dirty -E 0.001
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
+        with:
+          gcov: true
