@@ -13,6 +13,7 @@
 #include "vw/core/setup_base.h"
 
 #include <cfloat>
+#include <string>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::SCORER
@@ -21,6 +22,11 @@ using namespace VW::config;
 
 namespace
 {
+struct options_scorer
+{
+  std::string link;
+};
+
 class scorer
 {
 public:
@@ -77,20 +83,30 @@ inline float logistic(float in) { return 1.f / (1.f + correctedExp(-in)); }
 inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
+
+std::unique_ptr<options_scorer> get_scorer_options_instance(
+    const VW::workspace&, VW::io::logger& logger, options_i& options)
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  std::string link;
+  auto scorer_opts = VW::make_unique<options_scorer>();
   option_group_definition new_options("[Reduction] Scorer");
-  new_options.add(make_option("link", link)
+  new_options.add(make_option("link", scorer_opts->link())
                       .default_value("identity")
                       .keep()
                       .one_of({"identity", "logistic", "glf1", "poisson"})
                       .help("Specify the link function"));
   options.add_and_parse(new_options);
+}
+}  // namespace
+
+
+VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+
+  // scorer is a mandatory reduction, no need to check for nullptr(?)
+  auto scorer_opts = get_scorer_options_instance(all, all.logger, options);
 
   using predict_or_learn_fn_t = void (*)(scorer&, VW::LEARNER::single_learner&, VW::example&);
   using multipredict_fn_t =
@@ -100,31 +116,29 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
   predict_or_learn_fn_t predict_fn;
   std::string name = stack_builder.get_setupfn_name(scorer_setup);
 
+  const auto& link = scorer_opts->link;
+  name.append("-").append(link);
   if (link == "identity")
   {
     learn_fn = predict_or_learn<true, id>;
     predict_fn = predict_or_learn<false, id>;
-    name += "-identity";
   }
   else if (link == "logistic")
   {
     learn_fn = predict_or_learn<true, logistic>;
     predict_fn = predict_or_learn<false, logistic>;
-    name += "-logistic";
     multipredict_f = multipredict<logistic>;
   }
   else if (link == "glf1")
   {
     learn_fn = predict_or_learn<true, glf1>;
     predict_fn = predict_or_learn<false, glf1>;
-    name += "-glf1";
     multipredict_f = multipredict<glf1>;
   }
   else if (link == "poisson")
   {
     learn_fn = predict_or_learn<true, expf>;
     predict_fn = predict_or_learn<false, expf>;
-    name += "-poisson";
     multipredict_f = multipredict<expf>;
   }
   else
