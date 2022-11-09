@@ -5,22 +5,33 @@ on:
     branches:
       - '*'
 
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
   build-valgrind:
-    name: ubuntu2004.amd64.valgrind-build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+      - run: git submodule update --init ext_libs/vcpkg
+      - uses: lukka/get-cmake@latest
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+        shell: bash
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          submodules: true
-      - name: Install deps
-        run: sudo apt install -y cmake valgrind ninja-build g++ libfmt-dev libspdlog-dev rapidjson-dev zlib1g-dev libboost-test-dev libboost-math-dev libgtest-dev libgmock-dev libflatbuffers-dev flatbuffers-compiler-dev
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ubuntu-latest-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
+      - name: Install valgrind
+        run: sudo apt install -y valgrind
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On -DVW_UNIT_TEST_WITH_VALGRIND_INTERNAL=On
+        run: cmake --preset=vcpkg-release -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On -DVW_UNIT_TEST_WITH_VALGRIND_INTERNAL=On
       - name: Build
         run: cmake --build build
       - name: Upload vw binary
@@ -49,13 +60,10 @@ jobs:
     strategy:
       matrix:
         test-segment: ["..100", "101..200", "201..300", "301.."]
-    container:
-      image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: recursive
+      - uses: actions/checkout@v3
+      - run: sudo apt install -y valgrind
       - uses: actions/download-artifact@v2
         with:
           name: vw
