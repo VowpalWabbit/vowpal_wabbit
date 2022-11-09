@@ -170,6 +170,11 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       // once new block has rolled over either reset quota or roll over previous quota
       data.block_ex_quota++;
     }
+    else if (data.block_ex_quota == 0)
+    {
+      // if we reached the example quota for this example block just skip
+      return;
+    }
 
     VW::action_scores& a_s = ec_seq[0]->pred.a_s;
 
@@ -198,10 +203,6 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     if (data.random_state->get_and_update_random() < threshold)
     {
-      // if we reached the example quota for this example block just skip
-      if (data.block_ex_quota == 0) { return; }
-      data.block_ex_quota--;
-
       VW::example* ec_found = nullptr;
       for (VW::example*& ec : ec_seq)
       {
@@ -222,7 +223,9 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       }
 
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
+
       data.update_count++;
+      data.block_ex_quota--;
     }
   }
 }
