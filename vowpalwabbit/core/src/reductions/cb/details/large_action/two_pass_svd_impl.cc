@@ -75,7 +75,7 @@ private:
   float& _final_dot_product;
 };
 
-bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors)
+bool two_pass_svd_impl::generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   uint64_t max_non_zero_col = 0;
   _triplets.clear();
@@ -88,7 +88,7 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
-    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
     for (uint64_t col = 0; col < _d; col++)
     {
@@ -116,7 +116,7 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
       }
     }
 
-    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
 
     row_index++;
   }
@@ -130,7 +130,7 @@ bool vanilla_rand_svd_impl::generate_Y(const multi_ex& examples, const std::vect
   return non_zero_rows.size() > _d;
 }
 
-void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vector<float>& shrink_factors)
+void two_pass_svd_impl::generate_B(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   // create B matrix with dimenstions Kxd where K = examples.size()
   uint64_t num_actions = examples[0]->pred.a_s.size();
@@ -144,7 +144,7 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
-    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
     for (Eigen::Index col = 0; col < Y.outerSize(); ++col)
     {
@@ -173,15 +173,15 @@ void vanilla_rand_svd_impl::generate_B(const multi_ex& examples, const std::vect
       B(row_index, col) = shrink_factors[row_index] * final_dot_prod;
     }
 
-    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
 
     row_index++;
   }
 }
 
-void vanilla_rand_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }
+void two_pass_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }
 
-void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,
+void two_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U,
     Eigen::VectorXf& S, Eigen::MatrixXf& _V)
 {
   // This implementation is following the redsvd algorithm from this repo: https://github.com/ntessore/redsvd-h
@@ -208,7 +208,7 @@ void vanilla_rand_svd_impl::run(const multi_ex& examples, const std::vector<floa
   if (_set_testing_components) { _V = Y * svd.matrixV(); }
 }
 
-vanilla_rand_svd_impl::vanilla_rand_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t, size_t)
+two_pass_svd_impl::two_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t, size_t)
     : _all(all), _d(d), _seed(seed)
 {
 }

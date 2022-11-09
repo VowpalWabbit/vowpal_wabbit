@@ -145,8 +145,7 @@ public:
   polylabel l;
   reduction_features ex_reduction_features;
 
-  size_t tag_len;
-  char* tag;  // An identifier for the example.
+  VW::v_array<char> tag;  // An identifier for the example.
 
   size_t example_counter;
   uint64_t ft_offset;
@@ -176,6 +175,15 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
 using example_factory_t = example& (*)(void*);
+
+namespace details
+{
+void append_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+
+void append_example_namespaces_from_example(VW::example& target, const VW::example& source);
+void truncate_example_namespaces_from_example(VW::example& target, const VW::example& source);
+}  // namespace details
 
 namespace model_utils
 {
