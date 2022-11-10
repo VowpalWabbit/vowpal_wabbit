@@ -22,7 +22,7 @@ using namespace VW::config;
 
 namespace
 {
-struct options_scorer
+struct options_scorer_v1
 {
   std::string link;
 };
@@ -85,10 +85,10 @@ inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 inline float id(float in) { return in; }
 
 
-std::unique_ptr<options_scorer> get_scorer_options_instance(
+std::unique_ptr<options_scorer_v1> get_scorer_options_instance(
     const VW::workspace&, VW::io::logger& logger, options_i& options)
 {
-  auto scorer_opts = VW::make_unique<options_scorer>();
+  auto scorer_opts = VW::make_unique<options_scorer_v1>();
   option_group_definition new_options("[Reduction] Scorer");
   new_options.add(make_option("link", scorer_opts->link)
                       .default_value("identity")
