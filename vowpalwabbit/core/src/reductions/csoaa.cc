@@ -192,8 +192,7 @@ struct options_csoaa_v1
   bool search = false;
 };
 
-std::unique_ptr<options_csoaa_v1> get_csoaa_options_instance(
-    const VW::workspace&, VW::io::logger& logger, options_i& options)
+std::unique_ptr<options_csoaa_v1> get_csoaa_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto csoaa_opts = VW::make_unique<options_csoaa_v1>();
   option_group_definition new_options("[Reduction] Cost Sensitive One Against All");

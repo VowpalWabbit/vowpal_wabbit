@@ -142,7 +142,6 @@ struct options_cb_algs_v1
   std::string type_string = "dr";
   bool eval = false;
   bool force_legacy = true;
-  size_t problem_multiplier = 2;  // default for DR
 };
 
 std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(
@@ -183,25 +182,6 @@ std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(
     options.insert("csoaa", ss.str());
   }
 
-  switch (VW::cb_type_from_string(cb_algs_opts->type_string))
-  {
-    case VW::cb_type_t::DR:
-      break;
-    case VW::cb_type_t::DM:
-      if (cb_algs_opts->eval) THROW("direct method can not be used for evaluation --- it is biased.");
-      cb_algs_opts->problem_multiplier = 1;
-      break;
-    case VW::cb_type_t::IPS:
-      cb_algs_opts->problem_multiplier = 1;
-      break;
-    case VW::cb_type_t::MTR:
-    case VW::cb_type_t::SM:
-      logger.err_warn(
-          "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", cb_algs_opts->type_string);
-      cb_algs_opts->type_string = "dr";
-      break;
-  }
-
   return cb_algs_opts;
 }
 
@@ -214,12 +194,30 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   auto cb_algs_opts = get_cb_algs_options_instance(all, all.logger, options);
   if (cb_algs_opts == nullptr) { return nullptr; }
   auto cb_algs_data = VW::make_unique<cb>(all.logger);
+
+  size_t problem_multiplier = 2;  // default for DR
+  switch (VW::cb_type_from_string(cb_algs_opts->type_string))
+  {
+    case VW::cb_type_t::DR:
+      break;
+    case VW::cb_type_t::DM:
+      if (cb_algs_opts->eval) THROW("direct method can not be used for evaluation --- it is biased.");
+      problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::IPS:
+      problem_multiplier = 1;
+      break;
+    case VW::cb_type_t::MTR:
+    case VW::cb_type_t::SM:
+      all.logger.err_warn(
+          "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", cb_algs_opts->type_string);
+      cb_algs_opts->type_string = "dr";
+      break;
+  }
+
   cb_algs_data->cbcs.num_actions = cb_algs_opts->num_actions;
-
   cb_to_cs& c = cb_algs_data->cbcs;
-
   c.cb_type = VW::cb_type_from_string(cb_algs_opts->type_string);
-
   auto base = as_singleline(stack_builder.setup_base_learner());
   if (cb_algs_opts->eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
   else
@@ -240,7 +238,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
                 .set_output_label_type(VW::label_type_t::CS)
                 .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_params_per_weight(cb_algs_opts->problem_multiplier)
+                .set_params_per_weight(problem_multiplier)
                 .set_learn_returns_prediction(cb_algs_opts->eval)
                 .set_finish_example(finish_ex)
                 .build(&all.logger);
