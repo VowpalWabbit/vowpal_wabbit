@@ -16,7 +16,7 @@ struct wt
   wt(std::string w, uint32_t t) : word(std::move(w)), tag(t) {}
 };
 
-class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> >
+class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> >  // NOLINT
 {
 public:
   SequenceLabelerTask(VW::workspace& vw_obj)
@@ -28,11 +28,11 @@ public:
   }
 
   // using vanilla vw interface
-  void _run(Search::search& sch, std::vector<wt> & input_example, std::vector<uint32_t> & output)
+  void _run(Search::search& sch, std::vector<wt>& input_example, std::vector<uint32_t>& output)
   {
     output.clear();
-    //ptag currently uint32_t
-    for (ptag i=0; i<input_example.size(); i++)
+    // ptag currently uint32_t
+    for (ptag i = 0; i < input_example.size(); i++)
     {
       VW::example* ex = VW::read_example(vw_obj, std::string("1 |w ") + input_example[i].word);
       action p =
@@ -42,12 +42,12 @@ public:
     }
   }
 
-  void _run2(Search::search& sch, std::vector<wt> & input_example, std::vector<uint32_t> & output)
+  void _run2(Search::search& sch, std::vector<wt>& input_example, std::vector<uint32_t>& output)  // NOLINT
   {
     auto& vw_obj = sch.get_vw_pointer_unsafe();
     output.clear();
-    //ptag currently uint32_t
-    for (ptag i=0; i<input_example.size(); i++)
+    // ptag currently uint32_t
+    for (ptag i = 0; i < input_example.size(); i++)
     {
       VW::example ex;
       auto ns_hash_w = VW::hash_space(vw_obj, "w");
@@ -72,13 +72,16 @@ void run(VW::workspace& vw_obj)
   SequenceLabelerTask task(vw_obj);
   std::vector<wt> data;
   std::vector<uint32_t> output;
-  uint32_t DET = 1, NOUN = 2, VERB = 3, ADJ = 4;
-  data.push_back( wt("the", DET) );
-  data.push_back( wt("monster", NOUN) );
-  data.push_back( wt("ate", VERB) );
-  data.push_back( wt("a", DET) );
-  data.push_back( wt("big", ADJ) );
-  data.push_back( wt("sandwich", NOUN) );
+  static constexpr const uint32_t DET = 1;
+  static constexpr const uint32_t NOUN = 2;
+  static constexpr const uint32_t VERB = 3;
+  static constexpr const uint32_t ADJ = 4;
+  data.push_back(wt("the", DET));
+  data.push_back(wt("monster", NOUN));
+  data.push_back(wt("ate", VERB));
+  data.push_back(wt("a", DET));
+  data.push_back(wt("big", ADJ));
+  data.push_back(wt("sandwich", NOUN));
   task.learn(data, output);
   task.learn(data, output);
   task.learn(data, output);
@@ -120,20 +123,20 @@ void test_buildin_task()
   // now, load that model using the BuiltInTask library
   cerr << endl << endl << "##### test BuiltInTask #####" << endl << endl;
   VW::workspace& vw_obj = *VW::initialize("-t --search_task hook");
-  { // create a new scope for the task object
+  {  // create a new scope for the task object
     BuiltInTask task(vw_obj, &SequenceTask::task);
-    VW::multi_ex V;
-    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
-    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
-    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
-    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
-    V.push_back( VW::read_example(vw_obj, (char*)"1 | a") );
+    VW::multi_ex mult_ex;
+    mult_ex.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
+    mult_ex.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
+    mult_ex.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
+    mult_ex.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
+    mult_ex.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
     std::vector<action> out;
-    task.predict(V, out);
+    task.predict(mult_ex, out);
     cerr << "out (should be 1 2 3 4 3) =";
     for (size_t i = 0; i < out.size(); i++) { cerr << " " << out[i]; }
     cerr << endl;
-    for (size_t i = 0; i < V.size(); i++) { VW::finish_example(vw_obj, *V[i]); }
+    for (size_t i = 0; i < mult_ex.size(); i++) { VW::finish_example(vw_obj, *mult_ex[i]); }
   }
 
   VW::finish(vw_obj, false);

@@ -1,4 +1,4 @@
-Version 9.1.0
+Version 9.6.0
 Id
 Min label:0
 Max label:2
@@ -6,8 +6,8 @@ bits:18
 lda:0
 0 ngram:
 0 skip:
-options: --pistol
-Checksum: 844022391
+options: --noconstant --pistol
+Checksum: 2029294460
 :0
 f2:82936:1
 f1:259761:1

@@ -17,7 +17,7 @@ using VW.Serializer.Intermediate;
 using VW.Labels;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using VW.Reflection;
 using System.Collections.ObjectModel;
 
@@ -43,7 +43,7 @@ namespace VW.Serializer
 
             internal bool EnableStringFloatCompact { get; set; }
 
-            internal List<Type> CustomFeaturizer { get; set; }
+            internal IList<Type> CustomFeaturizer { get; set; }
 
             public override bool Equals(object obj)
             {

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
@@ -20,11 +20,16 @@ namespace cs_unittest
         [TestInitialize]
         public void Init()
         {
+            // CMake will copy test files to a "test" sub-directory of the binary output directory
             var basePath = Path.GetDirectoryName(typeof(TestBase).Assembly.Location);
+#if NETCOREAPP3_0_OR_GREATER
+            var testPath = Path.Join(basePath, "test");
+#else
+            var testPath = basePath + @"\test";
+#endif
+            Debug.Assert(Directory.Exists(testPath), $"Could not find directory: {testPath}");
 
-            // TODO: Fix this, since it is super-fragile to depend on the relative position of the test sources
-            // and the generated assembly. Right now it just happens to work in both CMake and Visual Studio.
-            Environment.CurrentDirectory = basePath + @"\..\..\..\test";
+            Environment.CurrentDirectory = testPath;
 
             if (!Directory.Exists("models"))
             {

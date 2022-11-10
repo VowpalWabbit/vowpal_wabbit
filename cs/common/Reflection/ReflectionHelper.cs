@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="ReflectionHelper.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -9,7 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
@@ -31,6 +30,10 @@ namespace VW.Reflection
         /// <remarks>Can't constraint on Func (or would have to have 11 overloads) nor is it possible to constaint on delegate.</remarks>
         public static System.Delegate CompileToFunc<T>(this Expression<T> sourceExpression)
         {
+#if NETSTANDARD
+            throw new PlatformNotSupportedException("ReflectionHelper does not work in .Net Standard mode.");
+#else
+
             // inspect T to be Func<...>
             var funcType = typeof(T);
 
@@ -53,8 +56,11 @@ namespace VW.Reflection
             }
             asmName.KeyPair = kp;
 
-            var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
-
+            #if NETSTANDARD
+            var dynAsm = AssemblyBuilder.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
+            #else
+            var dynAsm = AppDomain.CurrentDomain.DefineDynamicAssembly(asmName, AssemblyBuilderAccess.Run);
+            #endif
             // Create a dynamic module and type
             //#if !DEBUG
             //var moduleBuilder = dynAsm.DefineDynamicModule("VowpalWabbitSerializerModule", asmName.Name + ".dll", true);
@@ -77,8 +83,8 @@ namespace VW.Reflection
             //var debugInfoGenerator = DebugInfoGenerator.CreatePdbGenerator();
             //visit.CompileToMethod(methodBuilder, debugInfoGenerator);
             //#else
+
             sourceExpression.CompileToMethod(methodBuilder);
-            //#endif
 
             var dynType = typeBuilder.CreateType();
 
@@ -86,6 +92,8 @@ namespace VW.Reflection
             // dynAsm.Save(@"my.dll");
 
             return Delegate.CreateDelegate(typeof(T), dynType.GetMethod(methodName));
+
+#endif
         }
 
         /// <summary>
@@ -94,9 +102,9 @@ namespace VW.Reflection
         /// <remarks>This is a simple heuristic for overload resolution, not the full thing.</remarks>
         public static MethodInfo FindMethod(Type objectType, string name, params Type[] parameterTypes)
         {
-            Contract.Requires(objectType != null);
-            Contract.Requires(name != null);
-            Contract.Requires(parameterTypes != null);
+            Debug.Assert(objectType != null);
+            Debug.Assert(name != null);
+            Debug.Assert(parameterTypes != null);
 
             // let's find the "best" match:
             // order by
@@ -240,7 +248,7 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo<T, TResult>(Expression<Func<T, TResult>> expression)
         {
-            Contract.Requires(expression != null);
+            Debug.Assert(expression != null);
 
             return GetInfo(expression.Body);
         }
@@ -250,7 +258,7 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo<T>(Expression<Action<T>> expression)
         {
-            Contract.Requires(expression != null);
+            Debug.Assert(expression != null);
 
             return GetInfo(expression.Body);
         }
@@ -260,7 +268,7 @@ namespace VW.Reflection
         /// </summary>
         public static MemberInfo GetInfo(Expression expression)
         {
-            Contract.Requires(expression != null);
+            Debug.Assert(expression != null);
 
             var binaryExpression = expression as BinaryExpression;
             if (binaryExpression != null)

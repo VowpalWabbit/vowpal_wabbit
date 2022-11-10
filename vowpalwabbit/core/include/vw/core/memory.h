@@ -67,17 +67,22 @@ free_ptr<T> scoped_calloc_or_throw(Args&&... args)
 
 namespace VW
 {
+#if __cplusplus >= 201402L  // C++14 and beyond
+using std::make_unique;
+#else
 template <typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args&&... params)
 {
+  static_assert(!std::is_array<T>::value, "arrays not supported");
   return std::unique_ptr<T>(new T(std::forward<Args>(params)...));
 }
+#endif
 }  // namespace VW
 
-#ifdef MADV_MERGEABLE
 template <class T>
 T* calloc_mergable_or_throw(size_t nmemb)
 {
+#ifdef MADV_MERGEABLE
   if (nmemb == 0) { return nullptr; }
   size_t length = nmemb * sizeof(T);
 #  if defined(ANDROID)
@@ -117,10 +122,10 @@ T* calloc_mergable_or_throw(size_t nmemb)
     fputs(msg, stderr);
   }
   return (T*)data;
-}
 #else
-#  define calloc_mergable_or_throw calloc_or_throw
+  return calloc_or_throw<T>(nmemb);
 #endif
+}
 
 inline void free_it(void* ptr)
 {

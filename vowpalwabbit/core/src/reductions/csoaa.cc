@@ -5,6 +5,8 @@
 
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
@@ -12,16 +14,16 @@
 #include <utility>
 
 using namespace VW::LEARNER;
-using namespace COST_SENSITIVE;
 using namespace VW::config;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::csoaa
+#define VW_DEBUG_LOG vw_dbg::CSOAA
 
 namespace
 {
-struct csoaa
+class csoaa
 {
+public:
   uint32_t num_classes = 0;
   bool search = false;
   VW::polyprediction* pred = nullptr;
@@ -61,7 +63,7 @@ inline void inner_loop(single_learner& base, VW::example& ec, uint32_t i, float 
     score = ec.partial_prediction;
     prediction = i;
   }
-  add_passthrough_feature(ec, i, ec.partial_prediction);
+  ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
 }
 
 #define DO_MULTIPREDICT true
@@ -101,7 +103,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     }
   }
 
-  COST_SENSITIVE::label ld = std::move(ec.l.cs);
+  VW::cs_label ld = std::move(ec.l.cs);
 
   // Guard VW::example state restore against throws
   auto restore_guard = VW::scope_exit([&ld, &ec] { ec.l.cs = std::move(ld); });
@@ -110,7 +112,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   float score = FLT_MAX;
   size_t pt_start = ec.passthrough ? ec.passthrough->size() : 0;
   ec.l.simple = {0.};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   bool dont_learn = DO_MULTIPREDICT && !is_learn;
 
@@ -123,14 +125,14 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   else if (dont_learn)
   {
     ec.l.simple = {FLT_MAX};
-    ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+    ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     if (c.indexing == 0)
     {
       for (uint32_t i = 0; i <= c.num_classes; i++)
       {
-        add_passthrough_feature(ec, i, c.pred[i].scalar);
+        ADD_PASSTHROUGH_FEATURE(ec, i, c.pred[i].scalar);
         if (c.pred[i].scalar < c.pred[prediction].scalar) { prediction = i; }
       }
       ec.partial_prediction = c.pred[prediction].scalar;
@@ -139,7 +141,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     {
       for (uint32_t i = 1; i <= c.num_classes; i++)
       {
-        add_passthrough_feature(ec, i, c.pred[i - 1].scalar);
+        ADD_PASSTHROUGH_FEATURE(ec, i, c.pred[i - 1].scalar);
         if (c.pred[i - 1].scalar < c.pred[prediction - 1].scalar) { prediction = i; }
       }
       ec.partial_prediction = c.pred[prediction - 1].scalar;
@@ -168,17 +170,19 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     if (second_best_cost < FLT_MAX)
     {
       float margin = second_best_cost - ec.partial_prediction;
-      add_passthrough_feature(ec, constant * 2, margin);
-      add_passthrough_feature(ec, constant * 2 + 1 + second_best, 1.);
+      ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 2, margin);
+      ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 2 + 1 + second_best, 1.);
     }
     else
-      add_passthrough_feature(ec, constant * 3, 1.);
+    {
+      ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 3, 1.);
+    }
   }
 
   ec.pred.multiclass = prediction;
 }
 
-void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { COST_SENSITIVE::finish_example(all, ec); }
+void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { VW::details::finish_cs_example(all, ec); }
 }  // namespace
 
 base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
@@ -187,8 +191,9 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = VW::make_unique<csoaa>(all.logger, all.indexing);
   option_group_definition new_options("[Reduction] Cost Sensitive One Against All");
-  new_options.add(
-      make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"));
+  new_options
+      .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
+      .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -203,12 +208,12 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(
                     true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
                 .set_params_per_weight(ws)
-                .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_input_label_type(VW::label_type_t::cs)
+                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_input_label_type(VW::label_type_t::CS)
                 .set_finish_example(::finish_example)
                 .build();
 
-  all.example_parser->lbl_parser = cs_label;
+  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }

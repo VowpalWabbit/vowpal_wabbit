@@ -2,12 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
 
+#include "vw/core/learner.h"
 #include "vw/core/reduction_stack.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
@@ -73,12 +74,13 @@ void reset_test_state()
 //
 // custom_builder can be augmented to do heavier edits (reorder/remove)
 // on reduction_stack
-struct custom_simple_builder : VW::default_reduction_stack_setup
+class custom_simple_builder : public VW::default_reduction_stack_setup
 {
+public:
   custom_simple_builder()
   {
-    BOOST_CHECK_GT(reduction_stack.size(), 77);
-    reduction_stack.emplace_back("test_reduction_name", minimal_reduction::test_reduction_setup);
+    BOOST_CHECK_GT(_reduction_stack.size(), 77);
+    _reduction_stack.emplace_back("test_reduction_name", minimal_reduction::test_reduction_setup);
   }
 };
 

@@ -4,15 +4,17 @@
 
 #pragma once
 
-#include "vw/core/v_array.h"
+#include "vw/core/multi_ex.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/vw_fwd.h"
 #include "vw/fb_parser/generated/example_generated.h"
 
 class io_buf;
 namespace VW
 {
-struct workspace;
-struct example;
-struct polylabel;
+class workspace;
+class example;
+class polylabel;
 class reduction_features;
 }  // namespace VW
 
@@ -29,8 +31,7 @@ class parser
 public:
   parser() = default;
   const VW::parsers::flatbuffer::ExampleRoot* data();
-  bool parse_examples(
-      VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer = nullptr);
+  bool parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer = nullptr);
 
 private:
   const VW::parsers::flatbuffer::ExampleRoot* _data;

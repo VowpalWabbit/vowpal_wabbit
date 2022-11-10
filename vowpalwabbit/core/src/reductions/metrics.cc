@@ -4,17 +4,14 @@
 
 #include "vw/core/reductions/metrics.h"
 
+#include "vw/config/options.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/debug_log.h"
-#include "vw/core/learner.h"
-#include "vw/core/setup_base.h"
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_external.h"
-#endif
-#include "vw/config/options.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/parser.h"
 #include "vw/core/scope_exit.h"
+#include "vw/core/setup_base.h"
 #include "vw/io/logger.h"
 
 #include <rapidjson/filewritestream.h>
@@ -33,40 +30,42 @@ void insert_dsjson_metrics(
   // ds_metrics is nullptr when --dsjson is disabled
   if (ds_metrics != nullptr)
   {
-    metrics.set_uint("number_skipped_events", ds_metrics->NumberOfSkippedEvents);
-    metrics.set_uint("number_events_zero_actions", ds_metrics->NumberOfEventsZeroActions);
-    metrics.set_uint("line_parse_error", ds_metrics->LineParseError);
-    metrics.set_string("first_event_id", ds_metrics->FirstEventId);
-    metrics.set_string("first_event_time", ds_metrics->FirstEventTime);
-    metrics.set_string("last_event_id", ds_metrics->LastEventId);
-    metrics.set_string("last_event_time", ds_metrics->LastEventTime);
-    metrics.set_float("dsjson_sum_cost_original", ds_metrics->DsjsonSumCostOriginal);
+    metrics.set_uint("number_skipped_events", ds_metrics->number_of_skipped_events);
+    metrics.set_uint("number_events_zero_actions", ds_metrics->number_of_events_zero_actions);
+    metrics.set_uint("line_parse_error", ds_metrics->line_parse_error);
+    metrics.set_string("first_event_id", ds_metrics->first_event_id);
+    metrics.set_string("first_event_time", ds_metrics->first_event_time);
+    metrics.set_string("last_event_id", ds_metrics->last_event_id);
+    metrics.set_string("last_event_time", ds_metrics->last_event_time);
+    metrics.set_float("dsjson_sum_cost_original", ds_metrics->dsjson_sum_cost_original);
     if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
     {
-      metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->DsjsonSumCostOriginalFirstSlot);
-      metrics.set_uint(
-          "dsjson_number_label_equal_baseline_first_slot", ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
+      metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->dsjson_sum_cost_original_first_slot);
+      metrics.set_uint("dsjson_number_label_equal_baseline_first_slot",
+          ds_metrics->dsjson_number_of_label_equal_baseline_first_slot);
       metrics.set_uint("dsjson_number_label_not_equal_baseline_first_slot",
-          ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+          ds_metrics->dsjson_number_of_label_not_equal_baseline_first_slot);
       metrics.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
-          ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
+          ds_metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot);
     }
     else
     {
-      metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->DsjsonSumCostOriginalBaseline);
+      metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->dsjson_sum_cost_original_baseline);
     }
   }
 }
 
-struct metrics_data
+class metrics_data
 {
+public:
   std::string out_file;
   size_t learn_count = 0;
   size_t predict_count = 0;
 };
 
-struct json_metrics_writer : VW::metric_sink_visitor
+class json_metrics_writer : public VW::metric_sink_visitor
 {
+public:
   json_metrics_writer(Writer<FileWriteStream>& writer) : _writer(writer) { _writer.StartObject(); }
   ~json_metrics_writer() override { _writer.EndObject(); }
   void int_metric(const std::string& key, uint64_t value) override
@@ -89,6 +88,13 @@ struct json_metrics_writer : VW::metric_sink_visitor
   {
     _writer.Key(key.c_str());
     _writer.Bool(value);
+  }
+  void sink_metric(const std::string& key, const VW::metric_sink& value) override
+  {
+    _writer.Key(key.c_str());
+    _writer.StartObject();
+    value.visit(*this);
+    _writer.EndObject();
   }
 
 private:
@@ -143,10 +149,6 @@ void VW::reductions::output_metrics(VW::workspace& all)
     VW::metric_sink list_metrics;
 
     all.l->persist_metrics(list_metrics);
-
-#ifdef BUILD_EXTERNAL_PARSER
-    if (all.external_parser) { all.external_parser->persist_metrics(list_metrics); }
-#endif
 
     for (auto& metric_hook : all.metric_output_hooks) { metric_hook(list_metrics); }
 

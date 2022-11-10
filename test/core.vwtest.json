@@ -304,7 +304,7 @@
   {
     "id": 24,
     "desc": "active-learning -- training",
-    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3",
+    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3 --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/active-simulation.t24.stderr",
       "stdout": "train-sets/ref/active-simulation.t24.stdout"
@@ -3144,7 +3144,7 @@
   },
   {
     "id": 244,
-    "desc": "Flatbuffer CB_eval test",
+    "desc": "Flatbuffer CB_EVAL test",
     "vw_command": "-d train-sets/rcv1_cb_eval.fb --cb 2 --eval --flatbuffer",
     "diff_files": {
       "stderr": "train-sets/ref/rcv1_cb_eval_fb.stderr",
@@ -4528,7 +4528,7 @@
   {
     "id": 351,
     "desc": "should be the same output as 158 except the line of enabled_reductions",
-    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand",
+    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_.json --readable_model automl_readable.txt --oracle_type rand",
     "diff_files": {
       "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_.stderr",
       "metrics_.json": "test-sets/ref/metrics_.json",
@@ -5082,7 +5082,7 @@
   {
     "id": 394,
     "desc": "Test using automl with ccb",
-    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json",
+    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json --oracle_type one_diff",
     "diff_files": {
       "aml_ccb_metrics.json": "test-sets/ref/aml_ccb_metrics.json"
     },
@@ -5293,7 +5293,7 @@
   {
     "id": 411,
     "desc": "automl with cb_adf",
-    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --keep_configs --oracle_type rand",
+    "vw_command": "-f models/automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --oracle_type rand",
     "diff_files": {
       "stderr": "train-sets/ref/cb_adf_dsjson_metrics_.stderr",
       "metrics_.json": "test-sets/ref/metrics_cbadfautoml.json",
@@ -5349,7 +5349,7 @@
   {
     "id": 415,
     "desc": "test AutoML with cubic interaction",
-    "vw_command": "-f automl_cubic.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_cubic.json --readable_model automl_readable_cubic.txt --keep_configs --oracle_type rand --interaction_type cubic",
+    "vw_command": "-f automl_cubic.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_cubic.json --readable_model automl_readable_cubic.txt --oracle_type rand --interaction_type cubic",
     "diff_files": {
       "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_cubic.stderr",
       "metrics_cubic.json": "test-sets/ref/metrics_cubic.json",
@@ -5358,6 +5358,111 @@
     },
     "input_files": [
       "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 416,
+    "desc": "Test CSOAA multiline LDF with shared features",
+    "vw_command": "--csoaa_ldf=m -d train-sets/csoaa_ldf_multiline_with_shared.txt -q ua -p csoaa_ldf_multiline_with_shared.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_multiline_with_shared.stderr",
+      "stdout": "train-sets/ref/csoaa_ldf_multiline_with_shared.stdout",
+      "csoaa_ldf_multiline_with_shared.predict": "train-sets/ref/csoaa_ldf_multiline_with_shared.predict"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_multiline_with_shared.txt"
+    ]
+  },
+  {
+    "id": 417,
+    "desc": "automl with cb_adf - transform to predict only model SkipC# - Do not remove this - this test breaks test generation by requiring a dependency that is not supported",
+    "vw_command": "--aml_predict_only_model automl_predict_only.model -i models/automl.model --readable_model automl_readable.txt",
+    "diff_files": {
+      "automl_readable.txt": "train-sets/ref/cbadf_automl_readable_predictonly.txt"
+    },
+    "input_files": [
+      "models/automl.model"
+    ],
+    "depends_on": [
+      411
+    ]
+  },
+  {
+    "id": 418,
+    "desc": "set up automl model to test overrides",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -f models/automl_override.model --automl 4 --global_lease 100 --priority_type favor_popular_namespaces --priority_challengers 1 --oracle_type rand --automl_significance_level .1",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_test_set_override.stderr",
+      "stdout": "train-sets/ref/automl_test_set_override.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 419,
+    "desc": "load automl model with overrides",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -i models/automl_override.model --automl 4 --global_lease 200 --priority_type none --priority_challengers 2 --oracle_type one_diff --automl_significance_level .2",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_test_load_override.stderr",
+      "stdout": "train-sets/ref/automl_test_load_override.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json",
+      "models/automl_override.model"
+    ],
+    "depends_on": [
+      418
+    ]
+  },
+  {
+    "id": 420,
+    "desc": "Save model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -f models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_save.stderr",
+      "stdout": "train-sets/ref/ksvm_model_save.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat"
+    ]
+  },
+  {
+    "id": 421,
+    "desc": "Load model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -i models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_load.stderr",
+      "stdout": "train-sets/ref/ksvm_model_load.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat",
+      "models/ksvm_flat.model"
+    ],
+    "depends_on": [
+      420
+    ]
+  },
+  {
+    "id": 422,
+    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default block_size",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_block_size_1.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 423,
+    "desc": "explore_eval evaluate same policy as logged policy, with block_size > 1 there should be at most ((#examples / block_size) + 1) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --block_size 5",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_block_size_5.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
     ]
   }
 ]

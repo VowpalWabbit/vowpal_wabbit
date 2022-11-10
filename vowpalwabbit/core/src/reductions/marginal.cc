@@ -9,6 +9,7 @@
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/interactions.h"
+#include "vw/core/io_buf.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
@@ -21,8 +22,9 @@
 using namespace VW::config;
 namespace
 {
-struct expert
+class expert
 {
+public:
   expert() = default;
   expert(float regret, float abs_regret, float weight) : regret(regret), abs_regret(abs_regret), weight(weight) {}
 
@@ -34,31 +36,20 @@ struct expert
 using marginal = std::pair<double, double>;
 using expert_pair = std::pair<expert, expert>;
 
-struct data
+class data
 {
+public:
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
-      bool unweighted_marginals, bool compete, parameters* m_weights, VW::loss_function* m_loss_function,
-      shared_data* m_shared_data, bool m_hash_inv, VW::io::logger logger)
+      bool unweighted_marginals, bool compete, VW::workspace* all)
       : initial_numerator(initial_numerator)
       , initial_denominator(initial_denominator)
       , decay(decay)
       , update_before_learn(update_before_learn)
       , unweighted_marginals(unweighted_marginals)
       , compete(compete)
-      , m_weights(m_weights)
-      , m_loss_function(m_loss_function)
-      , m_shared_data(m_shared_data)
-      , m_hash_inv(m_hash_inv)
-      , m_logger(std::move(logger))
+      , m_all(all)
   {
     id_features.fill(false);
-  }
-
-  data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
-      bool unweighted_marginals, bool compete, VW::workspace& all)
-      : data(initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete,
-            &all.weights, all.loss.get(), all.sd, all.hash_inv, all.logger)
-  {
   }
 
   float initial_numerator;
@@ -81,12 +72,8 @@ struct data
   std::unordered_map<uint64_t, expert_pair>
       expert_state;  // pair of weights on marginal and feature based predictors, one per marginal feature
 
-  parameters* m_weights;
-  VW::loss_function* m_loss_function;
-  shared_data* m_shared_data;
-  bool m_hash_inv;
   std::unordered_map<uint64_t, std::string> inverse_hashes;
-  VW::io::logger m_logger;
+  VW::workspace* m_all = nullptr;
 };
 
 float get_adanormalhedge_weights(float r, float c)
@@ -99,7 +86,7 @@ float get_adanormalhedge_weights(float r, float c)
 template <bool is_learn>
 void make_marginal(data& sm, VW::example& ec)
 {
-  const uint64_t mask = sm.m_weights->mask();
+  const uint64_t mask = sm.m_all->weights.mask();
   sm.alg_loss = 0.;
   sm.net_weight = 0.;
   sm.net_feature_weight = 0.;
@@ -120,7 +107,7 @@ void make_marginal(data& sm, VW::example& ec)
         const uint64_t first_index = j.index() & mask;
         if (++j == sm.temp[n].end())
         {
-          sm.m_logger.out_warn(
+          sm.m_all->logger.out_warn(
               "marginal feature namespace has {} features. Should be a multiple of 2", sm.temp[n].size());
           break;
         }
@@ -128,7 +115,7 @@ void make_marginal(data& sm, VW::example& ec)
         const uint64_t second_index = j.index() & mask;
         if (first_value != 1.f || second_value != 1.f)
         {
-          sm.m_logger.out_warn("Bad id features, must have value 1.");
+          sm.m_all->logger.out_warn("Bad id features, must have value 1.");
           continue;
         }
         const uint64_t key = second_index + ec.ft_offset;
@@ -140,7 +127,7 @@ void make_marginal(data& sm, VW::example& ec)
             expert e = {0, 0, 1.};
             sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
           }
-          if (sm.m_hash_inv)
+          if (sm.m_all->hash_inv)
           {
             std::ostringstream ss;
             std::vector<VW::audit_strings>& sn = sm.temp[n].space_names;
@@ -162,7 +149,7 @@ void make_marginal(data& sm, VW::example& ec)
           if VW_STD17_CONSTEXPR (is_learn)
           {
             const float label = ec.l.simple.label;
-            sm.alg_loss += weight * sm.m_loss_function->get_loss(sm.m_shared_data, marginal_pred, label);
+            sm.alg_loss += weight * sm.m_all->loss->get_loss(sm.m_all->sd, marginal_pred, label);
           }
         }
       }
@@ -197,14 +184,14 @@ void compute_expert_loss(data& sm, VW::example& ec)
   if VW_STD17_CONSTEXPR (is_learn)
   {
     const float label = ec.l.simple.label;
-    sm.alg_loss += sm.net_feature_weight * sm.m_loss_function->get_loss(sm.m_shared_data, sm.feature_pred, label);
+    sm.alg_loss += sm.net_feature_weight * sm.m_all->loss->get_loss(sm.m_all->sd, sm.feature_pred, label);
     sm.alg_loss *= inv_weight;
   }
 }
 
 void update_marginal(data& sm, VW::example& ec)
 {
-  const uint64_t mask = sm.m_weights->mask();
+  const uint64_t mask = sm.m_all->weights.mask();
   const float label = ec.l.simple.label;
   float weight = ec.weight;
   if (sm.unweighted_marginals) { weight = 1.; }
@@ -225,9 +212,9 @@ void update_marginal(data& sm, VW::example& ec)
         if (sm.compete)  // now update weights, before updating marginals
         {
           expert_pair& e = sm.expert_state[key];
-          const float regret1 = sm.alg_loss -
-              sm.m_loss_function->get_loss(sm.m_shared_data, static_cast<float>(m.first / m.second), label);
-          const float regret2 = sm.alg_loss - sm.m_loss_function->get_loss(sm.m_shared_data, sm.feature_pred, label);
+          const float regret1 =
+              sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd, static_cast<float>(m.first / m.second), label);
+          const float regret2 = sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd, sm.feature_pred, label);
 
           e.first.regret += regret1 * weight;
           e.first.abs_regret += regret1 * regret1 * weight;  // fabs(regret1);
@@ -293,7 +280,7 @@ void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, VW::example& 
 
 void save_load(data& sm, io_buf& io, bool read, bool text)
 {
-  const uint64_t stride_shift = sm.m_weights->stride_shift();
+  const uint64_t stride_shift = sm.m_all->weights.stride_shift();
 
   if (io.num_files() == 0) { return; }
   std::stringstream msg;
@@ -312,7 +299,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     if (!read)
     {
       index = iter->first >> stride_shift;
-      if (sm.m_hash_inv) { msg << sm.inverse_hashes[iter->first]; }
+      if (sm.m_all->hash_inv) { msg << sm.inverse_hashes[iter->first]; }
       else
       {
         msg << index;
@@ -429,7 +416,7 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
   if (!options.add_parse_and_check_necessary(marginal_options)) { return nullptr; }
 
   auto d = VW::make_unique<::data>(
-      initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete, *all);
+      initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete, all);
 
   marginal = VW::decode_inline_hex(marginal, all->logger);
   if (marginal.find(':') != std::string::npos) { THROW("Cannot use wildcard with marginal.") }
@@ -437,8 +424,8 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
 
   auto* l = VW::LEARNER::make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .build();

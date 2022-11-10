@@ -4,6 +4,7 @@
 
 #include "reductions/cb/details/large_action_space.h"
 #include "test_common.h"
+#include "vw/core/constant.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
@@ -14,23 +15,20 @@
 #include <boost/test/unit_test.hpp>
 
 using internal_action_space =
-    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space>;
+    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
+        VW::cb_explore_adf::two_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
+using internal_action_space_op =
+    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
+        VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
+
+BOOST_AUTO_TEST_SUITE(test_suite_las)
 
 BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 {
   auto d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-
-    vw.learn(examples);
-    vw.finish_example(examples);
-  }
 
   std::vector<std::string> e_r;
   vw.l->get_enabled_reductions(e_r);
@@ -44,33 +42,44 @@ BOOST_AUTO_TEST_CASE(creation_of_the_og_A_matrix)
 
   BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+  std::vector<Eigen::Triplet<float>> _triplets;
+
   {
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
+    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.2 3:0.3"));
+
+    std::vector<float> ft_values = {0.1f, 0.2f, 0.3f};
 
     vw.predict(examples);
 
-    action_space->explore._generate_A(examples);
+    VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
 
     auto num_actions = examples.size();
-    // gather the feature indexes
+    BOOST_CHECK_EQUAL(num_actions, 1);
 
-    for (size_t action_index = 0; action_index < num_actions; action_index++)
+    uint64_t action_index = 0;
+    auto* ex = examples[action_index];
+    // test sanity - test assumes no shared features
+    BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
+    for (auto ns : ex->indices)
     {
-      auto* ex = examples[action_index];
-      // test sanity - test assumes no shared features
-      BOOST_CHECK_EQUAL(!CB::ec_is_example_header(*ex), true);
-      for (auto ns : ex->indices)
+      for (size_t i = 0; i < ex->feature_space[ns].indices.size(); i++)
       {
-        for (auto ft_index : ex->feature_space[ns].indices)
+        auto ft_index = ex->feature_space[ns].indices[i];
+        auto ft_value = ex->feature_space[ns].values[i];
+
+        if (ns == VW::details::DEFAULT_NAMESPACE) { BOOST_CHECK_CLOSE(ft_value, ft_values[i], FLOAT_TOL); }
+        else if (ns == VW::details::CONSTANT_NAMESPACE)
         {
-          BOOST_CHECK_EQUAL(
-              action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())),
-              vw.weights.dense_weights[ft_index]);
+          BOOST_CHECK_CLOSE(ft_value, 1.f, FLOAT_TOL);
         }
+
+        BOOST_CHECK_EQUAL(
+            action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())), ft_value);
       }
     }
+
     vw.finish_example(examples);
   }
   VW::finish(vw);
@@ -80,14 +89,14 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_no_interactions, false});
 
-  auto* vw_yes_interactions = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q ::",
+  auto* vw_yes_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_yes_interactions, true});
@@ -99,39 +108,6 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
   {
     auto& vw = *std::get<0>(vw_pair);
     bool interactions = std::get<1>(vw_pair);
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:0.9:0.5 |f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:0.8:0.5 |f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -148,16 +124,17 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_Y)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "shared |U b c"));
+      examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.predict(examples);
 
       std::set<uint64_t> non_zero_rows;
-      for (int k = 0; k < action_space->explore.Y.outerSize(); ++k)
+      for (int k = 0; k < action_space->explore.impl.Y.outerSize(); ++k)
       {
-        for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore.Y, k); it; ++it)
+        for (Eigen::SparseMatrix<float>::InnerIterator it(action_space->explore.impl.Y, k); it; ++it)
         { non_zero_rows.emplace(it.row()); }
       }
 
@@ -174,14 +151,14 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_no_interactions, false});
 
-  auto* vw_yes_interactions = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q ::",
+  auto* vw_yes_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_yes_interactions, true});
@@ -194,39 +171,6 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
     auto& vw = *std::get<0>(vw_pair);
     bool interactions = std::get<1>(vw_pair);
 
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:0.9:0.5 |f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:0.8:0.5 |f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
@@ -242,14 +186,15 @@ BOOST_AUTO_TEST_CASE(check_interactions_on_B)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "shared |U b c"));
+      examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
 
       vw.predict(examples);
 
-      if (!interactions) { B_non_interactions = action_space->explore.B; }
-      if (interactions) { B_interactions = action_space->explore.B; }
+      if (!interactions) { B_non_interactions = action_space->explore.impl.B; }
+      if (interactions) { B_interactions = action_space->explore.impl.B; }
       vw.finish_example(examples);
     }
     VW::finish(vw);
@@ -261,16 +206,15 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
@@ -278,111 +222,6 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
   {
     auto& vw = *std::get<0>(vw_pair);
     auto apply_diag_M = std::get<1>(vw_pair);
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:0.9:0.5 | a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:0.8:0.5 | a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "0:0.7:0.5 | a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "0:0.6:0.5 | a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "0:0.5:0.5 | a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-      examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
-      examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-      examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-      examples.push_back(VW::read_example(vw, "0:0.4:0.5 | a_16 a_17 a_18"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -396,12 +235,14 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
     BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
+    std::vector<Eigen::Triplet<float>> _triplets;
+
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
       examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
       examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
       examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
@@ -409,16 +250,19 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
 
       vw.predict(examples);
 
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
-      action_space->explore._generate_A(examples);
-      action_space->explore.generate_Y(examples);
+      action_space->explore.shrink_fact_config.calculate_shrink_factor(
+          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+
+      VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
+      action_space->explore.impl.generate_Y(examples, action_space->explore.shrink_factors);
 
       uint64_t num_actions = examples[0]->pred.a_s.size();
 
       // Generate Omega
       std::vector<Eigen::Triplet<float>> omega_triplets;
       uint64_t max_ft_index = 0;
-      uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+
+      float seed = (vw.get_random_state()->get_random() + 1) * 10.f;
 
       for (uint64_t action_index = 0; action_index < num_actions; action_index++)
       {
@@ -429,7 +273,7 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
         {
           for (uint64_t col = 0; col < d; col++)
           {
-            auto combined_index = action_index + col + seed;
+            uint64_t combined_index = action_index + col + seed;
             auto mm = merand48_boxmuller(combined_index);
             omega_triplets.push_back(Eigen::Triplet<float>(action_index, col, mm));
           }
@@ -454,12 +298,12 @@ BOOST_AUTO_TEST_CASE(check_At_times_Omega_is_Y)
         diag_M.setIdentity();
       }
 
-      Eigen::SparseMatrix<float> Yd(action_space->explore.Y.rows(), d);
+      Eigen::SparseMatrix<float> Yd(action_space->explore.impl.Y.rows(), d);
 
       Yd = action_space->explore._A.transpose() * diag_M * Omega;
       // Orthonormalize Yd
       VW::gram_schmidt(Yd);
-      BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore.Y), true);
+      BOOST_CHECK_EQUAL(Yd.isApprox(action_space->explore.impl.Y), true);
 
       vw.finish_example(examples);
     }
@@ -471,33 +315,23 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
+    std::vector<Eigen::Triplet<float>> _triplets;
     auto apply_diag_M = std::get<1>(vw_pair);
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -514,15 +348,17 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
 
       vw.predict(examples);
 
-      action_space->explore._generate_A(examples);
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
-      action_space->explore.generate_Y(examples);
-      action_space->explore.generate_B(examples);
+      VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
+      action_space->explore.shrink_fact_config.calculate_shrink_factor(
+          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+
+      action_space->explore.impl.generate_Y(examples, action_space->explore.shrink_factors);
+      action_space->explore.impl.generate_B(examples, action_space->explore.shrink_factors);
 
       auto num_actions = examples[0]->pred.a_s.size();
       Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
@@ -537,8 +373,8 @@ BOOST_AUTO_TEST_CASE(check_A_times_Y_is_B)
         diag_M.setIdentity();
       }
 
-      Eigen::MatrixXf B = diag_M * action_space->explore._A * action_space->explore.Y;
-      BOOST_CHECK_EQUAL(B.isApprox(action_space->explore.B), true);
+      Eigen::MatrixXf B = diag_M * action_space->explore._A * action_space->explore.impl.Y;
+      BOOST_CHECK_EQUAL(B.isApprox(action_space->explore.impl.B), true);
 
       vw.finish_example(examples);
     }
@@ -551,32 +387,22 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
   auto d = 2;
 
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
+    std::vector<Eigen::Triplet<float>> _triplets;
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -591,36 +417,37 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
     BOOST_CHECK_EQUAL(action_space != nullptr, true);
 
     {
+      float seed = (vw.get_random_state()->get_random() + 1) * 10.f;
+
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
+      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
 
       vw.predict(examples);
 
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
-      action_space->explore._generate_A(examples);
-      action_space->explore.generate_Y(examples);
-      action_space->explore.generate_B(examples);
-      action_space->explore.generate_Z(examples);
+      action_space->explore.shrink_fact_config.calculate_shrink_factor(
+          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+      VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
+      action_space->explore.impl.generate_Y(examples, action_space->explore.shrink_factors);
+      action_space->explore.impl.generate_B(examples, action_space->explore.shrink_factors);
+      VW::cb_explore_adf::generate_Z(examples, action_space->explore.impl.Z, action_space->explore.impl.B, d, seed);
 
       Eigen::MatrixXf P(d, d);
-
-      uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
 
       for (size_t row = 0; row < d; row++)
       {
         for (size_t col = 0; col < d; col++)
         {
-          auto combined_index = row + col + seed;
+          auto combined_index = row + col + static_cast<uint64_t>(seed);
           auto mm = merand48_boxmuller(combined_index);
           P(row, col) = mm;
         }
       }
 
-      Eigen::MatrixXf Zp = action_space->explore.B * P;
+      Eigen::MatrixXf Zp = action_space->explore.impl.B * P;
       VW::gram_schmidt(Zp);
-      BOOST_CHECK_EQUAL(Zp.isApprox(action_space->explore.Z), true);
+      BOOST_CHECK_EQUAL(Zp.isApprox(action_space->explore.impl.Z), true);
       vw.finish_example(examples);
     }
 
@@ -628,80 +455,137 @@ BOOST_AUTO_TEST_CASE(check_B_times_P_is_Z)
   }
 }
 
+template <typename T>
+void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
+    VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<T,
+        VW::cb_explore_adf::one_rank_spanner_state>>* action_space,
+    bool apply_diag_M, std::vector<Eigen::Triplet<float>> _triplets, uint64_t d)
+{
+  BOOST_CHECK_EQUAL(action_space != nullptr, true);
+
+  {
+    VW::multi_ex examples;
+
+    examples.push_back(VW::read_example(vw, "|f 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "|f a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "|f a_4:0.8 a_5:0.32 a_6:0.15"));
+    action_space->explore._populate_all_testing_components();
+
+    vw.predict(examples);
+
+    action_space->explore.shrink_fact_config.calculate_shrink_factor(
+        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+    action_space->explore.randomized_SVD(examples);
+
+    VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
+    {
+      Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._A);
+      auto rank = lu_decomp.rank();
+      // for test set actual rank of A
+      action_space->explore._test_only_set_rank(rank);
+      // should have a rank larger than 1 for the test
+      BOOST_CHECK_GT(rank, 1);
+    }
+
+    vw.predict(examples);
+
+    action_space->explore.shrink_fact_config.calculate_shrink_factor(
+        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+    action_space->explore.randomized_SVD(examples);
+
+    auto num_actions = examples.size();
+
+    // U dimensions should be K x d
+    BOOST_CHECK_EQUAL(action_space->explore.U.rows(), num_actions);
+    BOOST_CHECK_EQUAL(action_space->explore.U.cols(), d);
+
+    // truncated randomized SVD reconstruction
+    for (int i = 0; i < action_space->explore.U.cols(); ++i)
+    {
+      BOOST_CHECK_SMALL(1.f - action_space->explore.U.col(i).norm(), FLOAT_TOL);
+      for (int j = 0; j < i; ++j)
+      { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
+    }
+
+    for (int i = 0; i < action_space->explore._V.cols(); ++i)
+    {
+      BOOST_CHECK_SMALL(1.f - action_space->explore._V.col(i).norm(), FLOAT_TOL);
+      for (int j = 0; j < i; ++j)
+      { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
+    }
+
+    Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
+
+    if (apply_diag_M)
+    {
+      for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+      { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
+    }
+    else
+    {
+      diag_M.setIdentity();
+    }
+
+    BOOST_CHECK_SMALL(
+        ((diag_M * action_space->explore._A) -
+            action_space->explore.U * action_space->explore.S.asDiagonal() * action_space->explore._V.transpose())
+            .norm(),
+        FLOAT_TOL);
+
+    // compare singular values with actual SVD singular values
+    Eigen::MatrixXf A_dense = diag_M * action_space->explore._A;
+    Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::VectorXf S = svd.singularValues();
+
+    for (size_t i = 0; i < action_space->explore.S.rows(); i++)
+    { BOOST_CHECK_SMALL(S(i) - action_space->explore.S(i), FLOAT_TOL); }
+
+    vw.finish_example(examples);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
 {
   auto d = 3;
 
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_wo_interactions = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+  std::vector<std::tuple<VW::workspace*, bool, VW::cb_explore_adf::implementation_type>> vws;
+  auto* vw_wo_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_wo_interactions, false});
+  vws.emplace_back(vw_wo_interactions, false, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
-  auto* vw_w_interactions = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q ::",
+  auto* vw_w_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 -q :: --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_w_interactions, false});
+  vws.emplace_back(vw_w_interactions, false, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
-  auto* vw_wo_interactions_sq =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
+  auto* vw_wo_interactions_sq = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
+
+  vws.emplace_back(vw_wo_interactions_sq, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
+
+  auto* vw_w_interactions_sq = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
+
+  vws.emplace_back(vw_w_interactions_sq, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
+
+  auto* vw_w_interactions_sq_sparse_weights =
+      VW::initialize("--cb_explore_adf --squarecb --sparse_weights --large_action_space --max_actions " +
+              std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
           nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_wo_interactions_sq, true});
-
-  auto* vw_w_interactions_sq =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 -q ::",
-          nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_w_interactions_sq, true});
-
-  auto* vw_w_interactions_sq_sparse_weights = VW::initialize(
-      "--cb_explore_adf --squarecb --sparse_weights --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q ::",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_w_interactions_sq_sparse_weights, true});
+  vws.emplace_back(vw_w_interactions_sq_sparse_weights, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
+    std::vector<Eigen::Triplet<float>> _triplets;
     auto apply_diag_M = std::get<1>(vw_pair);
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 |f a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
+    auto impl_type = std::get<2>(vw_pair);
 
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
@@ -711,87 +595,17 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-
-    BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
+    if (impl_type == VW::cb_explore_adf::implementation_type::two_pass_svd)
     {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "|f 1 2 3"));
-      examples.push_back(VW::read_example(vw, "|f a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "|f a_4 a_5 a_6"));
-      action_space->explore._populate_all_SVD_components();
-
-      vw.predict(examples);
-
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
-      action_space->explore.randomized_SVD(examples);
-
-      action_space->explore._generate_A(examples);
-      {
-        Eigen::FullPivLU<Eigen::MatrixXf> lu_decomp(action_space->explore._A);
-        auto rank = lu_decomp.rank();
-        // for test set actual rank of A
-        action_space->explore._set_rank(rank);
-        // should have a rank larger than 1 for the test
-        BOOST_CHECK_GT(rank, 1);
-      }
-
-      vw.predict(examples);
-
-      action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
-      action_space->explore.randomized_SVD(examples);
-
-      auto num_actions = examples.size();
-
-      // U dimensions should be K x d
-      BOOST_CHECK_EQUAL(action_space->explore.U.rows(), num_actions);
-      BOOST_CHECK_EQUAL(action_space->explore.U.cols(), d);
-
-      // truncated randomized SVD reconstruction
-      for (int i = 0; i < action_space->explore.U.cols(); ++i)
-      {
-        BOOST_CHECK_SMALL(1.f - action_space->explore.U.col(i).norm(), FLOAT_TOL);
-        for (int j = 0; j < i; ++j)
-        { BOOST_CHECK_SMALL(action_space->explore.U.col(i).dot(action_space->explore.U.col(j)), FLOAT_TOL); }
-      }
-
-      for (int i = 0; i < action_space->explore._V.cols(); ++i)
-      {
-        BOOST_CHECK_SMALL(1.f - action_space->explore._V.col(i).norm(), FLOAT_TOL);
-        for (int j = 0; j < i; ++j)
-        { BOOST_CHECK_SMALL(action_space->explore._V.col(i).dot(action_space->explore._V.col(j)), FLOAT_TOL); }
-      }
-
-      Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
-
-      if (apply_diag_M)
-      {
-        for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
-        { diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i]; }
-      }
-      else
-      {
-        diag_M.setIdentity();
-      }
-
-      BOOST_CHECK_SMALL(
-          ((diag_M * action_space->explore._A) -
-              action_space->explore.U * action_space->explore._S.asDiagonal() * action_space->explore._V.transpose())
-              .norm(),
-          FLOAT_TOL);
-
-      // compare singular values with actual SVD singular values
-      Eigen::MatrixXf A_dense = diag_M * action_space->explore._A;
-      Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
-      Eigen::VectorXf S = svd.singularValues();
-
-      for (size_t i = 0; i < action_space->explore._S.rows(); i++)
-      { BOOST_CHECK_SMALL(S(i) - action_space->explore._S(i), FLOAT_TOL); }
-
-      vw.finish_example(examples);
+      auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
+      check_final_truncated_SVD_validity_impl<VW::cb_explore_adf::two_pass_svd_impl>(
+          vw, action_space, apply_diag_M, _triplets, d);
     }
+    else
+    {
+      BOOST_FAIL("test for implementation type not implemented");
+    }
+
     VW::finish(vw);
   }
 }
@@ -800,16 +614,15 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
+  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+          " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_epsilon, false});
 
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
-          nullptr, false, nullptr, nullptr);
+  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
+          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
+      nullptr, false, nullptr, nullptr);
 
   vws.push_back({vw_squarecb, true});
 
@@ -832,9 +645,9 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
 
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
+    examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
+    examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+    examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
     examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9"));
     examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
     examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
@@ -846,7 +659,8 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
 
     BOOST_CHECK_EQUAL(num_actions, 7);
 
-    action_space->explore.calculate_shrink_factor(examples[0]->pred.a_s);
+    action_space->explore.shrink_fact_config.calculate_shrink_factor(
+        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
     Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
     Eigen::SparseMatrix<float> identity_diag_M(num_actions, num_actions);
@@ -866,354 +680,4 @@ BOOST_AUTO_TEST_CASE(check_shrink_factor)
   }
 }
 
-BOOST_AUTO_TEST_CASE(check_finding_max_volume)
-{
-  auto d = 3;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
-      nullptr, false, nullptr, nullptr);
-  VW::cb_explore_adf::cb_explore_adf_large_action_space largecb(
-      /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw);
-  largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
-  Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
-
-  auto p = largecb.find_max_volume(0, X);
-  BOOST_CHECK_SMALL(p.first - 30, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(p.second, 2);
-
-  p = largecb.find_max_volume(1, X);
-  BOOST_CHECK_SMALL(p.first - 27, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(p.second, 4);
-
-  p = largecb.find_max_volume(2, X);
-  BOOST_CHECK_SMALL(p.first - 24, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(p.second, 5);
-
-  VW::finish(vw);
-}
-
-BOOST_AUTO_TEST_CASE(check_spanner_results_squarecb)
-{
-  auto d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-
-  auto* vw_full_preds =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
-          nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_full_preds, true});
-
-  auto* vw_sparse_preds = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_sparse_preds, false});
-
-  for (auto& vw_pair : vws)
-  {
-    auto& vw = *std::get<0>(vw_pair);
-    auto full_preds = std::get<1>(vw_pair);
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
-    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
-
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-    BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-      vw.predict(examples);
-
-      const auto num_actions = examples.size();
-      const auto& preds = examples[0]->pred.a_s;
-
-      // Only d actions have non-zero scores.
-      if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else
-      {
-        BOOST_CHECK_EQUAL(preds.size(), d);
-      }
-      BOOST_CHECK_SMALL(preds[0].score - 0.697270989f, FLOAT_TOL);
-      BOOST_CHECK_EQUAL(preds[0].action, 1);
-
-      BOOST_CHECK_SMALL(preds[1].score - 0.30272904f, FLOAT_TOL);
-      BOOST_CHECK_EQUAL(preds[1].action, 2);
-
-      if (full_preds)
-      {
-        BOOST_CHECK_SMALL(preds[2].score, FLOAT_TOL);
-        BOOST_CHECK_EQUAL(preds[2].action, 0);
-      }
-
-      vw.finish_example(examples);
-    }
-    VW::finish(vw);
-  }
-}
-
-BOOST_AUTO_TEST_CASE(check_spanner_results_epsilon_greedy)
-{
-  auto d = 2;
-  float epsilon = 0.2f;
-
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-
-  auto* vw_full_preds = VW::initialize("--cb_explore_adf --epsilon " + std::to_string(epsilon) +
-          " --large_action_space --full_predictions --max_actions " + std::to_string(d) + " --quiet --random_seed 5",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_full_preds, true});
-
-  auto* vw_sparse_preds = VW::initialize("--cb_explore_adf --epsilon " + std::to_string(epsilon) +
-          " --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 5",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_sparse_preds, false});
-
-  for (auto& vw_pair : vws)
-  {
-    auto& vw = *std::get<0>(vw_pair);
-    auto full_preds = std::get<1>(vw_pair);
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
-
-      vw.learn(examples);
-      vw.finish_example(examples);
-    }
-
-    std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
-    if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
-
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-    auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-    BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-      vw.predict(examples);
-
-      const auto num_actions = examples.size();
-      const auto& preds = examples[0]->pred.a_s;
-      // Only d actions have non-zero scores.
-      if (full_preds) { BOOST_CHECK_EQUAL(preds.size(), num_actions); }
-      else
-      {
-        BOOST_CHECK_EQUAL(preds.size(), d);
-      }
-
-      size_t num_actions_non_zeroed = d;
-      float epsilon_ur = epsilon / num_actions_non_zeroed;
-      BOOST_CHECK_SMALL(preds[0].score - (epsilon_ur + (1.f - epsilon)), FLOAT_TOL);
-      BOOST_CHECK_EQUAL(preds[0].action, 2);
-
-      BOOST_CHECK_SMALL(preds[1].score - epsilon_ur, FLOAT_TOL);
-      BOOST_CHECK_EQUAL(preds[1].action, 0);
-
-      if (full_preds)
-      {
-        BOOST_CHECK_SMALL(preds[2].score, FLOAT_TOL);
-        BOOST_CHECK_EQUAL(preds[2].action, 1);
-      }
-
-      vw.finish_example(examples);
-    }
-    VW::finish(vw);
-  }
-}
-
-BOOST_AUTO_TEST_CASE(check_uniform_probabilities_before_learning)
-{
-  auto d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_epsilon, false});
-
-  auto* vw_squarecb =
-      VW::initialize("--cb_explore_adf --squarecb --large_action_space --full_predictions --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5",
-          nullptr, false, nullptr, nullptr);
-
-  vws.push_back({vw_squarecb, true});
-
-  for (auto& vw_pair : vws)
-  {
-    auto& vw = *std::get<0>(vw_pair);
-    auto apply_diag_M = std::get<1>(vw_pair);
-
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-    {
-      VW::multi_ex examples;
-
-      examples.push_back(VW::read_example(vw, "| 1 2 3"));
-      examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-      examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-      learner->predict(examples);
-
-      const auto num_actions = examples.size();
-      const auto& preds = examples[0]->pred.a_s;
-      BOOST_CHECK_EQUAL(preds.size(), num_actions);
-      for (const auto& pred : preds) { BOOST_CHECK_SMALL(pred.score - (1.f / 3.f), FLOAT_TOL); }
-
-      vw.finish_example(examples);
-    }
-    VW::finish(vw);
-  }
-}
-
-BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
-{
-  auto d = 3;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --full_predictions --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5",
-      nullptr, false, nullptr, nullptr);
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-    vw.learn(examples);
-    vw.finish_example(examples);
-  }
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-    vw.learn(examples);
-    vw.finish_example(examples);
-  }
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4 a_5 a_6"));
-
-    vw.learn(examples);
-    vw.finish_example(examples);
-  }
-
-  std::vector<std::string> e_r;
-  vw.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-  { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
-
-  VW::LEARNER::multi_learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
-
-  auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
-  BOOST_CHECK_EQUAL(action_space != nullptr, true);
-
-  {
-    VW::multi_ex examples;
-
-    examples.push_back(VW::read_example(vw, "| 1 2 3"));
-    examples.push_back(VW::read_example(vw, "| a_1 a_2 a_3"));
-    examples.push_back(VW::read_example(vw, "| a_4 a_5 a_6"));
-
-    vw.predict(examples);
-
-    const auto num_actions = examples.size();
-    const auto& preds = examples[0]->pred.a_s;
-    BOOST_CHECK_EQUAL(preds.size(), num_actions);
-    BOOST_CHECK_SMALL(preds[0].score - 0.966666639f, FLOAT_TOL);
-    BOOST_CHECK_SMALL(preds[1].score - 0.0166666675f, FLOAT_TOL);
-    BOOST_CHECK_SMALL(preds[2].score - 0.0166666675f, FLOAT_TOL);
-
-    vw.finish_example(examples);
-  }
-  VW::finish(vw);
-}
+BOOST_AUTO_TEST_SUITE_END()

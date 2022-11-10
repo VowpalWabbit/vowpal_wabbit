@@ -159,7 +159,7 @@ def do_test(filename, args, verbose=None, repeat_args=None, known_failure=False)
 if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.add_option("--filename", default="train-sets/rcv1_small.dat")
-    parser.add_option("--vw", default="../vowpalwabbit/vw")
+    parser.add_option("--vw", default="../build/vowpalwabbit/cli/vw")
     parser.add_option("--no_repeat_args", action="store_true")
     parser.add_option("--verbose", action="store_true")
     parser.add_option("--verbose_on_fail", action="store_true")

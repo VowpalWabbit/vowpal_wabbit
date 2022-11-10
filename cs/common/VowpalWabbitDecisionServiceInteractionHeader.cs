@@ -8,6 +8,8 @@
 
 namespace VW
 {
+    
+
     /// <summary>
     /// Decision Service interaction header information.
     /// </summary>

@@ -743,7 +743,7 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = ../vowpalwabbit ../explore
+INPUT                  = ../vowpalwabbit/allreduce/include ../vowpalwabbit/common/include ../vowpalwabbit/config/include ../vowpalwabbit/core/include ../vowpalwabbit/csv_parser/include ../vowpalwabbit/explore/include ../vowpalwabbit/fb_parser/include ../vowpalwabbit/io/include ../vowpalwabbit/spanning_tree/include
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

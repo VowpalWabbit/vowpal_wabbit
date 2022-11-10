@@ -6,14 +6,16 @@
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/config/options.h"
+#include "vw/core/global_data.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/vw_fwd.h"
 
 using namespace VW::details;
 
 // Used in parse_source
-struct input_options
+class input_options
 {
+public:
   bool daemon;
   bool foreground;
   uint32_t port;
@@ -28,9 +30,8 @@ struct input_options
   bool compressed;
   bool chain_hash_json;
   bool flatbuffer = false;
-#ifdef BUILD_EXTERNAL_PARSER
-  // pointer because it is an incomplete type
-  std::unique_ptr<VW::external::parser_options> ext_opts;
+#ifdef VW_BUILD_CSV
+  std::unique_ptr<VW::parsers::csv_parser_options> csv_opts;
 #endif
 };
 

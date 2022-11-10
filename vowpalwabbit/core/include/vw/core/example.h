@@ -4,22 +4,22 @@
 
 #pragma once
 
-#include "active_multiclass_prediction.h"
-#include "ccb_label.h"
-#include "decision_scores.h"
-#include "simple_label.h"
 #include "vw/core/action_score.h"
+#include "vw/core/active_multiclass_prediction.h"
 #include "vw/core/cache.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/ccb_label.h"
 #include "vw/core/constant.h"
 #include "vw/core/cost_sensitive.h"
+#include "vw/core/decision_scores.h"
 #include "vw/core/example_predict.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
 #include "vw/core/no_label.h"
 #include "vw/core/prob_dist_cont.h"
+#include "vw/core/simple_label.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/v_array.h"
 
@@ -28,29 +28,31 @@
 
 namespace VW
 {
-struct workspace;
+class workspace;
 }
 namespace VW
 {
 void copy_example_data(example* dst, const example* src);
 void setup_example(VW::workspace& all, example* ae);
 
-struct polylabel
+class polylabel
 {
-  no_label::no_label empty = static_cast<char>(0);
-  label_data simple;
-  MULTICLASS::label_t multi;
-  COST_SENSITIVE::label cs;
+public:
+  VW::no_label empty = static_cast<char>(0);
+  VW::simple_label simple;
+  VW::multiclass_label multi;
+  VW::cs_label cs;
   CB::label cb;
   VW::cb_continuous::continuous_label cb_cont;
-  CCB::label conditional_contextual_bandit;
+  VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
 };
 
-struct polyprediction
+class polyprediction
 {
+public:
   polyprediction() = default;
   ~polyprediction() = default;
 
@@ -61,8 +63,8 @@ struct polyprediction
   polyprediction& operator=(const polyprediction&) = delete;
 
   float scalar = 0.f;
-  VW::v_array<float> scalars;       // a sequence of scalar predictions
-  ACTION_SCORE::action_scores a_s;  // a sequence of classes with scores.  Also used for probabilities.
+  VW::v_array<float> scalars;  // a sequence of scalar predictions
+  VW::action_scores a_s;       // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
   uint32_t multiclass = 0;
   MULTILABEL::labels multilabels;
@@ -73,10 +75,11 @@ struct polyprediction
   char nopred = static_cast<char>(0);
 };
 
-std::string to_string(const v_array<float>& scalars, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+std::string to_string(const v_array<float>& scalars, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
 
-struct example : public example_predict  // core example datatype.
+class example : public example_predict  // core example datatype.
 {
+public:
   example() = default;
   ~example();
 
@@ -94,9 +97,6 @@ struct example : public example_predict  // core example datatype.
   float weight = 1.f;     // a relative importance weight for the example, default = 1
   VW::v_array<char> tag;  // An identifier for the example.
   size_t example_counter = 0;
-#ifdef PRIVACY_ACTIVATION
-  uint64_t tag_hash;  // Storing the hash of the tag for privacy preservation learning
-#endif
 
   // helpers
   size_t num_features = 0;  // precomputed, cause it's fast&easy.
@@ -126,26 +126,26 @@ struct example : public example_predict  // core example datatype.
   void reset_total_sum_feat_sq()
   {
     total_sum_feat_sq = 0.f;
-    total_sum_feat_sq_calculated = false;
+    _total_sum_feat_sq_calculated = false;
   }
 
   friend void VW::copy_example_data(example* dst, const example* src);
   friend void VW::setup_example(VW::workspace& all, example* ae);
 
 private:
-  bool total_sum_feat_sq_calculated = false;
-  bool use_permutations = false;
+  bool _total_sum_feat_sq_calculated = false;
+  bool _use_permutations = false;
 };
 
-struct workspace;
+class workspace;
 
-struct flat_example
+class flat_example
 {
+public:
   polylabel l;
-  reduction_features _reduction_features;
+  reduction_features ex_reduction_features;
 
-  size_t tag_len;
-  char* tag;  // An identifier for the example.
+  VW::v_array<char> tag;  // An identifier for the example.
 
   size_t example_counter;
   uint64_t ft_offset;
@@ -166,17 +166,24 @@ inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
 inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 {
-  if (ec.passthrough) { ec.passthrough->push_back(x, (FNV_prime * magic) ^ i); }
+  if (ec.passthrough) { ec.passthrough->push_back(x, (VW::details::FNV_PRIME * magic) ^ i); }
 }
 
-#define add_passthrough_feature(ec, i, x) \
+#define ADD_PASSTHROUGH_FEATURE(ec, i, x) \
   VW::add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
-
-using multi_ex = std::vector<example*>;
 
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
 using example_factory_t = example& (*)(void*);
+
+namespace details
+{
+void append_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
+
+void append_example_namespaces_from_example(VW::example& target, const VW::example& source);
+void truncate_example_namespaces_from_example(VW::example& target, const VW::example& source);
+}  // namespace details
 
 namespace model_utils
 {

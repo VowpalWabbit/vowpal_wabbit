@@ -1,24 +1,60 @@
+# 3.11+ is required to use add_jar
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+
 # make sure it works with OpenJDK
 set(JAVA_AWT_LIBRARY NotNeeded)
 set(JAVA_JVM_LIBRARY NotNeeded)
 
 find_package(JNI REQUIRED)
+find_package(Java)
+include(UseJava)
+
+# This jar is just to make use of the GENERATE_NATIVE_HEADERS functionality.
+# The vw_jni_generate_native_headers_do_not_use_jar.jar itself should not be used in any way.
+add_jar(vw_jni_generate_native_headers_do_not_use_jar
+SOURCES
+  src/main/java/common/Native.java
+  src/main/java/org/vowpalwabbit/spark/ClusterSpanningTree.java
+  src/main/java/org/vowpalwabbit/spark/prediction
+  src/main/java/org/vowpalwabbit/spark/prediction/ScalarPrediction.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitArguments.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitExample.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitMurmur.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitNative.java
+  src/main/java/org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics.java
+  src/main/java/vowpalWabbit/learner/package-info.java
+  src/main/java/vowpalWabbit/learner/VWActionProbsLearner.java
+  src/main/java/vowpalWabbit/learner/VWActionScoresLearner.java
+  src/main/java/vowpalWabbit/learner/VWBase.java
+  src/main/java/vowpalWabbit/learner/VWCCBLearner.java
+  src/main/java/vowpalWabbit/learner/VWFloatLearner.java
+  src/main/java/vowpalWabbit/learner/VWIntLearner.java
+  src/main/java/vowpalWabbit/learner/VWLearner.java
+  src/main/java/vowpalWabbit/learner/VWLearnerBase.java
+  src/main/java/vowpalWabbit/learner/VWLearners.java
+  src/main/java/vowpalWabbit/learner/VWMulticlassLearner.java
+  src/main/java/vowpalWabbit/learner/VWMultilabelsLearner.java
+  src/main/java/vowpalWabbit/learner/VWProbLearner.java
+  src/main/java/vowpalWabbit/learner/VWScalarLearner.java
+  src/main/java/vowpalWabbit/learner/VWScalarsLearner.java
+  src/main/java/vowpalWabbit/learner/VWTypedLearner.java
+  src/main/java/vowpalWabbit/responses/ActionProb.java
+  src/main/java/vowpalWabbit/responses/ActionProbs.java
+  src/main/java/vowpalWabbit/responses/ActionScore.java
+  src/main/java/vowpalWabbit/responses/ActionScores.java
+  src/main/java/vowpalWabbit/responses/DecisionScores.java
+  src/main/java/vowpalWabbit/responses/Multilabels.java
+  src/main/java/vowpalWabbit/responses/PDF.java
+  src/main/java/vowpalWabbit/responses/PDFSegment.java
+  src/main/java/vowpalWabbit/responses/PDFValue.java
+  src/main/java/vowpalWabbit/VW.java
+GENERATE_NATIVE_HEADERS vw_jni_native_headers)
 
 set(src_base src/main/c++)
 set(vw_jni_headers
   ${src_base}/jni_base_learner.h
-  ${src_base}/vowpalWabbit_learner_VWCCBLearner.h
-  ${src_base}/vowpalWabbit_learner_VWActionProbsLearner.h
-  ${src_base}/vowpalWabbit_learner_VWActionScoresLearner.h
-  ${src_base}/vowpalWabbit_learner_VWLearners.h
-  ${src_base}/vowpalWabbit_learner_VWMulticlassLearner.h
-  ${src_base}/vowpalWabbit_learner_VWMultilabelsLearner.h
-  ${src_base}/vowpalWabbit_learner_VWProbLearner.h
-  ${src_base}/vowpalWabbit_learner_VWScalarLearner.h
-  ${src_base}/vowpalWabbit_learner_VWScalarsLearner.h
   ${src_base}/vowpalWabbit_VW.h
   ${src_base}/jni_spark_vw.h
-  ${src_base}/jni_spark_vw_generated.h
   ${src_base}/util.h
 )
 
@@ -40,7 +76,10 @@ set(vw_jni_sources
 )
 
 add_library(vw_jni SHARED ${vw_jni_headers} ${vw_jni_sources})
-target_link_libraries(vw_jni PUBLIC vw_core vw_spanning_tree)
+target_link_libraries(vw_jni
+  PUBLIC vw_core vw_spanning_tree
+  PRIVATE vw_jni_native_headers
+)
 set_property(TARGET vw_jni PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET vw_jni PROPERTY BUILD_RPATH_USE_ORIGIN ON)
 target_include_directories(vw_jni PUBLIC
@@ -53,14 +92,10 @@ add_custom_command(TARGET vw_jni POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/linux_64/
 )
 
-if(STATIC_LINK_VW_JAVA)
-  target_link_libraries(vw_jni PUBLIC -Wl,--exclude-libs,ALL -static-libgcc -static-libstdc++ -fPIC)
-else()
-  if(${CMAKE_EXECUTABLE_FORMAT} MATCHES "ELF")
-    # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-    # dtags are an ELF feature
-    target_link_libraries(vw_jni PUBLIC -Wl,--enable-new-dtags)
-  endif()
+if(${CMAKE_EXECUTABLE_FORMAT} MATCHES "ELF")
+  # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
+  # dtags are an ELF feature
+  target_link_libraries(vw_jni PUBLIC -Wl,--enable-new-dtags)
 endif()
 
 # Replace version number in POM
@@ -71,27 +106,6 @@ if(NOT WIN32)
   file(MAKE_DIRECTORY target/classes)
   file(MAKE_DIRECTORY target/test-classes)
   file(MAKE_DIRECTORY target/bin/natives/linux_64)
-
-  # Development
-  # - uncomment the following section to generate the jni headers
-  # - it's commented to speed up the build as it's not expected to change frequently
-
-  # find_package(Java)
-  # include(UseJava)
-
-  # add_custom_target(javacompile
-      # COMMAND mvn compile
-      # WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      # COMMENT "Compile classes for javah")
-
-  # create_javah(TARGET javaheaders
-  #   CLASSES
-  #     org.vowpalwabbit.spark.VowpalWabbitNative
-  #     org.vowpalwabbit.spark.VowpalWabbitExample
-  #     org.vowpalwabbit.spark.ClusterSpanningTree
-  #   CLASSPATH ${CMAKE_CURRENT_SOURCE_DIR}/target/classes
-  #   OUTPUT_NAME ${CMAKE_CURRENT_SOURCE_DIR}/src/main/c++/jni_spark_vw_generated.h)
-  # add_dependencies(javaheaders javacompile)
 
   if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(JAVA_INSTALL_PATH /Library/Java/Extensions)

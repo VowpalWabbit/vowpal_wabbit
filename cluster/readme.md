@@ -67,7 +67,7 @@ hadoop jar $HADOOP_HOME/hadoop-streaming.jar \
 
 where `<output>` is the directory on HDFS where you want the trained
 model to be saved. The trained model is saved to the file
-`<output>/model` on HDFS and can be retreived by `hadoop -get`.
+`<output>/model` on HDFS and can be retrieved by `hadoop -get`.
 
 To modify the arguments to VW, edit the script `runvw.sh`. Arguments to
 hadoop can be directly added in the hadoop streaming command.

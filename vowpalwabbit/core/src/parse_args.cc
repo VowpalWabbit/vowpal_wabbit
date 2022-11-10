@@ -34,6 +34,7 @@
 #include "vw/core/reductions/metrics.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/text_utils.h"
+#include "vw/core/version.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_allreduce.h"
 #include "vw/core/vw_validate.h"
@@ -53,34 +54,35 @@
 #include <sstream>
 #include <tuple>
 #include <utility>
-
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_binary.h"
+#ifdef VW_BUILD_CSV
+#  include "vw/csv_parser/parse_example_csv.h"
 #endif
 
 using std::endl;
 using namespace VW::config;
 
-uint64_t hash_file_contents(VW::io::reader* f)
+uint64_t hash_file_contents(VW::io::reader* file_reader)
 {
-  uint64_t v = 5289374183516789128;
-  char buf[1024];
+  uint64_t hash = 5289374183516789128;
+  static const uint64_t BUFFER_SIZE = 1024;
+  char buf[BUFFER_SIZE];
   while (true)
   {
-    ssize_t n = f->read(buf, 1024);
-    if (n <= 0) { break; }
-    for (ssize_t i = 0; i < n; i++)
+    ssize_t bytes_read = file_reader->read(buf, BUFFER_SIZE);
+    if (bytes_read <= 0) { break; }
+    for (ssize_t i = 0; i < bytes_read; i++)
     {
-      v *= 341789041;
-      v += static_cast<uint64_t>(buf[i]);
+      if (buf[i] == '\r') { continue; }
+      hash *= 341789041;
+      hash += static_cast<uint64_t>(buf[i]);
     }
   }
-  return v;
+  return hash;
 }
 
 bool directory_exists(const std::string& path)
 {
-  struct stat info;
+  class stat info;
   if (stat(path.c_str(), &info) != 0) { return false; }
   else
   {
@@ -141,8 +143,10 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
 
   if (!all.quiet)
   {
-    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << file_name << "', hash=" << std::hex << fd_hash
-                         << std::dec << endl;
+    std::string out_file_name = file_name;
+    std::replace(out_file_name.begin(), out_file_name.end(), '\\', '/');
+    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << out_file_name << "', hash=" << std::hex
+                         << fd_hash << std::dec << endl;
   }
 
   // see if we've already read this dictionary
@@ -321,7 +325,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   if (help)
   {
     all.quiet = true;
-    all.logger.set_level(VW::io::log_level::off);
+    all.logger.set_level(VW::io::log_level::OFF_LEVEL);
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
     // results in the ostream not outputting anything.
@@ -334,7 +338,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
   {
-    std::cout << VW::version.to_string() << " (git commit: " << VW::git_commit << ")\n";
+    std::cout << VW::VERSION.to_string() << " (git commit: " << VW::GIT_COMMIT << ")\n";
     exit(0);
   }
 
@@ -409,8 +413,9 @@ input_options parse_source(VW::workspace& all, options_i& options)
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("Data file will be interpreted as a flatbuffer file")
                .experimental());
-#ifdef BUILD_EXTERNAL_PARSER
-  VW::external::parser::set_parse_args(input_options, parsed_options);
+#ifdef VW_BUILD_CSV
+  parsed_options.csv_opts = VW::make_unique<VW::parsers::csv_parser_options>();
+  VW::parsers::csv_parser::set_parse_args(input_options, *parsed_options.csv_opts.get());
 #endif
 
   options.add_and_parse(input_options);
@@ -454,12 +459,16 @@ input_options parse_source(VW::workspace& all, options_i& options)
     *(all.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
+#ifdef VW_BUILD_CSV
+  VW::parsers::csv_parser::handle_parse_args(*parsed_options.csv_opts.get());
+#endif
+
   return parsed_options;
 }
 
 namespace VW
 {
-const char* are_features_compatible(VW::workspace& vw1, VW::workspace& vw2)
+const char* are_features_compatible(const VW::workspace& vw1, const VW::workspace& vw2)
 {
   if (vw1.example_parser->hasher != vw2.example_parser->hasher) { return "hasher"; }
 
@@ -572,7 +581,7 @@ std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::st
             "A wildcard term in --experimental_full_name_interactions cannot contain characters other than ':'. Found: "
             << token)
       }
-      result.emplace_back(wildcard_namespace, wildcard_namespace);
+      result.emplace_back(VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE);
     }
     else
     {
@@ -611,14 +620,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   option_group_definition feature_options("Feature");
   feature_options
-#ifdef PRIVACY_ACTIVATION
-      .add(make_option("privacy_activation", all.privacy_activation)
-               .help("turns on aggregated weight exporting when the unique feature tags cross "
-                     "`privacy_activation_threshold`"))
-      .add(make_option("privacy_activation_threshold", all.privacy_activation_threshold)
-               .help("takes effect when `privacy_activation` is turned on and is the number of unique tag hashes a "
-                     "weight needs to see before it is exported"))
-#endif
       .add(make_option("hash", hash_function)
                .default_value("strings")
                .keep()
@@ -643,7 +644,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                      "wildcard in S.")
                .keep())
       .add(make_option("bit_precision", new_bits).short_name("b").help("Number of bits in the feature table"))
-      .add(make_option("noconstant", noconstant).help("Don't add a constant feature"))
+      .add(make_option("noconstant", noconstant).keep().help("Don't add a constant feature"))
       .add(make_option("constant", all.initial_constant)
                .default_value(0.f)
                .short_name("C")
@@ -682,12 +683,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
                      "duplicate: '-q ab -q ba' and a lot more in '-q ::'."))
       .add(make_option("quadratic", quadratics).short_name("q").keep().help("Create and use quadratic features"))
-      .add(make_option("cubic", cubics).keep().help("Create and use cubic features"))
-      .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
+      .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
+
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.example_parser->hasher = getHasher(hash_function);
+  all.example_parser->hasher = get_hasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -861,7 +862,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
   }
 
-  for (size_t i = 0; i < NUM_NAMESPACES; i++)
+  for (size_t i = 0; i < VW::NUM_NAMESPACES; i++)
   {
     all.ignore[i] = false;
     all.ignore_linear[i] = false;
@@ -882,7 +883,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "ignoring namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (all.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -903,7 +904,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (all.ignore_linear[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -932,7 +933,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.ignore[i] = true; }
+    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.ignore[i] = true; }
 
     all.ignore_some = true;
 
@@ -945,7 +946,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet)
     {
       *(all.trace_message) << "using namespaces beginning with:";
-      for (size_t i = 0; i < NUM_NAMESPACES; ++i)
+      for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
         if (!all.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
       }
@@ -959,7 +960,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   if (options.was_supplied("redefine"))
   {
     // initial values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < NUM_NAMESPACES; i++) { all.redefine[i] = static_cast<unsigned char>(i); }
+    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.redefine[i] = static_cast<unsigned char>(i); }
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -1018,7 +1019,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t j = 0; j < NUM_NAMESPACES; j++) { all.redefine[j] = new_namespace; }
+            for (size_t j = 0; j < VW::NUM_NAMESPACES; j++) { all.redefine[j] = new_namespace; }
             break;  // break processing S
           }
         }
@@ -1038,31 +1039,31 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (directory_exists(".")) { all.dictionary_path.emplace_back("."); }
 
 #if _WIN32
-    std::string PATH;
+    std::string path_env_var;
     char* buf;
     size_t buf_size;
     auto err = _dupenv_s(&buf, &buf_size, "PATH");
     if (!err && buf_size != 0)
     {
-      PATH = std::string(buf, buf_size);
+      path_env_var = std::string(buf, buf_size);
       free(buf);
     }
     const char delimiter = ';';
 #else
-    const std::string PATH = getenv("PATH");
+    const std::string path_env_var = getenv("PATH");
     const char delimiter = ':';
 #endif
-    if (!PATH.empty())
+    if (!path_env_var.empty())
     {
       size_t previous = 0;
-      size_t index = PATH.find(delimiter);
+      size_t index = path_env_var.find(delimiter);
       while (index != std::string::npos)
       {
-        all.dictionary_path.push_back(PATH.substr(previous, index - previous));
+        all.dictionary_path.push_back(path_env_var.substr(previous, index - previous));
         previous = index + 1;
-        index = PATH.find(delimiter, previous);
+        index = path_env_var.find(delimiter, previous);
       }
-      all.dictionary_path.push_back(PATH.substr(previous));
+      all.dictionary_path.push_back(path_env_var.substr(previous));
     }
   }
 
@@ -1197,10 +1198,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
         << loss_function);
   }
 
-  if (loss_function_accepts_quantile_tau)
-  {
-    all.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
-  }
+  if (loss_function_accepts_quantile_tau) { all.loss = get_loss_function(all, loss_function, quantile_loss_parameter); }
   else if (loss_function_accepts_expectile_q)
   {
     if (expectile_loss_parameter <= 0.0f || expectile_loss_parameter > 0.5f)
@@ -1403,16 +1401,15 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
 {
   auto* wrapper_context = reinterpret_cast<trace_message_wrapper*>(context);
   const std::string str(buffer, num_bytes);
-  wrapper_context->_trace_message(wrapper_context->_inner_context, str);
+  wrapper_context->trace_message(wrapper_context->inner_context, str);
   return static_cast<ssize_t>(num_bytes);
 }
 
 std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_deleter_type> options,
-    trace_message_t trace_listener, void* trace_context, VW::io::logger_output_func_t logger_output_func = nullptr,
-    void* logger_output_func_context = nullptr)
+    trace_message_t trace_listener, void* trace_context, VW::io::logger* custom_logger)
 {
-  auto logger = logger_output_func != nullptr
-      ? VW::io::create_custom_sink_logger(logger_output_func_context, logger_output_func)
+  auto logger = custom_logger != nullptr
+      ? *custom_logger
       : (trace_listener != nullptr ? VW::io::create_custom_sink_logger_legacy(trace_context, trace_listener)
                                    : VW::io::create_default_logger());
 
@@ -1460,7 +1457,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   logger.set_location(location);
 
   // Don't print warning if a custom log output trace_listener is supplied.
-  if (trace_listener == nullptr && location == VW::io::output_location::compat)
+  if (trace_listener == nullptr && location == VW::io::output_location::COMPAT)
   { logger.err_warn("'compat' mode for --log_output is deprecated and will be removed in a future release."); }
 
   if (options->was_supplied("limit_output") && (upper_limit != 0))
@@ -1532,7 +1529,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   }
 
   all->example_parser = new parser{final_example_queue_limit, strict_parse};
-  all->example_parser->_shared_data = all->sd;
+  all->example_parser->shared_data_obj = all->sd;
 
   option_group_definition weight_args("Weight");
   weight_args
@@ -1575,8 +1572,8 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
 
   if (all->options->was_supplied("span_server"))
   {
-    all->all_reduce_type = AllReduceType::Socket;
-    all->all_reduce = new AllReduceSockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
+    all->selected_all_reduce_type = VW::all_reduce_type::SOCKET;
+    all->all_reduce = new VW::all_reduce_sockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
         VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
         VW::cast_to_smaller_type<size_t>(node_arg), all->quiet);
   }
@@ -1843,12 +1840,10 @@ VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_m
 
 std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, options_deleter_type> options,
     io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context,
-    VW::io::logger_output_func_t logger_output_func = nullptr, void* logger_output_func_context = nullptr,
-    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
+    VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   // Set up logger as early as possible
-  auto all =
-      parse_args(std::move(options), trace_listener, trace_context, logger_output_func, logger_output_func_context);
+  auto all = parse_args(std::move(options), trace_listener, trace_context, custom_logger);
 
   // if user doesn't pass in a model, read from options
   io_buf local_model;
@@ -1875,7 +1870,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
   catch (VW::save_load_model_exception& e)
   {
     auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all->initial_regressors, ", "));
-    throw save_load_model_exception(e.Filename(), e.LineNumber(), msg);
+    throw save_load_model_exception(e.filename(), e.line_number(), msg);
   }
 
   if (!all->quiet)
@@ -1917,6 +1912,17 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
     std::exit(0);
   }
 
+  if (all->options->was_supplied("automl") && all->options->was_supplied("aml_predict_only_model"))
+  {
+    std::string automl_predict_only_filename =
+        all->options->get_typed_option<std::string>("aml_predict_only_model").value();
+    if (automl_predict_only_filename.empty())
+    { THROW("error: --aml_predict_only_model has to be non-zero string representing filename to write"); }
+
+    finalize_regressor(*all, automl_predict_only_filename);
+    std::exit(0);
+  }
+
   print_enabled_reductions(*all, enabled_reductions);
 
   if (!all->quiet)
@@ -1938,8 +1944,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, op
 
 std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::options_i> options,
     std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
-    void* driver_output_func_context, VW::io::logger_output_func_t logger_output_func, void* logger_output_func_context,
-    std::unique_ptr<VW::setup_base_i> learner_builder)
+    void* driver_output_func_context, VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   auto* released_options = options.release();
   std::unique_ptr<options_i, options_deleter_type> options_custom_deleter(
@@ -1953,8 +1958,7 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
     model->add_file(std::move(model_override_reader));
   }
   return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
-      driver_output_func, driver_output_func_context, logger_output_func, logger_output_func_context,
-      std::move(learner_builder));
+      driver_output_func, driver_output_func_context, custom_logger, std::move(learner_builder));
 }
 
 VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
@@ -1962,8 +1966,8 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
 
     std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
-  return initialize_internal(std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr,
-      nullptr, std::move(learner_builder))
+  return initialize_internal(
+      std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr, std::move(learner_builder))
       .release();
 }
 
@@ -2066,7 +2070,7 @@ VW::workspace* seed_vw_model(
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
-  new_model->example_parser->_shared_data = new_model->sd;
+  new_model->example_parser->shared_data_obj = new_model->sd;
 
   return new_model;
 }

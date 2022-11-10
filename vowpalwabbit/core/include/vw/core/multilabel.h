@@ -4,19 +4,21 @@
 #pragma once
 
 #include "vw/core/label_parser.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/v_array.h"
 
 class io_buf;
 namespace VW
 {
-struct workspace;
-struct example;
+class workspace;
+class example;
 }  // namespace VW
 
 namespace MULTILABEL
 {
-struct labels
+class labels
 {
+public:
   VW::v_array<uint32_t> label_v;
 };
 

@@ -3,14 +3,15 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/allreduce/allreduce_type.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_reporting.h"
 #include "vw/core/input_parser.h"
-#include "vw/core/interactions_predict.h"
-#include "vw/core/metric_sink.h"
+#include "vw/core/interaction_generation_state.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/logger.h"
@@ -36,63 +37,56 @@
 #  include <thread>
 #endif
 
-using weight = float;
-
 using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
-struct shared_data;
+class shared_data;
 
 namespace VW
 {
-struct workspace;
-}
+class workspace;
+
+class all_reduce_base;
+enum class all_reduce_type;
+}  // namespace VW
 
 using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
 
-struct dictionary_info
+class dictionary_info
 {
+public:
   std::string name;
   uint64_t file_hash;
   std::shared_ptr<feature_dict> dict;
 };
 
-class AllReduce;
-enum class AllReduceType;
-
-#ifdef BUILD_EXTERNAL_PARSER
-// forward declarations
 namespace VW
 {
-namespace external
-{
-class parser;
-struct parser_options;
-}  // namespace external
-}  // namespace VW
-#endif
-
-namespace VW
-{
-struct default_reduction_stack_setup;
+class default_reduction_stack_setup;
 namespace parsers
 {
 namespace flatbuffer
 {
 class parser;
 }
+
+#ifdef VW_BUILD_CSV
+class csv_parser;
+class csv_parser_options;
+#endif
 }  // namespace parsers
 }  // namespace VW
 
-struct trace_message_wrapper
+class trace_message_wrapper
 {
-  void* _inner_context;
-  trace_message_t _trace_message;
+public:
+  void* inner_context;
+  trace_message_t trace_message;
 
   trace_message_wrapper(void* context, trace_message_t trace_message)
-      : _inner_context(context), _trace_message(trace_message)
+      : inner_context(context), trace_message(trace_message)
   {
   }
   ~trace_message_wrapper() = default;
@@ -102,31 +96,28 @@ namespace VW
 {
 namespace details
 {
-struct invert_hash_info
+class invert_hash_info
 {
+public:
   std::vector<VW::audit_strings> weight_components;
   uint64_t offset;
   uint64_t stride_shift;
 };
 }  // namespace details
-struct workspace
+class workspace
 {
-private:
-  std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
-
 public:
   shared_data* sd;
 
   parser* example_parser;
   std::thread parse_thread;
 
-  AllReduceType all_reduce_type;
-  AllReduce* all_reduce;
+  all_reduce_type selected_all_reduce_type;
+  all_reduce_base* all_reduce;
 
   bool chain_hash_json = false;
 
-  VW::LEARNER::base_learner* l;         // the top level learner
-  VW::LEARNER::single_learner* scorer;  // a scoring function
+  VW::LEARNER::base_learner* l;  // the top level learner
   VW::LEARNER::base_learner*
       cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
@@ -155,20 +146,10 @@ public:
 
   uint32_t hash_seed;
 
-#ifdef PRIVACY_ACTIVATION
-  bool privacy_activation = false;
-  // this is coupled with the bitset size in array_parameters which needs to be determined at compile time
-  size_t feature_bitset_size = 32;
-  size_t privacy_activation_threshold = 10;
-#endif
-
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 
-#ifdef BUILD_EXTERNAL_PARSER
-  std::unique_ptr<VW::external::parser> external_parser;
-#endif
   // This field is experimental and subject to change.
   // Used to implement the external binary parser.
   std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
@@ -193,7 +174,6 @@ public:
   std::string id;
 
   VW::version_struct model_file_ver;
-  double normalized_sum_norm_x;
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
@@ -279,7 +259,7 @@ public:
   size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
                                         // passes learning a single policy
 
-  INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
+  VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
 
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
@@ -349,6 +329,7 @@ public:
 
 private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
+  std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
 };
 }  // namespace VW
 
@@ -360,6 +341,6 @@ void binary_print_result_by_ref(
 void noop_mm(shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);
 void compile_gram(
-    std::vector<std::string> grams, std::array<uint32_t, NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
-void compile_limits(
-    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool quiet, VW::io::logger& logger);
+    std::vector<std::string> grams, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool quiet,
+    VW::io::logger& logger);

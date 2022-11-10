@@ -10,6 +10,7 @@
 #include "vw/core/interactions_predict.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/reductions/gd.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/vw.h"
 
 #include <array>
@@ -28,8 +29,9 @@ std::ostream& operator<<(std::ostream& os, const std::pair<VW::namespace_index, 
 }
 }  // namespace std
 
-struct eval_gen_data
+class eval_gen_data
 {
+public:
   size_t& new_features_cnt;
   float& new_features_value;
   eval_gen_data(size_t& features_cnt, float& features_value)
@@ -360,7 +362,8 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   {
     auto a = parse_full_name_interactions(*vw, "art|:|and");
     std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
-        extent_term{wildcard_namespace, wildcard_namespace}, extent_term{'a', VW::hash_space(*vw, "and")}};
+        extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE},
+        extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
@@ -418,14 +421,14 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
     VW::finish(*vw);
   });
 
-  INTERACTIONS::generate_interactions_object_cache cache;
+  VW::details::generate_interactions_object_cache cache;
 
   {
     const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info");
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
-        [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
+        [&](const std::vector<VW::details::features_range_t>& combination) {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 2);
         },
@@ -438,7 +441,7 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
-        [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
+        [&](const std::vector<VW::details::features_range_t>& combination) {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 3);
         },
@@ -451,7 +454,7 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
-        [&](const std::vector<INTERACTIONS::features_range_t>& combination) {
+        [&](const std::vector<VW::details::features_range_t>& combination) {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 2);
         },

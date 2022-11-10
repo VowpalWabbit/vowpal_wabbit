@@ -10,8 +10,8 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 Enabled reductions: ftrl-Proximal-FTRL, nn, scorer-identity, csoaa, search_task
-Input label = cs
-Output pred = multiclass
+Input label = CS
+Output pred = MULTICLASS
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 89.000000  89.000000         1  [43:1 5:2 5:2 5:2 1..] [20:9 20:9 20:9 20:..]     0     0       96        0       94  0.000930

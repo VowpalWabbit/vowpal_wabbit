@@ -106,7 +106,7 @@ VW::label_parser cb_label = {
     // test_label
     [](const VW::polylabel& label) { return CB::is_test_label(label.cb); },
     // Label type
-    VW::label_type_t::cb};
+    VW::label_type_t::CB};
 
 bool ec_is_example_header(VW::example const& ec)  // example headers just have "shared"
 {
@@ -121,7 +121,7 @@ std::string known_cost_to_str(const CB::cb_class* known_cost)
   if (known_cost == nullptr) { return " known"; }
 
   std::stringstream label_string;
-  label_string.precision(VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION);
+  label_string.precision(VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION);
   label_string << known_cost->action << ":" << known_cost->cost << ":" << known_cost->probability;
   return label_string.str();
 }
@@ -143,7 +143,7 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
         if (CB::ec_is_example_header(*(*ec_seq)[i]))
         {
           num_features += (ec_seq->size() - 1) *
-              ((*ec_seq)[i]->get_num_features() - (*ec_seq)[i]->feature_space[constant_namespace].size());
+              ((*ec_seq)[i]->get_num_features() - (*ec_seq)[i]->feature_space[VW::details::CONSTANT_NAMESPACE].size());
         }
         else
         {
@@ -164,7 +164,7 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
       if (!ec.pred.a_s.empty())
       {
         pred_buf << fmt::format("{}:{}", ec.pred.a_s[0].action,
-            VW::fmt_float(ec.pred.a_s[0].score, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
+            VW::fmt_float(ec.pred.a_s[0].score, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
       }
       else
       {
@@ -226,7 +226,7 @@ VW::label_parser cb_eval = {
     // test_label
     [](const VW::polylabel& label) { return CB_EVAL::test_label(label.cb_eval); },
     // Label type
-    VW::label_type_t::cb_eval};
+    VW::label_type_t::CB_EVAL};
 
 }  // namespace CB_EVAL
 
@@ -257,7 +257,6 @@ size_t write_model_field(io_buf& io, const CB::cb_class& cbc, const std::string&
 size_t read_model_field(io_buf& io, CB::label& cb)
 {
   size_t bytes = 0;
-  cb.costs.clear();
   bytes += read_model_field(io, cb.costs);
   bytes += read_model_field(io, cb.weight);
   return bytes;

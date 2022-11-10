@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/core/global_data.h"
+
 #include "vw/core/vw_fwd.h"
 
 namespace VW

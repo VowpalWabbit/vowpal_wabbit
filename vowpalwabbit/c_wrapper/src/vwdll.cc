@@ -4,6 +4,7 @@
 
 #include "vw/c_wrapper/vwdll.h"
 
+#include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parser.h"
@@ -412,8 +413,9 @@ extern "C"
     return static_cast<VW_HANDLE>(all);
   }
 
-  struct buffer_holder
+  class buffer_holder
   {
+  public:
     std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>();
     io_buf holding_buffer;
   };
@@ -461,4 +463,13 @@ extern "C"
   }
 
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_FreeAuditDataA(VW_HANDLE /*handle*/, char* data) { delete[] data; }
+
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_GetCatsActionPdfValuePrediction(
+      VW_EXAMPLE example, float action_and_pdf_value[2])
+  {
+    const auto* ex = static_cast<VW::example*>(example);
+    const auto& prediction = ex->pred.pdf_value;
+    action_and_pdf_value[0] = prediction.action;
+    action_and_pdf_value[1] = prediction.pdf_value;
+  }
 }

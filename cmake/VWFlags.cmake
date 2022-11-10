@@ -13,7 +13,9 @@ if(LTO)
 endif()
 
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-  set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
+  if(NOT "arm64" STREQUAL "${CMAKE_OSX_ARCHITECTURES}")
+    set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
+  endif()
 endif()
 
 # Add -ffast-math for speed, remove for testability.
@@ -22,7 +24,7 @@ set(LINUX_RELEASE_CONFIG -fno-strict-aliasing ${LINUX_X86_64_OPT_FLAGS} -fno-sta
 set(LINUX_DEBUG_CONFIG -fno-stack-check)
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(VW_LINUX_FLAGS -fvisibility=hidden $<$<CONFIG:Debug>:${LINUX_DEBUG_CONFIG}> $<$<CONFIG:Release>:${LINUX_RELEASE_CONFIG}> $<$<CONFIG:RelWithDebInfo>:${LINUX_RELEASE_CONFIG}>)
+set(VW_LINUX_FLAGS $<$<CONFIG:Debug>:${LINUX_DEBUG_CONFIG}> $<$<CONFIG:Release>:${LINUX_RELEASE_CONFIG}> $<$<CONFIG:RelWithDebInfo>:${LINUX_RELEASE_CONFIG}>)
 set(VW_WIN_FLAGS /MP /Zc:__cplusplus)
 
 # Turn on warnings

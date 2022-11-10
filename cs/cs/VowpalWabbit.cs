@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="VowpalWabbit.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using VW.Labels;
 using VW.Serializer;
 
@@ -81,19 +81,19 @@ namespace VW
                 throw new ArgumentNullException(nameof(vw));
             if (compiledSerializer == null)
                 throw new ArgumentNullException(nameof(compiledSerializer));
-            Contract.Ensures(this.serializer != null);
-            Contract.EndContractBlock();
 
             this.vw = vw;
             this.compiledSerializer = compiledSerializer;
 
             this.serializer = this.compiledSerializer.Create(vw);
+            Debug.Assert(this.serializer != null);
 
             // have a 2nd member to throw NullReferenceException in release instead of silently producing wrong results.
             this.learnSerializer = this.serializer.CachesExamples ? null : this.serializer;
 
             // have a 3rd member to avoid cast everytime...
             this.singleLineSerializer = this.serializer as VowpalWabbitSingleExampleSerializer<TExample>;
+
         }
 
         /// <summary>
@@ -126,8 +126,8 @@ namespace VW
         /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
         public void Learn(TExample example, ILabel label = null, int? index = null)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(label != null);
+            Debug.Assert(example != null);
+            Debug.Assert(label != null);
 
 #if DEBUG
             if (this.serializer.CachesExamples)
@@ -153,9 +153,9 @@ namespace VW
         /// <returns>The prediction for the given <paramref name="example"/>.</returns>
         public TPrediction Learn<TPrediction>(TExample example, ILabel label, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(label != null);
-            Contract.Requires(predictionFactory != null);
+            Debug.Assert(example != null);
+            Debug.Assert(label != null);
+            Debug.Assert(predictionFactory != null);
 
 #if DEBUG
             // only in debug, since it's a hot path
@@ -178,7 +178,7 @@ namespace VW
         /// <param name="label">This label can be used to weight the example.</param>
         public void Predict(TExample example, ILabel label = null)
         {
-            Contract.Requires(example != null);
+            Debug.Assert(example != null);
 
             using (var ex = this.serializer.Serialize(example, label))
             {
@@ -195,8 +195,8 @@ namespace VW
         /// <param name="label">This label can be used to weight the example.</param>
         public TPrediction Predict<TPrediction>(TExample example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(predictionFactory != null);
+            Debug.Assert(example != null);
+            Debug.Assert(predictionFactory != null);
 
             using (var ex = this.serializer.Serialize(example, label))
             {
@@ -212,8 +212,8 @@ namespace VW
         /// <param name="label">The label for the example to learn.</param>
         public void Learn(IReadOnlyCollection<TExample> actionDependentFeatures, int index, ILabel label)
         {
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(this.singleLineSerializer != null,
+            Debug.Assert(actionDependentFeatures != null);
+            Debug.Assert(this.singleLineSerializer != null,
                 string.Format(
                 "{0} maps to a multiline example. Use VowpalWabbit.Learn<{0}>({0} example,...) instead.",
                     typeof(TExample)));
@@ -237,10 +237,10 @@ namespace VW
         /// <returns>The ranked prediction for the given examples.</returns>
         public ActionDependentFeature<TExample>[] LearnAndPredict(IReadOnlyCollection<TExample> actionDependentFeatures, int index, ILabel label)
         {
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
-            Contract.Requires(this.singleLineSerializer != null,
+            Debug.Assert(actionDependentFeatures != null);
+            Debug.Assert(index >= 0);
+            Debug.Assert(label != null);
+            Debug.Assert(this.singleLineSerializer != null,
                 string.Format(
                 "{0} maps to a multiline example. Use VowpalWabbit.Learn<{0}>({0} example,...) instead.",
                     typeof(TExample)));
@@ -264,8 +264,8 @@ namespace VW
         /// <returns>The ranked prediction for the given examples.</returns>
         public ActionDependentFeature<TExample>[] Predict(IReadOnlyCollection<TExample> actionDependentFeatures, int? index = null, ILabel label = null)
         {
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(this.singleLineSerializer != null,
+            Debug.Assert(actionDependentFeatures != null);
+            Debug.Assert(this.singleLineSerializer != null,
                 string.Format(
                 "{0} maps to a multiline example. Use VowpalWabbit.Learn<{0}>({0} example,...) instead.",
                     typeof(TExample)));
@@ -363,7 +363,6 @@ namespace VW
             {
                 throw new ArgumentNullException("vw");
             }
-            Contract.EndContractBlock();
 
             this.vw = vw;
             this.serializer = VowpalWabbitSerializerFactory.CreateSerializer<TExample>(vw.Settings).Create(vw) as VowpalWabbitSingleExampleSerializer<TExample>;
@@ -426,8 +425,8 @@ namespace VW
         /// <param name="label">The label for the example to learn.</param>
         public void Learn(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
 
             VowpalWabbitMultiLine.Learn(
                 this.vw,
@@ -449,10 +448,10 @@ namespace VW
         /// <returns>The ranked prediction for the given examples.</returns>
         public ActionDependentFeature<TActionDependentFeature>[] LearnAndPredict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int index, ILabel label)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
-            Contract.Requires(index >= 0);
-            Contract.Requires(label != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
+            Debug.Assert(index >= 0);
+            Debug.Assert(label != null);
 
             return VowpalWabbitMultiLine.LearnAndPredict(
                 this.vw,
@@ -474,8 +473,8 @@ namespace VW
         /// <returns>The ranked prediction for the given examples.</returns>
         public ActionDependentFeature<TActionDependentFeature>[] Predict(TExample example, IReadOnlyCollection<TActionDependentFeature> actionDependentFeatures, int? index = null, ILabel label = null)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(actionDependentFeatures != null);
+            Debug.Assert(example != null);
+            Debug.Assert(actionDependentFeatures != null);
 
             return VowpalWabbitMultiLine.Predict(
                 this.vw,

@@ -8,6 +8,7 @@
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -26,7 +27,7 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cats
+#define VW_DEBUG_LOG vw_dbg::CATS
 
 namespace VW
 {
@@ -160,9 +161,10 @@ void reduction_output::print_update_cb_cont(VW::workspace& all, const VW::exampl
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown"
-                     : VW::to_string(ec.l.cb_cont.costs[0], VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
-        VW::to_string(ec.pred.pdf_value, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
+        ec.test_only
+            ? "unknown"
+            : VW::to_string(ec.l.cb_cont.costs[0], VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
+        VW::to_string(ec.pred.pdf_value, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
@@ -220,10 +222,9 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
-                .set_learn_returns_prediction(true)
-                .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
                 .set_finish_example(::finish_example)
-                .set_input_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 
   return make_base(*l);

@@ -39,12 +39,10 @@
 #ifdef BUILD_FLATBUFFERS
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
-#ifdef BUILD_EXTERNAL_PARSER
-#  include "parse_example_external.h"
-#endif
 
-struct global_prediction
+class global_prediction
 {
+public:
   float p;
   float weight;
 };
@@ -324,15 +322,17 @@ std::string workspace::dump_weights_to_json_experimental()
   // This could be extended to other base learners reasonably. Since this is new and experimental though keep the scope
   // small.
   while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
-  if (current->get_name() != "gd")
+  if (current->get_name() == "ksvm")
   {
-    THROW("dump_weights_to_json is currently only supported for GD base learners. The current base learner is "
+    THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
         << current->get_name());
   }
   if (dump_json_weights_include_feature_names && !hash_inv)
   { THROW("hash_inv == true is required to dump weights to json including feature names"); }
   if (dump_json_weights_include_extra_online_state && !save_resume)
   { THROW("save_resume == true is required to dump weights to json including feature names"); }
+  if (dump_json_weights_include_extra_online_state && current->get_name() != "gd")
+  { THROW("including extra online state is only allowed with GD as base learner"); }
 
   return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
                               dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)
@@ -341,8 +341,8 @@ std::string workspace::dump_weights_to_json_experimental()
 }
 }  // namespace VW
 
-void compile_limits(
-    std::vector<std::string> limits, std::array<uint32_t, NUM_NAMESPACES>& dest, bool /*quiet*/, VW::io::logger& logger)
+void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool /*quiet*/,
+    VW::io::logger& logger)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
@@ -379,7 +379,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
 
   l = nullptr;
-  scorer = nullptr;
   cost_sensitive = nullptr;
   loss = nullptr;
   example_parser = nullptr;
@@ -476,6 +475,7 @@ workspace::~workspace()
   {
     l->finish();
     delete l;
+    l = nullptr;
   }
 
   // TODO: migrate all finalization into parser destructor
@@ -483,12 +483,18 @@ workspace::~workspace()
   {
     free_parser(*this);
     delete example_parser;
+    example_parser = nullptr;
   }
 
   const bool seeded = weights.seeded() > 0;
-  if (!seeded) { delete sd; }
+  if (!seeded)
+  {
+    delete sd;
+    sd = nullptr;
+  }
 
   delete all_reduce;
+  all_reduce = nullptr;
 }
 
 }  // namespace VW

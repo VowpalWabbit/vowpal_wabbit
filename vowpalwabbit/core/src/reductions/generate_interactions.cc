@@ -35,7 +35,7 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
 
   if (data.store_in_reduction_features)
   {
-    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     red_features.generated_interactions = &data.generated_interactions;
   }
 
@@ -66,7 +66,7 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
 
   if (data.store_in_reduction_features)
   {
-    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     red_features.generated_interactions = &data.generated_interactions;
     red_features.generated_extent_interactions = &data.generated_extent_interactions;
   }
@@ -99,7 +99,7 @@ void update(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_lear
 
   if (data.store_in_reduction_features)
   {
-    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     red_features.generated_interactions = &data.generated_interactions;
     red_features.generated_extent_interactions = &data.generated_extent_interactions;
   }
@@ -121,7 +121,7 @@ void update(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_lear
 
   if (data.store_in_reduction_features)
   {
-    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     red_features.generated_interactions = &data.generated_interactions;
   }
 
@@ -142,7 +142,7 @@ inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER
 
   if (data.store_in_reduction_features)
   {
-    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     red_features.generated_interactions = &data.generated_interactions;
   }
 
@@ -170,7 +170,7 @@ inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER
 
   if (data.store_in_reduction_features)
   {
-    auto& red_features = ec._reduction_features.template get<VW::generated_interactions::reduction_features>();
+    auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     red_features.generated_interactions = &data.generated_interactions;
     red_features.generated_extent_interactions = &data.generated_extent_interactions;
   }

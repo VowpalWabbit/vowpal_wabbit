@@ -10,6 +10,7 @@
 #include "vw/core/guard.h"
 #include "vw/core/learner.h"
 #include "vw/core/reductions/baseline.h"
+#include "vw/core/simple_label.h"
 
 #include <cfloat>
 
@@ -31,7 +32,7 @@ float get_cost_pred(
 {
   VW_DBG(ec) << "get_cost_pred:" << is_learn << std::endl;
 
-  label_data simple_temp;
+  VW::simple_label simple_temp;
   if (index == known_cost.action) { simple_temp.label = known_cost.cost; }
   else
   {
@@ -68,7 +69,7 @@ inline float get_cost_estimate(const CB::cb_class& observation, uint32_t action,
 }
 
 // doubly robust estimate
-inline float get_cost_estimate(const CB::cb_class& observation, const COST_SENSITIVE::label& scores, uint32_t action)
+inline float get_cost_estimate(const CB::cb_class& observation, const VW::cs_label& scores, uint32_t action)
 {
   for (auto& cl : scores.costs)
   {
@@ -89,7 +90,7 @@ inline float get_cost_estimate(const CB::label& ld, uint32_t action)
 }
 
 // doubly robust estimate
-inline float get_cost_estimate(const ACTION_SCORE::action_score& a_s, float cost, uint32_t action, float offset = 0.)
+inline float get_cost_estimate(const VW::action_score& a_s, float cost, uint32_t action, float offset = 0.)
 {
   if (action == a_s.action) { return (cost - offset) / a_s.score; }
   return 0.;

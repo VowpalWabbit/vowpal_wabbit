@@ -15,6 +15,10 @@ IndentPPDirectives: AfterHash
 PointerAlignment: Left
 DerivePointerAlignment: false
 IncludeCategories:
+  # vw_string_format.h has a template specialization for fmt.h
+  # and it must be included first to prevent compile errors
+  - Regex:           '"vw\/core\/vw_string_view_fmt\.h"'
+    Priority:        0
   # First block is local directory includes
   - Regex:           '"[[:alnum:]._\/]+"'
     Priority:        1

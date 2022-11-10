@@ -56,12 +56,13 @@ inline int64_t zig_zag_decode(uint64_t n) { return (n >> 1) ^ -static_cast<int64
 
 inline uint64_t zig_zag_encode(int64_t n)
 {
-  uint64_t ret = (n << 1) ^ (n >> 63);
+  uint64_t ret = (static_cast<uint64_t>(n) << 1) ^ (n >> 63);
   return ret;
 }
 
-struct one_float
+class one_float
 {
+public:
   float f;
 }
 #ifndef _WIN32
@@ -129,11 +130,15 @@ size_t VW::details::read_cached_features(io_buf& input, features& feats, bool& s
 void VW::details::cache_tag(io_buf& cache, const VW::v_array<char>& tag)
 {
   char* write_head = nullptr;
-  cache.buf_write(write_head, sizeof(size_t) + tag.size());
-  *reinterpret_cast<size_t*>(write_head) = tag.size();
+  size_t tag_size = tag.size();
+  cache.buf_write(write_head, sizeof(size_t) + tag_size);
+  memcpy(write_head, &tag_size, sizeof(size_t));
   write_head += sizeof(size_t);
-  memcpy(write_head, tag.begin(), tag.size());
-  write_head += tag.size();
+  if (tag_size > 0)
+  {
+    memcpy(write_head, tag.begin(), tag_size);
+    write_head += tag_size;
+  }
   cache.set(write_head);
 }
 
@@ -178,15 +183,16 @@ void VW::details::cache_features(io_buf& cache, const features& feats, uint64_t 
   }
 
   cache.set(write_head);
-  *reinterpret_cast<size_t*>(storage_size_loc) = write_head - storage_size_loc - sizeof(size_t);
+  size_t storage_size = write_head - storage_size_loc - sizeof(size_t);
+  memcpy(storage_size_loc, &storage_size, sizeof(size_t));
 }
 
 void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parser& lbl_parser, uint64_t parse_mask,
     VW::details::cache_temp_buffer& temp_buffer)
 {
-  temp_buffer._backing_buffer->clear();
-  io_buf& temp_cache = temp_buffer._temporary_cache_buffer;
-  lbl_parser.cache_label(ex_ptr->l, ex_ptr->_reduction_features, temp_cache, "_label", false);
+  temp_buffer.backing_buffer->clear();
+  io_buf& temp_cache = temp_buffer.temporary_cache_buffer;
+  lbl_parser.cache_label(ex_ptr->l, ex_ptr->ex_reduction_features, temp_cache, "_label", false);
   details::cache_tag(temp_cache, ex_ptr->tag);
   temp_cache.write_value<unsigned char>(ex_ptr->is_newline ? NEWLINE_EXAMPLE_INDICATOR : NON_NEWLINE_EXAMPLE_INDICATOR);
   assert(ex_ptr->indices.size() < 256);
@@ -198,9 +204,9 @@ void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parse
   }
   temp_cache.flush();
 
-  uint64_t example_size = temp_buffer._backing_buffer->size();
+  uint64_t example_size = temp_buffer.backing_buffer->size();
   output.write_value(example_size);
-  output.bin_write_fixed(temp_buffer._backing_buffer->data(), temp_buffer._backing_buffer->size());
+  output.bin_write_fixed(temp_buffer.backing_buffer->data(), temp_buffer.backing_buffer->size());
 }
 
 int VW::read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples)
@@ -212,8 +218,9 @@ int VW::read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex&
   // (As opposed to being unable to get the next bytes while midway through reading an example)
   if (input.buf_read(unused_read_ptr, sizeof(uint64_t)) < sizeof(uint64_t)) { return 0; }
 
+  all->example_parser->lbl_parser.default_label(examples[0]->l);
   size_t total =
-      all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->_reduction_features, input);
+      all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->ex_reduction_features, input);
   if (total == 0) { THROW("Ran out of cache while reading example. File may be truncated."); }
 
   size_t tag_size = details::read_cached_tag(input, examples[0]->tag);

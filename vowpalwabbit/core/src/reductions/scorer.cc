@@ -15,14 +15,15 @@
 #include <cfloat>
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::scorer
+#define VW_DEBUG_LOG vw_dbg::SCORER
 
 using namespace VW::config;
 
 namespace
 {
-struct scorer
+class scorer
 {
+public:
   scorer(VW::workspace* all) : all(all) {}
   VW::workspace* all;
 };  // for set_minmax, loss
@@ -136,12 +137,11 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
   auto* base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(s), base, learn_fn, predict_fn, name)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_multipredict(multipredict_f)
                 .set_update(update)
                 .build();
 
-  all.scorer = VW::LEARNER::as_singleline(l);
   return make_base(*l);
 }
