@@ -145,7 +145,7 @@ struct options_cb_algs_v1
 };
 
 std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(
-    const VW::workspace&, VW::io::logger& logger, options_i& options)
+    const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto cb_algs_opts = VW::make_unique<options_cb_algs_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit");
