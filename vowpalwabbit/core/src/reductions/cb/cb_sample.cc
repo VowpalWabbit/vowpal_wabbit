@@ -16,7 +16,7 @@
 #include "vw/explore/explore.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_sample
+#define VW_DEBUG_LOG vw_dbg::CB_SAMPLE
 
 using namespace VW::LEARNER;
 using namespace VW;

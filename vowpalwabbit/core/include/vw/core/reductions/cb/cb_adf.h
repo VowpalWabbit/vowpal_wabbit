@@ -49,9 +49,9 @@ public:
 
   bool learn_returns_prediction() const
   {
-    return ((gen_cs.cb_type == VW::cb_type_t::mtr) && !_no_predict) || gen_cs.cb_type == VW::cb_type_t::ips ||
-        gen_cs.cb_type == VW::cb_type_t::dr || gen_cs.cb_type == VW::cb_type_t::dm ||
-        gen_cs.cb_type == VW::cb_type_t::sm;
+    return ((gen_cs.cb_type == VW::cb_type_t::MTR) && !_no_predict) || gen_cs.cb_type == VW::cb_type_t::IPS ||
+        gen_cs.cb_type == VW::cb_type_t::DR || gen_cs.cb_type == VW::cb_type_t::DM ||
+        gen_cs.cb_type == VW::cb_type_t::SM;
   }
 
   CB::cb_class* known_cost() { return &gen_cs.known_cost; }

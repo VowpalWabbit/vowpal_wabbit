@@ -34,7 +34,7 @@ using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_explore
+#define VW_DEBUG_LOG vw_dbg::CB_EXPLORE
 
 namespace
 {
@@ -417,7 +417,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   cb_explore_data->random_state = all.get_random_state();
   uint32_t num_actions = cb_explore_data->cbcs.num_actions;
 
-  cb_explore_data->cbcs.cb_type = VW::cb_type_t::dr;
+  cb_explore_data->cbcs.cb_type = VW::cb_type_t::DR;
   cb_explore_data->model_file_version = all.model_file_ver;
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());

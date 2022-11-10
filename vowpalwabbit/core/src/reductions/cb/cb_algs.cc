@@ -81,7 +81,7 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
 
-  if (c.cb_type != VW::cb_type_t::dm)
+  if (c.cb_type != VW::cb_type_t::DM)
   {
     if (is_learn) { base.learn(ec); }
     else
@@ -185,17 +185,17 @@ std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(
 
   switch (VW::cb_type_from_string(cb_algs_opts->type_string))
   {
-    case VW::cb_type_t::dr:
+    case VW::cb_type_t::DR:
       break;
-    case VW::cb_type_t::dm:
+    case VW::cb_type_t::DM:
       if (cb_algs_opts->eval) THROW("direct method can not be used for evaluation --- it is biased.");
       cb_algs_opts->problem_multiplier = 1;
       break;
-    case VW::cb_type_t::ips:
+    case VW::cb_type_t::IPS:
       cb_algs_opts->problem_multiplier = 1;
       break;
-    case VW::cb_type_t::mtr:
-    case VW::cb_type_t::sm:
+    case VW::cb_type_t::MTR:
+    case VW::cb_type_t::SM:
       logger.err_warn(
           "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", cb_algs_opts->type_string);
       cb_algs_opts->type_string = "dr";

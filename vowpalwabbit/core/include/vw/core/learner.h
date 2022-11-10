@@ -33,7 +33,7 @@
 #include "vw/core/scope_exit.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::learner
+#define VW_DEBUG_LOG vw_dbg::LEARNER
 
 namespace VW
 {

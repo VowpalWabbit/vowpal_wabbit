@@ -171,7 +171,7 @@ public:
   BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
   {
     // check valid pdf else remove
-    auto& red_fts = ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>();
+    auto& red_fts = ctx.ex->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
     if (!VW::continuous_actions::is_valid_pdf(red_fts.pdf)) { red_fts.pdf.clear(); }
     return return_state;
   }
@@ -189,7 +189,7 @@ public:
     }
     else if (!_stricmp(ctx.key, "chosen_action"))
     {
-      ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
+      ctx.ex->ex_reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
     }
     else
     {
@@ -204,7 +204,7 @@ public:
 
   BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
   {
-    ctx.ex->_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.push_back(segment);
+    ctx.ex->ex_reduction_features.template get<VW::continuous_actions::reduction_features>().pdf.push_back(segment);
     segment = {0., 0., 0.};
     return obj_return_state;
   }
@@ -269,13 +269,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = std::numeric_limits<float>::quiet_NaN();
       found = true;
     }
@@ -318,13 +318,13 @@ public:
     }
     else if (!_stricmp(ctx.key, "Initial"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.initial = v;
       found = true;
     }
     else if (!_stricmp(ctx.key, "Weight"))
     {
-      auto& simple_red_features = ctx.ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      auto& simple_red_features = ctx.ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       simple_red_features.weight = v;
       found = true;
     }
@@ -546,7 +546,7 @@ public:
         case ' ':
         case '\t':
           *p = '\0';
-          if (p - start > 0) { ns.AddFeature(start, ctx._hash_func, ctx._parse_mask); }
+          if (p - start > 0) { ns.add_feature(start, ctx._hash_func, ctx._parse_mask); }
 
           start = p + 1;
           break;
@@ -558,7 +558,7 @@ public:
       }
     }
 
-    if (start < end) { ns.AddFeature(start, ctx._hash_func, ctx._parse_mask); }
+    if (start < end) { ns.add_feature(start, ctx._hash_func, ctx._parse_mask); }
 
     return ctx.previous_state;
   }
@@ -729,11 +729,11 @@ public:
       std::stringstream str;
       str << '[' << (array_hash - ctx.CurrentNamespace().namespace_hash) << ']';
 
-      ctx.CurrentNamespace().AddFeature(f, array_hash, str.str().c_str());
+      ctx.CurrentNamespace().add_feature(f, array_hash, str.str().c_str());
     }
     else
     {
-      ctx.CurrentNamespace().AddFeature(f, array_hash, nullptr);
+      ctx.CurrentNamespace().add_feature(f, array_hash, nullptr);
     }
     array_hash++;
 
@@ -943,8 +943,8 @@ public:
       else if (ctx.key_length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
         if (!ctx.decision_service_data) { THROW("_original_label_cost is only valid in DSJson"); }
-        ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->originalLabelCost;
-        ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.aggr_float = &ctx.decision_service_data->original_label_cost;
+        ctx.original_label_cost_state.first_slot_float = &ctx.decision_service_data->original_label_cost_first_slot;
         ctx.original_label_cost_state.return_state = this;
         return &ctx.original_label_cost_state;
       }
@@ -981,13 +981,13 @@ public:
         (ctx.ignore_features->find(ns) == ctx.ignore_features->end() ||
             ctx.ignore_features->at(ns).find(ctx.key) == ctx.ignore_features->at(ns).end()))
     {
-      if (ctx._chain_hash) { ctx.CurrentNamespace().AddFeature(ctx.key, str, ctx._hash_func, ctx._parse_mask); }
+      if (ctx._chain_hash) { ctx.CurrentNamespace().add_feature(ctx.key, str, ctx._hash_func, ctx._parse_mask); }
       else
       {
         char* prepend = const_cast<char*>(str) - ctx.key_length;
         memmove(prepend, ctx.key, ctx.key_length);
 
-        ctx.CurrentNamespace().AddFeature(prepend, ctx._hash_func, ctx._parse_mask);
+        ctx.CurrentNamespace().add_feature(prepend, ctx._hash_func, ctx._parse_mask);
       }
     }
 
@@ -996,7 +996,7 @@ public:
 
   BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
   {
-    if (b) { ctx.CurrentNamespace().AddFeature(ctx.key, ctx._hash_func, ctx._parse_mask); }
+    if (b) { ctx.CurrentNamespace().add_feature(ctx.key, ctx._hash_func, ctx._parse_mask); }
 
     return this;
   }
@@ -1067,7 +1067,7 @@ public:
   {
     auto& ns = ctx.CurrentNamespace();
     auto hash_index = ctx._hash_func(ctx.key, strlen(ctx.key), ns.namespace_hash) & ctx._parse_mask;
-    ns.AddFeature(f, hash_index, ctx.key);
+    ns.add_feature(f, hash_index, ctx.key);
     return this;
   }
 
@@ -1311,7 +1311,7 @@ template <bool audit>
 class SlotOutcomeList : public BaseState<audit>
 {
 public:
-  DecisionServiceInteraction* interactions;
+  VW::details::decision_service_interaction* interactions;
 
   SlotOutcomeList() : BaseState<audit>("SlotOutcomeList") {}
 
@@ -1396,7 +1396,7 @@ class DecisionServiceState : public BaseState<audit>
 public:
   DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
-  DecisionServiceInteraction* data;
+  VW::details::decision_service_interaction* data;
 
   BaseState<audit>* StartObject(Context<audit>& /* ctx */) override
   {
@@ -1438,13 +1438,13 @@ public:
     }
     else if (length == 5 && !strcmp(str, "pdrop"))
     {
-      ctx.float_state.output_float = &data->probabilityOfDrop;
+      ctx.float_state.output_float = &data->probability_of_drop;
       ctx.float_state.return_state = this;
       return &ctx.float_state;
     }
     else if (length == 7 && !strcmp(str, "EventId"))
     {
-      ctx.string_state.output_string = &data->eventId;
+      ctx.string_state.output_string = &data->event_id;
       ctx.string_state.return_state = this;
       return &ctx.string_state;
     }
@@ -1477,7 +1477,7 @@ public:
       }
       else if (length == 10 && !strncmp(str, "_skipLearn", 10))
       {
-        ctx.bool_state.output_bool = &data->skipLearn;
+        ctx.bool_state.output_bool = &data->skip_learn;
         ctx.bool_state.return_state = this;
         return &ctx.bool_state;
       }
@@ -1495,8 +1495,8 @@ public:
       }
       else if (length == 20 && !strncmp(str, "_original_label_cost", 20))
       {
-        ctx.original_label_cost_state.aggr_float = &data->originalLabelCost;
-        ctx.original_label_cost_state.first_slot_float = &data->originalLabelCostFirstSlot;
+        ctx.original_label_cost_state.aggr_float = &data->original_label_cost;
+        ctx.original_label_cost_state.first_slot_float = &data->original_label_cost_first_slot;
         ctx.original_label_cost_state.return_state = this;
         return &ctx.original_label_cost_state;
       }
@@ -1535,7 +1535,7 @@ public:
   BaseState<audit>* previous_state;
 
   // the path of namespaces
-  std::vector<Namespace<audit>> namespace_path;
+  std::vector<VW::details::namespace_builder<audit>> namespace_path;
   std::vector<BaseState<audit>*> return_path;
 
   std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr;
@@ -1552,7 +1552,7 @@ public:
   // TODO: This shouldn't really exist in the Context. Once the JSON parser
   // gets refactored to separate the VWJson/DSJson concepts, this should
   // be moved into the DSJson version of the context
-  DecisionServiceInteraction* decision_service_data = nullptr;
+  VW::details::decision_service_interaction* decision_service_data = nullptr;
 
   // states
   DefaultState<audit> default_state;
@@ -1614,7 +1614,7 @@ public:
     return *error_ptr;
   }
 
-  void SetStartStateToDecisionService(DecisionServiceInteraction* data)
+  void SetStartStateToDecisionService(VW::details::decision_service_interaction* data)
   {
     decision_service_state.data = data;
     current_state = root_state = &decision_service_state;
@@ -1634,7 +1634,7 @@ public:
     return return_state;
   }
 
-  Namespace<audit>& CurrentNamespace() { return namespace_path.back(); }
+  VW::details::namespace_builder<audit>& CurrentNamespace() { return namespace_path.back(); }
 
   bool TransitionState(BaseState<audit>* next_state)
   {
@@ -1796,12 +1796,13 @@ inline bool apply_pdrop(label_type_t label_type, float pdrop, VW::multi_ex& exam
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
 bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    bool copy_line, example_factory_t example_factory, void* ex_factory_context, DecisionServiceInteraction* data)
+    bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    VW::details::decision_service_interaction* data)
 {
   if (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
   {
     parse_slates_example_dsjson<audit>(all, examples, line, length, example_factory, ex_factory_context, data);
-    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples, all.logger);
+    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
   }
 
   std::vector<char> line_vec;
@@ -1848,7 +1849,7 @@ bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples,
     }
   }
 
-  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probabilityOfDrop, examples, all.logger);
+  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
 }  // namespace VW
 }  // namespace VW
 
@@ -1860,7 +1861,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     // Skip lines that do not start with "{"
     if (line[0] != '{') { return false; }
 
-    DecisionServiceInteraction interaction;
+    VW::details::decision_service_interaction interaction;
     bool result = VW::template read_line_decision_service_json<audit>(*all, examples, line, num_chars, false,
         reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
@@ -1874,13 +1875,13 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
 
     if (all->example_parser->metrics)
     {
-      if (!interaction.eventId.empty())
+      if (!interaction.event_id.empty())
       {
         if (all->example_parser->metrics->first_event_id.empty())
-        { all->example_parser->metrics->first_event_id = std::move(interaction.eventId); }
+        { all->example_parser->metrics->first_event_id = std::move(interaction.event_id); }
         else
         {
-          all->example_parser->metrics->last_event_id = std::move(interaction.eventId);
+          all->example_parser->metrics->last_event_id = std::move(interaction.event_id);
         }
       }
 
@@ -1898,13 +1899,13 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
       // but according to Casey, the only operation used is Sum
       // The _original_label_cost element is found either at the top level OR under
       // the _outcomes node (for CCB)
-      all->example_parser->metrics->dsjson_sum_cost_original += interaction.originalLabelCost;
-      all->example_parser->metrics->dsjson_sum_cost_original_first_slot += interaction.originalLabelCostFirstSlot;
+      all->example_parser->metrics->dsjson_sum_cost_original += interaction.original_label_cost;
+      all->example_parser->metrics->dsjson_sum_cost_original_first_slot += interaction.original_label_cost_first_slot;
       if (!interaction.actions.empty())
       {
         // APS requires this metric for CB (baseline action is 1)
         if (interaction.actions[0] == 1)
-        { all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.originalLabelCost; }
+        { all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.original_label_cost; }
 
         if (!interaction.baseline_actions.empty())
         {
@@ -1912,7 +1913,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
           {
             all->example_parser->metrics->dsjson_number_of_label_equal_baseline_first_slot++;
             all->example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
-                interaction.originalLabelCostFirstSlot;
+                interaction.original_label_cost_first_slot;
           }
           else
           {
@@ -1923,9 +1924,9 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
     }
 
     // TODO: In refactoring the parser to be usable standalone, we need to ensure that we
-    // stop suppressing "skipLearn" interactions. Also, not sure if this is the right logic
+    // stop suppressing "skip_learn" interactions. Also, not sure if this is the right logic
     // for counterfactual. (@marco)
-    if (interaction.skipLearn)
+    if (interaction.skip_learn)
     {
       if (all->example_parser->metrics) { all->example_parser->metrics->number_of_skipped_events++; }
       VW::return_multiple_example(*all, examples);
@@ -2038,10 +2039,10 @@ template void VW::read_line_json_s<false>(VW::workspace& all, VW::multi_ex& exam
 
 template bool VW::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    DecisionServiceInteraction* data);
+    VW::details::decision_service_interaction* data);
 template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    DecisionServiceInteraction* data);
+    VW::details::decision_service_interaction* data);
 
 template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);

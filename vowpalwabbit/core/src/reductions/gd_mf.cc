@@ -103,7 +103,7 @@ template <class T>
 float mf_predict(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
-  const auto& simple_red_features = ec._reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
   ec.num_features_from_interactions = 0;

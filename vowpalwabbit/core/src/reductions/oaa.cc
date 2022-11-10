@@ -79,7 +79,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec
   }
 
   ec.l.simple.label = 1.;  // truth
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   uint32_t lbl_ind = (o.indexing == 0) ? ld.label : ld.label - 1;
 
   base.learn(ec, lbl_ind);
@@ -146,7 +146,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   }
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -191,12 +191,12 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   {
     if (o.indexing == 0)
     {
-      add_passthrough_feature(ec, 0, o.pred[o.k - 1].scalar);
-      for (uint32_t i = 0; i < o.k - 1; i++) { add_passthrough_feature(ec, (i + 1), o.pred[i].scalar); }
+      ADD_PASSTHROUGH_FEATURE(ec, 0, o.pred[o.k - 1].scalar);
+      for (uint32_t i = 0; i < o.k - 1; i++) { ADD_PASSTHROUGH_FEATURE(ec, (i + 1), o.pred[i].scalar); }
     }
     else
     {
-      for (uint32_t i = 1; i <= o.k; i++) { add_passthrough_feature(ec, i, o.pred[i - 1].scalar); }
+      for (uint32_t i = 1; i <= o.k; i++) { ADD_PASSTHROUGH_FEATURE(ec, i, o.pred[i - 1].scalar); }
     }
   }
 

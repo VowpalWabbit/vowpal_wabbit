@@ -29,7 +29,7 @@ using namespace VW::config;
 using std::endl;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cs_active
+#define VW_DEBUG_LOG vw_dbg::CS_ACTIVE
 
 namespace
 {
@@ -155,7 +155,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
     score = ec.partial_prediction;
     prediction = i;
   }
-  add_passthrough_feature(ec, i, ec.partial_prediction);
+  ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
 }
 
 inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float delta, float eta,
@@ -228,7 +228,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
   uint32_t prediction = 1;
   float score = FLT_MAX;
   ec.l.simple = {0.f};
-  ec._reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   float min_max_cost = FLT_MAX;
   float t = static_cast<float>(cs_a.t);  // ec.example_t;  // current round

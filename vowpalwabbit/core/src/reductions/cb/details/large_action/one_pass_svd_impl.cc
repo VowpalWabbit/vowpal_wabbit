@@ -58,16 +58,35 @@ public:
 
   void set(float feature_value, uint64_t index)
   {
-    // set is going to be called foreach feature
-    // The index and _column_index are used figure out the Omega cell and its value that is needed to multiply the
-    // feature value with
-    // That combined index is then used to flip a coin and generate rademacher randomness
-    // The way the coin is flipped is by counting the number of bits in the combined index (plus the seed). If the
-    // number of bits are even then we multiply with -1.f else we multiply with 1.f
+    /**
+     * set is going to be called foreach feature
+     *
+     * The index and _column_index are used figure out the Omega cell and its value that is needed to multiply the
+     * feature value with.
+     * That combined index is then used to flip a coin and generate rademacher randomness.
+     * The way the coin is flipped is by counting the number of bits in the combined index (plus the seed).
+     * If the number of bits are even then we multiply with -1.f else we multiply with 1.f
+     *
+     * This is a sparse rademacher implementation where half the time we select zero and the remaining time we flip the
+     * coin to get -1/+1. The below code is the equivalent of branching on the first bit count of the combined index
+     * without the seed. If even then we would return 0 if odd then we would branch again on the combined index
+     * including the seed and select -1/+1.
+     *
+     * Branching is avoided by using the lookup maps.
+     */
+
 #ifdef _MSC_VER
-    float val = ((__popcnt((index & _weights_mask) + _column_index + _seed) & 1) << 1) - 1.f;
+    size_t select_sparsity = __popcnt((index & _weights_mask) + _column_index) & 1;
+    auto sparsity_index = INDEX_MAP[select_sparsity];
+    size_t select_sign = (__popcnt((index & _weights_mask) + _column_index + _seed) & 1);
+    auto value_index = sparsity_index + select_sign;
+    float val = VALUE_MAP[value_index];
 #else
-    float val = (__builtin_parity((index & _weights_mask) + _column_index + _seed) << 1) - 1.f;
+    size_t select_sparsity = __builtin_parity((index & _weights_mask) + _column_index);
+    auto sparsity_index = INDEX_MAP[select_sparsity];
+    size_t select_sign = (__builtin_parity((index & _weights_mask) + _column_index + _seed));
+    auto value_index = sparsity_index + select_sign;
+    float val = VALUE_MAP[value_index];
 #endif
     _final_dot_product += feature_value * val;
   }
@@ -77,7 +96,14 @@ private:
   uint64_t _column_index;
   uint64_t _seed;
   float& _final_dot_product;
+  // index mapped used to select sparsity or not from value map
+  constexpr static std::array<size_t, 2> INDEX_MAP = {0, 2};
+  constexpr static std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
 };
+
+// definition at namespace scope
+constexpr std::array<size_t, 2> AO_triplet_constructor::INDEX_MAP;
+constexpr std::array<float, 4> AO_triplet_constructor::VALUE_MAP;
 
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
@@ -87,18 +113,19 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   // matrix
   const uint64_t sampling_slack = 10;
   auto p = std::min(num_actions, static_cast<size_t>(_d + sampling_slack));
+  const float scaling_factor = 1.f / std::sqrt(p);
   AOmega.resize(num_actions, p);
 
   auto calculate_aomega_row = [](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
                                   uint64_t _seed, const multi_ex& examples, Eigen::MatrixXf& AOmega,
-                                  const std::vector<float>& shrink_factors) -> void {
+                                  const std::vector<float>& shrink_factors, float scaling_factor) -> void {
     for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
       VW::example* ex = examples[row_index];
 
-      auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+      auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
       auto* shared_example = red_features.shared_example;
-      if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+      if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
       for (uint64_t col = 0; col < p; ++col)
       {
@@ -111,12 +138,12 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                         : *ex->extent_interactions),
-            _all->permutations, *ex, tc, _all->_generate_interactions_object_cache);
+            _all->permutations, *ex, tc, _all->generate_interactions_object_cache_state);
 
-        AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index];
+        AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index] * scaling_factor;
       }
 
-      if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+      if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
     }
   };
 
@@ -124,7 +151,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   {
     // Compute block_size if not specified.
     const size_t num_blocks = std::max(size_t(1), this->_thread_pool.size());
-    _block_size = examples.size() / num_blocks;  // Evenly split the examples into blocks
+    _block_size = std::max(size_t(1), examples.size() / num_blocks);  // Evenly split the examples into blocks
   }
 
   for (size_t row_index_begin = 0; row_index_begin < examples.size();)
@@ -133,7 +160,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     if ((row_index_end + _block_size) > examples.size()) { row_index_end = examples.size(); }
 
     _futures.emplace_back(_thread_pool.submit(calculate_aomega_row, row_index_begin, row_index_end, p, _all, _seed,
-        std::cref(examples), std::ref(AOmega), std::cref(shrink_factors)));
+        std::cref(examples), std::ref(AOmega), std::cref(shrink_factors), scaling_factor));
 
     row_index_begin = row_index_end;
   }

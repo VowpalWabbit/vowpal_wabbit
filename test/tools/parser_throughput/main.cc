@@ -178,7 +178,7 @@ int main(int argc, char** argv)
   }
   else if (type == parser_type::DSJSON)
   {
-    DecisionServiceInteraction interaction;
+    VW::details::decision_service_interaction interaction;
     for (const auto& line : file_contents_as_lines)
     {
       VW::multi_ex examples;

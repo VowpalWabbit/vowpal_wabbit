@@ -31,7 +31,7 @@ epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
 }
 }  // namespace epsilon_decay_test
 
-BOOST_AUTO_TEST_CASE(epsilon_decay_test_init)
+BOOST_AUTO_TEST_CASE(epsilon_decay_test_init_w_iterations)
 {
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper(
@@ -40,7 +40,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_init)
   float with_save = ctr.back();
 }
 
-BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
+BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change_w_iterations)
 {
   const size_t num_iterations = 8000;
   const std::vector<uint64_t> swap_after = {5000};
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change)
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
 
-BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
+BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count_w_iterations)
 {
   const size_t num_iterations = 105;
   const size_t seed = 100;
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count)
   BOOST_CHECK_GT(ctr.back(), 0.5f);
 }
 
-BOOST_AUTO_TEST_CASE(epsilon_decay_test_save_load)
+BOOST_AUTO_TEST_CASE(epsilon_decay_test_save_load_w_iterations)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(

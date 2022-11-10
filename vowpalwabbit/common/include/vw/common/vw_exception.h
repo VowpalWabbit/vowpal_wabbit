@@ -24,9 +24,9 @@
 #  endif  // _WIN32
 
 #  ifdef _WIN32
-#    define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#    define VW_FILENAME (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #  else
-#    define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+#    define VW_FILENAME (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #  endif
 
 #  include "vw/common/future_compat.h"
@@ -179,36 +179,36 @@ inline std::string strerror_to_string(int error_number)
 
 #  ifdef _WIN32
 
-#    define THROWERRNO(args)                                         \
-      {                                                              \
-        std::ostringstream __msg;                                    \
-        __msg << args;                                               \
-        __msg << ", errno = " << VW::strerror_to_string(errno);      \
-        throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
+#    define THROWERRNO(args)                                        \
+      {                                                             \
+        std::ostringstream __msg;                                   \
+        __msg << args;                                              \
+        __msg << ", errno = " << VW::strerror_to_string(errno);     \
+        throw VW::vw_exception(VW_FILENAME, __LINE__, __msg.str()); \
       }
 #  else
-#    define THROWERRNO(args)                                         \
-      {                                                              \
-        std::ostringstream __msg;                                    \
-        __msg << args;                                               \
-        __msg << ", errno = " << VW::strerror_to_string(errno);      \
-        throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
+#    define THROWERRNO(args)                                        \
+      {                                                             \
+        std::ostringstream __msg;                                   \
+        __msg << args;                                              \
+        __msg << ", errno = " << VW::strerror_to_string(errno);     \
+        throw VW::vw_exception(VW_FILENAME, __LINE__, __msg.str()); \
       }
 #  endif
 
 // ease error handling and also log filename and line number
-#  define THROW(args)                                              \
-    {                                                              \
-      std::ostringstream __msg;                                    \
-      __msg << args;                                               \
-      throw VW::vw_exception(__FILENAME__, __LINE__, __msg.str()); \
+#  define THROW(args)                                             \
+    {                                                             \
+      std::ostringstream __msg;                                   \
+      __msg << args;                                              \
+      throw VW::vw_exception(VW_FILENAME, __LINE__, __msg.str()); \
     }
 
-#  define THROW_EX(ex, args)                         \
-    {                                                \
-      std::ostringstream __msg;                      \
-      __msg << args;                                 \
-      throw ex(__FILENAME__, __LINE__, __msg.str()); \
+#  define THROW_EX(ex, args)                        \
+    {                                               \
+      std::ostringstream __msg;                     \
+      __msg << args;                                \
+      throw ex(VW_FILENAME, __LINE__, __msg.str()); \
     }
 }  // namespace VW
 

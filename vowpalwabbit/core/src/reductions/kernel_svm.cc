@@ -19,8 +19,10 @@
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
+#include "vw/core/version.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_allreduce.h"
+#include "vw/core/vw_versions.h"
 #include "vw/io/logger.h"
 
 #include <cassert>
@@ -145,7 +147,6 @@ svm_example::~svm_example()
   // VW::flat_example* fec = &calloc_or_throw<VW::flat_example>();
   //*fec = ex;
   // free_flatten_example(fec);  // free contents of flat example and frees fec.
-  if (ex.tag_len > 0) { free(ex.tag); }
 }
 
 float kernel_function(const VW::flat_example* fec1, const VW::flat_example* fec2, void* params, size_t kernel_type);
@@ -285,6 +286,11 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
     *params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
+  else if (params.all->model_file_ver > VW::version_definitions::EMPTY_VERSION_FILE &&
+      params.all->model_file_ver < VW::version_definitions::VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX)
+  {
+    THROW("Models using ksvm from before version 9.6 are not compatable with this version of VW.")
+  }
 
   save_load_svm_model(params, model_file, read, text);
 }
@@ -389,7 +395,7 @@ size_t suboptimality(svm_model* model, double* subopt)
   {
     float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
     const auto& simple_red_features =
-        model->support_vec[i]->ex._reduction_features.template get<VW::simple_label_reduction_features>();
+        model->support_vec[i]->ex.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
     { subopt[i] = fabs(model->delta[i]); }
     else
@@ -467,7 +473,7 @@ bool update(svm_params& params, size_t pos)
   float proj = alphaKi * ld.label;
   float ai = (params.lambda - proj) / inprods[pos];
 
-  const auto& simple_red_features = fec->ex._reduction_features.template get<VW::simple_label_reduction_features>();
+  const auto& simple_red_features = fec->ex.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   if (ai > simple_red_features.weight) { ai = simple_red_features.weight; }
   else if (ai < 0)
   {
@@ -607,7 +613,7 @@ void train(svm_params& params)
         if (params.random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
-          auto& simple_red_features = fec->ex._reduction_features.template get<VW::simple_label_reduction_features>();
+          auto& simple_red_features = fec->ex.ex_reduction_features.template get<VW::simple_label_reduction_features>();
           simple_red_features.weight *= 1 / queryp;
           train_pool[i] = 1;
         }

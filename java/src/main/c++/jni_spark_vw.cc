@@ -558,7 +558,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
   {
     auto* ld = &ex->l.simple;
     ld->label = label;
-    auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+    auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
     red_fts.weight = weight;
 
     VW::count_label(*all->sd, ld->label);
@@ -890,7 +890,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     {
       auto* ld = &ex->l.simple;
-      const auto& red_fts = ex->_reduction_features.template get<VW::simple_label_reduction_features>();
+      const auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       ostr << "simple " << ld->label << ":" << red_fts.weight << ":" << red_fts.initial;
     }
     else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))

@@ -10,6 +10,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/parser.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
@@ -64,9 +65,9 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
   {
     assert(!CB::ec_is_example_header(*ex));
 
-    auto& red_features = ex->_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
-    if (shared_example != nullptr) { LabelDict::del_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
     if (_all->weights.sparse)
     {
@@ -76,7 +77,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
+          _all->permutations, *ex, w, _all->generate_interactions_object_cache_state);
     }
     else
     {
@@ -87,10 +88,10 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->permutations, *ex, w, _all->_generate_interactions_object_cache);
+          _all->permutations, *ex, w, _all->generate_interactions_object_cache_state);
     }
 
-    if (shared_example != nullptr) { LabelDict::add_example_namespaces_from_example(*ex, *shared_example); }
+    if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
 
     row_index++;
   }
@@ -129,9 +130,12 @@ template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::save_load(io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  std::stringstream msg;
-  if (!read) { msg << "cb large action space storing example counter:  = " << _counter << "\n"; }
-  bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+
+  if (read) { model_utils::read_model_field(io, _counter); }
+  else
+  {
+    model_utils::write_model_field(io, _counter, "cb large action space storing example counter", text);
+  }
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
@@ -182,7 +186,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
       return;
     }
 
-    auto non_degen = std::min(_d, static_cast<uint64_t>(number_of_non_degenerate_singular_values() + 1));
+    auto non_degen = std::min(_d, static_cast<uint64_t>(number_of_non_degenerate_singular_values()));
     spanner_state.compute_spanner(U, non_degen, shrink_factors);
 
     assert(spanner_state.spanner_size() == preds.size());
@@ -195,7 +199,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
 
   // Keep only the actions in the spanner so they can be fed into the e-greedy or squarecb reductions.
   // Removed actions will be added back with zero probabilities in the cb_actions_mask reduction later
-  // if the --full_predictions flag is supplied.
+
   auto best_action = preds[0].action;
 
   auto it = preds.begin();
@@ -217,6 +221,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::predi
   if (is_learn)
   {
     base.learn(examples);
+    if (base.learn_returns_prediction) { update_example_prediction(examples); }
     ++_counter;
   }
   else
@@ -290,8 +295,7 @@ void shrink_factor_config::calculate_shrink_factor(
 }
 
 template class cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
-template class cb_explore_adf_large_action_space<vanilla_rand_svd_impl, one_rank_spanner_state>;
-template class cb_explore_adf_large_action_space<model_weight_rand_svd_impl, one_rank_spanner_state>;
+template class cb_explore_adf_large_action_space<two_pass_svd_impl, one_rank_spanner_state>;
 }  // namespace cb_explore_adf
 }  // namespace VW
 
@@ -304,7 +308,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
 
   size_t problem_multiplier = 1;
 
-  uint64_t seed = all.get_random_state()->get_current_state() * 10.f;
+  float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
   auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all,
       seed, 1 << all.num_bits, thread_pool_size, block_size, impl_type);
@@ -320,6 +324,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_print_example(explore_type::print_multiline_example)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
+                .set_learn_returns_prediction(base->learn_returns_prediction)
                 .build(&all.logger);
   return make_base(*l);
 }
@@ -336,52 +341,46 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float gamma_exponent = 0.f;
   float c;
   bool apply_shrink_factor = false;
-  bool full_predictions = false;
-  bool model_weight_impl = false;
-  bool use_vanilla_impl = false;
-  bool full_spanner = false;
+  bool use_two_pass_svd_impl = false;
   // leave some resources available in the case of few core's (for parser)
   uint64_t thread_pool_size = (std::thread::hardware_concurrency() - 1) / 2;
   uint64_t block_size = 0;
 
   config::option_group_definition new_options(
-      "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space");
+      "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering");
   new_options
       .add(make_option("cb_explore_adf", cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("model_weight", model_weight_impl))
-      .add(make_option("vanilla", use_vanilla_impl))
-      .add(make_option("full_spanner", full_spanner))
-      .add(make_option("thread_pool_size", thread_pool_size)
-               .help("number of threads in the thread pool that will be used when running with one pass svd "
-                     "implementation (default svd implementation option). Default thread pool size will be half of the "
-                     "available hardware threads"))
-      .add(make_option("block_size", block_size)
-               .default_value(0)
-               .help("number of actions in a block to be scheduled for multithreading when using one pass svd "
-                     "implementation (by default, block_size = num_actions / thread_pool_size)"))
       .add(make_option("large_action_space", large_action_space)
                .necessary()
                .keep()
-               .help("Large action space exploration")
-               .experimental())
-      .add(make_option("full_predictions", full_predictions)
-               .help("Full representation of the prediction's action probabilities")
+               .help("Large action space filtering")
                .experimental())
       .add(make_option("max_actions", d)
                .keep()
                .allow_override()
-               .default_value(50)
-               .help("Max number of actions to explore")
+               .default_value(20)
+               .help("Max number of actions to hold")
                .experimental())
       .add(make_option("spanner_c", c)
                .keep()
                .allow_override()
                .default_value(2)
                .help("Parameter for computing c-approximate spanner")
-               .experimental());
+               .experimental())
+      .add(make_option("thread_pool_size", thread_pool_size)
+               .help("Number of threads in the thread pool that will be used when running with one pass svd "
+                     "implementation (default svd implementation option). Default thread pool size will be half of the "
+                     "available hardware threads"))
+      .add(make_option("block_size", block_size)
+               .default_value(0)
+               .help("Number of actions in a block to be scheduled for multithreading when using one pass svd "
+                     "implementation (by default, block_size = num_actions / thread_pool_size)"))
+      .add(make_option("two_pass_svd", use_two_pass_svd_impl)
+               .experimental()
+               .help("A more accurate svd that is much slower than the default (one pass svd)"));
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }
@@ -410,46 +409,16 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
-  if (model_weight_impl)
+  if (use_two_pass_svd_impl)
   {
-    auto impl_type = implementation_type::model_weight_rand_svd;
-    if (full_spanner)
-    {
-      return make_las_with_impl<model_weight_rand_svd_impl, spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
-    else
-    {
-      return make_las_with_impl<model_weight_rand_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
-  }
-  else if (use_vanilla_impl)
-  {
-    auto impl_type = implementation_type::vanilla_rand_svd;
-    if (full_spanner)
-    {
-      return make_las_with_impl<vanilla_rand_svd_impl, spanner_state>(stack_builder, base, impl_type, all, with_metrics,
-          d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
-    else
-    {
-      return make_las_with_impl<vanilla_rand_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
+    auto impl_type = implementation_type::two_pass_svd;
+    return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
+        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
-    if (full_spanner)
-    {
-      return make_las_with_impl<one_pass_svd_impl, spanner_state>(stack_builder, base, impl_type, all, with_metrics, d,
-          gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
-    else
-    {
-      return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-          with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
-    }
+    return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
+        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
   }
 }

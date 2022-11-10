@@ -317,7 +317,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			pin_ptr<unsigned char> data = &json[0];
 			data += offset;
 
-			DecisionServiceInteraction interaction;
+			VW::details::decision_service_interaction interaction;
 
 			if (m_vw->audit)
 				VW::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
@@ -330,7 +330,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			// delete native array of pointers, keep examples
 			examples.clear();
 
-			header->EventId = gcnew String(interaction.eventId.c_str());
+			header->EventId = gcnew String(interaction.event_id.c_str());
 			header->Actions = gcnew cli::array<int>((int)interaction.actions.size());
 			int index = 0;
 			for (auto a : interaction.actions)
@@ -341,8 +341,8 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			for (auto p : interaction.probabilities)
 				header->Probabilities[index++] = p;
 
-			header->ProbabilityOfDrop = interaction.probabilityOfDrop;
-			header->SkipLearn = interaction.skipLearn;
+			header->ProbabilityOfDrop = interaction.probability_of_drop;
+			header->SkipLearn = interaction.skip_learn;
 
 			return state->examples;
 		}

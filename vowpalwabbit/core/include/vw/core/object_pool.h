@@ -158,42 +158,42 @@ class object_pool
 public:
   object_pool() = default;
   object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
-      : inner_pool(initial_chunk_size, initializer, chunk_size)
+      : _inner_pool(initial_chunk_size, initializer, chunk_size)
   {
   }
 
   void return_object(T* obj)
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    inner_pool.return_object(obj);
+    std::unique_lock<std::mutex> lock(_lock);
+    _inner_pool.return_object(obj);
   }
 
   T* get_object()
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.get_object();
+    std::unique_lock<std::mutex> lock(_lock);
+    return _inner_pool.get_object();
   }
 
   bool empty() const
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.empty();
+    std::unique_lock<std::mutex> lock(_lock);
+    return _inner_pool.empty();
   }
 
   size_t size() const
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.size();
+    std::unique_lock<std::mutex> lock(_lock);
+    return _inner_pool.size();
   }
 
   bool is_from_pool(const T* obj) const
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.is_from_pool(obj);
+    std::unique_lock<std::mutex> lock(_lock);
+    return _inner_pool.is_from_pool(obj);
   }
 
 private:
-  mutable std::mutex m_lock;
-  no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
+  mutable std::mutex _lock;
+  no_lock_object_pool<T, TInitializer, TCleanup> _inner_pool;
 };
 }  // namespace VW

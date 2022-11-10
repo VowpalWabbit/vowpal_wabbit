@@ -37,4 +37,5 @@ set(vw_config_test_sources
 vw_add_test_executable(
     FOR_LIB "config"
     SOURCES ${vw_config_test_sources}
+    EXTRA_DEPS vw_test_common
 )

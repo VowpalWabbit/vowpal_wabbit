@@ -9,23 +9,27 @@
 #include <string>
 #include <vector>
 
+namespace VW
+{
+namespace details
+{
 // Decision Service JSON header information - required to construct final label
-class DecisionServiceInteraction
+class decision_service_interaction
 {
 public:
-  std::string eventId;
+  std::string event_id;
   std::string timestamp;
   std::vector<unsigned> actions;
   std::vector<float> probabilities;
   std::vector<unsigned> baseline_actions;
-  float probabilityOfDrop = 0.f;
-  float originalLabelCost = 0.f;
-  float originalLabelCostFirstSlot = 0.f;
-  bool skipLearn{false};
+  float probability_of_drop = 0.f;
+  float original_label_cost = 0.f;
+  float original_label_cost_first_slot = 0.f;
+  bool skip_learn{false};
 };
 
 template <bool audit>
-class Namespace
+class namespace_builder
 {
 public:
   char feature_group;
@@ -34,7 +38,7 @@ public:
   size_t feature_count;
   const char* name;
 
-  void AddFeature(feature_value v, feature_index i, const char* feature_name)
+  void add_feature(feature_value v, feature_index i, const char* feature_name)
   {
     // filter out 0-values
     if (v == 0) { return; }
@@ -45,7 +49,7 @@ public:
     if (audit) { ftrs->space_names.emplace_back(name, feature_name); }
   }
 
-  void AddFeature(const char* str, hash_func_t hash_func, uint64_t parse_mask)
+  void add_feature(const char* str, hash_func_t hash_func, uint64_t parse_mask)
   {
     auto hashed_feature = hash_func(str, strlen(str), namespace_hash) & parse_mask;
     ftrs->push_back(1., hashed_feature);
@@ -54,7 +58,7 @@ public:
     if (audit) { ftrs->space_names.emplace_back(name, str); }
   }
 
-  void AddFeature(const char* key, const char* value, hash_func_t hash_func, uint64_t parse_mask)
+  void add_feature(const char* key, const char* value, hash_func_t hash_func, uint64_t parse_mask)
   {
     ftrs->push_back(1., VW::chain_hash_static(key, value, namespace_hash, hash_func, parse_mask));
     feature_count++;
@@ -63,10 +67,10 @@ public:
 };
 
 template <bool audit>
-void push_ns(VW::example* ex, const char* ns, std::vector<Namespace<audit>>& namespaces, hash_func_t hash_func,
+void push_ns(VW::example* ex, const char* ns, std::vector<namespace_builder<audit>>& namespaces, hash_func_t hash_func,
     uint64_t hash_seed)
 {
-  Namespace<audit> n;
+  namespace_builder<audit> n;
   n.feature_group = ns[0];
   n.namespace_hash = hash_func(ns, strlen(ns), hash_seed);
   n.ftrs = ex->feature_space.data() + ns[0];
@@ -87,7 +91,7 @@ void push_ns(VW::example* ex, const char* ns, std::vector<Namespace<audit>>& nam
 }
 
 template <bool audit>
-void pop_ns(VW::example* ex, std::vector<Namespace<audit>>& namespaces)
+void pop_ns(VW::example* ex, std::vector<namespace_builder<audit>>& namespaces)
 {
   auto& ns = namespaces.back();
   if (ns.feature_count > 0)
@@ -107,3 +111,5 @@ void pop_ns(VW::example* ex, std::vector<Namespace<audit>>& namespaces)
     top.ftrs->start_ns_extent(top.namespace_hash);
   }
 }
+}  // namespace details
+}  // namespace VW

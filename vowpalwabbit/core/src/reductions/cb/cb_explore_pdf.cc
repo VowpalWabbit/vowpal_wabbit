@@ -22,7 +22,7 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_explore_pdf
+#define VW_DEBUG_LOG vw_dbg::CB_EXPLORE_PDF
 
 namespace
 {
@@ -53,7 +53,7 @@ int cb_explore_pdf::learn(VW::example& ec, VW::experimental::api_status*)
 
 int cb_explore_pdf::predict(VW::example& ec, VW::experimental::api_status*)
 {
-  const auto& reduction_features = ec._reduction_features.template get<VW::continuous_actions::reduction_features>();
+  const auto& reduction_features = ec.ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
   if (first_only && !reduction_features.is_pdf_set() && !reduction_features.is_chosen_action_set())
   {
     // uniform random

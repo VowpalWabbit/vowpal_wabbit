@@ -80,7 +80,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
                  << " p_log: " << logged.probability << " reward: " << r << "\n";
       ++_global_counter;
     }
-    auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+    auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     // Process each model, then update the upper/lower bounds for each model
     for (int64_t model_ind = 0; model_ind < model_count; ++model_ind)
     {
@@ -264,7 +264,7 @@ void predict(
   uint64_t final_model_idx = static_cast<uint64_t>(data.conf_seq_estimators.size()) - 1;
   if (!data._constant_epsilon)
   {
-    auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+    auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     const auto& active_estimator = data.conf_seq_estimators[final_model_idx][final_model_idx];
     ep_fts.epsilon =
         VW::reductions::epsilon_decay::decayed_epsilon(data._initial_epsilon, active_estimator.update_count);

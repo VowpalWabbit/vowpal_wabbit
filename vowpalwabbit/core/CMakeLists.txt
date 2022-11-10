@@ -6,7 +6,6 @@ set(vw_core_headers
   include/vw/core/array_parameters_dense.h
   include/vw/core/array_parameters_sparse.h
   include/vw/core/array_parameters.h
-  include/vw/core/beam.h
   include/vw/core/best_constant.h
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
@@ -76,6 +75,7 @@ set(vw_core_headers
   include/vw/core/prediction_type.h
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
+   include/vw/core/qr_decomposition.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
@@ -95,6 +95,7 @@ set(vw_core_headers
   include/vw/core/reductions/cats_pdf.h
   include/vw/core/reductions/cats_tree.h
   include/vw/core/reductions/cats.h
+  include/vw/core/reductions/cb/cb_actions_mask.h
   include/vw/core/reductions/cb/cb_adf.h
   include/vw/core/reductions/cb/cb_algs.h
   include/vw/core/reductions/cb/cb_dro.h
@@ -103,6 +104,7 @@ set(vw_core_headers
   include/vw/core/reductions/cb/cb_explore_adf_cover.h
   include/vw/core/reductions/cb/cb_explore_adf_first.h
   include/vw/core/reductions/cb/cb_explore_adf_greedy.h
+  include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
   include/vw/core/reductions/cb/cb_explore_adf_regcb.h
   include/vw/core/reductions/cb/cb_explore_adf_rnd.h
   include/vw/core/reductions/cb/cb_explore_adf_softmax.h
@@ -240,6 +242,7 @@ set(vw_core_sources
   src/prediction_type.cc
   src/print_utils.cc
   src/prob_dist_cont.cc
+  src/qr_decomposition.cc
   src/rand48.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
@@ -256,6 +259,10 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/details/large_action/one_pass_svd_impl.cc
+  src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
+  src/reductions/cb/details/large_action/two_pass_svd_impl.cc
+  src/reductions/cb/cb_actions_mask.cc
   src/reductions/cb/cb_adf.cc
   src/reductions/cb/cb_algs.cc
   src/reductions/cb/cb_dro.cc
@@ -263,6 +270,7 @@ set(vw_core_sources
   src/reductions/cb/cb_explore_adf_cover.cc
   src/reductions/cb/cb_explore_adf_first.cc
   src/reductions/cb/cb_explore_adf_greedy.cc
+  src/reductions/cb/cb_explore_adf_large_action_space.cc
   src/reductions/cb/cb_explore_adf_regcb.cc
   src/reductions/cb/cb_explore_adf_rnd.cc
   src/reductions/cb/cb_explore_adf_softmax.cc
@@ -344,25 +352,6 @@ set(vw_core_sources
   src/vw_validate.cc
 )
 
-if(VW_BUILD_LARGE_ACTION_SPACE)
-  set(vw_core_headers
-    ${vw_core_headers}
-    include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
-    include/vw/core/reductions/cb/cb_actions_mask.h include/vw/core/qr_decomposition.h
-  )
-
-  set(vw_core_sources
-    ${vw_core_sources}
-    src/reductions/cb/cb_explore_adf_large_action_space.cc
-    src/reductions/cb/details/large_action/model_weight_rand_svd_impl.cc
-    src/reductions/cb/details/large_action/one_pass_svd_impl.cc
-    src/reductions/cb/details/large_action/vanilla_rand_svd_impl.cc
-    src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
-    src/reductions/cb/details/large_action/spanner_impl.cc
-    src/reductions/cb/cb_actions_mask.cc src/qr_decomposition.cc
-  )
-endif()
-
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
@@ -373,6 +362,7 @@ vw_add_library(
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
         ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
+        $<BUILD_INTERFACE:eigen>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
@@ -388,11 +378,6 @@ endif()
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
   target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)
-endif()
-
-if(VW_BUILD_LARGE_ACTION_SPACE)
-  target_link_libraries(vw_core PUBLIC $<BUILD_INTERFACE:eigen>)
-  target_compile_definitions(vw_core PUBLIC BUILD_LARGE_ACTION_SPACE)
 endif()
 
 # Handle generated header
@@ -424,11 +409,13 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "core"
+    EXTRA_DEPS vw_test_common
     SOURCES
       tests/cache_test.cc
+      tests/flat_example_test.cc
+      tests/main.cc
       tests/merge_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
       tests/thread_pool_test.cc
-      tests/main.cc
 )

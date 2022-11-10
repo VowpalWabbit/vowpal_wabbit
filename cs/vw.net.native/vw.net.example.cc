@@ -194,7 +194,7 @@ API void MakeLabelDefault(vw_net_native::workspace_context* workspace, example* 
 
 API void UpdateExampleWeight(vw_net_native::workspace_context* workspace, example* example)
 {
-  example->weight = workspace->vw->example_parser->lbl_parser.get_weight(example->l, example->_reduction_features);
+  example->weight = workspace->vw->example_parser->lbl_parser.get_weight(example->l, example->ex_reduction_features);
 }
 
 API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(
