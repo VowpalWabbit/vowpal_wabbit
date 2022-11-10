@@ -31,6 +31,7 @@ public:
   VW_ATTR(nodiscard) std::shared_ptr<const base_option> get_option(const std::string& key) const;
   VW_ATTR(nodiscard) std::map<std::string, std::vector<option_group_definition>> get_collection_of_options() const;
   VW_ATTR(nodiscard) const std::vector<option_group_definition>& get_all_option_group_definitions() const;
+  VW_ATTR(nodiscard) void remove_option(const std::string& key);
 
   template <typename T>
   VW_ATTR(nodiscard)

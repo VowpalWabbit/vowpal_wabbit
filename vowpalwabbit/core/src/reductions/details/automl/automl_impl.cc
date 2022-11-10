@@ -321,7 +321,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::do_learning
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::process_example(const multi_ex& ec)
 {
-  bool new_ns_seen = count_namespaces(ec, ns_counter);
+  bool new_ns_seen = count_namespaces(ec, ns_counter, index_set);
   // Regenerate interactions if new namespaces are seen
   if (new_ns_seen)
   {

@@ -93,15 +93,46 @@ void finish_example(VW::workspace& all, automl<CMType>& data, VW::multi_ex& ec)
 }
 
 template <typename CMType>
+void output_single_model(VW::workspace& all, automl<CMType>& data)
+{
+  options_i& options = *all.options;
+  if (!options.was_supplied("predict_only_model")) { return; }
+  // Clear non-champ weights first
+  clear_non_champ_weights(data.cm->weights, data.cm->estimators.size(), data.cm->wpp);
+
+  uint64_t multiplier = static_cast<uint64_t>(data.cm->wpp) << data.cm->weights.stride_shift();
+  for (uint32_t index = 0; index < data.cm->weights.mask(); index += multiplier)
+  {
+    if (data.cm->weights[index] != 0.0f)
+    {
+      uint32_t cb_ind = index / data.cm->wpp;
+      std::cout << "AML_FIX:\n";
+      std::cout << cb_ind << "\n";
+      for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << data.cm->weights.stride_shift()); ++stride)
+      {
+        std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]);
+      }
+    }
+  }
+  uint32_t num_bits = options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
+  options.remove_option("automl");
+  options.get_typed_option<uint32_t>("bit_precision").value(num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp)));
+  all.num_bits = num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));
+}
+
+template <typename CMType>
 void save_load_aml(automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
   if (aml.should_save_predict_only_model)
   { clear_non_champ_weights(aml.cm->weights, aml.cm->estimators.size(), aml.cm->wpp); }
-  if (io.num_files() == 0) { return; }
-  if (read) { VW::model_utils::read_model_field(io, aml); }
   else
   {
-    VW::model_utils::write_model_field(io, aml, "_automl", text);
+    if (io.num_files() == 0) { return; }
+    if (read) { VW::model_utils::read_model_field(io, aml); }
+    else
+    {
+      VW::model_utils::write_model_field(io, aml, "_automl", text);
+    }
   }
 }
 
@@ -184,6 +215,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
                 .set_learn_returns_prediction(true)
+                .set_output_single_model(::output_single_model<config_manager_type>)
                 .build();
   return make_base(*l);
 }
@@ -205,7 +237,6 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   bool reversed_learning_order = false;
   bool lb_trick = false;
   bool fixed_significance_level = false;
-  std::string predict_only_model_file = "";
 
   option_group_definition new_options("[Reduction] Automl");
   new_options
@@ -262,9 +293,6 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .default_value(false)
                .help("Use 1-lower_bound as upper_bound for estimator")
                .experimental())
-      .add(make_option("aml_predict_only_model", predict_only_model_file)
-               .help("transform input automl model into predict only automl model")
-               .experimental())
       .add(make_option("automl_significance_level", automl_significance_level)
                .keep()
                .default_value(CS_DEFAULT_ALPHA)
@@ -283,7 +311,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   if (!fixed_significance_level) { automl_significance_level /= max_live_configs; }
 
   bool ccb_on = options.was_supplied("ccb_explore_adf");
-  bool predict_only_model = options.was_supplied("aml_predict_only_model");
+  bool predict_only_model = options.was_supplied("predict_only_model");
 
   if (max_live_configs > MAX_CONFIGS)
   {

@@ -6,6 +6,7 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/learner.h"
 #include "vw/core/rand_state.h"
+#include "vw/config/options.h"
 
 #include <queue>
 
@@ -223,6 +224,9 @@ public:
   // Stores all namespaces currently seen
   std::map<namespace_index, uint64_t> ns_counter;
 
+  // Stores all hashed indices seen so far 
+  std::set<uint64_t> index_set;
+
   // Stores estimators of live configs, size will never exceed max_live_configs. Each pair will be of the form
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
@@ -254,7 +258,7 @@ private:
   static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);
 };
 
-bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
+bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter, std::set<uint64_t>& index_set);
 void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const namespace_index ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);

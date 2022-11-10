@@ -764,7 +764,9 @@ void setup_example(VW::workspace& all, VW::example* ae)
   {  // make room for per-feature information.
     for (features& fs : *ae)
     {
-      for (auto& j : fs.indices) { j *= multiplier; }
+      for (auto& j : fs.indices) {
+         j *= multiplier; 
+      }
     }
   }
   ae->num_features = 0;

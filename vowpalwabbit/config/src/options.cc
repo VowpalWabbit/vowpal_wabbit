@@ -55,6 +55,11 @@ std::shared_ptr<const base_option> VW::config::options_i::get_option(const std::
   return internal_get_option(key, _options);
 }
 
+void VW::config::options_i::remove_option(const std::string& key)
+{
+  if (!_options.erase(key)) { throw std::out_of_range(key + " was not found."); }
+}
+
 void options_i::add_and_parse(const option_group_definition& group)
 {
   // Add known options before parsing so impl can make use of them.

@@ -112,6 +112,14 @@ public:
   fn save_load_f = nullptr;
 };
 
+class output_single_model_data
+{
+  public:
+    using fn = void (*)(VW::workspace& all, void* data);
+    void* data = nullptr;
+    fn output_single_model_f;
+};
+
 class save_metric_data
 {
 public:
@@ -329,6 +337,13 @@ public:
     if (_save_load_fd.base) { _save_load_fd.base->save_load(io, read, text); }
   }
 
+  // called to edit the command-line from a reduction.
+  inline void NO_SANITIZE_UNDEFINED output_single_model(VW::workspace& all)
+  {
+    if (_output_single_model_fd.output_single_model_f == nullptr) { return; }
+    _output_single_model_fd.output_single_model_f(all, _output_single_model_fd.data);
+  }
+
   // called when metrics is enabled.  Autorecursive.
   void NO_SANITIZE_UNDEFINED persist_metrics(metric_sink& metrics)
   {
@@ -508,6 +523,7 @@ private:
   details::save_load_data _save_load_fd;
   details::func_data _end_pass_fd;
   details::func_data _end_examples_fd;
+  details::output_single_model_data _output_single_model_fd;
   details::save_metric_data _persist_metrics_fd;
   details::func_data _finisher_fd;
   std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
@@ -694,6 +710,13 @@ public:
     learner_ptr->_persist_metrics_fd.save_metric_f = (details::save_metric_data::fn)fn_ptr;
     learner_ptr->_persist_metrics_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_persist_metrics_fd.base = learner_ptr->_learn_fd.base;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_output_single_model(void (*fn_ptr)(VW::workspace& all, DataT&))
+  {
+    learner_ptr->_output_single_model_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_output_single_model_fd.output_single_model_f = (details::output_single_model_data::fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
