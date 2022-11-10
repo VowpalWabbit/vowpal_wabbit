@@ -292,8 +292,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_20features_1thread,
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions,
-    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions, gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
@@ -313,8 +312,7 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_plaincb,
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions,
-    gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions, gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0)
     ->UseRealTime()

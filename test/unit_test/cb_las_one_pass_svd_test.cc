@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/cb/details/large_action/compute_dot_prod_simd.h"
 #include "reductions/cb/details/large_action_space.h"
 #include "test_common.h"
 #include "vw/core/qr_decomposition.h"
@@ -91,11 +92,11 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 
   vws.push_back(vw_rs);
 
-  auto* vw_zero_threads_zs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+  auto* vw_zs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
           " --quiet --random_seed 0 --noconstant",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back(vw_zero_threads_zs);
+  vws.push_back(vw_zs);
 
   for (auto* vw_ptr : vws)
   {
@@ -174,6 +175,43 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
   }
 }
 
-// TODO: Add tests for vectorized implementation.
+// TODO: Hide behind some compile flag.
+BOOST_AUTO_TEST_CASE(compute16_has_same_results_with_16_compute1)
+{
+  constexpr uint64_t column_index = 666;
+  constexpr uint64_t seed = 233;
+  constexpr uint64_t weights_len = (1 << 18);
+  constexpr uint64_t weights_mask = weights_len - 1;
+  constexpr uint64_t offset = 4;
+
+  constexpr int num_features = 16;
+  std::vector<uint64_t> feature_indices(num_features);
+  std::vector<float> feature_values(num_features);
+  for (int i = 0; i < num_features; ++i)
+  {
+    feature_indices[i] = rand() % weights_len;
+    feature_values[i] = rand() / static_cast<float>(RAND_MAX);
+  }
+
+  std::vector<float> expected_results(num_features, 0.f);
+  for (int i = 0; i < num_features; ++i)
+  {
+    VW::cb_explore_adf::compute1(
+        feature_values[i], feature_indices[i], offset, weights_mask, column_index, seed, expected_results[i]);
+  }
+
+  __m512 sums = _mm512_setzero_ps();
+  const __m512i column_indices = _mm512_set1_epi64(column_index);
+  const __m512i seeds = _mm512_set1_epi64(seed);
+  const __m512i weights_masks = _mm512_set1_epi64(weights_mask);
+  const __m512i offsets = _mm512_set1_epi64(offset);
+  const __m512 values = _mm512_loadu_ps(&feature_values[0]);
+  const __m512i indices1 = _mm512_loadu_si512(&feature_indices[0]);
+  const __m512i indices2 = _mm512_loadu_si512(&feature_indices[8]);
+  VW::cb_explore_adf::compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
+
+  const float* results = reinterpret_cast<float*>(&sums);
+  for (int i = 0; i < num_features; ++i) { BOOST_CHECK_CLOSE(results[i], expected_results[i], FLOAT_TOL); }
+}
 
 BOOST_AUTO_TEST_SUITE_END()

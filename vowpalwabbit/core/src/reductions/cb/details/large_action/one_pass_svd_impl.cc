@@ -137,7 +137,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
 #ifdef __linux__
   // Only works for linux for now.
   // TODO: Expose this parameter.
-  bool use_simd = false;
+  bool use_simd = true;
   auto compute_dot_prod = use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
 #else
   // TODO: Make simd work with msvc.

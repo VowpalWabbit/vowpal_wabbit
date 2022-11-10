@@ -352,6 +352,9 @@ set(vw_core_sources
   src/vw_validate.cc
 )
 
+# TODO: Hide behind some compile flag.
+set_source_files_properties( src/reductions/cb/details/large_action/one_pass_svd_impl.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq" )
+
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"

@@ -18,16 +18,13 @@ if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
   endif()
 endif()
 
-# TODO: Hide this behind some compile flag.
-set(LINUX_AVX512_FLAGS -mfma -mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq)
-
 # Add -ffast-math for speed, remove for testability.
 # no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
 set(LINUX_RELEASE_CONFIG -fno-strict-aliasing ${LINUX_X86_64_OPT_FLAGS} -fno-stack-check -fomit-frame-pointer)
 set(LINUX_DEBUG_CONFIG -fno-stack-check)
 
-#Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
-set(VW_LINUX_FLAGS $<$<CONFIG:Debug>:${LINUX_DEBUG_CONFIG}> $<$<CONFIG:Release>:${LINUX_RELEASE_CONFIG}> $<$<CONFIG:RelWithDebInfo>:${LINUX_RELEASE_CONFIG}> ${LINUX_AVX512_FLAGS})
+# Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
+set(VW_LINUX_FLAGS $<$<CONFIG:Debug>:${LINUX_DEBUG_CONFIG}> $<$<CONFIG:Release>:${LINUX_RELEASE_CONFIG}> $<$<CONFIG:RelWithDebInfo>:${LINUX_RELEASE_CONFIG}>)
 set(VW_WIN_FLAGS /MP /Zc:__cplusplus)
 
 # Turn on warnings

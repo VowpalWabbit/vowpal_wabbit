@@ -62,6 +62,9 @@ add_executable(vw-unit-test.out
   weights_test.cc
 )
 
+# TODO: Hide behind some compile flag.
+set_source_files_properties( cb_las_one_pass_svd_test.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq" )
+
 # Add the include directories from vw target for testing
 target_link_libraries(vw-unit-test.out PRIVATE vw_core Boost::unit_test_framework)
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
