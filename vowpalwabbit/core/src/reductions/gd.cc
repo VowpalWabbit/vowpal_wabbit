@@ -1023,6 +1023,8 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
   }
   else
   {  // write binary or text
+    if (hexfloat_print) { msg << std::hexfloat; }
+
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
       i = v.index() >> weights.stride_shift();
@@ -1034,7 +1036,6 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
           const auto map_it = all.index_name_map.find(i);
           if (map_it != all.index_name_map.end())
           {
-            if (hexfloat_print) { msg << std::hexfloat; }
             msg << to_string(map_it->second) << ":";
             bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
           }
