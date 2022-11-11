@@ -22,9 +22,9 @@ inline void kernel_impl(float feature_value, uint64_t index, uint64_t weights_ma
     uint64_t seed, float& final_dot_product)
 {
 #ifdef _MSC_VER
-  size_t select_sparsity = __popcnt((index & _weights_mask) + _column_index) & 1;
+  size_t select_sparsity = __popcnt((index & weights_mask) + column_index) & 1;
   auto sparsity_index = INDEX_MAP[select_sparsity];
-  size_t select_sign = __popcnt((index & _weights_mask) + _column_index + _seed) & 1;
+  size_t select_sign = __popcnt((index & weights_mask) + column_index + seed) & 1;
   auto value_index = sparsity_index + select_sign;
   float val = VALUE_MAP[value_index];
 #else

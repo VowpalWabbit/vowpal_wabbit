@@ -55,8 +55,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   const float scaling_factor = 1.f / std::sqrt(p);
   AOmega.resize(num_actions, p);
 
-// TODO: Hide behind some compile flag.
-#ifdef __linux__
+#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
   // TODO: Make simd work with msvc. Only works on linux for now.
   auto compute_dot_prod = _use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
 #else

@@ -4,19 +4,15 @@
 
 #pragma once
 
+#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
+
 #include "compute_dot_prod_scalar.h"
-#ifdef _MSC_VER
-#  include <intrin.h>
-#else
-#  include <x86intrin.h>
-#endif
+#include <x86intrin.h>
 
 namespace VW
 {
 namespace cb_explore_adf
 {
-// TODO: Hide behind some compile flag.
-#ifdef __linux__
 inline void compute1(float feature_value, uint64_t feature_index, uint64_t offset, uint64_t weights_mask,
     uint64_t column_index, uint64_t seed, float& sum)
 {
@@ -153,7 +149,8 @@ inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, u
   }
   return sum + _mm512_reduce_add_ps(sums);
 }
-#endif
 
 }  // namespace cb_explore_adf
 }  // namespace VW
+
+#endif

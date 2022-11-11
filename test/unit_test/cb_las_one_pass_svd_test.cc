@@ -176,8 +176,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
   }
 }
 
-#ifdef __linux__
-// TODO: Hide behind some compile flag.
+#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
 BOOST_AUTO_TEST_CASE(compute16_has_same_results_with_16_compute1)
 {
   constexpr uint64_t column_index = 666;
@@ -216,11 +215,9 @@ BOOST_AUTO_TEST_CASE(compute16_has_same_results_with_16_compute1)
   for (int i = 0; i < num_features; ++i) { BOOST_CHECK_CLOSE(results[i], expected_results[i], FLOAT_TOL); }
 }
 
-// TODO: Hide behind some compile flag.
 BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
 {
-  auto generate_example = [](int num_namespaces, int num_features)
-  {
+  auto generate_example = [](int num_namespaces, int num_features) {
     std::string s;
     for (int i = 0; i < num_namespaces; ++i)
     {
@@ -309,8 +306,7 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
 
 BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predicts)
 {
-  auto generate_example = [](int num_namespaces, int num_features)
-  {
+  auto generate_example = [](int num_namespaces, int num_features) {
     std::string s;
     for (int i = 0; i < num_namespaces; ++i)
     {

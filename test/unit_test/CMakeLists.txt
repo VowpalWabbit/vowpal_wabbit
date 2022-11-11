@@ -62,8 +62,11 @@ add_executable(vw-unit-test.out
   weights_test.cc
 )
 
-# TODO: Hide behind some compile flag.
-set_source_files_properties( cb_las_one_pass_svd_test.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq" )
+if (VW_BUILD_LAS_WITH_SIMD)
+  message(STATUS "Build cb_las_one_pass_svd_test with AVX-512")
+  set_source_files_properties(cb_las_one_pass_svd_test.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
+  target_compile_definitions(vw-unit-test.out PUBLIC BUILD_LAS_WITH_SIMD)
+endif()
 
 # Add the include directories from vw target for testing
 target_link_libraries(vw-unit-test.out PRIVATE vw_core Boost::unit_test_framework)
