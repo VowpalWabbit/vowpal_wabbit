@@ -4,11 +4,7 @@
 
 #pragma once
 
-#include "../large_action_space.h"
-#include "vw/core/example.h"
-#include "vw/core/global_data.h"
-#include "vw/core/large_action_space_reduction_features.h"
-
+#include "compute_dot_prod_scalar.h"
 #ifdef _MSC_VER
 #  include <intrin.h>
 #else
@@ -19,9 +15,17 @@ namespace VW
 {
 namespace cb_explore_adf
 {
+// TODO: Hide behind some compile flag.
+#ifdef __linux__
+inline void compute1(float feature_value, uint64_t feature_index, uint64_t offset, uint64_t weights_mask,
+    uint64_t column_index, uint64_t seed, float& sum)
+{
+  uint64_t index = feature_index + offset;
+  kernel_impl(feature_value, index, weights_mask, column_index, seed, sum);
+}
 
 /*
-// Alternative implementation of 64-bit vpopcnt
+// Alternative implementation of 64-bit vpopcnt in case the instruction is missing.
 // https://github.com/WojciechMula/sse-popcount/blob/master/popcnt-avx512-harley-seal.cpp
 inline __m512i popcount64(const __m512i v)
 {
@@ -36,37 +40,12 @@ inline __m512i popcount64(const __m512i v)
 }
 */
 
-// TODO: refactor & reuse AO_triplet_constructor
-constexpr std::array<size_t, 2> INDEX_MAP = {0, 2};
-constexpr std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
-
-inline void compute1(float feature_value, uint64_t feature_index, uint64_t offset, uint64_t weights_mask,
-    uint64_t column_index, uint64_t seed, float& sum)
-{
-  uint64_t index = feature_index + offset;
-#ifdef _MSC_VER
-  size_t select_sparsity = __popcnt((index & weights_mask) + column_index) & 1;
-  auto sparsity_index = INDEX_MAP[select_sparsity];
-  size_t select_sign = (__popcnt((index & weights_mask) + column_index + seed) & 1);
-  auto value_index = sparsity_index + select_sign;
-  float tmp = VALUE_MAP[value_index];
-#else
-  size_t select_sparsity = __builtin_parity((index & weights_mask) + column_index);
-  auto sparsity_index = INDEX_MAP[select_sparsity];
-  size_t select_sign = __builtin_parity((index & weights_mask) + column_index + seed);
-  auto value_index = sparsity_index + select_sign;
-  float tmp = VALUE_MAP[value_index];
-#endif
-  sum += feature_value * tmp;
-  // sum += feature_value * select_sparsity * (1.f - (select_sign << 1));
-}
-
-#ifdef __linux__
-// TODO: Add comments.
+// Process 16 features in parallel using AVX-512, resulting in the same output of 16 compute1() executions.
 inline void compute16(const __m512& feature_values, const __m512i& feature_indices1, const __m512i& feature_indices2,
     const __m512i& offsets, const __m512i& weights_masks, const __m512i& column_indices, const __m512i& seeds,
     __m512& sums)
 {
+  // value_maps must be the same as the scalar VALUE_MAP.
   const __m512 value_maps = _mm512_setr4_ps(0, 0, 1.f, -1.f);
   const __m512i perm_idx = _mm512_setr_epi32(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
   const __m512i all_ones = _mm512_set1_epi32(1);
@@ -95,8 +74,8 @@ inline void compute16(const __m512& feature_values, const __m512i& feature_indic
   sums = _mm512_fmadd_ps(feature_values, tmp, sums);
 }
 
-inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex,
-    const VW::large_action_space::las_reduction_features& red_features)
+// A data parallel implementation of the foreach_feature that processes 16 features at once.
+inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex)
 {
   float sum = 0.f;
   const uint64_t offset = ex->ft_offset;
@@ -128,44 +107,47 @@ inline float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, u
       compute1(features.values[i], features.indices[i], offset, weights_mask, column_index, seed, sum);
     }
   }
-  // TODO: other interactions, the following only handles quadratics
-  if (red_features.generated_interactions)
+  const auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+  const auto& interactions =
+      red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions;
+  for (const auto& ns : interactions)
   {
-    for (const auto& ns : *red_features.generated_interactions)
+    // TODO: other interactions, ignores & extent_interactions. The following only handles quadratics.
+    assert(ns.size() == 2);
+
+    const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
+    const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
+    const size_t num_features_ns1 = ex->feature_space[ns[1]].size();
+    const auto& ns0_indices = ex->feature_space[ns[0]].indices;
+    const auto& ns1_indices = ex->feature_space[ns[1]].indices;
+    const auto& ns0_values = ex->feature_space[ns[0]].values;
+    const auto& ns1_values = ex->feature_space[ns[1]].values;
+
+    for (size_t i = 0; i < num_features_ns0; ++i)
     {
-      assert(ns.size() == 2);
-      const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
-      const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
-      const size_t num_features_ns1 = ex->feature_space[ns[1]].size();
-      const auto& ns0_indices = ex->feature_space[ns[0]].indices;
-      const auto& ns1_indices = ex->feature_space[ns[1]].indices;
-      const auto& ns0_values = ex->feature_space[ns[0]].values;
-      const auto& ns1_values = ex->feature_space[ns[1]].values;
-      for (size_t i = 0; i < num_features_ns0; ++i)
+      const uint64_t halfhash = VW::details::FNV_PRIME * ns0_indices[i];
+      const __m512i halfhashes = _mm512_set1_epi64(halfhash);
+      const float val = ns0_values[i];
+      const __m512 vals = _mm512_set1_ps(val);
+      size_t j = same_namespace ? i : 0;
+
+      for (; j + 16 <= num_features_ns1; j += 16)
       {
-        const uint64_t halfhash = VW::details::FNV_PRIME * ns0_indices[i];
-        const __m512i halfhashes = _mm512_set1_epi64(halfhash);
-        const float val = ns0_values[i];
-        const __m512 vals = _mm512_set1_ps(val);
-        size_t j = same_namespace ? i : 0;
-        for (; j + 16 <= num_features_ns1; j += 16)
-        {
-          __m512i indices1 = _mm512_loadu_si512(&ns1_indices[j]);
-          __m512i indices2 = _mm512_loadu_si512(&ns1_indices[j + 8]);
-          indices1 = _mm512_xor_epi64(indices1, halfhashes);
-          indices2 = _mm512_xor_epi64(indices2, halfhashes);
+        __m512i indices1 = _mm512_loadu_si512(&ns1_indices[j]);
+        __m512i indices2 = _mm512_loadu_si512(&ns1_indices[j + 8]);
+        indices1 = _mm512_xor_epi64(indices1, halfhashes);
+        indices2 = _mm512_xor_epi64(indices2, halfhashes);
 
-          __m512 values = _mm512_loadu_ps(&ns1_values[j]);
-          values = _mm512_mul_ps(vals, values);
+        __m512 values = _mm512_loadu_ps(&ns1_values[j]);
+        values = _mm512_mul_ps(vals, values);
 
-          compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
-        }
-        for (; j < num_features_ns1; ++j)
-        {
-          float feature_value = val * ns1_values[j];
-          auto index = (ns1_indices[j] ^ halfhash);
-          compute1(feature_value, index, offset, weights_mask, column_index, seed, sum);
-        }
+        compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
+      }
+      for (; j < num_features_ns1; ++j)
+      {
+        float feature_value = val * ns1_values[j];
+        auto index = (ns1_indices[j] ^ halfhash);
+        compute1(feature_value, index, offset, weights_mask, column_index, seed, sum);
       }
     }
   }

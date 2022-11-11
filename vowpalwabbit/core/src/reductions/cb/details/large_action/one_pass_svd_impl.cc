@@ -3,13 +3,8 @@
 // license as described in the file LICENSE.
 
 #include "../large_action_space.h"
+#include "compute_dot_prod_scalar.h"
 #include "compute_dot_prod_simd.h"
-#include "vw/core/cb.h"
-#include "vw/core/label_dictionary.h"
-#include "vw/core/reductions/gd.h"
-#ifdef _MSC_VER
-#  include <intrin.h>
-#endif
 
 namespace VW
 {
@@ -49,80 +44,6 @@ namespace cb_explore_adf
  * (row's cell) on the fly, and adding the product to the final dotproduct corresponding to that example-row)
  */
 
-class AO_triplet_constructor
-{
-public:
-  AO_triplet_constructor(uint64_t weights_mask, uint64_t column_index, uint64_t seed, float& final_dot_product)
-      : _weights_mask(weights_mask), _column_index(column_index), _seed(seed), _final_dot_product(final_dot_product)
-  {
-  }
-
-  void set(float feature_value, uint64_t index)
-  {
-    /**
-     * set is going to be called foreach feature
-     *
-     * The index and _column_index are used figure out the Omega cell and its value that is needed to multiply the
-     * feature value with.
-     * That combined index is then used to flip a coin and generate rademacher randomness.
-     * The way the coin is flipped is by counting the number of bits in the combined index (plus the seed).
-     * If the number of bits are even then we multiply with -1.f else we multiply with 1.f
-     *
-     * This is a sparse rademacher implementation where half the time we select zero and the remaining time we flip the
-     * coin to get -1/+1. The below code is the equivalent of branching on the first bit count of the combined index
-     * without the seed. If even then we would return 0 if odd then we would branch again on the combined index
-     * including the seed and select -1/+1.
-     *
-     * Branching is avoided by using the lookup maps.
-     */
-
-#ifdef _MSC_VER
-    size_t select_sparsity = __popcnt((index & _weights_mask) + _column_index) & 1;
-    auto sparsity_index = INDEX_MAP[select_sparsity];
-    size_t select_sign = __popcnt((index & _weights_mask) + _column_index + _seed) & 1;
-    auto value_index = sparsity_index + select_sign;
-    float val = VALUE_MAP[value_index];
-#else
-    size_t select_sparsity = __builtin_parity((index & _weights_mask) + _column_index);
-    auto sparsity_index = INDEX_MAP[select_sparsity];
-    size_t select_sign = __builtin_parity((index & _weights_mask) + _column_index + _seed);
-    auto value_index = sparsity_index + select_sign;
-    float val = VALUE_MAP[value_index];
-#endif
-    _final_dot_product += feature_value * val;
-  }
-
-private:
-  uint64_t _weights_mask;
-  uint64_t _column_index;
-  uint64_t _seed;
-  float& _final_dot_product;
-  // index mapped used to select sparsity or not from value map
-  constexpr static std::array<size_t, 2> INDEX_MAP = {0, 2};
-  constexpr static std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
-};
-
-// definition at namespace scope
-constexpr std::array<size_t, 2> AO_triplet_constructor::INDEX_MAP;
-constexpr std::array<float, 4> AO_triplet_constructor::VALUE_MAP;
-
-inline float compute_dot_prod_scalar(uint64_t col, VW::workspace* _all, uint64_t _seed, VW::example* ex,
-    const VW::large_action_space::las_reduction_features& red_features)
-{
-  float final_dot_prod = 0.f;
-
-  AO_triplet_constructor tc(_all->weights.mask(), col, _seed, final_dot_prod);
-
-  GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-      _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
-      (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
-      (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
-                                                  : *ex->extent_interactions),
-      _all->permutations, *ex, tc, _all->generate_interactions_object_cache_state);
-
-  return final_dot_prod;
-}
-
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
   auto num_actions = examples[0]->pred.a_s.size();
@@ -134,13 +55,11 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   const float scaling_factor = 1.f / std::sqrt(p);
   AOmega.resize(num_actions, p);
 
+// TODO: Hide behind some compile flag.
 #ifdef __linux__
-  // Only works for linux for now.
-  // TODO: Expose this parameter.
-  bool use_simd = true;
-  auto compute_dot_prod = use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
+  // TODO: Make simd work with msvc. Only works on linux for now.
+  auto compute_dot_prod = _use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
 #else
-  // TODO: Make simd work with msvc.
   auto compute_dot_prod = compute_dot_prod_scalar;
 #endif
 
@@ -156,14 +75,11 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
       auto* shared_example = red_features.shared_example;
       if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
-      // float sum = 0.f;
       for (uint64_t col = 0; col < p; ++col)
       {
-        float final_dot_prod = compute_dot_prod(col, _all, _seed, ex, red_features);
+        float final_dot_prod = compute_dot_prod(col, _all, _seed, ex);
         AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index] * scaling_factor;
-        // sum += final_dot_prod;
       }
-      // printf("%d\t%f\n", (int)row_index, sum);
 
       if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
     }
@@ -204,9 +120,14 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
   if (_set_testing_components) { _V = _svd.matrixV(); }
 }
 
-one_pass_svd_impl::one_pass_svd_impl(
-    VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size, size_t block_size)
-    : _all(all), _d(d), _seed(seed), _thread_pool(thread_pool_size), _block_size(block_size)
+one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size,
+    size_t block_size, bool use_explicit_simd)
+    : _all(all)
+    , _d(d)
+    , _seed(seed)
+    , _thread_pool(thread_pool_size)
+    , _block_size(block_size)
+    , _use_simd(use_explicit_simd)
 {
 }
 

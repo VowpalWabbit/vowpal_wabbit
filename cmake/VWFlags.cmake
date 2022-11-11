@@ -14,6 +14,7 @@ endif()
 
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
   if(NOT "arm64" STREQUAL "${CMAKE_OSX_ARCHITECTURES}")
+    # Use sse2 by default. Change to latest simd extensions such as avx512 on supported architecture.
     set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
   endif()
 endif()
