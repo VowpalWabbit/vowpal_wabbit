@@ -370,7 +370,7 @@ vw_add_library(
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
-if (VW_BUILD_LAS_WITH_SIMD)
+if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE))
   message(STATUS "Build one_pass_svd_impl with AVX-512")
   set_source_files_properties(src/reductions/cb/details/large_action/one_pass_svd_impl.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
   target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)

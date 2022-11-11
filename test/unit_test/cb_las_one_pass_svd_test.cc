@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
   }
 }
 
-#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
+#ifdef BUILD_LAS_WITH_SIMD
 BOOST_AUTO_TEST_CASE(compute16_has_same_results_with_16_compute1)
 {
   constexpr uint64_t column_index = 666;

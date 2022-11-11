@@ -4,10 +4,11 @@
 
 #pragma once
 
-#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
+#ifdef BUILD_LAS_WITH_SIMD
 
 #  include "compute_dot_prod_scalar.h"
 
+// TODO: Make simd work with MSVC. Only works on linux for now.
 #  include <x86intrin.h>
 
 namespace VW

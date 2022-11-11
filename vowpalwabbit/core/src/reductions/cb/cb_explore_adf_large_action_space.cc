@@ -380,7 +380,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .default_value(0)
                .help("Number of actions in a block to be scheduled for multithreading when using one pass svd "
                      "implementation (by default, block_size = num_actions / thread_pool_size)"))
-#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
+#ifdef BUILD_LAS_WITH_SIMD
       .add(make_option("explicit_simd", use_simd_in_one_pass_svd_impl)
                .experimental()
                .help("Use explicit simd implementation in one pass svd. Only works with quadratics and no ignores."))

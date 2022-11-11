@@ -55,8 +55,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   const float scaling_factor = 1.f / std::sqrt(p);
   AOmega.resize(num_actions, p);
 
-#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
-  // TODO: Make simd work with msvc. Only works on linux for now.
+#ifdef BUILD_LAS_WITH_SIMD
   auto compute_dot_prod = _use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
 #else
   auto compute_dot_prod = compute_dot_prod_scalar;
@@ -119,14 +118,19 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
   if (_set_testing_components) { _V = _svd.matrixV(); }
 }
 
-one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size,
-    size_t block_size, bool use_explicit_simd)
+one_pass_svd_impl::one_pass_svd_impl(
+    VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size, size_t block_size,
+    bool
+#ifdef BUILD_LAS_WITH_SIMD
+        use_explicit_simd
+#endif
+    )
     : _all(all)
     , _d(d)
     , _seed(seed)
     , _thread_pool(thread_pool_size)
     , _block_size(block_size)
-#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
+#ifdef BUILD_LAS_WITH_SIMD
     , _use_simd(use_explicit_simd)
 #endif
 {
