@@ -79,7 +79,9 @@ private:
   uint64_t _seed;
   thread_pool _thread_pool;
   size_t _block_size;
+#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
   bool _use_simd;
+#endif
   std::vector<std::future<void>> _futures;
   Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
 };

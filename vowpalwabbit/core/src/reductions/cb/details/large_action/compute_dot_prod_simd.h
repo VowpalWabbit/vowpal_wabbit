@@ -6,8 +6,9 @@
 
 #if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
 
-#include "compute_dot_prod_scalar.h"
-#include <x86intrin.h>
+#  include "compute_dot_prod_scalar.h"
+
+#  include <x86intrin.h>
 
 namespace VW
 {

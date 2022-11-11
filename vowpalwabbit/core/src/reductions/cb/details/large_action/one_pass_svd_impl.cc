@@ -126,7 +126,9 @@ one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t se
     , _seed(seed)
     , _thread_pool(thread_pool_size)
     , _block_size(block_size)
+#if defined(__linux__) && defined(BUILD_LAS_WITH_SIMD)
     , _use_simd(use_explicit_simd)
+#endif
 {
 }
 
