@@ -29,35 +29,19 @@ namespace
 {
 class rate_target
 {
-  float _rate;
+  float _target_rate;
   float _sum_p;
   size_t _t;
   std::vector<float> v;
-
-public:
-  rate_target() : _rate(1), _sum_p(0), _t(0) {}
-
-  void set_rate(float rate) { _rate = rate; }
-
-  float get_rate() { return _rate; }
+  float _latest_rate = 1.f;
 
   float predict()
   {
-    if (_rate == 1.f) { return 1.f; }
     if (_sum_p > 0.f)
     {
-      return std::max(0.f, std::min(1.f, _rate * (float)_t / _sum_p));
+      return std::max(0.f, std::min(1.f, _target_rate * (float)_t / _sum_p));
     }
     else { return 1.f; }
-  }
-
-  void print_state()
-  {
-    auto m = v.begin() + v.size() / 2;
-    std::nth_element(v.begin(), m, v.end());
-    auto cur_med = v[v.size() / 2];
-    std::cout << "t: " << _t << " sump: " << _sum_p << " avg " << _sum_p / static_cast<float>(_t) << " med " << cur_med
-              << std::endl;
   }
 
   void learn(float p)
@@ -65,6 +49,36 @@ public:
     _sum_p += p;
     _t++;
     v.push_back(_sum_p / (float)_t);
+  }
+
+public:
+  rate_target() : _target_rate(1), _sum_p(0), _t(0) {}
+
+  void set_target_rate(float rate) { _target_rate = rate; }
+
+  float get_target_rate() { return _target_rate; }
+
+  float get_latest_rate() { return _latest_rate; }
+
+  float get_rate_and_update(float threshold, size_t update_count, size_t example_count, bool action_found)
+  {
+    if (_target_rate == 1.f) { return 1.f; }
+
+    float z = predict();
+    float current_rate = (float)update_count / (float)example_count;
+    auto off_target = current_rate > _target_rate ? z : 1 - 1.f / example_count;
+
+    if (z >= 0.99f || z <= 0.001f || !action_found)
+    {
+      // this kicks in whenever the threshold has been consecutively too low or too high or (with LAS) action is missing
+      // in these cases threshold will be around 0/1 so it can't really be used to adjust the rate prediction
+      // this special case has the effect of not swaying the predicted rate too much
+      learn(current_rate);
+    }
+    else { learn(threshold); }
+
+    _latest_rate = off_target;
+    return off_target;
   }
 };
 
@@ -94,11 +108,11 @@ void finish(explore_eval& data)
     *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
     if (data.violations > 0) { *(data.all->trace_message) << "violation count = " << data.violations << std::endl; }
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
-    if (data.rt_target.get_rate() < 1)
+    if (data.rt_target.get_target_rate() < 1)
     {
-      *(data.all->trace_message) << "targeted update count = " << (data.example_counter * data.rt_target.get_rate())
+      *(data.all->trace_message) << "targeted update count = " << (data.example_counter * data.rt_target.get_target_rate())
                                  << std::endl;
-      *(data.all->trace_message) << "final rate = " << (data.rt_target.predict()) << std::endl;
+      *(data.all->trace_message) << "final rate = " << (data.rt_target.get_latest_rate()) << std::endl;
     }
   }
 }
@@ -230,27 +244,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     p *= data.multiplier;
 
-    float z = data.rt_target.predict();
-    float cur_rate = ((float)(data.update_count) / (float)(data.example_counter));
-    auto off_target = cur_rate > data.rt_target.get_rate() ? z : 1.f - 1.f / data.example_counter;
-    if (data.rt_target.get_rate() == 1.f)
-    {
-      off_target = 1.f;
-    }
-
-    if (z == 1.f)
-    {
-      data.rt_target.learn(1.f);
-    }
-    else if (!action_found)
-    {
-      // don't want it to learn on zero
-      data.rt_target.learn(cur_rate);
-    }
-    else
-    {
-      data.rt_target.learn(p);
-    }
+    float off_target = data.rt_target.get_rate_and_update(p, data.update_count, data.example_counter, action_found);
 
 
     if (!action_found) { return; }
@@ -312,7 +306,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
 
   data->all = &all;
   data->random_state = all.get_random_state();
-  data->rt_target.set_rate(target_rate);
+  data->rt_target.set_target_rate(target_rate);
 
   if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
   else { data->multiplier = 1; }
