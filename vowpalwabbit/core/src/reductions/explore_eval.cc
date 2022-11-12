@@ -37,11 +37,11 @@ class rate_target
 
   float predict()
   {
-    if (_sum_p > 0.f)
+    if (_sum_p > 0.f) { return std::max(0.f, std::min(1.f, _target_rate * (float)_t / _sum_p)); }
+    else
     {
-      return std::max(0.f, std::min(1.f, _target_rate * (float)_t / _sum_p));
+      return 1.f;
     }
-    else { return 1.f; }
   }
 
   void learn(float p)
@@ -75,7 +75,10 @@ public:
       // this special case has the effect of not swaying the predicted rate too much
       learn(current_rate);
     }
-    else { learn(threshold); }
+    else
+    {
+      learn(threshold);
+    }
 
     _latest_rate = off_target;
     return off_target;
@@ -110,8 +113,8 @@ void finish(explore_eval& data)
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
     if (data.rt_target.get_target_rate() < 1)
     {
-      *(data.all->trace_message) << "targeted update count = " << (data.example_counter * data.rt_target.get_target_rate())
-                                 << std::endl;
+      *(data.all->trace_message) << "targeted update count = "
+                                 << (data.example_counter * data.rt_target.get_target_rate()) << std::endl;
       *(data.all->trace_message) << "final rate = " << (data.rt_target.get_latest_rate()) << std::endl;
     }
   }
@@ -246,7 +249,6 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     float off_target = data.rt_target.get_rate_and_update(p, data.update_count, data.example_counter, action_found);
 
-
     if (!action_found) { return; }
 
     if (p > 1. + 1e-6) { data.violations++; }
@@ -309,7 +311,10 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   data->rt_target.set_target_rate(target_rate);
 
   if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
-  else { data->multiplier = 1; }
+  else
+  {
+    data->multiplier = 1;
+  }
 
   if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 
