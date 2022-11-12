@@ -261,10 +261,11 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       }
       else
       {
+
         uint32_t l = node.n - p.ti;
         if (p.probabilities)
         {
-          ec.pred.a_s.push_back({l, node.p});
+          pred.a_s.push_back({l, node.p});
           if (pred.a_s.size() >= p.top_k) { break; }
         }
         else
@@ -298,10 +299,84 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
+void print_update_with_probabilities(VW::workspace& all, bool is_test, const VW::example& ec)
+{
+    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+    {
+        std::stringstream label_string;
+        if (is_test) { label_string << "unknown"; }
+        else
+        {
+            label_string << VW::to_string(ec.l.multilabels);
+        }
+
+        all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+                             VW::to_string(ec.pred.a_s), ec.get_num_features(), all.progress_add, all.progress_arg);
+    }
+}
+
+void output_example_with_probabilities(VW::workspace& all, const VW::example& ec)
+{
+    const auto& ld = ec.l.multilabels;
+
+    float loss = 0.;
+    if (ld.label_v.size() != 0)
+    {
+        // need to compute exact loss
+        const ACTION_SCORE::action_scores& preds = ec.pred.a_s;
+        const MULTILABEL::labels& given = ec.l.multilabels;
+
+        uint32_t preds_index = 0;
+        uint32_t given_index = 0;
+
+        while (preds_index < preds.size() && given_index < given.label_v.size())
+        {
+            if (preds[preds_index].action < given.label_v[given_index])
+            {
+                preds_index++;
+                loss++;
+            }
+            else if (preds[preds_index].action > given.label_v[given_index])
+            {
+                given_index++;
+                loss++;
+            }
+            else
+            {
+                preds_index++;
+                given_index++;
+            }
+        }
+        loss += given.label_v.size() - given_index;
+        loss += preds.size() - preds_index;
+    }
+
+    all.sd->update(ec.test_only, (ld.label_v.size() != 0), loss, 1.f, ec.get_num_features());
+
+    for (auto& sink : all.final_prediction_sink)
+    {
+        if (sink != nullptr)
+        {
+            std::stringstream ss;
+
+            for (size_t i = 0; i < ec.pred.a_s.size(); i++)
+            {
+                if (i > 0) { ss << ','; }
+                ss << ec.pred.a_s[i];
+            }
+            ss << ' ';
+            all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
+        }
+    }
+
+    print_update_with_probabilities(all, (ld.label_v.size() == 0), ec);
+}
+
 void finish_example(VW::workspace& all, plt& p, VW::example& ec)
 {
   if (p.probabilities)
-  { /*ACTION_SCORE::output_example(all, ec);*/
+  { // Since the input is multi-label and output is action-score, lets use custom output_example
+      output_example_with_probabilities(all, ec);
   }
   else { MULTILABEL::output_example(all, ec); }
   VW::finish_example(all, ec);
