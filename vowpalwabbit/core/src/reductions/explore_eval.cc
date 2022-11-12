@@ -27,6 +27,47 @@ using namespace VW::config;
 
 namespace
 {
+class rate_target
+{
+  float _rate;
+  float _sum_p;
+  size_t _t;
+  std::vector<float> v;
+
+public:
+  rate_target() : _rate(1), _sum_p(0), _t(0) {}
+
+  void set_rate(float rate) { _rate = rate; }
+
+  float get_rate() { return _rate; }
+
+  float predict()
+  {
+    if (_rate == 1.f) { return 1.f; }
+    if (_sum_p > 0.f)
+    {
+      return std::max(0.f, std::min(1.f, _rate * (float)_t / _sum_p));
+    }
+    else { return 1.f; }
+  }
+
+  void print_state()
+  {
+    auto m = v.begin() + v.size() / 2;
+    std::nth_element(v.begin(), m, v.end());
+    auto cur_med = v[v.size() / 2];
+    std::cout << "t: " << _t << " sump: " << _sum_p << " avg " << _sum_p / static_cast<float>(_t) << " med " << cur_med
+              << std::endl;
+  }
+
+  void learn(float p)
+  {
+    _sum_p += p;
+    _t++;
+    v.push_back(_sum_p / (float)_t);
+  }
+};
+
 class explore_eval
 {
 public:
@@ -37,8 +78,7 @@ public:
   CB::label action_label;
   CB::label empty_label;
   size_t example_counter = 0;
-  size_t block_size = 1;
-  size_t block_ex_quota = 1;
+  rate_target rt_target;
 
   size_t update_count = 0;
   size_t violations = 0;
@@ -54,9 +94,11 @@ void finish(explore_eval& data)
     *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
     if (data.violations > 0) { *(data.all->trace_message) << "violation count = " << data.violations << std::endl; }
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
-    if (data.block_size > 1)
+    if (data.rt_target.get_rate() < 1)
     {
-      *(data.all->trace_message) << "targeted update count = " << (data.example_counter / data.block_size) << std::endl;
+      *(data.all->trace_message) << "targeted update count = " << (data.example_counter * data.rt_target.get_rate())
+                                 << std::endl;
+      *(data.all->trace_message) << "final rate = " << (data.rt_target.predict()) << std::endl;
     }
   }
 }
@@ -165,17 +207,6 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
   {
     data.example_counter++;
 
-    if (data.example_counter % data.block_size == 0)
-    {
-      // once new block has rolled over either reset quota or roll over previous quota
-      data.block_ex_quota++;
-    }
-    else if (data.block_ex_quota == 0)
-    {
-      // if we reached the example quota for this example block just skip
-      return;
-    }
-
     VW::action_scores& a_s = ec_seq[0]->pred.a_s;
 
     float action_probability = 0;
@@ -189,19 +220,44 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       }
     }
 
-    if (!action_found) { return; }
-
     float threshold = action_probability / data.known_cost.probability;
+    float p = std::min(1.f, threshold);
 
-    if (!data.fixed_multiplier) { data.multiplier = std::min(data.multiplier, 1 / threshold); }
-    else
+    if (!data.fixed_multiplier)
     {
-      threshold *= data.multiplier;
+      if (action_found) { data.multiplier = std::min(data.multiplier, 1.f / p); }
     }
 
-    if (threshold > 1. + 1e-6) { data.violations++; }
+    p *= data.multiplier;
 
-    if (data.random_state->get_and_update_random() < threshold)
+    float z = data.rt_target.predict();
+    float cur_rate = ((float)(data.update_count) / (float)(data.example_counter));
+    auto off_target = cur_rate > data.rt_target.get_rate() ? z : 1.f - 1.f / data.example_counter;
+    if (data.rt_target.get_rate() == 1.f)
+    {
+      off_target = 1.f;
+    }
+
+    if (z == 1.f)
+    {
+      data.rt_target.learn(1.f);
+    }
+    else if (!action_found)
+    {
+      // don't want it to learn on zero
+      data.rt_target.learn(cur_rate);
+    }
+    else
+    {
+      data.rt_target.learn(p);
+    }
+
+
+    if (!action_found) { return; }
+
+    if (p > 1. + 1e-6) { data.violations++; }
+
+    if (data.random_state->get_and_update_random() < (p * off_target))
     {
       VW::example* ec_found = nullptr;
       for (VW::example*& ec : ec_seq)
@@ -225,7 +281,6 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
 
       data.update_count++;
-      data.block_ex_quota--;
     }
   }
 }
@@ -237,7 +292,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<explore_eval>();
   bool explore_eval_option = false;
-  uint32_t block_size = 0;
+  float target_rate = 1.f;
   option_group_definition new_options("[Reduction] Explore Evaluation");
   new_options
       .add(make_option("explore_eval", explore_eval_option)
@@ -247,8 +302,8 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
       .add(make_option("multiplier", data->multiplier)
                .help("Multiplier used to make all rejection sample probabilities <= 1"))
       .add(
-          make_option("block_size", block_size)
-              .default_value(1)
+          make_option("target_rate", target_rate)
+              .default_value(1.f)
               .help("The examples will be processed in blocks of block_size. If an example update is found in that "
                     "block no other examples in the block will be used to update the policy. If an example is not used "
                     "in the block then the quota rolls over and the next block can update more than one examples"));
@@ -257,14 +312,10 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
 
   data->all = &all;
   data->random_state = all.get_random_state();
-  data->block_size = static_cast<size_t>(block_size);
-  data->block_ex_quota = 1;
+  data->rt_target.set_rate(target_rate);
 
   if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
-  else
-  {
-    data->multiplier = 1;
-  }
+  else { data->multiplier = 1; }
 
   if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 
