@@ -16,7 +16,6 @@
 #include <cstdio>
 #include <queue>
 #include <sstream>
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -164,7 +163,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   VW::polyprediction pred = std::move(ec.pred);
 
   if (p.probabilities) { pred.a_s.clear(); }
-  else { pred.multilabels.label_v.clear(); }
+  pred.multilabels.label_v.clear();
 
   // split labels into true and skip (those > max. label num)
   p.true_labels.clear();
@@ -204,8 +203,8 @@ void predict(plt& p, single_learner& base, VW::example& ec)
           else
           {
             uint32_t l = n_child - p.ti;
-            if (p.probabilities) { ec.pred.a_s.push_back({l, cp_child}); }
-            else { pred.multilabels.label_v.push_back(l); }
+            if (p.probabilities) { pred.a_s.push_back({l, cp_child}); }
+            pred.multilabels.label_v.push_back(l);
           }
         }
       }
@@ -216,13 +215,10 @@ void predict(plt& p, single_learner& base, VW::example& ec)
     {
       uint32_t tp = 0;
       uint32_t pred_size = pred.multilabels.label_v.size();
-      if (p.probabilities) { pred_size = pred.a_s.size(); }
 
       for (uint32_t i = 0; i < pred_size; ++i)
       {
-        uint32_t pred_label;
-        if (p.probabilities) { pred_label = pred.a_s[i].action; }
-        else { pred_label = pred.multilabels.label_v[i]; }
+        uint32_t pred_label = pred.multilabels.label_v[i];
         if (p.true_labels.count(pred_label)) { ++tp; }
       }
       p.tp += tp;
@@ -261,18 +257,10 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       }
       else
       {
-
         uint32_t l = node.n - p.ti;
-        if (p.probabilities)
-        {
-          pred.a_s.push_back({l, node.p});
-          if (pred.a_s.size() >= p.top_k) { break; }
-        }
-        else
-        {
-          pred.multilabels.label_v.push_back(l);
-          if (pred.multilabels.label_v.size() >= p.top_k) { break; }
-        }
+        if (p.probabilities) pred.a_s.push_back({l, node.p});
+        pred.multilabels.label_v.push_back(l);
+        if (pred.multilabels.label_v.size() >= p.top_k) { break; }
       }
     }
 
@@ -282,9 +270,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       float tp_at = 0;
       for (size_t i = 0; i < p.top_k; ++i)
       {
-        uint32_t pred_label;
-        if (p.probabilities) { pred_label = pred.a_s[i].action; }
-        else { pred_label = pred.multilabels.label_v[i]; }
+        uint32_t pred_label = pred.multilabels.label_v[i];
         if (p.true_labels.count(pred_label)) { tp_at += 1; }
         p.p_at[i] += tp_at / (i + 1);
         p.r_at[i] += tp_at / p.true_labels.size();
@@ -299,92 +285,31 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void print_update_with_probabilities(VW::workspace& all, bool is_test, const VW::example& ec)
-{
-    if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-    {
-        std::stringstream label_string;
-        if (is_test) { label_string << "unknown"; }
-        else
-        {
-            label_string << VW::to_string(ec.l.multilabels);
-        }
-
-        all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-                             VW::to_string(ec.pred.a_s), ec.get_num_features(), all.progress_add, all.progress_arg);
-    }
-}
-
-void output_example_with_probabilities(VW::workspace& all, const VW::example& ec)
-{
-    const auto& ld = ec.l.multilabels;
-
-    float loss = 0.;
-    if (ld.label_v.size() != 0)
-    {
-        // need to compute exact loss
-        const ACTION_SCORE::action_scores& preds = ec.pred.a_s;
-        const MULTILABEL::labels& given = ec.l.multilabels;
-
-        uint32_t preds_index = 0;
-        uint32_t given_index = 0;
-
-        while (preds_index < preds.size() && given_index < given.label_v.size())
-        {
-            if (preds[preds_index].action < given.label_v[given_index])
-            {
-                preds_index++;
-                loss++;
-            }
-            else if (preds[preds_index].action > given.label_v[given_index])
-            {
-                given_index++;
-                loss++;
-            }
-            else
-            {
-                preds_index++;
-                given_index++;
-            }
-        }
-        loss += given.label_v.size() - given_index;
-        loss += preds.size() - preds_index;
-    }
-
-    all.sd->update(ec.test_only, (ld.label_v.size() != 0), loss, 1.f, ec.get_num_features());
-
-    for (auto& sink : all.final_prediction_sink)
-    {
-        if (sink != nullptr)
-        {
-            std::stringstream ss;
-
-            for (size_t i = 0; i < ec.pred.a_s.size(); i++)
-            {
-                if (i > 0) { ss << ','; }
-                ss << ec.pred.a_s[i];
-            }
-            ss << ' ';
-            all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
-        }
-    }
-
-    print_update_with_probabilities(all, (ld.label_v.size() == 0), ec);
-}
-
 void finish_example(VW::workspace& all, plt& p, VW::example& ec)
 {
   if (p.probabilities)
-  { // Since the input is multi-label and output is action-score, lets use custom output_example
-      output_example_with_probabilities(all, ec);
+  {   // print probabilities for predicted labels stored in a_s vector, similar to multilabel_oaa reduction
+      std::ostringstream outputStringStream;
+      for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+      {
+          if (i > 0) { outputStringStream << ' '; }
+          if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(ec.pred.a_s[i].action); }
+          else
+          {
+              outputStringStream << ec.pred.a_s[i].action;
+          }
+          outputStringStream << ':' << ec.pred.a_s[i].score;
+      }
+      const auto ss_str = outputStringStream.str();
+      for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
   }
-  else { MULTILABEL::output_example(all, ec); }
+  MULTILABEL::output_example(all, ec);
   VW::finish_example(all, ec);
 }
 
 void finish(plt& p)
 {
-  // print results in test mode
+  // print results in the test mode
   if (!p.all->training && p.ec_count > 0)
   {
     // top-k predictions
