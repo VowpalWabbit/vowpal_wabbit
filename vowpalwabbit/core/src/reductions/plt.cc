@@ -6,6 +6,7 @@
 #include "vw/config/options.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/named_labels.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -154,7 +155,7 @@ inline float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-x)); }
 inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
 {
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<simple_label_reduction_features>().reset_to_default();
   base.predict(ec, n);
   return sigmoid(ec.partial_prediction);
 }
