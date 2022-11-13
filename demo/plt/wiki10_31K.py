@@ -7,7 +7,7 @@ import time
 k = 30938  # number of labels
 kary_tree = 16
 l = 1.0
-passes = 3
+passes = 1
 b = 30
 output_model = "wiki10_model"
 
@@ -25,22 +25,31 @@ if not os.path.exists(test_data):
 
 print("\nTraining\n")
 
+print("\nTraining\n")
 start = time.time()
-os.system(
-    "vw {} -c --plt {} --kary_tree {} -l {} --passes {} -b {} -f {} --holdout_off".format(
-        train_data, k, kary_tree, l, passes, b, output_model
-    )
+train_cmd = "vw {} -c --plt {} --loss_function logistic --kary_tree {} -l {} --passes {} -b {} -f {} --holdout_off".format(
+    train_data, k, kary_tree, l, passes, b, output_model
 )
+print(train_cmd)
+os.system(train_cmd)
 train_time = time.time() - start
 
 print("\nTesting with probability threshold = 0.5 (default prediction mode)\n")
 start = time.time()
-os.system("vw {} -i {} --threshold 0.5 -t".format(test_data, output_model))
+test_threshold_cmd = "vw {} -i {} --loss_function logistic --threshold 0.5 -t".format(
+    test_data, output_model
+)
+print(test_threshold_cmd)
+os.system(test_threshold_cmd)
 thr_test_time = time.time() - start
 
 print("\nTesting with top-5 prediction\n")
 start = time.time()
-os.system("vw {} -i {} --top_k 5 -t".format(test_data, output_model))
+test_topk_cmd = "vw {} -i {} --loss_function logistic --top_k 5 -t".format(
+    test_data, output_model
+)
+print(test_topk_cmd)
+os.system(test_topk_cmd)
 topk_test_time = time.time() - start
 
 print("\ntrain time (s) = {:.3f}".format(train_time))
