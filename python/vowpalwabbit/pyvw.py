@@ -2,7 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
@@ -110,6 +110,7 @@ class VWOption:
         value_supplied,
         default_value,
         default_value_supplied,
+        experimental,
     ):
         self._name = name
         self._help_str = help_str
@@ -121,6 +122,7 @@ class VWOption:
         self._value_supplied = value_supplied
         self._default_value = default_value
         self._default_value_supplied = default_value_supplied
+        self._experimental = experimental
 
     @property
     def name(self):
@@ -159,6 +161,10 @@ class VWOption:
         return self._default_value_supplied
 
     @property
+    def experimental(self):
+        return self._experimental
+
+    @property
     def value(self):
         return self._value
 
@@ -187,6 +193,10 @@ class VWOption:
 
 class SearchTask:
     """Search task class"""
+
+    # Declare types for optional variables to prevent pytype attribute-error
+    _setup: Optional[Callable]
+    _takedown: Optional[Callable]
 
     def __init__(self, vw, sch, num_actions):
         """

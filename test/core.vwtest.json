@@ -3144,7 +3144,7 @@
   },
   {
     "id": 244,
-    "desc": "Flatbuffer CB_eval test",
+    "desc": "Flatbuffer CB_EVAL test",
     "vw_command": "-d train-sets/rcv1_cb_eval.fb --cb 2 --eval --flatbuffer",
     "diff_files": {
       "stderr": "train-sets/ref/rcv1_cb_eval_fb.stderr",
@@ -5385,6 +5385,84 @@
     ],
     "depends_on": [
       411
+    ]
+  },
+  {
+    "id": 418,
+    "desc": "set up automl model to test overrides",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -f models/automl_override.model --automl 4 --global_lease 100 --priority_type favor_popular_namespaces --priority_challengers 1 --oracle_type rand --automl_significance_level .1",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_test_set_override.stderr",
+      "stdout": "train-sets/ref/automl_test_set_override.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 419,
+    "desc": "load automl model with overrides",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -i models/automl_override.model --automl 4 --global_lease 200 --priority_type none --priority_challengers 2 --oracle_type one_diff --automl_significance_level .2",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_test_load_override.stderr",
+      "stdout": "train-sets/ref/automl_test_load_override.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json",
+      "models/automl_override.model"
+    ],
+    "depends_on": [
+      418
+    ]
+  },
+  {
+    "id": 420,
+    "desc": "Save model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -f models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_save.stderr",
+      "stdout": "train-sets/ref/ksvm_model_save.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat"
+    ]
+  },
+  {
+    "id": 421,
+    "desc": "Load model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -i models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_load.stderr",
+      "stdout": "train-sets/ref/ksvm_model_load.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat",
+      "models/ksvm_flat.model"
+    ],
+    "depends_on": [
+      420
+    ]
+  },
+  {
+    "id": 422,
+    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default block_size",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_block_size_1.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 423,
+    "desc": "explore_eval evaluate same policy as logged policy, with block_size > 1 there should be at most ((#examples / block_size) + 1) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --block_size 5",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_block_size_5.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
     ]
   }
 ]

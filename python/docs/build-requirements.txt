@@ -2,7 +2,7 @@ matplotlib
 myst-nb
 numpy
 pandas
-pydata-sphinx-theme
+pydata-sphinx-theme==0.9.0
 scikit-learn
 scipy
 Sphinx

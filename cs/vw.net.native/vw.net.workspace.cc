@@ -3,6 +3,7 @@
 #include "vw/allreduce/allreduce.h"
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
+#include "vw/core/learner.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 
@@ -203,15 +204,16 @@ API size_t WorkspaceHashFeature(
 
 API void WorkspaceSetUpAllReduceThreadsRoot(vw_net_native::workspace_context* workspace, size_t total, size_t node)
 {
-  workspace->vw->all_reduce_type = AllReduceType::Thread;
-  workspace->vw->all_reduce = new AllReduceThreads(total, node);
+  workspace->vw->selected_all_reduce_type = VW::all_reduce_type::THREAD;
+  workspace->vw->all_reduce = new VW::all_reduce_threads(total, node);
 }
 
 API void WorkspaceSetUpAllReduceThreadsNode(vw_net_native::workspace_context* workspace, size_t total, size_t node,
     vw_net_native::workspace_context* root_workspace)
 {
-  workspace->vw->all_reduce_type = AllReduceType::Thread;
-  workspace->vw->all_reduce = new AllReduceThreads((AllReduceThreads*)root_workspace->vw->all_reduce, total, node);
+  workspace->vw->selected_all_reduce_type = VW::all_reduce_type::THREAD;
+  workspace->vw->all_reduce =
+      new VW::all_reduce_threads((VW::all_reduce_threads*)root_workspace->vw->all_reduce, total, node);
 }
 
 API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(
@@ -223,7 +225,7 @@ API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(
     {
       workspace->vw->do_reset_source = true;
       VW::start_parser(*workspace->vw);
-      LEARNER::generic_driver(*workspace->vw);
+      VW::LEARNER::generic_driver(*workspace->vw);
       VW::end_parser(*workspace->vw);
     }
     CATCH_RETURN_STATUS

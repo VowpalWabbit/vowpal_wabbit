@@ -2,24 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/no_label.h"
 #include "vw/core/vw_string_view_fmt.h"
 
-#include "vw/common/string_view.h"
-#include "vw/core/accumulate.h"
-#include "vw/core/best_constant.h"
-#include "vw/core/cache.h"
 #include "vw/core/example.h"
+#include "vw/core/global_data.h"
+#include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
-#include <cfloat>
-#include <cmath>
-#include <cstdio>
-#include <cstring>
-// needed for printing ranges of objects (eg: all elements of a vector)
-#include <fmt/ranges.h>
-
-namespace no_label
+namespace
 {
 void parse_no_label(const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
@@ -31,8 +23,11 @@ void parse_no_label(const std::vector<VW::string_view>& words, VW::io::logger& l
       logger.out_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));
   }
 }
+}  // namespace
 
-VW::label_parser no_label_parser = {
+namespace VW
+{
+VW::label_parser no_label_parser_global = {
     // default_label
     [](VW::polylabel& /* label */) {},
     // parse_label
@@ -50,9 +45,10 @@ VW::label_parser no_label_parser = {
     // test_label
     [](const VW::polylabel& /* label */) { return false; },
     // label type
-    VW::label_type_t::nolabel};
+    VW::label_type_t::NOLABEL};
+}
 
-void print_no_label_update(VW::workspace& all, VW::example& ec)
+void VW::details::print_no_label_update(VW::workspace& all, VW::example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
       !all.bfgs)
@@ -62,7 +58,7 @@ void print_no_label_update(VW::workspace& all, VW::example& ec)
   }
 }
 
-void output_and_account_no_label_example(VW::workspace& all, VW::example& ec)
+void VW::details::output_and_account_no_label_example(VW::workspace& all, VW::example& ec)
 {
   all.sd->update(ec.test_only, false, ec.loss, ec.weight, ec.get_num_features());
 
@@ -72,9 +68,8 @@ void output_and_account_no_label_example(VW::workspace& all, VW::example& ec)
   print_no_label_update(all, ec);
 }
 
-void return_no_label_example(VW::workspace& all, void*, VW::example& ec)
+void VW::details::return_no_label_example(VW::workspace& all, void*, VW::example& ec)
 {
-  output_and_account_example(all, ec);
+  VW::details::output_and_account_example(all, ec);
   VW::finish_example(all, ec);
 }
-}  // namespace no_label

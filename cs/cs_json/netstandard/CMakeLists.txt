@@ -19,12 +19,12 @@ if (vw_DOTNET_USE_MSPROJECT)
   include_external_msproject(VowpalWabbit.JSON ${CMAKE_CURRENT_SOURCE_DIR}/vw.json.csproj VowpalWabbit)
 else()
   add_custom_target(VowpalWabbit.JSON ALL
-    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> -v m --nologo --no-dependencies /clp:NoSummary
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native> --configuration "$<IF:$<CONFIG:Debug>,Debug,Release>" -v m --nologo --no-dependencies /clp:NoSummary
     COMMENT "Building VowpalWabbit.JSON"
     DEPENDS VowpalWabbit
     SOURCES ${VW_NET_CS_JSON_SOURCES})
   add_custom_target(VowpalWabbit.JSON.Ref ALL
-    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native>/ref -v m --nologo --no-dependencies /clp:NoSummary -property:ProduceOnlyReferenceAssembly=true
+    COMMAND ${DOTNET_COMMAND} build ${CMAKE_CURRENT_SOURCE_DIR} -o $<TARGET_FILE_DIR:vw.net.native>/ref --configuration "$<IF:$<CONFIG:Debug>,Debug,Release>" -v m --nologo --no-dependencies /clp:NoSummary -property:ProduceOnlyReferenceAssembly=true
     COMMENT "Building VowpalWabbit.JSON Reference Assembly"
     DEPENDS VowpalWabbit.Ref VowpalWabbit.JSON
     SOURCES ${VW_NET_CS_JSON_SOURCES})

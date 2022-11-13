@@ -79,7 +79,7 @@ void one_rank_spanner_state::rank_one_determinant_update(
 }
 
 void one_rank_spanner_state::compute_spanner(
-    const Eigen::MatrixXf& U, size_t _d, const std::vector<float>& shrink_factors)
+    const Eigen::MatrixXf& U, size_t num_actions_in_spanner, const std::vector<float>& shrink_factors)
 {
   /**
    * Implements the C-approximate barycentric spanner algorithm in Figure 2 of the following paper
@@ -100,14 +100,14 @@ void one_rank_spanner_state::compute_spanner(
    */
 
   // The size of U is K x d, where K is the total number of all actions
-  assert(static_cast<uint64_t>(U.cols()) == _d);
-  _X.setIdentity(_d, _d);
-  _X_inv.setIdentity(_d, _d);
+  assert(static_cast<uint64_t>(U.cols()) >= num_actions_in_spanner);
+  _X.setIdentity(num_actions_in_spanner, U.cols());
+  _X_inv.setIdentity(num_actions_in_spanner, U.cols());
   _log_determinant_factor = 0;
 
-  float max_volume;
+  float max_volume{};
   // Compute a basis contained in U.
-  for (uint64_t i = 0; i < _d; ++i)
+  for (uint64_t i = 0; i < num_actions_in_spanner; ++i)
   {
     Eigen::VectorXf phi = _X_inv.row(i);
     uint64_t U_rid;
@@ -117,7 +117,7 @@ void one_rank_spanner_state::compute_spanner(
     rank_one_determinant_update(U, max_volume, U_rid, shrink_factors[U_rid], i);
   }
 
-  const int max_iterations = static_cast<int>(_d * std::log(_d) / std::log(_c));
+  const int max_iterations = static_cast<int>(num_actions_in_spanner * std::log(num_actions_in_spanner) / std::log(_c));
   float X_volume = max_volume;
 
   for (int iter = 0; iter < max_iterations; ++iter)
@@ -125,9 +125,8 @@ void one_rank_spanner_state::compute_spanner(
     bool found_larger_volume = false;
 
     // If replacing some row in _X results in larger volume, replace it with the row from U.
-    for (uint64_t i = 0; i < _d; ++i)
+    for (uint64_t i = 0; i < num_actions_in_spanner; ++i)
     {
-      float max_volume;
       uint64_t U_rid;
       Eigen::VectorXf phi = _X_inv.row(i);
       find_max_volume(U, phi, max_volume, U_rid);
@@ -149,6 +148,12 @@ void one_rank_spanner_state::compute_spanner(
   _spanner_bitvec.resize(U.rows(), false);
   for (uint64_t idx : _action_indices) { _spanner_bitvec[idx] = true; }
 }
+
+bool one_rank_spanner_state::is_action_in_spanner(uint32_t action) { return _spanner_bitvec[action]; }
+
+size_t one_rank_spanner_state::spanner_size() { return _spanner_bitvec.size(); }
+
+void one_rank_spanner_state::_test_only_set_rank(uint64_t rank) { _action_indices.resize(rank); }
 
 }  // namespace cb_explore_adf
 }  // namespace VW

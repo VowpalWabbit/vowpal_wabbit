@@ -5,7 +5,9 @@
 #include "vw/core/reductions/cbzo.h"
 
 #include "vw/core/io_buf.h"
+#include "vw/core/learner.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/prob_dist_cont.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
@@ -23,19 +25,21 @@ using VW::continuous_actions::probability_density_function;
 
 namespace
 {
-constexpr uint8_t constant_policy = 0;
-constexpr uint8_t linear_policy = 1;
+constexpr uint8_t CONSTANT_POLICY = 0;
+constexpr uint8_t LINEAR_POLICY = 1;
 
-struct cbzo
+class cbzo
 {
+public:
   float radius = 0.f;
   VW::workspace* all = nullptr;
   bool min_prediction_supplied = false;
   bool max_prediction_supplied = false;
 };
 
-struct linear_update_data
+class linear_update_data
 {
+public:
   float mult = 0.f;
   float part_grad = 0.f;
   VW::workspace* all = nullptr;
@@ -55,7 +59,7 @@ inline void set_weight(VW::workspace& all, uint64_t index, uint32_t offset, floa
 
 float l1_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.no_bias && fi == constant) { return 0.0f; }
+  if (all.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
   float fw = get_weight(all, fi, 0);
   return fw >= 0.0f ? all.l1_lambda : -all.l1_lambda;
@@ -63,7 +67,7 @@ float l1_grad(VW::workspace& all, uint64_t fi)
 
 float l2_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.no_bias && fi == constant) { return 0.0f; }
+  if (all.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
   float fw = get_weight(all, fi, 0);
   return all.l2_lambda * fw;
@@ -73,7 +77,7 @@ inline void accumulate_dotprod(float& dotprod, float x, float& fw) { dotprod += 
 
 inline float constant_inference(VW::workspace& all)
 {
-  float wt = get_weight(all, constant, 0);
+  float wt = get_weight(all, VW::details::CONSTANT, 0);
   return wt;
 }
 
@@ -89,8 +93,8 @@ VW_WARNING_DISABLE_COND_CONST_EXPR
 template <uint8_t policy>
 float inference(VW::workspace& all, VW::example& ec)
 {
-  if VW_STD17_CONSTEXPR (policy == constant_policy) { return constant_inference(all); }
-  else if VW_STD17_CONSTEXPR (policy == linear_policy)
+  if VW_STD17_CONSTEXPR (policy == CONSTANT_POLICY) { return constant_inference(all); }
+  else if VW_STD17_CONSTEXPR (policy == LINEAR_POLICY)
   {
     return linear_inference(all, ec);
   }
@@ -101,14 +105,15 @@ float inference(VW::workspace& all, VW::example& ec)
 template <bool feature_mask_off>
 void constant_update(cbzo& data, VW::example& ec)
 {
-  float fw = get_weight(*data.all, constant, 0);
+  float fw = get_weight(*data.all, VW::details::CONSTANT, 0);
   if (feature_mask_off || fw != 0.0f)
   {
-    float action_centroid = inference<constant_policy>(*data.all, ec);
+    float action_centroid = inference<CONSTANT_POLICY>(*data.all, ec);
     float grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
-    float update = -data.all->eta * (grad + l1_grad(*data.all, constant) + l2_grad(*data.all, constant));
+    float update =
+        -data.all->eta * (grad + l1_grad(*data.all, VW::details::CONSTANT) + l2_grad(*data.all, VW::details::CONSTANT));
 
-    set_weight(*data.all, constant, 0, fw + update);
+    set_weight(*data.all, VW::details::CONSTANT, 0, fw + update);
   }
 }
 
@@ -129,7 +134,7 @@ void linear_update(cbzo& data, VW::example& ec)
 {
   float mult = -data.all->eta;
 
-  float action_centroid = inference<linear_policy>(*data.all, ec);
+  float action_centroid = inference<LINEAR_POLICY>(*data.all, ec);
   float part_grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
 
   linear_update_data upd_data;
@@ -144,8 +149,8 @@ void linear_update(cbzo& data, VW::example& ec)
 template <uint8_t policy, bool feature_mask_off>
 void update_weights(cbzo& data, VW::example& ec)
 {
-  if VW_STD17_CONSTEXPR (policy == constant_policy) { constant_update<feature_mask_off>(data, ec); }
-  else if VW_STD17_CONSTEXPR (policy == linear_policy)
+  if VW_STD17_CONSTEXPR (policy == CONSTANT_POLICY) { constant_update<feature_mask_off>(data, ec); }
+  else if VW_STD17_CONSTEXPR (policy == LINEAR_POLICY)
   {
     linear_update<feature_mask_off>(data, ec);
   }
@@ -238,7 +243,7 @@ void save_load(cbzo& data, io_buf& model_file, bool read, bool text)
   if (read)
   {
     initialize_regressor(all);
-    if (data.all->initial_constant != 0.0f) { set_weight(all, constant, 0, data.all->initial_constant); }
+    if (data.all->initial_constant != 0.0f) { set_weight(all, VW::details::CONSTANT, 0, data.all->initial_constant); }
   }
   if (model_file.num_files() > 0) { save_load_regressor(all, model_file, read, text); }
 }
@@ -255,7 +260,7 @@ void report_progress(VW::workspace& all, VW::example& ec)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : VW::to_string(costs[0]),
-        VW::to_string(ec.pred.pdf, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
+        VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
         all.progress_add, all.progress_arg);
   }
 }
@@ -275,42 +280,42 @@ void finish_example(VW::workspace& all, cbzo&, VW::example& ec)
 
 void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, base_learner&, VW::example&)
 {
-  if (policy == constant_policy)
+  if (policy == CONSTANT_POLICY)
   {
     if (feature_mask_off)
     {
-      if (all.audit || all.hash_inv) { return learn<constant_policy, true, true>; }
+      if (all.audit || all.hash_inv) { return learn<CONSTANT_POLICY, true, true>; }
       else
       {
-        return learn<constant_policy, true, false>;
+        return learn<CONSTANT_POLICY, true, false>;
       }
     }
     else if (all.audit || all.hash_inv)
     {
-      return learn<constant_policy, false, true>;
+      return learn<CONSTANT_POLICY, false, true>;
     }
     else
     {
-      return learn<constant_policy, false, false>;
+      return learn<CONSTANT_POLICY, false, false>;
     }
   }
-  else if (policy == linear_policy)
+  else if (policy == LINEAR_POLICY)
   {
     if (feature_mask_off)
     {
-      if (all.audit || all.hash_inv) { return learn<linear_policy, true, true>; }
+      if (all.audit || all.hash_inv) { return learn<LINEAR_POLICY, true, true>; }
       else
       {
-        return learn<linear_policy, true, false>;
+        return learn<LINEAR_POLICY, true, false>;
       }
     }
     else if (all.audit || all.hash_inv)
     {
-      return learn<linear_policy, false, true>;
+      return learn<LINEAR_POLICY, false, true>;
     }
     else
     {
-      return learn<linear_policy, false, false>;
+      return learn<LINEAR_POLICY, false, false>;
     }
   }
   else
@@ -319,20 +324,20 @@ void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbz
 
 void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, VW::example&)
 {
-  if (policy == constant_policy)
+  if (policy == CONSTANT_POLICY)
   {
-    if (all.audit || all.hash_inv) { return predict<constant_policy, true>; }
+    if (all.audit || all.hash_inv) { return predict<CONSTANT_POLICY, true>; }
     else
     {
-      return predict<constant_policy, false>;
+      return predict<CONSTANT_POLICY, false>;
     }
   }
-  else if (policy == linear_policy)
+  else if (policy == LINEAR_POLICY)
   {
-    if (all.audit || all.hash_inv) { return predict<linear_policy, true>; }
+    if (all.audit || all.hash_inv) { return predict<LINEAR_POLICY, true>; }
     else
     {
-      return predict<linear_policy, false>;
+      return predict<LINEAR_POLICY, false>;
     }
   }
   else
@@ -358,7 +363,11 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
                .keep()
                .necessary()
                .help("Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order Optimization"))
-      .add(make_option("policy", policy_str).default_value("linear").keep().help("Policy/Model to Learn"))
+      .add(make_option("policy", policy_str)
+               .default_value("linear")
+               .one_of({"linear", "constant"})
+               .keep()
+               .help("Policy/Model to Learn"))
       .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -367,15 +376,15 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("feature_mask")) { feature_mask_off = false; }
 
   uint8_t policy;
-  if (policy_str.compare("constant") == 0) { policy = constant_policy; }
+  if (policy_str.compare("constant") == 0) { policy = CONSTANT_POLICY; }
   else if (policy_str.compare("linear") == 0)
   {
-    policy = linear_policy;
+    policy = LINEAR_POLICY;
   }
   else
     THROW("policy must be in {'constant', 'linear'}");
 
-  if (policy == constant_policy)
+  if (policy == CONSTANT_POLICY)
   {
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
@@ -389,7 +398,7 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
   auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
-      stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::pdf, label_type_t::continuous)
+      stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
                 .set_params_per_weight(0)
                 .set_save_load(save_load)
                 .set_finish_example(::finish_example)

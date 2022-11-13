@@ -3,6 +3,7 @@
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/io_buf.h"
+#include "vw/core/learner.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
@@ -20,21 +21,21 @@
 
 enum class parser_type
 {
-  text,
-  dsjson,
-  csv
+  TEXT,
+  DSJSON,
+  CSV
 };
 
 parser_type to_parser_type(const std::string& str)
 {
-  if (str == "text") { return parser_type::text; }
+  if (str == "text") { return parser_type::TEXT; }
   else if (str == "dsjson")
   {
-    return parser_type::dsjson;
+    return parser_type::DSJSON;
   }
   else if (str == "csv")
   {
-    return parser_type::csv;
+    return parser_type::CSV;
   }
   else
   {
@@ -120,13 +121,13 @@ int main(int argc, char** argv)
   // Other option is the parser can use this io_buf. It's using more memory for no good reason, unless we run out it
   // shouldnt matter in this test tool.
   io_buf file_contents_as_io_buf;
-  std::ifstream testFile(file_name, std::ios::binary);
-  std::vector<char> fileContents((std::istreambuf_iterator<char>(testFile)), std::istreambuf_iterator<char>());
-  file_contents_as_io_buf.add_file(VW::io::create_buffer_view(fileContents.data(), fileContents.size()));
+  std::ifstream test_file(file_name, std::ios::binary);
+  std::vector<char> file_contents((std::istreambuf_iterator<char>(test_file)), std::istreambuf_iterator<char>());
+  file_contents_as_io_buf.add_file(VW::io::create_buffer_view(file_contents.data(), file_contents.size()));
 
   const auto type = to_parser_type(type_str);
-  if (type == parser_type::dsjson) { args += " --dsjson"; }
-  else if (type == parser_type::csv)
+  if (type == parser_type::DSJSON) { args += " --dsjson"; }
+  else if (type == parser_type::CSV)
   {
 #ifndef VW_BUILD_CSV
     THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_BUILD_CSV=ON");
@@ -139,7 +140,7 @@ int main(int argc, char** argv)
   const auto is_multiline = vw->l->is_multiline();
 
   const auto start = std::chrono::high_resolution_clock::now();
-  if (type == parser_type::text)
+  if (type == parser_type::TEXT)
   {
     if (is_multiline)
     {
@@ -175,9 +176,9 @@ int main(int argc, char** argv)
       }
     }
   }
-  else if (type == parser_type::dsjson)
+  else if (type == parser_type::DSJSON)
   {
-    DecisionServiceInteraction interaction;
+    VW::details::decision_service_interaction interaction;
     for (const auto& line : file_contents_as_lines)
     {
       VW::multi_ex examples;

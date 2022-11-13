@@ -4,6 +4,7 @@
 #include "vw/core/reductions/plt.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -24,16 +25,18 @@ using namespace VW::config;
 
 namespace
 {
-struct node
+class node
 {
+public:
   uint32_t n;  // node number
   float p;     // node probability
 
   bool operator<(const node& r) const { return p < r.p; }
 };
 
-struct plt
+class plt
 {
+public:
   VW::workspace* all = nullptr;
 
   // tree structure
@@ -132,7 +135,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
 
   float loss = 0;
   ec.l.simple = {1.f};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   for (auto& n : p.positive_nodes) { loss += learn_node(p, n, base, ec); }
 
   ec.l.simple.label = -1.f;
@@ -191,7 +194,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
 
       uint32_t n_child = p.kary * node.n + 1;
       ec.l.simple = {FLT_MAX};
-      ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+      ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
       base.multipredict(ec, n_child, p.kary, p.node_pred.data(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
@@ -244,7 +247,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       {
         uint32_t n_child = p.kary * node.n + 1;
         ec.l.simple = {FLT_MAX};
-        ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+        ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
         base.multipredict(ec, n_child, p.kary, p.node_pred.data(), false);
 
@@ -364,7 +367,6 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
       .add(make_option("probabilities", tree->probabilities).help("Predict probabilities for the predicted labels"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
 
   if (all.loss->get_type() != "logistic")
   {

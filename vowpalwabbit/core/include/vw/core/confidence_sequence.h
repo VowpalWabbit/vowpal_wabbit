@@ -14,17 +14,16 @@
 
 #include <algorithm>
 
-constexpr float DEFAULT_ALPHA = 0.05f;
+constexpr float CS_DEFAULT_ALPHA = 0.05f;
 
 namespace VW
 {
-namespace confidence_sequence
+class incremental_f_sum
 {
-struct IncrementalFsum
-{
+public:
   std::vector<double> partials;
 
-  IncrementalFsum operator+=(double x)
+  incremental_f_sum operator+=(double x)
   {
     int i = 0;
     for (double y : this->partials)
@@ -44,9 +43,9 @@ struct IncrementalFsum
     return *this;
   }
 
-  IncrementalFsum operator+(IncrementalFsum const& other)
+  incremental_f_sum operator+(incremental_f_sum const& other)
   {
-    IncrementalFsum result;
+    incremental_f_sum result;
     result.partials = this->partials;
     for (double y : other.partials) { result += y; }
     return result;
@@ -60,54 +59,54 @@ struct IncrementalFsum
   }
 };
 
-struct ConfidenceSequence
+class confidence_sequence
 {
+public:
   double alpha;
   double rmin_init;
-  double rmin;
   double rmax_init;
-  double rmax;
   bool adjust;
 
+  double rmin;
+  double rmax;
   double eta;
   double s;
   int t;
 
-  IncrementalFsum sumwsqrsq;
-  IncrementalFsum sumwsqr;
-  IncrementalFsum sumwsq;
-  IncrementalFsum sumwr;
-  IncrementalFsum sumw;
-  IncrementalFsum sumwrxhatlow;
-  IncrementalFsum sumwxhatlow;
-  IncrementalFsum sumxhatlowsq;
-  IncrementalFsum sumwrxhathigh;
-  IncrementalFsum sumwxhathigh;
-  IncrementalFsum sumxhathighsq;
+  incremental_f_sum sumwsqrsq;
+  incremental_f_sum sumwsqr;
+  incremental_f_sum sumwsq;
+  incremental_f_sum sumwr;
+  incremental_f_sum sumw;
+  incremental_f_sum sumwrxhatlow;
+  incremental_f_sum sumwxhatlow;
+  incremental_f_sum sumxhatlowsq;
+  incremental_f_sum sumwrxhathigh;
+  incremental_f_sum sumwxhathigh;
+  incremental_f_sum sumxhathighsq;
 
   uint64_t update_count;
   double last_w;
   double last_r;
 
-public:
-  ConfidenceSequence(double alpha = DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
+  confidence_sequence(
+      double alpha = CS_DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
   void update(double w, double r, double p_drop = 0.0, double n_drop = -1.0);
   void persist(metric_sink&, const std::string&);
   void reset_stats();
-  float lower_bound();
-  float upper_bound();
+  float lower_bound() const;
+  float upper_bound() const;
 
 private:
-  double approxpolygammaone(double b);
-  double lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha);
+  double approxpolygammaone(double b) const;
+  double lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha) const;
 };
-}  // namespace confidence_sequence
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::confidence_sequence::IncrementalFsum&);
-size_t write_model_field(io_buf&, const VW::confidence_sequence::IncrementalFsum&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::confidence_sequence::ConfidenceSequence&);
-size_t write_model_field(io_buf&, const VW::confidence_sequence::ConfidenceSequence&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::incremental_f_sum&);
+size_t write_model_field(io_buf&, const VW::incremental_f_sum&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::confidence_sequence&);
+size_t write_model_field(io_buf&, const VW::confidence_sequence&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

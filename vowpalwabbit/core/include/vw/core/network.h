@@ -3,14 +3,12 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/io/logger.h"
+#include "vw/core/vw_fwd.h"
 
 namespace VW
 {
-namespace io
+namespace details
 {
-struct logger;
+int open_socket(const char* host, VW::io::logger& logger);
 }
 }  // namespace VW
-
-int open_socket(const char* host, VW::io::logger& logger);

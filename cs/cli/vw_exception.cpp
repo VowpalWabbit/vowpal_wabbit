@@ -7,7 +7,7 @@
 namespace VW
 {
 VowpalWabbitException::VowpalWabbitException(const vw_exception& ex)
-  : Exception(gcnew System::String(ex.what())), m_filename(gcnew System::String(ex.Filename())), m_lineNumber(ex.LineNumber())
+  : Exception(gcnew System::String(ex.what())), m_filename(gcnew System::String(ex.filename())), m_lineNumber(ex.line_number())
 {
 }
 
