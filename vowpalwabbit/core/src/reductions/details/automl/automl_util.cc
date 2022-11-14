@@ -28,8 +28,7 @@ void apply_config(example* ec, interaction_vec_t* live_interactions)
 // This function will process an incoming multi_ex, update the namespace_counter,
 // log if new namespaces are encountered, and regenerate interactions based on
 // newly seen namespaces.
-bool count_namespaces(
-    const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter, std::set<uint64_t>& index_set)
+bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter)
 {
   // Count all namepsace seen in current example
   bool new_ns_seen = false;
@@ -37,7 +36,6 @@ bool count_namespaces(
   {
     for (const auto& ns : ex->indices)
     {
-      for (auto index : ex->feature_space[ns].indices) { index_set.insert(index); }
       if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
       if (!is_allowed_to_remove(ns)) { continue; }
       ns_counter[ns]++;

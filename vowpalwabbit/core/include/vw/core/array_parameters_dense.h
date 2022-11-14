@@ -8,7 +8,6 @@
 
 #include <cassert>
 #include <cstdint>
-#include <iostream>
 #include <iterator>
 
 template <typename T>
