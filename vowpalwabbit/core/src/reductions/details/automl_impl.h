@@ -254,8 +254,7 @@ private:
   static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);
 };
 
-bool count_namespaces(
-    const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
+bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
 void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const namespace_index ns);
 void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
