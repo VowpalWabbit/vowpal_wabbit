@@ -49,12 +49,14 @@ emt_example::emt_example(VW::workspace& all, VW::example* ex)
   std::vector<std::vector<VW::namespace_index>> base_interactions;
 
   ex->interactions = &base_interactions;
-  auto ex1 = std::unique_ptr<flat_example>(VW::flatten_sort_example(all, ex));
+  auto* ex1 = VW::flatten_sort_example(all, ex);
   for (auto& f : ex1->fs) { base.emplace_back(f.index(), f.value()); }
+  VW::free_flatten_example(ex1);
 
   ex->interactions = full_interactions;
-  auto ex2 = std::unique_ptr<flat_example>(VW::flatten_sort_example(all, ex));
+  auto* ex2 = VW::flatten_sort_example(all, ex);
   for (auto& f : ex2->fs) { full.emplace_back(f.index(), f.value()); }
+  VW::free_flatten_example(ex2);
 }
 
 emt_lru::emt_lru(unsigned long max_size) { (*this).max_size = max_size; }
