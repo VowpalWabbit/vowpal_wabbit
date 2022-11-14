@@ -1,0 +1,7 @@
+include "flat_svm_example.fbs";
+
+namespace VW_proto;
+table svm_params_predict {
+num_support : int32;
+support_data : [flat_svm_example];
+}

@@ -1,0 +1,14 @@
+namespace VW_proto;
+
+table test3a {
+t1 : [test1a];
+t2 : [string];
+}
+
+
+table test1a {
+x : float;
+y : [float];
+}
+
+root_type test3a;

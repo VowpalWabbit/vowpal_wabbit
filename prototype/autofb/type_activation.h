@@ -9,7 +9,32 @@ class activation
 {
 public:
   activation(void*&& ptr, destroy_f destroy) : _value(ptr, destroy) {}
+  activation(const activation& other) = delete;
+  activation(activation&& other) : _value(std::move(other._value)) {};
 
+  void* detach()
+  {
+    return _value.release();
+  }
+
+  template <typename T>
+  T& detach()
+  {
+    return *detach();
+  }
+
+  template <typename T>
+  T& get() const 
+  { 
+    // std::cout << "getting @" << _r << std::endl; 
+    return *static_cast<T*>(_value.get()); 
+  }
+
+  // void* get() const
+  // {
+  //   return _value.get();
+  // }
+  
 private:
   std::unique_ptr<void, destroy_f> _value;
 };
@@ -20,7 +45,7 @@ class activator
 public:
   static activation activate()
   {
-    return activation(std::move(I()), D);
+    return activation(I(), D);
   }
 };
 

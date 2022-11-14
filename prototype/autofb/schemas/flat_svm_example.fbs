@@ -1,0 +1,13 @@
+include "flat_features.fbs";
+
+namespace VW_proto;
+table flat_svm_example {
+total_sum_feat_sq : float;
+num_features : uint64;
+global_weight : float;
+ft_offset : uint64;
+example_counter : uint64;
+tag : string;
+simple_label : float;
+fs : flat_features;
+}

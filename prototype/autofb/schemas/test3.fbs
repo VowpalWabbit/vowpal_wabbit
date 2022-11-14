@@ -1,0 +1,9 @@
+include "test1.fbs";
+
+namespace VW_proto;
+table test3 {
+t1 : [test1];
+t2 : [string];
+}
+
+root_type test3;

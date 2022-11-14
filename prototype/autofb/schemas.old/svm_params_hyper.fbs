@@ -1,0 +1,12 @@
+namespace autofb_proto;
+
+table svm_params_hyperV1 {
+kernel_type : string;
+bandwidth : float;
+degree : int32;
+para_active : bool;
+active_pool_greedy : bool;
+pool_size : uint64;
+subsample : uint64;
+reprocess : uint64;
+}

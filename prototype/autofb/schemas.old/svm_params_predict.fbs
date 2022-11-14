@@ -1,0 +1,6 @@
+namespace autofb_proto;
+
+table svm_params_predictV1 {
+num_support : int32;
+placeholder_support_data : string;
+}

@@ -1,0 +1,5 @@
+namespace autofb_proto;
+
+table baseV1 {
+b : uint8;
+}

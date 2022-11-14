@@ -93,7 +93,7 @@ void print_schema(
   os << "}" << endl;
 }
 
-template <bool write_to_cout = false>
+template <bool write_schema_to_cout = false>
 void generate_universe_types_internal(
     const std::string& schema_ns, 
     const std::string& output_dir,
@@ -110,7 +110,8 @@ void generate_universe_types_internal(
       schema_map[ti.index] = std::string(ti.name.name) + ".fbs";
       const std::string schema_path = output_dir + schema_map[ti.index];
       
-      std::cout << "Generating schema for " << ti.name << " to " << schema_path;
+      std::cout << "Generating schema for " << ti.name;
+      if (!write_schema_to_cout) std::cout << " to " << schema_path;
       if (ti.props_end() == ti.props_begin())
       {
         std::cout << ". No properties (empty type): Skipping." << std::endl;
@@ -122,19 +123,19 @@ void generate_universe_types_internal(
       }
       
       std::fstream* fs = nullptr;
-      if (!write_to_cout)
+      if (!write_schema_to_cout)
       {
         fs = new std::fstream();
         fs->open(schema_path, std::ios::out);
       }
 
-      std::ostream& os = write_to_cout ? std::cout : *fs;
+      std::ostream& os = write_schema_to_cout ? std::cout : *fs;
       print_schema_header(schema_ns, os);
       os << std::endl;
 
       print_schema(flatbuffers_typemap, schema_map, ti, os);
       
-      if (!write_to_cout)
+      if (!write_schema_to_cout)
       {
         fs->flush();
         fs->close();

@@ -1,0 +1,6 @@
+
+namespace VW_proto;
+table flat_features {
+indicies : [uint64];
+values : [float];
+}

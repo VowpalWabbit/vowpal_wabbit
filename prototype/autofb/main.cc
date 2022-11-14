@@ -6,6 +6,8 @@
 #include "reductions.h"
 #include "kernel_svm.h"
 
+#include "v2/test.h"
+
 using namespace typesys;
 
 //register_type(base, 1);
@@ -32,7 +34,8 @@ int main(int argc, char** argv)
 {
   //test();
   //test_autofb();
-  kernel_svm_test();
+  //kernel_svm_test();
+  do_test();
 }
 
 template <typename builtin>
@@ -60,7 +63,7 @@ void test()
   cout << "Types in the universe: (Count = " << (types.types_end() - types.types_begin()) << ")" << endl;
 
   // dispatch table for BUILTIN property types (for now int32 types, float type and bool type)
-  erased_dispatch_table dt;
+  erased_effect_table dt;
 
   // register a lambda to print the type name for each of the types
   dt.add<int32_t, print_type<int32_t>>()

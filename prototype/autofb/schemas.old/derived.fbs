@@ -1,0 +1,8 @@
+namespace autofb_proto;
+
+include "base.fbs";
+
+table derivedV1 : baseV1 {
+l1 : double;
+l2 : double;
+}

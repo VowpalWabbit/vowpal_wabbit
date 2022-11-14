@@ -4,7 +4,7 @@
 #include "flatbuffers/flatbuffer_builder.h"
 
 // map ( type.name => "{type.name}_generated.h" )
-#include "../generated/svm_params_hyper_generated.h"
+//#include "../generated/svm_params_hyper_generated.h"
 
 #include "../typeerase.h"
 #include "../typesys.h"

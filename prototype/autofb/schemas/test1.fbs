@@ -1,0 +1,8 @@
+
+namespace VW_proto;
+table test1 {
+x : float;
+y : [float];
+}
+
+root_type test1;

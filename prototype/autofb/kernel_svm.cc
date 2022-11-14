@@ -19,13 +19,12 @@ enum(kernel_type_t)
 
 data(svm_params_hyper)
 {
-  //string?
   _(std::string, kernel_type);
   _(float, bandwidth);
   _(int, degree);
   _(bool, para_active);
   _(bool, active_pool_greedy);
-  _(uint64_t, pool_size);
+  _(uint64_t, pool_size); // these are not .keep()ed - why?
   _(uint64_t, subsample);
   _(uint64_t, reprocess);
 };
@@ -65,6 +64,7 @@ void kernel_svm_test()
   const std::string schema_dir = "C:\\s\\vw\\vw_proto\\prototype\\autofb\\schemas\\"; 
   const std::string schema_ns = "autofb_proto";
 
+  autofb::print_universe_types(schema_ns);
   autofb::generate_universe_types(schema_ns, schema_dir);
 }
 

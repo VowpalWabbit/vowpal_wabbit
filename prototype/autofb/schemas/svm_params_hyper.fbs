@@ -1,0 +1,12 @@
+
+namespace VW_proto;
+table svm_params_hyper {
+reprocess : uint64;
+subsample : uint64;
+pool_size : uint64;
+active_pool_greedy : bool;
+para_active : bool;
+bandwidth : float;
+kernel_type : string;
+degree : int32;
+}

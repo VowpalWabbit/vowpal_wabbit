@@ -16,6 +16,8 @@ struct evidence
   evidence(static_initializer_f<T> func) : _value(func()) {
     //std::cout << "witness ctor" << std::endl;
   }
+
+  operator T() const { return _value; }
 };
 
 template <>
@@ -30,6 +32,10 @@ struct evidence<void>
 template <typename T, static_initializer_f<T> func>
 struct witness
 {
+  evidence<T> _evidence = testify();
+
+  inline evidence<T> get_evidence() const { return _evidence; }
+
   inline static evidence<T> testify()
   {
     return evidence<T>(func);
