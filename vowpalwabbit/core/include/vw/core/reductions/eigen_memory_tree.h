@@ -36,17 +36,17 @@ enum class emt_router_type
 
 float emt_median(std::vector<float>&);
 
-float emt_inner(emt_feats, emt_feats);
+float emt_inner(const emt_feats&, const emt_feats&);
 
-emt_feats emt_scale(emt_feats, float);
+float emt_norm(const emt_feats&);
 
-float emt_norm(emt_feats);
+void emt_abs(emt_feats&);
 
-emt_feats emt_normalize(emt_feats);
+void emt_scale(emt_feats&, float);
 
-emt_feats emt_scale_add(float const, emt_feats const, float const, emt_feats const);
+void emt_normalize(emt_feats&);
 
-emt_feats emt_abs(emt_feats const);
+emt_feats emt_scale_add(float, const emt_feats&, float, const emt_feats&);
 
 emt_feats emt_router_eigen(std::vector<emt_feats>&, VW::rand_state&);
 

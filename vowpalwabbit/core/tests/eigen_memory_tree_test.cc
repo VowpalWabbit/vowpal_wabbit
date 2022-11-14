@@ -184,6 +184,7 @@ TEST(emt_tests, test_emt_scale_add)
 
   EXPECT_EQ(emt_scale_add(1, v1, 1, v2), v3);
 
+
   v3.clear();
   v3.emplace_back(1, -1);
 
@@ -215,20 +216,20 @@ TEST(emt_tests, test_emt_abs)
   emt_feats v1;
   emt_feats v2;
 
-  EXPECT_EQ(emt_abs(v1), v2);
+  emt_abs(v1);
+  EXPECT_EQ(v1, v2);
 
   v1.emplace_back(1, -3);
   v2.emplace_back(1, 3);
 
-  EXPECT_EQ(emt_abs(v1), v2);
-  EXPECT_EQ(v1.at(0).second, -3);
+  emt_abs(v1);
+  EXPECT_EQ(v1, v2);
 
   v1.emplace_back(2, -4);
   v2.emplace_back(2, 4);
 
-  EXPECT_EQ(emt_abs(v1), v2);
-  EXPECT_EQ(v1.at(0).second, -3);
-  EXPECT_EQ(v1.at(1).second, -4);
+  emt_abs(v1);
+  EXPECT_EQ(v1, v2);
 }
 
 TEST(emt_tests, test_emt_normalize)
@@ -236,7 +237,8 @@ TEST(emt_tests, test_emt_normalize)
   emt_feats v1;
   emt_feats v2;
 
-  EXPECT_EQ(emt_normalize(v1), v2);
+  emt_normalize(v1);
+  EXPECT_EQ(v1, v2);
 
   v1.emplace_back(1, -3);
   v1.emplace_back(5,  4);
@@ -244,9 +246,8 @@ TEST(emt_tests, test_emt_normalize)
   v2.emplace_back(1, -.6);
   v2.emplace_back(5,  .8);
 
-  EXPECT_EQ(emt_normalize(v1), v2);
-  EXPECT_EQ(v1.at(0).second, -3);
-  EXPECT_EQ(v1.at(1).second,  4);
+  emt_normalize(v1);
+  EXPECT_EQ(v1, v2);
 }
 
 TEST(emt_tests, test_emt_median)
@@ -305,6 +306,10 @@ TEST(emt_tests, test_emt_router_eigen)
   // which has a projection variance of 19.5
   // our oja method gave us 19.31 variance
 
+  EXPECT_NEAR(weights[0].second, -0.0905, .001);
+  EXPECT_NEAR(weights[1].second, -0.9177, .001);
+  EXPECT_NEAR(weights[2].second,  0.3218, .001);
+  EXPECT_NEAR(weights[3].second,  0.2145, .001);
   EXPECT_GE(var, 19.3);
 }
 

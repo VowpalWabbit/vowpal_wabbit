@@ -51,12 +51,10 @@ emt_example::emt_example(VW::workspace& all, VW::example* ex)
   ex->interactions = &base_interactions;
   auto ex1 = std::unique_ptr<flat_example>(VW::flatten_sort_example(all, ex));
   for (auto& f : ex1->fs) { base.emplace_back(f.index(), f.value()); }
-  if (ex1->tag_len > 0) { free(ex1->tag); }
 
   ex->interactions = full_interactions;
   auto ex2 = std::unique_ptr<flat_example>(VW::flatten_sort_example(all, ex));
   for (auto& f : ex2->fs) { full.emplace_back(f.index(), f.value()); }
-  if (ex2->tag_len > 0) { free(ex2->tag); }
 }
 
 emt_lru::emt_lru(unsigned long max_size) { (*this).max_size = max_size; }
@@ -155,7 +153,7 @@ float emt_median(std::vector<float>& array)
   }
 }
 
-float emt_inner(emt_feats xs, emt_feats ys)
+float emt_inner(const emt_feats& xs, const emt_feats& ys)
 {
   float sum = 0;
   int xi = 0;
@@ -175,28 +173,31 @@ float emt_inner(emt_feats xs, emt_feats ys)
   return sum;
 }
 
-emt_feats emt_scale(emt_feats xs, float scalar)
+float emt_norm(const emt_feats& xs)
+{
+  float sum_weights_sq = 0;
+
+  for (auto& x : xs) { sum_weights_sq += x.second * x.second; }
+
+  return std::sqrt(sum_weights_sq);
+}
+
+void emt_scale(emt_feats &xs, float scalar)
 {
   for (auto &x : xs)
   {
     x.second *= scalar;
   }
-
-  return xs;
 }
 
-float emt_norm(emt_feats xs)
+void emt_normalize(emt_feats &xs) { emt_scale(xs, 1 / emt_norm(xs)); }
+
+void emt_abs(emt_feats& fs)
 {
-  float sum_weights_sq = 0;
-
-  for (auto& x: xs) { sum_weights_sq += x.second * x.second; }
-
-  return std::sqrt(sum_weights_sq);
+  for (auto& f : fs) { f.second = std::abs(f.second); }
 }
 
-emt_feats emt_normalize(emt_feats xs) { return emt_scale(xs, 1 / emt_norm(xs)); }
-
-emt_feats emt_scale_add(float const s1, emt_feats const f1, float const s2, emt_feats const f2)
+emt_feats emt_scale_add(float s1, const emt_feats& f1, float s2, const emt_feats &f2)
 {
   size_t idx1 = 0;
   size_t idx2 = 0;
@@ -237,12 +238,6 @@ emt_feats emt_scale_add(float const s1, emt_feats const f1, float const s2, emt_
   return out;
 }
 
-emt_feats emt_abs(emt_feats const f) {
-  emt_feats out(f);
-  for (auto& p : out) { p.second = std::abs(p.second); }
-  return out;
-}
-
 emt_feats emt_router_random(std::vector<emt_feats>& exs, VW::rand_state& rng)
 {
   std::set<int> is;
@@ -254,7 +249,9 @@ emt_feats emt_router_random(std::vector<emt_feats>& exs, VW::rand_state& rng)
   }
   for (auto& i : is) { weights.emplace_back(i, rng.get_and_update_random()); }
 
-  return emt_normalize(weights);
+  emt_normalize(weights);
+
+  return weights;
 }
 
 emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
@@ -291,7 +288,7 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
       //         = weights + (1/n) * fs * inner(fs,weights)
       //         =          weights+(1/n)*inner(fs,weights)*fs
       weights = emt_scale_add(1, weights, (1 / n) * emt_inner(fs, weights), fs);
-      weights = emt_normalize(weights);
+      emt_normalize(weights);
       n += 1;
     }
   }
@@ -355,15 +352,15 @@ void tree_bound(emt_tree& b, emt_example* ec)
   }
 }
 
-float scorer_initial(VW::example& ex) { return 1 - std::exp(-std::sqrt(ex.total_sum_feat_sq)); }
+float scorer_initial(const VW::example& ex) { return 1 - std::exp(-std::sqrt(ex.total_sum_feat_sq)); }
 
-void scorer_features(emt_feats const f1, features& out)
+void scorer_features(const emt_feats& f1, features& out)
 {
   out.clear();
   for (auto p : f1) { if (p.second != 0) {out.push_back(p.second, p.first); } }
 }
 
-void scorer_example(emt_tree& b, emt_example ex1, emt_example ex2)
+void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 {
   VW::example& out = *b.ex;
 
@@ -377,7 +374,9 @@ void scorer_example(emt_tree& b, emt_example ex1, emt_example ex2)
     out.feature_space['x'].clear();
     out.feature_space['z'].clear();
 
-    scorer_features(emt_abs(emt_scale_add(1, ex1.full, -1, ex2.full)), out.feature_space['x']);
+    emt_feats feat_diff = emt_scale_add(1, ex1.full, -1, ex2.full);
+    emt_abs(feat_diff);
+    scorer_features(feat_diff, out.feature_space['x']);
 
     out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
     out.num_features = out.feature_space['x'].size();
@@ -430,7 +429,7 @@ void scorer_example(emt_tree& b, emt_example ex1, emt_example ex2)
   }
 }
 
-float scorer_predict(emt_tree& b, single_learner& base, emt_example& pred_ex, emt_example& leaf_ex)
+float scorer_predict(emt_tree& b, single_learner& base, const emt_example& pred_ex, const emt_example& leaf_ex)
 {
   if (b.scorer_type == emt_scorer_type::random)  // random scorer
   {
@@ -466,7 +465,7 @@ void scorer_learn(single_learner& base, VW::example& ex, float label, float weig
   }
 }
 
-void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, emt_example& ex, float weight)
+void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, const emt_example& ex, float weight)
 {
   // random and dist scorer has nothing to learsn
   if (b.scorer_type == emt_scorer_type::random || b.scorer_type == emt_scorer_type::distance) { return; }
@@ -578,28 +577,28 @@ void node_insert(emt_tree& b, emt_node& cn, std::unique_ptr<emt_example> ex)
   cn.examples.push_back(std::move(ex));
 }
 
-emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, emt_example& ex)
+emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, const emt_example& ex)
 {
   if (cn.examples.size() == 0) { return nullptr; }
 
   float best_score = FLT_MAX;
-  std::vector<emt_example*> best_examples;
+  emt_example* best_example = cn.examples[0].get();
+
+  // shuffle the examples to break ties randomly
+  std::shuffle(cn.examples.begin(), cn.examples.end(), emt_rng(b._random_state.get()));
 
   for (auto const& example : cn.examples)
   {
     float score = scorer_predict(b, base, ex, *example);
 
-    if (score == best_score) { best_examples.push_back(example.get()); }
-    else if (score < best_score)
+    if (score < best_score)
     {
       best_score = score;
-      best_examples.clear();
-      best_examples.push_back(example.get());
+      best_example = example.get();
     }
   }
 
-  std::shuffle(best_examples.begin(), best_examples.end(), emt_rng(b._random_state.get()));
-  return best_examples[0];
+  return best_example;
 }
 
 void node_predict(emt_tree& b, single_learner& base, emt_node& cn, emt_example& ex, VW::example& ec)
