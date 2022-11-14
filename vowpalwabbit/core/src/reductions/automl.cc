@@ -114,12 +114,11 @@ void output_single_model(VW::workspace& all, automl<CMType>& data)
     {
       uint32_t cb_ind = index / data.cm->wpp;
       for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << data.cm->weights.stride_shift()); ++stride)
-      {
-        std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]);
-      }
+      { std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]); }
     }
   }
-  uint32_t num_bits = options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
+  uint32_t num_bits =
+      options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
   options.remove_option("automl");
   options.get_typed_option<uint32_t>("bit_precision").value(num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp)));
   all.num_bits = num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));

@@ -114,10 +114,10 @@ public:
 
 class output_single_model_data
 {
-  public:
-    using fn = void (*)(VW::workspace& all, void* data);
-    void* data = nullptr;
-    fn output_single_model_f;
+public:
+  using fn = void (*)(VW::workspace& all, void* data);
+  void* data = nullptr;
+  fn output_single_model_f;
 };
 
 class save_metric_data

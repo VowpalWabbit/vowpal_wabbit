@@ -5,10 +5,10 @@
 #pragma once
 
 #include "vw/core/constant.h"
-#include <iostream>
 
 #include <cassert>
 #include <cstdint>
+#include <iostream>
 #include <iterator>
 
 template <typename T>
@@ -108,13 +108,8 @@ public:
   const_iterator cbegin() const { return const_iterator(_begin, _begin, stride_shift()); }
   const_iterator cend() const { return const_iterator(_begin + _weight_mask + 1, _begin, stride_shift()); }
 
-  inline const VW::weight& operator[](size_t i) const {
-    std::cout << _begin[i & _weight_mask] << " " << i << " " << _weight_mask << " " << (i & _weight_mask) << "\n";
-     return _begin[i & _weight_mask]; 
-     }
-  inline VW::weight& operator[](size_t i) { 
-    return _begin[i & _weight_mask]; 
-    }
+  inline const VW::weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
+  inline VW::weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
 
   void shallow_copy(const dense_parameters& input);
 
