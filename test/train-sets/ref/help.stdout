@@ -257,8 +257,6 @@ Weight Options:
                                             bool, default: false, experimental)
     --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
                                             false, experimental)
-    --aml_predict_only_model arg            transform input automl model into predict only automl model (type:
-                                            str, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count

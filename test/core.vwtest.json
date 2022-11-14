@@ -5375,20 +5375,6 @@
   },
   {
     "id": 417,
-    "desc": "automl with cb_adf - transform to predict only model SkipC# - Do not remove this - this test breaks test generation by requiring a dependency that is not supported",
-    "vw_command": "--aml_predict_only_model automl_predict_only.model -i models/automl.model --readable_model automl_readable.txt",
-    "diff_files": {
-      "automl_readable.txt": "train-sets/ref/cbadf_automl_readable_predictonly.txt"
-    },
-    "input_files": [
-      "models/automl.model"
-    ],
-    "depends_on": [
-      411
-    ]
-  },
-  {
-    "id": 418,
     "desc": "set up automl model to test overrides",
     "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -f models/automl_override.model --automl 4 --global_lease 100 --priority_type favor_popular_namespaces --priority_challengers 1 --oracle_type rand --automl_significance_level .1",
     "diff_files": {
@@ -5400,7 +5386,7 @@
     ]
   },
   {
-    "id": 419,
+    "id": 418,
     "desc": "load automl model with overrides",
     "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -i models/automl_override.model --automl 4 --global_lease 200 --priority_type none --priority_challengers 2 --oracle_type one_diff --automl_significance_level .2",
     "diff_files": {
@@ -5412,11 +5398,11 @@
       "models/automl_override.model"
     ],
     "depends_on": [
-      418
+      417
     ]
   },
   {
-    "id": 420,
+    "id": 419,
     "desc": "Save model using ksvm to test flat_example save_load",
     "vw_command": "--ksvm -d train-sets/tagged_data.dat -f models/ksvm_flat.model",
     "diff_files": {
@@ -5428,7 +5414,7 @@
     ]
   },
   {
-    "id": 421,
+    "id": 420,
     "desc": "Load model using ksvm to test flat_example save_load",
     "vw_command": "--ksvm -d train-sets/tagged_data.dat -i models/ksvm_flat.model",
     "diff_files": {
@@ -5440,11 +5426,11 @@
       "models/ksvm_flat.model"
     ],
     "depends_on": [
-      420
+      419
     ]
   },
   {
-    "id": 422,
+    "id": 421,
     "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default block_size",
     "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval",
     "diff_files": {
@@ -5455,7 +5441,7 @@
     ]
   },
   {
-    "id": 423,
+    "id": 422,
     "desc": "explore_eval evaluate same policy as logged policy, with block_size > 1 there should be at most ((#examples / block_size) + 1) updates",
     "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --block_size 5",
     "diff_files": {
@@ -5466,7 +5452,7 @@
     ]
   },
   {
-    "id": 424,
+    "id": 423,
     "desc": "Spin off automl model to lower bitsize to cb_explore",
     "vw_command": "--cb_explore_adf -d train-sets/cb_test.ldf --noconstant -f models/aml_spin_off.m -b 18 --predict_only_model --automl 2",
     "diff_files": {
@@ -5477,7 +5463,7 @@
     ]
   },
   {
-    "id": 425,
+    "id": 424,
     "desc": "Load spun off automl model and output invert hash",
     "vw_command": "--cb_explore_adf -d train-sets/cb_test.ldf --noconstant -i models/aml_spin_off.m -b 17 -q :: --invert_hash aml_spinoff.inv --predict_only_model",
     "diff_files": {
@@ -5489,11 +5475,11 @@
       "models/aml_spin_off.m"
     ],
     "depends_on": [
-      424
+      423
     ]
   },
   {
-    "id": 426,
+    "id": 425,
     "desc": "Generate similar model to spun off automl using standard cb_explore_adf",
     "vw_command": "--cb_explore_adf -d train-sets/cb_test.ldf --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model -q ::",
     "diff_files": {
@@ -5504,7 +5490,7 @@
     ]
   },
   {
-    "id": 427,
+    "id": 426,
     "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff",
     "vw_command": "--cb_explore_adf -d train-sets/cb_test.ldf --noconstant -i models/aml_spin_off_cb.m -b 17 -q :: --invert_hash aml_spinoff_cb.inv --predict_only_model",
     "diff_files": {
@@ -5516,7 +5502,7 @@
       "models/aml_spin_off_cb.m"
     ],
     "depends_on": [
-      426
+      425
     ]
   }
 ]
