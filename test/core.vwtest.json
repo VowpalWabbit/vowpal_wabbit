@@ -5464,5 +5464,53 @@
     "input_files": [
       "train-sets/explore_eval_egreedy.dat"
     ]
+  },
+  {
+    "id": 424,
+    "desc": "Spin off automl model to lower bitsize to cb_explore",
+    "vw_command": "--cb_explore_adf -d train-sets/cb_test.ldf --noconstant -f models/aml_spin_off.m -b 18 --predict_only_model --automl 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_save.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 425,
+    "desc": "Load spun off automl model and output invert hash",
+    "vw_command": "--cb_explore_adf -d train-sets/cb_test.ldf --noconstant -i models/aml_spin_off.m -b 17 -q :: --invert_hash aml_spinoff.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load.stderr",
+      "aml_spinoff.inv": "pred-sets/ref/aml_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf",
+      "models/aml_spin_off.m"
+    ]
+  },
+  {
+    "id": 426,
+    "desc": "Generate similar model to spun off automl using standard cb_explore_adf",
+    "vw_command": "--cb_explore_adf -d train-sets/cb_test.ldf --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model -q ::",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_aml_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 427,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff",
+    "vw_command": "--cb_explore_adf -d train-sets/cb_test.ldf --noconstant -i models/aml_spin_off_cb.m -b 17 -q :: --invert_hash aml_spinoff_cb.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load.stderr",
+      "aml_spinoff_cb.inv": "pred-sets/ref/aml_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf",
+      "models/aml_spin_off_cb.m"
+    ]
   }
 ]

@@ -98,6 +98,13 @@ void output_single_model(VW::workspace& all, automl<CMType>& data)
   options_i& options = *all.options;
   if (!options.was_supplied("predict_only_model")) { return; }
   // Clear non-champ weights first
+
+  std::swap(*data.cm->_gd_normalized, data.cm->per_live_model_state_double[0]);
+  std::swap(*data.cm->_gd_total_weight, data.cm->per_live_model_state_double[1]);
+  std::swap(*data.cm->_sd_gravity, data.cm->per_live_model_state_double[2]);
+  std::swap(*data.cm->_cb_adf_event_sum, data.cm->per_live_model_state_uint64[0]);
+  std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
+
   clear_non_champ_weights(data.cm->weights, data.cm->estimators.size(), data.cm->wpp);
 
   uint64_t multiplier = static_cast<uint64_t>(data.cm->wpp) << data.cm->weights.stride_shift();
@@ -106,8 +113,6 @@ void output_single_model(VW::workspace& all, automl<CMType>& data)
     if (data.cm->weights[index] != 0.0f)
     {
       uint32_t cb_ind = index / data.cm->wpp;
-      std::cout << "AML_FIX:\n";
-      std::cout << cb_ind << "\n";
       for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << data.cm->weights.stride_shift()); ++stride)
       {
         std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]);
@@ -123,9 +128,7 @@ void output_single_model(VW::workspace& all, automl<CMType>& data)
 template <typename CMType>
 void save_load_aml(automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
-  if (aml.should_save_predict_only_model)
-  { clear_non_champ_weights(aml.cm->weights, aml.cm->estimators.size(), aml.cm->wpp); }
-  else
+  if (!aml.should_save_predict_only_model)
   {
     if (io.num_files() == 0) { return; }
     if (read) { VW::model_utils::read_model_field(io, aml); }
