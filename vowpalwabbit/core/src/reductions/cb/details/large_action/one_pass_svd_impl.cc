@@ -56,6 +56,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   AOmega.resize(num_actions, p);
 
 #ifdef BUILD_LAS_WITH_SIMD
+  // TODO: Detect runtime architecture based on CPUID and automatically choose the code path.
   auto compute_dot_prod = _use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
 #else
   auto compute_dot_prod = compute_dot_prod_scalar;

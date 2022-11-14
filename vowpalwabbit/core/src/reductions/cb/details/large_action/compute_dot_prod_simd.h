@@ -22,22 +22,6 @@ inline void compute1(float feature_value, uint64_t feature_index, uint64_t offse
   kernel_impl(feature_value, index, weights_mask, column_index, seed, sum);
 }
 
-/*
-// Alternative implementation of 64-bit vpopcnt in case the instruction is missing.
-// https://github.com/WojciechMula/sse-popcount/blob/master/popcnt-avx512-harley-seal.cpp
-inline __m512i popcount64(const __m512i v)
-{
-  const __m512i m1 = _mm512_set1_epi8(0x55);
-  const __m512i m2 = _mm512_set1_epi8(0x33);
-  const __m512i m4 = _mm512_set1_epi8(0x0F);
-
-  const __m512i t1 = _mm512_sub_epi8(v, (_mm512_srli_epi16(v, 1) & m1));
-  const __m512i t2 = _mm512_add_epi8(t1 & m2, (_mm512_srli_epi16(t1, 2) & m2));
-  const __m512i t3 = _mm512_add_epi8(t2, _mm512_srli_epi16(t2, 4)) & m4;
-  return _mm512_sad_epu8(t3, _mm512_setzero_si512());
-}
-*/
-
 // Process 16 features in parallel using AVX-512, resulting in the same output of 16 compute1() executions.
 inline void compute16(const __m512& feature_values, const __m512i& feature_indices1, const __m512i& feature_indices2,
     const __m512i& offsets, const __m512i& weights_masks, const __m512i& column_indices, const __m512i& seeds,
