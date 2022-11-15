@@ -1387,47 +1387,75 @@ uint64_t ceil_log_2(uint64_t v)
   }
 }
 
+struct options_gd_v1
+{
+  bool sgd = false;
+  bool adaptive = false;
+  bool adax = false;
+  bool invariant = false;
+  bool normalized = false;
+  float sparse_l2;
+  float local_gravity = 0;
+  float local_contraction = 0;
+  bool l1_state_supplied = false;
+  bool l2_state_supplied = false;
+  bool feature_mask_supplied = false;
+  uint64_t early_terminate = 0;
+  bool learning_rate_supplied = false;
+  bool initial_t_supplied = false;
+};
+
+std::unique_ptr<options_gd_v1> get_gd_options_instance(
+    const VW::workspace& all, VW::io::logger&, options_i& options)
+{
+  auto gd_opts = VW::make_unique<options_gd_v1>();
+  option_group_definition new_options("[Reduction] Gradient Descent");
+  new_options.add(make_option("sgd", gd_opts->sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
+      .add(make_option("adaptive", gd_opts->adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
+      .add(make_option("adax", gd_opts->adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))
+      .add(make_option("invariant", gd_opts->invariant).help("Use safe/importance aware updates").keep(all.save_resume))
+      .add(make_option("normalized", gd_opts->normalized).help("Use per feature normalized updates").keep(all.save_resume))
+      .add(make_option("sparse_l2", gd_opts->sparse_l2)
+               .default_value(0.f)
+               .help("Degree of l2 regularization applied to activated sparse parameters"))
+      .add(make_option("l1_state", gd_opts->local_gravity)
+               .allow_override()
+               .default_value(L1_STATE_DEFAULT)
+               .help("Amount of accumulated implicit l1 regularization"))
+      .add(make_option("l2_state", gd_opts->local_contraction)
+               .allow_override()
+               .default_value(L2_STATE_DEFAULT)
+               .help("Amount of accumulated implicit l2 regularization"));
+  options.add_and_parse(new_options);
+
+  gd_opts->l1_state_supplied = options.was_supplied("l1_state");
+  gd_opts->l2_state_supplied = options.was_supplied("l2_state");
+  gd_opts->feature_mask_supplied = options.was_supplied("feature_mask");
+  if (!all.holdout_set_off)
+  {
+    gd_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value();
+  }
+  gd_opts->learning_rate_supplied = options.was_supplied("learning_rate") || options.was_supplied("l");
+  gd_opts->initial_t_supplied = options.was_supplied("initial_t");
+  return gd_opts;
+}
 }  // namespace GD
 
 base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  auto gd_opts = GD::get_gd_options_instance(all, all.logger, options);
+  if (gd_opts == nullptr) { return nullptr; }
 
   auto g = VW::make_unique<GD::gd>();
 
-  bool sgd = false;
-  bool adaptive = false;
-  bool adax = false;
-  bool invariant = false;
-  bool normalized = false;
-
   all.sd->gravity = L1_STATE_DEFAULT;
   all.sd->contraction = L2_STATE_DEFAULT;
-  float local_gravity = 0;
-  float local_contraction = 0;
+  g->sparse_l2 = gd_opts->sparse_l2;
 
-  option_group_definition new_options("[Reduction] Gradient Descent");
-  new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
-      .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
-      .add(make_option("adax", adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))
-      .add(make_option("invariant", invariant).help("Use safe/importance aware updates").keep(all.save_resume))
-      .add(make_option("normalized", normalized).help("Use per feature normalized updates").keep(all.save_resume))
-      .add(make_option("sparse_l2", g->sparse_l2)
-               .default_value(0.f)
-               .help("Degree of l2 regularization applied to activated sparse parameters"))
-      .add(make_option("l1_state", local_gravity)
-               .allow_override()
-               .default_value(L1_STATE_DEFAULT)
-               .help("Amount of accumulated implicit l1 regularization"))
-      .add(make_option("l2_state", local_contraction)
-               .allow_override()
-               .default_value(L2_STATE_DEFAULT)
-               .help("Amount of accumulated implicit l2 regularization"));
-  options.add_and_parse(new_options);
-
-  if (options.was_supplied("l1_state")) { all.sd->gravity = local_gravity; }
-  if (options.was_supplied("l2_state")) { all.sd->contraction = local_contraction; }
+  if (gd_opts->l1_state_supplied) { all.sd->gravity = gd_opts->local_gravity; }
+  if (gd_opts->l2_state_supplied) { all.sd->contraction = gd_opts->local_contraction; }
 
   g->all = &all;
   auto single_model_state = GD::per_model_state();
@@ -1448,24 +1476,24 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   }
 
   bool feature_mask_off = true;
-  if (options.was_supplied("feature_mask")) { feature_mask_off = false; }
+  if (gd_opts->feature_mask_supplied) { feature_mask_off = false; }
 
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    g->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+    g->early_stop_thres = gd_opts->early_terminate;
   }
 
   g->initial_constant = all.initial_constant;
 
-  if (sgd || adaptive || invariant || normalized)
+  if (gd_opts->sgd || gd_opts->adaptive || gd_opts->invariant || gd_opts->normalized)
   {
     // nondefault
-    all.weights.adaptive = adaptive;
-    all.invariant_updates = all.training && invariant;
-    all.weights.normalized = normalized;
+    all.weights.adaptive = gd_opts->adaptive;
+    all.invariant_updates = all.training && gd_opts->invariant;
+    all.weights.normalized = gd_opts->normalized;
 
-    if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
+    if (!gd_opts->learning_rate_supplied &&
         !(all.weights.adaptive && all.weights.normalized))
     {
       all.eta = 10;  // default learning rate to 10 for non default update rule
@@ -1474,7 +1502,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
     // if not using normalized or adaptive, default initial_t to 1 instead of 0
     if (!all.weights.adaptive && !all.weights.normalized)
     {
-      if (!options.was_supplied("initial_t"))
+      if (!gd_opts->initial_t_supplied)
       {
         all.sd->t = 1.f;
         all.initial_t = 1.f;
@@ -1492,7 +1520,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   all.weights.adaptive = all.weights.adaptive && all.training;
   all.weights.normalized = all.weights.normalized && all.training;
 
-  if (adax) { g->adax = all.training && adax; }
+  if (gd_opts->adax) { g->adax = all.training && gd_opts->adax; }
 
   if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
