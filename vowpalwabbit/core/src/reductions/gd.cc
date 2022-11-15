@@ -1451,31 +1451,31 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   auto gd_opts = GD::get_gd_options_instance(all, all.logger, options);
   if (gd_opts == nullptr) { return nullptr; }
 
-  auto g = VW::make_unique<GD::gd>();
+  auto gd_data = VW::make_unique<GD::gd>();
 
   all.sd->gravity = L1_STATE_DEFAULT;
   all.sd->contraction = L2_STATE_DEFAULT;
-  g->sparse_l2 = gd_opts->sparse_l2;
+  gd_data->sparse_l2 = gd_opts->sparse_l2;
 
   if (gd_opts->l1_state_supplied) { all.sd->gravity = gd_opts->local_gravity; }
   if (gd_opts->l2_state_supplied) { all.sd->contraction = gd_opts->local_contraction; }
 
-  g->all = &all;
+  gd_data->all = &all;
   auto single_model_state = GD::per_model_state();
   single_model_state.normalized_sum_norm_x = 0;
   single_model_state.total_weight = 0.;
-  g->per_model_states.emplace_back(single_model_state);
-  g->no_win_counter = 0;
+  gd_data->per_model_states.emplace_back(single_model_state);
+  gd_data->no_win_counter = 0;
   all.weights.adaptive = true;
   all.weights.normalized = true;
-  g->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
-  g->neg_power_t = -all.power_t;
+  gd_data->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
+  gd_data->neg_power_t = -all.power_t;
 
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
   {
-    g->per_model_states[0].normalized_sum_norm_x = all.initial_t;
-    g->per_model_states[0].total_weight = all.initial_t;
+    gd_data->per_model_states[0].normalized_sum_norm_x = all.initial_t;
+    gd_data->per_model_states[0].total_weight = all.initial_t;
   }
 
   bool feature_mask_off = true;
@@ -1484,10 +1484,10 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    g->early_stop_thres = gd_opts->early_terminate;
+    gd_data->early_stop_thres = gd_opts->early_terminate;
   }
 
-  g->initial_constant = all.initial_constant;
+  gd_data->initial_constant = all.initial_constant;
 
   if (gd_opts->sgd || gd_opts->adaptive || gd_opts->invariant || gd_opts->normalized)
   {
@@ -1516,15 +1516,15 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   {
     all.invariant_updates = all.training;
   }
-  g->adaptive_input = all.weights.adaptive;
-  g->normalized_input = all.weights.normalized;
+  gd_data->adaptive_input = all.weights.adaptive;
+  gd_data->normalized_input = all.weights.normalized;
 
   all.weights.adaptive = all.weights.adaptive && all.training;
   all.weights.normalized = all.weights.normalized && all.training;
 
-  if (gd_opts->adax) { g->adax = all.training && gd_opts->adax; }
+  if (gd_opts->adax) { gd_data->adax = all.training && gd_opts->adax; }
 
-  if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
+  if (gd_data->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
   if (pow(static_cast<double>(all.eta_decay_rate), static_cast<double>(all.numpasses)) < 0.0001)
   {
@@ -1537,37 +1537,37 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   {
     if (all.audit || all.hash_inv)
     {
-      g->predict = GD::predict<true, true>;
-      g->multipredict = GD::multipredict<true, true>;
+      gd_data->predict = GD::predict<true, true>;
+      gd_data->multipredict = GD::multipredict<true, true>;
     }
     else
     {
-      g->predict = GD::predict<true, false>;
-      g->multipredict = GD::multipredict<true, false>;
+      gd_data->predict = GD::predict<true, false>;
+      gd_data->multipredict = GD::multipredict<true, false>;
     }
   }
   else if (all.audit || all.hash_inv)
   {
-    g->predict = GD::predict<false, true>;
-    g->multipredict = GD::multipredict<false, true>;
+    gd_data->predict = GD::predict<false, true>;
+    gd_data->multipredict = GD::multipredict<false, true>;
   }
   else
   {
-    g->predict = GD::predict<false, false>;
-    g->multipredict = GD::multipredict<false, false>;
+    gd_data->predict = GD::predict<false, false>;
+    gd_data->multipredict = GD::multipredict<false, false>;
   }
 
   uint64_t stride;
-  if (all.power_t == 0.5) { stride = GD::set_learn<true>(all, feature_mask_off, *g.get()); }
+  if (all.power_t == 0.5) { stride = GD::set_learn<true>(all, feature_mask_off, *gd_data.get()); }
   else
   {
-    stride = GD::set_learn<false>(all, feature_mask_off, *g.get());
+    stride = GD::set_learn<false>(all, feature_mask_off, *gd_data.get());
   }
 
   all.weights.stride_shift(static_cast<uint32_t>(GD::ceil_log_2(stride - 1)));
 
-  auto* bare = g.get();
-  learner<GD::gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
+  auto* bare = gd_data.get();
+  learner<GD::gd, VW::example>* l = make_base_learner(std::move(gd_data), gd_data->learn, bare->predict,
       stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                                         .set_learn_returns_prediction(true)
                                         .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
