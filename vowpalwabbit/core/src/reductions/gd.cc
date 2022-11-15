@@ -1405,16 +1405,21 @@ struct options_gd_v1
   bool initial_t_supplied = false;
 };
 
-std::unique_ptr<options_gd_v1> get_gd_options_instance(
-    const VW::workspace& all, VW::io::logger&, options_i& options)
+std::unique_ptr<options_gd_v1> get_gd_options_instance(const VW::workspace& all, VW::io::logger&, options_i& options)
 {
   auto gd_opts = VW::make_unique<options_gd_v1>();
   option_group_definition new_options("[Reduction] Gradient Descent");
-  new_options.add(make_option("sgd", gd_opts->sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
-      .add(make_option("adaptive", gd_opts->adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
+  new_options
+      .add(
+          make_option("sgd", gd_opts->sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
+      .add(make_option("adaptive", gd_opts->adaptive)
+               .help("Use adaptive, individual learning rates")
+               .keep(all.save_resume))
       .add(make_option("adax", gd_opts->adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))
       .add(make_option("invariant", gd_opts->invariant).help("Use safe/importance aware updates").keep(all.save_resume))
-      .add(make_option("normalized", gd_opts->normalized).help("Use per feature normalized updates").keep(all.save_resume))
+      .add(make_option("normalized", gd_opts->normalized)
+               .help("Use per feature normalized updates")
+               .keep(all.save_resume))
       .add(make_option("sparse_l2", gd_opts->sparse_l2)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
@@ -1432,9 +1437,7 @@ std::unique_ptr<options_gd_v1> get_gd_options_instance(
   gd_opts->l2_state_supplied = options.was_supplied("l2_state");
   gd_opts->feature_mask_supplied = options.was_supplied("feature_mask");
   if (!all.holdout_set_off)
-  {
-    gd_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value();
-  }
+  { gd_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value(); }
   gd_opts->learning_rate_supplied = options.was_supplied("learning_rate") || options.was_supplied("l");
   gd_opts->initial_t_supplied = options.was_supplied("initial_t");
   return gd_opts;
@@ -1493,8 +1496,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
     all.invariant_updates = all.training && gd_opts->invariant;
     all.weights.normalized = gd_opts->normalized;
 
-    if (!gd_opts->learning_rate_supplied &&
-        !(all.weights.adaptive && all.weights.normalized))
+    if (!gd_opts->learning_rate_supplied && !(all.weights.adaptive && all.weights.normalized))
     {
       all.eta = 10;  // default learning rate to 10 for non default update rule
     }
