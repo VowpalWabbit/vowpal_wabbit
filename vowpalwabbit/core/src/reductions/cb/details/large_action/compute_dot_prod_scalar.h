@@ -5,38 +5,13 @@
 #pragma once
 
 #include "../large_action_space.h"
+#include "kernel_impl.h"
 #include "vw/core/reductions/gd.h"
-#ifdef _MSC_VER
-#  include <intrin.h>
-#endif
 
 namespace VW
 {
 namespace cb_explore_adf
 {
-// index mapped used to select sparsity or not from value map
-constexpr static std::array<size_t, 2> INDEX_MAP = {0, 2};
-constexpr static std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
-
-inline void kernel_impl(float feature_value, uint64_t index, uint64_t weights_mask, uint64_t column_index,
-    uint64_t seed, float& final_dot_product)
-{
-#ifdef _MSC_VER
-  size_t select_sparsity = __popcnt((index & weights_mask) + column_index) & 1;
-  auto sparsity_index = INDEX_MAP[select_sparsity];
-  size_t select_sign = __popcnt((index & weights_mask) + column_index + seed) & 1;
-  auto value_index = sparsity_index + select_sign;
-  float val = VALUE_MAP[value_index];
-#else
-  size_t select_sparsity = __builtin_parity((index & weights_mask) + column_index);
-  auto sparsity_index = INDEX_MAP[select_sparsity];
-  size_t select_sign = __builtin_parity((index & weights_mask) + column_index + seed);
-  auto value_index = sparsity_index + select_sign;
-  float val = VALUE_MAP[value_index];
-#endif
-  final_dot_product += feature_value * val;
-}
-
 class AO_triplet_constructor
 {
 public:

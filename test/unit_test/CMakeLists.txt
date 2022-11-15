@@ -63,8 +63,6 @@ add_executable(vw-unit-test.out
 )
 
 if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE))
-  message(STATUS "Build cb_las_one_pass_svd_test with AVX-512")
-  set_source_files_properties(cb_las_one_pass_svd_test.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
   target_compile_definitions(vw-unit-test.out PUBLIC BUILD_LAS_WITH_SIMD)
 endif()
 
