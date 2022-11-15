@@ -776,6 +776,7 @@ def convert_tests_for_flatbuffers(
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
         # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
+        # 423, 424, 425, 426 - FB converter removes feature names from invert_hash (probably the same issue as above)
         if str(test.id) in (
             "300",
             "189",
@@ -803,6 +804,10 @@ def convert_tests_for_flatbuffers(
             "407",
             "411",
             "415",
+            "423",
+            "424",
+            "425",
+            "426",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
