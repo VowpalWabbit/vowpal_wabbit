@@ -750,17 +750,26 @@ std::unique_ptr<options_kernel_svm_v1> get_kernel_svm_options_instance(
   auto kernel_svm_opts = VW::make_unique<options_kernel_svm_v1>();
   option_group_definition new_options("[Reduction] Kernel SVM");
   new_options.add(make_option("ksvm", kernel_svm_opts->ksvm).keep().necessary().help("Kernel svm"))
-      .add(make_option("reprocess", kernel_svm_opts->reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
+      .add(make_option("reprocess", kernel_svm_opts->reprocess)
+               .default_value(1)
+               .help("Number of reprocess steps for LASVM"))
       .add(make_option("pool_greedy", kernel_svm_opts->active_pool_greedy).help("Use greedy selection on mini pools"))
       .add(make_option("para_active", kernel_svm_opts->para_active).help("Do parallel active learning"))
-      .add(make_option("pool_size", kernel_svm_opts->pool_size).default_value(1).help("Size of pools for active learning"))
-      .add(make_option("subsample", kernel_svm_opts->subsample).default_value(1).help("Number of items to subsample from the pool"))
+      .add(make_option("pool_size", kernel_svm_opts->pool_size)
+               .default_value(1)
+               .help("Size of pools for active learning"))
+      .add(make_option("subsample", kernel_svm_opts->subsample)
+               .default_value(1)
+               .help("Number of items to subsample from the pool"))
       .add(make_option("kernel", kernel_svm_opts->kernel_type)
                .keep()
                .default_value("linear")
                .one_of({"linear", "rbf", "poly"})
                .help("Type of kernel"))
-      .add(make_option("bandwidth", kernel_svm_opts->bandwidth).keep().default_value(1.f).help("Bandwidth of rbf kernel"))
+      .add(make_option("bandwidth", kernel_svm_opts->bandwidth)
+               .keep()
+               .default_value(1.f)
+               .help("Bandwidth of rbf kernel"))
       .add(make_option("degree", kernel_svm_opts->degree).keep().default_value(2).help("Degree of poly kernel"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -833,8 +842,8 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
 
   kernel_svm_data->all->weights.stride_shift(0);
 
-  auto* l = make_base_learner(std::move(kernel_svm_data), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
-      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+  auto* l = make_base_learner(std::move(kernel_svm_data), learn, predict,
+      stack_builder.get_setupfn_name(kernel_svm_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_save_load(save_load)
                 .set_finish(finish_kernel_svm)
                 .build();

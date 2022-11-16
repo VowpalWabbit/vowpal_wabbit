@@ -368,7 +368,10 @@ std::unique_ptr<options_cbzo_v1> get_cbzo_options_instance(
                .one_of({"linear", "constant"})
                .keep()
                .help("Policy/Model to Learn"))
-      .add(make_option("radius", cbzo_opts->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
+      .add(make_option("radius", cbzo_opts->radius)
+               .default_value(0.1f)
+               .keep(all.save_resume)
+               .help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -410,8 +413,9 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   cbzo_data->min_prediction_supplied = options.was_supplied("min_prediction");
   cbzo_data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  auto* l = make_base_learner(std::move(cbzo_data), get_learn(all, policy, cbzo_opts->feature_mask_off), get_predict(all, policy),
-      stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
+  auto* l = make_base_learner(std::move(cbzo_data), get_learn(all, policy, cbzo_opts->feature_mask_off),
+      get_predict(all, policy), stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF,
+      label_type_t::CONTINUOUS)
                 .set_params_per_weight(0)
                 .set_save_load(save_load)
                 .set_finish_example(::finish_example)

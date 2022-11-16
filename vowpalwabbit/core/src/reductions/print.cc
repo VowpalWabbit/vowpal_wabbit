@@ -58,8 +58,7 @@ struct options_print_v1
   bool print_option = false;
 };
 
-std::unique_ptr<options_print_v1> get_print_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_print_v1> get_print_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto print_opts = VW::make_unique<options_print_v1>();
   option_group_definition new_options("[Reduction] Print Psuedolearner");

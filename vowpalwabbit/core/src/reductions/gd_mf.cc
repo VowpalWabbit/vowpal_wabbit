@@ -362,9 +362,7 @@ std::unique_ptr<options_gd_mf_v1> get_gd_mf_options_instance(
   gd_mf_opts->learning_rate_not_supplied = !options.was_supplied("learning_rate") && !options.was_supplied("l");
   gd_mf_opts->initial_t_supplied = options.was_supplied("initial_t");
   if (!all.holdout_set_off)
-  {
-    gd_mf_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
-  }
+  { gd_mf_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value(); }
   return gd_mf_opts;
 }
 

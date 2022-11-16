@@ -1155,20 +1155,24 @@ std::unique_ptr<options_bfgs_v1> get_bfgs_options_instance(
                                      .necessary()
                                      .help("Use conjugate gradient based optimization"));
   option_group_definition bfgs_options("[Reduction] LBFGS and Conjugate Gradient");
-  bfgs_options.add(
-      make_option("bfgs", bfgs_opts->bfgs_option).keep().necessary().help("Use conjugate gradient based optimization"))
-  .add(make_option("hessian_on", bfgs_opts->local_hessian_on).help("Use second derivative in line search"))
-  .add(make_option("mem", bfgs_opts->local_m).default_value(15).help("Memory in bfgs"))
-  .add(make_option("termination", bfgs_opts->local_rel_threshold).default_value(0.001f).help("Termination threshold"));
+  bfgs_options
+      .add(make_option("bfgs", bfgs_opts->bfgs_option)
+               .keep()
+               .necessary()
+               .help("Use conjugate gradient based optimization"))
+      .add(make_option("hessian_on", bfgs_opts->local_hessian_on).help("Use second derivative in line search"))
+      .add(make_option("mem", bfgs_opts->local_m).default_value(15).help("Memory in bfgs"))
+      .add(make_option("termination", bfgs_opts->local_rel_threshold)
+               .default_value(0.001f)
+               .help("Termination threshold"));
 
   auto conjugate_gradient_enabled = options.add_parse_and_check_necessary(conjugate_gradient_options);
   bfgs_opts->bfgs_enabled = options.add_parse_and_check_necessary(bfgs_options);
   if (!conjugate_gradient_enabled && !bfgs_opts->bfgs_enabled) { return nullptr; }
-  if (conjugate_gradient_enabled && bfgs_opts->bfgs_enabled) { THROW("'conjugate_gradient' and 'bfgs' cannot be used together."); }
+  if (conjugate_gradient_enabled && bfgs_opts->bfgs_enabled)
+  { THROW("'conjugate_gradient' and 'bfgs' cannot be used together."); }
   if (!all.holdout_set_off)
-  {
-    bfgs_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value();
-  }
+  { bfgs_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value(); }
   return bfgs_opts;
 }
 
@@ -1242,8 +1246,8 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
     learner_name = stack_builder.get_setupfn_name(bfgs_setup);
   }
 
-  return make_base(*make_base_learner(
-      std::move(bfgs_data), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+  return make_base(*make_base_learner(std::move(bfgs_data), learn_ptr, predict_ptr, learner_name,
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                         .set_params_per_weight(all.weights.stride())
                         .set_save_load(save_load)
                         .set_init_driver(init_driver)

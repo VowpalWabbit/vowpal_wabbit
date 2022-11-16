@@ -145,8 +145,8 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
   sender_data->all = &all;
   sender_data->delay_ring = calloc_or_throw<VW::example*>(all.example_parser->example_queue_limit);
 
-  auto* l = VW::LEARNER::make_base_learner(std::move(sender_data), learn, learn, stack_builder.get_setupfn_name(sender_setup),
-      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+  auto* l = VW::LEARNER::make_base_learner(std::move(sender_data), learn, learn,
+      stack_builder.get_setupfn_name(sender_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_finish_example(::finish_example)
                 .set_end_examples(end_examples)
                 .build();

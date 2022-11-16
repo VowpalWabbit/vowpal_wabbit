@@ -338,7 +338,11 @@ std::unique_ptr<options_freegrad_v1> get_freegrad_options_instance(
 {
   auto freegrad_opts = VW::make_unique<options_freegrad_v1>();
   option_group_definition new_options("[Reduction] FreeGrad");
-  new_options.add(make_option("freegrad", freegrad_opts->freegrad_enabled).necessary().keep().help("Diagonal FreeGrad Algorithm"))
+  new_options
+      .add(make_option("freegrad", freegrad_opts->freegrad_enabled)
+               .necessary()
+               .keep()
+               .help("Diagonal FreeGrad Algorithm"))
       .add(make_option("restart", freegrad_opts->restart).help("Use the FreeRange restarts"))
       .add(make_option("project", freegrad_opts->project)
                .help("Project the outputs to adapt to both the lipschitz and comparator norm"))
@@ -352,12 +356,9 @@ std::unique_ptr<options_freegrad_v1> get_freegrad_options_instance(
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   freegrad_opts->radius_supplied = options.was_supplied("radius");
   if (!all.holdout_set_off)
-  {
-    freegrad_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
-  }
+  { freegrad_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value(); }
   return freegrad_opts;
 }
-
 
 }  // namespace
 
@@ -409,7 +410,8 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   }
 
   auto predict_ptr = (freegrad_data->all->audit || freegrad_data->all->hash_inv) ? predict<true> : predict<false>;
-  auto learn_ptr = (freegrad_data->all->audit || freegrad_data->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
+  auto learn_ptr =
+      (freegrad_data->all->audit || freegrad_data->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
   auto* l = VW::LEARNER::make_base_learner(std::move(freegrad_data), learn_ptr, predict_ptr,
       stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_learn_returns_prediction(true)

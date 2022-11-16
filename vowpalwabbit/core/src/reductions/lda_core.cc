@@ -1308,7 +1308,9 @@ std::unique_ptr<options_lda_core_v1> get_lda_core_options_instance(
                .default_value(0.1f)
                .help("Prior on sparsity of topic distributions"))
       .add(make_option("lda_D", lda_core_opts->lda_D).default_value(10000.0f).help("Number of documents"))
-      .add(make_option("lda_epsilon", lda_core_opts->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"))
+      .add(make_option("lda_epsilon", lda_core_opts->lda_epsilon)
+               .default_value(0.001f)
+               .help("Loop convergence threshold"))
       .add(make_option("minibatch", lda_core_opts->minibatch).default_value(1).help("Minibatch size, for LDA"))
       .add(make_option("math-mode", lda_core_opts->math_mode)
                .default_value(static_cast<int64_t>(lda_math_mode::USE_SIMD))
@@ -1379,16 +1381,17 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 
   all.example_parser->lbl_parser = VW::no_label_parser_global;
 
-  auto* l = make_base_learner(std::move(lda_core_data), lda_core_data->compute_coherence_metrics ? learn_with_metrics : learn,
-      lda_core_data->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
-      VW::prediction_type_t::SCALARS, VW::label_type_t::NOLABEL)
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                .set_learn_returns_prediction(true)
-                .set_save_load(save_load)
-                .set_finish_example(::finish_example)
-                .set_end_examples(end_examples)
-                .set_end_pass(end_pass)
-                .build();
+  auto* l =
+      make_base_learner(std::move(lda_core_data), lda_core_data->compute_coherence_metrics ? learn_with_metrics : learn,
+          lda_core_data->compute_coherence_metrics ? predict_with_metrics : predict,
+          stack_builder.get_setupfn_name(lda_setup), VW::prediction_type_t::SCALARS, VW::label_type_t::NOLABEL)
+          .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+          .set_learn_returns_prediction(true)
+          .set_save_load(save_load)
+          .set_finish_example(::finish_example)
+          .set_end_examples(end_examples)
+          .set_end_pass(end_pass)
+          .build();
 
   return make_base(*l);
 }

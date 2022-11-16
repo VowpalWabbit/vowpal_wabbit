@@ -373,8 +373,7 @@ struct options_ftrl_v1
   bool coin_enabled;
 };
 
-std::unique_ptr<options_ftrl_v1> get_ftrl_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_ftrl_v1> get_ftrl_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   bool ftrl_option_no_not_use = false;
   bool pistol_no_not_use = false;

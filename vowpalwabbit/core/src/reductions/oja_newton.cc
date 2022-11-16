@@ -523,11 +523,16 @@ std::unique_ptr<options_oja_newton_v1> get_oja_newton_options_instance(
 {
   auto oja_newton_opts = VW::make_unique<options_oja_newton_v1>();
   option_group_definition new_options("[Reduction] OjaNewton");
-  new_options.add(make_option("OjaNewton", oja_newton_opts->oja_newton).keep().necessary().help("Online Newton with Oja's Sketch"))
+  new_options
+      .add(make_option("OjaNewton", oja_newton_opts->oja_newton)
+               .keep()
+               .necessary()
+               .help("Online Newton with Oja's Sketch"))
       .add(make_option("sketch_size", oja_newton_opts->m).default_value(10).help("Size of sketch"))
       .add(make_option("epoch_size", oja_newton_opts->epoch_size).default_value(1).help("Size of epoch"))
       .add(make_option("alpha", oja_newton_opts->alpha).default_value(1.f).help("Mutiplicative constant for indentiy"))
-      .add(make_option("alpha_inverse", oja_newton_opts->alpha_inverse).help("One over alpha, similar to learning rate"))
+      .add(
+          make_option("alpha_inverse", oja_newton_opts->alpha_inverse).help("One over alpha, similar to learning rate"))
       .add(make_option("learning_rate_cnt", oja_newton_opts->learning_rate_cnt)
                .default_value(2.f)
                .help("Constant for the learning rate 1/t"))
