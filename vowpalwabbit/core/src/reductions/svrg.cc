@@ -173,25 +173,39 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     }
   }
 }
+
+struct options_svrg_v1
+{
+  bool svrg_option = false;
+  int stage_size;
+};
+
+std::unique_ptr<options_svrg_v1> get_svrg_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto svrg_opts = VW::make_unique<options_svrg_v1>();
+  option_group_definition new_options("[Reduction] Stochastic Variance Reduced Gradient");
+  new_options
+      .add(make_option("svrg", svrg_opts->svrg_option).keep().necessary().help("Streaming Stochastic Variance Reduced Gradient"))
+      .add(make_option("stage_size", svrg_opts->stage_size).default_value(1).help("Number of passes per SVRG stage"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return svrg_opts;
+}
 }  // namespace
 
 base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
 {
-  VW::config::options_i& options = *stack_builder.get_options();
+  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto s = VW::make_unique<svrg>(&all);
-
-  bool svrg_option = false;
-  option_group_definition new_options("[Reduction] Stochastic Variance Reduced Gradient");
-  new_options
-      .add(make_option("svrg", svrg_option).keep().necessary().help("Streaming Stochastic Variance Reduced Gradient"))
-      .add(make_option("stage_size", s->stage_size).default_value(1).help("Number of passes per SVRG stage"));
-
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  auto svrg_opts = get_svrg_options_instance(all, all.logger, options);
+  if (svrg_opts == nullptr) { return nullptr; }
+  auto svrg_data = VW::make_unique<svrg>(&all);
+  svrg_data->stage_size = svrg_opts->stage_size;
 
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
+  auto* l = VW::LEARNER::make_base_learner(std::move(svrg_data), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_save_load(save_load)

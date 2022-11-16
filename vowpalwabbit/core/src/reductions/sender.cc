@@ -114,26 +114,38 @@ void end_examples(sender& s)
   while (s.received_index != s.sent_index) { receive_result(s); }
   s.buf->close_files();
 }
+
+struct options_sender_v1
+{
+  std::string host;
+};
+
+std::unique_ptr<options_sender_v1> get_sender_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto sender_opts = VW::make_unique<options_sender_v1>();
+  option_group_definition sender_options("[Reduction] Network sending");
+  sender_options.add(make_option("sendto", sender_opts->host).keep().necessary().help("Send examples to <host>"));
+
+  if (!options.add_parse_and_check_necessary(sender_options)) { return nullptr; }
+  return sender_opts;
+}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
 {
-  VW::config::options_i& options = *stack_builder.get_options();
+  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  std::string host;
+  auto sender_opts = get_sender_options_instance(all, all.logger, options);
+  if (sender_opts == nullptr) { return nullptr; }
 
-  option_group_definition sender_options("[Reduction] Network sending");
-  sender_options.add(make_option("sendto", host).keep().necessary().help("Send examples to <host>"));
+  auto sender_data = VW::make_unique<sender>();
+  open_sockets(*sender_data, sender_opts->host);
 
-  if (!options.add_parse_and_check_necessary(sender_options)) { return nullptr; }
+  sender_data->all = &all;
+  sender_data->delay_ring = calloc_or_throw<VW::example*>(all.example_parser->example_queue_limit);
 
-  auto s = VW::make_unique<sender>();
-  open_sockets(*s, host);
-
-  s->all = &all;
-  s->delay_ring = calloc_or_throw<VW::example*>(all.example_parser->example_queue_limit);
-
-  auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, learn, stack_builder.get_setupfn_name(sender_setup),
+  auto* l = VW::LEARNER::make_base_learner(std::move(sender_data), learn, learn, stack_builder.get_setupfn_name(sender_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_finish_example(::finish_example)
                 .set_end_examples(end_examples)

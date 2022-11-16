@@ -1281,52 +1281,75 @@ void VW::reductions::lda::get_top_weights(
   }
 }
 
+struct options_lda_core_v1
+{
+  int64_t math_mode;
+  uint64_t topics;
+  uint64_t minibatch;
+  float lda_alpha;
+  float lda_rho;
+  float lda_D;
+  float lda_epsilon;
+  bool compute_coherence_metrics;
+};
+
+std::unique_ptr<options_lda_core_v1> get_lda_core_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto lda_core_opts = VW::make_unique<options_lda_core_v1>();
+  option_group_definition new_options("[Reduction] Latent Dirichlet Allocation");
+  new_options.add(make_option("lda", lda_core_opts->topics).keep().necessary().help("Run lda with <int> topics"))
+      .add(make_option("lda_alpha", lda_core_opts->lda_alpha)
+               .keep()
+               .default_value(0.1f)
+               .help("Prior on sparsity of per-document topic weights"))
+      .add(make_option("lda_rho", lda_core_opts->lda_rho)
+               .keep()
+               .default_value(0.1f)
+               .help("Prior on sparsity of topic distributions"))
+      .add(make_option("lda_D", lda_core_opts->lda_D).default_value(10000.0f).help("Number of documents"))
+      .add(make_option("lda_epsilon", lda_core_opts->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"))
+      .add(make_option("minibatch", lda_core_opts->minibatch).default_value(1).help("Minibatch size, for LDA"))
+      .add(make_option("math-mode", lda_core_opts->math_mode)
+               .default_value(static_cast<int64_t>(lda_math_mode::USE_SIMD))
+               .one_of({0, 1, 2})
+               .help("Math mode: 0=simd, 1=accuracy, 2=fast-approx"))
+      .add(make_option("metrics", lda_core_opts->compute_coherence_metrics).help("Compute metrics"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return lda_core_opts;
+}
+
 base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  auto lda_core_opts = get_lda_core_options_instance(all, all.logger, options);
+  if (lda_core_opts == nullptr) { return nullptr; }
 
-  auto ld = VW::make_unique<::lda>();
-  option_group_definition new_options("[Reduction] Latent Dirichlet Allocation");
-  int64_t math_mode;
-  uint64_t topics;
-  uint64_t minibatch;
-  new_options.add(make_option("lda", topics).keep().necessary().help("Run lda with <int> topics"))
-      .add(make_option("lda_alpha", ld->lda_alpha)
-               .keep()
-               .default_value(0.1f)
-               .help("Prior on sparsity of per-document topic weights"))
-      .add(make_option("lda_rho", ld->lda_rho)
-               .keep()
-               .default_value(0.1f)
-               .help("Prior on sparsity of topic distributions"))
-      .add(make_option("lda_D", ld->lda_D).default_value(10000.0f).help("Number of documents"))
-      .add(make_option("lda_epsilon", ld->lda_epsilon).default_value(0.001f).help("Loop convergence threshold"))
-      .add(make_option("minibatch", minibatch).default_value(1).help("Minibatch size, for LDA"))
-      .add(make_option("math-mode", math_mode)
-               .default_value(static_cast<int64_t>(lda_math_mode::USE_SIMD))
-               .one_of({0, 1, 2})
-               .help("Math mode: 0=simd, 1=accuracy, 2=fast-approx"))
-      .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
-
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  auto lda_core_data = VW::make_unique<::lda>();
+  lda_core_data->lda_alpha = lda_core_opts->lda_alpha;
+  lda_core_data->lda_rho = lda_core_opts->lda_rho;
+  lda_core_data->lda_D = lda_core_opts->lda_D;
+  lda_core_data->lda_epsilon = lda_core_opts->lda_epsilon;
+  lda_core_data->compute_coherence_metrics = lda_core_opts->compute_coherence_metrics;
 
   // Convert from int to corresponding enum value.
-  ld->mmode = static_cast<lda_math_mode>(math_mode);
-  ld->topics = VW::cast_to_smaller_type<size_t>(topics);
-  ld->minibatch = VW::cast_to_smaller_type<size_t>(minibatch);
+  lda_core_data->mmode = static_cast<lda_math_mode>(lda_core_opts->math_mode);
+  lda_core_data->topics = VW::cast_to_smaller_type<size_t>(lda_core_opts->topics);
+  lda_core_data->minibatch = VW::cast_to_smaller_type<size_t>(lda_core_opts->minibatch);
 
-  ld->finish_example_count = 0;
+  lda_core_data->finish_example_count = 0;
 
-  all.lda = static_cast<uint32_t>(ld->topics);
-  ld->sorted_features = std::vector<index_feature>();
-  ld->total_lambda_init = false;
-  ld->all = &all;
-  ld->example_t = all.initial_t;
-  if (ld->compute_coherence_metrics)
+  all.lda = static_cast<uint32_t>(lda_core_data->topics);
+  lda_core_data->sorted_features = std::vector<index_feature>();
+  lda_core_data->total_lambda_init = false;
+  lda_core_data->all = &all;
+  lda_core_data->example_t = all.initial_t;
+  if (lda_core_data->compute_coherence_metrics)
   {
-    ld->feature_counts.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
-    ld->feature_to_example_map.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
+    lda_core_data->feature_counts.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
+    lda_core_data->feature_to_example_map.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
   }
 
   float temp = ceilf(logf(static_cast<float>(all.lda * 2 + 1)) / logf(2.f));
@@ -1341,7 +1364,7 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
     all.eta = std::min(all.eta, 1.f);
   }
 
-  size_t minibatch2 = next_pow2(ld->minibatch);
+  size_t minibatch2 = next_pow2(lda_core_data->minibatch);
   if (minibatch2 > all.example_parser->example_queue_limit)
   {
     bool previous_strict_parse = all.example_parser->strict_parse;
@@ -1350,14 +1373,14 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
     all.example_parser->shared_data_obj = all.sd;
   }
 
-  ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);
+  lda_core_data->v.resize_but_with_stl_behavior(all.lda * lda_core_data->minibatch);
 
-  ld->decay_levels.push_back(0.f);
+  lda_core_data->decay_levels.push_back(0.f);
 
   all.example_parser->lbl_parser = VW::no_label_parser_global;
 
-  auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
-      ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
+  auto* l = make_base_learner(std::move(lda_core_data), lda_core_data->compute_coherence_metrics ? learn_with_metrics : learn,
+      lda_core_data->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
       VW::prediction_type_t::SCALARS, VW::label_type_t::NOLABEL)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)

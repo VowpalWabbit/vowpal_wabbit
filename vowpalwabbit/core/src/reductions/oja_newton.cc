@@ -499,15 +499,9 @@ void save_load(OjaNewton& oja_newton_ptr, io_buf& model_file, bool read, bool te
     }
   }
 }
-}  // namespace
 
-base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
+struct options_oja_newton_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-
-  auto oja_newton_ptr = VW::make_unique<OjaNewton>();
-
   bool oja_newton;
   float alpha_inverse;
 
@@ -517,59 +511,86 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
   // of the positional data argument.
   std::string normalize = "true";
   std::string random_init = "true";
+
+  int m;
+  int epoch_size;
+  float alpha;
+  float learning_rate_cnt;
+};
+
+std::unique_ptr<options_oja_newton_v1> get_oja_newton_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto oja_newton_opts = VW::make_unique<options_oja_newton_v1>();
   option_group_definition new_options("[Reduction] OjaNewton");
-  new_options.add(make_option("OjaNewton", oja_newton).keep().necessary().help("Online Newton with Oja's Sketch"))
-      .add(make_option("sketch_size", oja_newton_ptr->m).default_value(10).help("Size of sketch"))
-      .add(make_option("epoch_size", oja_newton_ptr->epoch_size).default_value(1).help("Size of epoch"))
-      .add(make_option("alpha", oja_newton_ptr->alpha).default_value(1.f).help("Mutiplicative constant for indentiy"))
-      .add(make_option("alpha_inverse", alpha_inverse).help("One over alpha, similar to learning rate"))
-      .add(make_option("learning_rate_cnt", oja_newton_ptr->learning_rate_cnt)
+  new_options.add(make_option("OjaNewton", oja_newton_opts->oja_newton).keep().necessary().help("Online Newton with Oja's Sketch"))
+      .add(make_option("sketch_size", oja_newton_opts->m).default_value(10).help("Size of sketch"))
+      .add(make_option("epoch_size", oja_newton_opts->epoch_size).default_value(1).help("Size of epoch"))
+      .add(make_option("alpha", oja_newton_opts->alpha).default_value(1.f).help("Mutiplicative constant for indentiy"))
+      .add(make_option("alpha_inverse", oja_newton_opts->alpha_inverse).help("One over alpha, similar to learning rate"))
+      .add(make_option("learning_rate_cnt", oja_newton_opts->learning_rate_cnt)
                .default_value(2.f)
                .help("Constant for the learning rate 1/t"))
-      .add(make_option("normalize", normalize).help("Normalize the features or not"))
-      .add(make_option("random_init", random_init).help("Randomize initialization of Oja or not"));
+      .add(make_option("normalize", oja_newton_opts->normalize).help("Normalize the features or not"))
+      .add(make_option("random_init", oja_newton_opts->random_init).help("Randomize initialization of Oja or not"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return oja_newton_opts;
+}
+}  // namespace
 
-  oja_newton_ptr->all = &all;
-  oja_newton_ptr->random_state = all.get_random_state();
+base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto oja_newton_opts = get_oja_newton_options_instance(all, all.logger, options);
+  if (oja_newton_opts == nullptr) { return nullptr; }
 
-  oja_newton_ptr->normalize = normalize == "true";
-  oja_newton_ptr->random_init = random_init == "true";
+  auto oja_newton_data = VW::make_unique<OjaNewton>();
+  oja_newton_data->m = oja_newton_opts->m;
+  oja_newton_data->epoch_size = oja_newton_opts->epoch_size;
+  oja_newton_data->alpha = oja_newton_opts->alpha;
+  oja_newton_data->learning_rate_cnt = oja_newton_opts->learning_rate_cnt;
 
-  if (options.was_supplied("alpha_inverse")) { oja_newton_ptr->alpha = 1.f / alpha_inverse; }
+  oja_newton_data->all = &all;
+  oja_newton_data->random_state = all.get_random_state();
 
-  oja_newton_ptr->cnt = 0;
-  oja_newton_ptr->t = 1;
-  oja_newton_ptr->ev = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-  oja_newton_ptr->b = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-  oja_newton_ptr->D = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-  oja_newton_ptr->A = calloc_or_throw<float*>(oja_newton_ptr->m + 1);
-  oja_newton_ptr->K = calloc_or_throw<float*>(oja_newton_ptr->m + 1);
-  for (int i = 1; i <= oja_newton_ptr->m; i++)
+  oja_newton_data->normalize = oja_newton_opts->normalize == "true";
+  oja_newton_data->random_init = oja_newton_opts->random_init == "true";
+
+  if (options.was_supplied("alpha_inverse")) { oja_newton_data->alpha = 1.f / oja_newton_opts->alpha_inverse; }
+
+  oja_newton_data->cnt = 0;
+  oja_newton_data->t = 1;
+  oja_newton_data->ev = calloc_or_throw<float>(oja_newton_data->m + 1);
+  oja_newton_data->b = calloc_or_throw<float>(oja_newton_data->m + 1);
+  oja_newton_data->D = calloc_or_throw<float>(oja_newton_data->m + 1);
+  oja_newton_data->A = calloc_or_throw<float*>(oja_newton_data->m + 1);
+  oja_newton_data->K = calloc_or_throw<float*>(oja_newton_data->m + 1);
+  for (int i = 1; i <= oja_newton_data->m; i++)
   {
-    oja_newton_ptr->A[i] = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-    oja_newton_ptr->K[i] = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-    oja_newton_ptr->A[i][i] = 1;
-    oja_newton_ptr->K[i][i] = 1;
-    oja_newton_ptr->D[i] = 1;
+    oja_newton_data->A[i] = calloc_or_throw<float>(oja_newton_data->m + 1);
+    oja_newton_data->K[i] = calloc_or_throw<float>(oja_newton_data->m + 1);
+    oja_newton_data->A[i][i] = 1;
+    oja_newton_data->K[i][i] = 1;
+    oja_newton_data->D[i] = 1;
   }
 
-  oja_newton_ptr->buffer = calloc_or_throw<VW::example*>(oja_newton_ptr->epoch_size);
-  oja_newton_ptr->weight_buffer = calloc_or_throw<float>(oja_newton_ptr->epoch_size);
+  oja_newton_data->buffer = calloc_or_throw<VW::example*>(oja_newton_data->epoch_size);
+  oja_newton_data->weight_buffer = calloc_or_throw<float>(oja_newton_data->epoch_size);
 
-  oja_newton_ptr->zv = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-  oja_newton_ptr->vv = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-  oja_newton_ptr->tmp = calloc_or_throw<float>(oja_newton_ptr->m + 1);
+  oja_newton_data->zv = calloc_or_throw<float>(oja_newton_data->m + 1);
+  oja_newton_data->vv = calloc_or_throw<float>(oja_newton_data->m + 1);
+  oja_newton_data->tmp = calloc_or_throw<float>(oja_newton_data->m + 1);
 
-  oja_newton_ptr->data.oja_newton_ptr = oja_newton_ptr.get();
-  oja_newton_ptr->data.Zx = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-  oja_newton_ptr->data.AZx = calloc_or_throw<float>(oja_newton_ptr->m + 1);
-  oja_newton_ptr->data.delta = calloc_or_throw<float>(oja_newton_ptr->m + 1);
+  oja_newton_data->data.oja_newton_ptr = oja_newton_data.get();
+  oja_newton_data->data.Zx = calloc_or_throw<float>(oja_newton_data->m + 1);
+  oja_newton_data->data.AZx = calloc_or_throw<float>(oja_newton_data->m + 1);
+  oja_newton_data->data.delta = calloc_or_throw<float>(oja_newton_data->m + 1);
 
-  all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(oja_newton_ptr->m + 2))));
+  all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(oja_newton_data->m + 2))));
 
-  auto* l = make_base_learner(std::move(oja_newton_ptr), learn, predict,
+  auto* l = make_base_learner(std::move(oja_newton_data), learn, predict,
       stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(all.weights.stride())
                 .set_save_load(save_load)

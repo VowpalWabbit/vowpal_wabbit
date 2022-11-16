@@ -344,40 +344,53 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, VW
     THROW("Unknown policy encountered: " << policy)
 }
 
+struct options_cbzo_v1
+{
+  std::string policy_str;
+  bool cbzo_option = false;
+  float radius;
+  bool feature_mask_off = true;
+};
+
+std::unique_ptr<options_cbzo_v1> get_cbzo_options_instance(
+    const VW::workspace& all, VW::io::logger&, options_i& options)
+{
+  auto cbzo_opts = VW::make_unique<options_cbzo_v1>();
+  option_group_definition new_options(
+      "[Reduction] Continuous Action Contextual Bandit using Zeroth-Order Optimization");
+  new_options
+      .add(make_option("cbzo", cbzo_opts->cbzo_option)
+               .keep()
+               .necessary()
+               .help("Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order Optimization"))
+      .add(make_option("policy", cbzo_opts->policy_str)
+               .default_value("linear")
+               .one_of({"linear", "constant"})
+               .keep()
+               .help("Policy/Model to Learn"))
+      .add(make_option("radius", cbzo_opts->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  if (options.was_supplied("feature_mask")) { cbzo_opts->feature_mask_off = false; }
+  return cbzo_opts;
+}
+
 }  // namespace
 
 base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbzo_opts = get_cbzo_options_instance(all, all.logger, options);
+  if (cbzo_opts == nullptr) { return nullptr; }
 
-  auto data = VW::make_unique<cbzo>();
-
-  std::string policy_str;
-  bool cbzo_option = false;
-
-  option_group_definition new_options(
-      "[Reduction] Continuous Action Contextual Bandit using Zeroth-Order Optimization");
-  new_options
-      .add(make_option("cbzo", cbzo_option)
-               .keep()
-               .necessary()
-               .help("Solve 1-slot Continuous Action Contextual Bandit using Zeroth-Order Optimization"))
-      .add(make_option("policy", policy_str)
-               .default_value("linear")
-               .one_of({"linear", "constant"})
-               .keep()
-               .help("Policy/Model to Learn"))
-      .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
-
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  bool feature_mask_off = true;
-  if (options.was_supplied("feature_mask")) { feature_mask_off = false; }
+  auto cbzo_data = VW::make_unique<cbzo>();
+  cbzo_data->radius = cbzo_opts->radius;
 
   uint8_t policy;
-  if (policy_str.compare("constant") == 0) { policy = CONSTANT_POLICY; }
-  else if (policy_str.compare("linear") == 0)
+  if (cbzo_opts->policy_str.compare("constant") == 0) { policy = CONSTANT_POLICY; }
+  else if (cbzo_opts->policy_str.compare("linear") == 0)
   {
     policy = LINEAR_POLICY;
   }
@@ -388,16 +401,16 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   {
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
-    if (!feature_mask_off)
+    if (!cbzo_opts->feature_mask_off)
     { all.logger.err_warn("Feature_mask used with constant policy (where there is only one weight to learn)."); }
   }
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
-  data->all = &all;
-  data->min_prediction_supplied = options.was_supplied("min_prediction");
-  data->max_prediction_supplied = options.was_supplied("max_prediction");
+  cbzo_data->all = &all;
+  cbzo_data->min_prediction_supplied = options.was_supplied("min_prediction");
+  cbzo_data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
+  auto* l = make_base_learner(std::move(cbzo_data), get_learn(all, policy, cbzo_opts->feature_mask_off), get_predict(all, policy),
       stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
                 .set_params_per_weight(0)
                 .set_save_load(save_load)

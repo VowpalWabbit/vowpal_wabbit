@@ -335,16 +335,20 @@ void learn(gdmf& d, base_learner&, VW::example& ec)
   if (all.training && ec.l.simple.label != FLT_MAX) { mf_train(d, ec); }
 }
 
-}  // namespace
-base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
+struct options_gd_mf_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
+  uint32_t rank;
+  bool learning_rate_not_supplied;
+  bool initial_t_supplied;
+  uint64_t early_stop_thres;
+};
 
-  auto data = VW::make_unique<gdmf>();
-
+std::unique_ptr<options_gd_mf_v1> get_gd_mf_options_instance(
+    const VW::workspace& all, VW::io::logger&, options_i& options)
+{
+  auto gd_mf_opts = VW::make_unique<options_gd_mf_v1>();
   option_group_definition gf_md_options("[Reduction] Gradient Descent Matrix Factorization");
-  gf_md_options.add(make_option("rank", data->rank).keep().necessary().help("Rank for matrix factorization"));
+  gf_md_options.add(make_option("rank", gd_mf_opts->rank).keep().necessary().help("Rank for matrix factorization"));
 
   if (!options.add_parse_and_check_necessary(gf_md_options)) { return nullptr; }
 
@@ -355,35 +359,54 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 
   if (options.was_supplied("bfgs") || options.was_supplied("conjugate_gradient"))
   { THROW("bfgs is not implemented for matrix factorization"); }
+  gd_mf_opts->learning_rate_not_supplied = !options.was_supplied("learning_rate") && !options.was_supplied("l");
+  gd_mf_opts->initial_t_supplied = options.was_supplied("initial_t");
+  if (!all.holdout_set_off)
+  {
+    gd_mf_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+  }
+  return gd_mf_opts;
+}
 
-  data->all = &all;
-  data->no_win_counter = 0;
+}  // namespace
+base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto gd_mf_opts = get_gd_mf_options_instance(all, all.logger, options);
+  if (gd_mf_opts == nullptr) { return nullptr; }
+
+  auto gd_mf_data = VW::make_unique<gdmf>();
+  gd_mf_data->rank = gd_mf_opts->rank;
+
+  gd_mf_data->all = &all;
+  gd_mf_data->no_win_counter = 0;
 
   // store linear + 2*rank weights per index, round up to power of two
-  float temp = ceilf(logf(static_cast<float>(data->rank * 2 + 1)) / logf(2.f));
+  float temp = ceilf(logf(static_cast<float>(gd_mf_data->rank * 2 + 1)) / logf(2.f));
   all.weights.stride_shift(static_cast<size_t>(temp));
   all.random_weights = true;
 
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    data->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+    gd_mf_data->early_stop_thres = gd_mf_opts->early_stop_thres;
   }
 
-  if (!options.was_supplied("learning_rate") && !options.was_supplied("l"))
+  if (gd_mf_opts->learning_rate_not_supplied)
   {
     all.eta = 10;  // default learning rate to 10 for non default update rule
   }
 
   // default initial_t to 1 instead of 0
-  if (!options.was_supplied("initial_t"))
+  if (!gd_mf_opts->initial_t_supplied)
   {
     all.sd->t = 1.f;
     all.initial_t = 1.f;
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
+  auto* l = make_base_learner(std::move(gd_mf_data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)

@@ -52,17 +52,29 @@ void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
   GD::foreach_feature<VW::workspace, uint64_t, print_feature>(*(p.all), ec, *p.all);
   (*all.trace_message) << std::endl;
 }
+
+struct options_print_v1
+{
+  bool print_option = false;
+};
+
+std::unique_ptr<options_print_v1> get_print_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto print_opts = VW::make_unique<options_print_v1>();
+  option_group_definition new_options("[Reduction] Print Psuedolearner");
+  new_options.add(make_option("print", print_opts->print_option).keep().necessary().help("Print examples"));
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return print_opts;
+}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::print_setup(VW::setup_base_i& stack_builder)
 {
-  VW::config::options_i& options = *stack_builder.get_options();
+  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  bool print_option = false;
-  option_group_definition new_options("[Reduction] Print Psuedolearner");
-  new_options.add(make_option("print", print_option).keep().necessary().help("Print examples"));
-
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  auto print_opts = get_print_options_instance(all, all.logger, options);
+  if (print_opts == nullptr) { return nullptr; }
 
   all.weights.stride_shift(0);
   auto* learner = VW::LEARNER::make_base_learner(VW::make_unique<print>(&all), learn, learn,

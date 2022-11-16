@@ -1134,69 +1134,87 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
 void init_driver(bfgs& b) { b.backstep_on = true; }
 
-base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
+struct options_bfgs_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-
-  auto b = VW::make_unique<bfgs>();
   bool conjugate_gradient = false;
-  option_group_definition conjugate_gradient_options("[Reduction] Conjugate Gradient");
-  conjugate_gradient_options.add(make_option("conjugate_gradient", conjugate_gradient)
-                                     .keep()
-                                     .necessary()
-                                     .help("Use conjugate gradient based optimization"));
-
   bool bfgs_option = false;
   int local_m = 0;
   float local_rel_threshold = 0.f;
   bool local_hessian_on = false;
+  uint64_t early_terminate = 0;
+  bool bfgs_enabled = false;
+};
+
+std::unique_ptr<options_bfgs_v1> get_bfgs_options_instance(
+    const VW::workspace& all, VW::io::logger&, options_i& options)
+{
+  auto bfgs_opts = VW::make_unique<options_bfgs_v1>();
+  option_group_definition conjugate_gradient_options("[Reduction] Conjugate Gradient");
+  conjugate_gradient_options.add(make_option("conjugate_gradient", bfgs_opts->conjugate_gradient)
+                                     .keep()
+                                     .necessary()
+                                     .help("Use conjugate gradient based optimization"));
   option_group_definition bfgs_options("[Reduction] LBFGS and Conjugate Gradient");
   bfgs_options.add(
-      make_option("bfgs", bfgs_option).keep().necessary().help("Use conjugate gradient based optimization"));
-  bfgs_options.add(make_option("hessian_on", local_hessian_on).help("Use second derivative in line search"));
-  bfgs_options.add(make_option("mem", local_m).default_value(15).help("Memory in bfgs"));
-  bfgs_options.add(make_option("termination", local_rel_threshold).default_value(0.001f).help("Termination threshold"));
+      make_option("bfgs", bfgs_opts->bfgs_option).keep().necessary().help("Use conjugate gradient based optimization"))
+  .add(make_option("hessian_on", bfgs_opts->local_hessian_on).help("Use second derivative in line search"))
+  .add(make_option("mem", bfgs_opts->local_m).default_value(15).help("Memory in bfgs"))
+  .add(make_option("termination", bfgs_opts->local_rel_threshold).default_value(0.001f).help("Termination threshold"));
 
   auto conjugate_gradient_enabled = options.add_parse_and_check_necessary(conjugate_gradient_options);
-  auto bfgs_enabled = options.add_parse_and_check_necessary(bfgs_options);
-  if (!conjugate_gradient_enabled && !bfgs_enabled) { return nullptr; }
-  if (conjugate_gradient_enabled && bfgs_enabled) { THROW("'conjugate_gradient' and 'bfgs' cannot be used together."); }
-
-  b->all = &all;
-  b->wolfe1_bound = 0.01;
-  b->first_hessian_on = true;
-  b->first_pass = true;
-  b->gradient_pass = true;
-  b->preconditioner_pass = true;
-  b->backstep_on = false;
-  b->final_pass = all.numpasses;
-  b->no_win_counter = 0;
-
-  if (bfgs_enabled)
+  bfgs_opts->bfgs_enabled = options.add_parse_and_check_necessary(bfgs_options);
+  if (!conjugate_gradient_enabled && !bfgs_opts->bfgs_enabled) { return nullptr; }
+  if (conjugate_gradient_enabled && bfgs_opts->bfgs_enabled) { THROW("'conjugate_gradient' and 'bfgs' cannot be used together."); }
+  if (!all.holdout_set_off)
   {
-    b->m = local_m;
-    b->rel_threshold = local_rel_threshold;
-    b->hessian_on = local_hessian_on;
+    bfgs_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value();
+  }
+  return bfgs_opts;
+}
+
+base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto bfgs_opts = get_bfgs_options_instance(all, all.logger, options);
+  if (bfgs_opts == nullptr) { return nullptr; }
+
+  auto bfgs_data = VW::make_unique<bfgs>();
+
+  bfgs_data->all = &all;
+  bfgs_data->wolfe1_bound = 0.01;
+  bfgs_data->first_hessian_on = true;
+  bfgs_data->first_pass = true;
+  bfgs_data->gradient_pass = true;
+  bfgs_data->preconditioner_pass = true;
+  bfgs_data->backstep_on = false;
+  bfgs_data->final_pass = all.numpasses;
+  bfgs_data->no_win_counter = 0;
+
+  if (bfgs_opts->bfgs_enabled)
+  {
+    bfgs_data->m = bfgs_opts->local_m;
+    bfgs_data->rel_threshold = bfgs_opts->local_rel_threshold;
+    bfgs_data->hessian_on = bfgs_opts->local_hessian_on;
   }
 
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    b->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+    bfgs_data->early_stop_thres = bfgs_opts->early_terminate;
   }
 
-  if (b->m == 0) { b->hessian_on = true; }
+  if (bfgs_data->m == 0) { bfgs_data->hessian_on = true; }
 
   if (!all.quiet)
   {
-    if (b->m > 0) { *(all.trace_message) << "enabling BFGS based optimization "; }
+    if (bfgs_data->m > 0) { *(all.trace_message) << "enabling BFGS based optimization "; }
     else
     {
       *(all.trace_message) << "enabling conjugate gradient optimization via BFGS ";
     }
 
-    if (b->hessian_on) { *(all.trace_message) << "with curvature calculation" << std::endl; }
+    if (bfgs_data->hessian_on) { *(all.trace_message) << "with curvature calculation" << std::endl; }
     else
     {
       *(all.trace_message) << "**without** curvature calculation" << std::endl;
@@ -1225,7 +1243,7 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
   }
 
   return make_base(*make_base_learner(
-      std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+      std::move(bfgs_data), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                         .set_params_per_weight(all.weights.stride())
                         .set_save_load(save_load)
                         .set_init_driver(init_driver)

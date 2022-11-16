@@ -320,75 +320,97 @@ void end_pass(freegrad& fg)
     { set_done(all); }
   }
 }
-}  // namespace
 
-base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
+struct options_freegrad_v1
 {
-  auto& options = *stack_builder.get_options();
   bool freegrad_enabled;
   bool restart = false;
   bool project = false;
-  bool adaptiveradius = true;
   float radius;
   float fepsilon;
   float flipschitz_const;
+  bool radius_supplied;
+  uint64_t early_stop_thres;
+};
 
+std::unique_ptr<options_freegrad_v1> get_freegrad_options_instance(
+    const VW::workspace& all, VW::io::logger&, options_i& options)
+{
+  auto freegrad_opts = VW::make_unique<options_freegrad_v1>();
   option_group_definition new_options("[Reduction] FreeGrad");
-  new_options.add(make_option("freegrad", freegrad_enabled).necessary().keep().help("Diagonal FreeGrad Algorithm"))
-      .add(make_option("restart", restart).help("Use the FreeRange restarts"))
-      .add(make_option("project", project)
+  new_options.add(make_option("freegrad", freegrad_opts->freegrad_enabled).necessary().keep().help("Diagonal FreeGrad Algorithm"))
+      .add(make_option("restart", freegrad_opts->restart).help("Use the FreeRange restarts"))
+      .add(make_option("project", freegrad_opts->project)
                .help("Project the outputs to adapt to both the lipschitz and comparator norm"))
-      .add(make_option("radius", radius)
+      .add(make_option("radius", freegrad_opts->radius)
                .help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used"))
-      .add(make_option("fepsilon", fepsilon).default_value(1.f).help("Initial wealth"))
-      .add(make_option("flipschitz_const", flipschitz_const)
+      .add(make_option("fepsilon", freegrad_opts->fepsilon).default_value(1.f).help("Initial wealth"))
+      .add(make_option("flipschitz_const", freegrad_opts->flipschitz_const)
                .default_value(0.f)
                .help("Upper bound on the norm of the gradients if known in advance"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  auto fg_ptr = VW::make_unique<freegrad>();
-  if (options.was_supplied("radius"))
+  freegrad_opts->radius_supplied = options.was_supplied("radius");
+  if (!all.holdout_set_off)
   {
-    fg_ptr->radius = radius;
+    freegrad_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+  }
+  return freegrad_opts;
+}
+
+
+}  // namespace
+
+base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto freegrad_opts = get_freegrad_options_instance(all, all.logger, options);
+  if (freegrad_opts == nullptr) { return nullptr; }
+
+  bool adaptiveradius = true;
+  auto freegrad_data = VW::make_unique<freegrad>();
+  if (freegrad_opts->radius_supplied)
+  {
+    freegrad_data->radius = freegrad_opts->radius;
     adaptiveradius = false;
   }
 
   // Defaults
-  fg_ptr->update_data.sum_normalized_grad_norms = 1;
-  fg_ptr->update_data.maximum_clipped_gradient_norm = 0.;
-  fg_ptr->update_data.freegrad_data_ptr = fg_ptr.get();
+  freegrad_data->update_data.sum_normalized_grad_norms = 1;
+  freegrad_data->update_data.maximum_clipped_gradient_norm = 0.;
+  freegrad_data->update_data.freegrad_data_ptr = freegrad_data.get();
 
-  fg_ptr->all = stack_builder.get_all_pointer();
-  fg_ptr->restart = restart;
-  fg_ptr->project = project;
-  fg_ptr->adaptiveradius = adaptiveradius;
-  fg_ptr->no_win_counter = 0;
-  fg_ptr->total_weight = 0;
-  fg_ptr->normalized_sum_norm_x = 0;
-  fg_ptr->epsilon = fepsilon;
-  fg_ptr->lipschitz_const = flipschitz_const;
+  freegrad_data->all = stack_builder.get_all_pointer();
+  freegrad_data->restart = freegrad_opts->restart;
+  freegrad_data->project = freegrad_opts->project;
+  freegrad_data->adaptiveradius = adaptiveradius;
+  freegrad_data->no_win_counter = 0;
+  freegrad_data->total_weight = 0;
+  freegrad_data->normalized_sum_norm_x = 0;
+  freegrad_data->epsilon = freegrad_opts->fepsilon;
+  freegrad_data->lipschitz_const = freegrad_opts->flipschitz_const;
 
   const auto* algorithm_name = "FreeGrad";
 
-  fg_ptr->all->weights.stride_shift(3);  // NOTE: for more parameter storage
-  fg_ptr->freegrad_size = 6;
+  freegrad_data->all->weights.stride_shift(3);  // NOTE: for more parameter storage
+  freegrad_data->freegrad_size = 6;
 
-  if (!fg_ptr->all->quiet)
+  if (!freegrad_data->all->quiet)
   {
-    *(fg_ptr->all->trace_message) << "Enabling FreeGrad based optimization" << std::endl;
-    *(fg_ptr->all->trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(freegrad_data->all->trace_message) << "Enabling FreeGrad based optimization" << std::endl;
+    *(freegrad_data->all->trace_message) << "Algorithm used: " << algorithm_name << std::endl;
   }
 
-  if (!fg_ptr->all->holdout_set_off)
+  if (!freegrad_data->all->holdout_set_off)
   {
-    fg_ptr->all->sd->holdout_best_loss = FLT_MAX;
-    fg_ptr->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+    freegrad_data->all->sd->holdout_best_loss = FLT_MAX;
+    freegrad_data->early_stop_thres = freegrad_opts->early_stop_thres;
   }
 
-  auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
-  auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
-  auto* l = VW::LEARNER::make_base_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
+  auto predict_ptr = (freegrad_data->all->audit || freegrad_data->all->hash_inv) ? predict<true> : predict<false>;
+  auto learn_ptr = (freegrad_data->all->audit || freegrad_data->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
+  auto* l = VW::LEARNER::make_base_learner(std::move(freegrad_data), learn_ptr, predict_ptr,
       stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())

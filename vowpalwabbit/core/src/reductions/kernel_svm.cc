@@ -730,95 +730,110 @@ void finish_kernel_svm(svm_params& params)
     *(params.all->trace_message) << "Total loss = " << params.loss_sum << endl;
   }
 }
+
+struct options_kernel_svm_v1
+{
+  bool ksvm = false;
+  uint64_t reprocess;
+  bool active_pool_greedy;
+  bool para_active;
+  uint64_t pool_size;
+  uint64_t subsample;
+  std::string kernel_type;
+  float bandwidth = 1.f;
+  int degree = 2;
+};
+
+std::unique_ptr<options_kernel_svm_v1> get_kernel_svm_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto kernel_svm_opts = VW::make_unique<options_kernel_svm_v1>();
+  option_group_definition new_options("[Reduction] Kernel SVM");
+  new_options.add(make_option("ksvm", kernel_svm_opts->ksvm).keep().necessary().help("Kernel svm"))
+      .add(make_option("reprocess", kernel_svm_opts->reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
+      .add(make_option("pool_greedy", kernel_svm_opts->active_pool_greedy).help("Use greedy selection on mini pools"))
+      .add(make_option("para_active", kernel_svm_opts->para_active).help("Do parallel active learning"))
+      .add(make_option("pool_size", kernel_svm_opts->pool_size).default_value(1).help("Size of pools for active learning"))
+      .add(make_option("subsample", kernel_svm_opts->subsample).default_value(1).help("Number of items to subsample from the pool"))
+      .add(make_option("kernel", kernel_svm_opts->kernel_type)
+               .keep()
+               .default_value("linear")
+               .one_of({"linear", "rbf", "poly"})
+               .help("Type of kernel"))
+      .add(make_option("bandwidth", kernel_svm_opts->bandwidth).keep().default_value(1.f).help("Bandwidth of rbf kernel"))
+      .add(make_option("degree", kernel_svm_opts->degree).keep().default_value(2).help("Degree of poly kernel"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return kernel_svm_opts;
+}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  auto kernel_svm_opts = get_kernel_svm_options_instance(all, all.logger, options);
+  if (kernel_svm_opts == nullptr) { return nullptr; }
 
-  auto params = VW::make_unique<svm_params>();
-  std::string kernel_type;
-  float bandwidth = 1.f;
-  int degree = 2;
-  uint64_t pool_size;
-  uint64_t reprocess;
-  uint64_t subsample;
+  auto kernel_svm_data = VW::make_unique<svm_params>();
+  kernel_svm_data->active_pool_greedy = kernel_svm_opts->active_pool_greedy;
+  kernel_svm_data->para_active = kernel_svm_opts->para_active;
 
-  bool ksvm = false;
-
-  option_group_definition new_options("[Reduction] Kernel SVM");
-  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("Kernel svm"))
-      .add(make_option("reprocess", reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
-      .add(make_option("pool_greedy", params->active_pool_greedy).help("Use greedy selection on mini pools"))
-      .add(make_option("para_active", params->para_active).help("Do parallel active learning"))
-      .add(make_option("pool_size", pool_size).default_value(1).help("Size of pools for active learning"))
-      .add(make_option("subsample", subsample).default_value(1).help("Number of items to subsample from the pool"))
-      .add(make_option("kernel", kernel_type)
-               .keep()
-               .default_value("linear")
-               .one_of({"linear", "rbf", "poly"})
-               .help("Type of kernel"))
-      .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("Bandwidth of rbf kernel"))
-      .add(make_option("degree", degree).keep().default_value(2).help("Degree of poly kernel"));
-
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  params->pool_size = VW::cast_to_smaller_type<size_t>(pool_size);
-  params->reprocess = VW::cast_to_smaller_type<size_t>(reprocess);
-  params->subsample = VW::cast_to_smaller_type<size_t>(subsample);
+  kernel_svm_data->pool_size = VW::cast_to_smaller_type<size_t>(kernel_svm_opts->pool_size);
+  kernel_svm_data->reprocess = VW::cast_to_smaller_type<size_t>(kernel_svm_opts->reprocess);
+  kernel_svm_data->subsample = VW::cast_to_smaller_type<size_t>(kernel_svm_opts->subsample);
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;
   all.loss = get_loss_function(all, loss_function, loss_parameter);
 
-  params->model = &calloc_or_throw<svm_model>();
-  new (params->model) svm_model();
-  params->model->num_support = 0;
-  params->maxcache = 1024 * 1024 * 1024;
-  params->loss_sum = 0.;
-  params->all = &all;
-  params->random_state = all.get_random_state();
+  kernel_svm_data->model = &calloc_or_throw<svm_model>();
+  new (kernel_svm_data->model) svm_model();
+  kernel_svm_data->model->num_support = 0;
+  kernel_svm_data->maxcache = 1024 * 1024 * 1024;
+  kernel_svm_data->loss_sum = 0.;
+  kernel_svm_data->all = &all;
+  kernel_svm_data->random_state = all.get_random_state();
 
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and
   // NOT --simulation
-  if (all.active) { params->active = true; }
-  if (params->active) { params->active_c = 1.; }
+  if (all.active) { kernel_svm_data->active = true; }
+  if (kernel_svm_data->active) { kernel_svm_data->active_c = 1.; }
 
-  params->pool = calloc_or_throw<svm_example*>(params->pool_size);
-  params->pool_pos = 0;
+  kernel_svm_data->pool = calloc_or_throw<svm_example*>(kernel_svm_data->pool_size);
+  kernel_svm_data->pool_pos = 0;
 
-  if (!options.was_supplied("subsample") && params->para_active)
-  { params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total)); }
+  if (!options.was_supplied("subsample") && kernel_svm_data->para_active)
+  { kernel_svm_data->subsample = static_cast<size_t>(ceil(kernel_svm_data->pool_size / all.all_reduce->total)); }
 
-  params->lambda = all.l2_lambda;
-  if (params->lambda == 0.) { params->lambda = 1.; }
-  *params->all->trace_message << "Lambda = " << params->lambda << endl;
-  *params->all->trace_message << "Kernel = " << kernel_type << endl;
+  kernel_svm_data->lambda = all.l2_lambda;
+  if (kernel_svm_data->lambda == 0.) { kernel_svm_data->lambda = 1.; }
+  *kernel_svm_data->all->trace_message << "Lambda = " << kernel_svm_data->lambda << endl;
+  *kernel_svm_data->all->trace_message << "Kernel = " << kernel_svm_opts->kernel_type << endl;
 
-  if (kernel_type.compare("rbf") == 0)
+  if (kernel_svm_opts->kernel_type.compare("rbf") == 0)
   {
-    params->kernel_type = SVM_KER_RBF;
-    *params->all->trace_message << "bandwidth = " << bandwidth << endl;
-    params->kernel_params = &calloc_or_throw<double>();
-    *(static_cast<float*>(params->kernel_params)) = bandwidth;
+    kernel_svm_data->kernel_type = SVM_KER_RBF;
+    *kernel_svm_data->all->trace_message << "bandwidth = " << kernel_svm_opts->bandwidth << endl;
+    kernel_svm_data->kernel_params = &calloc_or_throw<double>();
+    *(static_cast<float*>(kernel_svm_data->kernel_params)) = kernel_svm_opts->bandwidth;
   }
-  else if (kernel_type.compare("poly") == 0)
+  else if (kernel_svm_opts->kernel_type.compare("poly") == 0)
   {
-    params->kernel_type = SVM_KER_POLY;
-    *params->all->trace_message << "degree = " << degree << endl;
-    params->kernel_params = &calloc_or_throw<int>();
-    *(static_cast<int*>(params->kernel_params)) = degree;
+    kernel_svm_data->kernel_type = SVM_KER_POLY;
+    *kernel_svm_data->all->trace_message << "degree = " << kernel_svm_opts->degree << endl;
+    kernel_svm_data->kernel_params = &calloc_or_throw<int>();
+    *(static_cast<int*>(kernel_svm_data->kernel_params)) = kernel_svm_opts->degree;
   }
   else
   {
-    params->kernel_type = SVM_KER_LIN;
+    kernel_svm_data->kernel_type = SVM_KER_LIN;
   }
 
-  params->all->weights.stride_shift(0);
+  kernel_svm_data->all->weights.stride_shift(0);
 
-  auto* l = make_base_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
+  auto* l = make_base_learner(std::move(kernel_svm_data), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_save_load(save_load)
                 .set_finish(finish_kernel_svm)
