@@ -974,7 +974,6 @@ template <class T>
 void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool read, bool text, gd* g,
     std::stringstream& msg, uint32_t ftrl_size, T& weights)
 {
-  bool hexfloat_print = true;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
 
   uint64_t i = 0;
@@ -1023,7 +1022,9 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
   }
   else
   {  // write binary or text
-    if (hexfloat_print) { msg << std::hexfloat; }
+    bool hexfloat_print = all.options->was_supplied("hexfloat_weights");
+    hexfloat_print = true;
+    if (hexfloat_print && (text || all.print_invert)) { msg << std::hexfloat; }
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
