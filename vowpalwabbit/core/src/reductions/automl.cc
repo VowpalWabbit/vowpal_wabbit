@@ -317,8 +317,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     {
       return make_automl_with_impl<config_oracle<one_diff_impl>, VW::confidence_sequence>(stack_builder, base_learner,
           max_live_configs, verbose_metrics, oracle_type, global_lease, all, priority_challengers, interaction_type,
-          priority_type, automl_significance_level, ccb_on, predict_only_model, reversed_learning_order,
-          conf_type);
+          priority_type, automl_significance_level, ccb_on, predict_only_model, reversed_learning_order, conf_type);
     }
     else if (oracle_type == "rand")
     {
@@ -331,8 +330,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     {
       return make_automl_with_impl<config_oracle<champdupe_impl>, VW::confidence_sequence>(stack_builder, base_learner,
           max_live_configs, verbose_metrics, oracle_type, global_lease, all, priority_challengers, interaction_type,
-          priority_type, automl_significance_level, ccb_on, predict_only_model, reversed_learning_order,
-          conf_type);
+          priority_type, automl_significance_level, ccb_on, predict_only_model, reversed_learning_order, conf_type);
     }
     else if (oracle_type == "one_diff_inclusion")
     {

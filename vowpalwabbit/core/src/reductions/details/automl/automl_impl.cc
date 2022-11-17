@@ -63,8 +63,8 @@ template <typename config_oracle_impl, typename estimator_impl>
 interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_config_manager(uint64_t global_lease,
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
-    priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp,
-    bool ccb_on, config_type conf_type)
+    priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
+    config_type conf_type)
     : global_lease(global_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -142,8 +142,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
               VW::reductions::automl::config_state::Live)
       {
         _config_oracle.configs[estimators[live_slot].first.config_index].lease *= 2;
-        if (!estimators[live_slot].first.eligible_to_inactivate ||
-            swap_eligible_to_inactivate(estimators, live_slot))
+        if (!estimators[live_slot].first.eligible_to_inactivate || swap_eligible_to_inactivate(estimators, live_slot))
         { continue; }
       }
       // Skip over removed configs in index queue, and do nothing we we run out of eligible configs
@@ -213,8 +212,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
   {
     if (live_slot == current_champ) { continue; }
     // If challenger is better ('better function from Chacha')
-    if (aml_estimator<estimator_impl>::better(
-            estimators[live_slot].first._estimator, estimators[live_slot].second))
+    if (aml_estimator<estimator_impl>::better(estimators[live_slot].first._estimator, estimators[live_slot].second))
     {
       champ_change = true;
       winning_challenger_slot = live_slot;
@@ -388,9 +386,7 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   cm->do_learning(base, ec, current_champ);
 
   for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
-  {
-    cm->estimators[live_slot].second.update(1, r);
-  }
+  { cm->estimators[live_slot].second.update(1, r); }
 }
 
 template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence>>;

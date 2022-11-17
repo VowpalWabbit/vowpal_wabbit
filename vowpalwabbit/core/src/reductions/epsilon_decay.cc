@@ -37,8 +37,8 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
-    std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp,
-    uint64_t min_champ_examples, float initial_epsilon, uint64_t shift_model_bounds)
+    std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, uint64_t min_champ_examples,
+    float initial_epsilon, uint64_t shift_model_bounds)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -107,9 +107,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
           float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
           if (model_ind == model_count - 1) { w = 1; }  // Set w = 1 for champ
           for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
-          {
-            conf_seq_estimators[model_ind][estimator_ind].update(w, r);
-          }
+          { conf_seq_estimators[model_ind][estimator_ind].update(w, r); }
           if (_epsilon_decay_audit_str != "")
           {
             if (model_ind != model_count - 1)
@@ -372,8 +370,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon,
-      shift_model_bounds);
+      epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon, shift_model_bounds);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
