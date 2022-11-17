@@ -93,7 +93,7 @@ void finish_example(VW::workspace& all, automl<CMType>& data, VW::multi_ex& ec)
 }
 
 template <typename CMType>
-void output_single_model(VW::workspace& all, automl<CMType>& data)
+void convert_to_single_model(VW::workspace& all, automl<CMType>& data)
 {
   options_i& options = *all.options;
   if (!options.was_supplied("predict_only_model")) { return; }
@@ -110,16 +110,25 @@ void output_single_model(VW::workspace& all, automl<CMType>& data)
   uint64_t multiplier = static_cast<uint64_t>(data.cm->wpp) << data.cm->weights.stride_shift();
   for (uint32_t index = 0; index < data.cm->weights.mask(); index += multiplier)
   {
-    if (data.cm->weights[index] != 0.0f)
+    uint32_t cb_ind = index / data.cm->wpp;
+    for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << data.cm->weights.stride_shift()); ++stride)
     {
-      uint32_t cb_ind = index / data.cm->wpp;
-      for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << data.cm->weights.stride_shift()); ++stride)
-      { std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]); }
+      if (data.cm->weights[index + stride] != 0.0f)
+      {
+        std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]);
+      }
     }
   }
   uint32_t num_bits =
       options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
-  options.remove_option("automl");
+  std::set<std::string> aml_opts = { "automl", "global_lease", "cm_type", "priority_type", "priority_challengers", "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level", "fixed_significance_level" };
+  for (auto opt : aml_opts)
+  {
+    if (options.was_supplied(opt))
+    {
+        options.remove_option(opt);
+    }
+  }
   options.get_typed_option<uint32_t>("bit_precision").value(num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp)));
   all.num_bits = num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));
 }
@@ -217,7 +226,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
                 .set_learn_returns_prediction(true)
-                .set_output_single_model(::output_single_model<config_manager_type>)
+                .set_convert_to_single_model(::convert_to_single_model<config_manager_type>)
                 .build();
   return make_base(*l);
 }
@@ -239,7 +248,6 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   bool reversed_learning_order = false;
   bool lb_trick = false;
   bool fixed_significance_level = false;
-
   option_group_definition new_options("[Reduction] Automl");
   new_options
       .add(make_option("automl", max_live_configs)

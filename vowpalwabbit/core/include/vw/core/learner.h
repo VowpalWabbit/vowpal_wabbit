@@ -31,6 +31,7 @@
 #include "vw/core/metric_sink.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/scope_exit.h"
+#include "vw/config/options.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::LEARNER
@@ -112,12 +113,13 @@ public:
   fn save_load_f = nullptr;
 };
 
-class output_single_model_data
+class convert_to_single_model_data
 {
 public:
   using fn = void (*)(VW::workspace& all, void* data);
   void* data = nullptr;
-  fn output_single_model_f;
+  base_learner* base = nullptr;
+  fn convert_to_single_model_f;
 };
 
 class save_metric_data
@@ -337,11 +339,14 @@ public:
     if (_save_load_fd.base) { _save_load_fd.base->save_load(io, read, text); }
   }
 
-  // called to edit the command-line from a reduction.
-  inline void NO_SANITIZE_UNDEFINED output_single_model(VW::workspace& all)
+  // called to edit the command-line from a reduction. Autorecursive
+  inline void NO_SANITIZE_UNDEFINED convert_to_single_model(VW::workspace& all)
   {
-    if (_output_single_model_fd.output_single_model_f == nullptr) { return; }
-    _output_single_model_fd.output_single_model_f(all, _output_single_model_fd.data);
+    if (_convert_to_single_model_fd.convert_to_single_model_f != nullptr)
+    {
+      _convert_to_single_model_fd.convert_to_single_model_f(all, _convert_to_single_model_fd.data);
+    }
+    if (_convert_to_single_model_fd.base) { _convert_to_single_model_fd.base->convert_to_single_model(all); }
   }
 
   // called when metrics is enabled.  Autorecursive.
@@ -523,7 +528,7 @@ private:
   details::save_load_data _save_load_fd;
   details::func_data _end_pass_fd;
   details::func_data _end_examples_fd;
-  details::output_single_model_data _output_single_model_fd;
+  details::convert_to_single_model_data _convert_to_single_model_fd;
   details::save_metric_data _persist_metrics_fd;
   details::func_data _finisher_fd;
   std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
@@ -713,10 +718,11 @@ public:
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_output_single_model(void (*fn_ptr)(VW::workspace& all, DataT&))
+  FluentBuilderT& set_convert_to_single_model(void (*fn_ptr)(VW::workspace& all, DataT&))
   {
-    learner_ptr->_output_single_model_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_output_single_model_fd.output_single_model_f = (details::output_single_model_data::fn)fn_ptr;
+    learner_ptr->_convert_to_single_model_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_convert_to_single_model_fd.convert_to_single_model_f = (details::convert_to_single_model_data::fn)fn_ptr;
+    learner_ptr->_convert_to_single_model_fd.base = learner_ptr->_learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 
