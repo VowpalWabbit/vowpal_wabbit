@@ -37,8 +37,8 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
-    std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, bool lb_trick,
-    uint64_t min_champ_examples, float initial_epsilon, uint64_t shift_model_bounds)
+    std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, uint64_t min_champ_examples,
+    float initial_epsilon, uint64_t shift_model_bounds)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -46,7 +46,6 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _epsilon_decay_audit_str(std::move(epsilon_decay_audit_str))
     , _constant_epsilon(constant_epsilon)
     , _wpp(wpp)
-    , _lb_trick(lb_trick)
     , _min_champ_examples(min_champ_examples)
     , _initial_epsilon(initial_epsilon)
     , _shift_model_bounds(shift_model_bounds)
@@ -108,14 +107,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
           float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
           if (model_ind == model_count - 1) { w = 1; }  // Set w = 1 for champ
           for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
-          {
-            if (_lb_trick && model_ind == model_count - 1)
-            { conf_seq_estimators[model_ind][estimator_ind].update(w, 1 - r); }
-            else
-            {
-              conf_seq_estimators[model_ind][estimator_ind].update(w, r);
-            }
-          }
+          { conf_seq_estimators[model_ind][estimator_ind].update(w, r); }
           if (_epsilon_decay_audit_str != "")
           {
             if (model_ind != model_count - 1)
@@ -194,20 +186,11 @@ void epsilon_decay_data::check_estimator_bounds()
   auto final_model_idx = model_count - 1;
   for (int64_t i = 0; i < final_model_idx; ++i)
   {
-    bool better = _lb_trick
-        ? conf_seq_estimators[i][i].lower_bound() > (1.f - conf_seq_estimators[final_model_idx][i].lower_bound())
-        : conf_seq_estimators[i][i].lower_bound() > conf_seq_estimators[final_model_idx][i].upper_bound();
+    bool better = conf_seq_estimators[i][i].lower_bound() > conf_seq_estimators[final_model_idx][i].upper_bound();
     if (better && conf_seq_estimators[i][i].update_count >= _min_champ_examples)
     {
       if (_epsilon_decay_audit_str != "") { _audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP\n"; }
       shift_model(i, final_model_idx - i, model_count);
-      if (_lb_trick)
-      {
-        for (int64_t i = 0; i < model_count; ++i)
-        {
-          for (int64_t j = 0; j <= i; ++j) { conf_seq_estimators[i][j].reset_stats(); }
-        }
-      }
       break;
     }
   }
@@ -318,7 +301,6 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float epsilon_decay_estimator_decay;
   std::string epsilon_decay_audit_str;
   bool constant_epsilon = false;
-  bool lb_trick = false;
   bool fixed_significance_level = false;
   uint64_t min_champ_examples;
   float initial_epsilon;
@@ -359,10 +341,6 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .keep()
                .help("Keep epsilon constant across models")
                .experimental())
-      .add(make_option("lb_trick", lb_trick)
-               .default_value(false)
-               .help("Use 1-lower_bound as upper_bound for estimator")
-               .experimental())
       .add(make_option("fixed_significance_level", fixed_significance_level)
                .keep()
                .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
@@ -392,8 +370,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.wpp, lb_trick, min_champ_examples, initial_epsilon,
-      shift_model_bounds);
+      epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon, shift_model_bounds);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

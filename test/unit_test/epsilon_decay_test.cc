@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, false, 0, 1.f, 0);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, false, 0, 1.f, 0);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
