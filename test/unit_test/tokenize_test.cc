@@ -2,120 +2,111 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
+#include "vw/common/text_utils.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/vw.h"
+
 #include <boost/test/test_tools.hpp>
-
-#include "parse_primitives.h"
-#include "vw.h"
-
-#include <vector>
-#include <string>
+#include <boost/test/unit_test.hpp>
 #include <cstring>
+#include <string>
+#include <vector>
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string)
+{
   std::vector<VW::string_view> container;
   std::string str = "this is   a string  ";
-  tokenize(' ', str, container);
+  VW::tokenize(' ', str, container);
 
   auto const expected_values = {"this", "is", "a", "string"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty)
+{
   std::vector<VW::string_view> container;
   std::string str = "this is   a string  ";
-  tokenize(' ', str, container, true);
+  VW::tokenize(' ', str, container, true);
 
-  auto const expected_values = {"this", "is","", "", "a", "string", "", ""};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  auto const expected_values = {"this", "is", "", "", "a", "string", "", ""};
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty_no_end_space) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty_no_end_space)
+{
   std::vector<VW::string_view> container;
   std::string str = "this is   a string";
-  tokenize(' ', str, container, true);
+  VW::tokenize(' ', str, container, true);
 
-  auto const expected_values = {"this", "is","", "", "a", "string"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  auto const expected_values = {"this", "is", "", "", "a", "string"};
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_escaped) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_escaped)
+{
   std::string str = "this is   a string  ";
   auto const container = escaped_tokenize(' ', str);
 
   auto const expected_values = {"this", "is", "a", "string"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty_escaped) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty_escaped)
+{
   std::string str = "this is   a string  ";
   auto const container = escaped_tokenize(' ', str, true);
 
-  auto const expected_values = {"this", "is","", "", "a", "string", "", ""};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  auto const expected_values = {"this", "is", "", "", "a", "string", "", ""};
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty_no_end_space_escaped) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_allow_empty_no_end_space_escaped)
+{
   std::string str = "this is   a string";
   auto const container = escaped_tokenize(' ', str, true);
 
-  auto const expected_values = {"this", "is","", "", "a", "string"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  auto const expected_values = {"this", "is", "", "", "a", "string"};
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_slash_escaped) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_slash_escaped)
+{
   std::string str = "this is\\ a string";
   auto const container = escaped_tokenize(' ', str, true);
 
   auto const expected_values = {"this", "is a", "string"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_doubleslash_escaped) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_doubleslash_escaped)
+{
   std::string str = "this is\\\\ a string";
   auto const container = escaped_tokenize(' ', str, true);
 
-  auto const expected_values = {"this", "is\\" ,"a", "string"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  auto const expected_values = {"this", "is\\", "a", "string"};
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_normal_char_slash_escaped) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_normal_char_slash_escaped)
+{
   std::string str = "this \\is a string";
   auto const container = escaped_tokenize(' ', str, true);
 
-  auto const expected_values = {"this", "is" ,"a", "string"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  auto const expected_values = {"this", "is", "a", "string"};
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_escape_final_character) {
+BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_escape_final_character)
+{
   std::string str = "this is a string\\";
   auto const container = escaped_tokenize(' ', str, true);
 
-  auto const expected_values = {"this", "is" ,"a", "string"};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-    container.begin(), container.end(),
-    expected_values.begin(), expected_values.end());
+  auto const expected_values = {"this", "is", "a", "string"};
+  BOOST_CHECK_EQUAL_COLLECTIONS(container.begin(), container.end(), expected_values.begin(), expected_values.end());
 }
 
-BOOST_AUTO_TEST_CASE(tokenize_to_argv_with_space) {
+BOOST_AUTO_TEST_CASE(tokenize_to_argv_with_space)
+{
   int argc = 0;
   char** argv = VW::to_argv_escaped("--example_queue_limit 1024 -f my_model\\ best.model", argc);
   BOOST_CHECK_EQUAL(argc, 5);
@@ -125,11 +116,12 @@ BOOST_AUTO_TEST_CASE(tokenize_to_argv_with_space) {
   BOOST_CHECK_EQUAL(argv[3], "-f");
   BOOST_CHECK_EQUAL(argv[4], "my_model best.model");
 
-  for (int i = 0; i < argc; i++) free(argv[i]);
+  for (int i = 0; i < argc; i++) { free(argv[i]); }
   free(argv);
 }
 
-BOOST_AUTO_TEST_CASE(basic_tokenize_to_argv) {
+BOOST_AUTO_TEST_CASE(basic_tokenize_to_argv)
+{
   int argc = 0;
   char** argv = VW::to_argv_escaped("--ccb_explore_adf --json --no_stdin --quiet", argc);
 
@@ -140,7 +132,7 @@ BOOST_AUTO_TEST_CASE(basic_tokenize_to_argv) {
   BOOST_CHECK_EQUAL(argv[3], "--no_stdin");
   BOOST_CHECK_EQUAL(argv[4], "--quiet");
 
-  for (int i = 0; i < argc; i++) free(argv[i]);
+  for (int i = 0; i < argc; i++) { free(argv[i]); }
   free(argv);
 }
 
@@ -148,21 +140,21 @@ BOOST_AUTO_TEST_CASE(escaped_split_command_line_test)
 {
   auto args = VW::split_command_line(VW::string_view(R"(--example_queue_limit 1024 -f my_model\ best.model)"));
   const auto expected = {"--example_queue_limit", "1024", "-f", "my_model best.model"};
-  BOOST_TEST(args == expected, boost::test_tools::per_element());
+  BOOST_CHECK_EQUAL_COLLECTIONS(args.begin(), args.end(), expected.begin(), expected.end());
 }
 
 BOOST_AUTO_TEST_CASE(basic_split_command_line)
 {
   auto args = VW::split_command_line(VW::string_view(R"(--ccb_explore_adf --json --no_stdin --quiet)"));
   const auto expected = {"--ccb_explore_adf", "--json", "--no_stdin", "--quiet"};
-  BOOST_TEST(args == expected, boost::test_tools::per_element());
+  BOOST_CHECK_EQUAL_COLLECTIONS(args.begin(), args.end(), expected.begin(), expected.end());
 }
 
 BOOST_AUTO_TEST_CASE(complex_split_command_line)
 {
   auto args = VW::split_command_line(VW::string_view(R"(-d "this is my file\"" 'another arg' test\ arg \\test)"));
   const auto expected = {"-d", "this is my file\"", "another arg", "test arg", R"(\test)"};
-  BOOST_TEST(args == expected, boost::test_tools::per_element());
+  BOOST_CHECK_EQUAL_COLLECTIONS(args.begin(), args.end(), expected.begin(), expected.end());
 }
 
 BOOST_AUTO_TEST_CASE(unclosed_quote_split_command_line)
@@ -179,5 +171,5 @@ BOOST_AUTO_TEST_CASE(mixed_quotes_split_command_line)
 {
   auto args = VW::split_command_line(VW::string_view(R"("this is 'a quoted'" '"unclosed')"));
   const auto expected = {"this is 'a quoted'", "\"unclosed"};
-  BOOST_TEST(args == expected, boost::test_tools::per_element());
+  BOOST_CHECK_EQUAL_COLLECTIONS(args.begin(), args.end(), expected.begin(), expected.end());
 }

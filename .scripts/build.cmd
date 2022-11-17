@@ -14,16 +14,17 @@ ECHO Building "%vwRoot%" for Release x64
 REM CMAKE_PROGRAM_PATH is for nuget and texttransform
 cmake -S "%vwRoot%" -B "%vwRoot%\build" -G "Visual Studio 16 2019" -A "x64" ^
     -DCMAKE_TOOLCHAIN_FILE="%VCPKG_INSTALLATION_ROOT%\scripts\buildsystems\vcpkg.cmake" ^
+    -DVCPKG_MANIFEST_MODE=OFF ^
     -Dvw_BUILD_NET_FRAMEWORK=On ^
-    -DUSE_LATEST_STD=On ^
     -DBUILD_FLATBUFFERS=On ^
+    -DVW_BUILD_CSV=On ^
     -Dvw_BUILD_NET_FRAMEWORK=On ^
     -DRAPIDJSON_SYS_DEP=Off ^
     -DFMT_SYS_DEP=Off ^
     -DSPDLOG_SYS_DEP=OFF ^
     -DVW_ZLIB_SYS_DEP=OFF ^
     -DVW_BOOST_MATH_SYS_DEP=OFF ^
-    -DDO_NOT_BUILD_VW_C_WRAPPER=On ^
+    -DVW_BUILD_VW_C_WRAPPER=Off ^
     "-DCMAKE_PROGRAM_PATH=%vwRoot%\vowpalwabbit\.nuget;%VsInstallDir%\Common7\IDE;%VCPKG_INSTALLATION_ROOT%\installed\x64-windows\tools\flatbuffers;%VsInstallDir%\Common7\IDE\CommonExtensions\Microsoft\TestWindow"
 
 cmake --build "%vwRoot%\build" --config Release

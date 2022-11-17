@@ -2,13 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#define NOMINMAX
+
 #include "vowpalwabbit.h"
 #include "vw_example.h"
 #include "vw_prediction.h"
-#include "simple_label_parser.h"
-#include "reductions/gd.h"
+#include "vw/core/simple_label_parser.h"
+#include "vw/core/reductions/gd.h"
 #include <algorithm>
-#include "shared_data.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/parse_example.h"
 
 namespace VW
 {
@@ -70,13 +73,13 @@ bool VowpalWabbitExample::IsNewLine::get()
 ILabel^ VowpalWabbitExample::Label::get()
 { ILabel^ label;
   auto lp = m_owner->Native->m_vw->example_parser->lbl_parser;
-  if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
+  if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     label = gcnew SimpleLabel();
   else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
     label = gcnew ContextualBanditLabel();
   else if (!memcmp(&lp, &CB_EVAL::cb_eval, sizeof(lp)))
     label = gcnew SimpleLabel();
-  else if (!memcmp(&lp, &COST_SENSITIVE::cs_label, sizeof(lp)))
+  else if (!memcmp(&lp, &VW::cs_label_parser_global, sizeof(lp)))
     label = gcnew SimpleLabel();
   else
     return nullptr;
@@ -99,7 +102,7 @@ void VowpalWabbitExample::Label::set(ILabel^ label)
 	label->UpdateExample(m_owner->Native->m_vw, m_example);
 
 	// we need to update the example weight as setup_example() can be called prior to this call.
-	m_example->weight = m_owner->Native->m_vw->example_parser->lbl_parser.get_weight(m_example->l, m_example->_reduction_features);
+	m_example->weight = m_owner->Native->m_vw->example_parser->lbl_parser.get_weight(m_example->l, m_example->ex_reduction_features);
 }
 
 void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)
@@ -284,8 +287,8 @@ System::String^ VowpalWabbitExample::Diff(VowpalWabbit^ vw, VowpalWabbitExample^
 String^ VowpalWabbitSimpleLabelComparator::Diff(VowpalWabbitExample^ ex1, VowpalWabbitExample^ ex2)
 { auto s1 = ex1->m_example->l.simple;
   auto s2 = ex2->m_example->l.simple;
-  auto ex1_initial = ex1->m_example->_reduction_features.template get<simple_label_reduction_features>().initial;
-  auto ex2_initial = ex2->m_example->_reduction_features.template get<simple_label_reduction_features>().initial;
+  auto ex1_initial = ex1->m_example->ex_reduction_features.template get<simple_label_reduction_features>().initial;
+  auto ex2_initial = ex2->m_example->ex_reduction_features.template get<simple_label_reduction_features>().initial;
 
   if (!(FloatEqual(ex1_initial, ex2_initial) &&
         FloatEqual(s1.label, s2.label) &&

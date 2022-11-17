@@ -18,8 +18,7 @@ add_executable(vw-benchmarks.out
 find_package(benchmark REQUIRED)
 
 # Add the include directories from vw target for testing
-target_include_directories(vw-benchmarks.out PRIVATE $<TARGET_PROPERTY:vw,INCLUDE_DIRECTORIES>)
-target_link_libraries(vw-benchmarks.out PRIVATE vw benchmark::benchmark)
+target_link_libraries(vw-benchmarks.out PRIVATE vw_core benchmark::benchmark)
 
 # Communicate that Boost Unit Test is being statically linked
 if(STATIC_LINK_VW)

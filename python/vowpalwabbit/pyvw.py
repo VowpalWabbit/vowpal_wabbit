@@ -2,11 +2,12 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 from vowpalwabbit.DFtoVWtoTBorTW import (VWtoTensorboard, VWtoTensorwatchStreamer)
 import inspect
+from pathlib import Path
 
 from enum import IntEnum
 
@@ -110,6 +111,7 @@ class VWOption:
         value_supplied,
         default_value,
         default_value_supplied,
+        experimental,
     ):
         self._name = name
         self._help_str = help_str
@@ -121,6 +123,7 @@ class VWOption:
         self._value_supplied = value_supplied
         self._default_value = default_value
         self._default_value_supplied = default_value_supplied
+        self._experimental = experimental
 
     @property
     def name(self):
@@ -159,6 +162,10 @@ class VWOption:
         return self._default_value_supplied
 
     @property
+    def experimental(self):
+        return self._experimental
+
+    @property
     def value(self):
         return self._value
 
@@ -177,17 +184,20 @@ class VWOption:
             if self.is_flag():
                 return "--{}".format(self.name)
             else:
-                # missing list case
                 if isinstance(self.value, list):
-                    return "**NOT_IMPL**"
+                    return " ".join(map(lambda x: f"--{self.name}={x}", self.value))
                 else:
-                    return "--{} {}".format(self.name, self.value)
+                    return "--{}={}".format(self.name, self.value)
         else:
             return ""
 
 
 class SearchTask:
     """Search task class"""
+
+    # Declare types for optional variables to prevent pytype attribute-error
+    _setup: Optional[Callable]
+    _takedown: Optional[Callable]
 
     def __init__(self, vw, sch, num_actions):
         """
@@ -517,7 +527,15 @@ class Workspace(pylibvw.vw):
             return str_ex
 
         elif isinstance(str_ex, list):
-            if all([getattr(ex, "setup_done", None) for ex in str_ex]):
+            if all(
+                [
+                    isinstance(ex, Example) and getattr(ex, "setup_done", None)
+                    for ex in str_ex
+                ]
+            ):
+                str_ex: List[
+                    Example
+                ] = str_ex  # pytype: disable=annotation-type-mismatch
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):
@@ -634,8 +652,19 @@ class Workspace(pylibvw.vw):
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a mutiline Learner.")
-            ec = self.parse(ec)
-            new_example = True
+            if len(ec) == 0:
+                raise ValueError("An empty list is invalid")
+            if isinstance(ec[0], str):
+                ec = self.parse(ec)
+                new_example = True
+
+        if not isinstance(ec, Example) and not (
+            isinstance(ec, list) and isinstance(ec[0], Example)
+        ):
+            raise TypeError(
+                "expecting string, example object, or list of example objects"
+                " as ec argument for learn, got %s" % type(ec)
+            )
 
         if isinstance(ec, Example):
             if not getattr(ec, "setup_done", None):
@@ -701,10 +730,15 @@ class Workspace(pylibvw.vw):
         elif isinstance(ec, list):
             if not self._is_multiline():
                 raise TypeError("Expecting a multiline Learner.")
-            ec = self.parse(ec)
-            new_example = True
+            if len(ec) == 0:
+                raise ValueError("An empty list is invalid")
+            if isinstance(ec[0], str):
+                ec = self.parse(ec)
+                new_example = True
 
-        if not isinstance(ec, Example) and not isinstance(ec, list):
+        if not isinstance(ec, Example) and not (
+            isinstance(ec, list) and isinstance(ec[0], Example)
+        ):
             raise TypeError(
                 "expecting string, example object, or list of example objects"
                 " as ec argument for predict, got %s" % type(ec)
@@ -724,16 +758,16 @@ class Workspace(pylibvw.vw):
         if isinstance(ec, Example):
             prediction = ec.get_prediction(prediction_type)
         else:
-            prediction = ec[0].get_prediction(prediction_type)
+            prediction = ec[0].get_prediction(prediction_type)  # type: ignore
 
         if new_example:
             self.finish_example(ec)
 
         return prediction
 
-    def save(self, filename: str) -> None:
+    def save(self, filename: Union[str, Path]) -> None:
         """save model to disk"""
-        pylibvw.vw.save(self, filename)
+        pylibvw.vw.save(self, str(filename))
 
     def finish(self) -> None:
         """stop VW by calling finish (and, eg, write weights to disk)"""
@@ -1497,6 +1531,7 @@ class Example(pylibvw.example):
             Union[
                 str,
                 Dict[str, List[Union[Tuple[Union[str, int], float], Union[str, int]]]],
+                Dict[str, Dict[Union[str, int], float]],
                 Any,
                 pylibvw.example,
             ]
@@ -1517,8 +1552,7 @@ class Example(pylibvw.example):
                     .. deprecated:: 9.0.0
                         Using a callable object is no longer supported.
 
-                - If a dict, the keys are the namespace names and the values can either be an integer (already hashed) or a string (to be hashed) and may be paired with a value or not
-                (if not, the value is assumed to be 1.0).
+                - If a dict, the keys are the namespace names and the values are the namespace features. Namespace features can either be represented as a list or a dict. When using a list items are either keys (i.e., an int or string) in which case the value is assumed to be 1 or a key-value tuple. When using a dict the all features are represented as key-value pairs.
             labelType: Which label type this example contains. If None (or 0), the label type is inferred from the workspace configuration.
 
                 .. deprecated:: 9.0.0
@@ -1990,6 +2024,40 @@ class Example(pylibvw.example):
             PredictionType.NOPRED: self.get_nopred,
         }
         return switch_prediction_type[prediction_type]()
+
+
+def merge_models(base_model: Optional[Workspace], models: List[Workspace]) -> Workspace:
+    """Merge the models loaded into separate workspaces into a single workspace which can then be serialized to a model.
+
+    All of the given workspaces must use the exact same arguments, and only differ in training. `--preserve_performance_counters` should be used if models are loaded from disk and then given to this call.
+
+    Args:
+        base_model (Optional[Workspace]): Base model the other models were based on. None, if they are trained from scratch.
+        models (List[Workspace]): List of models to merge.
+
+    Returns:
+        Workspace: The merged workspace
+
+    Example:
+        >>> from vowpalwabbit import Workspace, merge_models
+        >>> model1 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model1.model') # doctest: +SKIP
+        >>> model2 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model2.model') # doctest: +SKIP
+        >>> merged_model = merge_models([model1, model2]) # doctest: +SKIP
+        >>> merged_model.save('merged.model') # doctest: +SKIP
+
+    .. note::
+        This is an experimental feature and may change in future releases.
+    """
+
+    # This needs to be promoted to the Workspace object defined in Python.
+    result = pylibvw._merge_models_impl(base_model, models)
+    result.__class__ = Workspace
+    result._log_wrapper = None
+    result.parser_ran = False
+    result.init = True
+    result.finished = False
+    result._log_fwd = None
+    return result
 
 
 ############################ DEPREECATED CLASSES ############################

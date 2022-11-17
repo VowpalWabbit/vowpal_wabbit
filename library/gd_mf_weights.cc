@@ -1,9 +1,10 @@
-#include "vw.h"
-#include "parser.h"
-#include "config/options_cli.h"
-#include "config/option_builder.h"
-#include "config/option_group_definition.h"
-#include "config/cli_help_formatter.h"
+#include "vw/config/cli_help_formatter.h"
+#include "vw/config/option_builder.h"
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/crossplat_compat.h"
+#include "vw/core/parser.h"
+#include "vw/core/vw.h"
 
 #include <cstdio>
 #include <fstream>
@@ -30,7 +31,8 @@ int main(int argc, char* argv[])
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.
-  opts.check_unregistered();
+  auto warnings = opts.check_unregistered();
+  _UNUSED(warnings);
 
   if (help || infile.empty() || vwparams.empty())
   {
@@ -105,7 +107,7 @@ int main(int argc, char* argv[])
       left_linear << left.space_names[i].name << '\t' << weights[left.indices[i]];
 
       left_quadratic << left.space_names[i].name;
-      for (size_t k = 1; k <= rank; k++) left_quadratic << '\t' << weights[(left.indices[i] + k)];
+      for (size_t k = 1; k <= rank; k++) { left_quadratic << '\t' << weights[(left.indices[i] + k)]; }
     }
     left_linear << std::endl;
     left_quadratic << std::endl;
@@ -117,7 +119,7 @@ int main(int argc, char* argv[])
       right_linear << right.space_names[i].name << '\t' << weights[right.indices[i]];
 
       right_quadratic << right.space_names[i].name;
-      for (size_t k = 1; k <= rank; k++) right_quadratic << '\t' << weights[(right.indices[i] + k + rank)];
+      for (size_t k = 1; k <= rank; k++) { right_quadratic << '\t' << weights[(right.indices[i] + k + rank)]; }
     }
     right_linear << std::endl;
     right_quadratic << std::endl;
@@ -126,7 +128,7 @@ int main(int argc, char* argv[])
   }
 
   // write constant
-  constant << weights[ec->feature_space[constant_namespace].indices[0]] << std::endl;
+  constant << weights[ec->feature_space[VW::details::CONSTANT_NAMESPACE].indices[0]] << std::endl;
 
   // clean up
   VW::finish(*model);

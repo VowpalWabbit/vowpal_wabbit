@@ -1,0 +1,27 @@
+Command line options
+====================
+
+There are two kinds of options. General and reduction based. General options generally apply irrespective of which reductions are enabled. For reduction based options they apply to only the reduction in question.
+
+Most reductions require one or more args to enable them, an "enables reduction" tag marks each such option. Without a reduction being enabled, the other options will not have any effect.
+
+There are a few cases where several reductions read the same option value and so the option itself is repeated in each option group.
+
+General
+-------
+
+{{#option_groups}}
+{{#unless (startswith name "[Reduction]")}}
+{{> inner_template }}
+{{/unless}}
+{{/option_groups}}
+
+
+Reductions
+----------
+
+{{#option_groups}}
+{{#if (startswith name "[Reduction]")}}
+{{> inner_template }}
+{{/if}}
+{{/option_groups}}

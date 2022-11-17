@@ -2,21 +2,22 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
+#include "vw/core/object_pool.h"
+
 #include <boost/test/test_tools.hpp>
-
-#include "object_pool.h"
-
-#include <vector>
+#include <boost/test/unit_test.hpp>
 #include <string>
+#include <vector>
 
-struct obj
+class obj
 {
+public:
   int i;
 };
 
-struct obj_initializer
+class obj_initializer
 {
+public:
   obj* operator()(obj* o) { return o; }
 };
 

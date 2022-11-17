@@ -6,20 +6,21 @@
 #  define NOMINMAX
 #  include <WinSock2.h>
 #else
-#  include <sys/socket.h>
 #  include <arpa/inet.h>
+#  include <sys/socket.h>
 #endif
-#include <sys/timeb.h>
-#include "parse_args.h"
-#include "parse_regressor.h"
-#include "accumulate.h"
-#include "best_constant.h"
-#include "vw_exception.h"
-#include <fstream>
-
-#include "config/options.h"
-#include "config/options_cli.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/accumulate.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/parse_args.h"
+#include "vw/core/parse_regressor.h"
 #include "vw_to_flat.h"
+
+#include <sys/timeb.h>
+
+#include <fstream>
 
 using namespace VW::config;
 

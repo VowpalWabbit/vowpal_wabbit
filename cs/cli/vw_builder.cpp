@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw_builder.h"
-#include "parser.h"
+#include "vw/core/parser.h"
 
 namespace VW
 {

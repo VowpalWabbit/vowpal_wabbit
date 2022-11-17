@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -92,7 +92,7 @@ namespace VW
         /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
         public void Learn(object example, ILabel label = null, int? index = null)
         {
-            Contract.Requires(example != null);
+            Debug.Assert(example != null);
 
             using (var ex = this.Serialize(example, label, index))
             {
@@ -109,8 +109,8 @@ namespace VW
         /// <param name="index">The optional index of the example, the <paramref name="label"/> should be attributed to.</param>
         public TPrediction Learn<TPrediction>(object example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(predictionFactory != null);
+            Debug.Assert(example != null);
+            Debug.Assert(predictionFactory != null);
 
             using (var ex = this.Serialize(example, label, index))
             {
@@ -129,8 +129,8 @@ namespace VW
         /// <returns></returns>
         public TPrediction Predict<TPrediction>(object example, IVowpalWabbitPredictionFactory<TPrediction> predictionFactory, ILabel label = null, int? index = null)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(predictionFactory != null);
+            Debug.Assert(example != null);
+            Debug.Assert(predictionFactory != null);
 
             using (var ex = this.Serialize(example, label, index))
             {

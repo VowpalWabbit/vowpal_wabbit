@@ -17,3 +17,20 @@
     {%include 'main_nav.html' %}
     {%include 'mobile_nav.html' %}
 {% endblock %}
+
+{% block footer %}
+{{ super() }}
+<script type="text/javascript" src="https://js.monitor.azure.com/scripts/c/ms.analytics-web-3.min.js">
+</script>
+<script>
+  const analytics = new oneDS.ApplicationInsights();
+  var config = {
+    instrumentationKey: "734e91f5b0594dd08e2e4768fb4f9655-a7347ca4-1142-4c1e-831a-372cd2790ac0-6806",
+    disableCookiesUsage: true,
+    webAnalyticsConfiguration: {
+      urlCollectHash: true
+    }
+  };
+  analytics.initialize(config, []);
+</script>
+{% endblock %}

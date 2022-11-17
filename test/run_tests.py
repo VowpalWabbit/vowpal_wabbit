@@ -254,6 +254,16 @@ def is_line_different(
     output_tokens = re.split("[ \t:,@]+", output_line)
     ref_tokens = re.split("[ \t:,@]+", ref_line)
 
+    # some compile flags cause VW to report different code line number for the same exception
+    # if this is the case we want to ignore that from the diff
+    if ref_tokens[0] == "[critical]" and output_tokens[0] == "[critical]":
+        # check that exception format is being followed
+        if ref_tokens[2][0] == "(" and ref_tokens[3][-1] == ")":
+            if ref_tokens[3][:-1].isnumeric():
+                # remove the line number before diffing
+                ref_tokens.pop(3)
+                output_tokens.pop(3)
+
     if len(output_tokens) != len(ref_tokens):
         return True, "Number of tokens different", False
 
@@ -279,6 +289,21 @@ def is_line_different(
                     f"Mismatch at token {output_token} {ref_token}",
                     found_close_floats,
                 )
+
+    # ignore whitespace when considering delimiting tokens
+    output_delimiters = re.findall("[:,@]+", output_line)
+    ref_delimiters = re.findall("[:,@]+", ref_line)
+
+    if len(output_delimiters) != len(ref_delimiters):
+        return True, "Number of tokens different", found_close_floats
+
+    for output_token, ref_token in zip(output_delimiters, ref_delimiters):
+        if output_token != ref_token:
+            return (
+                True,
+                f"Mismatch at token {output_token} {ref_token}",
+                found_close_floats,
+            )
 
     return False, "", found_close_floats
 
@@ -396,10 +421,10 @@ def run_command_line_test(
         if test.is_shell:
             cmd = command_line
         else:
-            cmd = shlex.split(command_line)
+            posix = sys.platform != "win32"
+            cmd = shlex.split(command_line, posix=posix)
 
         checks: Dict[str, Union[StatusCheck, DiffCheck]] = dict()
-
         try:
             result = subprocess.run(
                 cmd,
@@ -579,10 +604,10 @@ def find_vw_binary(
         if user_supplied_bin_path_or_python_invocation is not None
         else None
     )
-    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit"]
+    vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "cli"]
 
     def is_vw_binary(file: Path) -> bool:
-        return file.name == "vw"
+        return file.name == "vw" or file.name == "vw.exe"
 
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
@@ -595,10 +620,12 @@ def find_vw_binary(
 def find_spanning_tree_binary(
     test_base_ref_dir: Path, user_supplied_bin_path: Optional[str]
 ) -> Optional[Path]:
-    spanning_tree_search_path = [test_base_ref_dir / ".." / "build" / "cluster"]
+    spanning_tree_search_path = [
+        test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "spanning_tree_bin"
+    ]
 
     def is_spanning_tree_binary(file: Path) -> bool:
-        return file.name == "spanning_tree"
+        return file.name == "spanning_tree" or file.name == "spanning_tree.exe"
 
     user_supplied_bin_path = (
         Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
@@ -620,7 +647,7 @@ def find_to_flatbuf_binary(
     ]
 
     def is_to_flatbuff_binary(file: Path) -> bool:
-        return file.name == "to_flatbuff"
+        return file.name == "to_flatbuff" or file.name == "to_flatbuff.exe"
 
     user_supplied_bin_path = (
         Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
@@ -768,6 +795,14 @@ def convert_tests_for_flatbuffers(
             "337",
             "338",
             "351",
+            "399",
+            "400",
+            "404",
+            "405",
+            "406",
+            "407",
+            "411",
+            "415",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
@@ -878,7 +913,8 @@ def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
             return test
     return None
 
-def interpret_test_arg(arg: str, *, num_tests:int) -> List[int]:
+
+def interpret_test_arg(arg: str, *, num_tests: int) -> List[int]:
     single_number_pattern = re.compile(r"^\d+$")
     range_pattern = re.compile(r"^(\d+)?\.\.(\d+)?$")
     if single_number_pattern.match(arg):
@@ -891,7 +927,9 @@ def interpret_test_arg(arg: str, *, num_tests:int) -> List[int]:
             raise ValueError(f"Invalid range: {arg}")
         return list(range(start, end + 1))
     else:
-        raise ValueError(f"Invalid test argument '{arg}'. Must either be a single integer 'id' or a range in the form 'start..end'")
+        raise ValueError(
+            f"Invalid test argument '{arg}'. Must either be a single integer 'id' or a range in the form 'start..end'"
+        )
 
 
 def main():
@@ -1059,8 +1097,11 @@ def main():
 
     vw_bin = find_vw_binary(test_base_ref_dir, args.vw_bin_path)
     if vw_bin is None:
-        print("Can't find vw binary. Did you build the 'vw-bin' target?")
+        print("Can't find vw binary. Did you build the 'vw_cli_bin' target?")
         sys.exit(1)
+    # test if vw_bin is a Path object
+    elif isinstance(vw_bin, Path):
+        vw_bin = str(vw_bin.resolve())
     print(f"Using VW binary: {vw_bin}")
 
     spanning_tree_bin: Optional[Path] = None
@@ -1073,6 +1114,8 @@ def main():
                 "Can't find spanning tree binary. Did you build the 'spanning_tree' target?"
             )
             sys.exit(1)
+        else:
+            spanning_tree_bin = spanning_tree_bin.resolve()
 
         print(f"Using spanning tree binary: {spanning_tree_bin.resolve()}")
 
@@ -1096,23 +1139,27 @@ def main():
 
     # Flatten nested lists for arg.test argument and process
     # Ideally we would have used action="extend", but that was added in 3.8
+    interpreted_test_arg: Optional[List[int]] = None
     if args.test is not None:
-        res = []
+        interpreted_test_arg = []
         for arg in args.test:
             for value in arg:
-                res.extend(interpret_test_arg(value, num_tests=len(tests)))
-        args.test = res
+                interpreted_test_arg.extend(
+                    interpret_test_arg(value, num_tests=len(tests))
+                )
 
     print()
 
     # Filter the test list if the requested tests were explicitly specified
     tests_to_run_explicitly = None
-    if args.test is not None:
-        tests_to_run_explicitly = calculate_test_to_run_explicitly(args.test, tests)
+    if interpreted_test_arg is not None:
+        tests_to_run_explicitly = calculate_test_to_run_explicitly(
+            interpreted_test_arg, tests
+        )
         print(f"Running tests: {list(tests_to_run_explicitly)}")
-        if len(args.test) != len(tests_to_run_explicitly):
+        if len(interpreted_test_arg) != len(tests_to_run_explicitly):
             print(
-                f"Note: due to test dependencies, more than just tests {args.test} must be run"
+                f"Note: due to test dependencies, more than just tests {interpreted_test_arg} must be run"
             )
         tests = list(filter(lambda x: x.id in tests_to_run_explicitly, tests))
 

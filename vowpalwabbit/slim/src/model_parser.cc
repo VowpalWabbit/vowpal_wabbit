@@ -1,9 +1,16 @@
-#include "model_parser.h"
+#include "vw/slim/model_parser.h"
 
 namespace vw_slim
 {
 model_parser::model_parser(const char* model, size_t length)
-    : _model_begin(model), _model(model), _model_end(model + length), _checksum(0)
+    :
+#ifdef MODEL_PARSER_DEBUG
+    _model_begin(model)
+    ,
+#endif
+    _model(model)
+    , _model_end(model + length)
+    , _checksum(0)
 {
 #ifdef MODEL_PARSER_DEBUG
   std::cout << "moder_parser("
@@ -23,7 +30,7 @@ int model_parser::read(const char* field_name, size_t field_length, const char**
 
   // check if we're inside the buffer
   const char* new_model = _model + field_length;
-  if (new_model > _model_end) return E_VW_PREDICT_ERR_INVALID_MODEL;
+  if (new_model > _model_end) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
 #ifdef MODEL_PARSER_DEBUG
   std::fstream log("vwslim-debug.log", std::fstream::app);
@@ -40,9 +47,9 @@ int model_parser::read(const char* field_name, size_t field_length, const char**
 int model_parser::skip(size_t bytes)
 {
   const char* new_model = _model + bytes;
-  if (new_model > _model_end) return E_VW_PREDICT_ERR_INVALID_MODEL;
+  if (new_model > _model_end) { return E_VW_PREDICT_ERR_INVALID_MODEL; }
 
-  if (bytes > 0) _checksum = (uint32_t)uniform_hash(_model, bytes, _checksum);
+  if (bytes > 0) { _checksum = (uint32_t)VW::uniform_hash(_model, bytes, _checksum); }
 
   _model = new_model;
 

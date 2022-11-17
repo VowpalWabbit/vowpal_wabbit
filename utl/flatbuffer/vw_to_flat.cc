@@ -2,19 +2,21 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw_to_flat.h"
+
+#include "vw/common/hash.h"
+#include "vw/common/vw_exception.h"
+#include "vw/core/accumulate.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/parse_args.h"
+#include "vw/core/parse_regressor.h"
+#include "vw/core/reductions/cb/cb_algs.h"
+#include "vw/core/shared_data.h"
+
 #include <sys/timeb.h>
+
 #include <fstream>
 #include <vector>
-
-#include "vw_to_flat.h"
-#include "parse_args.h"
-#include "parse_regressor.h"
-#include "accumulate.h"
-#include "best_constant.h"
-#include "vw_exception.h"
-#include "hash.h"
-#include "reductions/cb/cb_algs.h"
-#include "shared_data.h"
 
 void write_buffer_to_file(std::ofstream& outfile, flatbuffers::FlatBufferBuilder& builder,
     flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot>& root)
@@ -94,7 +96,7 @@ void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuil
 
 void to_flat::create_simple_label(VW::example* v, ExampleBuilder& ex_builder)
 {
-  const auto& red_features = v->_reduction_features.template get<simple_label_reduction_features>();
+  const auto& red_features = v->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   ex_builder.label =
       VW::parsers::flatbuffer::CreateSimpleLabel(_builder, v->l.simple.label, red_features.weight, red_features.initial)
           .Union();
@@ -131,19 +133,19 @@ void to_flat::create_ccb_label(VW::example* v, ExampleBuilder& ex_builder)
   auto weight = v->l.conditional_contextual_bandit.weight;
   auto e_type = v->l.conditional_contextual_bandit.type;
 
-  if (e_type == CCB::example_type::shared)
+  if (e_type == VW::ccb_example_type::SHARED)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
     ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
     ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
   }
-  else if (e_type == CCB::example_type::action)
+  else if (e_type == VW::ccb_example_type::ACTION)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
     ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
     ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
   }
-  else if (e_type == CCB::example_type::slot)
+  else if (e_type == VW::ccb_example_type::SLOT)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     std::vector<uint32_t> explicit_included_actions;
@@ -241,21 +243,21 @@ void to_flat::create_slates_label(VW::example* v, ExampleBuilder& ex_builder)
   auto e_type = v->l.slates.type;
   ex_builder.label_type = VW::parsers::flatbuffer::Label_Slates_Label;
 
-  if (e_type == VW::slates::example_type::shared)
+  if (e_type == VW::slates::example_type::SHARED)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, v->l.slates.labeled, v->l.slates.cost, 0U, nullptr)
                            .Union();
   }
-  else if (e_type == VW::slates::example_type::action)
+  else if (e_type == VW::slates::example_type::ACTION)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, false, 0.0, v->l.slates.slot_id, nullptr)
                            .Union();
   }
-  else if (e_type == VW::slates::example_type::slot)
+  else if (e_type == VW::slates::example_type::SLOT)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     for (auto const& as : v->l.slates.probabilities)
@@ -300,7 +302,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespac
   ss << ":" << hash;
 
   std::string s = ss.str();
-  uint64_t refid = uniform_hash(s.c_str(), s.size(), 0);
+  uint64_t refid = VW::uniform_hash(s.c_str(), s.size(), 0);
   const auto find_ns_offset = _share_examples.find(refid);
 
   if (find_ns_offset == _share_examples.end())
@@ -361,7 +363,8 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
   MultiExampleBuilder multi_ex_builder;
   ExampleBuilder ex_builder;
 
-  VW::example* ae = all.example_parser->ready_parsed_examples.pop();
+  VW::example* ae = nullptr;
+  all.example_parser->ready_parsed_examples.try_pop(ae);
 
   while (ae != nullptr && !ae->end_pass)
   {
@@ -370,34 +373,34 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
     switch (all.example_parser->lbl_parser.label_type)
     {
-      case VW::label_type_t::nolabel:
+      case VW::label_type_t::NOLABEL:
         to_flat::create_no_label(ae, ex_builder);
         break;
-      case VW::label_type_t::cb:
+      case VW::label_type_t::CB:
         to_flat::create_cb_label(ae, ex_builder);
         break;
-      case VW::label_type_t::ccb:
+      case VW::label_type_t::CCB:
         to_flat::create_ccb_label(ae, ex_builder);
         break;
-      case VW::label_type_t::multilabel:
+      case VW::label_type_t::MULTILABEL:
         to_flat::create_multi_label(ae, ex_builder);
         break;
-      case VW::label_type_t::multiclass:
+      case VW::label_type_t::MULTICLASS:
         to_flat::create_mc_label(all.sd->ldict.get(), ae, ex_builder);
         break;
-      case VW::label_type_t::cs:
+      case VW::label_type_t::CS:
         to_flat::create_cs_label(ae, ex_builder);
         break;
-      case VW::label_type_t::cb_eval:
+      case VW::label_type_t::CB_EVAL:
         to_flat::create_cb_eval_label(ae, ex_builder);
         break;
-      case VW::label_type_t::slates:
+      case VW::label_type_t::SLATES:
         to_flat::create_slates_label(ae, ex_builder);
         break;
-      case VW::label_type_t::simple:
+      case VW::label_type_t::SIMPLE:
         to_flat::create_simple_label(ae, ex_builder);
         break;
-      case VW::label_type_t::continuous:
+      case VW::label_type_t::CONTINUOUS:
         to_flat::create_continuous_action_label(ae, ex_builder);
         break;
       default:
@@ -438,12 +441,12 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     if (all.l->is_multiline())
     {
       if (!VW::example_is_newline(*ae) ||
-          (all.example_parser->lbl_parser.label_type == VW::label_type_t::cb &&
+          (all.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
               !CB_ALGS::example_is_newline_not_header(*ae)) ||
-          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
-               ae->l.conditional_contextual_bandit.type == CCB::example_type::slot) ||
-              (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
-                  ae->l.slates.type == VW::slates::example_type::slot)))
+          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
+               ae->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT) ||
+              (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&
+                  ae->l.slates.type == VW::slates::example_type::SLOT)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
         ex_builder.is_newline = ae->is_newline;
@@ -452,7 +455,8 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         ex_builder.clear();
         _multi_ex_index++;
         _examples++;
-        ae = all.example_parser->ready_parsed_examples.pop();
+        ae = nullptr;
+        all.example_parser->ready_parsed_examples.try_pop(ae);
         continue;
       }
       else
@@ -470,7 +474,8 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
 
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
 
-    ae = all.example_parser->ready_parsed_examples.pop();
+    ae = nullptr;
+    all.example_parser->ready_parsed_examples.try_pop(ae);
   }
 
   if (collection && _collection_count > 0)

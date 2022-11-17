@@ -21,8 +21,8 @@ namespace cs_unittest
             var nativeModelPath = Path.GetTempFileName();
 
             // Note: deployment item is not working on build server
-            cs_vw.Program.Main(new[] { @"..\cs\unittest\json\test_array.json", "-f", arrayModelPath });
-            cs_vw.Program.Main(new[] { @"..\cs\unittest\json\test_newline.json", "-f", newlineModelPath });
+            cs_vw.Program.Main(new[] { @"test_array.json", "-f", arrayModelPath });
+            cs_vw.Program.Main(new[] { @"test_newline.json", "-f", newlineModelPath });
 
             // compare model
             using (var vw = new VowpalWabbit("-f " + nativeModelPath))

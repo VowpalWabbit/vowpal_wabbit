@@ -4,12 +4,12 @@
 
 #pragma once
 
-#include "vw.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/cb.h"
+#include "vw/core/constant.h"
+#include "vw/core/multiclass.h"
+#include "vw/core/vw.h"
 #include "vw_clr.h"
-#include "cb.h"
-#include "best_constant.h"
-#include "constant.h"
-#include "multiclass.h"
 
 namespace VW
 {
@@ -24,7 +24,6 @@ using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Globalization;
 using namespace System::Text;
-using namespace CB;
 using namespace MULTICLASS;
 using namespace Newtonsoft::Json;
 
@@ -71,7 +70,7 @@ public:
     void set(float value)
     { if (value < 0 || value >1)
       {
-        if (value > 1 && value - 1 < probability_tolerance)
+        if (value > 1 && value - 1 < VW::details::PROBABILITY_TOLERANCE)
           m_probability = 1.0f;
         else
           throw gcnew ArgumentOutOfRangeException("invalid probability: " + value);
@@ -103,7 +102,8 @@ public:
   {
     CB::label* ld = &ex->l.cb;
     if (ld->costs.size() > 0)
-    { cb_class& f = ld->costs[0];
+    {
+      CB::cb_class& f = ld->costs[0];
 
       m_action = f.action;
       m_cost = f.cost;
@@ -114,7 +114,7 @@ public:
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     CB::label* ld = &ex->l.cb;
-    cb_class f;
+    CB::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = m_action;
@@ -146,8 +146,7 @@ public ref class SharedLabel sealed : ILabel
 private:
   uint32_t m_action;
 
-  SharedLabel() : m_action((uint32_t)uniform_hash("shared", 6, 0))
-  { }
+  SharedLabel() : m_action((uint32_t)VW::uniform_hash("shared", 6, 0)) {}
 
 public:
   static SharedLabel^ Instance = gcnew SharedLabel;
@@ -155,7 +154,7 @@ public:
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     CB::label* ld = &ex->l.cb;
-    cb_class f;
+    CB::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = m_action;
@@ -222,25 +221,25 @@ public:
 
   virtual void ReadFromExample(example* ex)
   {
-    label_data* ld = &ex->l.simple;
+    auto* ld = &ex->l.simple;
 
     m_label = ld->label;
 
-    const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    const auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
     m_weight = red_fts.weight;
     m_initial = red_fts.initial;
   }
 
   virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
-    label_data* ld = &ex->l.simple;
+    auto* ld = &ex->l.simple;
     ld->label = m_label;
 
     if (m_weight.HasValue) ex->weight = m_weight.Value;
 
     if (m_initial.HasValue)
     {
-      auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       red_fts.initial = m_initial.Value;
     }
 

@@ -1,6 +1,7 @@
 from vowpalwabbit import pyvw
 import vowpalwabbit
 
+
 def helper_options_to_list_strings(config):
     cmd_str_list = []
 
@@ -18,8 +19,8 @@ def test_vw_config_manager():
     expected_set = {
         "--no_stdin",
         "--quiet",
-        "--loss_function logistic",
-        "--data test/train-sets/rcv1_small.dat",
+        "--loss_function=logistic",
+        "--data=test/train-sets/rcv1_small.dat",
     }
     expected_reductions = {"gd", "scorer-identity", "count_label"}
 
@@ -56,3 +57,18 @@ def test_vw_get_all_options():
         cmd_str_list.add(name)
 
     assert len(cmd_str_list) >= 74
+
+
+def test_experimental_option_value():
+    has_experimental = False
+    vw = vowpalwabbit.Workspace("--cb_explore_adf --automl 3", quiet=True)
+    for groups in vw.get_config().values():
+        for group in groups:
+            for opt in group[1]:
+                if opt.experimental:
+                    has_experimental = True
+                    break
+        if has_experimental:
+            break
+    vw.finish()
+    assert has_experimental

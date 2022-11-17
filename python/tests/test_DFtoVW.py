@@ -41,12 +41,20 @@ def test_namespace_with_value_but_no_name():
 
 
 # Tests for SimpleLabel
-def test_from_colnames_constructor():
+def test_from_column_names_constructor():
     df = pd.DataFrame({"y": [1], "x": [2]})
-    conv = DFtoVW.from_colnames(y="y", x=["x"], df=df)
+    conv = DFtoVW.from_column_names(y="y", x=["x"], df=df)
     lines_list = conv.convert_df()
     first_line = lines_list[0]
     assert first_line == "1 | x:2"
+
+
+def test_from_column_names_no_label_constructor():
+    df = pd.DataFrame({"x": [2]})
+    conv = DFtoVW.from_column_names(x=["x"], df=df)
+    lines_list = conv.convert_df()
+    first_line = lines_list[0]
+    assert first_line == "| x:2"
 
 
 def test_feature_column_renaming_and_tag():

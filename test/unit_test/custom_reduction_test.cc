@@ -2,15 +2,18 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
 #include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
 
-#include "vw.h"
-#include "reductions_fwd.h"
-#include "reduction_stack.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
+#include "vw/core/learner.h"
+#include "vw/core/reduction_stack.h"
+#include "vw/core/vw.h"
+#include "vw/core/vw_fwd.h"
 
 // this file would live in toy_reduction.cc
 // toy_reduction.h would define test_reduction_setup(..) fn
@@ -26,7 +29,7 @@ bool called_learn_predict = false;
 
 // minimal predict/learn fn for test_reduction_setup
 template <bool is_learn>
-void predict_or_learn(char&, VW::LEARNER::single_learner& base, example& ec)
+void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   BOOST_CHECK(added_to_learner);
   called_learn_predict = true;
@@ -54,7 +57,7 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
 
   // do not add when ksvm is present
   // see custom_reduction_builder_check_throw
-  if (options.was_supplied("ksvm")) return nullptr;
+  if (options.was_supplied("ksvm")) { return nullptr; }
 
   auto base = stack_builder.setup_base_learner();
   BOOST_CHECK(base->is_multiline() == false);
@@ -105,24 +108,25 @@ void reset_test_state()
 //
 // custom_builder can be augmented to do heavier edits (reorder/remove)
 // on reduction_stack
-struct custom_builder : VW::default_reduction_stack_setup
+class custom_builder : public VW::default_reduction_stack_setup
 {
+public:
   custom_builder()
   {
     // this is the reduction stack of function pointers
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[0]), "gd");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[1]), "ksvm");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[2]), "ftrl");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[0]), "gd");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[1]), "ksvm");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[2]), "ftrl");
 
-    BOOST_CHECK_GT(reduction_stack.size(), 77);
+    BOOST_CHECK_GT(_reduction_stack.size(), 77);
     // erase "ksvm" just as a proof of concept
     // see custom_reduction_builder_check_throw below
-    reduction_stack.erase(reduction_stack.begin() + 1);
+    _reduction_stack.erase(_reduction_stack.begin() + 1);
 
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[0]), "gd");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[1]), "ftrl");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[0]), "gd");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[1]), "ftrl");
 
-    reduction_stack.emplace_back("test_reduction_name", toy_reduction::test_reduction_setup<true>);
+    _reduction_stack.emplace_back("test_reduction_name", toy_reduction::test_reduction_setup<true>);
   }
 };
 

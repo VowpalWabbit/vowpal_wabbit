@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
+#include "vw/core/vw.h"
 
-#include "vw.h"
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 
 // Test case validating this issue: https://github.com/VowpalWabbit/vowpal_wabbit/issues/2166
 BOOST_AUTO_TEST_CASE(predict_modifying_state)

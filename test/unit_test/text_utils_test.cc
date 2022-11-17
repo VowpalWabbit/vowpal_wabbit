@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
+#include "vw/common/text_utils.h"
 
-#include "text_utils.h"
+#include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(wrap_text_tests)
 {

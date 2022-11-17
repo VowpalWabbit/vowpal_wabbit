@@ -1,22 +1,23 @@
+#include "vw/config/cli_help_formatter.h"
+#include "vw/config/option_builder.h"
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/crossplat_compat.h"
+#include "vw/core/vw.h"
+
+#include <unistd.h>
+
+#include <algorithm>
+#include <cassert>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
-#include <unistd.h>
-#include <cassert>
-
-#include <vector>
+#include <fstream>
+#include <iostream>
 #include <queue>
 #include <utility>
-#include <algorithm>
-#include <iostream>
-#include <fstream>
-
-#include "vw.h"
-#include "config/options_cli.h"
-#include "config/option_builder.h"
-#include "config/option_group_definition.h"
-#include "config/cli_help_formatter.h"
+#include <vector>
 
 int pairs = 0;
 int users = 0;
@@ -46,18 +47,18 @@ void progress()
 void get_hashv(char* in, size_t len, unsigned* out)
 {
   assert(NUM_HASHES == 2);
-  out[0] = MASK(uniform_hash(in, len, 1), bits);
-  out[1] = MASK(uniform_hash(in, len, 2), bits);
+  out[0] = MASK(VW::uniform_hash(in, len, 1), bits);
+  out[1] = MASK(VW::uniform_hash(in, len, 2), bits);
 }
 
 #define BIT_TEST(c, i) (c[i / 8] & (1 << (i % 8)))
 #define BIT_SET(c, i) (c[i / 8] |= (1 << (i % 8)))
-#define byte_len(b) (((1UL << b) / 8) + (((1UL << b) % 8) ? 1 : 0))
-#define num_bits(b) (1UL << b)
+#define BYTE_LEN(b) (((1UL << b) / 8) + (((1UL << b) % 8) ? 1 : 0))
+#define NUM_BITS(b) (1UL << b)
 
 char* bf_new(unsigned b)
 {
-  char* bf = (char* )calloc(1, byte_len(b));
+  char* bf = (char*)calloc(1, BYTE_LEN(b));
   return bf;
 }
 
@@ -65,17 +66,18 @@ void bf_add(char* bf, char* line)
 {
   unsigned i, hashv[NUM_HASHES];
   get_hashv(line, strlen(line), hashv);
-  for (i = 0; i < NUM_HASHES; i++) BIT_SET(bf, hashv[i]);
+  for (i = 0; i < NUM_HASHES; i++) { BIT_SET(bf, hashv[i]); }
 }
 
 void bf_info(char* bf, FILE* f)
 {
   unsigned i, on = 0;
-  for (i = 0; i < num_bits(bits); i++)
-    if (BIT_TEST(bf, i))
-      on++;
+  for (i = 0; i < NUM_BITS(bits); i++)
+  {
+    if (BIT_TEST(bf, i)) { on++; }
+  }
 
-  fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on * 100.0 / num_bits(bits), num_bits(bits));
+  fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on * 100.0 / NUM_BITS(bits), NUM_BITS(bits));
 }
 
 int bf_hit(char* bf, char* line)
@@ -84,18 +86,17 @@ int bf_hit(char* bf, char* line)
   get_hashv(line, strlen(line), hashv);
   for (i = 0; i < NUM_HASHES; i++)
   {
-    if (BIT_TEST(bf, hashv[i]) == 0)
-      return 0;
+    if (BIT_TEST(bf, hashv[i]) == 0) { return 0; }
   }
   return 1;
 }
 
-typedef std::pair<float, std::string> scored_example;
+using scored_example = std::pair<float, std::string>;
 std::vector<scored_example> scored_examples;
 
 struct compare_scored_examples
 {
-  bool operator()(scored_example const &lhs, scored_example const &rhs) const { return lhs.first > rhs.first; }
+  bool operator()(scored_example const& lhs, scored_example const& rhs) const { return lhs.first > rhs.first; }
 };
 
 std::priority_queue<scored_example, std::vector<scored_example>, compare_scored_examples> pr_queue;
@@ -128,7 +129,8 @@ int main(int argc, char* argv[])
 
   opts.add_and_parse(desc);
   // Return value is ignored as option reachability is not relevant here.
-  opts.check_unregistered();
+  auto warnings = opts.check_unregistered();
+  _UNUSED(warnings);
 
   VW::config::cli_help_formatter help_formatter;
   const auto help_message = help_formatter.format_help(opts.get_all_option_group_definitions());
@@ -147,9 +149,9 @@ int main(int argc, char* argv[])
     exit(2);
   }
 
-  FILE* fB;
-  FILE* fU;
-  FILE* fI;
+  FILE* fB;  // NOLINT
+  FILE* fU;  // NOLINT
+  FILE* fI;  // NOLINT
 
   if (VW::file_open(&fB, blacklistfilename.c_str(), "r") != 0)
   {
@@ -177,8 +179,7 @@ int main(int argc, char* argv[])
   ssize_t read;
 
   /* make the bloom filter */
-  if (verbose > 0)
-    fprintf(stderr, "loading blacklist into bloom filter...\n");
+  if (verbose > 0) { fprintf(stderr, "loading blacklist into bloom filter...\n"); }
   char* bf = bf_new(bits);
 
   /* loop over the source file */
@@ -196,8 +197,7 @@ int main(int argc, char* argv[])
   }
 
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
-  if (verbose > 0)
-    fprintf(stderr, "initializing vw...\n");
+  if (verbose > 0) { fprintf(stderr, "initializing vw...\n"); }
   VW::workspace* model = VW::initialize(vwparams);
 
   char* estr = NULL;
@@ -230,15 +230,12 @@ int main(int argc, char* argv[])
 
       if (!bf_hit(bf, estr))
       {
-        example* ex = VW::read_example(*model, estr);
+        VW::example* ex = VW::read_example(*model, estr);
         model->learn(*ex);
 
         const std::string str(estr);
 
-        if (pr_queue.size() < (size_t)topk)
-        {
-          pr_queue.push(std::make_pair(ex->pred.scalar, str));
-        }
+        if (pr_queue.size() < (size_t)topk) { pr_queue.push(std::make_pair(ex->pred.scalar, str)); }
         else if (pr_queue.top().first < ex->pred.scalar)
         {
           pr_queue.pop();
@@ -250,8 +247,7 @@ int main(int argc, char* argv[])
       else
       {
         skipped++;
-        if (verbose >= 2)
-          fprintf(stderr, "skipping:#%s#\n", estr);
+        if (verbose >= 2) { fprintf(stderr, "skipping:#%s#\n", estr); }
       }
     }
 
@@ -263,10 +259,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  if (verbose > 0)
-  {
-    progress();
-  }
+  if (verbose > 0) { progress(); }
 
   VW::finish(*model);
   fclose(fI);

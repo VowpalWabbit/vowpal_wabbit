@@ -14,6 +14,10 @@ on:
     branches:
       - '*'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   linux-python-build:
     name: manylinux.amd64.py${{ matrix.config.version}}.build
@@ -32,6 +36,8 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - name: Build wheel
         shell: bash
         run: |
@@ -54,6 +60,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - uses: actions/download-artifact@v1
         with:
           name: manylinux_amd64_${{ matrix.version }}
@@ -77,14 +85,14 @@ jobs:
         # Tests without datafiles are skipped
         run: |
           cd test
-          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393
+          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.8.sdist-bundle
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: "recursive"
+          submodules: recursive
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
@@ -97,6 +105,7 @@ jobs:
         with:
           name: python_source_distribution
           path: dist/*.tar.gz
+          if-no-files-found: error
   linux-python-sdist-build-test:
     name: ubuntu-latest.amd64.py3.8.sdist-build-test
     needs: linux-python-sdist-bundle
@@ -118,6 +127,8 @@ jobs:
         shell: bash
         run: pip install python_source_distribution/*.tar.gz
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Install dependencies
         shell: bash
         run: |
@@ -134,7 +145,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", base_path: /opt/python/cp36-cp36m/, include_dir_name: python3.6m/ }
         - { version: "3.7", base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/ }
         - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
         - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
@@ -143,6 +153,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Set up QEMU
       id: qemu
       uses: docker/setup-qemu-action@v1
@@ -167,7 +179,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6" }
         - { version: "3.7" }
         - { version: "3.8" }
         - { version: "3.9" }
@@ -178,6 +189,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Set up QEMU
       id: qemu
       uses: docker/setup-qemu-action@v1
@@ -192,6 +205,7 @@ jobs:
             bash -exc 'apt-get update && \
             apt install software-properties-common -y && \
             add-apt-repository ppa:deadsnakes/ppa -y && \
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata && \
             apt install -y ${{ env.py }} && \
             apt install -y ${{ env.py }}-venv && \
             ${{ env.py }} -m venv .env && \
@@ -206,7 +220,7 @@ jobs:
             deactivate'
   macos-python-build:
     name: macos.amd64.py${{ matrix.config.version }}.build
-    runs-on: macos-10.15
+    runs-on: macos-11
     strategy:
       matrix:
         config:
@@ -214,9 +228,12 @@ jobs:
         - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
         - { version: 3.9, include_dir_name: python3.9/}
+        - { version: "3.10", include_dir_name: python3.10/}
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
@@ -233,25 +250,23 @@ jobs:
           name: macos_amd64_${{ matrix.config.version }}
           path: wheel_output/
   macos-python-test:
-    name: macos.amd64.py${{ matrix.config.version }}.test
+    name: macos.amd64.py${{ matrix.version }}.test
     needs: macos-python-build
-    runs-on: macos-10.15
+    runs-on: macos-11
     strategy:
       matrix:
-        config:
-        - { version: 3.6, include_dir_name: python3.6m/}
-        - { version: 3.7, include_dir_name: python3.7m/}
-        - { version: 3.8, include_dir_name: python3.8/}
-        - { version: 3.9, include_dir_name: python3.9/}
+        version: [3.6, 3.7, 3.8, 3.9, "3.10"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.config.version }}
+          python-version: ${{ matrix.version }}
       - uses: actions/download-artifact@v1
         with:
-          name: macos_amd64_${{ matrix.config.version }}
+          name: macos_amd64_${{ matrix.version }}
           path: built_wheel
       - name: Test wheel
         shell: bash
@@ -262,16 +277,20 @@ jobs:
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
-  macos-windows-build:
-    name: windows.amd64.py${{ matrix.config.version }}.build
+  windows-python-build:
+    name: windows-2019.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
+      VCPKG_REF: 6ca56aeb457f033d344a7106cb3f9f1abf8f4e98
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
     strategy:
       matrix:
         config:
         - { version: "3.6", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
         - { version: "3.7", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python37\\"}
         - { version: "3.8", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python38\\" }
-        - { version: "3.9", vcpkg_manifest: "python\\vcpkg_python39.json", overlay_ports: "" }
+        - { version: "3.9", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python39\\" }
         - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
       fail-fast: false
     steps:
@@ -280,43 +299,54 @@ jobs:
           python-version: ${{ matrix.config.version }}
       - uses: actions/checkout@v2
         with:
-          repository: microsoft/vcpkg
-          ref: a515872b1abf58b639bf8b15ab5fe23b62f25ac3
-          fetch-depth: 0
-          path: ${{github.workspace}}\\vcpkg
-      - name: Cache vcpkg
-        id: vcpkg-cache
-        uses: actions/cache@v2
-        with:
-          path: ${{github.workspace}}\\vcpkg
-          key: ${{ runner.os }}-${{ matrix.config.version }}-a515872b1abf58b639bf8b15ab5fe23b62f25ac3-2
-      # Downgrade CMake to mitigate crashing issue introduced in 3.21 that only affects vcpkg. See here: https://github.com/microsoft/vcpkg/issues/18718
+          submodules: recursive
+          path: ${{github.workspace}}\vowpal_wabbit
       - uses: actions/checkout@v2
         with:
-          path: ${{github.workspace}}\\vowpal_wabbit
+          path: ${{ env.VCPKG_ROOT }}
+          repository: 'microsoft/vcpkg'
+          ref: ${{ env.VCPKG_REF }}
+          # We need a deep clone so that we can go back in history for version selection.
+          fetch-depth: '0'
+      - name: Restore vcpkg and build artifacts
+        uses: actions/cache@v2
+        with:
+          path: |
+            ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: |
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-5
+      - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Build wheel
         shell: powershell
         run: |
+          if (![System.IO.Directory]::Exists("${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"))
+          {
+              New-Item -ItemType Directory -Force -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+          }
+          ls ${{ github.workspace }}
+          ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           cd ${{github.workspace}}\\vowpal_wabbit
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
           pip install wheel
-          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{github.workspace}}\\vcpkg" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
+          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
         with:
           name: windows_amd64_${{ matrix.config.version }}
           path: wheel_output
   windows-python-test:
-    name: windows.amd64.py${{ matrix.config.version }}.test
-    needs: macos-windows-build
+    name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
+    needs: windows-python-build
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
-        os: ["windows-2016", "windows-2019"]
+        os: ["windows-2019"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.version }}

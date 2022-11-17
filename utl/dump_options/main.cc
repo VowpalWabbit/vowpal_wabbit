@@ -4,16 +4,16 @@
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
-#include "config/help_formatter.h"
-#include "config/option_group_definition.h"
-#include "vw.h"
-#include "version.h"
-
-#include <memory>
+#include "vw/config/help_formatter.h"
+#include "vw/config/options.h"
+#include "vw/core/version.h"
+#include "vw/core/vw.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+
+#include <memory>
 
 using namespace VW::config;
 
@@ -125,18 +125,18 @@ struct type_info_injector : typed_option_visitor
 
 struct json_help_formatter : VW::config::help_formatter
 {
-  rapidjson::Document _document;
+  rapidjson::Document document;
 
-  json_help_formatter(rapidjson::Document&& doc) : _document(std::move(doc)) {}
+  json_help_formatter(rapidjson::Document&& doc) : document(std::move(doc)) {}
 
   std::string format_help(const std::vector<option_group_definition>& groups) override
   {
     // must pass an allocator when the object may need to allocate memory
-    auto& allocator = _document.GetAllocator();
+    auto& allocator = document.GetAllocator();
 
     // create a rapidjson array type with similar syntax to std::vector
     rapidjson::Value array(rapidjson::kArrayType);
-    _document.AddMember("option_groups", array, allocator);
+    document.AddMember("option_groups", array, allocator);
 
     for (const auto& group : groups)
     {
@@ -165,17 +165,18 @@ struct json_help_formatter : VW::config::help_formatter
         }
         option_obj.AddMember("keep", option->m_keep, allocator);
         option_obj.AddMember("necessary", option->m_necessary, allocator);
+        option_obj.AddMember("experimental", option->m_experimental, allocator);
         type_info_injector injector(option_obj, allocator);
         option->accept(injector);
         options_array.PushBack(option_obj, allocator);
       }
 
       group_object.AddMember("options", options_array, allocator);
-      _document["option_groups"].PushBack(group_object, allocator);
+      document["option_groups"].PushBack(group_object, allocator);
     }
     rapidjson::StringBuffer strbuf;
     rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
-    _document.Accept(writer);
+    document.Accept(writer);
     return strbuf.GetString();
   }
 };
@@ -187,21 +188,21 @@ int main(int argc, char* argv[])
   rapidjson::Document doc;
   auto& allocator = doc.GetAllocator();
 
-  // define the _document as an object rather than an array
+  // define the document as an object rather than an array
   doc.SetObject();
 
   rapidjson::Value version_object(rapidjson::kObjectType);
   rapidjson::Value version_text;
-  version_text.SetString(VW::version.to_string(), allocator);
+  version_text.SetString(VW::VERSION.to_string(), allocator);
   version_object.AddMember("version", version_text, allocator);
   rapidjson::Value git_commit_text;
-  git_commit_text.SetString(VW::git_commit, allocator);
+  git_commit_text.SetString(VW::GIT_COMMIT, allocator);
   version_object.AddMember("git_commit", git_commit_text, allocator);
   doc.AddMember("version_info", version_object, allocator);
 
   json_help_formatter formatter(std::move(doc));
   std::cout << formatter.format_help(vw->options->get_all_option_group_definitions()) << std::endl;
-  ;
+
   delete vw;
 
   return 0;

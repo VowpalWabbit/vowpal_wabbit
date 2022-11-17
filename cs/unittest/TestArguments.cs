@@ -57,6 +57,12 @@ namespace cs_unittest
             using (var vw = new VowpalWabbitModel(new VowpalWabbitSettings { ModelStream = File.Open("args.model", FileMode.Open) }))
             {
                 Assert.IsFalse(vw.Arguments.CommandLine.Contains("--quiet"));
+
+                // At first glance it seems like this should be IsFalse, given that VW is not meant to persiste
+                // the -t flag in the model file. What is going on, however is that when we use VowpalWabbitModel
+                // as the mechanism to load a VW model file (for the purposes of seeding other instances with
+                // the weights, it must be made TestOnly. This checks to ensure that the way that VowpalWabbitModel
+                // works is correct, not the file persistence.
                 Assert.IsTrue(vw.Arguments.CommandLine.Contains("-t"));
 
                 using (var vwSub = new VowpalWabbit(new VowpalWabbitSettings { Model = vw }))

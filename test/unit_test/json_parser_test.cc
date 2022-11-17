@@ -2,14 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "test_common.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
+#include "vw/core/vw.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <vector>
-#include "reductions/conditional_contextual_bandit.h"
-#include "vw.h"
 // TODO: Make unit test dig out and verify features.
 BOOST_AUTO_TEST_CASE(parse_json_simple)
 {
@@ -29,6 +28,32 @@ BOOST_AUTO_TEST_CASE(parse_json_simple)
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_CHECK_CLOSE(examples[0]->l.simple.label, 1.f, FLOAT_TOL);
+  VW::finish_example(*vw, examples);
+  VW::finish(*vw);
+}
+
+BOOST_AUTO_TEST_CASE(parse_json_simple_with_weight)
+{
+  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+
+  std::string json_text = R"(
+    {
+      "_label": {
+        "Label": -1,
+        "Weight": 0.85
+      },
+      "features": {
+        "13": 3.9656971e-02,
+        "24303": 2.2660980e-01,
+        "const": 0.01
+      }
+    })";
+
+  auto examples = parse_json(*vw, json_text);
+
+  BOOST_CHECK_EQUAL(examples.size(), 1);
+  BOOST_CHECK_CLOSE(examples[0]->l.simple.label, -1.f, FLOAT_TOL);
+  BOOST_CHECK_CLOSE(examples[0]->weight, 0.85, FLOAT_TOL);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
@@ -214,14 +239,14 @@ BOOST_AUTO_TEST_CASE(parse_json_ccb)
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[6]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[7]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[6]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[7]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
 
   auto label1 = examples[5]->l.conditional_contextual_bandit;
   BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 2);
@@ -283,11 +308,11 @@ BOOST_AUTO_TEST_CASE(parse_json_cb_as_ccb)
   auto examples = parse_json(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 5);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
 
   auto& label1 = examples[4]->l.conditional_contextual_bandit;
   BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 0);
@@ -353,19 +378,19 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
 )";
 
   // Assert parsed values against what they should be
-  auto slates_vw =
-      VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto slates_vw = VW::initialize(
+      "--slates --dsjson --chain_hash --no_stdin --noconstant --quiet", nullptr, false, nullptr, nullptr);
   auto examples = parse_json(*slates_vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
-  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::SLOT);
 
   const auto& label0 = examples[0]->l.slates;
   BOOST_CHECK_EQUAL(label0.labeled, false);
@@ -375,7 +400,7 @@ BOOST_AUTO_TEST_CASE(parse_json_slates_dom_parser)
   BOOST_CHECK_EQUAL(examples[4]->l.slates.slot_id, 1);
   BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
 
-  check_collections_exact(examples[0]->indices, std::vector<namespace_index>{'G'});
+  check_collections_exact(examples[0]->indices, std::vector<VW::namespace_index>{'G'});
   BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].indices.size(), 4);
   BOOST_CHECK_EQUAL(examples[0]->feature_space['G'].namespace_extents.size(), 1);
 
@@ -392,13 +417,13 @@ BOOST_AUTO_TEST_CASE(parse_json_text_does_not_change_input)
 
   auto* ccb_vw = VW::initialize("--ccb_explore_adf --dsjson --quiet", nullptr, false, nullptr, nullptr);
 
-  VW::v_array<example*> examples;
+  VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(ccb_vw));
   ccb_vw->example_parser->text_reader(ccb_vw, json_text.c_str(), strlen(json_text.c_str()), examples);
 
   BOOST_CHECK_EQUAL(json_text, json_text_copy);
 
-  multi_ex vec;
+  VW::multi_ex vec;
   for (const auto& ex : examples) { vec.push_back(ex); }
   VW::finish_example(*ccb_vw, vec);
   VW::finish(*ccb_vw);
@@ -419,8 +444,8 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb)
 
   auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
-  std::unordered_map<uint64_t, example*> dedup_examples;
-  VW::v_array<example*> examples;
+  std::unordered_map<uint64_t, VW::example*> dedup_examples;
+  VW::multi_ex examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -485,8 +510,8 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_cb_missing_dedup_id)
 
   auto vw = VW::initialize("--json --chain_hash --cb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
-  std::unordered_map<uint64_t, example*> dedup_examples;
-  VW::v_array<example*> examples;
+  std::unordered_map<uint64_t, VW::example*> dedup_examples;
+  VW::multi_ex examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -554,8 +579,8 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
   auto vw =
       VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
-  std::unordered_map<uint64_t, example*> dedup_examples;
-  VW::v_array<example*> examples;
+  std::unordered_map<uint64_t, VW::example*> dedup_examples;
+  VW::multi_ex examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -602,12 +627,12 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb)
 
   // check ccb
 
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
 
   auto label1 = examples[3]->l.conditional_contextual_bandit;
   BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 2);
@@ -674,8 +699,8 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_ccb_dedup_id_missing)
   auto vw =
       VW::initialize("--json --chain_hash --ccb_explore_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
-  std::unordered_map<uint64_t, example*> dedup_examples;
-  VW::v_array<example*> examples;
+  std::unordered_map<uint64_t, VW::example*> dedup_examples;
+  VW::multi_ex examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -722,8 +747,8 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
 
   auto vw = VW::initialize("--json --chain_hash --slates --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
-  std::unordered_map<uint64_t, example*> dedup_examples;
-  VW::v_array<example*> examples;
+  std::unordered_map<uint64_t, VW::example*> dedup_examples;
+  VW::multi_ex examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
@@ -769,11 +794,11 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates)
   BOOST_CHECK_EQUAL(examples[2]->feature_space['T'].space_names[0].str_value, "f2");
 
   // check slates
-  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::shared);
-  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::action);
-  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::slot);
-  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::slot);
+  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
+  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::ACTION);
+  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::SLOT);
+  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::SLOT);
 
   BOOST_CHECK_EQUAL(examples[1]->l.slates.slot_id, 0);
   BOOST_CHECK_EQUAL(examples[2]->l.slates.slot_id, 1);
@@ -800,8 +825,8 @@ BOOST_AUTO_TEST_CASE(parse_json_dedup_slates_dedup_id_missing)
 
   auto vw = VW::initialize("--json --chain_hash --slates --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
-  std::unordered_map<uint64_t, example*> dedup_examples;
-  VW::v_array<example*> examples;
+  std::unordered_map<uint64_t, VW::example*> dedup_examples;
+  VW::multi_ex examples;
 
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));

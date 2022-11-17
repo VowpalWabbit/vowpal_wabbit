@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import socket
 import argparse
 from typing import Callable, ContextManager, Optional, TextIO
@@ -30,12 +31,13 @@ def _get_getch_impl_unix() -> Optional[Callable[[], str]]:
     def _getch():
         fd = sys.stdin.fileno()
         old_settings = termios.tcgetattr(fd)
+        ch = None
         try:
             tty.setraw(fd)
             ch = sys.stdin.read(1)
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            if ord(ch) == 3:
+            if ch is not None and ord(ch) == 3:
                 raise KeyboardInterrupt
             return ch
 

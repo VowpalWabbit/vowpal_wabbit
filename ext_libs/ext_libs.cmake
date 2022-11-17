@@ -41,29 +41,16 @@ if(RAPIDJSON_SYS_DEP)
   target_include_directories(RapidJSON INTERFACE ${RapidJSON_INCLUDE_DIRS})
 else()
   add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/rapidjson/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
-
-  if(VW_INSTALL)
-    install(
-      TARGETS RapidJSON
-      EXPORT VowpalWabbitConfig)
-
-    install(
-      DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/rapidjson/include/rapidjson/
-      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
-    )
-  endif()
+  target_include_directories(RapidJSON SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/rapidjson/include")
 endif()
 
 if(VW_BOOST_MATH_SYS_DEP)
   find_package(Boost REQUIRED)
-  add_library(Boost::math ALIAS Boost::boost)
+  set(boost_math_target Boost::boost)
 else()
   set(BOOST_MATH_STANDALONE ON CACHE BOOL "Use Boost math vendored dep in standalone mode" FORCE)
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/boost_math EXCLUDE_FROM_ALL)
+  set(boost_math_target Boost::math)
 endif()
 
 if(VW_ZLIB_SYS_DEP)
@@ -88,4 +75,28 @@ else()
           LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
           RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   endif()
+endif()
+
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+
+if(BUILD_FLATBUFFERS)
+  find_package(Flatbuffers CONFIG QUIET)
+  if(FLATBUFFERS_FOUND)
+    get_property(flatc_location TARGET flatbuffers::flatc PROPERTY LOCATION)
+  else()
+    # Fallback to the old version
+    find_package(Flatbuffers MODULE REQUIRED)
+    set(flatc_location ${FLATBUFFERS_FLATC_EXECUTABLE})
+  endif()
+  include(FlatbufferUtils)
+endif()
+
+if(VW_EIGEN_SYS_DEP)
+  # Since EXACT is not specified, any version compatible with 3.4.0 is accepted (>= 3.4.0)
+  find_package(Eigen3 3.4.0 CONFIG REQUIRED)
+  add_library(eigen INTERFACE)
+  target_include_directories(eigen INTERFACE ${EIGEN3_INCLUDE_DIR})
+else()
+  add_library(eigen INTERFACE)
+  target_include_directories(eigen SYSTEM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>)
 endif()

@@ -1,64 +1,61 @@
 name: Run Benchmarks
 
 on:
-  pull_request:
+  push:
     branches:
       - master
-      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
 
 jobs:
   benchmark:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      deployments: write
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
         with:
-          ref: ${{ github.base_ref }}
-          submodules: 'recursive'
-      - name: Install google benchmarks
+          submodules: recursive
+      - uses: lukka/get-cmake@latest
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
         shell: bash
-        run: ./.scripts/linux/install-benchmarks.sh
-      - name: Build ${{ github.base_ref }}
-        shell: bash
-        run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Benchmark ${{ github.base_ref }}
-        shell: bash
-        run: ./.scripts/linux/run-benchmarks.sh master-benchmarks.json
-      - name: Upload ${{ github.base_ref }} benchmark results
-        uses: actions/upload-artifact@v2
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      # This cache will probably be missing the benchmark dep, but that will be quick to fetch
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          name: master-benchmarks
-          path: master-benchmarks.json
-      - name: Upload benchmark compare
-        uses: actions/upload-artifact@v2
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
+      - name: Configure
+        run: cmake --preset vcpkg-release -DBUILD_BENCHMARKS=On
+      - name: Compile
+        run: cmake --build build --target vw-benchmarks.out
+      - name: Run benchmarks
+        run: >
+          ./build/test/benchmarks/vw-benchmarks.out
+          --benchmark_min_time=3
+          --benchmark_format=console
+          --benchmark_out_format=json
+          --benchmark_out=benchmark_results.json
+      - uses: benchmark-action/github-action-benchmark@v1
         with:
-          name: benchmark-compare
-          path: benchmark/tools/
-      - name: Install benchmark compare requirements
-        shell: bash
-        run: |
-          python3 -m pip install -r benchmark/tools/requirements.txt
-          # The above requirements file is missing the pandas dependency.
-          python3 -m pip install pandas
-      - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ # generated or downloaded files
-      - uses: actions/checkout@v1
-        with:
-          submodules: 'recursive'
-      - name: Download ${{ github.base_ref }} benchmark results
-        uses: actions/download-artifact@v2
-        with:
-          name: master-benchmarks
-      - name: Download benchmark compare
-        uses: actions/download-artifact@v2
-        with:
-          name: benchmark-compare
-      - name: Build branch
-        shell: bash
-        run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Benchmark branch
-        shell: bash
-        run: ./.scripts/linux/run-benchmarks.sh branch-benchmarks.json
-      - name: Compare benchmarks
-        shell: bash
-        run: ./.scripts/linux/compare-benchmarks.sh master-benchmarks.json branch-benchmarks.json
+          tool: 'googlecpp'
+          output-file-path: benchmark_results.json
+          alert-threshold: '150%'
+          fail-on-alert: true
+          comment-on-alert: true
+          auto-push: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push results to gh-pages branch
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        run: git push 'https://VowpalWabbit:${{ secrets.GITHUB_TOKEN }}@github.com/VowpalWabbit/vowpal_wabbit.git' gh-pages:gh-pages

@@ -1,0 +1,4 @@
+[warning] The label -0.5 is not in the range [0,1] as the logistic loss function expects.
+[warning] The label -0.5 is not in the range [0,1] as the logistic loss function expects.
+[warning] The label -0.3 is not in the range [0,1] as the logistic loss function expects.
+[warning] The label -0.3 is not in the range [0,1] as the logistic loss function expects.

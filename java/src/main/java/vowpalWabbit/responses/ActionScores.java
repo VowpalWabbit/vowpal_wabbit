@@ -36,7 +36,6 @@ public class ActionScores implements Serializable {
 
         // Probably incorrect - comparing Object[] arrays with Arrays.equals
         return Arrays.equals(actionScores, that.actionScores);
-
     }
 
     @Override

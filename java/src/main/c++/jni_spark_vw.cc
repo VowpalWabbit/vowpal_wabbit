@@ -1,20 +1,63 @@
 #include "jni_spark_vw.h"
-#include "vw_exception.h"
-#include "best_constant.h"
+
+#include "org_vowpalwabbit_spark_VowpalWabbitExample.h"
+#include "org_vowpalwabbit_spark_VowpalWabbitNative.h"
 #include "util.h"
-#include "config/cli_options_serializer.h"
-#include "learner.h"
-#include "simple_label_parser.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/vw_exception.h"
+#include "vw/config/cli_options_serializer.h"
+#include "vw/config/options.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/global_data.h"
+#include "vw/core/learner.h"
+#include "vw/core/merge.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/simple_label_parser.h"
+#include "vw/core/vw_fwd.h"
+
 #include <algorithm>
 #include <exception>
-#include "shared_data.h"
 
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex);
+
+// Will finish the examples too
+template <bool isLearn>
+jobject callLearner(JNIEnv* env, VW::workspace* all, VW::multi_ex& examples)
+{
+  assert(all != nullptr);
+  jobject prediction = nullptr;
+  if (all->l->is_multiline())
+  {
+    if VW_STD17_CONSTEXPR (isLearn) { all->learn(examples); }
+    else
+    {
+      all->predict(examples);
+    }
+    // prediction is in the first example
+    prediction = getJavaPrediction(env, all, examples[0]);
+    all->finish_example(examples);
+  }
+  else
+  {
+    assert(examples.size() == 1);
+    if VW_STD17_CONSTEXPR (isLearn) { all->learn(*examples[0]); }
+    else
+    {
+      all->predict(*examples[0]);
+    }
+    prediction = getJavaPrediction(env, all, examples[0]);
+    all->finish_example(*examples[0]);
+  }
+  assert(prediction != nullptr);
+  return prediction;
+}
 
 // Guards
 StringGuard::StringGuard(JNIEnv* env, jstring source) : _env(env), _source(source), _cstr(nullptr)
 {
   _cstr = _env->GetStringUTFChars(source, 0);
+  _length = static_cast<size_t>(_env->GetStringUTFLength(source));
 }
 
 StringGuard::~StringGuard()
@@ -27,21 +70,21 @@ StringGuard::~StringGuard()
 }
 
 const char* StringGuard::c_str() { return _cstr; }
+size_t StringGuard::length() { return _length; }
 
 CriticalArrayGuard::CriticalArrayGuard(JNIEnv* env, jarray arr) : _env(env), _arr(arr), _arr0(nullptr)
 {
   _arr0 = env->GetPrimitiveArrayCritical(arr, nullptr);
+  _length = env->GetArrayLength(arr);
 }
 
 CriticalArrayGuard::~CriticalArrayGuard()
 {
-  if (_arr0)
-  {
-    _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT);
-  }
+  if (_arr0 != nullptr) { _env->ReleasePrimitiveArrayCritical(_arr, _arr0, JNI_ABORT); }
 }
 
 void* CriticalArrayGuard::data() { return _arr0; }
+size_t CriticalArrayGuard::length() const { return _length; }
 
 // VW
 JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initialize(JNIEnv* env, jclass, jstring args)
@@ -116,14 +159,28 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learn(
   try
   {
     populateMultiEx(env, examples, *all, ex_coll);
+    return callLearner<true>(env, all, ex_coll);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+    return nullptr;
+  }
+}
 
-    all->learn(ex_coll);
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFromString(
+    JNIEnv* env, jobject vwObj, jstring examplesString)
+{
+  auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
+  StringGuard exampleStringGuard(env, examplesString);
 
-    // as this is not a ring-based example it is not freed
-    as_multiline(all->l)->finish_example(*all, ex_coll);
-
-    // prediction is in the first example
-    return getJavaPrediction(env, all, ex_coll[0]);
+  try
+  {
+    VW::multi_ex ex_coll;
+    ex_coll.push_back(&VW::get_unused_example(all));
+    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    VW::setup_examples(*all, ex_coll);
+    return callLearner<true>(env, all, ex_coll);
   }
   catch (...)
   {
@@ -141,14 +198,28 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   try
   {
     populateMultiEx(env, examples, *all, ex_coll);
+    return callLearner<false>(env, all, ex_coll);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+    return nullptr;
+  }
+}
 
-    all->predict(ex_coll);
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predictFromString(
+    JNIEnv* env, jobject vwObj, jstring examplesString)
+{
+  auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
+  StringGuard exampleStringGuard(env, examplesString);
 
-    // as this is not a ring-based example it is not freed
-    as_multiline(all->l)->finish_example(*all, ex_coll);
-
-    // prediction is in the first example
-    return getJavaPrediction(env, all, ex_coll[0]);
+  try
+  {
+    VW::multi_ex ex_coll;
+    ex_coll.push_back(&VW::get_unused_example(all));
+    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    VW::setup_examples(*all, ex_coll);
+    return callLearner<false>(env, all, ex_coll);
   }
   catch (...)
   {
@@ -212,10 +283,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   VW::config::cli_options_serializer serializer;
   for (auto const& option : all->options->get_all_options())
   {
-    if (all->options->was_supplied(option->m_name))
-    {
-      serializer.add(*option);
-    }
+    if (all->options->was_supplied(option->m_name)) { serializer.add(*option); }
   }
 
   // move it to Java
@@ -230,6 +298,15 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   CHECK_JNI_EXCEPTION(nullptr);
 
   return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->eta, all->power_t);
+}
+
+JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(
+    JNIEnv* env, jobject vwObj)
+{
+  auto* all = reinterpret_cast<VW::workspace*>(get_native_pointer(env, vwObj));
+
+  // produce string to avoid replication of enum types
+  return env->NewStringUTF(std::string(VW::to_string(all->l->get_output_prediction_type())).c_str());
 }
 
 JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerformanceStatistics(
@@ -319,7 +396,7 @@ JNIEXPORT jint JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_hash(
   CriticalArrayGuard dataGuard(env, data);
   const char* values0 = (const char*)dataGuard.data();
 
-  return (jint)uniform_hash(values0 + offset, len, seed);
+  return (jint)VW::uniform_hash(values0 + offset, len, seed);
 }
 
 // VW Example
@@ -387,10 +464,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
 
 void addNamespaceIfNotExists(VW::workspace* all, example* ex, char ns)
 {
-  if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end())
-  {
-    ex->indices.push_back(ns);
-  }
+  if (std::find(ex->indices.begin(), ex->indices.end(), ns) == ex->indices.end()) { ex->indices.push_back(ns); }
 }
 
 JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToNamespaceDense(
@@ -482,9 +556,9 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setLabel(
 
   try
   {
-    label_data* ld = &ex->l.simple;
+    auto* ld = &ex->l.simple;
     ld->label = label;
-    auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+    auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
     red_fts.weight = weight;
 
     VW::count_label(*all->sd, ld->label);
@@ -502,6 +576,130 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
   try
   {
     all->example_parser->lbl_parser.default_label(ex->l);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMulticlassLabel(
+    JNIEnv* env, jobject exampleObj, jfloat weight, jint label)
+{
+  INIT_VARS
+
+  try
+  {
+    VW::multiclass_label* ld = &ex->l.multi;
+
+    ld->label = label;
+    ld->weight = weight;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setCostSensitiveLabels(
+    JNIEnv* env, jobject exampleObj, jfloatArray costs, jintArray classes)
+{
+  INIT_VARS
+
+  try
+  {
+    VW::cs_label* ld = &ex->l.cs;
+
+    int sizeCosts = env->GetArrayLength(costs);
+    int sizeClasses = env->GetArrayLength(classes);
+
+    if (sizeCosts != sizeClasses)
+    {
+      env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "costs and classes length must match");
+      return;
+    }
+
+    CriticalArrayGuard costsGuard(env, costs);
+    float* costs0 = (float*)costsGuard.data();
+
+    CriticalArrayGuard classesGuard(env, classes);
+    int* classes0 = (int*)classesGuard.data();
+
+    // loop over weights/labels
+    for (int i = 0; i < sizeCosts; i++)
+    {
+      VW::cs_class w;
+      w.x = costs0[i];
+      w.class_index = classes0[i];
+
+      ld->costs.push_back(w);
+    }
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiLabels(
+    JNIEnv* env, jobject exampleObj, jintArray classes)
+{
+  INIT_VARS
+
+  try
+  {
+    MULTILABEL::labels* ld = &ex->l.multilabels;
+
+    CriticalArrayGuard classesGuard(env, classes);
+    int* classes0 = (int*)classesGuard.data();
+
+    int size = env->GetArrayLength(classes);
+
+    for (int i = 0; i < size; i++) ld->label_v.push_back(classes0[i]);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContextualBanditContinuousLabel(
+    JNIEnv* env, jobject exampleObj, jfloatArray actions, jfloatArray costs, jfloatArray pdfValues)
+{
+  INIT_VARS
+
+  try
+  {
+    int sizeActions = env->GetArrayLength(actions);
+    int sizeCosts = env->GetArrayLength(costs);
+    int sizePdfValues = env->GetArrayLength(pdfValues);
+
+    if (sizeActions != sizeCosts || sizeCosts != sizePdfValues)
+    {
+      env->ThrowNew(
+          env->FindClass("java/lang/IllegalArgumentException"), "actions, costs and pdfValues length must match");
+      return;
+    }
+
+    VW::cb_continuous::continuous_label* ld = &ex->l.cb_cont;
+
+    CriticalArrayGuard actionsGuard(env, actions);
+    float* actions0 = (float*)actionsGuard.data();
+
+    CriticalArrayGuard costsGuard(env, costs);
+    float* costs0 = (float*)costsGuard.data();
+
+    CriticalArrayGuard pdfValuesGuard(env, pdfValues);
+    float* pdfValues0 = (float*)pdfValuesGuard.data();
+
+    for (int i = 0; i < sizeActions; i++)
+    {
+      VW::cb_continuous::continuous_label_elm elm;
+      elm.action = actions0[i];
+      elm.cost = costs0[i];
+      elm.pdf_value = pdfValues0[i];
+      ld->costs.push_back(elm);
+    }
   }
   catch (...)
   {
@@ -542,11 +740,87 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
     CB::cb_class f;
 
     f.partial_prediction = 0.;
-    f.action = (uint32_t)uniform_hash("shared", 6 /*length of string*/, 0);
+    f.action = (uint32_t)VW::uniform_hash("shared", 6 /*length of string*/, 0);
     f.cost = FLT_MAX;
     f.probability = -1.f;
 
     ld->costs.push_back(f);
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSharedLabel(
+    JNIEnv* env, jobject exampleObj, jfloat cost)
+{
+  INIT_VARS
+
+  try
+  {
+    auto* ld = &ex->l.slates;
+    ld->reset_to_default();
+    ld->type = VW::slates::example_type::SHARED;
+    ld->cost = cost;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesActionLabel(
+    JNIEnv* env, jobject exampleObj, jint slot_id)
+{
+  INIT_VARS
+
+  try
+  {
+    auto* ld = &ex->l.slates;
+    ld->reset_to_default();
+    ld->type = VW::slates::example_type::ACTION;
+    ld->slot_id = slot_id;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setSlatesSlotLabel(
+    JNIEnv* env, jobject exampleObj, jintArray actions, jfloatArray probs)
+{
+  INIT_VARS
+
+  try
+  {
+    int sizeActions = env->GetArrayLength(actions);
+    int sizeProbs = env->GetArrayLength(probs);
+
+    if (sizeActions != sizeProbs)
+    {
+      env->ThrowNew(env->FindClass("java/lang/IllegalArgumentException"), "actions and probs length must match");
+      return;
+    }
+
+    auto* ld = &ex->l.slates;
+    ld->reset_to_default();
+    ld->type = VW::slates::example_type::SLOT;
+
+    CriticalArrayGuard actionsGuard(env, actions);
+    float* actions0 = (float*)actionsGuard.data();
+
+    CriticalArrayGuard probsGuard(env, probs);
+    float* probs0 = (float*)probsGuard.data();
+
+    for (int i = 0; i < sizeActions; i++)
+    {
+      VW::action_score as;
+      as.action = actions0[i];
+      as.score = probs0[i];
+      ld->probabilities.push_back(as);
+    }
   }
   catch (...)
   {
@@ -613,10 +887,10 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     ostr << "VowpalWabbitExample(label=";
     auto lp = all->example_parser->lbl_parser;
 
-    if (!memcmp(&lp, &simple_label_parser, sizeof(lp)))
+    if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     {
-      label_data* ld = &ex->l.simple;
-      const auto& red_fts = ex->_reduction_features.template get<simple_label_reduction_features>();
+      auto* ld = &ex->l.simple;
+      const auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       ostr << "simple " << ld->label << ":" << red_fts.weight << ":" << red_fts.initial;
     }
     else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
@@ -630,7 +904,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
 
         CB::cb_class& f = ld->costs[0];
 
-        // Ignore checking if f.action == uniform_hash("shared")
+        // Ignore checking if f.action == VW::uniform_hash("shared")
         if (f.partial_prediction == 0 && f.cost == FLT_MAX && f.probability == -1.f)
           ostr << "shared";
         else
@@ -649,8 +923,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
         ostr << "NULL:0,";
       else
       {
-        if ((ns >= 'a' && ns <= 'z') || (ns >= 'A' && ns <= 'Z'))
-          ostr << "'" << (char)ns << "':";
+        if ((ns >= 'a' && ns <= 'z') || (ns >= 'A' && ns <= 'Z')) ostr << "'" << (char)ns << "':";
 
         ostr << (int)ns << ",";
       }
@@ -678,6 +951,48 @@ jobject multilabel_predictor(example* vec, JNIEnv* env);
 jfloatArray scalars_predictor(example* vec, JNIEnv* env);
 jobject action_scores_prediction(example* vec, JNIEnv* env);
 jobject action_probs_prediction(example* vec, JNIEnv* env);
+jobject decision_scores_prediction(example* vec, JNIEnv* env);
+
+jobject probability_density_function_value(example* ex, JNIEnv* env)
+{
+  jclass predClass = env->FindClass("vowpalWabbit/responses/PDFValue");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctr = env->GetMethodID(predClass, "<init>", "(FF)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  return env->NewObject(predClass, ctr, ex->pred.pdf_value.action, ex->pred.pdf_value.pdf_value);
+}
+
+jobject probability_density_function(example* ex, JNIEnv* env)
+{
+  jclass pdfSegmentClass = env->FindClass("vowpalWabbit/responses/PDFSegment");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctrPdfSegment = env->GetMethodID(pdfSegmentClass, "<init>", "(FFF)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jclass pdfClass = env->FindClass("vowpalWabbit/responses/PDF");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctrPdf = env->GetMethodID(pdfClass, "<init>", "([LvowpalWabbit/responses/PDFSegment;)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  auto& pdf = ex->pred.pdf;
+
+  jobjectArray pdfSegments = env->NewObjectArray(pdf.size(), pdfSegmentClass, 0);
+  for (uint32_t i = 0; i < pdf.size(); ++i)
+  {
+    auto& pdfSegment = pdf[i];
+
+    jobject pdfSegmentObj =
+        env->NewObject(pdfSegmentClass, ctrPdfSegment, pdfSegment.left, pdfSegment.right, pdfSegment.pdf_value);
+
+    env->SetObjectArrayElement(pdfSegments, i, pdfSegmentObj);
+  }
+
+  return env->NewObject(pdfClass, ctrPdf, pdfSegments);
+}
 
 jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 {
@@ -685,7 +1000,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
   jmethodID ctr;
   switch (all->l->get_output_prediction_type())
   {
-    case VW::prediction_type_t::scalar:
+    case VW::prediction_type_t::SCALAR:
       predClass = env->FindClass("org/vowpalwabbit/spark/prediction/ScalarPrediction");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -694,7 +1009,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, VW::get_prediction(ex), ex->confidence);
 
-    case VW::prediction_type_t::prob:
+    case VW::prediction_type_t::PROB:
       predClass = env->FindClass("java/lang/Float");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -703,7 +1018,7 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.prob);
 
-    case VW::prediction_type_t::multiclass:
+    case VW::prediction_type_t::MULTICLASS:
       predClass = env->FindClass("java/lang/Integer");
       CHECK_JNI_EXCEPTION(nullptr);
 
@@ -712,17 +1027,26 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
 
       return env->NewObject(predClass, ctr, ex->pred.multiclass);
 
-    case VW::prediction_type_t::scalars:
+    case VW::prediction_type_t::SCALARS:
       return scalars_predictor(ex, env);
 
-    case VW::prediction_type_t::action_probs:
+    case VW::prediction_type_t::ACTION_PROBS:
       return action_probs_prediction(ex, env);
 
-    case VW::prediction_type_t::action_scores:
+    case VW::prediction_type_t::ACTION_SCORES:
       return action_scores_prediction(ex, env);
 
-    case VW::prediction_type_t::multilabels:
+    case VW::prediction_type_t::MULTILABELS:
       return multilabel_predictor(ex, env);
+
+    case VW::prediction_type_t::DECISION_PROBS:
+      return decision_scores_prediction(ex, env);
+
+    case VW::prediction_type_t::PDF:
+      return probability_density_function(ex, env);
+
+    case VW::prediction_type_t::ACTION_PDF_VALUE:
+      return probability_density_function_value(ex, env);
 
     default:
     {
@@ -733,4 +1057,42 @@ jobject getJavaPrediction(JNIEnv* env, VW::workspace* all, example* ex)
       return nullptr;
     }
   }
+}
+
+JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_mergeModels(
+    JNIEnv* env, jclass, jobject baseWorkspace, jobjectArray workspacePointers)
+try
+{
+  VW::workspace* base = nullptr;
+  if (baseWorkspace != nullptr) { base = reinterpret_cast<VW::workspace*>(get_native_pointer(env, baseWorkspace)); }
+
+  std::vector<const VW::workspace*> workspaces;
+  int length = env->GetArrayLength(workspacePointers);
+  if (length > 0)
+  {
+    workspaces.reserve(length);
+    jobject jworkspace = env->GetObjectArrayElement(workspacePointers, 0);
+    jclass cls = env->GetObjectClass(jworkspace);
+    jfieldID fieldId = env->GetFieldID(cls, "nativePointer", "J");
+    for (int i = 0; i < length; i++)
+    {
+      const auto* workspace = reinterpret_cast<const VW::workspace*>(get_native_pointer(env, jworkspace));
+      workspaces.push_back(workspace);
+    }
+  }
+
+  auto result = VW::merge_models(base, workspaces);
+
+  jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitNative");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  jmethodID ctor = env->GetMethodID(clazz, "<init>", "(J)V");
+  CHECK_JNI_EXCEPTION(nullptr);
+
+  return env->NewObject(clazz, ctor, reinterpret_cast<jlong>(result.release()));
+}
+catch (...)
+{
+  rethrow_cpp_exception_as_java_exception(env);
+  return nullptr;
 }

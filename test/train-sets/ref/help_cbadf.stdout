@@ -27,10 +27,16 @@ Example Options:
     --sort_features                         Turn this on to disregard order in which features have been defined.
                                             This will lead to smaller cache sizes (type: bool)
     --loss_function arg                     Specify the loss function to be used, uses squared by default
-                                            (type: str, default: squared, choices {classic, hinge, logistic,
-                                            poisson, quantile, squared})
+                                            (type: str, default: squared, choices {classic, expectile, hinge,
+                                            logistic, poisson, quantile, squared})
     --quantile_tau arg                      Parameter \tau associated with Quantile loss. Defaults to 0.5
                                             (type: float, default: 0.5)
+    --expectile_q arg                       Parameter q associated with Expectile loss (required). Must be
+                                            a value in (0.0, 0.5]. (type: float)
+    --logistic_min arg                      Minimum loss value for logistic loss. Defaults to -1 (type: float,
+                                            default: -1)
+    --logistic_max arg                      Maximum loss value for logistic loss. Defaults to +1 (type: float,
+                                            default: 1)
     --l1 arg                                L_1 lambda (type: float, default: 0)
     --l2 arg                                L_2 lambda (type: float, default: 0)
     --no_bias_regularization                No bias in regularization (type: bool)
@@ -45,6 +51,10 @@ Feature Options:
                                             keep)
     --ignore_linear args...                 Ignore namespaces beginning with character <arg> for linear terms
                                             only (type: list[str], keep)
+    --ignore_features_dsjson_experimental args...
+                                            Ignore specified features from namespace. To ignore a feature
+                                            arg should be namespace|feature To ignore a feature in the default
+                                            namespace, arg should be |feature (type: list[str], keep, experimental)
     --keep args...                          Keep namespaces beginning with character <arg> (type: list[str],
                                             keep)
     --redefine args...                      Redefine namespaces beginning with characters of std::string
@@ -52,7 +62,7 @@ Feature Options:
                                             Empty N or S are treated as default namespace. Use ':' as a wildcard
                                             in S. (type: list[str], keep)
     -b, --bit_precision arg                 Number of bits in the feature table (type: uint)
-    --noconstant                            Don't add a constant feature (type: bool)
+    --noconstant                            Don't add a constant feature (type: bool, keep)
     -C, --constant arg                      Set initial value of constant (type: float, default: 0)
     --ngram args...                         Generate N grams. To generate N grams for a single namespace
                                             'foo', arg should be fN (type: list[str])
@@ -74,9 +84,9 @@ Feature Options:
     --interactions args...                  Create feature interactions of any level between namespaces (type:
                                             list[str], keep)
     --experimental_full_name_interactions args...
-                                            EXPERIMENTAL: Create feature interactions of any level between
-                                            namespaces by specifying the full name of each namespace. (type:
-                                            list[str], keep)
+                                            Create feature interactions of any level between namespaces by
+                                            specifying the full name of each namespace. (type: list[str],
+                                            keep, experimental)
     --permutations                          Use permutations instead of combinations for feature interactions
                                             of same namespace (type: bool)
     --leave_duplicate_interactions          Don't remove interactions with duplicate combinations of namespaces.
@@ -108,7 +118,23 @@ Input Options:
     --chain_hash                            Enable chain hash in JSON for feature name and string feature
                                             value. e.g. {'A': {'B': 'C'}} is hashed as A^B^C. (type: bool,
                                             keep)
-    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool)
+    --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
+                                            experimental)
+    --csv                                   Data file will be interpreted as a CSV file (type: bool, experimental)
+    --csv_separator arg                     CSV Parser: Specify field separator in one character, " | : are
+                                            not allowed for reservation. (type: str, default: ,, experimental)
+    --csv_no_file_header                    CSV Parser: First line is NOT a header. By default, CSV files
+                                            are assumed to have a header with feature and/or namespaces names.
+                                            You MUST specify the header with --csv_header if you use this
+                                            option. (type: bool, default: false, experimental)
+    --csv_header arg                        CSV Parser: Override the CSV header by providing (namespace,
+                                            '|' and) feature name separated with ','. By default, CSV files
+                                            are assumed to have a header with feature and/or namespaces names
+                                            in the CSV first line. You can override it by specifying here.
+                                            Combined with --csv_no_file_header, we assume that there is no
+                                            header in the CSV file. (type: str, experimental)
+    --csv_ns_value arg                      CSV Parser: Scale the namespace values by specifying the float
+                                            ratio. e.g. --csv_ns_value=a:0.5,b:0.3,:8 (type: str, experimental)
 Logging Options:
     --quiet                                 Don't output diagnostics and progress updates. Supplying this
                                             implies --log_level off and --driver_output_off. Supplying this
@@ -132,19 +158,19 @@ Output Model Options:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
-    --dump_json_weights_experimental arg    Experimental: Output json representation of model parameters.
-                                            (type: str)
+    --dump_json_weights_experimental arg    Output json representation of model parameters. (type: str, experimental)
     --dump_json_weights_include_feature_names_experimental
-                                            Experimental: Whether to include feature names in json output
-                                            (type: bool)
+                                            Whether to include feature names in json output (type: bool,
+                                            experimental)
     --dump_json_weights_include_extra_online_state_experimental
-                                            Experimental: Whether to include extra online state in json output
-                                            (type: bool)
+                                            Whether to include extra online state in json output (type: bool,
+                                            experimental)
     --predict_only_model                    Do not save extra state for learning to be resumed. Stored model
                                             can only be used for prediction (type: bool)
     --save_resume                           This flag is now deprecated and models can continue learning
                                             by default (type: bool)
-    --preserve_performance_counters         Reset performance counters when warmstarting (type: bool)
+    --preserve_performance_counters         Prevent the default behavior of resetting counters when loading
+                                            a model. Has no effect when writing a model. (type: bool)
     --save_per_pass                         Save the model after every pass over data (type: bool)
     --output_feature_regularizer_binary arg Per feature regularization output file (type: str)
     --output_feature_regularizer_text arg   Per feature regularization output file, in text (type: str)
@@ -219,7 +245,8 @@ Weight Options:
     --cb_force_legacy                       Default to non-adf cb implementation (cb_algs) (type: bool, keep)
 [Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
     --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
-                                            features (type: str, keep, necessary)
+                                            features (type: str, choices {m, mc, multiline, multiline-classifier},
+                                            keep, necessary)
     --ldf_override arg                      Override singleline or multiline from csoaa_ldf or wap_ldf, eg
                                             if stored in file (type: str)
     --csoaa_rank                            Return actions sorted by score order (type: bool, keep)

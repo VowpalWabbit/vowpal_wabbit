@@ -2,11 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/unit_test.hpp>
-#include <boost/test/test_tools.hpp>
-
 #include "test_common.h"
 
+#include <boost/test/test_tools.hpp>
+#include <boost/test/unit_test.hpp>
 #include <vector>
 
 BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
@@ -34,7 +33,7 @@ BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
   BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), true);
@@ -76,7 +75,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
   BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), true);
@@ -122,7 +121,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_uniform_random)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
   BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
@@ -170,7 +169,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
   const auto& reduction_features =
-      examples[0]->_reduction_features.template get<VW::continuous_actions::reduction_features>();
+      examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
   BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), true);
   BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);

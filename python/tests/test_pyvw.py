@@ -5,6 +5,7 @@ import vowpalwabbit
 from vowpalwabbit import Workspace
 import pytest
 import warnings
+import filecmp
 
 BIT_SIZE = 18
 
@@ -40,7 +41,7 @@ class TestVW:
         assert ex.get_tag() == "baz"
 
     def test_num_weights(self):
-        assert self.model.num_weights() == 2 ** BIT_SIZE
+        assert self.model.num_weights() == 2**BIT_SIZE
 
     def test_get_weight(self):
         assert self.model.get_weight(0, 0) == 0
@@ -168,7 +169,9 @@ def test_CBContinuousLabel():
     model = Workspace(
         cats=4, min_value=185, max_value=23959, bandwidth=3000, quiet=True
     )
-    cb_contl = vowpalwabbit.CBContinuousLabel.from_example(model.example("ca 1:10:0.5 |"))
+    cb_contl = vowpalwabbit.CBContinuousLabel.from_example(
+        model.example("ca 1:10:0.5 |")
+    )
     assert cb_contl.costs[0].action == 1
     assert cb_contl.costs[0].pdf_value == 0.5
     assert cb_contl.costs[0].cost == 10.0
@@ -189,7 +192,9 @@ def test_CostSensitiveLabel():
 
 def test_MulticlassProbabilitiesLabel():
     n = 4
-    model = vowpalwabbit.Workspace(loss_function="logistic", oaa=n, probabilities=True, quiet=True)
+    model = vowpalwabbit.Workspace(
+        loss_function="logistic", oaa=n, probabilities=True, quiet=True
+    )
     ex = model.example("1 | a b c d", 2)
     model.learn(ex)
     mpl = vowpalwabbit.MulticlassProbabilitiesLabel.from_example(ex)
@@ -209,7 +214,9 @@ def test_ccb_label():
     ccb_slot_label = vowpalwabbit.CCBLabel.from_example(
         model.example("ccb slot 0:0.8:1.0 0 | slot_0")
     )
-    ccb_slot_pred_label = vowpalwabbit.CCBLabel.from_example(model.example("ccb slot |"))
+    ccb_slot_pred_label = vowpalwabbit.CCBLabel.from_example(
+        model.example("ccb slot |")
+    )
     assert ccb_shared_label.type == vowpalwabbit.CCBLabelType.SHARED
     assert len(ccb_shared_label.explicit_included_actions) == 0
     assert ccb_shared_label.outcome is None
@@ -263,6 +270,7 @@ def test_slates_label():
     assert str(slates_slot_label) == "slates slot 1:0.8,0:0.1,2:0.1"
     del model
 
+
 def test_multilabel_label():
     model = Workspace(multilabel_oaa=5, quiet=True)
     multil = vowpalwabbit.MultilabelLabel.from_example(model.example("1,2,3 |"))
@@ -271,6 +279,7 @@ def test_multilabel_label():
     assert multil.labels[1] == 2
     assert multil.labels[2] == 3
     assert str(multil) == "1,2,3"
+
 
 def test_regressor_args():
     # load and parse external data file
@@ -298,6 +307,17 @@ def test_regressor_args():
     os.remove("{}.cache".format(data_file))
     os.remove("tmp.model")
 
+
+def test_save_to_Path():
+    model = Workspace(quiet=True)
+    model.learn("1 | a b c")
+    model.save(Path("tmp1.model"))
+    model.save("tmp2.model")
+    assert filecmp.cmp("tmp1.model", "tmp2.model")
+    os.remove("tmp1.model")
+    os.remove("tmp2.model")
+
+
 def test_command_line_with_space_and_escape_kwargs():
     # load and parse external data file
     test_file_dir = Path(__file__).resolve().parent
@@ -311,12 +331,20 @@ def test_command_line_with_space_and_escape_kwargs():
     assert model_file.is_file()
     model_file.unlink()
 
+
 def test_command_line_using_arg_list():
     # load and parse external data file
     test_file_dir = Path(__file__).resolve().parent
     data_file = test_file_dir / "resources" / "train file.dat"
 
-    args = ["--oaa", "3", "--data", str(data_file), "--final_regressor", "test model2.vw"]
+    args = [
+        "--oaa",
+        "3",
+        "--data",
+        str(data_file),
+        "--final_regressor",
+        "test model2.vw",
+    ]
     model = Workspace(arg_list=args)
     assert model.predict("| feature1:2.5") == 1
     del model
@@ -325,10 +353,12 @@ def test_command_line_using_arg_list():
     assert model_file.is_file()
     model_file.unlink()
 
+
 def test_command_line_with_double_space_in_str():
     # Test regression for double space in string breaking splitting
-    model = Workspace(arg_list="--oaa 3 -q ::    ")
+    model = Workspace(arg_str="--oaa 3 -q ::    ")
     del model
+
 
 def test_keys_with_list_of_values():
     # No exception in creating and executing model with a key/list pair
@@ -507,6 +537,28 @@ def test_example_features():
     assert ex.pop_namespace()
 
 
+def test_example_features_dict():
+    vw = Workspace(quiet=True)
+    ex = vw.example(
+        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1.5}}
+    )
+    fs = list(ex.iter_features())
+
+    assert (ex.get_feature_id("a", "two"), 1) in fs
+    assert (ex.get_feature_id("a", "features"), 1) in fs
+    assert (ex.get_feature_id("b", "more"), 1) in fs
+    assert (ex.get_feature_id("b", "features"), 1) in fs
+    assert (5, 1.5) in fs
+
+
+def test_example_features_dict_long_long_index():
+    vw = Workspace(quiet=True)
+    ex = vw.example({"a": {2**40: 2}})
+    fs = list(ex.iter_features())
+
+    assert (2**40, 2) in fs
+
+
 def test_get_weight_name():
     model = Workspace(quiet=True)
     model.learn("1 | a a b c |ns x")
@@ -638,3 +690,79 @@ def test_deceprecated_labels():
         vowpalwabbit.pyvw.multiclass_probabilities_label()
         vowpalwabbit.pyvw.cost_sensitive_label()
         vowpalwabbit.pyvw.cbandits_label()
+
+
+def test_random_weights_seed():
+    # TODO: why do we need min_prediction and max_prediction?
+    shared_args = "--random_weights --quiet --min_prediction -50 --max_prediction 50"
+
+    a = Workspace(f"--random_seed 1 {shared_args}")
+    b = Workspace(f"--random_seed 2 {shared_args}")
+
+    dummy_ex_str = " | foo=bar"
+    assert a.predict(dummy_ex_str) != b.predict(dummy_ex_str)
+
+
+def test_merge_models():
+    model1 = vowpalwabbit.Workspace(quiet=True)
+    model1.learn("1 | foo")
+    model1.learn("1 | foo")
+    model2 = vowpalwabbit.Workspace(quiet=True)
+    model2.learn("1 | bar")
+    model2.learn("1 | bar")
+    model2.learn("1 | bar")
+
+    merged_model = vowpalwabbit.merge_models(None, [model1, model2])
+    assert (
+        merged_model.get_weighted_examples()
+        == model1.get_weighted_examples() + model2.get_weighted_examples()
+    )
+    assert model1.get_weight_from_name("foo") != 0
+    assert model1.get_weight_from_name("bar") == 0
+    assert merged_model.get_weight_from_name("foo") != 0
+    assert model2.get_weight_from_name("foo") == 0
+    assert model2.get_weight_from_name("bar") != 0
+    assert merged_model.get_weight_from_name("bar") != 0
+
+
+def test_merge_models_with_base():
+    model_base = vowpalwabbit.Workspace(quiet=True)
+    model_base.learn("1 | foobar")
+    model_base.learn("1 | foobar")
+    model_base.learn("1 | foobar")
+    model_base.save("test_merge_models_with_base.model")
+
+    model1 = vowpalwabbit.Workspace(
+        quiet=True,
+        preserve_performance_counters=True,
+        initial_regressor="test_merge_models_with_base.model",
+    )
+    model1.learn("1 | foo")
+    model1.learn("1 | foo")
+    model2 = vowpalwabbit.Workspace(
+        quiet=True,
+        preserve_performance_counters=True,
+        initial_regressor="test_merge_models_with_base.model",
+    )
+    model2.learn("1 | bar")
+    model2.learn("1 | bar")
+    model2.learn("1 | bar")
+
+    merged_model = vowpalwabbit.merge_models(model_base, [model1, model2])
+    assert merged_model.get_weighted_examples() == (
+        model_base.get_weighted_examples()
+        + (model1.get_weighted_examples() - model_base.get_weighted_examples())
+        + (model2.get_weighted_examples() - model_base.get_weighted_examples())
+    )
+
+    assert model_base.get_weight_from_name("foobar") != 0
+    assert model1.get_weight_from_name("foobar") != 0
+    assert model2.get_weight_from_name("foobar") != 0
+    assert merged_model.get_weight_from_name("foobar") != 0
+
+    assert model1.get_weight_from_name("foo") != 0
+    assert model1.get_weight_from_name("bar") == 0
+    assert merged_model.get_weight_from_name("foo") != 0
+    assert model2.get_weight_from_name("foo") == 0
+    assert model2.get_weight_from_name("bar") != 0
+    assert merged_model.get_weight_from_name("bar") != 0
