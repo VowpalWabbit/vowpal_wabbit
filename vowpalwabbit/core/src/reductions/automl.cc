@@ -114,20 +114,17 @@ void convert_to_single_model(VW::workspace& all, automl<CMType>& data)
     for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << data.cm->weights.stride_shift()); ++stride)
     {
       if (data.cm->weights[index + stride] != 0.0f)
-      {
-        std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]);
-      }
+      { std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]); }
     }
   }
   uint32_t num_bits =
       options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
-  std::set<std::string> aml_opts = { "automl", "global_lease", "cm_type", "priority_type", "priority_challengers", "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level", "fixed_significance_level" };
+  std::set<std::string> aml_opts = {"automl", "global_lease", "cm_type", "priority_type", "priority_challengers",
+      "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level",
+      "fixed_significance_level"};
   for (auto opt : aml_opts)
   {
-    if (options.was_supplied(opt))
-    {
-        options.remove_option(opt);
-    }
+    if (options.was_supplied(opt)) { options.remove_option(opt); }
   }
   options.get_typed_option<uint32_t>("bit_precision").value(num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp)));
   all.num_bits = num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));

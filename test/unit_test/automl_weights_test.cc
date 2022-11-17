@@ -6,8 +6,8 @@
 #include "test_common.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_PRIME
-#include "vw/core/vw_math.h"
 #include "vw/core/learner.h"
+#include "vw/core/vw_math.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>

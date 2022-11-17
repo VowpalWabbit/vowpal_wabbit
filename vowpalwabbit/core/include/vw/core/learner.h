@@ -31,7 +31,6 @@
 #include "vw/core/metric_sink.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/scope_exit.h"
-#include "vw/config/options.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::LEARNER
@@ -343,9 +342,7 @@ public:
   inline void NO_SANITIZE_UNDEFINED convert_to_single_model(VW::workspace& all)
   {
     if (_convert_to_single_model_fd.convert_to_single_model_f != nullptr)
-    {
-      _convert_to_single_model_fd.convert_to_single_model_f(all, _convert_to_single_model_fd.data);
-    }
+    { _convert_to_single_model_fd.convert_to_single_model_f(all, _convert_to_single_model_fd.data); }
     if (_convert_to_single_model_fd.base) { _convert_to_single_model_fd.base->convert_to_single_model(all); }
   }
 
@@ -721,7 +718,8 @@ public:
   FluentBuilderT& set_convert_to_single_model(void (*fn_ptr)(VW::workspace& all, DataT&))
   {
     learner_ptr->_convert_to_single_model_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_convert_to_single_model_fd.convert_to_single_model_f = (details::convert_to_single_model_data::fn)fn_ptr;
+    learner_ptr->_convert_to_single_model_fd.convert_to_single_model_f =
+        (details::convert_to_single_model_data::fn)fn_ptr;
     learner_ptr->_convert_to_single_model_fd.base = learner_ptr->_learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
