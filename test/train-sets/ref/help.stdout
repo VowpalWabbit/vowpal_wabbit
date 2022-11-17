@@ -158,6 +158,8 @@ Output Model Options:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
+    --hexfloat_weights                      Output hexfloat format for floats for human-readable final regressor.
+                                            Useful for debugging/comparing. (type: bool)
     --dump_json_weights_experimental arg    Output json representation of model parameters. (type: str, experimental)
     --dump_json_weights_include_feature_names_experimental
                                             Whether to include feature names in json output (type: bool,
