@@ -6,6 +6,7 @@
 
 #include "vw/config/options.h"
 #include "vw/core/interactions.h"
+#include "vw/core/learner.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -18,17 +19,18 @@
 
 using namespace VW::config;
 
-static constexpr size_t num_cols = 3;
-static constexpr std::array<VW::column_definition, num_cols> AUDIT_REGRESSOR_COLUMNS = {
+static constexpr size_t NUM_COLS = 3;
+static constexpr std::array<VW::column_definition, NUM_COLS> AUDIT_REGRESSOR_COLUMNS = {
     VW::column_definition(8, VW::align_type::left, VW::wrap_type::wrap_space),    // example counter
     VW::column_definition(9, VW::align_type::right, VW::wrap_type::wrap_space),   // values audited
     VW::column_definition(12, VW::align_type::right, VW::wrap_type::wrap_space),  // total progress
 };
-static const std::array<std::string, num_cols> AUDIT_REGRESSOR_HEADER = {
+static const std::array<std::string, NUM_COLS> AUDIT_REGRESSOR_HEADER = {
     "example\ncounter", "values\naudited", "total\nprogress"};
 
-struct audit_regressor_data
+class audit_regressor_data
 {
+public:
   audit_regressor_data(VW::workspace* all, std::unique_ptr<VW::io::writer>&& output) : all(all)
   {
     out_file.add_file(std::move(output));
@@ -109,7 +111,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
                  << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
-        weight& w = weights[(fs.indices[j] + k)];
+        VW::weight& w = weights[(fs.indices[j] + k)];
         tempstream << ':' << w;
         w = 0.;
       }
@@ -160,14 +162,14 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.sparse_weights, num_interacted_features,
-            rd.all->_generate_interactions_object_cache);
+            rd.all->generate_interactions_object_cache_state);
       }
       else
       {
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features,
-            rd.all->_generate_interactions_object_cache);
+            rd.all->generate_interactions_object_cache_state);
       }
 
       ec.ft_offset += rd.increment;

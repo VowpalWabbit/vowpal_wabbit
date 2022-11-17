@@ -6,6 +6,8 @@
 
 #include "test_common.h"
 #include "vw/core/cb_label_parser.h"
+#include "vw/core/learner.h"
+#include "vw/core/simple_label.h"
 
 #include <boost/test/unit_test.hpp>
 
@@ -22,19 +24,35 @@ std::ostream& operator<<(std::ostream& os, const VW::reductions::cats::tree_node
 }
 }  // namespace std
 
-struct reduction_test_harness
+namespace VW
 {
-  reduction_test_harness() : _curr_idx(0) {}
+std::ostream& operator<<(std::ostream& o, VW::simple_label const& lbl)
+{
+  o << "{l=" << lbl.label << "}";
+  return o;
+}
 
-  void set_predict_response(const vector<float>& predictions) { _predictions = predictions; }
+std::ostream& operator<<(std::ostream& o, VW::simple_label_reduction_features const& red_fts)
+{
+  o << "{w=" << red_fts.weight << ", i=" << red_fts.initial << "}";
+  return o;
+}
+}  // namespace VW
 
-  void test_predict(base_learner& base, VW::example& ec) { ec.pred.scalar = _predictions[_curr_idx++]; }
+class reduction_test_harness
+{
+public:
+  reduction_test_harness() : curr_idx(0) {}
+
+  void set_predict_response(const vector<float>& preds) { predictions = preds; }
+
+  void test_predict(base_learner& base, VW::example& ec) { ec.pred.scalar = predictions[curr_idx++]; }
 
   void test_learn(base_learner& base, VW::example& ec)
   {
-    _labels.emplace_back(ec.l.simple);
-    _weights.emplace_back(ec.weight);
-    _learner_offset.emplace_back(ec.ft_offset);
+    labels.emplace_back(ec.l.simple);
+    weights.emplace_back(ec.weight);
+    learner_offset.emplace_back(ec.ft_offset);
   }
 
   // use NO_SANITIZE_UNDEFINED because reference base_learner& base may be bound to nullptr
@@ -48,11 +66,11 @@ struct reduction_test_harness
     test_reduction.test_learn(base, ec);
   };
 
-  vector<float> _predictions;
-  vector<label_data> _labels;
-  vector<float> _weights;
-  vector<uint64_t> _learner_offset;
-  int _curr_idx;
+  vector<float> predictions;
+  vector<VW::simple_label> labels;
+  vector<float> weights;
+  vector<uint64_t> learner_offset;
+  int curr_idx;
 };
 
 using test_learner_t = learner<reduction_test_harness, VW::example>;
@@ -77,7 +95,7 @@ learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_re
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
-      "test_learner", VW::prediction_type_t::scalar, VW::label_type_t::cb)
+      "test_learner", VW::prediction_type_t::SCALAR, VW::label_type_t::CB)
                           .build();  // Create a learner using the base reduction.
   return test_learner;
 }
@@ -94,23 +112,11 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   delete test_base;
 }
 
-bool operator!=(const label_data& lhs, const label_data& rhs) { return !(lhs.label == rhs.label); }
+bool operator!=(const VW::simple_label& lhs, const VW::simple_label& rhs) { return !(lhs.label == rhs.label); }
 
-bool operator!=(const simple_label_reduction_features& lhs, const simple_label_reduction_features& rhs)
+bool operator!=(const VW::simple_label_reduction_features& lhs, const VW::simple_label_reduction_features& rhs)
 {
   return !(lhs.weight == rhs.weight && lhs.initial == rhs.initial);
-}
-
-std::ostream& operator<<(std::ostream& o, label_data const& lbl)
-{
-  o << "{l=" << lbl.label << "}";
-  return o;
-}
-
-std::ostream& operator<<(std::ostream& o, simple_label_reduction_features const& red_fts)
-{
-  o << "{w=" << red_fts.weight << ", i=" << red_fts.initial << "}";
-  return o;
 }
 
 BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
@@ -123,25 +129,25 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
 
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
 
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}, {1}};
+  vector<VW::simple_label> expected_labels = {{-1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -157,24 +163,24 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
 
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
 
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}};
+  vector<VW::simple_label> expected_labels = {{-1}};
   vector<float> expected_weights = {3.5f / 0.5f};
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -184,7 +190,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
 {
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 4, 0.5f});
@@ -199,17 +205,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}, {1}};
+  vector<VW::simple_label> expected_labels = {{-1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -219,7 +225,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
 {
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
@@ -234,17 +240,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}, {1}, {1}, {1}};
+  vector<VW::simple_label> expected_labels = {{-1}, {1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {3, 4, 1, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -254,7 +260,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
 {
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
@@ -269,7 +275,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {
+  vector<VW::simple_label> expected_labels = {
       {1},
       {1},
       {1},
@@ -277,13 +283,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {4, 1, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -293,7 +299,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
 {
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 6, 0.5f});
@@ -308,17 +314,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{-1}, {1}, {-1}};
+  vector<VW::simple_label> expected_labels = {{-1}, {1}, {-1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 2, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -328,7 +334,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
 {
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 7, 0.5f});
@@ -343,17 +349,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{1}, {-1}, {1}, {1}};
+  vector<VW::simple_label> expected_labels = {{1}, {-1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {6, 1, 2, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -363,7 +369,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
 {
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 6, 0.5f});
@@ -378,17 +384,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {};
+  vector<VW::simple_label> expected_labels = {};
   vector<float> expected_weights = {};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -398,7 +404,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
 {
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 3, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 11, 0.5f});
@@ -413,17 +419,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {{1}, {1}, {1}};
+  vector<VW::simple_label> expected_labels = {{1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {12, 5, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;
@@ -433,7 +439,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
 {
   VW::example ec;
   ec.ft_offset = 0;
-  ec._debug_current_reduction_depth = 0;
+  ec.debug_current_reduction_depth = 0;
   ec.l.cb = CB::label();
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 2, 0.5f});
   ec.l.cb.costs.push_back(CB::cb_class{3.5f, 5, 0.5f});
@@ -448,7 +454,7 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<label_data> expected_labels = {
+  vector<VW::simple_label> expected_labels = {
       {1},
       {1},
       {1},
@@ -456,13 +462,13 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_labels.begin(), pharness->_labels.end(), expected_labels.begin(), expected_labels.end());
+      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
   BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->_weights.begin(), pharness->_weights.end(), expected_weights.begin(), expected_weights.end());
+      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {5, 2, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->_learner_offset.begin(), pharness->_learner_offset.end(),
+  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
       expected_learners.begin(), expected_learners.end());
 
   delete base;

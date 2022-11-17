@@ -17,18 +17,19 @@
 
 namespace
 {
-struct reduction_data
+class reduction_data
 {
-  VW::workspace* _all = nullptr;
-  VW::LEARNER::base_learner* _base = nullptr;
+public:
+  VW::workspace* all = nullptr;
+  VW::LEARNER::base_learner* base = nullptr;
 
-  explicit reduction_data(VW::workspace* all, VW::LEARNER::base_learner* base) : _all(all), _base(base) {}
+  explicit reduction_data(VW::workspace* all, VW::LEARNER::base_learner* base) : all(all), base(base) {}
 };
 
 template <bool is_learn>
 void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  shared_data* sd = data._all->sd;
+  shared_data* sd = data.all->sd;
   VW::count_label(*sd, ec.l.simple.label);
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
@@ -41,7 +42,7 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
 template <bool is_learn>
 void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq)
 {
-  shared_data* sd = data._all->sd;
+  shared_data* sd = data.all->sd;
   for (const auto* ex : ec_seq) { VW::count_label(*sd, ex->l.simple.label); }
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec_seq); }
@@ -54,11 +55,11 @@ void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, V
 // This reduction must delegate finish to the one it is above as this is just a utility counter.
 void finish_example_multi(VW::workspace& all, reduction_data& data, VW::multi_ex& ec)
 {
-  VW::LEARNER::as_multiline(data._base)->finish_example(all, ec);
+  VW::LEARNER::as_multiline(data.base)->finish_example(all, ec);
 }
 void finish_example_single(VW::workspace& all, reduction_data& data, VW::example& ec)
 {
-  VW::LEARNER::as_singleline(data._base)->finish_example(all, ec);
+  VW::LEARNER::as_singleline(data.base)->finish_example(all, ec);
 }
 }  // namespace
 
@@ -80,7 +81,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
   auto base_label_type = all->example_parser->lbl_parser.label_type;
   if (dont_output_best_constant)
   {
-    if (base_label_type != label_type_t::simple)
+    if (base_label_type != label_type_t::SIMPLE)
     {
       all->logger.out_warn(
           "--dont_output_best_constant is not relevant. best constant is only tracked if the label type is simple.");
@@ -93,7 +94,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
   // return nullptr if the reduction is not active. However, in this reduction we
   // have already constructed the base. So we must return what we've already
   // constructed but it works because we aren't part of it
-  if (base_label_type != label_type_t::simple) { return base; }
+  if (base_label_type != label_type_t::SIMPLE) { return base; }
 
   auto data = VW::make_unique<reduction_data>(all, base);
   if (base->is_multiline())
@@ -102,7 +103,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
         count_label_multi<true>, count_label_multi<false>, stack_builder.get_setupfn_name(count_label_setup))
                         .set_learn_returns_prediction(base->learn_returns_prediction)
                         .set_output_prediction_type(base->get_output_prediction_type())
-                        .set_input_label_type(label_type_t::simple)
+                        .set_input_label_type(label_type_t::SIMPLE)
                         .set_finish_example(finish_example_multi)
                         .build();
     return VW::LEARNER::make_base(*learner);
@@ -112,7 +113,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .set_output_prediction_type(base->get_output_prediction_type())
-                      .set_input_label_type(label_type_t::simple)
+                      .set_input_label_type(label_type_t::SIMPLE)
                       .set_finish_example(finish_example_single)
                       .build();
   return VW::LEARNER::make_base(*learner);

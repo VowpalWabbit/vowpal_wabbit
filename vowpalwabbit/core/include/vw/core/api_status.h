@@ -65,8 +65,9 @@ private:
 /**
  * @brief Helper class used in report_error template funcstions to return status from API calls.
  */
-struct status_builder
+class status_builder
 {
+public:
   /**
    * @brief Construct a new status builder object
    *

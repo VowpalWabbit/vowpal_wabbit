@@ -45,11 +45,11 @@ TEST(test_suite_thread_pool, test_thread_pool_with_zero_threads)
   std::vector<std::vector<size_t>> vector_of_vectors;
   vector_of_vectors.resize(outer_vector_size);
 
-  VW::thread_pool thread_pool_(0);
+  VW::thread_pool thread_pool(0);
   std::vector<std::future<size_t>> fts;
 
   for (size_t i = 0; i < vector_of_vectors.size(); i++)
-  { fts.emplace_back(thread_pool_.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
+  { fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
 
   for (auto& ft : fts)
   {
@@ -68,11 +68,11 @@ TEST(test_suite_thread_pool, test_thread_pool_with_more_threads_than_tasks)
   std::vector<std::vector<size_t>> vector_of_vectors;
   vector_of_vectors.resize(outer_vector_size);
 
-  VW::thread_pool thread_pool_(20);
+  VW::thread_pool thread_pool(20);
   std::vector<std::future<size_t>> fts;
 
   for (size_t i = 0; i < vector_of_vectors.size(); i++)
-  { fts.emplace_back(thread_pool_.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
+  { fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
 
   for (auto& ft : fts)
   {
@@ -91,11 +91,11 @@ TEST(test_suite_thread_pool, test_thread_pool_with_less_threads_than_tasks)
   std::vector<std::vector<size_t>> vector_of_vectors;
   vector_of_vectors.resize(outer_vector_size);
 
-  VW::thread_pool thread_pool_(5);
+  VW::thread_pool thread_pool(5);
   std::vector<std::future<size_t>> fts;
 
   for (size_t i = 0; i < vector_of_vectors.size(); i++)
-  { fts.emplace_back(thread_pool_.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
+  { fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
 
   for (auto& ft : fts)
   {

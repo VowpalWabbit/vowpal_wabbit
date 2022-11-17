@@ -23,6 +23,7 @@
 #include "vw/core/reductions/cats.h"
 #include "vw/core/reductions/cats_pdf.h"
 #include "vw/core/reductions/cats_tree.h"
+#include "vw/core/reductions/cb/cb_actions_mask.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/reductions/cb/cb_dro.h"
@@ -31,10 +32,7 @@
 #include "vw/core/reductions/cb/cb_explore_adf_cover.h"
 #include "vw/core/reductions/cb/cb_explore_adf_first.h"
 #include "vw/core/reductions/cb/cb_explore_adf_greedy.h"
-#ifdef BUILD_LARGE_ACTION_SPACE
-#  include "vw/core/reductions/cb/cb_actions_mask.h"
-#  include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
-#endif
+#include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/reductions/cb/cb_explore_adf_regcb.h"
 #include "vw/core/reductions/cb/cb_explore_adf_rnd.h"
 #include "vw/core/reductions/cb/cb_explore_adf_softmax.h"
@@ -98,20 +96,16 @@
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
 {
-  std::map<reduction_setup_fn, std::string> allowlist = {
-      {VW::reductions::gd_setup, "gd"}, {VW::reductions::ftrl_setup, "ftrl"}, {VW::reductions::sender_setup, "sender"},
-      {VW::reductions::nn_setup, "nn"}, {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
+  std::map<reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
+      {VW::reductions::ftrl_setup, "ftrl"}, {VW::reductions::sender_setup, "sender"}, {VW::reductions::nn_setup, "nn"},
+      {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
       {VW::reductions::csldf_setup, "csoaa_ldf"},
       {VW::reductions::cb_explore_adf_greedy_setup, "cb_explore_adf_greedy"},
       {VW::reductions::cb_explore_adf_regcb_setup, "cb_explore_adf_regcb"},
       {VW::reductions::shared_feature_merger_setup, "shared_feature_merger"},
       {VW::reductions::generate_interactions_setup, "generate_interactions"},
-      {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"}
-#ifdef BUILD_LARGE_ACTION_SPACE
-      ,
-      {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}
-#endif
-  };
+      {VW::reductions::count_label_setup, "count_label"}, {VW::reductions::cb_to_cb_adf_setup, "cb_to_cbadf"},
+      {VW::reductions::cb_actions_mask_setup, "cb_actions_mask"}};
 
   auto name_extractor = VW::config::options_name_extractor();
   VW::workspace dummy_all(VW::io::create_null_logger());
@@ -155,7 +149,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
 
   // Score Users
   reductions.push_back(VW::reductions::baseline_setup);
-  reductions.push_back(VW::reductions::expreplay_setup<'b', simple_label_parser>);
+  reductions.push_back(VW::reductions::expreplay_setup<'b', VW::simple_label_parser_global>);
   reductions.push_back(VW::reductions::active_setup);
   reductions.push_back(VW::reductions::active_cover_setup);
   reductions.push_back(VW::reductions::confidence_setup);
@@ -173,7 +167,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::bs_setup);
   reductions.push_back(VW::reductions::binary_setup);
 
-  reductions.push_back(VW::reductions::expreplay_setup<'m', MULTICLASS::mc_label>);
+  reductions.push_back(VW::reductions::expreplay_setup<'m', VW::multiclass_label_parser_global>);
   reductions.push_back(VW::reductions::topk_setup);
   reductions.push_back(VW::reductions::oaa_setup);
   reductions.push_back(VW::reductions::boosting_setup);
@@ -197,9 +191,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::baseline_challenger_cb_setup);
   reductions.push_back(VW::reductions::automl_setup);
   reductions.push_back(VW::reductions::cb_explore_setup);
-#ifdef BUILD_LARGE_ACTION_SPACE
   reductions.push_back(VW::reductions::cb_explore_adf_large_action_space_setup);
-#endif
   reductions.push_back(VW::reductions::cb_explore_adf_greedy_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_softmax_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_rnd_setup);
@@ -213,9 +205,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);
   reductions.push_back(VW::reductions::epsilon_decay_setup);
-#ifdef BUILD_LARGE_ACTION_SPACE
   reductions.push_back(VW::reductions::cb_actions_mask_setup);
-#endif
   reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
   reductions.push_back(VW::reductions::slates_setup);
@@ -231,7 +221,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cbifyldf_setup);
   reductions.push_back(VW::reductions::cb_to_cb_adf_setup);
   reductions.push_back(VW::reductions::offset_tree_setup);
-  reductions.push_back(VW::reductions::expreplay_setup<'c', COST_SENSITIVE::cs_label>);
+  reductions.push_back(VW::reductions::expreplay_setup<'c', VW::cs_label_parser_global>);
   reductions.push_back(VW::reductions::search_setup);
   reductions.push_back(VW::reductions::audit_regressor_setup);
   reductions.push_back(VW::reductions::metrics_setup);
@@ -245,37 +235,37 @@ namespace VW
 default_reduction_stack_setup::default_reduction_stack_setup(VW::workspace& all, VW::config::options_i& options)
 {
   // push all reduction functions into the stack
-  prepare_reductions(reduction_stack);
+  prepare_reductions(_reduction_stack);
   delayed_state_attach(all, options);
 }
 
-default_reduction_stack_setup::default_reduction_stack_setup() { prepare_reductions(reduction_stack); }
+default_reduction_stack_setup::default_reduction_stack_setup() { prepare_reductions(_reduction_stack); }
 
 // this should be reworked, but its setup related to how setup is tied with all object
 // which is not applicable to everything
 void default_reduction_stack_setup::delayed_state_attach(VW::workspace& all, VW::config::options_i& options)
 {
-  all_ptr = &all;
-  options_impl = &options;
+  _all_ptr = &all;
+  _options_impl = &options;
   // populate setup_fn -> name map to be used to lookup names in setup_base
-  all.build_setupfn_name_dict(reduction_stack);
+  all.build_setupfn_name_dict(_reduction_stack);
 }
 
-// this function consumes all the reduction_stack until it's able to construct a base_learner
+// this function consumes all the _reduction_stack until it's able to construct a base_learner
 // same signature/code as the old setup_base(...) from parse_args.cc
 VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
 {
-  if (!reduction_stack.empty())
+  if (!_reduction_stack.empty())
   {
-    auto func_map = reduction_stack.back();
+    auto func_map = _reduction_stack.back();
     reduction_setup_fn setup_func = std::get<1>(func_map);
     std::string setup_func_name = std::get<0>(func_map);
-    reduction_stack.pop_back();
+    _reduction_stack.pop_back();
 
     // 'hacky' way of keeping track of the option group created by the setup_func about to be created
-    options_impl->tint(setup_func_name);
+    _options_impl->tint(setup_func_name);
     auto base = setup_func(*this);
-    options_impl->reset_tint();
+    _options_impl->reset_tint();
 
     // returning nullptr means that setup_func (any reduction) was not 'enabled' but
     // only added their respective command args and did not add itself into the
@@ -283,7 +273,7 @@ VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
     if (base == nullptr) { return this->setup_base_learner(); }
     else
     {
-      reduction_stack.clear();
+      _reduction_stack.clear();
       return base;
     }
   }
@@ -293,6 +283,6 @@ VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
 
 std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn setup)
 {
-  return all_ptr->get_setupfn_name(setup);
+  return _all_ptr->get_setupfn_name(setup);
 }
 }  // namespace VW

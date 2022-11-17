@@ -52,13 +52,9 @@ jobs:
         run: |
           cd build
           ctest --verbose --output-on-failure
-      - name: Run python test script - Windows
-        # separate case needed for windows because of test 67
-        if: ${{ startsWith(matrix.os, 'windows') && (success() || failure()) }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 67 --jobs 1
-      - name: Run python test script - Unix
-        if: ${{ !startsWith(matrix.os, 'windows') && (success() || failure()) }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers
+      - name: Run python test script
+        if: ${{ success() || failure() }}
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1
 
   test_ubsan_minimal:
   # To avoid running out of disk space, build only VW executables and Boost unit tests on Linux
@@ -88,7 +84,7 @@ jobs:
       - name: Build
         run: cmake --build build --target vw_cli_bin spanning_tree vw-unit-test.out
       - name: Run unit tests
-        run: ./build/test/unit_test/vw-unit-test.out
+        run: ./build/test/unit_test/vw-unit-test.out --run_test='!*w_iterations*'
       - name: Run python test script
         if: ${{ success() || failure() }}
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers

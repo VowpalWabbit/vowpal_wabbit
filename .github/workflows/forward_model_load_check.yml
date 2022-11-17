@@ -1,4 +1,4 @@
-name: Model checks
+name: Forward Model checks
 
 # This file is for checking that models generated from newer VW code do not cause crashes when loaded into older VW code
 # Generate a model using latest wheel and load the same model using the latest vw master branch
@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: vw_generated_models
-          path: ~/.vw_runtests_model_gen_working_dir/test_models/*
+          path: ~/.vw_runtests_model_gen_working_dir/*
           if-no-files-found: error
   test-latest-model:
     name: Test latest model with current master
@@ -75,7 +75,7 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: vw_generated_models
-          path: .vw_runtests_model_gen_working_dir/test_models
+          path: .vw_runtests_model_gen_working_dir
       - name: Test loading model with current master
         shell: bash
         run: |

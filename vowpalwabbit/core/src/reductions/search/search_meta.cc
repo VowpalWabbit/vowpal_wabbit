@@ -63,8 +63,9 @@ std::ostream& operator<<(std::ostream& os, const std::pair<unsigned int, float>&
   return os;
 }
 
-struct task_data
+class task_data
 {
+public:
   size_t max_branches, kbest;
   std::vector<branch> branches;
   std::vector<std::pair<branch, std::string*> > final;
@@ -129,7 +130,9 @@ void run(Search::search& sch, VW::multi_ex& ec)
         branch.insert(branch.end(), std::begin(d.trajectory), std::end(d.trajectory));
         branch.push_back(std::make_pair(a, a_cost));
         d.branches.push_back(std::make_pair(delta, branch));
-        cdbg << "adding branch: " << delta << " -> " << branch << std::endl;
+        cdbg << "adding branch: " << delta << " -> [";
+        for (auto& item : branch) { cdbg << ' ' << item.first << ':' << item.second; }
+        cdbg << ']' << std::endl;
       })
       .post_prediction([](Search::search& sch, size_t /*t*/, action a, float a_cost) -> void {
         task_data& d = *sch.get_metatask_data<task_data>();
@@ -163,7 +166,9 @@ void run(Search::search& sch, VW::multi_ex& ec)
     d.total_cost = 0.;
     d.output_string = nullptr;
 
-    cdbg << "*** BRANCH " << i << " *** " << d.branches[i].first << " : " << d.branches[i].second << std::endl;
+    cdbg << "*** BRANCH " << i << " *** " << d.branches[i].first << " : [";
+    for (auto& item : d.branches[i].second) { cdbg << ' ' << item.first << ':' << item.second; }
+    cdbg << ']' << std::endl;
     sch.base_task(ec)
         .foreach_action([](Search::search& /*sch*/, size_t /*t*/, float /*min_cost*/, action /*a*/, bool /*taken*/,
                             float /*a_cost*/) -> void {})

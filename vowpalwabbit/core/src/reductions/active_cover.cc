@@ -5,6 +5,7 @@
 #include "vw/core/reductions/active_cover.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
@@ -21,8 +22,9 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-struct active_cover
+class active_cover
 {
+public:
   // active learning algorithm parameters
   float active_c0 = 0.f;
   float alpha = 0.f;
@@ -34,7 +36,7 @@ struct active_cover
   float* lambda_d = nullptr;
 
   VW::workspace* all = nullptr;  // statistics, loss
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
 
   ~active_cover()
   {
@@ -101,7 +103,7 @@ float query_decision(active_cover& a, single_learner& l, VW::example& ec, float 
 
   if (std::isnan(p)) { p = 1.f; }
 
-  if (a._random_state->get_and_update_random() <= p) { return 1.f / p; }
+  if (a.random_state->get_and_update_random() <= p) { return 1.f / p; }
   else
   {
     return -1.f;
@@ -240,7 +242,7 @@ base_learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
   data->beta_scale *= data->beta_scale;
   data->cover_size = VW::cast_to_smaller_type<size_t>(cover_size);
 
@@ -265,10 +267,10 @@ base_learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
       predict_or_learn_active_cover<false>, stack_builder.get_setupfn_name(active_cover_setup))
                 .set_params_per_weight(saved_cover_size + 1)
-                .set_input_prediction_type(VW::prediction_type_t::scalar)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_label_type(VW::label_type_t::simple)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
                 .build();
   return make_base(*l);
 }

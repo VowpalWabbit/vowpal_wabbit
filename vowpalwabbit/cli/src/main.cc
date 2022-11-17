@@ -6,6 +6,7 @@
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
@@ -127,7 +128,7 @@ int main(int argc, char* argv[])
   }
   catch (VW::vw_exception& e)
   {
-    main_logger.err_critical("vw ({}:{}): {}", e.Filename(), e.LineNumber(), e.what());
+    main_logger.err_critical("vw ({}:{}): {}", e.filename(), e.line_number(), e.what());
     return 1;
   }
   catch (std::exception& e)

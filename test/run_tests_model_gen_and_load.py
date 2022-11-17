@@ -68,7 +68,7 @@ def create_test_dir(
         shutil.copy(str(file_to_copy), str(test_dest_file))
 
 
-def generate_model(
+def generate_model_and_weights(
     test_id: int,
     command: str,
     working_dir: Path,
@@ -76,8 +76,18 @@ def generate_model(
 ) -> None:
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
     vw = vowpalwabbit.Workspace(command, quiet=True)
-
-    vw.save(str(working_dir / f"model_{test_id}.vw"))
+    weights_dir = working_dir / "test_weights"
+    weights_dir.mkdir(parents=True, exist_ok=True)
+    with open(weights_dir / f"weights_{test_id}.json", "w") as weights_file:
+        try:
+            weights_file.write(vw.json_weights())
+        except:
+            print(
+                f"{color_enum.LIGHT_PURPLE}Weights could not be generated as base learner is KSVM"
+            )
+    test_models_dir = working_dir / "test_models"
+    test_models_dir.mkdir(parents=True, exist_ok=True)
+    vw.save(str(test_models_dir / f"model_{test_id}.vw"))
     vw.finish()
 
 
@@ -87,24 +97,50 @@ def load_model(
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
-    model_file = str(working_dir / f"model_{test_id}.vw")
-    command = command + f" -i {model_file}"
+    model_file = str(working_dir / "test_models" / f"model_{test_id}.vw")
+    load_command = f" -i {model_file}"
 
-    # link is changed in some reductions so it will clash with saved model
-    if "--link" in command:
-        command = re.sub("--link [:a-zA-Z0-9_.\\-/]*", "", command)
-        command = re.sub("--link=[:a-zA-Z0-9_.\\-/]*", "", command)
-    # random seed state is stored in the model so it will clash if passed again
-    if "--random_seed" in command:
-        command = re.sub("--random_seed [0-9]*", "", command)
-        command = re.sub("--random_seed=[0-9]*", "", command)
+    # Some options must be manually kept when loading a model
+    keep_commands = [
+        "--simulation",
+        "--eval",
+        "--compete",
+        "--cbify_reg",
+        "--sparse_weights",
+    ]
+    for k in keep_commands:
+        if k in command:
+            load_command += f" {k}"
+
+    # Some options with one arg must be manually kept
+    keep_arg_commands = [
+        "--dictionary_path",
+        "--loss_function",
+    ]
+    for k in keep_arg_commands:
+        cmd_split = command.split(" ")
+        for i, v in enumerate(cmd_split):
+            if v == k:
+                load_command += f" {v} {cmd_split[i + 1]}"
 
     print(
-        f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {command}{color_enum.ENDC}"
+        f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {load_command}{color_enum.ENDC}"
     )
 
     try:
-        vw = vowpalwabbit.Workspace(command, quiet=True)
+        vw = vowpalwabbit.Workspace(load_command, quiet=True)
+        try:
+            new_weights = json.loads(vw.json_weights())
+        except:
+            print(
+                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is KSVM"
+            )
+            return
+        weights_dir = working_dir / "test_weights"
+        weights_dir.mkdir(parents=True, exist_ok=True)
+        weight_file = str(weights_dir / f"weights_{test_id}.json")
+        old_weights = json.load(open(weight_file))
+        assert new_weights == old_weights
         vw.finish()
     except Exception as e:
         print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
@@ -186,29 +222,31 @@ def get_tests(
 
 def generate_all(
     tests: List[TestData],
-    model_working_dir: Path,
+    output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
-    os.chdir(model_working_dir.parent)
+    os.chdir(output_working_dir.parent)
     for test in tests:
-        generate_model(test.id, test.command_line, model_working_dir, color_enum)
+        generate_model_and_weights(
+            test.id, test.command_line, output_working_dir, color_enum
+        )
 
-    print(f"stored models in: {model_working_dir}")
+    print(f"stored models in: {output_working_dir}")
 
 
 def load_all(
     tests: List[TestData],
-    model_working_dir: Path,
+    output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
 ) -> None:
-    os.chdir(model_working_dir.parent)
-    if len(os.listdir(model_working_dir)) != len(tests):
+    os.chdir(output_working_dir.parent)
+    if len(os.listdir(output_working_dir / "test_models")) != len(tests):
         print(
-            f"{color_enum.LIGHT_RED} Warning: There is a mismatch between the number of models in {model_working_dir} and the number of tests that will attempt to load them {color_enum.ENDC}"
+            f"{color_enum.LIGHT_RED} Warning: There is a mismatch between the number of models in {output_working_dir} and the number of tests that will attempt to load them {color_enum.ENDC}"
         )
 
     for test in tests:
-        load_model(test.id, test.command_line, model_working_dir, color_enum)
+        load_model(test.id, test.command_line, output_working_dir, color_enum)
 
 
 def main():
@@ -255,7 +293,7 @@ def main():
     color_enum = NoColor if args.no_color else Color
 
     temp_working_dir = Path.home() / default_working_dir_name
-    test_model_dir = Path.home() / default_working_dir_name / "test_models"
+    test_output_dir = Path.home() / default_working_dir_name / "outputs"
 
     if args.clear_working_dir:
         if args.load_models:
@@ -268,16 +306,16 @@ def main():
 
     else:
         temp_working_dir.mkdir(parents=True, exist_ok=True)
-        test_model_dir.mkdir(parents=True, exist_ok=True)
-        tests = get_tests(test_model_dir, temp_working_dir, args.test)
+        test_output_dir.mkdir(parents=True, exist_ok=True)
+        tests = get_tests(test_output_dir, temp_working_dir, args.test)
 
         if args.generate_models:
-            generate_all(tests, test_model_dir, color_enum)
+            generate_all(tests, test_output_dir, color_enum)
         elif args.load_models:
-            load_all(tests, test_model_dir, color_enum)
+            load_all(tests, test_output_dir, color_enum)
         elif args.generate_and_load:
-            generate_all(tests, test_model_dir, color_enum)
-            load_all(tests, test_model_dir, color_enum)
+            generate_all(tests, test_output_dir, color_enum)
+            load_all(tests, test_output_dir, color_enum)
         else:
             print(
                 f"{color_enum.LIGHT_GREEN}Specify a run option, use --help for more info {color_enum.ENDC}"

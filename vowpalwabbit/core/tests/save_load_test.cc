@@ -6,6 +6,7 @@
 #include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -40,8 +41,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
       "0.583484 |T EWU |f t1:-0.0221598 t5:-0.162901 r5:0.429709 t10:-0.0214379 r10:0.745645 t20:0.0748484 "
       "r20:0.880457 t40:0.0230047 r40:0.486719 t60:0.0319379 r60:0.619057 t90:0.0519471 r90:0.732452"};
 
-  auto vw_all_data_single_run = VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--no_stdin", "--quiet"}));
+  auto vw_all_data_single_run = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet"));
 
   for (const auto& item : input_data)
   {
@@ -52,8 +52,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
     vw_all_data_single_run->finish_example(ex);
   }
 
-  auto vw_first_half = VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--no_stdin", "--quiet"}));
+  auto vw_first_half = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet"));
 
   for (size_t i = 0; i < 5; i++)
   {
@@ -70,10 +69,9 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   VW::save_predictor(*vw_first_half, io_writer);
   io_writer.flush();
 
-  auto vw_second_half_from_loaded = VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(
-          std::vector<std::string>{"--no_stdin", "--quiet", "--preserve_performance_counters"}),
-      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+  auto vw_second_half_from_loaded =
+      VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
+          VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   for (size_t i = 5; i < 10; i++)
   {

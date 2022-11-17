@@ -17,8 +17,9 @@ namespace VW
 {
 namespace parsers
 {
-struct csv_parser_options
+class csv_parser_options
 {
+public:
   bool enabled = false;
   // CSV parsing configurations
   std::string csv_separator = ",";

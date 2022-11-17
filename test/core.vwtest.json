@@ -3144,7 +3144,7 @@
   },
   {
     "id": 244,
-    "desc": "Flatbuffer CB_eval test",
+    "desc": "Flatbuffer CB_EVAL test",
     "vw_command": "-d train-sets/rcv1_cb_eval.fb --cb 2 --eval --flatbuffer",
     "diff_files": {
       "stderr": "train-sets/ref/rcv1_cb_eval_fb.stderr",
@@ -5413,6 +5413,56 @@
     ],
     "depends_on": [
       418
+    ]
+  },
+  {
+    "id": 420,
+    "desc": "Save model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -f models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_save.stderr",
+      "stdout": "train-sets/ref/ksvm_model_save.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat"
+    ]
+  },
+  {
+    "id": 421,
+    "desc": "Load model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -i models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_load.stderr",
+      "stdout": "train-sets/ref/ksvm_model_load.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat",
+      "models/ksvm_flat.model"
+    ],
+    "depends_on": [
+      420
+    ]
+  },
+  {
+    "id": 422,
+    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default block_size",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_block_size_1.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 423,
+    "desc": "explore_eval evaluate same policy as logged policy, with block_size > 1 there should be at most ((#examples / block_size) + 1) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --block_size 5",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_block_size_5.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
     ]
   }
 ]

@@ -4,10 +4,8 @@
 
 #pragma once
 
-#include <algorithm>
 #include <limits>
 #include <string>
-#include <tuple>
 
 constexpr float BASELINE_DEFAULT_TAU = 0.999f;
 constexpr float CRESSEREAD_DEFAULT_TAU = 1.0f;
@@ -18,7 +16,7 @@ namespace VW
 {
 namespace distributionally_robust
 {
-struct Duals;
+class Duals;
 class ChiSquared;
 }  // namespace distributionally_robust
 
@@ -32,8 +30,9 @@ size_t write_model_field(io_buf&, const VW::distributionally_robust::ChiSquared&
 
 namespace distributionally_robust
 {
-struct Duals
+class Duals
 {
+public:
   bool unbounded;
   double kappa;
   double gamma;
@@ -69,32 +68,12 @@ using ScoredDual = std::pair<double, Duals>;
 // https://en.wikipedia.org/wiki/Divergence_(statistics)
 class ChiSquared
 {
-private:
-  double alpha;
-  double tau;
-  double wmin;
-  double wmax;
-  double rmin;
-  double rmax;
-
-  double n;
-  double sumw;
-  double sumwsq;
-  double sumwr;
-  double sumwsqr;
-  double sumwsqrsq;
-
-  double delta;
-
-  bool duals_stale;
-  ScoredDual duals;
-
 public:
   // alpha: confidence level
   // tau: count decay time constant
   explicit ChiSquared(double _alpha, double _tau, double _wmin = 0.0,
       double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0.0, double _rmax = 1.0);
-  bool isValid() const;
+  bool is_valid() const;
   ChiSquared& update(double w, double r);
   double qlb(double w, double r, double sign);  // sign = 1.0 for lower_bound, sign = -1.0 for upper_bound
   void reset(double _alpha, double _tau);
@@ -106,11 +85,31 @@ public:
   double cressieread_upper_bound() const;
   ScoredDual recompute_duals();
   static double chisq_onedof_isf(double alpha);
-  const double& effn() { return n; }
+  const double& effn() { return _n; }
   friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
   friend size_t VW::model_utils::write_model_field(
       io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
   void save_load(io_buf& model_file, bool read, bool text, const char* name);
+
+private:
+  double _alpha;
+  double _tau;
+  double _wmin;
+  double _wmax;
+  double _rmin;
+  double _rmax;
+
+  double _n;
+  double _sumw;
+  double _sumwsq;
+  double _sumwr;
+  double _sumwsqr;
+  double _sumwsqrsq;
+
+  double _delta;
+
+  bool _duals_stale;
+  ScoredDual _duals;
 };
 
 }  // namespace distributionally_robust

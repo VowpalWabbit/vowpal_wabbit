@@ -34,35 +34,38 @@ uint64_t ceil_log_2(uint64_t v);
 // the complete feature_space of the added namespace is cleared afterwards
 class namespace_copy_guard
 {
-  VW::example_predict& _ex;
-  unsigned char _ns;
-  bool _remove_ns;
-
 public:
   namespace_copy_guard(VW::example_predict& ex, unsigned char ns);
   ~namespace_copy_guard();
 
   void feature_push_back(feature_value v, feature_index idx);
+
+private:
+  VW::example_predict& _ex;
+  unsigned char _ns;
+  bool _remove_ns;
 };
 
 class feature_offset_guard
 {
-  VW::example_predict& _ex;
-  uint64_t _old_ft_offset;
-
 public:
   feature_offset_guard(VW::example_predict& ex, uint64_t ft_offset);
   ~feature_offset_guard();
+
+private:
+  VW::example_predict& _ex;
+  uint64_t _old_ft_offset;
 };
 
 class stride_shift_guard
 {
-  VW::example_predict& _ex;
-  uint64_t _shift;
-
 public:
   stride_shift_guard(VW::example_predict& ex, uint64_t shift);
   ~stride_shift_guard();
+
+private:
+  VW::example_predict& _ex;
+  uint64_t _shift;
 };
 
 /**
@@ -71,28 +74,6 @@ public:
 template <typename W>
 class vw_predict
 {
-  std::unique_ptr<W> _weights;
-  std::string _id;
-  std::string _version;
-  std::string _command_line_arguments;
-  std::vector<std::vector<VW::namespace_index>> _interactions;
-  std::vector<std::vector<extent_term>> _unused_extent_interactions;
-  INTERACTIONS::generate_interactions_object_cache _generate_interactions_object_cache;
-  INTERACTIONS::interactions_generator _generate_interactions;
-  bool _contains_wildcard;
-  std::array<bool, NUM_NAMESPACES> _ignore_linear;
-  bool _no_constant;
-
-  vw_predict_exploration _exploration;
-  float _minimum_epsilon;
-  float _epsilon;
-  float _lambda;
-  size_t _bag_size;
-  uint32_t _num_bits;
-
-  uint32_t _stride_shift;
-  bool _model_loaded;
-
 public:
   vw_predict() : _contains_wildcard(false), _model_loaded(false) {}
 
@@ -279,8 +260,9 @@ public:
     if (!_no_constant)
     {
       // add constant feature
-      ns_copy_guard = std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(ex, constant_namespace));
-      ns_copy_guard->feature_push_back(1.f, (constant << _stride_shift) + ex.ft_offset);
+      ns_copy_guard =
+          std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(ex, VW::details::CONSTANT_NAMESPACE));
+      ns_copy_guard->feature_push_back(1.f, (VW::details::CONSTANT << _stride_shift) + ex.ft_offset);
     }
 
     if (_contains_wildcard)
@@ -485,5 +467,28 @@ public:
   }
 
   uint32_t feature_index_num_bits() { return _num_bits; }
+
+private:
+  std::unique_ptr<W> _weights;
+  std::string _id;
+  std::string _version;
+  std::string _command_line_arguments;
+  std::vector<std::vector<VW::namespace_index>> _interactions;
+  std::vector<std::vector<extent_term>> _unused_extent_interactions;
+  VW::details::generate_interactions_object_cache _generate_interactions_object_cache;
+  INTERACTIONS::interactions_generator _generate_interactions;
+  bool _contains_wildcard;
+  std::array<bool, VW::NUM_NAMESPACES> _ignore_linear;
+  bool _no_constant;
+
+  vw_predict_exploration _exploration;
+  float _minimum_epsilon;
+  float _epsilon;
+  float _lambda;
+  size_t _bag_size;
+  uint32_t _num_bits;
+
+  uint32_t _stride_shift;
+  bool _model_loaded;
 };
 }  // namespace vw_slim
