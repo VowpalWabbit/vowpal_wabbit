@@ -513,7 +513,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest_w_iterations)
 
     // excl_2 is now champ
     interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence>::apply_new_champ(
-        oracle, 2, estimators, 0, false, ns_counter);
+        oracle, 2, estimators, 0, ns_counter);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(configs[0].elements.begin(), configs[0].elements.end(), excl_2.begin(), excl_2.end());
     BOOST_CHECK_EQUAL_COLLECTIONS(configs[1].elements.begin(), configs[1].elements.end(), excl_0.begin(), excl_0.end());
@@ -544,7 +544,7 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest_w_iterations)
 
     // excl_4 is now champ
     interaction_config_manager<config_oracle<one_diff_impl>, VW::confidence_sequence>::apply_new_champ(
-        oracle, 3, estimators, 0, false, ns_counter);
+        oracle, 3, estimators, 0, ns_counter);
 
     BOOST_CHECK_EQUAL_COLLECTIONS(configs[0].elements.begin(), configs[0].elements.end(), excl_4.begin(), excl_4.end());
     BOOST_CHECK_EQUAL_COLLECTIONS(configs[1].elements.begin(), configs[1].elements.end(), excl_2.begin(), excl_2.end());
