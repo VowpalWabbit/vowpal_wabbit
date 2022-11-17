@@ -1319,7 +1319,6 @@ void parse_output_model(options_i& options, VW::workspace& all)
 {
   bool predict_only_model = false;
   bool save_resume = false;
-  bool hexfloat_weights = false;
 
   option_group_definition output_model_options("Output Model");
   output_model_options
@@ -1328,7 +1327,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
-      .add(make_option("hexfloat_weights", hexfloat_weights)
+      .add(make_option("hexfloat_weights", all.hexfloat_weights)
                .help("Output hexfloat format for floats for human-readable final regressor. Useful for "
                      "debugging/comparing."))
       .add(make_option("dump_json_weights_experimental", all.json_weights_file_name)
