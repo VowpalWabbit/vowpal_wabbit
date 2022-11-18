@@ -122,12 +122,31 @@ void convert_to_single_model(VW::workspace& all, automl<CMType>& data)
   std::set<std::string> aml_opts = {"automl", "global_lease", "cm_type", "priority_type", "priority_challengers",
       "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level",
       "fixed_significance_level"};
+
   for (auto opt : aml_opts)
   {
     if (options.was_supplied(opt)) { options.remove_option(opt); }
   }
+
   options.get_typed_option<uint32_t>("bit_precision").value(num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp)));
   all.num_bits = num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));
+
+  std::vector<std::string> interactions_opt;
+  for (auto& interaction : data.cm->estimators[0].first.live_interactions)
+  {
+    std::string interaction_string;
+    for (auto& ns : interaction)
+    {
+      if (ns == ' ') { interaction_string += "\\x20"; }
+      else
+      {
+        interaction_string += ns;
+      }
+    }
+    interactions_opt.push_back(interaction_string);
+  }
+  options.insert("interactions","");
+  options.get_typed_option<std::vector<std::string>>("interactions").value(interactions_opt);
 }
 
 template <typename CMType>

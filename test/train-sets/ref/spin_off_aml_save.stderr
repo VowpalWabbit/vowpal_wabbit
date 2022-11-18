@@ -1,6 +1,6 @@
 final_regressor = models/aml_spin_off.m
 using no cache
-Reading datafile = train-sets/cb_test.ldf
+Reading datafile = train-sets/automl_spin_off.txt
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -12,12 +12,12 @@ Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.666667 0.666667            1            1.0        0:1:0.5         0:0.33       60
-0.333333 0.000000            2            2.0        1:0:0.5         1:0.97       18
+0.333333 0.333333            1            1.0          0:1:1         0:0.33       27
+0.416667 0.500000            2            2.0          1:1:1          0:0.5       18
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
-average loss = 0.333333
-total feature number = 96
+average loss = 0.444444
+total feature number = 63
