@@ -299,6 +299,7 @@ public:
 
   bool hash_inv;
   bool print_invert;
+  bool hexfloat_weights;
 
   // Set by --progress <arg>
   bool progress_add;   // additive (rather than multiplicative) progress dumps
