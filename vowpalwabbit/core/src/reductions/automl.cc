@@ -145,7 +145,7 @@ void convert_to_single_model(VW::workspace& all, automl<CMType>& data)
     }
     interactions_opt.push_back(interaction_string);
   }
-  options.insert("interactions","");
+  options.insert("interactions", "");
   options.get_typed_option<std::vector<std::string>>("interactions").value(interactions_opt);
 }
 
