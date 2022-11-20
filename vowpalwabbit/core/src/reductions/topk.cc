@@ -120,18 +120,35 @@ void finish_example(VW::workspace& all, topk& d, VW::multi_ex& ec_seq)
   VW::finish_example(all, ec_seq);
 }
 
+struct options_topk_v1
+{
+  uint32_t k = 0;
+};
+
+std::unique_ptr<options_topk_v1> get_topk_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  using VW::config::make_option;
+  auto topk_opts = VW::make_unique<options_topk_v1>();
+
+  option_group_definition new_options("[Reduction] Top K");
+  new_options.add(make_option("top", topk_opts->k).keep().necessary().help("Top k recommendation"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  return topk_opts;
+}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  uint32_t k;
-  option_group_definition new_options("[Reduction] Top K");
-  new_options.add(make_option("top", k).keep().necessary().help("Top k recommendation"));
+  VW::workspace& all = *stack_builder.get_all_pointer();
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  auto topk_opts = get_topk_options_instance(all, all.logger, options);
+  if(topk_opts == nullptr) { return nullptr; }
 
-  auto data = VW::make_unique<topk>(k);
+  auto data = VW::make_unique<topk>(topk_opts->k);
   auto* l = VW::LEARNER::make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
                 .set_learn_returns_prediction(true)
