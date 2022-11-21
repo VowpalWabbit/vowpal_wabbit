@@ -44,7 +44,10 @@ class rate_target
   float predict()
   {
     if (_sum_p > 0.f) { return std::max(0.f, std::min(1.f, _target_rate * (float)_t / _sum_p)); }
-    else { return 1.f; }
+    else
+    {
+      return 1.f;
+    }
   }
 
   void learn(float p)
@@ -251,7 +254,8 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     threshold *= data.multiplier;
 
-    float off_target = data.rt_target.get_rate_and_update(threshold, data.update_count, data.example_counter, action_found);
+    float off_target =
+        data.rt_target.get_rate_and_update(threshold, data.update_count, data.example_counter, action_found);
 
     if (!action_found) { return; }
 
@@ -301,10 +305,10 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
                .help("Evaluate explore_eval adf policies"))
       .add(make_option("multiplier", data->multiplier)
                .help("Multiplier used to make all rejection sample probabilities <= 1"))
-      .add(
-          make_option("target_rate", target_rate)
-              .default_value(1.f)
-              .help("The target rate will be used to adjust the rejection rate in order to achieve an update count of #examples * target_rate"));
+      .add(make_option("target_rate", target_rate)
+               .default_value(1.f)
+               .help("The target rate will be used to adjust the rejection rate in order to achieve an update count of "
+                     "#examples * target_rate"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
