@@ -70,11 +70,10 @@ public:
   {
     if (_target_rate == 1.f) { return 1.f; }
 
-    float z = predict();
+    float off_target = predict();
     float current_rate = (float)update_count / (float)example_count;
-    auto off_target = z;
 
-    if (z >= 0.99f || z <= 0.001f || !action_found)
+    if (off_target >= 0.99f || off_target <= 0.001f || !action_found)
     {
       // this kicks in whenever the threshold has been consecutively too low or too high or (with LAS) action is missing
       // in these cases threshold will be around 0/1 so if it is used to adjust the rate prediction it will sway
