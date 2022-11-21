@@ -6,8 +6,10 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -26,8 +28,9 @@ static constexpr bool PRINT_ALL = true;
 static constexpr bool SCORES = true;
 static constexpr bool PROBABILITIES = true;
 
-struct oaa
+class oaa
 {
+public:
   uint64_t k = 0;
   VW::workspace* all = nullptr;         // for raw
   VW::polyprediction* pred = nullptr;   // for multipredict
@@ -61,7 +64,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec
     o.indexing = 1;
   }
 
-  MULTICLASS::label_t ld = ec.l.multi;
+  VW::multiclass_label ld = ec.l.multi;
 
   // Label validation
   if (o.indexing == 0 && ld.label >= o.k)
@@ -76,7 +79,7 @@ void learn_randomized(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec
   }
 
   ec.l.simple.label = 1.;  // truth
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   uint32_t lbl_ind = (o.indexing == 0) ? ld.label : ld.label - 1;
 
   base.learn(ec, lbl_ind);
@@ -126,7 +129,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   }
 
   // Save label
-  MULTICLASS::label_t mc_label_data = ec.l.multi;
+  VW::multiclass_label mc_label_data = ec.l.multi;
 
   // Label validation
   if (o.indexing == 0 && mc_label_data.label >= o.k)
@@ -143,7 +146,7 @@ void learn(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   }
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -188,12 +191,12 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   {
     if (o.indexing == 0)
     {
-      add_passthrough_feature(ec, 0, o.pred[o.k - 1].scalar);
-      for (uint32_t i = 0; i < o.k - 1; i++) add_passthrough_feature(ec, (i + 1), o.pred[i].scalar);
+      ADD_PASSTHROUGH_FEATURE(ec, 0, o.pred[o.k - 1].scalar);
+      for (uint32_t i = 0; i < o.k - 1; i++) { ADD_PASSTHROUGH_FEATURE(ec, (i + 1), o.pred[i].scalar); }
     }
     else
     {
-      for (uint32_t i = 1; i <= o.k; i++) add_passthrough_feature(ec, i, o.pred[i - 1].scalar);
+      for (uint32_t i = 1; i <= o.k; i++) { ADD_PASSTHROUGH_FEATURE(ec, i, o.pred[i - 1].scalar); }
     }
   }
 
@@ -277,19 +280,19 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   if (ec.l.multi.label != pred_lbl) { zero_one_loss = ec.weight; }
 
   // === Print probabilities for all classes
-  std::ostringstream outputStringStream;
+  std::ostringstream output_string_stream;
   for (uint32_t i = 0; i < o.k; i++)
   {
     uint32_t corrected_label = (o.indexing == 0) ? i : i + 1;
-    if (i > 0) { outputStringStream << ' '; }
-    if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(corrected_label); }
+    if (i > 0) { output_string_stream << ' '; }
+    if (all.sd->ldict) { output_string_stream << all.sd->ldict->get(corrected_label); }
     else
     {
-      outputStringStream << corrected_label;
+      output_string_stream << corrected_label;
     }
-    outputStringStream << ':' << ec.pred.scalars[i];
+    output_string_stream << ':' << ec.pred.scalars[i];
   }
-  const auto ss_str = outputStringStream.str();
+  const auto ss_str = output_string_stream.str();
   for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
 
   // === Report updates using zero-one loss
@@ -302,10 +305,10 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   // So let's report (average) multiclass_log_loss only in the final resume.
 
   // === Print progress report
-  if (probabilities) { MULTICLASS::print_update_with_probability(all, ec, pred_lbl); }
+  if (probabilities) { VW::details::print_multiclass_update_with_probability(all, ec, pred_lbl); }
   else
   {
-    MULTICLASS::print_update_with_score(all, ec, pred_lbl);
+    VW::details::print_multiclass_update_with_score(all, ec, pred_lbl);
   }
   VW::finish_example(all, ec);
 }
@@ -371,7 +374,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   void (*finish_ptr)(VW::workspace&, oaa&, VW::example&);
   if (probabilities || scores)
   {
-    pred_type = VW::prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::SCALARS;
     if (probabilities)
     {
       auto loss_function_type = all.loss->get_type();
@@ -397,8 +400,8 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   }
   else
   {
-    pred_type = VW::prediction_type_t::multiclass;
-    finish_ptr = MULTICLASS::finish_example<oaa>;
+    pred_type = VW::prediction_type_t::MULTICLASS;
+    finish_ptr = VW::details::finish_multiclass_example<oaa>;
     if (all.raw_prediction != nullptr)
     {
       learn_ptr = learn<PRINT_ALL, !SCORES, !PROBABILITIES>;
@@ -413,18 +416,18 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
     }
   }
 
-  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   if (data_ptr->num_subsample > 0)
   {
     learn_ptr = learn_randomized;
-    finish_ptr = MULTICLASS::finish_example_without_loss<oaa>;
+    finish_ptr = VW::details::finish_multiclass_example_without_loss<oaa>;
   }
 
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
                .set_params_per_weight(k_value)
-               .set_input_label_type(VW::label_type_t::multiclass)
+               .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_prediction_type(pred_type)
                .set_finish_example(finish_ptr)
                .build();

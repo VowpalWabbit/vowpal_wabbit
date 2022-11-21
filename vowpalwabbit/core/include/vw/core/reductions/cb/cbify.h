@@ -3,18 +3,21 @@
 // license as described in the file LICENSE.
 
 #pragma once
+
 #include "vw/core/feature_group.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
 class parameters;
-struct namespace_interactions;
+class namespace_interactions;
 
 namespace VW
 {
 namespace reductions
 {
-struct cbify_adf_data
+class cbify_adf_data
 {
+public:
   VW::multi_ex ecs;
   size_t num_actions = 0;
   size_t increment = 0;

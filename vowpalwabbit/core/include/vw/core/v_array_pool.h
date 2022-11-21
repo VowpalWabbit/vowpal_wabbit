@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "object_pool.h"
+#include "vw/core/object_pool.h"
 #include "vw/core/v_array.h"
 
 namespace VW

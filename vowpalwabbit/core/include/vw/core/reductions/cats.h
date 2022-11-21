@@ -3,9 +3,11 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/config/options.h"
+
 #include "vw/core/api_status.h"
-#include "vw/core/learner.h"
+#include "vw/core/cb_continuous_label.h"
+#include "vw/core/learner_fwd.h"
+#include "vw/core/vw_fwd.h"
 
 namespace VW
 {
@@ -15,8 +17,9 @@ LEARNER::base_learner* cats_setup(setup_base_i& stack_builder);
 
 namespace cats
 {
-struct cats
+class cats
 {
+public:
   uint32_t num_actions = 0;
   float bandwidth = 0.f;
   float min_value = 0.f;

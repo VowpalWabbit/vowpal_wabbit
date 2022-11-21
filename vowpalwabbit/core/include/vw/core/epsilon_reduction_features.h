@@ -10,8 +10,9 @@ namespace cb_explore_adf
 {
 namespace greedy
 {
-struct reduction_features
+class reduction_features
 {
+public:
   float epsilon;
 
   reduction_features() { epsilon = -1.f; }

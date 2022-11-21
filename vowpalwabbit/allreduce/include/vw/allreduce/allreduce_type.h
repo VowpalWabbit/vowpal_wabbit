@@ -4,5 +4,11 @@
 
 #pragma once
 
-#include "vw/core/setup_base.h"
-#include "vw/core/vw_fwd.h"
+namespace VW
+{
+enum class all_reduce_type
+{
+  SOCKET,
+  THREAD
+};
+}  // namespace VW

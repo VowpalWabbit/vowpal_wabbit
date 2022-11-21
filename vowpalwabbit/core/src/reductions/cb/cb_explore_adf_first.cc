@@ -6,8 +6,10 @@
 
 #include "vw/config/options.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -27,14 +29,8 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_first
+class cb_explore_adf_first
 {
-private:
-  size_t _tau;
-  float _epsilon;
-
-  VW::version_struct _model_file_version;
-
 public:
   cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version);
   ~cb_explore_adf_first() = default;
@@ -45,6 +41,10 @@ public:
   void save_load(io_buf& io, bool read, bool text);
 
 private:
+  size_t _tau;
+  float _epsilon;
+
+  VW::version_struct _model_file_version;
   template <bool is_learn>
   void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
 };
@@ -64,7 +64,7 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, VW::multi_
     multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
 
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   if (_tau)
@@ -134,10 +134,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_first_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)

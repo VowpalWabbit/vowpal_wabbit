@@ -21,15 +21,16 @@ using namespace VW::config;
 
 namespace
 {
-struct LRQFAstate
+class lrqfa_state
 {
+public:
   VW::workspace* all = nullptr;
   std::string field_name = "";
   int k = 0;
   int field_id[256];
   size_t orig_size[256];
 
-  LRQFAstate()
+  lrqfa_state()
   {
     std::fill(field_id, field_id + 256, 0);
     std::fill(orig_size, orig_size + 256, 0);
@@ -46,7 +47,7 @@ inline float cheesyrand(uint64_t x)
 constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -153,7 +154,7 @@ VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_b
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  auto lrq = VW::make_unique<LRQFAstate>();
+  auto lrq = VW::make_unique<lrqfa_state>();
   lrq->all = &all;
 
   if (lrqfa.find(':') != std::string::npos) { THROW("--lrqfa does not support wildcards ':'"); }

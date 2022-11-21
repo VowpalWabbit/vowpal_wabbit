@@ -15,8 +15,9 @@ using namespace VW::config;
 namespace
 {
 // TODO: This file should probably(?) use trace_message
-struct print
+class print
 {
+public:
   print(VW::workspace* all) : all(all) {}
   VW::workspace* all;
 };  // regressor, feature loop
@@ -35,7 +36,7 @@ void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
   if (ec.l.simple.label != FLT_MAX)
   {
     (*all.trace_message) << ec.l.simple.label << " ";
-    const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+    const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     if (ec.weight != 1 || simple_red_features.initial != 0)
     {
       (*all.trace_message) << ec.weight << " ";
@@ -65,7 +66,7 @@ VW::LEARNER::base_learner* VW::reductions::print_setup(VW::setup_base_i& stack_b
 
   all.weights.stride_shift(0);
   auto* learner = VW::LEARNER::make_base_learner(VW::make_unique<print>(&all), learn, learn,
-      stack_builder.get_setupfn_name(print_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(print_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                       .build();
   return VW::LEARNER::make_base(*learner);
 }

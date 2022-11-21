@@ -8,8 +8,6 @@
 #include "vw/core/numeric_casts.h"
 #include "vw/io/logger.h"
 
-#include <sys/types.h>
-
 #ifndef _WIN32
 #  include <netinet/tcp.h>
 #  include <sys/mman.h>
@@ -29,9 +27,9 @@
 #    define NOMINMAX
 #  endif
 
+#  include <WinSock2.h>
 #  include <Windows.h>
 #  include <io.h>
-#  include <winsock2.h>
 typedef int socklen_t;
 // windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
 #  define SOL_TCP IPPROTO_TCP
@@ -40,16 +38,16 @@ int daemon(int /*a*/, int /*b*/) { exit(0); }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
-// use VW_getpid instead of getpid to avoid name collisions with process.h
+// use VW_GETPID instead of getpid to avoid name collisions with process.h
 #  if _MSC_VER >= 1920
-#    define VW_getpid _getpid
+#    define VW_GETPID _getpid
 #  else
-int VW_getpid() { return (int)::GetCurrentProcessId(); }
+int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #  endif
 
 #else
 #  include <netdb.h>
-#  define VW_getpid getpid
+#  define VW_GETPID getpid
 #endif
 
 #if defined(__FreeBSD__) || defined(__APPLE__)
@@ -65,6 +63,8 @@ int VW_getpid() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/parse_example.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/parse_primitives.h"
+#include "vw/core/reductions/conditional_contextual_bandit.h"
+#include "vw/core/shared_data.h"
 #include "vw/core/unique_sort.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
@@ -101,7 +101,7 @@ parser::parser(size_t example_queue_limit, bool strict_parse_)
     , num_finished_examples(0)
     , strict_parse{strict_parse_}
 {
-  this->lbl_parser = simple_label_parser;
+  this->lbl_parser = VW::simple_label_parser_global;
 }
 
 namespace VW
@@ -111,7 +111,7 @@ void parse_example_label(string_view label, const VW::label_parser& lbl_parser, 
 {
   std::vector<string_view> words;
   VW::tokenize(' ', label, words);
-  lbl_parser.parse_label(ec.l, ec._reduction_features, reuse_mem, ldict, words, logger);
+  lbl_parser.parse_label(ec.l, ec.ex_reduction_features, reuse_mem, ldict, words, logger);
 }
 }  // namespace VW
 
@@ -144,12 +144,12 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   if (static_cast<size_t>(cache_reader.read(version_buffer.data(), version_buffer_length)) < version_buffer_length)
   { THROW("failed to read: version buffer"); }
   VW::version_struct cache_version(version_buffer.data());
-  if (cache_version != VW::version)
+  if (cache_version != VW::VERSION)
   {
     auto msg = fmt::format(
         "Cache file version does not match current VW version. Cache files must be produced by the version consuming "
         "them. Cache version: {} VW version: {}",
-        cache_version.to_string(), VW::version.to_string());
+        cache_version.to_string(), VW::VERSION.to_string());
     THROW(msg);
   }
 
@@ -323,10 +323,10 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
     return;
   }
 
-  size_t v_length = static_cast<uint64_t>(VW::version.to_string().length()) + 1;
+  size_t v_length = static_cast<uint64_t>(VW::VERSION.to_string().length()) + 1;
 
   output.bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
-  output.bin_write_fixed(VW::version.to_string().c_str(), v_length);
+  output.bin_write_fixed(VW::VERSION.to_string().c_str(), v_length);
   output.bin_write_fixed("c", 1);
   output.bin_write_fixed(reinterpret_cast<const char*>(&all.num_bits), sizeof(all.num_bits));
   output.flush();
@@ -410,9 +410,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     { *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl; }
 
     // Enable TCP Keep Alive to prevent socket leaks
-    int enableTKA = 1;
-    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enableTKA),
-            sizeof(enableTKA)) < 0)
+    int enable_tka = 1;
+    if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enable_tka),
+            sizeof(enable_tka)) < 0)
     { *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl; }
 
     sockaddr_in address;
@@ -478,7 +478,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       new (sd) shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
-      all.example_parser->_shared_data = sd;
+      all.example_parser->shared_data_obj = sd;
 
       // create children
       size_t num_children = VW::cast_to_smaller_type<size_t>(all.num_children);
@@ -497,7 +497,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
       // install signal handler so we can kill children when killed
       {
-        struct sigaction sa;
+        class sigaction sa;
         // specifically don't set SA_RESTART in sa.sa_flags, so that
         // waitid will be interrupted by SIGTERM with handler installed
         memset(&sa, 0, sizeof(sa));
@@ -701,7 +701,7 @@ void setup_example(VW::workspace& all, VW::example* ae)
   if (all.example_parser->write_cache)
   {
     VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask,
-        all.example_parser->_cache_temp_buffer);
+        all.example_parser->cache_temp_buffer_obj);
   }
 
   // Require all extents to be complete in an VW::example.
@@ -713,8 +713,8 @@ void setup_example(VW::workspace& all, VW::example* ae)
   ae->num_features = 0;
   ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
-  ae->_debug_current_reduction_depth = 0;
-  ae->use_permutations = all.permutations;
+  ae->debug_current_reduction_depth = 0;
+  ae->_use_permutations = all.permutations;
 
   all.example_parser->num_setup_examples++;
   if (!all.example_parser->emptylines_separate_examples) { all.example_parser->in_pass_counter++; }
@@ -727,11 +727,11 @@ void setup_example(VW::workspace& all, VW::example* ae)
 
   if (all.example_parser->emptylines_separate_examples &&
       (example_is_newline(*ae) &&
-          (all.example_parser->lbl_parser.label_type != label_type_t::ccb ||
+          (all.example_parser->lbl_parser.label_type != label_type_t::CCB ||
               VW::reductions::ccb::ec_is_example_unset(*ae))))
   { all.example_parser->in_pass_counter++; }
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->_reduction_features);
+  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->ex_reduction_features);
 
   if (all.ignore_some)
   {
@@ -802,16 +802,18 @@ VW::example* read_example(VW::workspace& all, const std::string& example_line)
 
 void add_constant_feature(VW::workspace& vw, VW::example* ec)
 {
-  ec->indices.push_back(constant_namespace);
-  ec->feature_space[constant_namespace].push_back(1, constant, constant_namespace);
+  ec->indices.push_back(VW::details::CONSTANT_NAMESPACE);
+  ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(
+      1, VW::details::CONSTANT, VW::details::CONSTANT_NAMESPACE);
   ec->num_features++;
-  if (vw.audit || vw.hash_inv) { ec->feature_space[constant_namespace].space_names.emplace_back("", "Constant"); }
+  if (vw.audit || vw.hash_inv)
+  { ec->feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "Constant"); }
 }
 
 void add_label(VW::example* ec, float label, float weight, float base)
 {
   ec->l.simple.label = label;
-  auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+  auto& simple_red_features = ec->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   simple_red_features.initial = base;
   ec->weight = weight;
 }
@@ -863,7 +865,7 @@ primitive_feature_space* export_example(VW::workspace& all, VW::example* ec, siz
   return fs_ptr;
 }
 
-void releaseFeatureSpace(primitive_feature_space* features, size_t len)
+void release_feature_space(primitive_feature_space* features, size_t len)
 {
   for (size_t i = 0; i < len; i++) { delete[] features[i].fs; }
   delete (features);
@@ -873,8 +875,8 @@ void parse_example_label(VW::workspace& all, example& ec, const std::string& lab
 {
   std::vector<VW::string_view> words;
   VW::tokenize(' ', label, words);
-  all.example_parser->lbl_parser.parse_label(
-      ec.l, ec._reduction_features, all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words, all.logger);
+  all.example_parser->lbl_parser.parse_label(ec.l, ec.ex_reduction_features, all.example_parser->parser_memory_to_reuse,
+      all.sd->ldict.get(), words, all.logger);
 }
 
 void empty_example(VW::workspace& /*all*/, example& ec)
@@ -886,7 +888,7 @@ void empty_example(VW::workspace& /*all*/, example& ec)
   ec.sorted = false;
   ec.end_pass = false;
   ec.is_newline = false;
-  ec._reduction_features.clear();
+  ec.ex_reduction_features.clear();
   ec.num_features_from_interactions = 0;
 }
 
@@ -935,7 +937,7 @@ float get_importance(example* ec) { return ec->weight; }
 
 float get_initial(example* ec)
 {
-  const auto& simple_red_features = ec->_reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   return simple_red_features.initial;
 }
 
@@ -954,7 +956,7 @@ uint32_t* get_multilabel_predictions(example* ec, size_t& len)
 
 float get_action_score(example* ec, size_t i)
 {
-  ACTION_SCORE::action_scores scores = ec->pred.a_s;
+  VW::action_scores scores = ec->pred.a_s;
 
   if (i < scores.size()) { return scores[i].score; }
   else

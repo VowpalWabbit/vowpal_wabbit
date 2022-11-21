@@ -6,6 +6,7 @@
 
 #include "test_common.h"
 #include "vw/core/cb_label_parser.h"
+#include "vw/core/learner.h"
 
 #include <boost/test/unit_test.hpp>
 #include <utility>
@@ -25,8 +26,9 @@ std::ostream& operator<<(std::ostream& os, const VW::reductions::offset_tree::tr
 
 namespace
 {
-struct reduction_test_harness
+class reduction_test_harness
 {
+public:
   reduction_test_harness() : _curr_idx(0) {}
 
   void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
@@ -35,8 +37,8 @@ struct reduction_test_harness
   {
     ec.pred.a_s.clear();
     const auto curr_pred = _predictions[_curr_idx++];
-    ec.pred.a_s.push_back(ACTION_SCORE::action_score{0, curr_pred.first});
-    ec.pred.a_s.push_back(ACTION_SCORE::action_score{1, curr_pred.second});
+    ec.pred.a_s.push_back(VW::action_score{0, curr_pred.first});
+    ec.pred.a_s.push_back(VW::action_score{1, curr_pred.second});
   }
 
   void test_learn(base_learner& base, VW::example& ec)
@@ -73,7 +75,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
-      "test_learner", VW::prediction_type_t::action_scores, VW::label_type_t::cb)
+      "test_learner", VW::prediction_type_t::ACTION_SCORES, VW::label_type_t::CB)
                           .build();  // Create a learner using the base reduction.
   return test_learner;
 }

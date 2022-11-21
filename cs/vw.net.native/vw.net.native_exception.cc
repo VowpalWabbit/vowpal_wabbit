@@ -4,6 +4,6 @@ API const char* NativeExceptionWhat(std::exception const* exception) { return ex
 
 API const char* NativeVwExceptionWhere(VW::vw_exception const* exception, int& line_number)
 {
-  line_number = exception->LineNumber();
-  return exception->Filename();
+  line_number = exception->line_number();
+  return exception->filename();
 }

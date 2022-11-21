@@ -1,9 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "vowpal-wabbit",
-  "version": "9.4.0",
+  "version": "9.6.0",
   "dependencies": [
     "boost-math",
+    "eigen3",
     "flatbuffers",
     "fmt",
     "rapidjson",

@@ -18,7 +18,7 @@ void add_grams(
     {
       uint64_t new_index = fs.indices[i];
       for (size_t n = 1; n < gram_mask.size(); n++)
-      { new_index = new_index * quadratic_constant + fs.indices[i + gram_mask[n]]; }
+      { new_index = new_index * VW::details::QUADRATIC_CONSTANT + fs.indices[i + gram_mask[n]]; }
 
       fs.push_back(1., new_index);
       if (!fs.space_names.empty())
@@ -42,7 +42,7 @@ void add_grams(
   if (skip_gram > 0 && ngram > 0) { add_grams(ngram, skip_gram - 1, fs, initial_length, gram_mask, skips + 1); }
 }
 
-void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NUM_NAMESPACES>& dest,
+void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, VW::NUM_NAMESPACES>& dest,
     const std::string& descriptor, bool /*quiet*/, VW::io::logger& logger)
 {
   for (const auto& gram : grams)
@@ -51,7 +51,7 @@ void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, NU
     {
       int n = atoi(gram.c_str());
       logger.err_info("Generating {0}-{1} for all namespaces.", n, descriptor);
-      for (size_t j = 0; j < NUM_NAMESPACES; j++) { dest[j] = n; }
+      for (size_t j = 0; j < VW::NUM_NAMESPACES; j++) { dest[j] = n; }
     }
     else if (gram.size() == 1)
     {

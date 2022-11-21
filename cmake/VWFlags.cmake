@@ -13,7 +13,9 @@ if(LTO)
 endif()
 
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-  set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
+  if(NOT "arm64" STREQUAL "${CMAKE_OSX_ARCHITECTURES}")
+    set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
+  endif()
 endif()
 
 # Add -ffast-math for speed, remove for testability.

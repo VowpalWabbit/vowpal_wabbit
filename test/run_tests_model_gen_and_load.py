@@ -83,7 +83,7 @@ def generate_model_and_weights(
             weights_file.write(vw.json_weights())
         except:
             print(
-                f"{color_enum.LIGHT_PURPLE}Weights could not be generated as base learner is not GD"
+                f"{color_enum.LIGHT_PURPLE}Weights could not be generated as base learner is KSVM"
             )
     test_models_dir = working_dir / "test_models"
     test_models_dir.mkdir(parents=True, exist_ok=True)
@@ -133,7 +133,7 @@ def load_model(
             new_weights = json.loads(vw.json_weights())
         except:
             print(
-                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is not GD"
+                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is KSVM"
             )
             return
         weights_dir = working_dir / "test_weights"
