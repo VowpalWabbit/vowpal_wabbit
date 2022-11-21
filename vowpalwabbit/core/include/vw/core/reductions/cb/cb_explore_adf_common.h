@@ -90,9 +90,6 @@ public:
     if (with_metrics) { _metrics = VW::make_unique<cb_explore_metrics>(); }
   }
 
-  static void finish_multiline_example(VW::workspace& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq);
-  static void print_multiline_example(
-      VW::workspace& all, cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq);
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
   static void persist_metrics(cb_explore_adf_base<ExploreType>& data, metric_sink& metrics);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
@@ -100,9 +97,9 @@ public:
 
   static void update_stats(const VW::workspace& all, shared_data& sd, const cb_explore_adf_base<ExploreType>& data, 
                 const multi_ex& ec_seq, VW::io::logger& logger);
-  static void output_example_prediction(const VW::workspace& all, shared_data& sd, const cb_explore_adf_base<ExploreType>& data, 
+  static void output_example_prediction(VW::workspace& all, const cb_explore_adf_base<ExploreType>& data, 
                 const multi_ex& ec_seq, VW::io::logger& logger);
-  static void print_update(const VW::workspace& all, shared_data& sd, const cb_explore_adf_base<ExploreType>& data, 
+  static void print_update(VW::workspace& all, shared_data& sd, const cb_explore_adf_base<ExploreType>& data, 
                 const multi_ex& ec_seq, VW::io::logger& logger);
 
   ExploreType explore;
@@ -114,12 +111,10 @@ private:
   CB::label _empty_label;
   VW::action_scores _saved_pred;
   std::unique_ptr<cb_explore_metrics> _metrics;
-  void output_example_seq(VW::workspace& all, const multi_ex& ec_seq);
-  void output_example(VW::workspace& all, const multi_ex& ec_seq);
 
-  void update_stats(const VW::workspace& all, shared_data& sd, const multi_ex& ec_seq, VW::io::logger& logger);
-  void output_example_prediction(const VW::workspace& all, shared_data& sd, const multi_ex& ec_seq, VW::io::logger& logger);
-  void print_update(const VW::workspace& all, shared_data& sd, const multi_ex& ec_seq, VW::io::logger& logger);
+  void _update_stats(const VW::workspace& all, shared_data& sd, const multi_ex& ec_seq, VW::io::logger& logger) const;
+  void _output_example_prediction(VW::workspace& all, const multi_ex& ec_seq, VW::io::logger& logger) const;
+  void _print_update(VW::workspace& all, shared_data& sd, const multi_ex& ec_seq, VW::io::logger& logger) const;
 };
 
 template <typename ExploreType>
@@ -183,28 +178,28 @@ inline void cb_explore_adf_base<ExploreType>::learn(
 }
 
 template <typename ExploreType>
-void update_stats(const VW::workspace& all, shared_data& sd, const cb_explore_adf_base<ExploreType>& data, 
-                const multi_ex& ec_seq, VW::io::logger& logger)
+inline void cb_explore_adf_base<ExploreType>::update_stats(const VW::workspace& all, shared_data& sd,
+                const cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq, VW::io::logger& logger)
 {
-  data.update_stats(all, sd, ec_seq, logger);
+  data._update_stats(all, sd, ec_seq, logger);
 }
 template <typename ExploreType>
-void output_example_prediction(const VW::workspace& all, shared_data& sd, const cb_explore_adf_base<ExploreType>& data, 
-                const multi_ex& ec_seq, VW::io::logger& logger)
+inline void cb_explore_adf_base<ExploreType>::output_example_prediction(VW::workspace& all,
+                const cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq, VW::io::logger& logger)
 {
-  data.output_example_prediction(all, sd, ec_seq, logger);
+  data._output_example_prediction(all, ec_seq, logger);
 }
 template <typename ExploreType>
-void print_update(const VW::workspace& all, shared_data& sd, const cb_explore_adf_base<ExploreType>& data, 
-                const multi_ex& ec_seq, VW::io::logger& logger)
+inline void cb_explore_adf_base<ExploreType>::print_update(VW::workspace& all, shared_data& sd,
+                const cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq, VW::io::logger& logger)
 {
-  data.print_update(all, sd, ec_seq, logger);
+  data._print_update(all, sd, ec_seq, logger);
 }
 
 template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::update_stats(
+void cb_explore_adf_base<ExploreType>::_update_stats(
   const VW::workspace& /*all*/, shared_data& sd, const multi_ex& ec_seq, VW::io::logger& /*logger*/
-)
+) const
 {
   if (ec_seq.size() <= 0) { return; }
 
@@ -255,9 +250,9 @@ void cb_explore_adf_base<ExploreType>::update_stats(
 }
 
 template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::output_example_prediction(
-  const VW::workspace& all, shared_data& /*sd*/, const multi_ex& ec_seq, VW::io::logger& logger
-)
+void cb_explore_adf_base<ExploreType>::_output_example_prediction(
+  VW::workspace& all, const multi_ex& ec_seq, VW::io::logger& logger
+) const
 {
   if (ec_seq.size() <= 0) { return; }
   auto& ec = *ec_seq[0];
@@ -283,58 +278,15 @@ void cb_explore_adf_base<ExploreType>::output_example_prediction(
 }
 
 template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::print_update(
-  const VW::workspace& all, shared_data& /*sd*/, const multi_ex& ec_seq, VW::io::logger& /*logger*/
-)
+void cb_explore_adf_base<ExploreType>::_print_update(
+  VW::workspace& all, shared_data& /*sd*/, const multi_ex& ec_seq, VW::io::logger& /*logger*/
+) const
 {
   if (ec_seq.size() <= 0) { return; }
   bool labeled_example = (_known_cost.probability > 0);
   auto& ec = *ec_seq[0];
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost); }
   else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
-}
-
-template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::output_example(VW::workspace& all, const multi_ex& ec_seq)
-{
-  if (ec_seq.size() <= 0) { return; }
-
-  update_stats(all, *all.sd, ec_seq, all.logger);
-  output_example_prediction(all, *all.sd, ec_seq, all.logger);
-  print_update(all, *all.sd, ec_seq, all.logger);
-}
-
-template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::output_example_seq(VW::workspace& all, const multi_ex& ec_seq)
-{
-  if (ec_seq.size() > 0)
-  {
-    output_example(all, ec_seq);
-    if (all.raw_prediction != nullptr)
-    {
-      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
-    }
-  }
-}
-
-template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::finish_multiline_example(
-    VW::workspace& all, cb_explore_adf_base<ExploreType>& data, multi_ex& ec_seq)
-{
-  print_multiline_example(all, data, ec_seq);
-
-  VW::finish_example(all, ec_seq);
-}
-
-template <typename ExploreType>
-void cb_explore_adf_base<ExploreType>::print_multiline_example(
-    VW::workspace& all, cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq)
-{
-  if (ec_seq.size() > 0)
-  {
-    data.output_example_seq(all, ec_seq);
-    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
-  }
 }
 
 template <typename ExploreType>
