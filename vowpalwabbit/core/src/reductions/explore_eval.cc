@@ -304,9 +304,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
       .add(
           make_option("target_rate", target_rate)
               .default_value(1.f)
-              .help("The examples will be processed in blocks of block_size. If an example update is found in that "
-                    "block no other examples in the block will be used to update the policy. If an example is not used "
-                    "in the block then the quota rolls over and the next block can update more than one examples"));
+              .help("The target rate will be used to adjust the rejection rate in order to achieve an update count of #examples * target_rate"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
