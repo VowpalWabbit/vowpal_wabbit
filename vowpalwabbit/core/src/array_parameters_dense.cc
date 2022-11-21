@@ -89,6 +89,20 @@ void dense_parameters::clear_offset(const size_t offset, const size_t params_per
   }
 }
 
+void dense_parameters::adjust_weights_single_model(const size_t params_per_problem)
+{
+  uint64_t multiplier = static_cast<uint64_t>(params_per_problem) << _stride_shift;
+  for (uint32_t index = 0; index < _weight_mask; index += multiplier)
+  {
+    uint32_t cb_ind = index / params_per_problem;
+    for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << _stride_shift); ++stride)
+    {
+      if (_begin[index + stride] != 0.0f)
+      { std::swap(_begin[index + stride], _begin[cb_ind + stride]); }
+    }
+  }
+}
+
 #ifndef _WIN32
 #  ifndef DISABLE_SHARED_WEIGHTS
 void dense_parameters::share(size_t length)

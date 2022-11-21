@@ -106,24 +106,15 @@ void convert_to_single_model(VW::workspace& all, automl<CMType>& data)
   std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
 
   clear_non_champ_weights(data.cm->weights, data.cm->estimators.size(), data.cm->wpp);
+  data.cm->weights.adjust_weights_single_model(data.cm->wpp);
 
-  uint64_t multiplier = static_cast<uint64_t>(data.cm->wpp) << data.cm->weights.stride_shift();
-  for (uint32_t index = 0; index < data.cm->weights.mask(); index += multiplier)
-  {
-    uint32_t cb_ind = index / data.cm->wpp;
-    for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << data.cm->weights.stride_shift()); ++stride)
-    {
-      if (data.cm->weights[index + stride] != 0.0f)
-      { std::swap(data.cm->weights[index + stride], data.cm->weights[cb_ind + stride]); }
-    }
-  }
   uint32_t num_bits =
       options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
   std::set<std::string> aml_opts = {"automl", "global_lease", "cm_type", "priority_type", "priority_challengers",
       "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level",
       "fixed_significance_level"};
 
-  for (auto opt : aml_opts)
+  for (const auto& opt : aml_opts)
   {
     if (options.was_supplied(opt)) { options.remove_option(opt); }
   }
