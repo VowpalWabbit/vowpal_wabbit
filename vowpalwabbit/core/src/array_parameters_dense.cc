@@ -97,8 +97,7 @@ void dense_parameters::adjust_weights_single_model(const size_t params_per_probl
     uint32_t cb_ind = index / params_per_problem;
     for (uint32_t stride = 0; stride < (static_cast<uint32_t>(1) << _stride_shift); ++stride)
     {
-      if (_begin[index + stride] != 0.0f)
-      { std::swap(_begin[index + stride], _begin[cb_ind + stride]); }
+      if (_begin[index + stride] != 0.0f) { std::swap(_begin[index + stride], _begin[cb_ind + stride]); }
     }
   }
 }
