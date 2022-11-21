@@ -42,7 +42,8 @@ public:
   void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 
-  const PredictionT& get_cached_prediction() { return _action_probs; };
+  // TODO: This is an awful hack, we'll need to get rid of it at some point
+  const PredictionT& get_cached_prediction() const { return _action_probs; };
 
 private:
   float _epsilon;
@@ -139,6 +140,34 @@ void finish_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_b
   assert(ec_seq.size() > 0);
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
   cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
+}
+void update_stats_bag(const VW::workspace& all, shared_data& sd, 
+                      const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq,
+                      VW::io::logger& logger)
+{
+  assert(ec_seq.size() > 0);
+  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
+  cb_explore_adf_base<cb_explore_adf_bag>::update_stats(all, sd, data, ec_seq, logger);
+}
+
+void print_update_bag(const VW::workspace& all, shared_data& sd, 
+                      const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq,
+                      VW::io::logger& logger)
+{
+  assert(ec_seq.size() > 0);
+  // TODO: We should not be modifying a const object...
+  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
+  cb_explore_adf_base<cb_explore_adf_bag>::print_update(all, sd, data, ec_seq, logger);
+}
+
+void output_prediction_example_bag(const VW::workspace& all, shared_data& sd, 
+                      const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq,
+                      VW::io::logger& logger)
+{
+  assert(ec_seq.size() > 0);
+  // TODO: We should not be modifying a const object...
+  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
+  cb_explore_adf_base<cb_explore_adf_bag>::output_example_prediction(all, sd, data, ec_seq, logger);
 }
 
 void print_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq)
