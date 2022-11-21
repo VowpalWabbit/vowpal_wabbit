@@ -18,18 +18,19 @@ average  since         example        example        current        current  cur
 loss     last          counter         weight          label        predict features
 0.000000 0.000000            1            1.0          known         0:0.11     1287
 -0.50000 -1.00000            2            2.0          known         0:0.11     1287
--0.31621 -0.13243            4            4.0          known         8:0.24     1287
--0.23734 -0.15846            8            8.0          known         8:0.24     1287
--0.23752 -0.23769           16           16.0          known         8:0.34     1287
--0.18046 -0.12341           32           32.0          known         8:0.46     1287
+-0.32483 -0.14966            4            4.0          known         8:0.27     1287
+-0.25223 -0.17962            8            8.0          known         8:0.27     1287
+-0.26083 -0.26944           16           16.0          known         8:0.38     1287
+-0.21307 -0.16531           32           32.0          known         8:0.41     1287
 
 finished run
 number of examples = 50
 weighted example sum = 50.000000
 weighted label sum = 0.000000
-average loss = -0.347694
+average loss = -0.373392
 total feature number = 63450
-update count = 12
+update count = 11
+violation count = 4
 final multiplier = 1.000000
 targeted update count = 10.000000
-final rate = 0.561729
+final rate = 0.508830

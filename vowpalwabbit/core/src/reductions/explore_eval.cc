@@ -29,6 +29,12 @@ namespace
 {
 class rate_target
 {
+  /**
+   * This class is used to adjust a multiplier to be used when deciding whether to update on a given example or not.
+   * The class has a target rate and uses the threshold at each step to keep an estimate of the current sampling rate,
+   * and return the multiplier that is needed in order to either over sample or under sample if the current sampling
+   * rate is under or over the target rate respectively
+   */
   float _target_rate;
   float _sum_p;
   size_t _t;
@@ -38,10 +44,7 @@ class rate_target
   float predict()
   {
     if (_sum_p > 0.f) { return std::max(0.f, std::min(1.f, _target_rate * (float)_t / _sum_p)); }
-    else
-    {
-      return 1.f;
-    }
+    else { return 1.f; }
   }
 
   void learn(float p)
@@ -66,18 +69,19 @@ public:
 
     float z = predict();
     float current_rate = (float)update_count / (float)example_count;
-    auto off_target = current_rate > _target_rate ? z : 1 - 1.f / example_count;
+    auto off_target = z;
 
     if (z >= 0.99f || z <= 0.001f || !action_found)
     {
       // this kicks in whenever the threshold has been consecutively too low or too high or (with LAS) action is missing
-      // in these cases threshold will be around 0/1 so it can't really be used to adjust the rate prediction
+      // in these cases threshold will be around 0/1 so if it is used to adjust the rate prediction it will sway
       // this special case has the effect of not swaying the predicted rate too much
       learn(current_rate);
     }
     else
     {
-      learn(threshold);
+      auto p = std::min(threshold, 1.f);
+      learn(p);
     }
 
     _latest_rate = off_target;
@@ -102,6 +106,7 @@ public:
   float multiplier = 0.f;
 
   bool fixed_multiplier = false;
+  bool target_rate = false;
 };
 
 void finish(explore_eval& data)
@@ -238,22 +243,21 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
     }
 
     float threshold = action_probability / data.known_cost.probability;
-    float p = std::min(1.f, threshold);
 
-    if (!data.fixed_multiplier)
+    if (!data.fixed_multiplier && !data.target_rate)
     {
-      if (action_found) { data.multiplier = std::min(data.multiplier, 1.f / p); }
+      if (action_found) { data.multiplier = std::min(data.multiplier, 1 / threshold); }
     }
 
-    p *= data.multiplier;
+    threshold *= data.multiplier;
 
-    float off_target = data.rt_target.get_rate_and_update(p, data.update_count, data.example_counter, action_found);
+    float off_target = data.rt_target.get_rate_and_update(threshold, data.update_count, data.example_counter, action_found);
 
     if (!action_found) { return; }
 
-    if (p > 1. + 1e-6) { data.violations++; }
+    if (threshold > 1. + 1e-6) { data.violations++; }
 
-    if (data.random_state->get_and_update_random() < (p * off_target))
+    if (data.random_state->get_and_update_random() < threshold * off_target)
     {
       VW::example* ec_found = nullptr;
       for (VW::example*& ec : ec_seq)
@@ -309,6 +313,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   data->all = &all;
   data->random_state = all.get_random_state();
   data->rt_target.set_target_rate(target_rate);
+  if (options.was_supplied("target_rate")) { data->target_rate = true; }
 
   if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
   else

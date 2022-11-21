@@ -620,11 +620,11 @@ Weight Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=
                                             1 (type: float)
-    --block_size arg                        The examples will be processed in blocks of block_size. If an
+    --target_rate arg                       The examples will be processed in blocks of block_size. If an
                                             example update is found in that block no other examples in the
                                             block will be used to update the policy. If an example is not
                                             used in the block then the quota rolls over and the next block
-                                            can update more than one examples (type: uint, default: 1)
+                                            can update more than one examples (type: float, default: 1)
 [Reduction] Follow the Regularized Leader - Coin Options:
     --coin                                  Coin betting optimizer (type: bool, keep, necessary)
     --ftrl_alpha arg                        Learning rate for FTRL optimization (type: float)
