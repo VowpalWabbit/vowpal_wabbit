@@ -376,24 +376,45 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 
 void save_load_boosting_noop(boosting&, io_buf&, bool, bool) {}
 
-VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stack_builder)
+struct options_boosting_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<boosting>(all.logger);
+  int N;
+  float gamma;
+  std::string alg;
+};
+
+std::unique_ptr<options_boosting_v1> get_boosting_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto boosting_options_opts = VW::make_unique<options_boosting_v1>();
   option_group_definition new_options("[Reduction] Boosting");
-  new_options.add(make_option("boosting", data->N).keep().necessary().help("Online boosting with <N> weak learners"))
-      .add(make_option("gamma", data->gamma)
+  new_options.add(make_option("boosting", boosting_options_opts->N).keep().necessary().help("Online boosting with <N> weak learners"))
+      .add(make_option("gamma", boosting_options_opts->gamma)
                .default_value(0.1f)
                .help("Weak learner's edge (=0.1), used only by online BBM"))
       .add(
-          make_option("alg", data->alg)
+          make_option("alg", boosting_options_opts->alg)
               .keep()
               .default_value("BBM")
               .one_of({"BBM", "logistic", "adaptive"})
               .help("Specify the boosting algorithm: BBM (default), logistic (AdaBoost.OL.W), adaptive (AdaBoost.OL)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return boosting_options_opts;
+}
+
+VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto boosting_opts = get_boosting_options_instance(all, all.logger, options);
+  if (boosting_opts == nullptr) { return nullptr; }
+
+  auto boosting_data = VW::make_unique<boosting>(all.logger);
+
+  boosting_data->N = boosting_opts->N;
+  boosting_data->gamma = boosting_opts->gamma;
+  boosting_data->alg = boosting_opts->alg;
 
   // Description of options:
   // "BBM" implements online BBM (Algorithm 1 in BLK'15)
@@ -402,37 +423,37 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
   // "adaptive" implements AdaBoost.OL (Algorithm 2 in BLK'15,
   // 	    using sampling rather than importance weighting)
 
-  all.logger.err_info("Number of weak learners = {}", data->N);
-  all.logger.err_info("Gamma = {}", data->gamma);
+  all.logger.err_info("Number of weak learners = {}", boosting_data->N);
+  all.logger.err_info("Gamma = {}", boosting_data->gamma);
 
-  data->C = std::vector<std::vector<int64_t> >(data->N, std::vector<int64_t>(data->N, -1));
-  data->t = 0;
-  data->all = &all;
-  data->random_state = all.get_random_state();
-  data->alpha = std::vector<float>(data->N, 0);
-  data->v = std::vector<float>(data->N, 1);
+  boosting_data->C = std::vector<std::vector<int64_t> >(boosting_data->N, std::vector<int64_t>(boosting_data->N, -1));
+  boosting_data->t = 0;
+  boosting_data->all = &all;
+  boosting_data->random_state = all.get_random_state();
+  boosting_data->alpha = std::vector<float>(boosting_data->N, 0);
+  boosting_data->v = std::vector<float>(boosting_data->N, 1);
 
-  size_t ws = data->N;
+  size_t ws = boosting_data->N;
   std::string name_addition;
   void (*learn_ptr)(boosting&, VW::LEARNER::single_learner&, VW::example&);
   void (*pred_ptr)(boosting&, VW::LEARNER::single_learner&, VW::example&);
   void (*save_load_fn)(boosting&, io_buf&, bool, bool);
 
-  if (data->alg == "BBM")
+  if (boosting_data->alg == "BBM")
   {
     name_addition = "";
     learn_ptr = predict_or_learn<true>;
     pred_ptr = predict_or_learn<false>;
     save_load_fn = save_load_boosting_noop;
   }
-  else if (data->alg == "logistic")
+  else if (boosting_data->alg == "logistic")
   {
     name_addition = "-logistic";
     learn_ptr = predict_or_learn_logistic<true>;
     pred_ptr = predict_or_learn_logistic<false>;
     save_load_fn = save_load;
   }
-  else if (data->alg == "adaptive")
+  else if (boosting_data->alg == "adaptive")
   {
     name_addition = "-adaptive";
     learn_ptr = predict_or_learn_adaptive<true>;
@@ -441,10 +462,10 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
   }
   else
   {
-    THROW("Unrecognized boosting algorithm: \'" << data->alg << "\'.");
+    THROW("Unrecognized boosting algorithm: \'" << boosting_data->alg << "\'.");
   }
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
+  auto* l = make_reduction_learner(std::move(boosting_data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
       pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)

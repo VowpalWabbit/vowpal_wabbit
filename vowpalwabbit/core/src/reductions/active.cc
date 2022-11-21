@@ -171,18 +171,21 @@ void save_load(active& a, io_buf& io, bool read, bool text)
   }
 }
 
-base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
+struct options_active_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-
   bool active_option = false;
   bool simulation = false;
   float active_c0;
+};
+
+std::unique_ptr<options_active_v1> get_active_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto active_opts = VW::make_unique<options_active_v1>();
   option_group_definition new_options("[Reduction] Active Learning");
-  new_options.add(make_option("active", active_option).keep().necessary().help("Enable active learning"))
-      .add(make_option("simulation", simulation).help("Active learning simulation mode"))
-      .add(make_option("mellowness", active_c0)
+  new_options.add(make_option("active", active_opts->active_option).keep().necessary().help("Enable active learning"))
+      .add(make_option("simulation", active_opts->simulation).help("Active learning simulation mode"))
+      .add(make_option("mellowness", active_opts->active_c0)
                .keep()
                .default_value(8.f)
                .help("Active learning mellowness parameter c_0. Default 8"));
@@ -190,7 +193,17 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("lda")) { THROW("lda cannot be combined with active learning") }
-  auto data = VW::make_unique<active>(active_c0, &all);
+  return active_opts;
+}
+
+base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto active_opts = get_active_options_instance(all, all.logger, options);
+  if (active_opts == nullptr) { return nullptr; }
+
+  auto active_data = VW::make_unique<active>(active_opts->active_c0, &all);
   auto base = as_singleline(stack_builder.setup_base_learner());
 
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, VW::example&);
@@ -199,7 +212,7 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   void (*finish_ptr)(VW::workspace&, active&, VW::example&);
   bool learn_returns_prediction = true;
   std::string reduction_name = stack_builder.get_setupfn_name(VW::reductions::active_setup);
-  if (simulation)
+  if (active_opts->simulation)
   {
     learn_func = predict_or_learn_simulation<true>;
     pred_func = predict_or_learn_simulation<false>;
@@ -216,7 +229,7 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   }
 
   // Create new learner
-  auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
+  auto* l = make_reduction_learner(std::move(active_data), base, learn_func, pred_func, reduction_name)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_learn_returns_prediction(learn_returns_prediction)

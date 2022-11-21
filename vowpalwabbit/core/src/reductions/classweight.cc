@@ -84,19 +84,33 @@ void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base,
 }
 }  // namespace
 
+struct options_classweight_v1
+{
+  std::vector<std::string> classweight_array;
+};
+
+std::unique_ptr<options_classweight_v1> get_classweight_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto classweight_opts = VW::make_unique<options_classweight_v1>();
+  option_group_definition new_options("[Reduction]  Importance Weight Classes");
+  new_options.add(
+      make_option("classweight", classweight_opts->classweight_array).necessary().help("Importance weight multiplier for class"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return classweight_opts;
+}
+
 VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  std::vector<std::string> classweight_array;
+  auto classweight_opts = get_classweight_options_instance(all, all.logger, options);
+  if (classweight_opts == nullptr) { return nullptr; }
+
   auto cweights = VW::make_unique<classweights>();
-  option_group_definition new_options("[Reduction]  Importance Weight Classes");
-  new_options.add(
-      make_option("classweight", classweight_array).necessary().help("Importance weight multiplier for class"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  for (auto& s : classweight_array) { cweights->load_string(s); }
+  for (auto& s : classweight_opts->classweight_array) { cweights->load_string(s); }
   all.logger.err_info("parsed {} class weights", cweights->weights.size());
 
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());

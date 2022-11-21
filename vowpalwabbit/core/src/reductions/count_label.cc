@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/count_label.h"
 
+#include "vw/config/options.h"
 #include "vw/common/future_compat.h"
 #include "vw/config/options.h"
 #include "vw/core/best_constant.h"
@@ -15,6 +16,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/io/logger.h"
 
+using namespace VW::config;
 namespace
 {
 class reduction_data
@@ -61,29 +63,43 @@ void finish_example_single(VW::workspace& all, reduction_data& data, VW::example
 {
   VW::LEARNER::as_singleline(data.base)->finish_example(all, ec);
 }
+
+struct options_count_label_v1
+{
+  bool dont_output_best_constant = false;
+};
+
+std::unique_ptr<options_count_label_v1> get_count_label_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto count_label_opts = VW::make_unique<options_count_label_v1>();
+  VW::config::option_group_definition reduction_options("[Reduction] Count label");
+  reduction_options.add(VW::config::make_option("dont_output_best_constant", count_label_opts->dont_output_best_constant)
+                            .help("Don't track the best constant used in the output"));
+
+  options.add_and_parse(reduction_options);
+  return count_label_opts;
+}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& stack_builder)
 {
-  bool dont_output_best_constant = false;
-  VW::config::option_group_definition reduction_options("[Reduction] Count label");
-  reduction_options.add(VW::config::make_option("dont_output_best_constant", dont_output_best_constant)
-                            .help("Don't track the best constant used in the output"));
-
-  stack_builder.get_options()->add_and_parse(reduction_options);
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto count_label_opts = get_count_label_options_instance(all, all.logger, options);
+  if (count_label_opts == nullptr) { return nullptr; }
 
   auto* base = stack_builder.setup_base_learner();
 
   // When called to determine the name base will be nullptr and other `all` state will be nullptr.
   if (base == nullptr) { return nullptr; }
 
-  auto* all = stack_builder.get_all_pointer();
-  auto base_label_type = all->example_parser->lbl_parser.label_type;
-  if (dont_output_best_constant)
+  auto base_label_type = all.example_parser->lbl_parser.label_type;
+  if (count_label_opts->dont_output_best_constant)
   {
     if (base_label_type != label_type_t::SIMPLE)
     {
-      all->logger.out_warn(
+      all.logger.out_warn(
           "--dont_output_best_constant is not relevant. best constant is only tracked if the label type is simple.");
     }
 
@@ -96,10 +112,10 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
   // constructed but it works because we aren't part of it
   if (base_label_type != label_type_t::SIMPLE) { return base; }
 
-  auto data = VW::make_unique<reduction_data>(all, base);
+  auto count_label_data = VW::make_unique<reduction_data>(&all, base);
   if (base->is_multiline())
   {
-    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base),
+    auto* learner = VW::LEARNER::make_reduction_learner(std::move(count_label_data), VW::LEARNER::as_multiline(base),
         count_label_multi<true>, count_label_multi<false>, stack_builder.get_setupfn_name(count_label_setup))
                         .set_learn_returns_prediction(base->learn_returns_prediction)
                         .set_output_prediction_type(base->get_output_prediction_type())
@@ -109,7 +125,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
     return VW::LEARNER::make_base(*learner);
   }
 
-  auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
+  auto* learner = VW::LEARNER::make_reduction_learner(std::move(count_label_data), VW::LEARNER::as_singleline(base),
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .set_output_prediction_type(base->get_output_prediction_type())

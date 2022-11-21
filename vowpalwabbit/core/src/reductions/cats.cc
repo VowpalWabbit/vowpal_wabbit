@@ -173,21 +173,23 @@ void reduction_output::print_update_cb_cont(VW::workspace& all, const VW::exampl
 // END: functions to output progress
 ////////////////////////////////////////////////////
 
-// Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
+struct options_cats_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-
-  option_group_definition new_options("[Reduction] Continuous Actions Tree with Smoothing");
   uint32_t num_actions = 0;
   float bandwidth = 0;
   float min_value = 0;
   float max_value = 0;
-  new_options.add(make_option("cats", num_actions).keep().necessary().help("Number of discrete actions <k> for cats"))
-      .add(make_option("min_value", min_value).keep().help("Minimum continuous value"))
-      .add(make_option("max_value", max_value).keep().help("Maximum continuous value"))
-      .add(make_option("bandwidth", bandwidth)
+};
+
+std::unique_ptr<options_cats_v1> get_cats_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto cats_opts = VW::make_unique<options_cats_v1>();
+  option_group_definition new_options("[Reduction] Continuous Actions Tree with Smoothing");
+  new_options.add(make_option("cats", cats_opts->num_actions).keep().necessary().help("Number of discrete actions <k> for cats"))
+      .add(make_option("min_value", cats_opts->min_value).keep().help("Minimum continuous value"))
+      .add(make_option("max_value", cats_opts->max_value).keep().help("Maximum continuous value"))
+      .add(make_option("bandwidth", cats_opts->bandwidth)
                .keep()
                .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range. By "
                      "default will be set to half of the continuous action unit-range resulting in smoothing that "
@@ -197,30 +199,40 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return cats_opts;
+}
 
-  if (num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
+// Setup reduction in stack
+VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cats_opts = get_cats_options_instance(all, all.logger, options);
+  if (cats_opts == nullptr) { return nullptr; }
+
+  if (cats_opts->num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
 
   // cats stack = [cats -> sample_pdf -> cats_pdf ... rest specified by cats_pdf]
   if (!options.was_supplied("sample_pdf")) { options.insert("sample_pdf", ""); }
-  options.insert("cats_pdf", std::to_string(num_actions));
+  options.insert("cats_pdf", std::to_string(cats_opts->num_actions));
 
   if (!options.was_supplied("bandwidth"))
   {
-    float leaf_width = (max_value - min_value) / (num_actions);  // aka unit range
+    float leaf_width = (cats_opts->max_value - cats_opts->min_value) / (cats_opts->num_actions);  // aka unit range
     float half_leaf_width = leaf_width / 2.f;
-    bandwidth = half_leaf_width;
+    cats_opts->bandwidth = half_leaf_width;
     all.logger.err_info(
-        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", bandwidth);
+        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", cats_opts->bandwidth);
   }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
-  auto p_reduction = VW::make_unique<VW::reductions::cats::cats>(as_singleline(p_base));
-  p_reduction->num_actions = num_actions;
-  p_reduction->bandwidth = bandwidth;
-  p_reduction->max_value = max_value;
-  p_reduction->min_value = min_value;
+  auto cats_data = VW::make_unique<VW::reductions::cats::cats>(as_singleline(p_base));
+  cats_data->num_actions = cats_opts->num_actions;
+  cats_data->bandwidth = cats_opts->bandwidth;
+  cats_data->max_value = cats_opts->max_value;
+  cats_data->min_value = cats_opts->min_value;
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto* l = make_reduction_learner(std::move(cats_data), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
                 .set_finish_example(::finish_example)

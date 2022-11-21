@@ -96,20 +96,32 @@ void return_confidence_example(VW::workspace& all, confidence& /* c */, VW::exam
   VW::finish_example(all, ec);
 }
 
+struct options_confidence_v1
+{
+  bool confidence_arg = false;
+  bool confidence_after_training = false;
+};
+
+std::unique_ptr<options_confidence_v1> get_confidence_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto confidence_opts = VW::make_unique<options_confidence_v1>();
+  option_group_definition new_options("[Reduction] Confidence");
+  new_options
+      .add(make_option("confidence", confidence_opts->confidence_arg).keep().necessary().help("Get confidence for binary predictions"))
+      .add(make_option("confidence_after_training", confidence_opts->confidence_after_training).help("Confidence after training"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return confidence_opts;
+}
 }  // namespace
 
 base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  bool confidence_arg = false;
-  bool confidence_after_training = false;
-  option_group_definition new_options("[Reduction] Confidence");
-  new_options
-      .add(make_option("confidence", confidence_arg).keep().necessary().help("Get confidence for binary predictions"))
-      .add(make_option("confidence_after_training", confidence_after_training).help("Confidence after training"));
-
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  auto confidence_opts = get_confidence_options_instance(all, all.logger, options);
+  if (confidence_opts == nullptr) { return nullptr; }
 
   if (!all.training)
   {
@@ -121,13 +133,13 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
     return nullptr;
   }
 
-  auto data = VW::make_unique<confidence>();
-  data->all = &all;
+  auto confidence_data = VW::make_unique<confidence>();
+  confidence_data->all = &all;
 
   void (*learn_with_confidence_ptr)(confidence&, single_learner&, VW::example&) = nullptr;
   void (*predict_with_confidence_ptr)(confidence&, single_learner&, VW::example&) = nullptr;
 
-  if (confidence_after_training)
+  if (confidence_opts->confidence_after_training)
   {
     learn_with_confidence_ptr = predict_or_learn_with_confidence<true, true>;
     predict_with_confidence_ptr = predict_or_learn_with_confidence<false, true>;
@@ -141,7 +153,7 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
   auto base = as_singleline(stack_builder.setup_base_learner());
 
   // Create new learner
-  auto* l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
+  auto* l = make_reduction_learner(std::move(confidence_data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
       stack_builder.get_setupfn_name(confidence_setup))
                 .set_learn_returns_prediction(true)
                 .set_input_label_type(VW::label_type_t::SIMPLE)

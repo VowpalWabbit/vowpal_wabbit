@@ -611,27 +611,28 @@ void save_load(ccb_data& sm, io_buf& io, bool read, bool text)
   if (read && sm.has_seen_multi_slot_example)
   { insert_ccb_interactions(sm.all->interactions, sm.all->extent_interactions); }
 }
-}  // namespace
-base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
+
+struct options_ccb_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<ccb_data>();
   bool ccb_explore_adf_option = false;
   bool all_slots_loss_report = false;
   std::string type_string = "mtr";
+  bool no_pred;
+};
 
-  data->is_ccb_input_model = all.is_ccb_input_model;
-
+std::unique_ptr<options_ccb_v1> get_ccb_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto ccb_opts = VW::make_unique<options_ccb_v1>();
   option_group_definition new_options("[Reduction] Conditional Contextual Bandit Exploration with ADF");
   new_options
-      .add(make_option("ccb_explore_adf", ccb_explore_adf_option)
+      .add(make_option("ccb_explore_adf", ccb_opts->ccb_explore_adf_option)
                .keep()
                .necessary()
                .help("Do Conditional Contextual Bandit learning with multiline action dependent features"))
-      .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
-      .add(make_option("no_predict", data->no_pred).help("Do not do a prediction when training"))
-      .add(make_option("cb_type", type_string)
+      .add(make_option("all_slots_loss", ccb_opts->all_slots_loss_report).help("Report average loss from all slots"))
+      .add(make_option("no_predict", ccb_opts->no_pred).help("Do not do a prediction when training"))
+      .add(make_option("cb_type", ccb_opts->type_string)
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
@@ -642,11 +643,10 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))
   {
-    options.insert("cb_type", type_string);
+    options.insert("cb_type", ccb_opts->type_string);
     options.add_and_parse(new_options);
   }
 
-  data->all_slots_loss_report = all_slots_loss_report;
   if (!options.was_supplied("cb_explore_adf"))
   {
     options.insert("cb_explore_adf", "");
@@ -656,14 +656,32 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
   if (options.was_supplied("no_predict") && options.was_supplied("p"))
   { THROW("Error: Cannot use flags --no_predict and -p simultaneously"); }
 
-  if (options.was_supplied("no_predict") && type_string != "mtr")
+  if (options.was_supplied("no_predict") && ccb_opts->type_string != "mtr")
   { THROW("Error: --no_predict flag can only be used with default cb_type mtr"); }
 
-  if (!options.was_supplied("cb_sample") && !data->no_pred)
+  if (!options.was_supplied("cb_sample") && !ccb_opts->no_pred)
   {
     options.insert("cb_sample", "");
     options.add_and_parse(new_options);
   }
+
+  return ccb_opts;
+}
+
+}  // namespace
+
+base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto ccb_opts = get_ccb_options_instance(all, all.logger, options);
+  if (ccb_opts == nullptr) { return nullptr; }
+
+  auto data = VW::make_unique<ccb_data>();
+
+  data->no_pred = ccb_opts->no_pred;
+  data->is_ccb_input_model = all.is_ccb_input_model;
+  data->all_slots_loss_report = ccb_opts->all_slots_loss_report;
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::ccb_label_parser_global;

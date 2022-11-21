@@ -357,21 +357,24 @@ void learn(VW::reductions::cats::cats_tree& tree, single_learner& base, VW::exam
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
+struct options_cats_tree_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-
-  option_group_definition new_options("[Reduction] CATS Tree");
   uint32_t num_actions;  // = K = 2^D
   uint32_t bandwidth;    // = 2^h#
   std::string link;
-  new_options.add(make_option("cats_tree", num_actions).keep().necessary().help("CATS Tree with <k> labels"))
-      .add(make_option("tree_bandwidth", bandwidth)
+};
+
+std::unique_ptr<options_cats_tree_v1> get_cats_tree_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto cats_tree_opts = VW::make_unique<options_cats_tree_v1>();
+  option_group_definition new_options("[Reduction] CATS Tree");
+  new_options.add(make_option("cats_tree", cats_tree_opts->num_actions).keep().necessary().help("CATS Tree with <k> labels"))
+      .add(make_option("tree_bandwidth", cats_tree_opts->bandwidth)
                .default_value(0)
                .keep()
                .help("Tree bandwidth for continuous actions in terms of #actions"))
-      .add(make_option("link", link)
+      .add(make_option("link", cats_tree_opts->link)
                .keep()
                .one_of({"glf1"})
                .help("The learner in each node must return a prediction in range [-1,1], so only glf1 is allowed"));
@@ -380,15 +383,24 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
 
   // default behaviour uses binary
   if (!options.was_supplied("link")) { options.insert("binary", ""); }
+  return cats_tree_opts;
+}
 
-  auto tree = VW::make_unique<VW::reductions::cats::cats_tree>();
-  tree->init(num_actions, bandwidth);
-  tree->set_trace_message(all.trace_message.get(), all.quiet);
+VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cats_tree_opts = get_cats_tree_options_instance(all, all.logger, options);
+  if (cats_tree_opts == nullptr) { return nullptr; }
+
+  auto cats_tree_data = VW::make_unique<VW::reductions::cats::cats_tree>();
+  cats_tree_data->init(cats_tree_opts->num_actions, cats_tree_opts->bandwidth);
+  cats_tree_data->set_trace_message(all.trace_message.get(), all.quiet);
 
   base_learner* base = stack_builder.setup_base_learner();
-  int32_t params_per_weight = tree->learner_count();
+  int32_t params_per_weight = cats_tree_data->learner_count();
   auto* l = make_reduction_learner(
-      std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
+      std::move(cats_tree_data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
                 .set_params_per_weight(params_per_weight)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_input_label_type(VW::label_type_t::CB)

@@ -163,31 +163,50 @@ float sensitivity(baseline_data& data, base_learner& base, VW::example& ec)
   return baseline_sens + sens;
 }
 
-base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
+struct options_baseline_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<baseline_data>();
   bool baseline_option = false;
-  std::string loss_function;
+  float lr_multiplier;
+  bool global_only;
+  bool check_enabled;
+};
 
+std::unique_ptr<options_baseline_v1> get_baseline_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto baseline_opts = VW::make_unique<options_baseline_v1>();
   option_group_definition new_options("[Reduction] Baseline");
   new_options
-      .add(make_option("baseline", baseline_option)
+      .add(make_option("baseline", baseline_opts->baseline_option)
                .keep()
                .necessary()
                .help("Learn an additive baseline (from constant features) and a residual separately in regression"))
-      .add(make_option("lr_multiplier", data->lr_multiplier)
+      .add(make_option("lr_multiplier", baseline_opts->lr_multiplier)
                .default_value(1.f)
                .help("Learning rate multiplier for baseline model"))
-      .add(make_option("global_only", data->global_only)
+      .add(make_option("global_only", baseline_opts->global_only)
                .keep()
                .help("Use separate example with only global constant for baseline predictions"))
-      .add(make_option("check_enabled", data->check_enabled)
+      .add(make_option("check_enabled", baseline_opts->check_enabled)
                .keep()
                .help("Only use baseline when the example contains enabled flag"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return baseline_opts;
+}
+
+base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto baseline_opts = get_baseline_options_instance(all, all.logger, options);
+  if (baseline_opts == nullptr) { return nullptr; }
+
+  auto data = VW::make_unique<baseline_data>();
+
+  data->lr_multiplier = baseline_opts->lr_multiplier;
+  data->global_only = baseline_opts->global_only;
+  data->check_enabled = baseline_opts->check_enabled;
 
   // initialize baseline example's interactions.
   data->ec.interactions = &all.interactions;
