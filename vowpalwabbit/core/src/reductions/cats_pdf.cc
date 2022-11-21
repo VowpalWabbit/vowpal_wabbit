@@ -168,8 +168,10 @@ std::unique_ptr<options_cats_pdf_v1> get_cats_pdf_options_instance(
 {
   auto cats_pdf_opts = VW::make_unique<options_cats_pdf_v1>();
   option_group_definition new_options("[Reduction] Continuous Action Tree with Smoothing with Full Pdf");
-  new_options.add(
-      make_option("cats_pdf", cats_pdf_opts->num_actions).keep().necessary().help("Number of tree labels <k> for cats_pdf"));
+  new_options.add(make_option("cats_pdf", cats_pdf_opts->num_actions)
+                      .keep()
+                      .necessary()
+                      .help("Number of tree labels <k> for cats_pdf"));
 
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;

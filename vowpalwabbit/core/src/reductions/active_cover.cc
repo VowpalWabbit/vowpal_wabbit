@@ -230,8 +230,10 @@ std::unique_ptr<options_active_cover_v1> get_active_cover_options_instance(
   option_group_definition new_options("[Reduction] Active Learning with Cover");
 
   new_options
-      .add(
-          make_option("active_cover", active_cover_opts->active_cover_option).keep().necessary().help("Enable active learning with cover"))
+      .add(make_option("active_cover", active_cover_opts->active_cover_option)
+               .keep()
+               .necessary()
+               .help("Enable active learning with cover"))
       .add(make_option("mellowness", active_cover_opts->active_c0)
                .keep()
                .default_value(8.f)

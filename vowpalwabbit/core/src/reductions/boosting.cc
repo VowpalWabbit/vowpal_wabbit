@@ -388,7 +388,11 @@ std::unique_ptr<options_boosting_v1> get_boosting_options_instance(
 {
   auto boosting_options_opts = VW::make_unique<options_boosting_v1>();
   option_group_definition new_options("[Reduction] Boosting");
-  new_options.add(make_option("boosting", boosting_options_opts->N).keep().necessary().help("Online boosting with <N> weak learners"))
+  new_options
+      .add(make_option("boosting", boosting_options_opts->N)
+               .keep()
+               .necessary()
+               .help("Online boosting with <N> weak learners"))
       .add(make_option("gamma", boosting_options_opts->gamma)
                .default_value(0.1f)
                .help("Weak learner's edge (=0.1), used only by online BBM"))
@@ -465,8 +469,8 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
     THROW("Unrecognized boosting algorithm: \'" << boosting_data->alg << "\'.");
   }
 
-  auto* l = make_reduction_learner(std::move(boosting_data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
-      pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(boosting_data), as_singleline(stack_builder.setup_base_learner()),
+      learn_ptr, pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_input_label_type(VW::label_type_t::SIMPLE)

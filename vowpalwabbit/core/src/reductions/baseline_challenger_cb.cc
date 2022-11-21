@@ -237,14 +237,16 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
   auto baseline_challenger_cb_opts = get_baseline_challenger_cb_options_instance(all, all.logger, options);
   if (baseline_challenger_cb_opts == nullptr) { return nullptr; }
 
-  auto baseline_challenger_cb_data = VW::make_unique<baseline_challenger_data>(baseline_challenger_cb_opts->emit_metrics, baseline_challenger_cb_opts->alpha, baseline_challenger_cb_opts->tau);
+  auto baseline_challenger_cb_data = VW::make_unique<baseline_challenger_data>(
+      baseline_challenger_cb_opts->emit_metrics, baseline_challenger_cb_opts->alpha, baseline_challenger_cb_opts->tau);
 
-  auto* l = make_reduction_learner(std::move(baseline_challenger_cb_data), as_multiline(stack_builder.setup_base_learner()),
-      learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_save_load(save_load)
-                .set_persist_metrics(persist_metrics)
-                .build();
+  auto* l =
+      make_reduction_learner(std::move(baseline_challenger_cb_data), as_multiline(stack_builder.setup_base_learner()),
+          learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
+          .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+          .set_input_label_type(VW::label_type_t::CB)
+          .set_save_load(save_load)
+          .set_persist_metrics(persist_metrics)
+          .build();
   return make_base(*l);
 }

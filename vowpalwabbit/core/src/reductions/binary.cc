@@ -72,8 +72,10 @@ std::unique_ptr<options_binary_v1> get_binary_options_instance(
 {
   auto binary_opts = VW::make_unique<options_binary_v1>();
   option_group_definition new_options("[Reduction] Binary Loss");
-  new_options.add(
-      make_option("binary", binary_opts->binary).keep().necessary().help("Report loss as binary classification on -1,1"));
+  new_options.add(make_option("binary", binary_opts->binary)
+                      .keep()
+                      .necessary()
+                      .help("Report loss as binary classification on -1,1"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return binary_opts;

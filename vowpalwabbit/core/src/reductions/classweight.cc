@@ -94,8 +94,9 @@ std::unique_ptr<options_classweight_v1> get_classweight_options_instance(
 {
   auto classweight_opts = VW::make_unique<options_classweight_v1>();
   option_group_definition new_options("[Reduction]  Importance Weight Classes");
-  new_options.add(
-      make_option("classweight", classweight_opts->classweight_array).necessary().help("Importance weight multiplier for class"));
+  new_options.add(make_option("classweight", classweight_opts->classweight_array)
+                      .necessary()
+                      .help("Importance weight multiplier for class"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return classweight_opts;

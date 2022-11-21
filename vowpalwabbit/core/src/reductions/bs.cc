@@ -237,8 +237,7 @@ struct options_bs_v1
   std::string type_string;
 };
 
-std::unique_ptr<options_bs_v1> get_bs_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_bs_v1> get_bs_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto bs_opts = VW::make_unique<options_bs_v1>();
   option_group_definition new_options("[Reduction] Bootstrap");

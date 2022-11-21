@@ -305,9 +305,11 @@ VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_
 
   all.audit = true;
 
-  auto audit_regressor_data = VW::make_unique<audit_regressor_data_obj>(&all, VW::io::open_file_writer(audit_regressor_opts->out_file));
-  auto ret = VW::LEARNER::make_reduction_learner(std::move(audit_regressor_data), as_singleline(stack_builder.setup_base_learner()),
-      audit_regressor, audit_regressor, stack_builder.get_setupfn_name(audit_regressor_setup))
+  auto audit_regressor_data =
+      VW::make_unique<audit_regressor_data_obj>(&all, VW::io::open_file_writer(audit_regressor_opts->out_file));
+  auto ret = VW::LEARNER::make_reduction_learner(std::move(audit_regressor_data),
+      as_singleline(stack_builder.setup_base_learner()), audit_regressor, audit_regressor,
+      stack_builder.get_setupfn_name(audit_regressor_setup))
                  // learn does not predict or learn. nothing to be gained by calling predict() before learn()
                  .set_learn_returns_prediction(true)
                  .set_finish_example(::finish_example)

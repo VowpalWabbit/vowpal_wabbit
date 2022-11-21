@@ -369,7 +369,8 @@ std::unique_ptr<options_cats_tree_v1> get_cats_tree_options_instance(
 {
   auto cats_tree_opts = VW::make_unique<options_cats_tree_v1>();
   option_group_definition new_options("[Reduction] CATS Tree");
-  new_options.add(make_option("cats_tree", cats_tree_opts->num_actions).keep().necessary().help("CATS Tree with <k> labels"))
+  new_options
+      .add(make_option("cats_tree", cats_tree_opts->num_actions).keep().necessary().help("CATS Tree with <k> labels"))
       .add(make_option("tree_bandwidth", cats_tree_opts->bandwidth)
                .default_value(0)
                .keep()

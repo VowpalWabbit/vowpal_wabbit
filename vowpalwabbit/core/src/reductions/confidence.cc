@@ -108,8 +108,12 @@ std::unique_ptr<options_confidence_v1> get_confidence_options_instance(
   auto confidence_opts = VW::make_unique<options_confidence_v1>();
   option_group_definition new_options("[Reduction] Confidence");
   new_options
-      .add(make_option("confidence", confidence_opts->confidence_arg).keep().necessary().help("Get confidence for binary predictions"))
-      .add(make_option("confidence_after_training", confidence_opts->confidence_after_training).help("Confidence after training"));
+      .add(make_option("confidence", confidence_opts->confidence_arg)
+               .keep()
+               .necessary()
+               .help("Get confidence for binary predictions"))
+      .add(make_option("confidence_after_training", confidence_opts->confidence_after_training)
+               .help("Confidence after training"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return confidence_opts;
@@ -153,8 +157,8 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
   auto base = as_singleline(stack_builder.setup_base_learner());
 
   // Create new learner
-  auto* l = make_reduction_learner(std::move(confidence_data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
-      stack_builder.get_setupfn_name(confidence_setup))
+  auto* l = make_reduction_learner(std::move(confidence_data), base, learn_with_confidence_ptr,
+      predict_with_confidence_ptr, stack_builder.get_setupfn_name(confidence_setup))
                 .set_learn_returns_prediction(true)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)

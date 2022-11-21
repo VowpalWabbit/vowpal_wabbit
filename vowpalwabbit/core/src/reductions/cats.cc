@@ -181,12 +181,15 @@ struct options_cats_v1
   float max_value = 0;
 };
 
-std::unique_ptr<options_cats_v1> get_cats_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_cats_v1> get_cats_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto cats_opts = VW::make_unique<options_cats_v1>();
   option_group_definition new_options("[Reduction] Continuous Actions Tree with Smoothing");
-  new_options.add(make_option("cats", cats_opts->num_actions).keep().necessary().help("Number of discrete actions <k> for cats"))
+  new_options
+      .add(make_option("cats", cats_opts->num_actions)
+               .keep()
+               .necessary()
+               .help("Number of discrete actions <k> for cats"))
       .add(make_option("min_value", cats_opts->min_value).keep().help("Minimum continuous value"))
       .add(make_option("max_value", cats_opts->max_value).keep().help("Maximum continuous value"))
       .add(make_option("bandwidth", cats_opts->bandwidth)
@@ -221,8 +224,8 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
     float leaf_width = (cats_opts->max_value - cats_opts->min_value) / (cats_opts->num_actions);  // aka unit range
     float half_leaf_width = leaf_width / 2.f;
     cats_opts->bandwidth = half_leaf_width;
-    all.logger.err_info(
-        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", cats_opts->bandwidth);
+    all.logger.err_info("Bandwidth was not supplied, setting default to half the continuous action unit range: {}",
+        cats_opts->bandwidth);
   }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();

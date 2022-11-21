@@ -4,7 +4,6 @@
 
 #include "vw/core/reductions/count_label.h"
 
-#include "vw/config/options.h"
 #include "vw/common/future_compat.h"
 #include "vw/config/options.h"
 #include "vw/core/best_constant.h"
@@ -74,8 +73,9 @@ std::unique_ptr<options_count_label_v1> get_count_label_options_instance(
 {
   auto count_label_opts = VW::make_unique<options_count_label_v1>();
   VW::config::option_group_definition reduction_options("[Reduction] Count label");
-  reduction_options.add(VW::config::make_option("dont_output_best_constant", count_label_opts->dont_output_best_constant)
-                            .help("Don't track the best constant used in the output"));
+  reduction_options.add(
+      VW::config::make_option("dont_output_best_constant", count_label_opts->dont_output_best_constant)
+          .help("Don't track the best constant used in the output"));
 
   options.add_and_parse(reduction_options);
   return count_label_opts;

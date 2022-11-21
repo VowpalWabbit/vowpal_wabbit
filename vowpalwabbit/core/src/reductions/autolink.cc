@@ -95,7 +95,8 @@ std::unique_ptr<options_autolink_v1> get_autolink_options_instance(
 {
   auto autolink_opts = VW::make_unique<options_autolink_v1>();
   option_group_definition new_options("[Reduction] Autolink");
-  new_options.add(make_option("autolink", autolink_opts->d).keep().necessary().help("Create link function with polynomial d"));
+  new_options.add(
+      make_option("autolink", autolink_opts->d).keep().necessary().help("Create link function with polynomial d"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return autolink_opts;

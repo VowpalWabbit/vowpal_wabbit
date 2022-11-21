@@ -620,8 +620,7 @@ struct options_ccb_v1
   bool no_pred;
 };
 
-std::unique_ptr<options_ccb_v1> get_ccb_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_ccb_v1> get_ccb_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto ccb_opts = VW::make_unique<options_ccb_v1>();
   option_group_definition new_options("[Reduction] Conditional Contextual Bandit Exploration with ADF");
