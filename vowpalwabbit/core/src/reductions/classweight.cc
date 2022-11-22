@@ -140,8 +140,8 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
     THROW("--classweight not implemented for this type of prediction");
   }
 
-  auto* l = make_reduction_learner(
-      std::move(class_weights_data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(classweight_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(class_weights_data), base, learn_ptr, pred_ptr,
+      stack_builder.get_setupfn_name(classweight_setup) + name_addition)
                 .set_output_prediction_type(pred_type)
                 .build();
 

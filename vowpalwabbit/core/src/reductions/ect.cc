@@ -341,12 +341,12 @@ struct options_ect_v1
   uint64_t errors;
 };
 
-std::unique_ptr<options_ect_v1> get_ect_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_ect_v1> get_ect_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto ect_opts = VW::make_unique<options_ect_v1>();
   option_group_definition new_options("[Reduction] Error Correcting Tournament");
-  new_options.add(make_option("ect", ect_opts->k).keep().necessary().help("Error correcting tournament with <k> labels"))
+  new_options
+      .add(make_option("ect", ect_opts->k).keep().necessary().help("Error correcting tournament with <k> labels"))
       .add(make_option("error", ect_opts->errors).keep().default_value(0).help("Errors allowed by ECT"))
       // Used to check value. TODO replace
       .add(make_option("link", ect_opts->link)

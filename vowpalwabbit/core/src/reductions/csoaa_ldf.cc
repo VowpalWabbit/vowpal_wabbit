@@ -652,7 +652,9 @@ std::unique_ptr<options_csoaa_ldf_v1> get_csoaa_ldf_options_instance(
       .add(make_option("ldf_override", csoaa_ldf_opts->ldf_override)
                .help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"))
       .add(make_option("csoaa_rank", csoaa_ldf_opts->rank).keep().help("Return actions sorted by score order"))
-      .add(make_option("probabilities", csoaa_ldf_opts->is_probabilities).keep().help("Predict probabilities of all classes"));
+      .add(make_option("probabilities", csoaa_ldf_opts->is_probabilities)
+               .keep()
+               .help("Predict probabilities of all classes"));
 
   option_group_definition csldf_inner_options(
       "[Reduction] Cost Sensitive Weighted All-Pairs with Label Dependent Features");
@@ -729,7 +731,8 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
     { all.logger.out_warn("--probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)"); }
   }
 
-  all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !csoaa_ldf_data->is_singleline;
+  all.example_parser->emptylines_separate_examples =
+      true;  // TODO: check this to be sure!!!  !csoaa_ldf_data->is_singleline;
 
   csoaa_ldf_data->label_features.max_load_factor(0.25);
   csoaa_ldf_data->label_features.reserve(256);

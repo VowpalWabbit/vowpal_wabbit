@@ -340,7 +340,9 @@ std::unique_ptr<options_cs_active_v1> get_cs_active_options_instance(
                .help("Cost-sensitive active learning with <k> costs"))
       .add(make_option("simulation", cs_active_opts->simulation).help("Cost-sensitive active learning simulation mode"))
       .add(make_option("baseline", cs_active_opts->is_baseline).help("Cost-sensitive active learning baseline"))
-      .add(make_option("domination", cs_active_opts->domination).default_value(1).help("Cost-sensitive active learning use domination"))
+      .add(make_option("domination", cs_active_opts->domination)
+               .default_value(1)
+               .help("Cost-sensitive active learning use domination"))
       .add(make_option("mellowness", cs_active_opts->c0).keep().default_value(0.1f).help("Mellowness parameter c_0"))
       .add(make_option("range_c", cs_active_opts->c1)
                .default_value(0.5f)
@@ -379,10 +381,12 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
   cs_active_data->cost_min = cs_active_opts->cost_min;
   cs_active_data->print_debug_stuff = cs_active_opts->print_debug_stuff;
 
-  cs_active_data->max_labels =
-      cs_active_opts->max_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : cs_active_opts->max_labels;
-  cs_active_data->min_labels =
-      cs_active_opts->min_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : cs_active_opts->min_labels;
+  cs_active_data->max_labels = cs_active_opts->max_labels == std::numeric_limits<uint64_t>::max()
+      ? std::numeric_limits<size_t>::max()
+      : cs_active_opts->max_labels;
+  cs_active_data->min_labels = cs_active_opts->min_labels == std::numeric_limits<uint64_t>::max()
+      ? std::numeric_limits<size_t>::max()
+      : cs_active_opts->min_labels;
   cs_active_data->use_domination = true;
   if (options.was_supplied("domination") && !cs_active_opts->domination) { cs_active_data->use_domination = false; }
 
@@ -424,8 +428,8 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
   }
 
   size_t ws = cs_active_data->num_classes;
-  auto* l = make_reduction_learner(std::move(cs_active_data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
-      predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(cs_active_data), as_singleline(stack_builder.setup_base_learner()),
+      learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)
