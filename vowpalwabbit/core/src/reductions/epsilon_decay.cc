@@ -286,13 +286,8 @@ void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
   }
 }
 
-}  // namespace
-
-VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
+struct options_epsilon_decay_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-
   std::string arg;
   bool epsilon_decay_option;
   uint64_t model_count;
@@ -305,57 +300,62 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   uint64_t min_champ_examples;
   float initial_epsilon;
   uint64_t shift_model_bounds;
+};
 
+std::unique_ptr<options_epsilon_decay_v1> get_epsilon_decay_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto epsilon_decay_opts = VW::make_unique<options_epsilon_decay_v1>();
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
-      .add(make_option("epsilon_decay", epsilon_decay_option)
+      .add(make_option("epsilon_decay", epsilon_decay_opts->epsilon_decay_option)
                .necessary()
                .keep()
                .help("Use decay of exploration reduction")
                .experimental())
-      .add(make_option("model_count", model_count)
+      .add(make_option("model_count", epsilon_decay_opts->model_count)
                .keep()
                .default_value(3)
                .help("Set number of exploration models")
                .experimental())
-      .add(make_option("min_scope", min_scope)
+      .add(make_option("min_scope", epsilon_decay_opts->min_scope)
                .keep()
                .default_value(100)
                .help("Minimum example count of model before removing")
                .experimental())
-      .add(make_option("epsilon_decay_significance_level", epsilon_decay_significance_level)
+      .add(make_option("epsilon_decay_significance_level", epsilon_decay_opts->epsilon_decay_significance_level)
                .keep()
                .default_value(DEFAULT_ALPHA)
                .help("Set significance level for champion change")
                .experimental())
-      .add(make_option("epsilon_decay_estimator_decay", epsilon_decay_estimator_decay)
+      .add(make_option("epsilon_decay_estimator_decay", epsilon_decay_opts->epsilon_decay_estimator_decay)
                .keep()
                .default_value(CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
                .experimental())
-      .add(make_option("epsilon_decay_audit", epsilon_decay_audit_str)
+      .add(make_option("epsilon_decay_audit", epsilon_decay_opts->epsilon_decay_audit_str)
                .default_value("")
                .help("Epsilon decay audit file name")
                .experimental())
-      .add(make_option("constant_epsilon", constant_epsilon)
+      .add(make_option("constant_epsilon", epsilon_decay_opts->constant_epsilon)
                .keep()
                .help("Keep epsilon constant across models")
                .experimental())
-      .add(make_option("fixed_significance_level", fixed_significance_level)
+      .add(make_option("fixed_significance_level", epsilon_decay_opts->fixed_significance_level)
                .keep()
                .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
                .experimental())
-      .add(make_option("min_champ_examples", min_champ_examples)
+      .add(make_option("min_champ_examples", epsilon_decay_opts->min_champ_examples)
                .default_value(0)
                .keep()
                .help("Minimum number of examples for any challenger to become champion")
                .experimental())
-      .add(make_option("initial_epsilon", initial_epsilon)
+      .add(make_option("initial_epsilon", epsilon_decay_opts->initial_epsilon)
                .default_value(1.0)
                .keep()
                .help("Initial epsilon value")
                .experimental())
-      .add(make_option("shift_model_bounds", shift_model_bounds)
+      .add(make_option("shift_model_bounds", epsilon_decay_opts->shift_model_bounds)
                .default_value(0)
                .keep()
                .help("Shift maximum update_count for model i from champ_update_count^(i / num_models) to "
@@ -363,14 +363,25 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return epsilon_decay_opts;
+}
 
-  if (model_count < 1) { THROW("Model count must be 1 or greater"); }
+}  // namespace
 
-  if (!fixed_significance_level) { epsilon_decay_significance_level /= model_count; }
+VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto epsilon_decay_opts = get_epsilon_decay_options_instance(all, all.logger, options);
+  if (epsilon_decay_opts == nullptr) { return nullptr; }
 
-  auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
-      epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon, shift_model_bounds);
+  if (epsilon_decay_opts->model_count < 1) { THROW("Model count must be 1 or greater"); }
+
+  if (!epsilon_decay_opts->fixed_significance_level) { epsilon_decay_opts->epsilon_decay_significance_level /= epsilon_decay_opts->model_count; }
+
+  auto epsilon_decay_data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(epsilon_decay_opts->model_count, epsilon_decay_opts->min_scope,
+      epsilon_decay_opts->epsilon_decay_significance_level, epsilon_decay_opts->epsilon_decay_estimator_decay, all.weights.dense_weights,
+      epsilon_decay_opts->epsilon_decay_audit_str, epsilon_decay_opts->constant_epsilon, all.wpp, epsilon_decay_opts->min_champ_examples, epsilon_decay_opts->initial_epsilon, epsilon_decay_opts->shift_model_bounds);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -380,23 +391,23 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
       base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
   auto& adf_data = *static_cast<CB_ADF::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
                                                      ->get_internal_type_erased_data_pointer_test_use_only());
-  data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
-  data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
-  data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
-  data->_gd_total_weight = &(gd.per_model_states[0].total_weight);
-  data->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
-  data->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
-  data->_sd_gravity = &(all.sd->gravity);
+  epsilon_decay_data->per_live_model_state_double = std::vector<double>(epsilon_decay_opts->model_count * 3, 0.f);
+  epsilon_decay_data->per_live_model_state_uint64 = std::vector<uint64_t>(epsilon_decay_opts->model_count * 2, 0.f);
+  epsilon_decay_data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
+  epsilon_decay_data->_gd_total_weight = &(gd.per_model_states[0].total_weight);
+  epsilon_decay_data->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
+  epsilon_decay_data->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
+  epsilon_decay_data->_sd_gravity = &(all.sd->gravity);
 
   if (base_learner->is_multiline())
   {
-    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
+    auto* learner = VW::LEARNER::make_reduction_learner(std::move(epsilon_decay_data), VW::LEARNER::as_multiline(base_learner), learn,
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_input_label_type(VW::label_type_t::CB)
                         .set_output_label_type(VW::label_type_t::CB)
                         .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                         .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                        .set_params_per_weight(model_count)
+                        .set_params_per_weight(epsilon_decay_opts->model_count)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_epsilon_decay)
                         .set_finish(::finish)
