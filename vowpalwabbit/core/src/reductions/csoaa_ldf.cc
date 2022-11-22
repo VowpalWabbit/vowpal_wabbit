@@ -627,34 +627,36 @@ void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_se
 
   VW::finish_example(all, ec_seq);
 }
-}  // namespace
 
-base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
+struct options_csoaa_ldf_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto ld = VW::make_unique<ldf>();
-
   std::string csoaa_ldf;
   std::string ldf_override;
   std::string wap_ldf;
+  bool rank;
+  bool is_probabilities;
+};
 
+std::unique_ptr<options_csoaa_ldf_v1> get_csoaa_ldf_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto csoaa_ldf_opts = VW::make_unique<options_csoaa_ldf_v1>();
   option_group_definition csldf_outer_options(
       "[Reduction] Cost Sensitive One Against All with Label Dependent Features");
   csldf_outer_options
-      .add(make_option("csoaa_ldf", csoaa_ldf)
+      .add(make_option("csoaa_ldf", csoaa_ldf_opts->csoaa_ldf)
                .keep()
                .necessary()
                .one_of({"m", "multiline", "mc", "multiline-classifier"})
                .help("Use one-against-all multiclass learning with label dependent features"))
-      .add(make_option("ldf_override", ldf_override)
+      .add(make_option("ldf_override", csoaa_ldf_opts->ldf_override)
                .help("Override singleline or multiline from csoaa_ldf or wap_ldf, eg if stored in file"))
-      .add(make_option("csoaa_rank", ld->rank).keep().help("Return actions sorted by score order"))
-      .add(make_option("probabilities", ld->is_probabilities).keep().help("Predict probabilities of all classes"));
+      .add(make_option("csoaa_rank", csoaa_ldf_opts->rank).keep().help("Return actions sorted by score order"))
+      .add(make_option("probabilities", csoaa_ldf_opts->is_probabilities).keep().help("Predict probabilities of all classes"));
 
   option_group_definition csldf_inner_options(
       "[Reduction] Cost Sensitive Weighted All-Pairs with Label Dependent Features");
-  csldf_inner_options.add(make_option("wap_ldf", wap_ldf)
+  csldf_inner_options.add(make_option("wap_ldf", csoaa_ldf_opts->wap_ldf)
                               .keep()
                               .necessary()
                               .one_of({"m", "multiline", "mc", "multiline-classifier"})
@@ -665,29 +667,45 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   {
     if (!options.add_parse_and_check_necessary(csldf_inner_options)) { return nullptr; }
   }
+  return csoaa_ldf_opts;
+}
+
+}  // namespace
+
+base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto csoaa_ldf_opts = get_csoaa_ldf_options_instance(all, all.logger, options);
+  if (csoaa_ldf_opts == nullptr) { return nullptr; }
+
+  auto csoaa_ldf_data = VW::make_unique<ldf>();
+
+  csoaa_ldf_data->rank = csoaa_ldf_opts->rank;
+  csoaa_ldf_data->is_probabilities = csoaa_ldf_opts->is_probabilities;
 
   // csoaa_ldf does logistic link manually for probabilities because the unlinked values are
   // required elsewhere. This implemenation will provide correct probabilities regardless
   // of whether --link logistic is included or not.
-  if (ld->is_probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
+  if (csoaa_ldf_data->is_probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
 
-  ld->all = &all;
+  csoaa_ldf_data->all = &all;
 
   std::string ldf_arg;
 
-  if (options.was_supplied("csoaa_ldf")) { ldf_arg = csoaa_ldf; }
+  if (options.was_supplied("csoaa_ldf")) { ldf_arg = csoaa_ldf_opts->csoaa_ldf; }
   else
   {
-    ldf_arg = wap_ldf;
-    ld->is_wap = true;
+    ldf_arg = csoaa_ldf_opts->wap_ldf;
+    csoaa_ldf_data->is_wap = true;
   }
-  if (options.was_supplied("ldf_override")) { ldf_arg = ldf_override; }
+  if (options.was_supplied("ldf_override")) { ldf_arg = csoaa_ldf_opts->ldf_override; }
 
-  ld->treat_as_classifier = false;
-  if (ldf_arg == "multiline" || ldf_arg == "m") { ld->treat_as_classifier = false; }
+  csoaa_ldf_data->treat_as_classifier = false;
+  if (ldf_arg == "multiline" || ldf_arg == "m") { csoaa_ldf_data->treat_as_classifier = false; }
   else if (ldf_arg == "multiline-classifier" || ldf_arg == "mc")
   {
-    ld->treat_as_classifier = true;
+    csoaa_ldf_data->treat_as_classifier = true;
   }
   else
   {
@@ -698,7 +716,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
           "longer supported");
   }
 
-  if (ld->is_probabilities)
+  if (csoaa_ldf_data->is_probabilities)
   {
     all.sd->report_multiclass_log_loss = true;
     auto loss_function_type = all.loss->get_type();
@@ -707,14 +725,14 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
       all.logger.out_warn(
           "--probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
     }
-    if (!ld->treat_as_classifier)
+    if (!csoaa_ldf_data->treat_as_classifier)
     { all.logger.out_warn("--probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)"); }
   }
 
-  all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
+  all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !csoaa_ldf_data->is_singleline;
 
-  ld->label_features.max_load_factor(0.25);
-  ld->label_features.reserve(256);
+  csoaa_ldf_data->label_features.max_load_factor(0.25);
+  csoaa_ldf_data->label_features.reserve(256);
 
   single_learner* pbase = as_singleline(stack_builder.setup_base_learner());
 
@@ -722,13 +740,13 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   std::string name_addition;
   VW::prediction_type_t pred_type;
   void (*pred_ptr)(ldf&, single_learner&, VW::multi_ex&);
-  if (ld->rank)
+  if (csoaa_ldf_data->rank)
   {
     name_addition = "-rank";
     pred_type = VW::prediction_type_t::ACTION_SCORES;
     pred_ptr = predict_csoaa_ldf_rank;
   }
-  else if (ld->is_probabilities)
+  else if (csoaa_ldf_data->is_probabilities)
   {
     name_addition = "-prob";
     pred_type = VW::prediction_type_t::PROB;
@@ -741,7 +759,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_csoaa_ldf;
   }
 
-  auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
+  auto* l = make_reduction_learner(std::move(csoaa_ldf_data), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
                 .set_input_label_type(VW::label_type_t::CS)

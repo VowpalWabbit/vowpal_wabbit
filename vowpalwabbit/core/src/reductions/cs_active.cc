@@ -313,52 +313,81 @@ void finish_example(VW::workspace& all, cs_active&, VW::example& ec)
   VW::finish_example(all, ec);
 }
 
+struct options_cs_active_v1
+{
+  bool simulation = false;
+  int32_t domination;
+  uint64_t max_labels;
+  uint64_t min_labels;
+  uint32_t num_classes;
+  bool is_baseline;
+  float c0;
+  float c1;
+  float cost_max;
+  float cost_min;
+  bool print_debug_stuff;
+};
+
+std::unique_ptr<options_cs_active_v1> get_cs_active_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto cs_active_opts = VW::make_unique<options_cs_active_v1>();
+  option_group_definition new_options("[Reduction] Cost Sensitive Active Learning");
+  new_options
+      .add(make_option("cs_active", cs_active_opts->num_classes)
+               .keep()
+               .necessary()
+               .help("Cost-sensitive active learning with <k> costs"))
+      .add(make_option("simulation", cs_active_opts->simulation).help("Cost-sensitive active learning simulation mode"))
+      .add(make_option("baseline", cs_active_opts->is_baseline).help("Cost-sensitive active learning baseline"))
+      .add(make_option("domination", cs_active_opts->domination).default_value(1).help("Cost-sensitive active learning use domination"))
+      .add(make_option("mellowness", cs_active_opts->c0).keep().default_value(0.1f).help("Mellowness parameter c_0"))
+      .add(make_option("range_c", cs_active_opts->c1)
+               .default_value(0.5f)
+               .help("Parameter controlling the threshold for per-label cost uncertainty"))
+      .add(make_option("max_labels", cs_active_opts->max_labels)
+               .default_value(std::numeric_limits<uint64_t>::max())
+               .help("Maximum number of label queries"))
+      .add(make_option("min_labels", cs_active_opts->min_labels)
+               .default_value(std::numeric_limits<uint64_t>::max())
+               .help("Minimum number of label queries"))
+      .add(make_option("cost_max", cs_active_opts->cost_max).default_value(1.f).help("Cost upper bound"))
+      .add(make_option("cost_min", cs_active_opts->cost_min).default_value(0.f).help("Cost lower bound"))
+      // TODO replace with trace and quiet
+      .add(make_option("csa_debug", cs_active_opts->print_debug_stuff).help("Print debug stuff for cs_active"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return cs_active_opts;
+}
+
 }  // namespace
 
 base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<cs_active>();
+  auto cs_active_opts = get_cs_active_options_instance(all, all.logger, options);
+  if (cs_active_opts == nullptr) { return nullptr; }
 
-  bool simulation = false;
-  int32_t domination;
-  uint64_t max_labels;
-  uint64_t min_labels;
-  option_group_definition new_options("[Reduction] Cost Sensitive Active Learning");
-  new_options
-      .add(make_option("cs_active", data->num_classes)
-               .keep()
-               .necessary()
-               .help("Cost-sensitive active learning with <k> costs"))
-      .add(make_option("simulation", simulation).help("Cost-sensitive active learning simulation mode"))
-      .add(make_option("baseline", data->is_baseline).help("Cost-sensitive active learning baseline"))
-      .add(make_option("domination", domination).default_value(1).help("Cost-sensitive active learning use domination"))
-      .add(make_option("mellowness", data->c0).keep().default_value(0.1f).help("Mellowness parameter c_0"))
-      .add(make_option("range_c", data->c1)
-               .default_value(0.5f)
-               .help("Parameter controlling the threshold for per-label cost uncertainty"))
-      .add(make_option("max_labels", max_labels)
-               .default_value(std::numeric_limits<uint64_t>::max())
-               .help("Maximum number of label queries"))
-      .add(make_option("min_labels", min_labels)
-               .default_value(std::numeric_limits<uint64_t>::max())
-               .help("Minimum number of label queries"))
-      .add(make_option("cost_max", data->cost_max).default_value(1.f).help("Cost upper bound"))
-      .add(make_option("cost_min", data->cost_min).default_value(0.f).help("Cost lower bound"))
-      // TODO replace with trace and quiet
-      .add(make_option("csa_debug", data->print_debug_stuff).help("Print debug stuff for cs_active"));
+  auto cs_active_data = VW::make_unique<cs_active>();
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  data->max_labels =
-      max_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : max_labels;
-  data->min_labels =
-      min_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : min_labels;
-  data->use_domination = true;
-  if (options.was_supplied("domination") && !domination) { data->use_domination = false; }
+  cs_active_data->num_classes = cs_active_opts->num_classes;
+  cs_active_data->is_baseline = cs_active_opts->is_baseline;
+  cs_active_data->c0 = cs_active_opts->c0;
+  cs_active_data->c1 = cs_active_opts->c1;
+  cs_active_data->cost_max = cs_active_opts->cost_max;
+  cs_active_data->cost_min = cs_active_opts->cost_min;
+  cs_active_data->print_debug_stuff = cs_active_opts->print_debug_stuff;
 
-  data->all = &all;
-  data->t = 1;
+  cs_active_data->max_labels =
+      cs_active_opts->max_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : cs_active_opts->max_labels;
+  cs_active_data->min_labels =
+      cs_active_opts->min_labels == std::numeric_limits<uint64_t>::max() ? std::numeric_limits<size_t>::max() : cs_active_opts->min_labels;
+  cs_active_data->use_domination = true;
+  if (options.was_supplied("domination") && !cs_active_opts->domination) { cs_active_data->use_domination = false; }
+
+  cs_active_data->all = &all;
+  cs_active_data->t = 1;
 
   auto loss_function_type = all.loss->get_type();
   if (loss_function_type != "squared") THROW("non-squared loss can't be used with --cs_active");
@@ -373,15 +402,15 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("adax")) { all.logger.err_warn("--cs_active should be used with --adax"); }
 
-  all.set_minmax(all.sd, data->cost_max);
-  all.set_minmax(all.sd, data->cost_min);
-  for (uint32_t i = 0; i < data->num_classes + 1; i++) { data->examples_by_queries.push_back(0); }
+  all.set_minmax(all.sd, cs_active_data->cost_max);
+  all.set_minmax(all.sd, cs_active_data->cost_min);
+  for (uint32_t i = 0; i < cs_active_data->num_classes + 1; i++) { cs_active_data->examples_by_queries.push_back(0); }
 
   void (*learn_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
   void (*predict_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
   std::string name_addition;
 
-  if (simulation)
+  if (cs_active_opts->simulation)
   {
     learn_ptr = predict_or_learn<true, true>;
     predict_ptr = predict_or_learn<false, true>;
@@ -394,8 +423,8 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
     name_addition = "";
   }
 
-  size_t ws = data->num_classes;
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
+  size_t ws = cs_active_data->num_classes;
+  auto* l = make_reduction_learner(std::move(cs_active_data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
       predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)

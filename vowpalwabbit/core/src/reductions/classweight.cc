@@ -53,15 +53,15 @@ public:
 };
 
 template <VW::prediction_type_t pred_type>
-void update_example_weight(classweights& cweights, VW::example& ec)
+void update_example_weight(classweights& class_weights_data, VW::example& ec)
 {
   switch (pred_type)
   {
     case VW::prediction_type_t::SCALAR:
-      ec.weight *= cweights.get_class_weight(static_cast<uint32_t>(ec.l.simple.label));
+      ec.weight *= class_weights_data.get_class_weight(static_cast<uint32_t>(ec.l.simple.label));
       break;
     case VW::prediction_type_t::MULTICLASS:
-      ec.weight *= cweights.get_class_weight(ec.l.multi.label);
+      ec.weight *= class_weights_data.get_class_weight(ec.l.multi.label);
       break;
     default:
       // suppress the warning
@@ -70,11 +70,11 @@ void update_example_weight(classweights& cweights, VW::example& ec)
 }
 
 template <bool is_learn, VW::prediction_type_t pred_type>
-void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(classweights& class_weights_data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   if (is_learn)
   {
-    update_example_weight<pred_type>(cweights, ec);
+    update_example_weight<pred_type>(class_weights_data, ec);
     base.learn(ec);
   }
   else
@@ -109,10 +109,10 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
   auto classweight_opts = get_classweight_options_instance(all, all.logger, options);
   if (classweight_opts == nullptr) { return nullptr; }
 
-  auto cweights = VW::make_unique<classweights>();
+  auto class_weights_data = VW::make_unique<classweights>();
 
-  for (auto& s : classweight_opts->classweight_array) { cweights->load_string(s); }
-  all.logger.err_info("parsed {} class weights", cweights->weights.size());
+  for (auto& s : classweight_opts->classweight_array) { class_weights_data->load_string(s); }
+  all.logger.err_info("parsed {} class weights", class_weights_data->weights.size());
 
   VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
 
@@ -141,7 +141,7 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
   }
 
   auto* l = make_reduction_learner(
-      std::move(cweights), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(classweight_setup) + name_addition)
+      std::move(class_weights_data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(classweight_setup) + name_addition)
                 .set_output_prediction_type(pred_type)
                 .build();
 

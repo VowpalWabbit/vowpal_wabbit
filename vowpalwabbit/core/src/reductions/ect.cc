@@ -333,36 +333,56 @@ void learn(ect& e, single_learner& base, VW::example& ec)
   ec.l.multi = mc;
   ec.pred.multiclass = pred;
 }
-}  // namespace
 
-base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
+struct options_ect_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<ect>(all.logger);
   std::string link;
+  uint64_t k;
+  uint64_t errors;
+};
+
+std::unique_ptr<options_ect_v1> get_ect_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto ect_opts = VW::make_unique<options_ect_v1>();
   option_group_definition new_options("[Reduction] Error Correcting Tournament");
-  new_options.add(make_option("ect", data->k).keep().necessary().help("Error correcting tournament with <k> labels"))
-      .add(make_option("error", data->errors).keep().default_value(0).help("Errors allowed by ECT"))
+  new_options.add(make_option("ect", ect_opts->k).keep().necessary().help("Error correcting tournament with <k> labels"))
+      .add(make_option("error", ect_opts->errors).keep().default_value(0).help("Errors allowed by ECT"))
       // Used to check value. TODO replace
-      .add(make_option("link", link)
+      .add(make_option("link", ect_opts->link)
                .default_value("identity")
                .keep()
                .one_of({"identity", "logistic", "glf1", "poisson"})
                .help("Specify the link function"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return ect_opts;
+}
 
-  size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
+}  // namespace
+
+base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
+{
+  options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto ect_opts = get_ect_options_instance(all, all.logger, options);
+  if (ect_opts == nullptr) { return nullptr; }
+
+  auto ect_data = VW::make_unique<ect>(all.logger);
+
+  ect_data->k = ect_opts->k;
+  ect_data->errors = ect_opts->errors;
+
+  size_t wpp = create_circuit(*ect_data.get(), ect_data->k, ect_data->errors + 1);
 
   base_learner* base = stack_builder.setup_base_learner();
-  if (link == "logistic")
+  if (ect_opts->link == "logistic")
   {
-    data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
+    ect_data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
   }
 
   auto* l = make_reduction_learner(
-      std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
+      std::move(ect_data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
                 .set_params_per_weight(wpp)
                 .set_finish_example(VW::details::finish_multiclass_example<ect&>)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
