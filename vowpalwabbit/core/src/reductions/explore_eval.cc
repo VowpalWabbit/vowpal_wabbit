@@ -91,7 +91,7 @@ public:
   float multiplier = 0.f;
 
   bool fixed_multiplier = false;
-  bool target_rate = false;
+  bool target_rate_on = false;
 };
 
 void finish(explore_eval& data)
@@ -101,7 +101,7 @@ void finish(explore_eval& data)
     *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
     if (data.violations > 0) { *(data.all->trace_message) << "violation count = " << data.violations << std::endl; }
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
-    if (data.target_rate)
+    if (data.target_rate_on)
     {
       *(data.all->trace_message) << "targeted update count = "
                                  << (data.example_counter * data.rt_target.get_target_rate()) << std::endl;
@@ -236,13 +236,14 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     threshold *= data.multiplier;
 
+    // rate multiplier called before we potentially return if action not found since we want to update the rate prediction
     float rate_multiplier = data.rt_target.get_rate_and_update(threshold, action_found);
 
     if (!action_found) { return; }
 
     if (threshold > 1. + 1e-6) { data.violations++; }
 
-    if (data.target_rate)
+    if (data.target_rate_on)
     {
       threshold *= rate_multiplier;
     }
@@ -293,7 +294,6 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
       .add(make_option("multiplier", data->multiplier)
                .help("Multiplier used to make all rejection sample probabilities <= 1"))
       .add(make_option("target_rate", target_rate)
-               .default_value(1.f)
                .help("The target rate will be used to adjust the rejection rate in order to achieve an update count of "
                      "#examples * target_rate"));
 
@@ -302,7 +302,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   data->all = &all;
   data->random_state = all.get_random_state();
   data->rt_target.set_target_rate(target_rate);
-  if (options.was_supplied("target_rate")) { data->target_rate = true; }
+  if (options.was_supplied("target_rate")) { data->target_rate_on = true; }
 
   if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
   else
