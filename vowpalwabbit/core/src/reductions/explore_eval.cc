@@ -38,12 +38,11 @@ class rate_target
   float _target_rate;
   float _sum_p;
   size_t _t;
-  std::vector<float> v;
   float _latest_rate = 1.f;
 
   float predict()
   {
-    if (_sum_p > 0.f) { return std::max(0.f, std::min(1.f, _target_rate * (float)_t / _sum_p)); }
+    if (_sum_p > 0.f) { return _target_rate * (float)_t / _sum_p; }
     else
     {
       return 1.f;
@@ -54,7 +53,6 @@ class rate_target
   {
     _sum_p += p;
     _t++;
-    v.push_back(_sum_p / (float)_t);
   }
 
 public:
@@ -66,28 +64,13 @@ public:
 
   float get_latest_rate() { return _latest_rate; }
 
-  float get_rate_and_update(float threshold, size_t update_count, size_t example_count, bool action_found)
+  float get_rate_and_update(float threshold, bool action_found)
   {
-    if (_target_rate == 1.f) { return 1.f; }
+    float z = predict();
+    learn(threshold);
 
-    float off_target = predict();
-    float current_rate = (float)update_count / (float)example_count;
-
-    if (off_target >= 0.99f || off_target <= 0.001f || !action_found)
-    {
-      // this kicks in whenever the threshold has been consecutively too low or too high or (with LAS) action is missing
-      // in these cases threshold will be around 0/1 so if it is used to adjust the rate prediction it will sway
-      // this special case has the effect of not swaying the predicted rate too much
-      learn(current_rate);
-    }
-    else
-    {
-      auto p = std::min(threshold, 1.f);
-      learn(p);
-    }
-
-    _latest_rate = off_target;
-    return off_target;
+    _latest_rate = z;
+    return z;
   }
 };
 
@@ -118,7 +101,7 @@ void finish(explore_eval& data)
     *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
     if (data.violations > 0) { *(data.all->trace_message) << "violation count = " << data.violations << std::endl; }
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
-    if (data.rt_target.get_target_rate() < 1)
+    if (data.target_rate)
     {
       *(data.all->trace_message) << "targeted update count = "
                                  << (data.example_counter * data.rt_target.get_target_rate()) << std::endl;
@@ -246,44 +229,49 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     float threshold = action_probability / data.known_cost.probability;
 
-    if (!data.fixed_multiplier && !data.target_rate)
+    if (!data.fixed_multiplier)
     {
-      if (action_found) { data.multiplier = std::min(data.multiplier, 1 / threshold); }
+      if (action_found) { data.multiplier = std::min(data.multiplier, 1.f / threshold); }
     }
 
     threshold *= data.multiplier;
 
-    float off_target =
-        data.rt_target.get_rate_and_update(threshold, data.update_count, data.example_counter, action_found);
+    float rate_multiplier = data.rt_target.get_rate_and_update(threshold, action_found);
 
     if (!action_found) { return; }
 
     if (threshold > 1. + 1e-6) { data.violations++; }
 
-    if (data.random_state->get_and_update_random() < threshold * off_target)
+    if (data.target_rate)
+    {
+      threshold *= rate_multiplier;
+    }
+
+    if (data.random_state->get_and_update_random() < threshold)
     {
       VW::example* ec_found = nullptr;
       for (VW::example*& ec : ec_seq)
       {
         if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
         { ec_found = ec; }
-        if (threshold > 1) { ec->weight *= threshold; }
+        if (threshold > 1.f) { ec->weight *= threshold; }
       }
 
       ec_found->l.cb.costs[0].probability = action_probability;
 
+      // weighted update count since weight can be *= threshold
+      data.update_count += ec_found->weight;
+
       multiline_learn_or_predict<true>(base, ec_seq, data.offset);
 
       // restore logged example
-      if (threshold > 1)
+      if (threshold > 1.f)
       {
         float inv_threshold = 1.f / threshold;
         for (auto& ec : ec_seq) { ec->weight *= inv_threshold; }
       }
 
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
-
-      data.update_count++;
     }
   }
 }
