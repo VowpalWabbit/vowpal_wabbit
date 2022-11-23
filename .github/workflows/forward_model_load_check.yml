@@ -86,4 +86,4 @@ jobs:
           auditwheel repair wheel_last_commit/*whl -w audit_last_commit/
           /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_last_commit/*.whl
           cd ..
-          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models
+          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models --expect_missing_args

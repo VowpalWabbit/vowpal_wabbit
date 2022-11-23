@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           pip install built_wheel/*.whl
-          python ./test/run_tests_model_gen_and_load.py --generate_models
+          python ./test/run_tests_model_gen_and_load.py --generate_models --expect_missing_args
       - name: Upload generated file
         uses: actions/upload-artifact@v2
         with:
