@@ -73,9 +73,22 @@ def generate_model_and_weights(
     command: str,
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
+    skip_missing_args: bool = False,
 ) -> None:
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
-    vw = vowpalwabbit.Workspace(command, quiet=True)
+    if skip_missing_args:
+        try:
+            vw = vowpalwabbit.Workspace(command, quiet=True)
+        except RuntimeError as e:
+            if "unrecognised option" in str(e):
+                print(
+                    f"{color_enum.LIGHT_PURPLE}Skipping this test as there are new cli arguments present{color_enum.ENDC}"
+                )
+                return
+            else:
+                raise e
+    else:
+        vw = vowpalwabbit.Workspace(command, quiet=True)
     weights_dir = working_dir / "test_weights"
     weights_dir.mkdir(parents=True, exist_ok=True)
     with open(weights_dir / f"weights_{test_id}.json", "w") as weights_file:
@@ -96,6 +109,7 @@ def load_model(
     command: str,
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
+    skip_missing_args: bool = False,
 ) -> None:
     model_file = str(working_dir / "test_models" / f"model_{test_id}.vw")
     load_command = f" -i {model_file}"
@@ -143,6 +157,13 @@ def load_model(
         assert new_weights == old_weights
         vw.finish()
     except Exception as e:
+        if skip_missing_args:
+            if "unrecognised option" in str(e):
+                print(
+                    f"{color_enum.LIGHT_PURPLE}Skipping this test as there are new cli arguments present{color_enum.ENDC}"
+                )
+                return
+
         print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
         raise e
 
@@ -224,11 +245,16 @@ def generate_all(
     tests: List[TestData],
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
+    skip_missing_args: bool = False,
 ) -> None:
     os.chdir(output_working_dir.parent)
     for test in tests:
         generate_model_and_weights(
-            test.id, test.command_line, output_working_dir, color_enum
+            test.id,
+            test.command_line,
+            output_working_dir,
+            color_enum,
+            skip_missing_args,
         )
 
     print(f"stored models in: {output_working_dir}")
@@ -238,6 +264,7 @@ def load_all(
     tests: List[TestData],
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
+    skip_missing_args: bool = False,
 ) -> None:
     os.chdir(output_working_dir.parent)
     if len(os.listdir(output_working_dir / "test_models")) != len(tests):
@@ -246,7 +273,13 @@ def load_all(
         )
 
     for test in tests:
-        load_model(test.id, test.command_line, output_working_dir, color_enum)
+        load_model(
+            test.id,
+            test.command_line,
+            output_working_dir,
+            color_enum,
+            skip_missing_args,
+        )
 
 
 def main():
@@ -287,6 +320,12 @@ def main():
 
     parser.add_argument(
         "--no_color", action="store_true", help="Don't print color ANSI escape codes"
+    )
+
+    parser.add_argument(
+        "--skip_missing_args",
+        action="store_true",
+        help=f"This should be set when running on a previous version of VW. If new arguments then initializing VW with them is expected to fail.",
     )
 
     args = parser.parse_args()
