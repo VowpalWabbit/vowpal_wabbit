@@ -64,7 +64,7 @@ public:
 
   float get_latest_rate() { return _latest_rate; }
 
-  float get_rate_and_update(float threshold, bool action_found)
+  float get_rate_and_update(float threshold)
   {
     float z = predict();
     learn(threshold);
@@ -238,7 +238,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     // rate multiplier called before we potentially return if action not found since we want to update the rate
     // prediction
-    float rate_multiplier = data.rt_target.get_rate_and_update(threshold, action_found);
+    float rate_multiplier = data.rt_target.get_rate_and_update(threshold);
 
     if (!action_found) { return; }
 
