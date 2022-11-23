@@ -5456,8 +5456,8 @@
   },
   {
     "id": 423,
-    "desc": "explore_eval evaluate same policy as logged policy, target_rate < 1 there should be around ((#examples * target_rate) updates",
-    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --target_rate 0.2",
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --target_rate 0.2 --multiplier 1",
     "diff_files": {
       "stderr": "train-sets/ref/explore_eval_tr_0.2.stderr"
     },
@@ -5467,8 +5467,8 @@
   },
   {
     "id": 424,
-    "desc": "explore_eval evaluate same policy as logged policy, target_rate < 1 there should be around ((#examples * target_rate) updates",
-    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --squarecb -q UA --explore_eval --target_rate 0.2",
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --squarecb -q UA --explore_eval --target_rate 0.2 --multiplier 1",
     "diff_files": {
       "stderr": "train-sets/ref/explore_eval_sqcb.stderr"
     },
@@ -5478,8 +5478,8 @@
   },
   {
     "id": 425,
-    "desc": "explore_eval evaluate same policy as logged policy, target_rate < 1 there should be around ((#examples * target_rate) updates",
-    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --large_action_space --max_actions 5 -q UA --explore_eval --target_rate 0.2",
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --large_action_space --max_actions 5 -q UA --explore_eval --target_rate 0.2 --multiplier 1",
     "diff_files": {
       "stderr": "train-sets/ref/explore_eval_las.stderr"
     },

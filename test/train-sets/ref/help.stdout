@@ -620,7 +620,7 @@ Weight Options:
                                             1 (type: float)
     --target_rate arg                       The target rate will be used to adjust the rejection rate in
                                             order to achieve an update count of #examples * target_rate (type:
-                                            float, default: 1)
+                                            float)
 [Reduction] Follow the Regularized Leader - Coin Options:
     --coin                                  Coin betting optimizer (type: bool, keep, necessary)
     --ftrl_alpha arg                        Learning rate for FTRL optimization (type: float)
