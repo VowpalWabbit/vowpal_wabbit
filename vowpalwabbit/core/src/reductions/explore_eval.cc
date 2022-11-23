@@ -236,17 +236,15 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     threshold *= data.multiplier;
 
-    // rate multiplier called before we potentially return if action not found since we want to update the rate prediction
+    // rate multiplier called before we potentially return if action not found since we want to update the rate
+    // prediction
     float rate_multiplier = data.rt_target.get_rate_and_update(threshold, action_found);
 
     if (!action_found) { return; }
 
     if (threshold > 1. + 1e-6) { data.violations++; }
 
-    if (data.target_rate_on)
-    {
-      threshold *= rate_multiplier;
-    }
+    if (data.target_rate_on) { threshold *= rate_multiplier; }
 
     if (data.random_state->get_and_update_random() < threshold)
     {
