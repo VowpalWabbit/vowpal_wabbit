@@ -3,17 +3,11 @@ Probabilistic Label Tree demo
 
 This demo presents PLT for applications of logarithmic time multilabel classification.
 It uses Mediamill dataset from the [LIBLINEAR datasets repository](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multilabel.html)
-and RCV1-2K, AmazonCat-13K, and Wiki10-31K datasets from the [Extreme Multi-Label (XML) repository](http://manikvarma.org/downloads/XC/XMLRepository.html) 
+and RCV1-2K, Eurlex-4K, AmazonCat-13K, and Wiki10-31K datasets from the [Extreme Multi-Label (XML) repository](http://manikvarma.org/downloads/XC/XMLRepository.html) 
 converted to Vowpal Wabbit format using scripts from [this repository](https://github.com/mwydmuch/datasets4vw).
-There are separate scripts for each dataset that download data, train PLT model, and test prediction with threshold = 0.5 as well as top-5 prediction. 
-Scripts require VW, Python and wget installed.
+`plt_demo.py` script trains PLT model, and test prediction with threshold = 0.5 as well as top-5 prediction.
+The datasets and paremeters can be easliy edited in the script. The script require VW, Python and wget installed.
 
-```
-python mediamill.py
-python rcv1x_2K.py
-python amazonCat_13K.py
-python wiki10_13K.py
-```
 
 ## PLT options
 ```
