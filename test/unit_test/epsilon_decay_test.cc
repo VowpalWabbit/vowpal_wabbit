@@ -111,9 +111,9 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count_w_iterations)
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][1].update_count, 101);
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][2].update_count, 101);
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][3].update_count, 101);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 1);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[3], 3);
     return true;
   });
@@ -131,8 +131,8 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count_w_iterations)
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][2].update_count, 102);
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][3].update_count, 102);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 0);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[3], 3);
     return true;
   });
@@ -149,9 +149,9 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count_w_iterations)
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][1].update_count, 1);
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][2].update_count, 2);
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][3].update_count, 103);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 2);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[3], 3);
     return true;
   });
@@ -168,9 +168,9 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_update_count_w_iterations)
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][1].update_count, 2);
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][2].update_count, 3);
     BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][3].update_count, 104);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 2);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[0], 0);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[1], 1);
-    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 0);
+    BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[2], 2);
     BOOST_CHECK_EQUAL(epsilon_decay->_weight_indices[3], 3);
     return true;
   });
@@ -210,7 +210,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, false, 0, 1.f, 0);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -294,7 +294,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_horizon_bounds_unit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, false, 0, 1.f, 0);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
