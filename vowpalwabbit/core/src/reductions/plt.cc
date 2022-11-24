@@ -219,21 +219,17 @@ void predict(plt& p, single_learner& base, VW::example& ec)
     }
 
     // calculate evaluation measures
-    if (p.true_labels.size() > 0)
-    {
-      uint32_t tp = 0;
-      uint32_t pred_size = pred.multilabels.label_v.size();
+    uint32_t tp = 0;
+    uint32_t pred_size = pred.multilabels.label_v.size();
 
-      for (uint32_t i = 0; i < pred_size; ++i)
-      {
-        uint32_t pred_label = pred.multilabels.label_v[i];
-        if (p.true_labels.count(pred_label)) { ++tp; }
-      }
-      p.tp += tp;
-      p.fp += static_cast<uint32_t>(pred_size) - tp;
-      p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
-      ++p.ec_count;
+    for (uint32_t i = 0; i < pred_size; ++i)
+    {
+      uint32_t pred_label = pred.multilabels.label_v[i];
+      if (p.true_labels.count(pred_label)) { ++tp; }
     }
+    p.tp += tp;
+    p.fp += static_cast<uint32_t>(pred_size) - tp;
+    p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
   }
 
   // top-k prediction
@@ -273,16 +269,13 @@ void predict(plt& p, single_learner& base, VW::example& ec)
     }
 
     // calculate precision and recall at
-    if (p.true_labels.size() > 0)
+    float tp_at = 0;
+    for (size_t i = 0; i < p.top_k; ++i)
     {
-      float tp_at = 0;
-      for (size_t i = 0; i < p.top_k; ++i)
-      {
-        uint32_t pred_label = pred.multilabels.label_v[i];
-        if (p.true_labels.count(pred_label)) { tp_at += 1; }
-        p.p_at[i] += tp_at / (i + 1);
-        p.r_at[i] += tp_at / p.true_labels.size();
-      }
+      uint32_t pred_label = pred.multilabels.label_v[i];
+      if (p.true_labels.count(pred_label)) { tp_at += 1; }
+      p.p_at[i] += tp_at / (i + 1);
+      if (p.true_labels.size() > 0) p.r_at[i] += tp_at / p.true_labels.size();
     }
   }
 
@@ -335,8 +328,8 @@ void finish(plt& p)
     {
       // TODO: is this the correct logger?
       *(p.all->trace_message) << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
-      *(p.all->trace_message) << "precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
-      *(p.all->trace_message) << "recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
+      *(p.all->trace_message) << "micro-precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
+      *(p.all->trace_message) << "micro-recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
     }
   }
 }
@@ -443,7 +436,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(false)
                 .set_finish_example(::finish_example)
                 .set_finish(::finish)
-                .set_save_load(save_load_tree)
+                .set_save_load(::save_load_tree)
                 .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;

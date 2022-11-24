@@ -19,15 +19,15 @@ output_model = f"{dataset}_model"
 
 # Parameters
 kary_tree = 16
-l = 0.1
-passes = 1
+l = 0.5
+passes = 3
 other_training_params = "--holdout_off"
 
 # dict with params for different datasets (k and b)
 params_dict = {
     "mediamill_exp1": (101, 25),
-    "eurlex": (3993, 28),
     "rcv1x": (2456, 28),
+    "eurlex": (3993, 28),
     "wiki10": (30938, 30),
     "amazonCat": (13330, 30)
 }
@@ -44,7 +44,7 @@ if not os.path.exists(test_data):
 
 print(f"\nTraining Vowpal Wabbit {reduction} on {dataset} dataset:\n")
 start = time.time()
-train_cmd = f"vw {train_data} -c --plt {k} --loss_function logistic -l {l} --passes {passes} -b {b} -f {output_model} {other_training_params}"
+train_cmd = f"./vw {train_data} -c --{reduction} {k} --loss_function logistic -l {l} --passes {passes} -b {b} -f {output_model} {other_training_params}"
 if reduction == "plt":
     train_cmd += f" --kary_tree {kary_tree}"
 print(train_cmd)
@@ -55,7 +55,7 @@ print(f"train time (s) = {train_time:.3f}")
 
 print("\nTesting with probability threshold = 0.5 (default prediction mode)\n")
 start = time.time()
-test_threshold_cmd = f"vw {test_data} -i {output_model} --loss_function logistic -t"
+test_threshold_cmd = f"./vw {test_data} -i {output_model} --loss_function logistic -t"
 if reduction == "plt":
     test_threshold_cmd += " --threshold 0.5"
 print(test_threshold_cmd)
@@ -67,7 +67,7 @@ print(f"threshold test time (s) = {thr_test_time:.3f}")
 if reduction == "plt":
     print("\nTesting with top-5 prediction\n")
     start = time.time()
-    test_topk_cmd = f"vw {test_data} -i {output_model} --loss_function logistic --top_k 5 -t"
+    test_topk_cmd = f"./vw {test_data} -i {output_model} --loss_function logistic --top_k 5 -t"
     print(test_topk_cmd)
     os.system(test_topk_cmd)
     topk_test_time = time.time() - start
