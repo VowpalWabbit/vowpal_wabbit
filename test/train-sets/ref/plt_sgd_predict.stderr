@@ -1,5 +1,5 @@
 only testing
-predictions = plt_multilabel.predict
+predictions = plt_sgd.predict
 PLT k = 10
 kary_tree = 2
 threshold = 0.5
