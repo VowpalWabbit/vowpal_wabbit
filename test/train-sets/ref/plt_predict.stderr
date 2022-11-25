@@ -27,5 +27,5 @@ weighted label sum = 0.000000
 average loss = 1.200000
 total feature number = 20
 hamming loss = 0.400000
-precision = 1.000000
-recall = 0.789474
+micro-precision = 1.000000
+micro-recall = 0.789474
