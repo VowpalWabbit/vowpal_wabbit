@@ -292,9 +292,9 @@ void finish_example(VW::workspace& all, plt& p, VW::example& ec)
   bool is_test = (ec.l.multilabels.label_v.size() == 0);
   all.sd->update(ec.test_only, !is_test, ec.loss, 1.f, ec.get_num_features());
 
-  std::ostringstream outputStringStream;
   if (p.probabilities)
   {  // print probabilities for predicted labels stored in a_s vector, similar to multilabel_oaa reduction
+    std::ostringstream outputStringStream;
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
     {
       if (i > 0) { outputStringStream << ' '; }
@@ -311,6 +311,7 @@ void finish_example(VW::workspace& all, plt& p, VW::example& ec)
 
   // print just the list of labels
   // TODO: should this be else?
+  std::ostringstream outputStringStream;
   for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
   {
     if (i > 0) { outputStringStream << ','; }
