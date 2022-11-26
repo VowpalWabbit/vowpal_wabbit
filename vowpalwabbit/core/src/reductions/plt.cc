@@ -275,22 +275,26 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       uint32_t pred_label = pred.multilabels.label_v[i];
       if (p.true_labels.count(pred_label)) { tp_at += 1; }
       p.p_at[i] += tp_at / (i + 1);
-      if (p.true_labels.size() > 0) p.r_at[i] += tp_at / p.true_labels.size();
+      if (p.true_labels.size() > 0) { p.r_at[i] += tp_at / p.true_labels.size(); }
     }
   }
 
   ++p.ec_count;
   p.node_queue.clear();
 
+  ec.loss = 0;
   ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
 }
 
 void finish_example(VW::workspace& all, plt& p, VW::example& ec)
 {
+  bool is_test = (ec.l.multilabels.label_v.size() == 0);
+  all.sd->update(ec.test_only, !is_test, ec.loss, 1.f, ec.get_num_features());
+
+  std::ostringstream outputStringStream;
   if (p.probabilities)
   {  // print probabilities for predicted labels stored in a_s vector, similar to multilabel_oaa reduction
-    std::ostringstream outputStringStream;
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
     {
       if (i > 0) { outputStringStream << ' '; }
@@ -304,7 +308,32 @@ void finish_example(VW::workspace& all, plt& p, VW::example& ec)
     const auto ss_str = outputStringStream.str();
     for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
   }
-  MULTILABEL::output_example(all, ec);
+
+  // print just the list of labels
+  // TODO: should this be else?
+  for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
+  {
+    if (i > 0) { outputStringStream << ','; }
+    outputStringStream << ec.pred.multilabels.label_v[i];
+  }
+  outputStringStream << ' ';
+  const auto ss_str = outputStringStream.str();
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
+
+  // copied from multilabel.cc - void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  {
+    std::stringstream label_string;
+    if (is_test) { label_string << "unknown"; }
+    else
+    {
+      label_string << VW::to_string(ec.l.multilabels);
+    }
+
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+        VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
+  }
+
   VW::finish_example(all, ec);
 }
 

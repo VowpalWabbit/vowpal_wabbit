@@ -13,14 +13,14 @@ Input label = MULTILABEL
 Output pred = MULTILABELS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-2.000000 2.000000            1            1.0            0,1                       2
-2.000000 2.000000            2            2.0            1,2            0,1        2
-2.000000 2.000000            4            4.0            3,4            2,3        2
-3.000000 4.000000            8            8.0              8        5,2,3,7        2
+4.852030 4.852030            1            1.0            0,1                       2
+8.835814 12.81959            2            2.0            1,2            0,1        2
+9.996288 11.15676            4            4.0            3,4            2,3        2
+12.75991 15.52353            8            8.0              8        5,2,3,7        2
 
 finished run
 number of examples = 10
 weighted example sum = 10.000000
 weighted label sum = 0.000000
-average loss = 2.900000
+average loss = 12.127363
 total feature number = 20
