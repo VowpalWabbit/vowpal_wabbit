@@ -9,7 +9,7 @@ import time
 dataset = "mediamill_exp1"  # should be in ["mediamill_exp1", "eurlex", "rcv1x", "wiki10", "amazonCat"]
 
 # Select reduction
-reduction = "plt"    # should be in ["plt", "multilabel_oaa"]
+reduction = "plt"  # should be in ["plt", "multilabel_oaa"]
 
 
 # Dataset filenames and model output file
@@ -29,7 +29,7 @@ params_dict = {
     "rcv1x": (2456, 28),
     "eurlex": (3993, 28),
     "wiki10": (30938, 30),
-    "amazonCat": (13330, 30)
+    "amazonCat": (13330, 30),
 }
 if dataset in params_dict:
     k, b = params_dict[dataset]
@@ -67,7 +67,9 @@ print(f"threshold test time (s) = {thr_test_time:.3f}")
 if reduction == "plt":
     print("\nTesting with top-5 prediction\n")
     start = time.time()
-    test_topk_cmd = f"./vw {test_data} -i {output_model} --loss_function logistic --top_k 5 -t"
+    test_topk_cmd = (
+        f"./vw {test_data} -i {output_model} --loss_function logistic --top_k 5 -t"
+    )
     print(test_topk_cmd)
     os.system(test_topk_cmd)
     topk_test_time = time.time() - start
