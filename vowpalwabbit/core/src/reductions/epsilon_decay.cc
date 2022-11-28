@@ -184,7 +184,7 @@ void epsilon_decay_data::check_estimator_bounds()
   // the new champion.
   auto model_count = static_cast<int64_t>(conf_seq_estimators.size());
   auto final_model_idx = model_count - 1;
-  for (int64_t i = 0; i < final_model_idx; ++i)
+  for (int64_t i = final_model_idx - 1; i >= 0; --i)
   {
     bool better = conf_seq_estimators[i][i].lower_bound() > conf_seq_estimators[final_model_idx][i].upper_bound();
     if (better && conf_seq_estimators[i][i].update_count >= _min_champ_examples)
@@ -202,7 +202,7 @@ void epsilon_decay_data::check_horizon_bounds()
   // back to the beginning of the list and reset its counts
   auto model_count = static_cast<int64_t>(conf_seq_estimators.size());
   auto final_model_idx = model_count - 1;
-  for (int64_t i = 0; i < final_model_idx; ++i)
+  for (int64_t i = final_model_idx - 1; i >= 0; --i)
   {
     if (conf_seq_estimators[i][i].update_count > _min_scope &&
         conf_seq_estimators[i][i].update_count >
