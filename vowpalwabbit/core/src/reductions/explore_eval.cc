@@ -40,7 +40,7 @@ class rate_target
   size_t _t;
   float _latest_rate = 1.f;
 
-  float predict()
+  float predict() const
   {
     if (_sum_p > 0.f) { return _target_rate * (float)_t / _sum_p; }
     else
