@@ -7,12 +7,15 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_PRIME
 #include "vw/core/learner.h"
+#include "vw/config/options.h"
 #include "vw/core/vw_math.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
 #include <functional>
 #include <map>
+#include <vector>
+#include <string>
 
 #define ARE_SAME(X, Y, Z) \
   BOOST_CHECK_MESSAGE(VW::math::are_same(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
@@ -343,11 +346,12 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
 
   auto* vw_qcolcol = VW::initialize(vw_arg + "-b 17 -q ::");
   auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "-b 18");
-  simulator::cb_sim sim1(seed);
-  simulator::cb_sim sim2(seed);
+  simulator::cb_sim sim1(seed, true);
+  simulator::cb_sim sim2(seed, true);
   auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
   auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
   vw_automl->l->output_target_model(*vw_automl);
+  //options_i& v = *(vw_automl->options); //->get_typed_option<std::vector<std::string>>("interactions").value();
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
