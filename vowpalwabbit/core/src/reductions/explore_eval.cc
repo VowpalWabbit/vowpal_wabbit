@@ -87,6 +87,7 @@ public:
   rate_target rt_target;
 
   size_t update_count = 0;
+  float weighted_update_count = 0;
   size_t violations = 0;
   float multiplier = 0.f;
 
@@ -98,7 +99,8 @@ void finish(explore_eval& data)
 {
   if (!data.all->quiet)
   {
-    *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
+    *(data.all->trace_message) << "weighted update count = " << data.weighted_update_count << std::endl;
+    *(data.all->trace_message) << "average accepted example weight = " << data.weighted_update_count / static_cast<float>(data.update_count) << std::endl;
     if (data.violations > 0) { *(data.all->trace_message) << "violation count = " << data.violations << std::endl; }
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
     if (data.target_rate_on)
@@ -259,7 +261,8 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       ec_found->l.cb.costs[0].probability = action_probability;
 
       // weighted update count since weight can be *= threshold
-      data.update_count += ec_found->weight;
+      data.weighted_update_count += ec_found->weight;
+      data.update_count++;
 
       multiline_learn_or_predict<true>(base, ec_seq, data.offset);
 
