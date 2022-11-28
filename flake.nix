@@ -8,6 +8,22 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system}; in
+      let generate-compile-commands = ''
+          set -e
+          rm -rf $TMPDIR/compile_commands_build
+          mkdir -p $TMPDIR/compile_commands_build
+          cmake -S . -B "$TMPDIR/compile_commands_build" \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
+            -DRAPIDJSON_SYS_DEP=On \
+            -DFMT_SYS_DEP=On \
+            -DSPDLOG_SYS_DEP=On \
+            -DVW_BOOST_MATH_SYS_DEP=On \
+            -DVW_ZLIB_SYS_DEP=On \
+            -DVW_GTEST_SYS_DEP=On \
+            -DVW_EIGEN_SYS_DEP=On \
+            -DBUILD_TESTING=Off \
+            -DVW_BUILD_VW_C_WRAPPER=Off
+      ''; in
       let
         core-dependencies = [
           pkgs.spdlog
@@ -17,6 +33,7 @@
           pkgs.eigen
           pkgs.gtest
           pkgs.boost
+          pkgs.cmake
         ];
       in
       let
@@ -56,37 +73,15 @@
         };
       in
       let
-        compile-commands = pkgs.stdenv.mkDerivation {
-          src = self;
-          buildInputs = [ ] ++ core-dependencies;
-          nativeBuildInputs = [ pkgs.cmake ];
-          name = "compile-commands";
-          buildCommand = ''
-            set -e
-            mkdir -p $out
-            cmake -S "${self}" -B "$out" \
-              -DCMAKE_EXPORT_COMPILE_COMMANDS=On \
-              -DRAPIDJSON_SYS_DEP=On \
-              -DFMT_SYS_DEP=On \
-              -DSPDLOG_SYS_DEP=On \
-              -DVW_BOOST_MATH_SYS_DEP=On \
-              -DVW_ZLIB_SYS_DEP=On \
-              -DVW_GTEST_SYS_DEP=On \
-              -DVW_EIGEN_SYS_DEP=On \
-              -DBUILD_TESTING=Off \
-              -DVW_BUILD_VW_C_WRAPPER=Off
-          '';
-
-        };
-      in
-      let
         clang-tidy-all-script = pkgs.writeShellScriptBin "vw-clang-tidy" ''
-          ${python-clang-tidy-package}/bin/run-clang-tidy -p ${compile-commands} -quiet -header-filter=vw/* "$@"
+          ${generate-compile-commands}
+          ${python-clang-tidy-package}/bin/run-clang-tidy -p $TMPDIR/compile_commands_build -quiet -header-filter=vw/* "$@"
         '';
       in
       let
         clang-tidy-diff-script = pkgs.writeShellScriptBin "vw-clang-tidy-diff" ''
-          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path ${compile-commands} -quiet -use-color "$@"
+          ${generate-compile-commands}
+          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path $TMPDIR/compile_commands_build -quiet -use-color "$@"
         '';
       in
       {
