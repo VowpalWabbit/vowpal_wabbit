@@ -42,10 +42,10 @@
         python-clang-format-package = pkgs.stdenv.mkDerivation {
           name = "python-clang-format";
           src = pkgs.fetchurl {
-            url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.0/clang-14.0.0.src.tar.xz";
-            sha256 = "sha256-9df/uG7Vf5fXxHHVQsTlaF20t1+4F8TD8Ce/pJ5WG5s=";
+            url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/clang-14.0.6.src.tar.xz";
+            sha256 = "sha256-K1hHtqYxGLnv5chVSDY8gf/glrZsOzZ16VPiY0KuQDE=";
           };
-          sourceRoot = "clang-14.0.0.src";
+          sourceRoot = "clang-14.0.6.src";
           phases = [ "unpackPhase" "installPhase" "fixupPhase" ];
           propagatedBuildInputs = [ pkgs.python3 pkgs.clang-tools_14 ];
           installPhase = ''
