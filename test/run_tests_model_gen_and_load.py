@@ -110,7 +110,7 @@ def generate_model_and_weights(
             weights_file.write(vw.json_weights())
         except:
             print(
-                f"{color_enum.LIGHT_PURPLE}Weights could not be generated as base learner is KSVM"
+                f"{color_enum.LIGHT_PURPLE}Weights could not be generated as base learner is KSVM{color_enum.ENDC}"
             )
     test_models_dir = working_dir / "test_models"
     test_models_dir.mkdir(parents=True, exist_ok=True)
@@ -126,6 +126,11 @@ def load_model(
     skip_missing_args: bool = False,
 ) -> None:
     model_file = str(working_dir / "test_models" / f"model_{test_id}.vw")
+    if not os.path.isfile(model_file):
+        print(
+            f"{color_enum.LIGHT_CYAN}Model file [{model_file}] is not present, skipping this test{color_enum.ENDC}"
+        )
+        return
     load_command = f" -i {model_file}"
 
     # Some options must be manually kept when loading a model
@@ -168,7 +173,7 @@ def load_model(
             new_weights = json.loads(vw.json_weights())
         except:
             print(
-                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is KSVM"
+                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is KSVM{color_enum.ENDC}"
             )
             return
         weights_dir = working_dir / "test_weights"
