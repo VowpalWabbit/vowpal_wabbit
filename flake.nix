@@ -72,7 +72,9 @@
               -DVW_BOOST_MATH_SYS_DEP=On \
               -DVW_ZLIB_SYS_DEP=On \
               -DVW_GTEST_SYS_DEP=On \
-              -DVW_EIGEN_SYS_DEP=On
+              -DVW_EIGEN_SYS_DEP=On \
+              -DBUILD_TESTING=Off \
+              -DVW_BUILD_VW_C_WRAPPER=Off
           '';
 
         };
