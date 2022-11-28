@@ -4,18 +4,20 @@
 
 #include "simulator.h"
 #include "test_common.h"
+#include "vw/config/options.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_PRIME
 #include "vw/core/learner.h"
-#include "vw/config/options.h"
 #include "vw/core/vw_math.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
 #include <functional>
 #include <map>
-#include <vector>
 #include <string>
+#include <vector>
+
+using namespace VW::config;
 
 #define ARE_SAME(X, Y, Z) \
   BOOST_CHECK_MESSAGE(VW::math::are_same(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
@@ -344,14 +346,19 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
   // a switch happens around ~1756
   size_t num_iterations = 1700;
 
-  auto* vw_qcolcol = VW::initialize(vw_arg + "-b 17 -q ::");
+  auto* vw_qcolcol = VW::initialize(vw_arg + "-b 17 --interactions \\x20\\x20 --interactions \\x20U --interactions UU");
   auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "-b 18");
   simulator::cb_sim sim1(seed, true);
   simulator::cb_sim sim2(seed, true);
   auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
   auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
   vw_automl->l->output_target_model(*vw_automl);
-  //options_i& v = *(vw_automl->options); //->get_typed_option<std::vector<std::string>>("interactions").value();
+
+  std::vector<std::string> automl_inters =
+      vw_automl->options->get_typed_option<std::vector<std::string>>("interactions").value();
+  std::vector<std::string> qcolcol_inters =
+      vw_qcolcol->options->get_typed_option<std::vector<std::string>>("interactions").value();
+  BOOST_CHECK(automl_inters == qcolcol_inters);
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
