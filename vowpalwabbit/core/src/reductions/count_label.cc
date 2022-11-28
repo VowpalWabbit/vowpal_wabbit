@@ -84,9 +84,8 @@ std::unique_ptr<options_count_label_v1> get_count_label_options_instance(
 
 VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto count_label_opts = get_count_label_options_instance(all, all.logger, options);
+  auto count_label_opts = get_count_label_options_instance(all, all.logger, *stack_builder.get_options());
   if (count_label_opts == nullptr) { return nullptr; }
 
   auto* base = stack_builder.setup_base_learner();

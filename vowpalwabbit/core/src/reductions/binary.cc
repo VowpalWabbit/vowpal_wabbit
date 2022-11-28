@@ -83,9 +83,8 @@ std::unique_ptr<options_binary_v1> get_binary_options_instance(
 
 VW::LEARNER::base_learner* VW::reductions::binary_setup(setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto binary_opts = get_binary_options_instance(all, all.logger, options);
+  auto binary_opts = get_binary_options_instance(all, all.logger, *stack_builder.get_options());
   if (binary_opts == nullptr) { return nullptr; }
 
   auto bin_data = VW::make_unique<binary_data>(stack_builder.get_all_pointer()->logger);

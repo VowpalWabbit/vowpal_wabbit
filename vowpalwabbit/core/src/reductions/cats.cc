@@ -179,6 +179,7 @@ struct options_cats_v1
   float bandwidth = 0;
   float min_value = 0;
   float max_value = 0;
+  bool bandwidth_supplied;
 };
 
 std::unique_ptr<options_cats_v1> get_cats_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
@@ -202,24 +203,25 @@ std::unique_ptr<options_cats_v1> get_cats_options_instance(const VW::workspace&,
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  // cats stack = [cats -> sample_pdf -> cats_pdf ... rest specified by cats_pdf]
+  if (!options.was_supplied("sample_pdf")) { options.insert("sample_pdf", ""); }
+  options.insert("cats_pdf", std::to_string(cats_opts->num_actions));
+  cats_opts->bandwidth_supplied = options.was_supplied("bandwidth");
+
   return cats_opts;
 }
 
 // Setup reduction in stack
 VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cats_opts = get_cats_options_instance(all, all.logger, options);
+  auto cats_opts = get_cats_options_instance(all, all.logger, *stack_builder.get_options());
   if (cats_opts == nullptr) { return nullptr; }
 
   if (cats_opts->num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
 
-  // cats stack = [cats -> sample_pdf -> cats_pdf ... rest specified by cats_pdf]
-  if (!options.was_supplied("sample_pdf")) { options.insert("sample_pdf", ""); }
-  options.insert("cats_pdf", std::to_string(cats_opts->num_actions));
-
-  if (!options.was_supplied("bandwidth"))
+  if (!cats_opts->bandwidth_supplied)
   {
     float leaf_width = (cats_opts->max_value - cats_opts->min_value) / (cats_opts->num_actions);  // aka unit range
     float half_leaf_width = leaf_width / 2.f;

@@ -235,6 +235,7 @@ struct options_bs_v1
 {
   uint32_t num_bootstrap_rounds;
   std::string type_string;
+  bool bs_type_supplied;
 };
 
 std::unique_ptr<options_bs_v1> get_bs_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
@@ -253,14 +254,14 @@ std::unique_ptr<options_bs_v1> get_bs_options_instance(const VW::workspace&, VW:
                .help("Prediction type"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  bs_opts->bs_type_supplied = options.was_supplied("bs_type");
   return bs_opts;
 }
 
 base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto bs_opts = get_bs_options_instance(all, all.logger, options);
+  auto bs_opts = get_bs_options_instance(all, all.logger, *stack_builder.get_options());
   if (bs_opts == nullptr) { return nullptr; }
 
   auto bs_data = VW::make_unique<bootstrap_data>();
@@ -271,7 +272,7 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
   bs_data->ub = FLT_MAX;
   bs_data->lb = -FLT_MAX;
 
-  if (options.was_supplied("bs_type"))
+  if (bs_opts->bs_type_supplied)
   {
     if (bs_opts->type_string == "mean") { bs_data->bs_type = BS_TYPE_MEAN; }
     else if (bs_opts->type_string == "vote")

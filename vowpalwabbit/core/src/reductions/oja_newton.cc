@@ -516,6 +516,7 @@ struct options_oja_newton_v1
   int epoch_size;
   float alpha;
   float learning_rate_cnt;
+  bool alpha_inverser_supplied;
 };
 
 std::unique_ptr<options_oja_newton_v1> get_oja_newton_options_instance(
@@ -540,15 +541,17 @@ std::unique_ptr<options_oja_newton_v1> get_oja_newton_options_instance(
       .add(make_option("random_init", oja_newton_opts->random_init).help("Randomize initialization of Oja or not"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  oja_newton_opts->alpha_inverser_supplied = options.was_supplied("alpha_inverse");
+
   return oja_newton_opts;
 }
 }  // namespace
 
 base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto oja_newton_opts = get_oja_newton_options_instance(all, all.logger, options);
+  auto oja_newton_opts = get_oja_newton_options_instance(all, all.logger, *stack_builder.get_options());
   if (oja_newton_opts == nullptr) { return nullptr; }
 
   auto oja_newton_data = VW::make_unique<OjaNewton>();
@@ -563,7 +566,7 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
   oja_newton_data->normalize = oja_newton_opts->normalize == "true";
   oja_newton_data->random_init = oja_newton_opts->random_init == "true";
 
-  if (options.was_supplied("alpha_inverse")) { oja_newton_data->alpha = 1.f / oja_newton_opts->alpha_inverse; }
+  if (oja_newton_opts->alpha_inverser_supplied) { oja_newton_data->alpha = 1.f / oja_newton_opts->alpha_inverse; }
 
   oja_newton_data->cnt = 0;
   oja_newton_data->t = 1;

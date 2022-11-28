@@ -219,9 +219,8 @@ std::unique_ptr<options_cb_to_cb_adf_v1> get_cb_to_cb_adf_options_instance(
 */
 VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cb_to_cb_adf_opts = get_cb_to_cb_adf_options_instance(all, all.logger, options);
+  auto cb_to_cb_adf_opts = get_cb_to_cb_adf_options_instance(all, all.logger, *stack_builder.get_options());
   if (cb_to_cb_adf_opts == nullptr) { return nullptr; }
 
   if (cb_to_cb_adf_opts->override_cbify)

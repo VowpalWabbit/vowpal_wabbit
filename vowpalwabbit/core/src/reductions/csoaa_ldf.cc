@@ -635,6 +635,9 @@ struct options_csoaa_ldf_v1
   std::string wap_ldf;
   bool rank;
   bool is_probabilities;
+  bool link_supplied;
+  bool csoaa_ldf_supplied;
+  bool ldf_override_supplied;
 };
 
 std::unique_ptr<options_csoaa_ldf_v1> get_csoaa_ldf_options_instance(
@@ -669,6 +672,16 @@ std::unique_ptr<options_csoaa_ldf_v1> get_csoaa_ldf_options_instance(
   {
     if (!options.add_parse_and_check_necessary(csldf_inner_options)) { return nullptr; }
   }
+
+  csoaa_ldf_opts->link_supplied = options.was_supplied("link");
+  csoaa_ldf_opts->csoaa_ldf_supplied = options.was_supplied("csoaa_ldf");
+  csoaa_ldf_opts->ldf_override_supplied = options.was_supplied("ldf_override");
+
+  // csoaa_ldf does logistic link manually for probabilities because the unlinked values are
+  // required elsewhere. This implemenation will provide correct probabilities regardless
+  // of whether --link logistic is included or not.
+  if (csoaa_ldf_opts->is_probabilities && csoaa_ldf_opts->link_supplied) { options.replace("link", "identity"); }
+
   return csoaa_ldf_opts;
 }
 
@@ -676,9 +689,8 @@ std::unique_ptr<options_csoaa_ldf_v1> get_csoaa_ldf_options_instance(
 
 base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto csoaa_ldf_opts = get_csoaa_ldf_options_instance(all, all.logger, options);
+  auto csoaa_ldf_opts = get_csoaa_ldf_options_instance(all, all.logger, *stack_builder.get_options());
   if (csoaa_ldf_opts == nullptr) { return nullptr; }
 
   auto csoaa_ldf_data = VW::make_unique<ldf>();
@@ -686,22 +698,17 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   csoaa_ldf_data->rank = csoaa_ldf_opts->rank;
   csoaa_ldf_data->is_probabilities = csoaa_ldf_opts->is_probabilities;
 
-  // csoaa_ldf does logistic link manually for probabilities because the unlinked values are
-  // required elsewhere. This implemenation will provide correct probabilities regardless
-  // of whether --link logistic is included or not.
-  if (csoaa_ldf_data->is_probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
-
   csoaa_ldf_data->all = &all;
 
   std::string ldf_arg;
 
-  if (options.was_supplied("csoaa_ldf")) { ldf_arg = csoaa_ldf_opts->csoaa_ldf; }
+  if (csoaa_ldf_opts->csoaa_ldf_supplied) { ldf_arg = csoaa_ldf_opts->csoaa_ldf; }
   else
   {
     ldf_arg = csoaa_ldf_opts->wap_ldf;
     csoaa_ldf_data->is_wap = true;
   }
-  if (options.was_supplied("ldf_override")) { ldf_arg = csoaa_ldf_opts->ldf_override; }
+  if (csoaa_ldf_opts->ldf_override_supplied) { ldf_arg = csoaa_ldf_opts->ldf_override; }
 
   csoaa_ldf_data->treat_as_classifier = false;
   if (ldf_arg == "multiline" || ldf_arg == "m") { csoaa_ldf_data->treat_as_classifier = false; }

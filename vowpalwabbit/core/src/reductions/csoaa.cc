@@ -213,9 +213,8 @@ std::unique_ptr<options_csoaa_v1> get_csoaa_options_instance(const VW::workspace
 
 base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto csoaa_opts = get_csoaa_options_instance(all, all.logger, options);
+  auto csoaa_opts = get_csoaa_options_instance(all, all.logger, *stack_builder.get_options());
   if (csoaa_opts == nullptr) { return nullptr; }
   all.indexing = csoaa_opts->indexing;
   auto csoaa_data = VW::make_unique<csoaa>(all.logger, all.indexing);

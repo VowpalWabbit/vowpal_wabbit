@@ -1324,9 +1324,8 @@ std::unique_ptr<options_lda_core_v1> get_lda_core_options_instance(
 
 base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto lda_core_opts = get_lda_core_options_instance(all, all.logger, options);
+  auto lda_core_opts = get_lda_core_options_instance(all, all.logger, *stack_builder.get_options());
   if (lda_core_opts == nullptr) { return nullptr; }
 
   auto lda_core_data = VW::make_unique<::lda>();

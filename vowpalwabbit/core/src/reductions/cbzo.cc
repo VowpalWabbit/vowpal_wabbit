@@ -350,6 +350,9 @@ struct options_cbzo_v1
   bool cbzo_option = false;
   float radius;
   bool feature_mask_off = true;
+  bool noconstant_supplied;
+  bool min_prediction_supplied;
+  bool max_prediction_supplied;
 };
 
 std::unique_ptr<options_cbzo_v1> get_cbzo_options_instance(
@@ -376,6 +379,10 @@ std::unique_ptr<options_cbzo_v1> get_cbzo_options_instance(
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("feature_mask")) { cbzo_opts->feature_mask_off = false; }
+  cbzo_opts->noconstant_supplied = options.was_supplied("noconstant");
+  cbzo_opts->min_prediction_supplied = options.was_supplied("min_prediction");
+  cbzo_opts->max_prediction_supplied = options.was_supplied("max_prediction");
+
   return cbzo_opts;
 }
 
@@ -383,9 +390,8 @@ std::unique_ptr<options_cbzo_v1> get_cbzo_options_instance(
 
 base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cbzo_opts = get_cbzo_options_instance(all, all.logger, options);
+  auto cbzo_opts = get_cbzo_options_instance(all, all.logger, *stack_builder.get_options());
   if (cbzo_opts == nullptr) { return nullptr; }
 
   auto cbzo_data = VW::make_unique<cbzo>();
@@ -402,7 +408,7 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 
   if (policy == CONSTANT_POLICY)
   {
-    if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
+    if (cbzo_opts->noconstant_supplied) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!cbzo_opts->feature_mask_off)
     { all.logger.err_warn("Feature_mask used with constant policy (where there is only one weight to learn)."); }
@@ -410,8 +416,8 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
   cbzo_data->all = &all;
-  cbzo_data->min_prediction_supplied = options.was_supplied("min_prediction");
-  cbzo_data->max_prediction_supplied = options.was_supplied("max_prediction");
+  cbzo_data->min_prediction_supplied = cbzo_opts->min_prediction_supplied;
+  cbzo_data->max_prediction_supplied = cbzo_opts->max_prediction_supplied;
 
   auto* l = make_base_learner(std::move(cbzo_data), get_learn(all, policy, cbzo_opts->feature_mask_off),
       get_predict(all, policy), stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF,

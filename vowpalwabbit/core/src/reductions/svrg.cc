@@ -198,9 +198,8 @@ std::unique_ptr<options_svrg_v1> get_svrg_options_instance(const VW::workspace&,
 
 base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto svrg_opts = get_svrg_options_instance(all, all.logger, options);
+  auto svrg_opts = get_svrg_options_instance(all, all.logger, *stack_builder.get_options());
   if (svrg_opts == nullptr) { return nullptr; }
   auto svrg_data = VW::make_unique<svrg>(&all);
   svrg_data->stage_size = svrg_opts->stage_size;

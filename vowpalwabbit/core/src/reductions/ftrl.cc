@@ -371,6 +371,9 @@ struct options_ftrl_v1
   bool ftrl_enabled;
   bool pistol_enabled;
   bool coin_enabled;
+  bool ftrl_alpha_enabled;
+  bool ftrl_beta_enabled;
+  uint64_t early_terminate_val;
 };
 
 std::unique_ptr<options_ftrl_v1> get_ftrl_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
@@ -405,6 +408,11 @@ std::unique_ptr<options_ftrl_v1> get_ftrl_options_instance(const VW::workspace&,
   ftrl_opts->ftrl_enabled = options.add_parse_and_check_necessary(ftrl_options);
   ftrl_opts->pistol_enabled = options.add_parse_and_check_necessary(pistol_options);
   ftrl_opts->coin_enabled = options.add_parse_and_check_necessary(coin_options);
+
+  ftrl_opts->ftrl_alpha_enabled = options.was_supplied("ftrl_alpha");
+  ftrl_opts->ftrl_beta_enabled = options.was_supplied("ftrl_beta");
+  ftrl_opts->early_terminate_val = options.get_typed_option<uint64_t>("early_terminate").value();
+
   return ftrl_opts;
 }
 
@@ -412,9 +420,8 @@ std::unique_ptr<options_ftrl_v1> get_ftrl_options_instance(const VW::workspace&,
 
 base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto ftrl_opts = get_ftrl_options_instance(all, all.logger, options);
+  auto ftrl_opts = get_ftrl_options_instance(all, all.logger, *stack_builder.get_options());
   if (ftrl_opts == nullptr) { return nullptr; }
   auto ftrl_data = VW::make_unique<ftrl>();
   ftrl_data->ftrl_alpha = ftrl_opts->ftrl_alpha;
@@ -440,8 +447,8 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
   // Defaults that are specific to the mode that was chosen.
   if (ftrl_opts->ftrl_enabled)
   {
-    ftrl_data->ftrl_alpha = options.was_supplied("ftrl_alpha") ? ftrl_data->ftrl_alpha : 0.005f;
-    ftrl_data->ftrl_beta = options.was_supplied("ftrl_beta") ? ftrl_data->ftrl_beta : 0.1f;
+    ftrl_data->ftrl_alpha = ftrl_opts->ftrl_alpha_enabled ? ftrl_data->ftrl_alpha : 0.005f;
+    ftrl_data->ftrl_beta = ftrl_opts->ftrl_beta_enabled ? ftrl_data->ftrl_beta : 0.1f;
     algorithm_name = "Proximal-FTRL";
     learn_ptr = all.audit || all.hash_inv ? learn_proximal<true> : learn_proximal<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
@@ -449,8 +456,8 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
   }
   else if (ftrl_opts->pistol_enabled)
   {
-    ftrl_data->ftrl_alpha = options.was_supplied("ftrl_alpha") ? ftrl_data->ftrl_alpha : 1.0f;
-    ftrl_data->ftrl_beta = options.was_supplied("ftrl_beta") ? ftrl_data->ftrl_beta : 0.5f;
+    ftrl_data->ftrl_alpha = ftrl_opts->ftrl_alpha_enabled ? ftrl_data->ftrl_alpha : 1.0f;
+    ftrl_data->ftrl_beta = ftrl_opts->ftrl_beta_enabled ? ftrl_data->ftrl_beta : 0.5f;
     algorithm_name = "PiSTOL";
     learn_ptr = all.audit || all.hash_inv ? learn_pistol<true> : learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
@@ -459,8 +466,8 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
   }
   else if (ftrl_opts->coin_enabled)
   {
-    ftrl_data->ftrl_alpha = options.was_supplied("ftrl_alpha") ? ftrl_data->ftrl_alpha : 4.0f;
-    ftrl_data->ftrl_beta = options.was_supplied("ftrl_beta") ? ftrl_data->ftrl_beta : 1.0f;
+    ftrl_data->ftrl_alpha = ftrl_opts->ftrl_alpha_enabled ? ftrl_data->ftrl_alpha : 4.0f;
+    ftrl_data->ftrl_beta = ftrl_opts->ftrl_beta_enabled ? ftrl_data->ftrl_beta : 1.0f;
     algorithm_name = "Coin Betting";
     learn_ptr = all.audit || all.hash_inv ? learn_coin_betting<true> : learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
@@ -484,7 +491,7 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
   if (!all.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
-    ftrl_data->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+    ftrl_data->early_stop_thres = ftrl_opts->early_terminate_val;
   }
 
   auto predict_ptr = (all.audit || all.hash_inv) ? predict<true> : predict<false>;

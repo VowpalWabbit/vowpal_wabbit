@@ -326,6 +326,8 @@ struct options_cs_active_v1
   float cost_max;
   float cost_min;
   bool print_debug_stuff;
+  bool domination_supplied;
+  bool adax_supplied;
 };
 
 std::unique_ptr<options_cs_active_v1> get_cs_active_options_instance(
@@ -359,6 +361,18 @@ std::unique_ptr<options_cs_active_v1> get_cs_active_options_instance(
       .add(make_option("csa_debug", cs_active_opts->print_debug_stuff).help("Print debug stuff for cs_active"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  if (options.was_supplied("lda")) THROW("lda can't be combined with active learning");
+
+  if (options.was_supplied("active")) THROW("--cs_active can't be used with --active");
+
+  if (options.was_supplied("active_cover")) THROW("--cs_active can't be used with --active_cover");
+
+  if (options.was_supplied("csoaa")) THROW("--cs_active can't be used with --csoaa");
+
+  cs_active_opts->domination_supplied = options.was_supplied("domination");
+  cs_active_opts->adax_supplied = options.was_supplied("adax");
+
   return cs_active_opts;
 }
 
@@ -366,9 +380,8 @@ std::unique_ptr<options_cs_active_v1> get_cs_active_options_instance(
 
 base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cs_active_opts = get_cs_active_options_instance(all, all.logger, options);
+  auto cs_active_opts = get_cs_active_options_instance(all, all.logger, *stack_builder.get_options());
   if (cs_active_opts == nullptr) { return nullptr; }
 
   auto cs_active_data = VW::make_unique<cs_active>();
@@ -388,23 +401,14 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
       ? std::numeric_limits<size_t>::max()
       : cs_active_opts->min_labels;
   cs_active_data->use_domination = true;
-  if (options.was_supplied("domination") && !cs_active_opts->domination) { cs_active_data->use_domination = false; }
+  if (cs_active_opts->domination_supplied && !cs_active_opts->domination) { cs_active_data->use_domination = false; }
 
   cs_active_data->all = &all;
   cs_active_data->t = 1;
 
   auto loss_function_type = all.loss->get_type();
   if (loss_function_type != "squared") THROW("non-squared loss can't be used with --cs_active");
-
-  if (options.was_supplied("lda")) THROW("lda can't be combined with active learning");
-
-  if (options.was_supplied("active")) THROW("--cs_active can't be used with --active");
-
-  if (options.was_supplied("active_cover")) THROW("--cs_active can't be used with --active_cover");
-
-  if (options.was_supplied("csoaa")) THROW("--cs_active can't be used with --csoaa");
-
-  if (!options.was_supplied("adax")) { all.logger.err_warn("--cs_active should be used with --adax"); }
+  if (!cs_active_opts->adax_supplied) { all.logger.err_warn("--cs_active should be used with --adax"); }
 
   all.set_minmax(all.sd, cs_active_data->cost_max);
   all.set_minmax(all.sd, cs_active_data->cost_min);

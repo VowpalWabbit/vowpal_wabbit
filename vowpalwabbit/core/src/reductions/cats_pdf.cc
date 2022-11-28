@@ -176,18 +176,6 @@ std::unique_ptr<options_cats_pdf_v1> get_cats_pdf_options_instance(
   // If cats reduction was not invoked, don't add anything
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  return cats_pdf_opts;
-}
-
-// Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_builder)
-{
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cats_pdf_opts = get_cats_pdf_options_instance(all, all.logger, options);
-  if (cats_pdf_opts == nullptr) { return nullptr; }
-
-  if (cats_pdf_opts->num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
 
   // cats stack = [cats_pdf -> cb_explore_pdf -> pmf_to_pdf -> get_pmf -> cats_tree]
   if (!options.was_supplied("cb_explore_pdf")) { options.insert("cb_explore_pdf", ""); }
@@ -195,6 +183,18 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
 
   if (!options.was_supplied("get_pmf")) { options.insert("get_pmf", ""); }
   options.insert("cats_tree", std::to_string(cats_pdf_opts->num_actions));
+
+  return cats_pdf_opts;
+}
+
+// Setup reduction in stack
+VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cats_pdf_opts = get_cats_pdf_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cats_pdf_opts == nullptr) { return nullptr; }
+
+  if (cats_pdf_opts->num_actions <= 0) THROW(VW::experimental::error_code::num_actions_gt_zero_s);
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
   bool always_predict = all.final_prediction_sink.size() > 0;

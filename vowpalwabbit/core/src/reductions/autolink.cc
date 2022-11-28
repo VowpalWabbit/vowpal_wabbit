@@ -104,9 +104,8 @@ std::unique_ptr<options_autolink_v1> get_autolink_options_instance(
 
 VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto autolink_opts = get_autolink_options_instance(all, all.logger, options);
+  auto autolink_opts = get_autolink_options_instance(all, all.logger, *stack_builder.get_options());
   if (autolink_opts == nullptr) { return nullptr; }
 
   auto autolink_reduction = VW::make_unique<autolink>(autolink_opts->d, all.weights.stride_shift());

@@ -227,49 +227,66 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
     }
   }
 }
-}  // namespace
 
-base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder)
+struct options_explore_eval_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<explore_eval>();
   bool explore_eval_option = false;
   uint32_t block_size = 0;
+  float multiplier;
+  bool multiplier_supplied;
+};
+
+std::unique_ptr<options_explore_eval_v1> get_explore_eval_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto explore_eval_opts = VW::make_unique<options_explore_eval_v1>();
   option_group_definition new_options("[Reduction] Explore Evaluation");
   new_options
-      .add(make_option("explore_eval", explore_eval_option)
+      .add(make_option("explore_eval", explore_eval_opts->explore_eval_option)
                .keep()
                .necessary()
                .help("Evaluate explore_eval adf policies"))
-      .add(make_option("multiplier", data->multiplier)
+      .add(make_option("multiplier", explore_eval_opts->multiplier)
                .help("Multiplier used to make all rejection sample probabilities <= 1"))
       .add(
-          make_option("block_size", block_size)
+          make_option("block_size", explore_eval_opts->block_size)
               .default_value(1)
               .help("The examples will be processed in blocks of block_size. If an example update is found in that "
                     "block no other examples in the block will be used to update the policy. If an example is not used "
                     "in the block then the quota rolls over and the next block can update more than one examples"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
+  explore_eval_opts->multiplier_supplied = options.was_supplied("multiplier");
+  return explore_eval_opts;
+}
 
-  data->all = &all;
-  data->random_state = all.get_random_state();
-  data->block_size = static_cast<size_t>(block_size);
-  data->block_ex_quota = 1;
+}  // namespace
 
-  if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
+base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto explore_eval_opts = get_explore_eval_options_instance(all, all.logger, *stack_builder.get_options());
+  if (explore_eval_opts == nullptr) { return nullptr; }
+
+  auto explore_eval_data = VW::make_unique<explore_eval>();
+
+  explore_eval_data->multiplier = explore_eval_opts->multiplier;
+  explore_eval_data->all = &all;
+  explore_eval_data->random_state = all.get_random_state();
+  explore_eval_data->block_size = static_cast<size_t>(explore_eval_opts->block_size);
+  explore_eval_data->block_ex_quota = 1;
+
+  if (explore_eval_opts->multiplier_supplied) { explore_eval_data->fixed_multiplier = true; }
   else
   {
-    data->multiplier = 1;
+    explore_eval_data->multiplier = 1;
   }
-
-  if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
+  auto* l = make_reduction_learner(std::move(explore_eval_data), base, do_actual_learning<true>, do_actual_learning<false>,
       stack_builder.get_setupfn_name(explore_eval_setup))
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)

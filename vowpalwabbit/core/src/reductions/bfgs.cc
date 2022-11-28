@@ -1178,9 +1178,8 @@ std::unique_ptr<options_bfgs_v1> get_bfgs_options_instance(
 
 base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto bfgs_opts = get_bfgs_options_instance(all, all.logger, options);
+  auto bfgs_opts = get_bfgs_options_instance(all, all.logger, *stack_builder.get_options());
   if (bfgs_opts == nullptr) { return nullptr; }
 
   auto bfgs_data = VW::make_unique<bfgs>();

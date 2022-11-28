@@ -258,9 +258,8 @@ std::unique_ptr<options_active_cover_v1> get_active_cover_options_instance(
 
 base_learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto active_cover_opts = get_active_cover_options_instance(all, all.logger, options);
+  auto active_cover_opts = get_active_cover_options_instance(all, all.logger, *stack_builder.get_options());
   if (active_cover_opts == nullptr) { return nullptr; }
 
   auto active_cover_data = VW::make_unique<active_cover>();

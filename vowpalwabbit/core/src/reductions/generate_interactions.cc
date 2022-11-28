@@ -179,19 +179,39 @@ inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER
   ec.interactions = saved_interactions;
   ec.extent_interactions = saved_extent_interactions;
 }
+
+struct options_generate_interactions_v1
+{
+  bool leave_duplicate_interactions;
+  bool ccb_explore_adf_supplied;
+  bool large_action_space_supplied;
+};
+
+std::unique_ptr<options_generate_interactions_v1> get_generate_interactions_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto generate_interactions_opts = VW::make_unique<options_generate_interactions_v1>();
+  option_group_definition new_options("[Reduction] Generate Interactions");
+  new_options.add(make_option("leave_duplicate_interactions", generate_interactions_opts->leave_duplicate_interactions)
+                      .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
+                            "duplicate: '-q ab -q ba' and a lot more in '-q ::'."));
+  options.add_and_parse(new_options);
+
+  generate_interactions_opts->ccb_explore_adf_supplied = options.was_supplied("ccb_explore_adf");
+  generate_interactions_opts->large_action_space_supplied = options.was_supplied("large_action_space");
+
+  return generate_interactions_opts;
+}
+
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  bool leave_duplicate_interactions;
+  auto generate_interactions_opts = get_generate_interactions_options_instance(all, all.logger, *stack_builder.get_options());
+  if (generate_interactions_opts == nullptr) { return nullptr; }
+  
   bool store_in_reduction_features = false;
-  option_group_definition new_options("[Reduction] Generate Interactions");
-  new_options.add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
-                      .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
-                            "duplicate: '-q ab -q ba' and a lot more in '-q ::'."));
-  options.add_and_parse(new_options);
 
   auto interactions_spec_contains_wildcards = false;
   for (const auto& inter : all.interactions)
@@ -216,10 +236,10 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   // If there are no wildcards, then no expansion is required.
   // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.
   if (!(interactions_spec_contains_wildcards || interactions_spec_contains_extent_wildcards ||
-          options.was_supplied("ccb_explore_adf")))
+          generate_interactions_opts->ccb_explore_adf_supplied))
   { return nullptr; }
 
-  if (options.was_supplied("large_action_space")) { store_in_reduction_features = true; }
+  if (generate_interactions_opts->large_action_space_supplied) { store_in_reduction_features = true; }
 
   using learn_pred_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&, VW::example&);
   using multipredict_func_t = void (*)(INTERACTIONS::interactions_generator&, VW::LEARNER::single_learner&,
@@ -229,7 +249,7 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   learn_pred_func_t update_func;
   multipredict_func_t multipredict_func;
 
-  if (leave_duplicate_interactions)
+  if (generate_interactions_opts->leave_duplicate_interactions)
   {
     if (interactions_spec_contains_extent_wildcards)
     {
@@ -326,11 +346,11 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
     }
   }
 
-  auto data = VW::make_unique<INTERACTIONS::interactions_generator>();
-  data->store_in_reduction_features = store_in_reduction_features;
+  auto generate_interactions_data = VW::make_unique<INTERACTIONS::interactions_generator>();
+  generate_interactions_data->store_in_reduction_features = store_in_reduction_features;
   auto* base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(
-      std::move(data), base, learn_func, pred_func, stack_builder.get_setupfn_name(generate_interactions_setup))
+      std::move(generate_interactions_data), base, learn_func, pred_func, stack_builder.get_setupfn_name(generate_interactions_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_update(update_func)
                 .set_multipredict(multipredict_func)

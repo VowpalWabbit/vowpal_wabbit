@@ -104,9 +104,8 @@ std::unique_ptr<options_classweight_v1> get_classweight_options_instance(
 
 VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto classweight_opts = get_classweight_options_instance(all, all.logger, options);
+  auto classweight_opts = get_classweight_options_instance(all, all.logger, *stack_builder.get_options());
   if (classweight_opts == nullptr) { return nullptr; }
 
   auto class_weights_data = VW::make_unique<classweights>();

@@ -289,9 +289,8 @@ std::unique_ptr<options_offset_tree_v1> get_offset_tree_options_instance(
 
 VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto offset_tree_opts = get_offset_tree_options_instance(all, all.logger, options);
+  auto offset_tree_opts = get_offset_tree_options_instance(all, all.logger, *stack_builder.get_options());
   if (offset_tree_opts == nullptr) { return nullptr; }
 
   auto offset_tree_data = VW::make_unique<VW::reductions::offset_tree::offset_tree>(offset_tree_opts->num_actions);

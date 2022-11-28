@@ -1448,9 +1448,8 @@ std::unique_ptr<options_gd_v1> get_gd_options_instance(const VW::workspace& all,
 
 base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto gd_opts = GD::get_gd_options_instance(all, all.logger, options);
+  auto gd_opts = GD::get_gd_options_instance(all, all.logger, *stack_builder.get_options());
   if (gd_opts == nullptr) { return nullptr; }
 
   auto gd_data = VW::make_unique<GD::gd>();

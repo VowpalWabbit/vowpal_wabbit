@@ -389,9 +389,8 @@ std::unique_ptr<options_cats_tree_v1> get_cats_tree_options_instance(
 
 VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cats_tree_opts = get_cats_tree_options_instance(all, all.logger, options);
+  auto cats_tree_opts = get_cats_tree_options_instance(all, all.logger, *stack_builder.get_options());
   if (cats_tree_opts == nullptr) { return nullptr; }
 
   auto cats_tree_data = VW::make_unique<VW::reductions::cats::cats_tree>();

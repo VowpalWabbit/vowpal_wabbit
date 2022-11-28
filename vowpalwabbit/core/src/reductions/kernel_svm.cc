@@ -742,6 +742,7 @@ struct options_kernel_svm_v1
   std::string kernel_type;
   float bandwidth = 1.f;
   int degree = 2;
+  bool subsample_supplied;
 };
 
 std::unique_ptr<options_kernel_svm_v1> get_kernel_svm_options_instance(
@@ -773,15 +774,17 @@ std::unique_ptr<options_kernel_svm_v1> get_kernel_svm_options_instance(
       .add(make_option("degree", kernel_svm_opts->degree).keep().default_value(2).help("Degree of poly kernel"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  kernel_svm_opts->subsample_supplied = options.was_supplied("subsample");
+
   return kernel_svm_opts;
 }
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto kernel_svm_opts = get_kernel_svm_options_instance(all, all.logger, options);
+  auto kernel_svm_opts = get_kernel_svm_options_instance(all, all.logger, *stack_builder.get_options());
   if (kernel_svm_opts == nullptr) { return nullptr; }
 
   auto kernel_svm_data = VW::make_unique<svm_params>();
@@ -813,7 +816,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   kernel_svm_data->pool = calloc_or_throw<svm_example*>(kernel_svm_data->pool_size);
   kernel_svm_data->pool_pos = 0;
 
-  if (!options.was_supplied("subsample") && kernel_svm_data->para_active)
+  if (!kernel_svm_opts->subsample_supplied && kernel_svm_data->para_active)
   { kernel_svm_data->subsample = static_cast<size_t>(ceil(kernel_svm_data->pool_size / all.all_reduce->total)); }
 
   kernel_svm_data->lambda = all.l2_lambda;

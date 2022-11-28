@@ -189,9 +189,8 @@ std::unique_ptr<options_cb_algs_v1> get_cb_algs_options_instance(
 
 base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cb_algs_opts = get_cb_algs_options_instance(all, all.logger, options);
+  auto cb_algs_opts = get_cb_algs_options_instance(all, all.logger, *stack_builder.get_options());
   if (cb_algs_opts == nullptr) { return nullptr; }
   auto cb_algs_data = VW::make_unique<cb>(all.logger);
 

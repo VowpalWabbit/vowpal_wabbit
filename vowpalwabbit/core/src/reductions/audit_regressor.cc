@@ -298,9 +298,8 @@ std::unique_ptr<options_audit_regressor_v1> get_audit_regressor_options_instance
 
 VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto audit_regressor_opts = get_audit_regressor_options_instance(all, all.logger, options);
+  auto audit_regressor_opts = get_audit_regressor_options_instance(all, all.logger, *stack_builder.get_options());
   if (audit_regressor_opts == nullptr) { return nullptr; }
 
   all.audit = true;

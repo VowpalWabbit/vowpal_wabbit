@@ -274,9 +274,8 @@ std::unique_ptr<options_mwt_v1> get_mwt_options_instance(const VW::workspace&, V
 
 base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto mwt_opts = get_mwt_options_instance(all, all.logger, options);
+  auto mwt_opts = get_mwt_options_instance(all, all.logger, *stack_builder.get_options());
   if (mwt_opts == nullptr) { return nullptr; }
   auto mwt_data = VW::make_unique<mwt>();
   mwt_data->num_classes = mwt_opts->num_classes;

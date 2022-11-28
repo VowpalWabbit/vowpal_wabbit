@@ -370,18 +370,21 @@ std::unique_ptr<options_epsilon_decay_v1> get_epsilon_decay_options_instance(
 
 VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto epsilon_decay_opts = get_epsilon_decay_options_instance(all, all.logger, options);
+  auto epsilon_decay_opts = get_epsilon_decay_options_instance(all, all.logger, *stack_builder.get_options());
   if (epsilon_decay_opts == nullptr) { return nullptr; }
 
   if (epsilon_decay_opts->model_count < 1) { THROW("Model count must be 1 or greater"); }
 
-  if (!epsilon_decay_opts->fixed_significance_level) { epsilon_decay_opts->epsilon_decay_significance_level /= epsilon_decay_opts->model_count; }
+  if (!epsilon_decay_opts->fixed_significance_level)
+  { epsilon_decay_opts->epsilon_decay_significance_level /= epsilon_decay_opts->model_count; }
 
-  auto epsilon_decay_data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(epsilon_decay_opts->model_count, epsilon_decay_opts->min_scope,
-      epsilon_decay_opts->epsilon_decay_significance_level, epsilon_decay_opts->epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_opts->epsilon_decay_audit_str, epsilon_decay_opts->constant_epsilon, all.wpp, epsilon_decay_opts->min_champ_examples, epsilon_decay_opts->initial_epsilon, epsilon_decay_opts->shift_model_bounds);
+  auto epsilon_decay_data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(
+      epsilon_decay_opts->model_count, epsilon_decay_opts->min_scope,
+      epsilon_decay_opts->epsilon_decay_significance_level, epsilon_decay_opts->epsilon_decay_estimator_decay,
+      all.weights.dense_weights, epsilon_decay_opts->epsilon_decay_audit_str, epsilon_decay_opts->constant_epsilon,
+      all.wpp, epsilon_decay_opts->min_champ_examples, epsilon_decay_opts->initial_epsilon,
+      epsilon_decay_opts->shift_model_bounds);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -401,8 +404,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   if (base_learner->is_multiline())
   {
-    auto* learner = VW::LEARNER::make_reduction_learner(std::move(epsilon_decay_data), VW::LEARNER::as_multiline(base_learner), learn,
-        predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
+    auto* learner = VW::LEARNER::make_reduction_learner(std::move(epsilon_decay_data),
+        VW::LEARNER::as_multiline(base_learner), learn, predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_input_label_type(VW::label_type_t::CB)
                         .set_output_label_type(VW::label_type_t::CB)
                         .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)

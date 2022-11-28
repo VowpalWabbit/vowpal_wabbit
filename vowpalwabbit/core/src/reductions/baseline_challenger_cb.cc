@@ -232,9 +232,9 @@ std::unique_ptr<options_baseline_challenger_cb_v1> get_baseline_challenger_cb_op
 
 VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto baseline_challenger_cb_opts = get_baseline_challenger_cb_options_instance(all, all.logger, options);
+  auto baseline_challenger_cb_opts =
+      get_baseline_challenger_cb_options_instance(all, all.logger, *stack_builder.get_options());
   if (baseline_challenger_cb_opts == nullptr) { return nullptr; }
 
   auto baseline_challenger_cb_data = VW::make_unique<baseline_challenger_data>(
