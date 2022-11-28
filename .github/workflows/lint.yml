@@ -143,12 +143,15 @@ jobs:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v18
       - run: |
+          echo "::group::nix develop -c vw-clang-tidy-all"
           nix develop -c vw-clang-tidy-all | tee tidy_out.txt || true
-          grep -A 3 "error: " tidy_out.txt > tidy_onlyerrors.txt || true
+          echo "::endgroup::"
+          # Prevent false positives for THROW("error: ...") by using the prepended :
+          grep -A 3 ": error: " tidy_out.txt > tidy_onlyerrors.txt || true
           if [ -s tidy_onlyerrors.txt ]; then
             # file has contents
+            echo "::group::errors"
             cat tidy_onlyerrors.txt
+            echo "::endgroup::"
             exit 11
-          else
-            cat tidy_out.txt
           fi
