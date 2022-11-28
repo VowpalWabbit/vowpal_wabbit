@@ -142,15 +142,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: cachix/install-nix-action@v18
-      - run: |
+      - name: Run clang-tidy
+        run: |
           echo "::group::nix develop -c vw-clang-tidy"
           nix develop -c vw-clang-tidy | tee tidy_out.txt || true
-          echo "::endgroup::"
           # Prevent false positives for THROW("error: ...") by using the prepended :
           grep -A 3 ": error: " tidy_out.txt > tidy_onlyerrors.txt || true
+          echo "::endgroup::"
           if [ -s tidy_onlyerrors.txt ]; then
             # file has contents
-            echo "::group::errors"
+            echo "::group::clang-tidy errors"
             cat tidy_onlyerrors.txt
             echo "::endgroup::"
             exit 11

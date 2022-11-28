@@ -33,7 +33,7 @@ clang-format --version
 
 for FILE in $(find . -type f -not -path './ext_libs/*' -not -path './cs/cli/*' \( -name '*.cc' -o -name "*.h" \) ); do
     if [[ "$1" == "check" ]]; then
-        diff $FILE <(clang-format $FILE);
+        clang-format --dry-run --Werror $FILE
         if [ $? -ne 0 ]; then
             ISSUE_FOUND="true"
             if [[ -v GH_WORKFLOW_LOGGING ]]; then
