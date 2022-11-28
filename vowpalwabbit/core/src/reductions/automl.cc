@@ -115,6 +115,11 @@ void output_target_model(VW::workspace& all, automl<CMType>& data)
       "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level",
       "fixed_significance_level"};
 
+  /*for (auto& group : options.get_all_option_group_definitions())
+  {
+    int i = 1;
+  }*/
+
   for (const auto& opt : aml_opts)
   {
     if (options.was_supplied(opt)) { options.remove_option(opt); }
@@ -144,14 +149,11 @@ void output_target_model(VW::workspace& all, automl<CMType>& data)
 template <typename CMType>
 void save_load_aml(automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
-  if (!aml.should_save_predict_only_model)
+  if (io.num_files() == 0) { return; }
+  if (read) { VW::model_utils::read_model_field(io, aml); }
+  else if (!aml.should_save_predict_only_model)
   {
-    if (io.num_files() == 0) { return; }
-    if (read) { VW::model_utils::read_model_field(io, aml); }
-    else
-    {
-      VW::model_utils::write_model_field(io, aml, "_automl", text);
-    }
+    VW::model_utils::write_model_field(io, aml, "_automl", text);
   }
 }
 

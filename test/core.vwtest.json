@@ -5431,10 +5431,10 @@
   },
   {
     "id": 421,
-    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default block_size",
+    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default target_rate of 1",
     "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval",
     "diff_files": {
-      "stderr": "train-sets/ref/explore_eval_block_size_1.stderr"
+      "stderr": "train-sets/ref/explore_eval_tr_1.stderr"
     },
     "input_files": [
       "train-sets/explore_eval_egreedy.dat"
@@ -5442,10 +5442,10 @@
   },
   {
     "id": 422,
-    "desc": "explore_eval evaluate same policy as logged policy, with block_size > 1 there should be at most ((#examples / block_size) + 1) updates",
-    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --block_size 5",
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --target_rate 0.2",
     "diff_files": {
-      "stderr": "train-sets/ref/explore_eval_block_size_5.stderr"
+      "stderr": "train-sets/ref/explore_eval_tr_0.2.stderr"
     },
     "input_files": [
       "train-sets/explore_eval_egreedy.dat"
@@ -5453,6 +5453,28 @@
   },
   {
     "id": 423,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --squarecb -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_sqcb.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 424,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --large_action_space --max_actions 5 -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_las.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 425,
     "desc": "Spin off automl model to lower bitsize to cb_explore",
     "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off.m -b 18 --predict_only_model --automl 2",
     "diff_files": {
@@ -5463,7 +5485,7 @@
     ]
   },
   {
-    "id": 424,
+    "id": 426,
     "desc": "Load spun off automl model and output invert hash",
     "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/aml_spin_off.m -b 17 --invert_hash aml_spinoff.inv --predict_only_model",
     "diff_files": {
@@ -5475,11 +5497,11 @@
       "models/aml_spin_off.m"
     ],
     "depends_on": [
-      423
+      425
     ]
   },
   {
-    "id": 425,
+    "id": 427,
     "desc": "Generate similar model to spun off automl using standard cb_explore_adf",
     "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model --interactions AA --interactions AB --interactions BB",
     "diff_files": {
@@ -5490,7 +5512,7 @@
     ]
   },
   {
-    "id": 426,
+    "id": 428,
     "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff",
     "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/aml_spin_off_cb.m -b 17 --invert_hash aml_spinoff_cb.inv --predict_only_model",
     "diff_files": {
@@ -5502,11 +5524,11 @@
       "models/aml_spin_off_cb.m"
     ],
     "depends_on": [
-      425
+      427
     ]
   },
   {
-    "id": 427,
+    "id": 429,
     "desc": "Check that binary model files are identical between standard cb_explore_adf and automl spinoff",
     "bash_command": "diff models/aml_spin_off.m models/aml_spin_off_cb.m",
     "input_files": [
@@ -5514,18 +5536,7 @@
       "models/aml_spin_off_cb.m"
     ],
     "depends_on": [
-      423, 425
-    ]
-  },
-  {
-    "id": 428,
-    "desc": "explore_eval evaluate same policy as logged policy, with block_size > 1 there should be at most ((#examples / block_size) + 1) updates",
-    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --block_size 5",
-    "diff_files": {
-      "stderr": "train-sets/ref/explore_eval_block_size_5.stderr"
-    },
-    "input_files": [
-      "train-sets/explore_eval_egreedy.dat"
+      425, 427
     ]
   }
 ]
