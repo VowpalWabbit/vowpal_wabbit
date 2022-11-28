@@ -100,7 +100,8 @@ void finish(explore_eval& data)
   if (!data.all->quiet)
   {
     *(data.all->trace_message) << "weighted update count = " << data.weighted_update_count << std::endl;
-    *(data.all->trace_message) << "average accepted example weight = " << data.weighted_update_count / static_cast<float>(data.update_count) << std::endl;
+    *(data.all->trace_message) << "average accepted example weight = "
+                               << data.weighted_update_count / static_cast<float>(data.update_count) << std::endl;
     if (data.violations > 0) { *(data.all->trace_message) << "violation count = " << data.violations << std::endl; }
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
     if (data.target_rate_on)
