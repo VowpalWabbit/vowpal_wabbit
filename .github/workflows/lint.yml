@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -138,18 +138,16 @@ jobs:
           fi
   run-clang-tidy:
     name: lint.c++.clang-tidy
-    container:
-      image: vowpalwabbit/ubuntu2004-dev:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Install Ninja
-        shell: bash
-        run: |
-          apt update
-          apt install -y libspdlog-dev libfmt-dev libboost-math-dev
-      - name: Run clang tidy
-        shell: bash
-        run: ./.scripts/linux/run-clang-tidy.sh
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v18
+      - run: |
+          nix develop -c vw-clang-tidy-all 1>tidy_out.txt 2>tidy_error.txt || true
+          if [ -s tidy_onlyerrors.txt ]; then
+            # file has contents
+            cat tidy_onlyerrors.txt
+            exit 11
+          else
+            cat tidy_out.txt
+          fi

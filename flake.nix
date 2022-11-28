@@ -79,12 +79,12 @@
       in
       let
         clang-tidy-all-script = pkgs.writeShellScriptBin "vw-clang-tidy-all" ''
-          ${python-clang-tidy-package}/bin/run-clang-tidy -p ${compile-commands} -quiet -header-filter=vw/*
+          ${python-clang-tidy-package}/bin/run-clang-tidy -p ${compile-commands} -quiet -header-filter=vw/* "$@"
         '';
       in
       let
         clang-tidy-diff-script = pkgs.writeShellScriptBin "vw-clang-tidy-diff" ''
-          ${python-clang-tidy-package}/bin/clang-tidy-diff -p 0 -path ${compile-commands} -quiet -use-color "$@"
+          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path ${compile-commands} -quiet -use-color "$@"
         '';
       in
       {
