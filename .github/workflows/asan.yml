@@ -52,12 +52,8 @@ jobs:
         run: |
           cd build
           ctest --verbose --output-on-failure
-      - name: Run python test script - win
-      # we need to exclude test 424 bc compiler pads with zero to the left
-        if: ${{ matrix.os == 'windows-latest' && (success() || failure()) }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --skip_test 424 --include_flatbuffers --jobs 1
       - name: Run python test script
-        if: ${{ matrix.os != 'windows-latest' && (success() || failure()) }}
+        if: ${{ success() || failure() }}
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1
 
   test_ubsan_minimal:
