@@ -5486,16 +5486,5 @@
     "input_files": [
       "train-sets/explore_eval_egreedy.dat"
     ]
-  },
-  {
-    "id": 426,
-    "desc": "creating model to be tested with -q :: and --invert_hash and hexfloat",
-    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/288.model --invert_hash ccb_quad.inv --hexfloat_weights",
-    "diff_files": {
-      "ccb_quad.inv": "pred-sets/ref/ccb_quad_hexfloat.inv"
-    },
-    "input_files": [
-      "train-sets/ccb_test_interactions.dat"
-    ]
   }
 ]
