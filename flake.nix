@@ -80,7 +80,7 @@
         };
       in
       let
-        clang-tidy-all-script = pkgs.writeShellScriptBin "vw-clang-tidy-all" ''
+        clang-tidy-all-script = pkgs.writeShellScriptBin "vw-clang-tidy" ''
           ${python-clang-tidy-package}/bin/run-clang-tidy -p ${compile-commands} -quiet -header-filter=vw/* "$@"
         '';
       in
