@@ -89,15 +89,22 @@ void dense_parameters::clear_offset(const size_t offset, const size_t params_per
   }
 }
 
-void dense_parameters::adjust_weights_single_model(const size_t params_per_problem)
+void dense_parameters::adjust_weights_single_model(const size_t params_per_problem, const size_t model_num)
 {
-  uint64_t multiplier = static_cast<uint64_t>(params_per_problem) << _stride_shift;
+  // multiplier is the size of all strides and srides and models for a given weight
+  uint64_t multiplier = static_cast<uint64_t>(params_per_problem) * stride();
   for (uint32_t index = 0; index < _weight_mask; index += multiplier)
   {
     uint32_t cb_ind = index / params_per_problem;
     for (uint64_t stride_ind = 0; stride_ind < stride(); ++stride_ind)
     {
-      if (_begin[index + stride_ind] != 0.0f) { std::swap(_begin[index + stride_ind], _begin[cb_ind + stride_ind]); }
+      if (_begin[index + stride() * model_num + stride_ind] != 0.0f)
+      {
+        // Move all strided weights of selected model to smaller weights array. Zero out
+        // previous weights.
+        _begin[cb_ind + stride_ind] = _begin[index + stride() * model_num + stride_ind];
+        _begin[index + stride() * model_num + stride_ind] = 0.f;
+      }
     }
   }
 }

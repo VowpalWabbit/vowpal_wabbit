@@ -109,10 +109,8 @@ void output_target_model(VW::workspace& all, automl<CMType>& data)
   clear_non_champ_weights(data.cm->weights, data.cm->estimators.size(), data.cm->wpp);
 
   // Adjust champ weights to new single-model space
-  data.cm->weights.adjust_weights_single_model(data.cm->wpp);
+  data.cm->weights.adjust_weights_single_model(data.cm->wpp, 0);
 
-  // uint32_t num_bits =
-  //    options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
   std::set<std::string> aml_opts = {"automl", "global_lease", "cm_type", "priority_type", "priority_challengers",
       "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level",
       "fixed_significance_level"};

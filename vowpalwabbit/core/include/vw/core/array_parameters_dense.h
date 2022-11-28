@@ -135,7 +135,7 @@ public:
   // ***** NOTE: params_per_problem must be of form 2^n *****
   void clear_offset(const size_t offset, const size_t params_per_problem);
 
-  void adjust_weights_single_model(const size_t params_per_problem);
+  void adjust_weights_single_model(const size_t params_per_problem, const size_t model_num = 0);
 
   uint64_t mask() const { return _weight_mask; }
 

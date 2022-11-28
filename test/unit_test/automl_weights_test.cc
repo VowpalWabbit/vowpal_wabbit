@@ -14,8 +14,6 @@
 #include <boost/test/unit_test.hpp>
 #include <functional>
 #include <map>
-#include <string>
-#include <vector>
 
 using namespace VW::config;
 
