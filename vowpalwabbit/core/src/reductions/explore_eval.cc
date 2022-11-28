@@ -60,9 +60,9 @@ public:
 
   void set_target_rate(float rate) { _target_rate = rate; }
 
-  float get_target_rate() { return _target_rate; }
+  float get_target_rate() const { return _target_rate; }
 
-  float get_latest_rate() { return _latest_rate; }
+  float get_latest_rate() const { return _latest_rate; }
 
   float get_rate_and_update(float threshold)
   {
