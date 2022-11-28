@@ -229,7 +229,7 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
 
     float threshold = action_probability / data.known_cost.probability;
 
-    if (!data.fixed_multiplier)
+    if (!data.fixed_multiplier && !data.target_rate_on)
     {
       if (action_found) { data.multiplier = std::min(data.multiplier, 1.f / threshold); }
     }

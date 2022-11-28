@@ -31,5 +31,6 @@ average loss = -0.390862
 total feature number = 63450
 update count = 14
 violation count = 4
+final multiplier = 1.000000
 targeted update count = 10.000000
 final rate = 0.230407

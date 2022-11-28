@@ -30,5 +30,6 @@ weighted label sum = 0.000000
 average loss = -0.303415
 total feature number = 63450
 update count = 9
+final multiplier = 1.000000
 targeted update count = 10.000000
 final rate = 0.346828
