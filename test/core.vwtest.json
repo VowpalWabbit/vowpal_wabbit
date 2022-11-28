@@ -5519,13 +5519,13 @@
   },
   {
     "id": 428,
-    "desc": "creating model to be tested with -q :: and --invert_hash and hexfloat",
-    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/288.model --invert_hash ccb_quad.inv --hexfloat_weights",
+    "desc": "explore_eval evaluate same policy as logged policy, with block_size > 1 there should be at most ((#examples / block_size) + 1) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --block_size 5",
     "diff_files": {
-      "ccb_quad.inv": "pred-sets/ref/ccb_quad_hexfloat.inv"
+      "stderr": "train-sets/ref/explore_eval_block_size_5.stderr"
     },
     "input_files": [
-      "train-sets/ccb_test_interactions.dat"
+      "train-sets/explore_eval_egreedy.dat"
     ]
   }
 ]
