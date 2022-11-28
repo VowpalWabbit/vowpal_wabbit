@@ -8,7 +8,8 @@
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system}; in
-      let generate-compile-commands = ''
+      let
+        generate-compile-commands = ''
           set -e
           rm -rf $TMPDIR/compile_commands_build
           mkdir -p $TMPDIR/compile_commands_build
@@ -23,7 +24,8 @@
             -DVW_EIGEN_SYS_DEP=On \
             -DBUILD_TESTING=Off \
             -DVW_BUILD_VW_C_WRAPPER=Off
-      ''; in
+        '';
+      in
       let
         core-dependencies = [
           pkgs.spdlog
@@ -81,7 +83,7 @@
       let
         clang-tidy-diff-script = pkgs.writeShellScriptBin "vw-clang-tidy-diff" ''
           ${generate-compile-commands}
-          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path $TMPDIR/compile_commands_build -quiet -use-color "$@"
+          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path $TMPDIR/compile_commands_build -r '^.*\.(cc|h)\$' -quiet -use-color "$@"
         '';
       in
       {
