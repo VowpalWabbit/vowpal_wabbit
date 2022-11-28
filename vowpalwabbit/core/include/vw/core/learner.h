@@ -112,13 +112,13 @@ public:
   fn save_load_f = nullptr;
 };
 
-class convert_to_single_model_data
+class output_target_model_data
 {
 public:
   using fn = void (*)(VW::workspace& all, void* data);
   void* data = nullptr;
   base_learner* base = nullptr;
-  fn convert_to_single_model_f;
+  fn output_target_model_f;
 };
 
 class save_metric_data
@@ -339,11 +339,11 @@ public:
   }
 
   // called to edit the command-line from a reduction. Autorecursive
-  inline void NO_SANITIZE_UNDEFINED convert_to_single_model(VW::workspace& all)
+  inline void NO_SANITIZE_UNDEFINED output_target_model(VW::workspace& all)
   {
-    if (_convert_to_single_model_fd.convert_to_single_model_f != nullptr)
-    { _convert_to_single_model_fd.convert_to_single_model_f(all, _convert_to_single_model_fd.data); }
-    if (_convert_to_single_model_fd.base) { _convert_to_single_model_fd.base->convert_to_single_model(all); }
+    if (_output_target_model_fd.output_target_model_f != nullptr)
+    { _output_target_model_fd.output_target_model_f(all, _output_target_model_fd.data); }
+    if (_output_target_model_fd.base) { _output_target_model_fd.base->output_target_model(all); }
   }
 
   // called when metrics is enabled.  Autorecursive.
@@ -525,7 +525,7 @@ private:
   details::save_load_data _save_load_fd;
   details::func_data _end_pass_fd;
   details::func_data _end_examples_fd;
-  details::convert_to_single_model_data _convert_to_single_model_fd;
+  details::output_target_model_data _output_target_model_fd;
   details::save_metric_data _persist_metrics_fd;
   details::func_data _finisher_fd;
   std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
@@ -715,12 +715,11 @@ public:
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_convert_to_single_model(void (*fn_ptr)(VW::workspace& all, DataT&))
+  FluentBuilderT& set_output_target_model(void (*fn_ptr)(VW::workspace& all, DataT&))
   {
-    learner_ptr->_convert_to_single_model_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_convert_to_single_model_fd.convert_to_single_model_f =
-        (details::convert_to_single_model_data::fn)fn_ptr;
-    learner_ptr->_convert_to_single_model_fd.base = learner_ptr->_learn_fd.base;
+    learner_ptr->_output_target_model_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_output_target_model_fd.output_target_model_f = (details::output_target_model_data::fn)fn_ptr;
+    learner_ptr->_output_target_model_fd.base = learner_ptr->_learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 

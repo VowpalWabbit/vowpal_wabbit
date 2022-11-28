@@ -5481,7 +5481,7 @@
   {
     "id": 425,
     "desc": "Generate similar model to spun off automl using standard cb_explore_adf",
-    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model --interactions \\x20\\x20 --interactions \\x20A --interactions \\x20B --interactions AA --interactions AB --interactions BB",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model --interactions AA --interactions AB --interactions BB",
     "diff_files": {
       "stderr": "train-sets/ref/cb_similar_aml_spinoff_save.stderr"
     },

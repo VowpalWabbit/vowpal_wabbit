@@ -466,7 +466,7 @@ void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
 {
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
-  if (all.l != nullptr) { all.l->convert_to_single_model(all); }
+  if (all.l != nullptr) { all.l->output_target_model(all); }
   save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr) { all.l->save_load(buf, false, as_text); }
 

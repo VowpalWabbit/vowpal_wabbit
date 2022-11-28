@@ -93,7 +93,7 @@ void finish_example(VW::workspace& all, automl<CMType>& data, VW::multi_ex& ec)
 }
 
 template <typename CMType>
-void convert_to_single_model(VW::workspace& all, automl<CMType>& data)
+void output_target_model(VW::workspace& all, automl<CMType>& data)
 {
   options_i& options = *all.options;
   if (!options.was_supplied("predict_only_model")) { return; }
@@ -105,11 +105,14 @@ void convert_to_single_model(VW::workspace& all, automl<CMType>& data)
   std::swap(*data.cm->_cb_adf_event_sum, data.cm->per_live_model_state_uint64[0]);
   std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
 
+  // Clear all non-champ weights
   clear_non_champ_weights(data.cm->weights, data.cm->estimators.size(), data.cm->wpp);
+
+  // Adjust champ weights to new single-model space
   data.cm->weights.adjust_weights_single_model(data.cm->wpp);
 
-  uint32_t num_bits =
-      options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
+  // uint32_t num_bits =
+  //    options.was_supplied("bit_precision") ? options.get_typed_option<uint32_t>("bit_precision").value() : 18;
   std::set<std::string> aml_opts = {"automl", "global_lease", "cm_type", "priority_type", "priority_challengers",
       "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level",
       "fixed_significance_level"};
@@ -119,8 +122,8 @@ void convert_to_single_model(VW::workspace& all, automl<CMType>& data)
     if (options.was_supplied(opt)) { options.remove_option(opt); }
   }
 
-  options.get_typed_option<uint32_t>("bit_precision").value(num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp)));
-  all.num_bits = num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));
+  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));
+  options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
 
   std::vector<std::string> interactions_opt;
   for (auto& interaction : data.cm->estimators[0].first.live_interactions)
@@ -233,7 +236,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
                 .set_learn_returns_prediction(true)
-                .set_convert_to_single_model(::convert_to_single_model<config_manager_type>)
+                .set_output_target_model(::output_target_model<config_manager_type>)
                 .build();
   return make_base(*l);
 }

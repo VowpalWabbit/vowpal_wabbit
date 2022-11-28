@@ -347,7 +347,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
   simulator::cb_sim sim2(seed);
   auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
   auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
-  vw_automl->l->convert_to_single_model(*vw_automl);
+  vw_automl->l->output_target_model(*vw_automl);
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
