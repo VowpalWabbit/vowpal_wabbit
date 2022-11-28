@@ -286,8 +286,8 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  auto* l = make_reduction_learner(std::move(explore_eval_data), base, do_actual_learning<true>, do_actual_learning<false>,
-      stack_builder.get_setupfn_name(explore_eval_setup))
+  auto* l = make_reduction_learner(std::move(explore_eval_data), base, do_actual_learning<true>,
+      do_actual_learning<false>, stack_builder.get_setupfn_name(explore_eval_setup))
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_input_label_type(VW::label_type_t::CB)

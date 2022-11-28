@@ -208,9 +208,10 @@ std::unique_ptr<options_generate_interactions_v1> get_generate_interactions_opti
 VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup_base_i& stack_builder)
 {
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto generate_interactions_opts = get_generate_interactions_options_instance(all, all.logger, *stack_builder.get_options());
+  auto generate_interactions_opts =
+      get_generate_interactions_options_instance(all, all.logger, *stack_builder.get_options());
   if (generate_interactions_opts == nullptr) { return nullptr; }
-  
+
   bool store_in_reduction_features = false;
 
   auto interactions_spec_contains_wildcards = false;
@@ -349,8 +350,8 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   auto generate_interactions_data = VW::make_unique<INTERACTIONS::interactions_generator>();
   generate_interactions_data->store_in_reduction_features = store_in_reduction_features;
   auto* base = as_singleline(stack_builder.setup_base_learner());
-  auto* l = VW::LEARNER::make_reduction_learner(
-      std::move(generate_interactions_data), base, learn_func, pred_func, stack_builder.get_setupfn_name(generate_interactions_setup))
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(generate_interactions_data), base, learn_func, pred_func,
+      stack_builder.get_setupfn_name(generate_interactions_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_update(update_func)
                 .set_multipredict(multipredict_func)
