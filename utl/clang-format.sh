@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Set environment variable GH_WORKFLOW_LOGGING to output logging that Azure pipelines will interpret as a warning.
 # Set environment variable WARNING_AS_ERROR to make the script exit with a non-zero code if issues are found.
