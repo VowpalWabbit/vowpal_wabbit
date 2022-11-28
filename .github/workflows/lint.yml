@@ -144,6 +144,7 @@ jobs:
       - uses: cachix/install-nix-action@v18
       - run: |
           nix develop -c vw-clang-tidy-all 1>tidy_out.txt 2>tidy_error.txt || true
+          grep -A 3 "error: " tidy_out.txt > tidy_onlyerrors.txt || true
           if [ -s tidy_onlyerrors.txt ]; then
             # file has contents
             cat tidy_onlyerrors.txt
