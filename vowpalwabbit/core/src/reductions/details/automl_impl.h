@@ -46,10 +46,9 @@ public:
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
   void persist(metric_sink&, const std::string&, bool, const std::string&);
-  static bool better(bool lb_trick, estimator_impl& challenger, estimator_impl& other)
+  static bool better(estimator_impl& challenger, estimator_impl& other)
   {
-    return lb_trick ? challenger.lower_bound() > (1.f - other.lower_bound())
-                    : challenger.lower_bound() > other.upper_bound();
+    return challenger.lower_bound() > other.upper_bound();
   }
 };
 
@@ -207,7 +206,6 @@ public:
   double automl_significance_level;
   VW::io::logger* logger;
   uint32_t& wpp;
-  const bool _lb_trick;
   const bool _ccb_on;
   config_oracle_impl _config_oracle;
 
@@ -231,8 +229,7 @@ public:
   interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
-      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool lb_trick, bool ccb_on,
-      config_type conf_type);
+      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type);
 
   void do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
@@ -245,13 +242,13 @@ public:
       const uint64_t live_slot, const uint64_t config_index, const double sig_level,
       const uint64_t priority_challengers);
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
-      estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers, const bool lb_trick,
+      estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers,
       const std::map<namespace_index, uint64_t>& ns_counter);
   static void insert_starting_configuration(
       estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level);
 
 private:
-  static bool swap_eligible_to_inactivate(bool lb_trick, estimator_vec_t<estimator_impl>& estimators, uint64_t);
+  static bool swap_eligible_to_inactivate(estimator_vec_t<estimator_impl>& estimators, uint64_t);
 };
 
 bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
