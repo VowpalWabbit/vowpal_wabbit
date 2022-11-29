@@ -1,9 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "vowpal-wabbit",
-  "version": "9.2.0",
+  "version": "9.6.0",
   "dependencies": [
     "boost-math",
+    "eigen3",
     "flatbuffers",
     "fmt",
     "rapidjson",
@@ -18,6 +19,10 @@
     "flatbuffers": {
       "description": "Enable flatbuffers support",
       "dependencies": ["flatbuffers"]
+    },
+    "benchmarks": {
+      "description": "Build Benchmarks",
+      "dependencies": ["benchmark"]
     }
   }
 }

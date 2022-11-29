@@ -4,22 +4,25 @@ set(vw_core_headers
   include/vw/core/active_multiclass_prediction.h
   include/vw/core/api_status.h
   include/vw/core/array_parameters_dense.h
+  include/vw/core/array_parameters_sparse.h
   include/vw/core/array_parameters.h
-  include/vw/core/beam.h
   include/vw/core/best_constant.h
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
   include/vw/core/cb_continuous_label.h
   include/vw/core/cb_label_parser.h
+  include/vw/core/multi_ex.h
+  include/vw/core/learner_fwd.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
-  include/vw/core/compat.h
+  include/vw/core/confidence_sequence.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
   include/vw/core/cost_sensitive.h
+  include/vw/core/cressieread_estimator.h
   include/vw/core/crossplat_compat.h
   include/vw/core/debug_log.h
   include/vw/core/debug_print.h
@@ -36,7 +39,7 @@ set(vw_core_headers
   include/vw/core/feature_group.h
   include/vw/core/gd_predict.h
   include/vw/core/gen_cs_example.h
-  include/vw/core/generated_interactions_reduction_features.h
+  include/vw/core/large_action_space_reduction_features.h
   include/vw/core/generic_range.h
   include/vw/core/global_data.h
   include/vw/core/guard.h
@@ -52,6 +55,7 @@ set(vw_core_headers
   include/vw/core/learner.h
   include/vw/core/loss_functions.h
   include/vw/core/memory.h
+  include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
   include/vw/core/multiclass.h
@@ -72,12 +76,12 @@ set(vw_core_headers
   include/vw/core/prediction_type.h
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
+   include/vw/core/qr_decomposition.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
   include/vw/core/reduction_features.h
   include/vw/core/reduction_stack.h
-  include/vw/core/reductions_fwd.h
   include/vw/core/reductions/active_cover.h
   include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h
@@ -95,6 +99,7 @@ set(vw_core_headers
   include/vw/core/reductions/cats_pdf.h
   include/vw/core/reductions/cats_tree.h
   include/vw/core/reductions/cats.h
+  include/vw/core/reductions/cb/cb_actions_mask.h
   include/vw/core/reductions/cb/cb_adf.h
   include/vw/core/reductions/cb/cb_algs.h
   include/vw/core/reductions/cb/cb_dro.h
@@ -103,6 +108,7 @@ set(vw_core_headers
   include/vw/core/reductions/cb/cb_explore_adf_cover.h
   include/vw/core/reductions/cb/cb_explore_adf_first.h
   include/vw/core/reductions/cb/cb_explore_adf_greedy.h
+  include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
   include/vw/core/reductions/cb/cb_explore_adf_regcb.h
   include/vw/core/reductions/cb/cb_explore_adf_rnd.h
   include/vw/core/reductions/cb/cb_explore_adf_softmax.h
@@ -178,6 +184,7 @@ set(vw_core_headers
   include/vw/core/stable_unique.h
   include/vw/core/tag_utils.h
   include/vw/core/text_utils.h
+  include/vw/core/thread_pool.h
   include/vw/core/unique_sort.h
   include/vw/core/v_array.h
   include/vw/core/version.h
@@ -192,6 +199,8 @@ set(vw_core_sources
   src/accumulate.cc
   src/action_score.cc
   src/api_status.cc
+  src/array_parameters_dense.cc
+  src/array_parameters_sparse.cc
   src/best_constant.cc
   src/cache.cc
   src/cb_continuous_label.cc
@@ -199,7 +208,9 @@ set(vw_core_sources
   src/cb.cc
   src/ccb_label.cc
   src/ccb_reduction_features.cc
+  src/confidence_sequence.cc
   src/cost_sensitive.cc
+  src/cressieread_estimator.cc
   src/crossplat_compat.cc
   src/debug_print.cc
   src/decision_scores.cc
@@ -210,13 +221,16 @@ set(vw_core_sources
   src/gen_cs_example.cc
   src/global_data.cc
   src/hashstring.cc
+  src/interactions.cc
   src/io_buf.cc
   src/kskip_ngram_transformer.cc
   src/label_dictionary.cc
   src/label_parser.cc
+  src/label_parser.cc
   src/label_type.cc
   src/learner.cc
   src/loss_functions.cc
+  src/merge.cc
   src/metric_sink.cc
   src/multiclass.cc
   src/multilabel.cc
@@ -225,12 +239,15 @@ set(vw_core_sources
   src/no_label.cc
   src/parse_args.cc
   src/parse_example.cc
+  src/parse_example_json.cc
   src/parse_primitives.cc
   src/parse_regressor.cc
+  src/parse_slates_example_json.cc
   src/parser.cc
   src/prediction_type.cc
   src/print_utils.cc
   src/prob_dist_cont.cc
+  src/qr_decomposition.cc
   src/rand48.cc
   src/estimator_config.cc
   src/interactions.cc
@@ -239,7 +256,6 @@ set(vw_core_sources
   src/reductions/active.cc
   src/reductions/audit_regressor.cc
   src/reductions/autolink.cc
-  src/reductions/automl_impl.cc
   src/reductions/automl.cc
   src/reductions/baseline_challenger_cb.cc
   src/reductions/baseline.cc
@@ -250,6 +266,10 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/details/large_action/one_pass_svd_impl.cc
+  src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
+  src/reductions/cb/details/large_action/two_pass_svd_impl.cc
+  src/reductions/cb/cb_actions_mask.cc
   src/reductions/cb/cb_adf.cc
   src/reductions/cb/cb_algs.cc
   src/reductions/cb/cb_dro.cc
@@ -257,6 +277,7 @@ set(vw_core_sources
   src/reductions/cb/cb_explore_adf_cover.cc
   src/reductions/cb/cb_explore_adf_first.cc
   src/reductions/cb/cb_explore_adf_greedy.cc
+  src/reductions/cb/cb_explore_adf_large_action_space.cc
   src/reductions/cb/cb_explore_adf_regcb.cc
   src/reductions/cb/cb_explore_adf_rnd.cc
   src/reductions/cb/cb_explore_adf_softmax.cc
@@ -276,6 +297,10 @@ set(vw_core_sources
   src/reductions/cs_active.cc
   src/reductions/csoaa_ldf.cc
   src/reductions/csoaa.cc
+  src/reductions/details/automl/automl_impl.cc
+  src/reductions/details/automl/automl_iomodel.cc
+  src/reductions/details/automl/automl_oracle.cc
+  src/reductions/details/automl/automl_util.cc
   src/reductions/ect.cc
   src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
@@ -335,36 +360,17 @@ set(vw_core_sources
   src/vw_validate.cc
 )
 
-if(VW_BUILD_LARGE_ACTION_SPACE)
-  set(vw_core_headers
-    ${vw_core_headers}
-    include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
-    include/vw/core/reductions/cb/cb_actions_mask.h include/vw/core/qr_decomposition.h
-  )
-
-  set(vw_core_sources
-    ${vw_core_sources}
-    src/reductions/cb/cb_explore_adf_large_action_space.cc
-    src/reductions/cb/details/large_action/model_weight_rand_svd_impl.cc
-    src/reductions/cb/details/large_action/one_pass_svd_impl.cc
-    src/reductions/cb/details/large_action/vanilla_rand_svd_impl.cc
-    src/reductions/cb/details/large_action/aatop_impl.cc
-    src/reductions/cb/details/large_action/spanner_impl.cc
-    src/reductions/cb/cb_actions_mask.cc src/qr_decomposition.cc
-  )
-endif()
-
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config ${spdlog_target} fmt::fmt
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt
     PRIVATE_DEPS
-        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}>
-        # Workaround an issue where RapidJSON needed to be exported tom install the target. This is
-        # actually a private dependency and so do not "link" when processing targets for installation.
+        # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
+        # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
-        $<BUILD_INTERFACE:RapidJSON>
+        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
+        $<BUILD_INTERFACE:eigen>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
@@ -372,14 +378,14 @@ vw_add_library(
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
+if(VW_BUILD_CSV)
+  target_link_libraries(vw_core PRIVATE vw_csv_parser)
+  target_compile_definitions(vw_core PUBLIC VW_BUILD_CSV)
+endif()
+
 if(BUILD_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
   target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)
-endif()
-
-if(VW_BUILD_LARGE_ACTION_SPACE)
-  target_link_libraries(vw_core PUBLIC $<BUILD_INTERFACE:eigen>)
-  target_compile_definitions(vw_core PUBLIC BUILD_LARGE_ACTION_SPACE)
 endif()
 
 # Handle generated header
@@ -411,5 +417,13 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "core"
-    SOURCES tests/cache_test.cc tests/parse_args_test.cc tests/save_load_test.cc
+    EXTRA_DEPS vw_test_common
+    SOURCES
+      tests/cache_test.cc
+      tests/flat_example_test.cc
+      tests/main.cc
+      tests/merge_test.cc
+      tests/parse_args_test.cc
+      tests/save_load_test.cc
+      tests/thread_pool_test.cc
 )

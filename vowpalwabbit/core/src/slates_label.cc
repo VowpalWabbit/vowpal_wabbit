@@ -41,12 +41,12 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
   ld.weight = 1;
 
   if (words.empty()) { THROW("Slates labels may not be empty"); }
-  if (!(words[0] == SLATES_LABEL)) { THROW("Slates labels require the first word to be slates"); }
+  if (!(words[0] == VW::details::SLATES_LABEL)) { THROW("Slates labels require the first word to be slates"); }
 
   if (words.size() == 1) { THROW("Slates labels require a type. It must be one of: [shared, action, slot]"); }
 
   const auto& type = words[1];
-  if (type == SHARED_TYPE)
+  if (type == VW::details::SHARED_TYPE)
   {
     // There is a cost defined.
     if (words.size() == 3)
@@ -58,9 +58,9 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     {
       THROW("Slates shared labels must be of the form: slates shared [global_cost]");
     }
-    ld.type = example_type::shared;
+    ld.type = example_type::SHARED;
   }
-  else if (type == ACTION_TYPE)
+  else if (type == VW::details::ACTION_TYPE)
   {
     if (words.size() != 3) { THROW("Slates action labels must be of the form: slates action <slot_id>"); }
 
@@ -69,9 +69,9 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
     { THROW("Slot id seems to be malformed"); }
 
-    ld.type = example_type::action;
+    ld.type = example_type::ACTION;
   }
-  else if (type == SLOT_TYPE)
+  else if (type == VW::details::SLOT_TYPE)
   {
     if (words.size() == 3)
     {
@@ -93,9 +93,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
       if (ld.probabilities.size() > 1)
       {
         float total_pred = std::accumulate(ld.probabilities.begin(), ld.probabilities.end(), 0.f,
-            [](float result_so_far, const ACTION_SCORE::action_score& action_pred) {
-              return result_so_far + action_pred.score;
-            });
+            [](float result_so_far, const VW::action_score& action_pred) { return result_so_far + action_pred.score; });
 
         if (!VW::math::are_same(total_pred, 1.f))
         {
@@ -110,7 +108,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
           "Slates shared labels must be of the form: slates slot "
           "[chosen_action_id:probability[,action_id:probability...]]");
     }
-    ld.type = example_type::slot;
+    ld.type = example_type::SLOT;
   }
   else
   {
@@ -138,7 +136,7 @@ label_parser slates_label_parser = {
     // test_label
     [](const polylabel& label) { return test_label(label.slates); },
     // label type
-    label_type_t::slates};
+    label_type_t::SLATES};
 
 }  // namespace slates
 }  // namespace VW
@@ -152,10 +150,10 @@ VW::string_view VW::to_string(VW::slates::example_type ex_type)
   using namespace VW::slates;
   switch (ex_type)
   {
-    CASE(example_type::unset)
-    CASE(example_type::shared)
-    CASE(example_type::action)
-    CASE(example_type::slot)
+    CASE(example_type::UNSET)
+    CASE(example_type::SHARED)
+    CASE(example_type::ACTION)
+    CASE(example_type::SLOT)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`
@@ -174,7 +172,6 @@ namespace model_utils
 size_t read_model_field(io_buf& io, VW::slates::label& slates)
 {
   // Since read_cached_features doesn't default the label we must do it here.
-  default_label(slates);
   size_t bytes = 0;
   bytes += read_model_field(io, slates.type);
   bytes += read_model_field(io, slates.weight);

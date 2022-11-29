@@ -17,10 +17,11 @@ namespace VW
 {
 namespace config
 {
-struct options_i;
+class options_i;
 
-struct option_group_definition
+class option_group_definition
 {
+public:
   // add second parameter for const string short name
   option_group_definition(const std::string& name);
 

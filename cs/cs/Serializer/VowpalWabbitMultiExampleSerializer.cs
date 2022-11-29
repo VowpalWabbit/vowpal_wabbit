@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -24,9 +24,9 @@ namespace VW.Serializer
             Func<TExample, IEnumerable<TActionDependentFeature>> adfAccessor)
         {
             // sharedSerializer can be null
-            Contract.Requires(vw != null);
-            Contract.Requires(adfSerializer != null);
-            Contract.Requires(adfAccessor != null);
+            Debug.Assert(vw != null);
+            Debug.Assert(adfSerializer != null);
+            Debug.Assert(adfAccessor != null);
 
             this.vw = vw;
             this.sharedSerializer = sharedSerializer;

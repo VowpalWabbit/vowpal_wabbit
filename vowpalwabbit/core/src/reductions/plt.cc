@@ -4,6 +4,7 @@
 #include "vw/core/reductions/plt.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -25,16 +26,18 @@ using namespace VW::config;
 
 namespace
 {
-struct node
+class node
 {
+public:
   uint32_t n;  // node number
   float p;     // node probability
 
   bool operator<(const node& r) const { return p < r.p; }
 };
 
-struct plt
+class plt
 {
+public:
   VW::workspace* all = nullptr;
 
   // tree structure
@@ -135,7 +138,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
   }
 
   ec.l.simple = {1.f};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   for (auto& n : p.positive_nodes) { learn_node(p, n, base, ec); }
 
   ec.l.simple.label = -1.f;
@@ -151,7 +154,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
 inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
 {
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   base.predict(ec, n);
   return 1.0f / (1.0f + std::exp(-ec.partial_prediction));
 }
@@ -192,7 +195,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
 
       uint32_t n_child = p.kary * node.n + 1;
       ec.l.simple = {FLT_MAX};
-      ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+      ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
       base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
       for (uint32_t i = 0; i < p.kary; ++i, ++n_child)
@@ -240,7 +243,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       {
         uint32_t n_child = p.kary * node.n + 1;
         ec.l.simple = {FLT_MAX};
-        ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+        ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
         base.multipredict(ec, n_child, p.kary, p.node_preds.data(), false);
 
@@ -400,8 +403,8 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
       stack_builder.get_setupfn_name(plt_setup) + name_addition)
                 .set_params_per_weight(ws)
-                .set_output_prediction_type(VW::prediction_type_t::multilabels)
-                .set_input_label_type(VW::label_type_t::multilabel)
+                .set_output_prediction_type(VW::prediction_type_t::MULTILABELS)
+                .set_input_label_type(VW::label_type_t::MULTILABEL)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(::finish_example)
                 .set_finish(::finish)

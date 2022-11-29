@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="VowpalWabbitThreadedLearning.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -74,7 +74,6 @@ namespace VW
 
             if (settings.ParallelOptions == null)
                 throw new ArgumentNullException("settings.ParallelOptions must be set");
-            Contract.EndContractBlock();
 
             this.Settings = settings;
 
@@ -237,7 +236,7 @@ namespace VW
         /// <remarks>If number of actions waiting to be executed has reached <see name="VowpalWabbitSettings.MaxExampleQueueLengthPerInstance"/> this method blocks.</remarks>
         public void Post(Action<VowpalWabbit> action)
         {
-            Contract.Requires(action != null);
+            Debug.Assert(action != null);
 
             var exampleCount = this.CheckEndOfPass();
 
@@ -254,7 +253,7 @@ namespace VW
         /// <returns>The awaitable result of the supplied task.</returns>
         internal Task<T> Post<T>(Func<VowpalWabbit, T> func)
         {
-            Contract.Requires(func!= null);
+            Debug.Assert(func!= null);
 
             var exampleCount = this.CheckEndOfPass();
 
@@ -282,7 +281,7 @@ namespace VW
         /// <param name="line">The example to learn.</param>
         public void Learn(string line)
         {
-            Contract.Requires(line != null);
+            Debug.Assert(line != null);
 
             this.Post(vw => vw.Learn(line));
         }
@@ -293,7 +292,7 @@ namespace VW
         /// <param name="lines">The multi-line example to learn.</param>
         public void Learn(IEnumerable<string> lines)
         {
-            Contract.Requires(lines != null);
+            Debug.Assert(lines != null);
 
             this.Post(vw => vw.Learn(lines));
         }
@@ -355,7 +354,7 @@ namespace VW
         /// <returns>Task compeletes once the model is saved.</returns>
         public Task SaveModel(string filename)
         {
-            Contract.Requires(!string.IsNullOrEmpty(filename));
+            Debug.Assert(!string.IsNullOrEmpty(filename));
 
             var completionSource = new TaskCompletionSource<bool>();
 

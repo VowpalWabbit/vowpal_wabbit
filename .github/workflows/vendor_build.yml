@@ -8,12 +8,17 @@ on:
   pull_request:
     branches:
       - '*'
+
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }} 
+  cancel-in-progress: true
+
 jobs:
   build_vendor_linux:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
     strategy:
       matrix:
-        os: ["ubuntu-20.04", "ubuntu-18.04"]
+        os: ["ubuntu-22.04", "ubuntu-20.04"]
         build_type: ["Debug", "Release"]
         compiler:
         - { cc: "gcc", cxx: "g++"}
@@ -33,6 +38,7 @@ jobs:
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DBUILD_FLATBUFFERS=Off
+          -DVW_BUILD_CSV=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -61,7 +67,7 @@ jobs:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-      VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
+      VCPKG_REF: 6ca56aeb457f033d344a7106cb3f9f1abf8f4e98
     steps:
       - uses: actions/checkout@v2
         with:
@@ -95,6 +101,7 @@ jobs:
           -DVCPKG_MANIFEST_MODE=OFF
           -DUSE_LATEST_STD=On
           -DBUILD_FLATBUFFERS=Off
+          -DVW_BUILD_CSV=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -105,8 +112,7 @@ jobs:
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }}
       - name: Test run_tests.py
-        # TODO: Look into test 67 failure
-        run: python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ env.CMAKE_BUILD_DIR }}/vowpalwabbit/cli/${{ matrix.build_type }}/vw.exe --skip_test 67
+        run: python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ env.CMAKE_BUILD_DIR }}/vowpalwabbit/cli/${{ matrix.build_type }}/vw.exe
       - name: Test unit tests
         run: |
           cd ${{ env.CMAKE_BUILD_DIR }}
@@ -129,6 +135,7 @@ jobs:
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DBUILD_FLATBUFFERS=Off
+          -DVW_BUILD_CSV=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off

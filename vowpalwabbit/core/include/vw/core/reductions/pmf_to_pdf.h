@@ -3,18 +3,20 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/config/options.h"
+
 #include "vw/core/action_score.h"
 #include "vw/core/cb.h"
-#include "vw/core/learner.h"
+#include "vw/core/learner_fwd.h"
+#include "vw/core/vw_fwd.h"
 
 namespace VW
 {
 namespace reductions
 {
 LEARNER::base_learner* pmf_to_pdf_setup(VW::setup_base_i& stack_builder);
-struct pmf_to_pdf_reduction
+class pmf_to_pdf_reduction
 {
+public:
   void predict(example& ec);
   void learn(example& ec);
 
@@ -31,7 +33,7 @@ private:
   void transform_prediction(example& ec);
 
   CB::label temp_lbl_cb;
-  ACTION_SCORE::action_scores temp_pred_a_s;
+  VW::action_scores temp_pred_a_s;
 };
 }  // namespace reductions
 }  // namespace VW

@@ -5,6 +5,7 @@
 #include "vw/core/reductions/multilabel_oaa.h"
 
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
@@ -20,8 +21,9 @@ using namespace VW::config;
 
 namespace
 {
-struct multi_oaa
+class multi_oaa
 {
+public:
   size_t k = 0;
   bool probabilities = false;
   std::string link = "";
@@ -38,7 +40,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::examp
   preds.label_v.clear();
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   uint32_t multilabel_index = 0;
   for (uint32_t i = 0; i < o.k; i++)
   {
@@ -80,18 +82,18 @@ void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
   if (o.probabilities)
   {
     // === Print probabilities for all classes
-    std::ostringstream outputStringStream;
+    std::ostringstream output_string_stream;
     for (uint32_t i = 0; i < o.k; i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(i); }
+      if (i > 0) { output_string_stream << ' '; }
+      if (all.sd->ldict) { output_string_stream << all.sd->ldict->get(i); }
       else
       {
-        outputStringStream << i;
+        output_string_stream << i;
       }
-      outputStringStream << ':' << ec.pred.scalars[i];
+      output_string_stream << ':' << ec.pred.scalars[i];
     }
-    const auto ss_str = outputStringStream.str();
+    const auto ss_str = output_string_stream.str();
     for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
   }
   MULTILABEL::output_example(all, ec);
@@ -131,7 +133,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
       options.replace("link", "logistic");
       data->link = "logistic";
     }
-    pred_type = VW::prediction_type_t::scalars;
+    pred_type = VW::prediction_type_t::SCALARS;
     auto loss_function_type = all.loss->get_type();
     if (loss_function_type != "logistic")
     {
@@ -144,7 +146,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
   else
   {
     name_addition = "";
-    pred_type = VW::prediction_type_t::multilabels;
+    pred_type = VW::prediction_type_t::MULTILABELS;
   }
 
   auto* l =
@@ -152,7 +154,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
           predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
           .set_params_per_weight(ws)
           .set_learn_returns_prediction(true)
-          .set_input_label_type(VW::label_type_t::multilabel)
+          .set_input_label_type(VW::label_type_t::MULTILABEL)
           .set_output_prediction_type(pred_type)
           .set_finish_example(::finish_example)
           .build();

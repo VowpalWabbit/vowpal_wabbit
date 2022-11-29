@@ -18,8 +18,9 @@ using namespace VW::config;
 std::string one_of_string(base_option& opt)
 {
   std::string ret_val = "";
-  struct extractor : typed_option_visitor
+  class extractor : public typed_option_visitor
   {
+  public:
     std::string& m_ret_val;
     extractor(std::string& ret_val) : m_ret_val(ret_val) {}
 
@@ -57,8 +58,9 @@ std::string one_of_string(base_option& opt)
 std::string type_string(base_option& opt)
 {
   std::string ret_val = "";
-  struct extractor : typed_option_visitor
+  class extractor : public typed_option_visitor
   {
+  public:
     std::string& m_ret_val;
     extractor(std::string& ret_val) : m_ret_val(ret_val) {}
 
@@ -81,8 +83,9 @@ std::string type_string(base_option& opt)
 std::string default_value_string(base_option& opt)
 {
   std::string ret_val = "";
-  struct extractor : typed_option_visitor
+  class extractor : public typed_option_visitor
   {
+  public:
     std::string& m_ret_val;
     extractor(std::string& ret_val) : m_ret_val(ret_val) {}
 

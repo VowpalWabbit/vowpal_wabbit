@@ -30,8 +30,9 @@ enum class align_type
   right
 };
 
-struct column_definition
+class column_definition
 {
+public:
   size_t column_width;
   align_type alignment;
   wrap_type wrapping;

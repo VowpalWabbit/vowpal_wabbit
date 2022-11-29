@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <T4Generated Include="$(IntermediateOutputPath)\*.T4Generated.cs"/>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <T4Command>t4</T4Command>
+  </PropertyGroup>
+
+  <Target Name="TextTemplateTransform" BeforeTargets="BeforeBuild">
+    <ItemGroup>
+        <Compile Remove="$(IntermediateOutputPath)\*.T4Generated.cs"/>
+    </ItemGroup>
+
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+
+    <PropertyGroup>
+      <Parameters>@(TextTransformParameter -> '-a:%(Identity)=%(Value)', ' ')</Parameters>
+      <AssemblyFolders>@(TextTransformAssemblyPath -> '-P=%(Identity)', ' ')</AssemblyFolders>
+      <TaskCommand>$(T4Command) "%(TextTemplate.Identity)" -o "$([System.IO.Path]::Combine($(IntermediateOutputPath),%(TextTemplate.FileName).T4Generated.cs))" $(Parameters) $(AssemblyFolders)</TaskCommand>
+    </PropertyGroup>
+    
+    <Exec WorkingDirectory="$(ProjectDir)" Command="$(TaskCommand)"/>
+    
+    <ItemGroup>
+        <Compile Include="$(IntermediateOutputPath)\*.T4Generated.cs"/>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="TextTemplateClean" AfterTargets="Clean">
+    <Delete Files="@(T4Generated)" />
+  </Target>
+</Project>
+

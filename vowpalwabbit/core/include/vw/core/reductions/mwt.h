@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
+
+#include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
-#include "vw/io/io_adapter.h"
-#include "vw/io/logger.h"
 
 namespace VW
 {

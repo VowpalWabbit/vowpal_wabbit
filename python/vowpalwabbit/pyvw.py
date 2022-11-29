@@ -2,7 +2,7 @@
 """Python binding for pylibvw class"""
 
 from __future__ import division
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
 import pylibvw
 import warnings
 import inspect
@@ -110,6 +110,7 @@ class VWOption:
         value_supplied,
         default_value,
         default_value_supplied,
+        experimental,
     ):
         self._name = name
         self._help_str = help_str
@@ -121,6 +122,7 @@ class VWOption:
         self._value_supplied = value_supplied
         self._default_value = default_value
         self._default_value_supplied = default_value_supplied
+        self._experimental = experimental
 
     @property
     def name(self):
@@ -159,6 +161,10 @@ class VWOption:
         return self._default_value_supplied
 
     @property
+    def experimental(self):
+        return self._experimental
+
+    @property
     def value(self):
         return self._value
 
@@ -187,6 +193,10 @@ class VWOption:
 
 class SearchTask:
     """Search task class"""
+
+    # Declare types for optional variables to prevent pytype attribute-error
+    _setup: Optional[Callable]
+    _takedown: Optional[Callable]
 
     def __init__(self, vw, sch, num_actions):
         """
@@ -1985,6 +1995,40 @@ class Example(pylibvw.example):
             PredictionType.NOPRED: self.get_nopred,
         }
         return switch_prediction_type[prediction_type]()
+
+
+def merge_models(base_model: Optional[Workspace], models: List[Workspace]) -> Workspace:
+    """Merge the models loaded into separate workspaces into a single workspace which can then be serialized to a model.
+
+    All of the given workspaces must use the exact same arguments, and only differ in training. `--preserve_performance_counters` should be used if models are loaded from disk and then given to this call.
+
+    Args:
+        base_model (Optional[Workspace]): Base model the other models were based on. None, if they are trained from scratch.
+        models (List[Workspace]): List of models to merge.
+
+    Returns:
+        Workspace: The merged workspace
+
+    Example:
+        >>> from vowpalwabbit import Workspace, merge_models
+        >>> model1 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model1.model') # doctest: +SKIP
+        >>> model2 = Workspace(quiet=True, preserve_performance_counters=True, initial_regressor='model2.model') # doctest: +SKIP
+        >>> merged_model = merge_models([model1, model2]) # doctest: +SKIP
+        >>> merged_model.save('merged.model') # doctest: +SKIP
+
+    .. note::
+        This is an experimental feature and may change in future releases.
+    """
+
+    # This needs to be promoted to the Workspace object defined in Python.
+    result = pylibvw._merge_models_impl(base_model, models)
+    result.__class__ = Workspace
+    result._log_wrapper = None
+    result.parser_ran = False
+    result.init = True
+    result.finished = False
+    result._log_fwd = None
+    return result
 
 
 ############################ DEPREECATED CLASSES ############################

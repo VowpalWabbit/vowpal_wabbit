@@ -37,36 +37,41 @@ VW::example::~example()
 
 float VW::example::get_total_sum_feat_sq()
 {
-  if (!total_sum_feat_sq_calculated)
+  if (!_total_sum_feat_sq_calculated)
   {
-    total_sum_feat_sq = calculate_total_sum_features_squared(use_permutations, *this);
-    total_sum_feat_sq_calculated = true;
+    total_sum_feat_sq = calculate_total_sum_features_squared(_use_permutations, *this);
+    _total_sum_feat_sq_calculated = true;
   }
   return total_sum_feat_sq;
 }
 
 float collision_cleanup(features& fs)
 {
-  uint64_t last_index = static_cast<uint64_t>(-1);
+  // This loops over the sequence of feature values and their indexes
+  // when an index is repeated this combines them by adding their values.
+  // This assumes that fs is sorted (which is the case in `flatten_sort_example`).
+
+  features::iterator p1 = fs.begin();
+  uint64_t last_index = p1.index();
   float sum_sq = 0.f;
-  features::iterator pos = fs.begin();
-  for (features::iterator& f : fs)
+
+  for (features::iterator p2 = (fs.begin() + 1); p2 != fs.end(); ++p2)
   {
-    if (last_index == f.index()) { pos.value() += f.value(); }
+    if (last_index == p2.index()) { p1.value() += p2.value(); }
     else
     {
-      sum_sq += pos.value() * pos.value();
-      ++pos;
-      pos.value() = f.value();
-      pos.index() = f.index();
-      last_index = f.index();
+      sum_sq += p1.value() * p1.value();
+      ++p1;
+      p1.value() = p2.value();
+      p1.index() = p2.index();
+      last_index = p2.index();
     }
   }
 
-  sum_sq += pos.value() * pos.value();
-  ++pos;
-  // Don't change the sum_feat_sq as we will do it manually directly after.
-  fs.truncate_to(pos, 0);
+  sum_sq += p1.value() * p1.value();
+  ++p1;
+
+  fs.truncate_to(p1, 0);
   fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
@@ -77,7 +82,7 @@ namespace VW
 void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylabel*))
 {
   dst->l = src->l;
-  dst->_reduction_features = src->_reduction_features;
+  dst->ex_reduction_features = src->ex_reduction_features;
 }
 
 void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
@@ -113,11 +118,11 @@ void copy_example_data(example* dst, const example* src)
   for (namespace_index c : src->indices) { dst->feature_space[c] = src->feature_space[c]; }
   dst->num_features = src->num_features;
   dst->total_sum_feat_sq = src->total_sum_feat_sq;
-  dst->total_sum_feat_sq_calculated = src->total_sum_feat_sq_calculated;
-  dst->use_permutations = src->use_permutations;
+  dst->_total_sum_feat_sq_calculated = src->_total_sum_feat_sq_calculated;
+  dst->_use_permutations = src->_use_permutations;
   dst->interactions = src->interactions;
   dst->extent_interactions = src->extent_interactions;
-  dst->_debug_current_reduction_depth = src->_debug_current_reduction_depth;
+  dst->debug_current_reduction_depth = src->debug_current_reduction_depth;
 }
 
 void copy_example_data_with_label(example* dst, const example* src)
@@ -146,8 +151,9 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
 
 }  // namespace VW
 
-struct features_and_source
+class features_and_source
 {
+public:
   VW::v_array<feature> feature_map;  // map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
@@ -174,8 +180,9 @@ feature* get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
 void return_features(feature* f) { free_it(f); }
 }  // namespace VW
 
-struct full_features_and_source
+class full_features_and_source
 {
+public:
   features fs;
   uint32_t stride_shift;
   uint64_t mask;
@@ -191,15 +198,8 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
 {
   flat_example& fec = calloc_or_throw<flat_example>();
   fec.l = ec->l;
-  fec._reduction_features = ec->_reduction_features;
-
-  fec.tag_len = ec->tag.size();
-  if (fec.tag_len > 0)
-  {
-    fec.tag = calloc_or_throw<char>(fec.tag_len + 1);
-    memcpy(fec.tag, ec->tag.begin(), fec.tag_len);
-  }
-
+  fec.tag = ec->tag;
+  fec.ex_reduction_features = ec->ex_reduction_features;
   fec.example_counter = ec->example_counter;
   fec.ft_offset = ec->ft_offset;
   fec.num_features = ec->num_features;
@@ -235,7 +235,6 @@ void free_flatten_example(flat_example* fec)
   if (fec)
   {
     fec->fs.~features();
-    if (fec->tag_len > 0) { free(fec->tag); }
     free(fec);
   }
 }
@@ -267,17 +266,69 @@ void return_multiple_example(VW::workspace& all, VW::multi_ex& examples)
   for (auto ec : examples) { clean_example(all, *ec); }
   examples.clear();
 }
+namespace details
+{
+void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs)
+{
+  // print_update is called after this del_example_namespace,
+  // so we need to keep the ec.num_features correct,
+  // so shared features are included in the reported number of "current features"
+  // ec.num_features -= numf;
+  features& del_target = ec.feature_space[static_cast<size_t>(ns)];
+  assert(del_target.size() >= fs.size());
+  assert(!ec.indices.empty());
+  if (ec.indices.back() == ns && ec.feature_space[static_cast<size_t>(ns)].size() == fs.size())
+  { ec.indices.pop_back(); }
+  ec.reset_total_sum_feat_sq();
+  ec.num_features -= fs.size();
+  del_target.truncate_to(del_target.size() - fs.size(), fs.sum_feat_sq);
+}
+
+void append_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs)
+{
+  const auto index_it = std::find(ec.indices.begin(), ec.indices.end(), ns);
+  const bool has_ns = index_it != ec.indices.end();
+  if (!has_ns) { ec.indices.push_back(ns); }
+
+  features& add_fs = ec.feature_space[static_cast<size_t>(ns)];
+  add_fs.concat(fs);
+  ec.reset_total_sum_feat_sq();
+  ec.num_features += fs.size();
+}
+
+void append_example_namespaces_from_example(VW::example& target, const VW::example& source)
+{
+  for (VW::namespace_index idx : source.indices)
+  {
+    if (idx == VW::details::CONSTANT_NAMESPACE) { continue; }
+    append_example_namespace(target, idx, source.feature_space[idx]);
+  }
+}
+
+void truncate_example_namespaces_from_example(VW::example& target, const VW::example& source)
+{
+  if (source.indices.empty())
+  {  // making sure we can deal with empty shared example
+    return;
+  }
+  auto idx = source.indices.end();
+  idx--;
+  for (; idx >= source.indices.begin(); idx--)
+  {
+    if (*idx == VW::details::CONSTANT_NAMESPACE) { continue; }
+    truncate_example_namespace(target, *idx, source.feature_space[*idx]);
+  }
+}
+}  // namespace details
 
 namespace model_utils
 {
 size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser)
 {
   size_t bytes = 0;
-  bool tag_is_null;
-  bytes += lbl_parser.read_cached_label(fe.l, fe._reduction_features, io);
-  bytes += read_model_field(io, fe.tag_len);
-  bytes += read_model_field(io, tag_is_null);
-  if (!tag_is_null) { bytes += read_model_field(io, *fe.tag); }
+  lbl_parser.default_label(fe.l);
+  bytes += lbl_parser.read_cached_label(fe.l, fe.ex_reduction_features, io);
+  bytes += read_model_field(io, fe.tag);
   bytes += read_model_field(io, fe.example_counter);
   bytes += read_model_field(io, fe.ft_offset);
   bytes += read_model_field(io, fe.global_weight);
@@ -293,10 +344,8 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
     VW::label_parser& lbl_parser, uint64_t parse_mask)
 {
   size_t bytes = 0;
-  lbl_parser.cache_label(fe.l, fe._reduction_features, io, upstream_name + "_label", text);
-  bytes += write_model_field(io, fe.tag_len, upstream_name + "_tag_len", text);
-  bytes += write_model_field(io, fe.tag == nullptr, upstream_name + "_tag_is_null", text);
-  if (!(fe.tag == nullptr)) { bytes += write_model_field(io, *fe.tag, upstream_name + "_tag", text); }
+  lbl_parser.cache_label(fe.l, fe.ex_reduction_features, io, upstream_name + "_label", text);
+  bytes += write_model_field(io, fe.tag, upstream_name + "_tag", text);
   bytes += write_model_field(io, fe.example_counter, upstream_name + "_example_counter", text);
   bytes += write_model_field(io, fe.ft_offset, upstream_name + "_ft_offset", text);
   bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);

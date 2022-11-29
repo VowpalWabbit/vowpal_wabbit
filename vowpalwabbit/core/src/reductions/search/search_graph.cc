@@ -64,12 +64,13 @@ namespace GraphTask
 {
 Search::search_task task = {"graph", run, initialize, nullptr, setup, takedown};
 
-struct task_data
+class task_data
 {
+public:
   // global data
   size_t num_loops;
   size_t K;     // number of labels, *NOT* including the +1 for 'unlabeled'
-  size_t numN;  // number of neighbor predictions (equals K+1 for undirected, or 2*(K+1) for directed)
+  size_t numN;  // NOLINT number of neighbor predictions (equals K+1 for undirected, or 2*(K+1) for directed)
   bool use_structure;
   bool separate_learners;
   bool directed;
@@ -81,8 +82,8 @@ struct task_data
   size_t wpp;
 
   // per-example data
-  uint32_t N;                               // number of nodes
-  uint32_t E;                               // number of edges
+  uint32_t N;                               // NOLINT number of nodes
+  uint32_t E;                               // NOLINT number of edges
   std::vector<std::vector<size_t>> adj;     // adj[n] is a vector of *edge example ids* that contain n
   std::vector<uint32_t> bfs;                // order of nodes to process
   std::vector<size_t> pred;                 // predictions
@@ -97,7 +98,7 @@ inline bool example_is_test(const VW::polylabel& l) { return l.cs.costs.empty();
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
-  auto D = VW::make_unique<task_data>();
+  auto D = VW::make_unique<task_data>();  // NOLINT
   uint64_t num_loops;
 
   option_group_definition new_options("[Search] Search Graphtask");
@@ -133,7 +134,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   sch.set_task_data<task_data>(D.release());
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
-  sch.set_label_parser(COST_SENSITIVE::cs_label, example_is_test);
+  sch.set_label_parser(VW::cs_label_parser_global, example_is_test);
 }
 
 inline bool example_is_edge(VW::example* e) { return e->l.cs.costs.size() > 1; }
@@ -186,7 +187,7 @@ void run_bfs(task_data& D, VW::multi_ex& ec)
 
 void setup(Search::search& sch, VW::multi_ex& ec)
 {
-  task_data& D = *sch.get_task_data<task_data>();
+  task_data& D = *sch.get_task_data<task_data>();  // NOLINT
   D.multiplier = D.wpp << D.ss;
   D.wpp = sch.get_vw_pointer_unsafe().wpp;
   D.mask = sch.get_vw_pointer_unsafe().weights.mask();
@@ -239,7 +240,7 @@ void setup(Search::search& sch, VW::multi_ex& ec)
 
 void takedown(Search::search& sch, VW::multi_ex& /*ec*/)
 {
-  task_data& D = *sch.get_task_data<task_data>();
+  task_data& D = *sch.get_task_data<task_data>();  // NOLINT
   D.bfs.clear();
   D.pred.clear();
   for (auto x : D.adj) { x.clear(); }
@@ -253,7 +254,7 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
   for (size_t k = 0; k < D.numN; k++)
   {
     if (D.neighbor_predictions[k] == 0.) { continue; }
-    node->feature_space[neighbor_namespace].push_back(
+    node->feature_space[VW::details::NEIGHBOR_NAMESPACE].push_back(
         fv * D.neighbor_predictions[k], static_cast<uint64_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
   }
 }
@@ -261,7 +262,7 @@ void add_edge_features_group_fn(task_data& D, float fv, uint64_t fx)
 void add_edge_features_single_fn(task_data& D, float fv, uint64_t fx)
 {
   VW::example* node = D.cur_node;
-  features& fs = node->feature_space[neighbor_namespace];
+  features& fs = node->feature_space[VW::details::NEIGHBOR_NAMESPACE];
   uint64_t fx2 = fx / D.multiplier;
   size_t k = static_cast<size_t>(D.neighbor_predictions[0]);
   fs.push_back(fv, static_cast<uint32_t>((fx2 + 348919043 * k) * D.multiplier) & D.mask);
@@ -333,9 +334,9 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
       GD::foreach_feature<task_data, uint64_t, add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
     }
   }
-  ec[n]->indices.push_back(neighbor_namespace);
+  ec[n]->indices.push_back(VW::details::NEIGHBOR_NAMESPACE);
   ec[n]->reset_total_sum_feat_sq();
-  ec[n]->num_features += ec[n]->feature_space[neighbor_namespace].size();
+  ec[n]->num_features += ec[n]->feature_space[VW::details::NEIGHBOR_NAMESPACE].size();
 
   VW::workspace& all = sch.get_vw_pointer_unsafe();
   for (const auto& i : all.interactions)
@@ -343,7 +344,8 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
     if (i.size() != 2) { continue; }
     int i0 = static_cast<int>(i[0]);
     int i1 = static_cast<int>(i[1]);
-    if ((i0 == static_cast<int>(neighbor_namespace)) || (i1 == static_cast<int>(neighbor_namespace)))
+    if ((i0 == static_cast<int>(VW::details::NEIGHBOR_NAMESPACE)) ||
+        (i1 == static_cast<int>(VW::details::NEIGHBOR_NAMESPACE)))
     { ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size(); }
   }
 }
@@ -351,7 +353,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
 void del_edge_features(task_data& /*D*/, uint32_t n, VW::multi_ex& ec)
 {
   ec[n]->indices.pop_back();
-  features& fs = ec[n]->feature_space[neighbor_namespace];
+  features& fs = ec[n]->feature_space[VW::details::NEIGHBOR_NAMESPACE];
   ec[n]->num_features -= fs.size();
   fs.clear();
 }
@@ -364,20 +366,20 @@ float macro_f(task_data& D)
   float count_f1 = 0.;
   for (size_t k = 1; k <= D.K; k++)
   {
-    float trueC = 0.;
-    float predC = 0.;
+    float true_c = 0.;
+    float pred_c = 0.;
     for (size_t j = 1; j <= D.K; j++)
     {
-      trueC += static_cast<float>(D.confusion_matrix[IDX(k, j)]);
-      predC += static_cast<float>(D.confusion_matrix[IDX(j, k)]);
+      true_c += static_cast<float>(D.confusion_matrix[IDX(k, j)]);
+      pred_c += static_cast<float>(D.confusion_matrix[IDX(j, k)]);
     }
-    if (trueC == 0) { continue; }
-    float correctC = static_cast<float>(D.confusion_matrix[IDX(k, k)]);
+    if (true_c == 0) { continue; }
+    float correct_c = static_cast<float>(D.confusion_matrix[IDX(k, k)]);
     count_f1++;
-    if (correctC > 0)
+    if (correct_c > 0)
     {
-      float pre = correctC / predC;
-      float rec = correctC / trueC;
+      float pre = correct_c / pred_c;
+      float rec = correct_c / true_c;
       total_f1 += 2 * pre * rec / (pre + rec);
     }
   }
@@ -411,12 +413,12 @@ void run(Search::search& sch, VW::multi_ex& ec)
       // add_features = false;
 
       if (add_features) { add_edge_features(sch, D, n, ec); }
-      Search::predictor P = Search::predictor(sch, n + 1);
-      P.set_input(*ec[n]);
-      if (D.separate_learners) { P.set_learner_id(loop); }
+      Search::predictor search_predictor = Search::predictor(sch, n + 1);
+      search_predictor.set_input(*ec[n]);
+      if (D.separate_learners) { search_predictor.set_learner_id(loop); }
       if (k > 0)
       {  // for test examples
-        P.set_oracle(k);
+        search_predictor.set_oracle(k);
       }
       // add all the conditioning
       for (size_t i = 0; i < D.adj[n].size(); i++)
@@ -427,12 +429,12 @@ void run(Search::search& sch, VW::multi_ex& ec)
           if (m == 0) { continue; }
           m--;
           if (m == n) { continue; }
-          P.add_condition(m + 1, 'e');
+          search_predictor.add_condition(m + 1, 'e');
         }
       }
 
       // make the prediction
-      D.pred[n] = P.predict();
+      D.pred[n] = search_predictor.predict();
       if (ec[n]->l.cs.costs.size() > 0)
       {  // for test examples
         sch.loss((ec[n]->l.cs.costs[0].class_index == D.pred[n]) ? 0.f : (last_loop ? 0.5f : loss_val));

@@ -22,8 +22,9 @@ namespace reductions
 namespace expreplay
 {
 template <VW::label_parser& lp>
-struct expreplay
+class expreplay
 {
+public:
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
   size_t N = 0;                // how big is the buffer?
@@ -44,7 +45,7 @@ template <VW::label_parser& lp>
 void learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // Cannot learn if the example weight is 0.
-  if (lp.get_weight(ec.l, ec._reduction_features) == 0.) { return; }
+  if (lp.get_weight(ec.l, ec.ex_reduction_features) == 0.) { return; }
 
   for (size_t replay = 1; replay < er.replay_count; replay++)
   {

@@ -14,6 +14,7 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <cfloat>
 #include <cmath>
@@ -31,10 +32,11 @@ constexpr size_t H1 = 3;     // maximum absolute value of features
 constexpr size_t HT = 4;     // maximum gradient
 constexpr size_t S = 5;      // sum of radios \sum_s |x_s|/h_s
 
-struct freegrad;
-struct freegrad_update_data
+class freegrad;
+class freegrad_update_data
 {
-  freegrad* FG;
+public:
+  freegrad* freegrad_data_ptr;
   float update = 0.f;
   float ec_weight = 0.f;
   float predict = 0.f;
@@ -45,8 +47,9 @@ struct freegrad_update_data
   float maximum_clipped_gradient_norm = 0.f;
 };
 
-struct freegrad
+class freegrad
 {
+public:
   VW::workspace* all;  // features, finalize, l1, l2,
   float epsilon = 0.f;
   float lipschitz_const = 0.f;
@@ -75,13 +78,13 @@ void predict(freegrad& b, base_learner& /* base */, VW::example& ec)
 void inner_freegrad_predict(freegrad_update_data& d, float x, float& wref)
 {
   float* w = &wref;
-  float h1 = w[H1];    // will be set to the value of the first non-zero gradient w.r.t. the scalar feature x
-  float ht = w[HT];    // maximum absolute value of the gradient w.r.t. scalar feature x
-  float w_pred = 0.0;  // weight for the feature x
-  float G = w[G_SUM];  // sum of gradients w.r.t. scalar feature x
-  float absG = std::fabs(G);
-  float V = w[V_SUM];  // sum of squared gradients w.r.t. scalar feature x
-  float epsilon = d.FG->epsilon;
+  float h1 = w[H1];           // will be set to the value of the first non-zero gradient w.r.t. the scalar feature x
+  float ht = w[HT];           // maximum absolute value of the gradient w.r.t. scalar feature x
+  float w_pred = 0.0;         // weight for the feature x
+  float G = w[G_SUM];         // NOLINT sum of gradients w.r.t. scalar feature x
+  float absG = std::fabs(G);  // NOLINT
+  float V = w[V_SUM];         // NOLINT sum of squared gradients w.r.t. scalar feature x
+  float epsilon = d.freegrad_data_ptr->epsilon;
 
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
   // freegrad update Equation 9 in paper http://proceedings.mlr.press/v125/mhammedi20a/mhammedi20a.pdf
@@ -130,13 +133,13 @@ void freegrad_predict(freegrad& fg, VW::example& ec)
 void gradient_dot_w(freegrad_update_data& d, float x, float& wref)
 {
   float* w = &wref;
-  float h1 = w[H1];    // will be set to the value of the first non-zero gradient w.r.t. the scalar feature x
-  float ht = w[HT];    // maximum absolute value of the gradient w.r.t. scalar feature x
-  float w_pred = 0.0;  // weight for the feature x
-  float G = w[G_SUM];  // sum of gradients w.r.t. scalar feature x
-  float absG = std::fabs(G);
-  float V = w[V_SUM];  // sum of squared gradients w.r.t. scalar feature x
-  float epsilon = d.FG->epsilon;
+  float h1 = w[H1];           // will be set to the value of the first non-zero gradient w.r.t. the scalar feature x
+  float ht = w[HT];           // maximum absolute value of the gradient w.r.t. scalar feature x
+  float w_pred = 0.0;         // weight for the feature x
+  float G = w[G_SUM];         // NOLINT sum of gradients w.r.t. scalar feature x
+  float absG = std::fabs(G);  // NOLINT
+  float V = w[V_SUM];         // NOLINT sum of squared gradients w.r.t. scalar feature x
+  float epsilon = d.freegrad_data_ptr->epsilon;
   float gradient = d.update * x;
 
   // Only predict a non-zero w_pred if a non-zero gradient has been observed
@@ -166,11 +169,11 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   float ht = w[HT];    // maximum absolute value of the gradient w.r.t. scalar feature x
   float w_pred = 0.0;  // weight for the feature x
   _UNUSED(w_pred);
-  float G = w[G_SUM];  // sum of gradients w.r.t. scalar feature x
-  float absG = std::fabs(G);
-  float V = w[V_SUM];  // sum of squared gradients w.r.t. scalar feature x
-  float epsilon = d.FG->epsilon;
-  float lipschitz_const = d.FG->lipschitz_const;
+  float G = w[G_SUM];         // NOLINT sum of gradients w.r.t. scalar feature x
+  float absG = std::fabs(G);  // NOLINT
+  float V = w[V_SUM];         // NOLINT sum of squared gradients w.r.t. scalar feature x
+  float epsilon = d.freegrad_data_ptr->epsilon;
+  float lipschitz_const = d.freegrad_data_ptr->lipschitz_const;
 
   // Computing the freegrad prediction again (Eq.(9) and Line 7 of Alg. 2 in paper)
   if (h1 > 0)
@@ -182,13 +185,14 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   // Compute the tilted gradient:
   // Cutkosky's varying constrains' reduction in
   // Alg. 1 in http://proceedings.mlr.press/v119/cutkosky20a/cutkosky20a.pdf with sphere sets
-  if (d.FG->project)
+  if (d.freegrad_data_ptr->project)
   {
     // Set the project radius either to the user-specified value, or adaptively
-    if (d.FG->adaptiveradius) { projection_radius = d.FG->epsilon * sqrtf(d.sum_normalized_grad_norms); }
+    if (d.freegrad_data_ptr->adaptiveradius)
+    { projection_radius = d.freegrad_data_ptr->epsilon * sqrtf(d.sum_normalized_grad_norms); }
     else
     {
-      projection_radius = d.FG->radius;
+      projection_radius = d.freegrad_data_ptr->radius;
     }
 
     if (norm_w_pred > projection_radius && g_dot_w < 0)
@@ -202,13 +206,14 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   fabs_tilde_g = std::fabs(tilde_gradient);
 
   // Updating the hint sequence
-  if (h1 == 0 && lipschitz_const==0)
+  if (h1 == 0 && lipschitz_const == 0)
   {
     w[H1] = fabs_tilde_g;
     w[HT] = fabs_tilde_g;
     w[V_SUM] += d.ec_weight * std::pow(fabs_tilde_g, 2.f);
   }
-  else if (h1 == 0){
+  else if (h1 == 0)
+  {
     w[H1] = lipschitz_const;
     w[HT] = lipschitz_const;
     w[V_SUM] += d.ec_weight * std::pow(fabs_tilde_g, 2.f);
@@ -222,7 +227,7 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   d.squared_norm_clipped_grad += std::pow(clipped_gradient, 2.f);
 
   // Check if restarts are enabled and whether the condition is satisfied
-  if (d.FG->restart && w[HT] / w[H1] > w[S] + 2)
+  if (d.freegrad_data_ptr->restart && w[HT] / w[H1] > w[S] + 2)
   {
     // Do a restart, but keep the lastest hint info
     w[H1] = w[HT];
@@ -308,7 +313,8 @@ void end_pass(freegrad& fg)
 
   if (!all.holdout_set_off)
   {
-    if (summarize_holdout_set(all, fg.no_win_counter)) { finalize_regressor(all, all.final_regressor_name); }
+    if (VW::details::summarize_holdout_set(all, fg.no_win_counter))
+    { finalize_regressor(all, all.final_regressor_name); }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
     { set_done(all); }
@@ -335,7 +341,8 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
       .add(make_option("radius", radius)
                .help("Radius of the l2-ball for the projection. If not supplied, an adaptive radius will be used"))
       .add(make_option("fepsilon", fepsilon).default_value(1.f).help("Initial wealth"))
-      .add(make_option("flipschitz_const", flipschitz_const).default_value(0.f)
+      .add(make_option("flipschitz_const", flipschitz_const)
+               .default_value(0.f)
                .help("Upper bound on the norm of the gradients if known in advance"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -350,7 +357,7 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   // Defaults
   fg_ptr->update_data.sum_normalized_grad_norms = 1;
   fg_ptr->update_data.maximum_clipped_gradient_norm = 0.;
-  fg_ptr->update_data.FG = fg_ptr.get();
+  fg_ptr->update_data.freegrad_data_ptr = fg_ptr.get();
 
   fg_ptr->all = stack_builder.get_all_pointer();
   fg_ptr->restart = restart;
@@ -382,7 +389,7 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
   auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
   auto* l = VW::LEARNER::make_base_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
-      stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())
                 .set_save_load(save_load)

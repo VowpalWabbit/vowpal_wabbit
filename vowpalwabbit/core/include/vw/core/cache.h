@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include "vw/core/multi_ex.h"
+#include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
-
-#include <cstdint>
 
 namespace VW
 {

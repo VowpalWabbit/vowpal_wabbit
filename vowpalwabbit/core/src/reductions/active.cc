@@ -7,7 +7,9 @@
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/model_utils.h"
+#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -42,13 +44,13 @@ float query_decision(active& a, float ec_revert_weight, float k)
   if (k <= 1.f) { bias = 1.f; }
   else
   {
-    const auto weighted_queries = static_cast<float>(a._shared_data->weighted_labeled_examples);
-    const float avg_loss = (static_cast<float>(a._shared_data->sum_loss) / k) +
+    const auto weighted_queries = static_cast<float>(a._all->sd->weighted_labeled_examples);
+    const float avg_loss = (static_cast<float>(a._all->sd->sum_loss) / k) +
         std::sqrt((1.f + 0.5f * std::log(k)) / (weighted_queries + 0.0001f));
     bias = get_active_coin_bias(k, avg_loss, ec_revert_weight / k, a.active_c0);
   }
 
-  return (a._random_state->get_and_update_random() < bias) ? 1.f / bias : -1.f;
+  return (a._all->get_random_state()->get_and_update_random() < bias) ? 1.f / bias : -1.f;
 }
 
 template <bool is_learn>
@@ -58,7 +60,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, VW::example& e
 
   if (is_learn)
   {
-    const auto k = static_cast<float>(a._shared_data->t);
+    const auto k = static_cast<float>(a._all->sd->t);
     constexpr float threshold = 0.f;
 
     ec.confidence = fabsf(ec.pred.scalar - threshold) / base.sensitivity(ec);
@@ -66,7 +68,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, VW::example& e
 
     if (importance > 0.f)
     {
-      a._shared_data->queries += 1;
+      a._all->sd->queries += 1;
       ec.weight *= importance;
       base.learn(ec);
     }
@@ -89,7 +91,7 @@ void predict_or_learn_active(active& a, single_learner& base, VW::example& ec)
 
   if (ec.l.simple.label == FLT_MAX)
   {
-    const float threshold = (a._shared_data->max_label + a._shared_data->min_label) * 0.5f;
+    const float threshold = (a._all->sd->max_label + a._all->sd->min_label) * 0.5f;
     // We want to understand the change in prediction if the label were to be
     // the opposite of what was predicted. 0 and 1 are used for the expected min
     // and max labels to be coming in from the active interactor.
@@ -124,7 +126,7 @@ void active_print_result(
 
 void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)
 {
-  const label_data& ld = ec.l.simple;
+  const auto& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
@@ -137,13 +139,13 @@ void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
   for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, all.logger); }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 template <bool simulation>
 void return_active_example(VW::workspace& all, active& a, VW::example& ec)
 {
-  if (simulation) { output_and_account_example(all, ec); }
+  if (simulation) { VW::details::output_and_account_example(all, ec); }
   else
   {
     output_and_account_example(all, a, ec);
@@ -188,7 +190,7 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("lda")) { THROW("lda cannot be combined with active learning") }
-  auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state(), all.model_file_ver);
+  auto data = VW::make_unique<active>(active_c0, &all);
   auto base = as_singleline(stack_builder.setup_base_learner());
 
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, VW::example&);
@@ -215,8 +217,8 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
 
   // Create new learner
   auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_learn_returns_prediction(learn_returns_prediction)
                 .set_save_load(save_load)
                 .set_finish_example(finish_ptr)

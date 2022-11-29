@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -48,9 +48,9 @@ namespace VW.Serializer
 
             public VowpalWabbitMultiExampleSerializerCompilerImpl(VowpalWabbitSettings settings, Schema schema, FeatureExpression multiFeature)
             {
-                Contract.Requires(settings != null);
-                Contract.Requires(schema != null);
-                Contract.Requires(multiFeature != null);
+                Debug.Assert(settings != null);
+                Debug.Assert(schema != null);
+                Debug.Assert(multiFeature != null);
 
                 var nonMultiFeatures = schema.Features.Where(fe => fe != multiFeature).ToList();
 
@@ -85,7 +85,11 @@ namespace VW.Serializer
                             typeof(IEnumerable<TActionDependentFeature>)),
                     exampleParameter);
 
+#if !NETSTANDARD
                 this.adfAccessor = (Func<TExample, IEnumerable<TActionDependentFeature>>)expr.CompileToFunc();
+#else
+                this.adfAccessor = expr.Compile();
+#endif
             }
 
             public int GetNumberOfActionDependentExamples(TExample example)

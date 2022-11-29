@@ -4,6 +4,7 @@
 
 #include "vw/c_wrapper/vwdll.h"
 
+#include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parser.h"
@@ -412,8 +413,9 @@ extern "C"
     return static_cast<VW_HANDLE>(all);
   }
 
-  struct buffer_holder
+  class buffer_holder
   {
+  public:
     std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>();
     io_buf holding_buffer;
   };

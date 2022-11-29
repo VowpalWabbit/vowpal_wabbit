@@ -6,6 +6,8 @@
 
 #include "vw_clr.h"
 
+#include "vw/core/prediction_type.h"
+
 namespace VW
 {
 ref class VowpalWabbitExample;
@@ -71,7 +73,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::scalar; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::SCALAR; }
   }
 };
 
@@ -99,7 +101,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::scalar; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::SCALAR; }
   }
 };
 
@@ -119,7 +121,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::scalars; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::SCALARS; }
   }
 };
 
@@ -139,7 +141,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::prob; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::PROB; }
   }
 };
 
@@ -159,7 +161,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::multiclass; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::MULTICLASS; }
   }
 };
 
@@ -179,7 +181,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::multiclass; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::MULTICLASS; }
   }
 };
 
@@ -200,7 +202,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::multiclassprobs; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::MULTICLASS_PROBS; }
   }
 };
 
@@ -220,7 +222,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::multilabels; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::MULTILABELS; }
   }
 };
 
@@ -263,7 +265,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() override sealed { return VW::prediction_type_t::action_scores; }
+    virtual VW::prediction_type_t get() override sealed { return VW::prediction_type_t::ACTION_SCORES; }
   }
 };
 
@@ -279,7 +281,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() override sealed { return VW::prediction_type_t::action_probs; }
+    virtual VW::prediction_type_t get() override sealed { return VW::prediction_type_t::ACTION_PROBS; }
   }
 };
 
@@ -328,7 +330,7 @@ public:
   /// </summary>
   property VW::prediction_type_t PredictionType
   {
-    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::active_multiclass; }
+    virtual VW::prediction_type_t get() sealed { return VW::prediction_type_t::ACTIVE_MULTICLASS; }
   }
 };
 
