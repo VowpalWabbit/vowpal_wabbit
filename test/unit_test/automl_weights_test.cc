@@ -411,7 +411,8 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model_cubic)
   // a switch happens around ~1756
   size_t num_iterations = 10;
 
-  auto* vw_qcolcol = VW::initialize(vw_arg + "-b 17 --interactions \\x20\\x20\\x20 --interactions \\x20\\x20U --interactions \\x20UU --interactions UUU");
+  auto* vw_qcolcol = VW::initialize(vw_arg +
+      "-b 17 --interactions \\x20\\x20\\x20 --interactions \\x20\\x20U --interactions \\x20UU --interactions UUU");
   auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "-b 18");
   simulator::cb_sim sim1(seed, true);
   simulator::cb_sim sim2(seed, true);
