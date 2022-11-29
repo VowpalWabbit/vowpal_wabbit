@@ -396,3 +396,70 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
   BOOST_CHECK(qcolcol_weights_vector == automl_weights_vector);
   BOOST_CHECK(ctr1 == ctr2);
 }
+
+BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model_cubic)
+{
+  callback_map test_hooks;
+
+  std::string vw_arg =
+      "--cb_explore_adf --quiet --epsilon 0.2 "
+      "--random_seed 5 --predict_only_model ";
+  std::string vw_automl_arg =
+      "--automl 4 --priority_type favor_popular_namespaces "
+      "--oracle_type one_diff --global_lease 10 --interaction_type cubic ";
+  int seed = 10;
+  // a switch happens around ~1756
+  size_t num_iterations = 10;
+
+  auto* vw_qcolcol = VW::initialize(vw_arg + "-b 17 --interactions \\x20\\x20\\x20 --interactions \\x20\\x20U --interactions \\x20UU --interactions UUU");
+  auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "-b 18");
+  simulator::cb_sim sim1(seed, true);
+  simulator::cb_sim sim2(seed, true);
+  auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
+  auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
+  vw_automl->l->pre_save_load(*vw_automl);
+
+  std::vector<std::string> automl_inters =
+      vw_automl->options->get_typed_option<std::vector<std::string>>("interactions").value();
+  std::vector<std::string> qcolcol_inters =
+      vw_qcolcol->options->get_typed_option<std::vector<std::string>>("interactions").value();
+  BOOST_CHECK(automl_inters == qcolcol_inters);
+
+  auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
+  auto& weights_automl = vw_automl->weights.dense_weights;
+  auto iter_1 = weights_qcolcol.begin();
+  auto iter_2 = weights_automl.begin();
+
+  std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
+  std::vector<std::tuple<float, float, float, float>> automl_weights_vector;
+
+  dense_iterator<float> qcolcol_it = weights_qcolcol.begin();
+  auto qcolcol_end = weights_qcolcol.end();
+
+  if (*qcolcol_it != 0.0f)
+  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+
+  while (qcolcol_it.next_non_zero(qcolcol_end) < qcolcol_end)
+  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+
+  std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
+
+  dense_iterator<float> automl_it = weights_automl.begin();
+  auto automl_end = weights_automl.end();
+
+  if (*automl_it != 0.0f)
+  { automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]); }
+
+  while (automl_it.next_non_zero(automl_end) < automl_end)
+  { automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]); }
+
+  std::sort(automl_weights_vector.begin(), automl_weights_vector.end());
+
+  VW::finish(*vw_qcolcol);
+  VW::finish(*vw_automl);
+
+  BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 38);
+  BOOST_CHECK_EQUAL(automl_weights_vector.size(), 38);
+  BOOST_CHECK(qcolcol_weights_vector == automl_weights_vector);
+  BOOST_CHECK(ctr1 == ctr2);
+}

@@ -112,10 +112,6 @@ void pre_save_load(VW::workspace& all, automl<CMType>& data)
   // Adjust champ weights to new single-model space
   data.cm->weights.adjust_weights_single_model(data.cm->wpp, 0);
 
-  std::set<std::string> aml_opts = {"automl", "global_lease", "cm_type", "priority_type", "priority_challengers",
-      "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level",
-      "fixed_significance_level"};
-
   for (auto& group : options.get_all_option_group_definitions())
   {
     if (group.m_name == "[Reduction] Automl Options")
