@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
   simulator::cb_sim sim2(seed, true);
   auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
   auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
-  vw_automl->l->output_target_model(*vw_automl);
+  vw_automl->l->pre_save_load(*vw_automl);
 
   std::vector<std::string> automl_inters =
       vw_automl->options->get_typed_option<std::vector<std::string>>("interactions").value();

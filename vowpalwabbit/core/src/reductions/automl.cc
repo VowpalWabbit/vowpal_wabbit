@@ -94,7 +94,7 @@ void finish_example(VW::workspace& all, automl<CMType>& data, VW::multi_ex& ec)
 }
 
 template <typename CMType>
-void output_target_model(VW::workspace& all, automl<CMType>& data)
+void pre_save_load(VW::workspace& all, automl<CMType>& data)
 {
   options_i& options = *all.options;
   if (!data.should_save_predict_only_model) { return; }
@@ -235,7 +235,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
                 .set_learn_returns_prediction(true)
-                .set_output_target_model(::output_target_model<config_manager_type>)
+                .set_pre_save_load(::pre_save_load<config_manager_type>)
                 .build();
   return make_base(*l);
 }
