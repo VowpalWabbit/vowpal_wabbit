@@ -150,83 +150,47 @@ int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt p
 }
 
 template <typename It>
-int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pmf_first, It pmf_last,
+int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last,
     std::random_access_iterator_tag /* pmf_tag */)
 {
   // iterators don't support <= in general
   if (pmf_first == pmf_last || pmf_last < pmf_first) { return E_EXPLORATION_BAD_RANGE; }
+  if (uniform_epsilon < 0.f || uniform_epsilon > 1.f) { return E_EXPLORATION_BAD_EPSILON; }
 
-  size_t num_actions = pmf_last - pmf_first;
+  size_t num_actions = consider_zero_valued_elements
+      ? pmf_last - pmf_first
+      // If we aren't considering 0 elements, then we need to count the number of non-zero elements.
+      : std::count_if(pmf_first, pmf_last, [](float val) { return val != 0.f; });
+  const auto minimum_probability = uniform_epsilon / num_actions;
+  size_t n_changed = 0;
+  float p_unchanged = 0.f;
 
-  if (minimum_uniform > 0.999)  // uniform exploration
+  for (auto it = pmf_first; it != pmf_last; ++it)
   {
-    size_t support_size = num_actions;
-    if (!update_zero_elements)
+    const auto value = *it;
+    if (consider_zero_valued_elements || value < minimum_probability) { n_changed += 1; }
+    else { p_unchanged += value; }
+    }
+    for (auto it = pmf_first; it != pmf_last; ++it)
     {
-      for (It d = pmf_first; d != pmf_last; ++d)
+      const auto value = *it;
+      if (consider_zero_valued_elements || value > 0)
       {
-        if (*d == 0) { support_size--; }
+        if (value < minimum_probability) { *it = minimum_probability; }
+        else { *it *= (1 - n_changed * minimum_probability) / p_unchanged; }
       }
-    }
-
-    for (It d = pmf_first; d != pmf_last; ++d)
-    {
-      if (update_zero_elements || *d > 0) { *d = 1.f / support_size; }
-    }
-
-    return S_EXPLORATION_OK;
-  }
-
-  minimum_uniform /= num_actions;
-  float touched_mass = 0.;
-  float untouched_mass = 0.;
-  uint16_t num_actions_touched = 0;
-
-  for (It d = pmf_first; d != pmf_last; ++d)
-  {
-    auto& prob = *d;
-    if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= minimum_uniform)
-    {
-      touched_mass += minimum_uniform;
-      prob = minimum_uniform;
-      ++num_actions_touched;
-    }
-    else
-    {
-      untouched_mass += prob;
-    }
-  }
-
-  if (touched_mass > 0.)
-  {
-    if (touched_mass > 0.999)
-    {
-      minimum_uniform = (1.f - untouched_mass) / static_cast<float>(num_actions_touched);
-      for (It d = pmf_first; d != pmf_last; ++d)
-      {
-        auto& prob = *d;
-        if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= minimum_uniform) { prob = minimum_uniform; }
-      }
-    }
-    else
-    {
-      float ratio = (1.f - touched_mass) / untouched_mass;
-      for (It d = pmf_first; d != pmf_last; ++d)
-      {
-        if (*d > minimum_uniform) { *d *= ratio; }
-      }
-    }
   }
 
   return S_EXPLORATION_OK;
 }
 
 template <typename It>
-int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pmf_first, It pmf_last)
+int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last)
 {
   using pmf_category = typename std::iterator_traits<It>::iterator_category;
 
-  return enforce_minimum_probability(minimum_uniform, update_zero_elements, pmf_first, pmf_last, pmf_category());
+  return enforce_minimum_probability(
+      uniform_epsilon, consider_zero_valued_elements, pmf_first, pmf_last, pmf_category());
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds

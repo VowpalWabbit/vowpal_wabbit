@@ -32,7 +32,6 @@ set(vw_core_headers
   include/vw/core/error_constants.h
   include/vw/core/error_data.h
   include/vw/core/error_reporting.h
-  include/vw/core/estimator_config.h
   include/vw/core/example_predict.h
   include/vw/core/example.h
   include/vw/core/fast_pow10.h
@@ -86,10 +85,7 @@ set(vw_core_headers
   include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h
   include/vw/core/reductions/autolink.h
-  include/vw/core/reductions/automl/automl_impl.h
-  include/vw/core/reductions/automl/automl_iomodel.h
-  include/vw/core/reductions/automl/automl_util.h
-  include/vw/core/reductions/automl/automl.h
+  include/vw/core/reductions/automl.h
   include/vw/core/reductions/baseline_challenger_cb.h
   include/vw/core/reductions/baseline.h
   include/vw/core/reductions/bfgs.h
@@ -249,8 +245,6 @@ set(vw_core_sources
   src/prob_dist_cont.cc
   src/qr_decomposition.cc
   src/rand48.cc
-  src/estimator_config.cc
-  src/interactions.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
   src/reductions/active.cc

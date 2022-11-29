@@ -9,13 +9,14 @@
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
+#include "vw/explore/explore.h"
 
 namespace
 {
 struct uniform_exploration_data
 {
-  uniform_exploration_data(float uniform_epsilon) : _uniform_epsilon(uniform_epsilon) {}
-  float _uniform_epsilon;
+  uniform_exploration_data(float uniform_epsilon) : uniform_epsilon(uniform_epsilon) {}
+  float uniform_epsilon;
 };
 
 template <bool is_learn, bool is_threshold>
@@ -28,30 +29,15 @@ void predict_or_learn(uniform_exploration_data& data, VW::LEARNER::multi_learner
   const auto size = probs.size();
   if VW_STD17_CONSTEXPR (is_threshold)
   {
-    const auto minimum_probability = data._uniform_epsilon / size;
-
-    size_t n_changed = 0;
-    float p_unchanged = 0.f;
-
-    for (auto& prob : probs)
-    {
-      if (prob.score < minimum_probability) { n_changed += 1; }
-      else { p_unchanged += prob.score; }
-    }
-
-    for (auto& prob : probs)
-    {
-      if (prob.score < minimum_probability) { prob.score = minimum_probability; }
-      else { prob.score *= (1 - n_changed * minimum_probability) / p_unchanged; }
-    }
+    exploration::enforce_minimum_probability(data.uniform_epsilon, true, begin_scores(probs), end_scores(probs));
   }
   else
   {
-    const auto scale = (1.f - data._uniform_epsilon);
+    const auto scale = (1.f - data.uniform_epsilon);
     for (auto& prob : probs)
     {
       prob.score *= scale;
-      prob.score += data._uniform_epsilon / size;
+      prob.score += data.uniform_epsilon / size;
     }
   }
 }
@@ -79,13 +65,16 @@ VW::LEARNER::base_learner* VW::reductions::uniform_exploration_setup(VW::setup_b
 
   if (uniform_epsilon < 0.f || uniform_epsilon > 1.f) { THROW("uniform_epsilon must be in the range [0, 1]"); }
 
+  // Reduction is a noop for 0.
+  if (uniform_epsilon == 0.f) { return nullptr; }
+
   auto* multi_base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
   auto data = VW::make_unique<uniform_exploration_data>(uniform_epsilon);
 
   using predict_or_learn_ptr =
       void (*)(::uniform_exploration_data & data, VW::LEARNER::multi_learner & base, VW::multi_ex & ec_seq);
-  predict_or_learn_ptr pred_ptr;
-  predict_or_learn_ptr learn_ptr;
+  predict_or_learn_ptr pred_ptr = nullptr;
+  predict_or_learn_ptr learn_ptr = nullptr;
 
   if (kind == "threshold")
   {
