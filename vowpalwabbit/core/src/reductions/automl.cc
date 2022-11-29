@@ -6,6 +6,7 @@
 
 #include "details/automl_impl.h"
 #include "vw/config/options.h"
+#include "vw/config/options_cli.h"
 #include "vw/core/confidence_sequence.h"
 
 // TODO: delete this three includes
@@ -96,7 +97,7 @@ template <typename CMType>
 void output_target_model(VW::workspace& all, automl<CMType>& data)
 {
   options_i& options = *all.options;
-  if (!options.was_supplied("predict_only_model")) { return; }
+  if (!data.should_save_predict_only_model) { return; }
   // Clear non-champ weights first
 
   std::swap(*data.cm->_gd_normalized, data.cm->per_live_model_state_double[0]);
@@ -115,14 +116,12 @@ void output_target_model(VW::workspace& all, automl<CMType>& data)
       "verbose_metrics", "interaction_type", "oracle_type", "debug_reversed_learn", "automl_significance_level",
       "fixed_significance_level"};
 
-  /*for (auto& group : options.get_all_option_group_definitions())
+  for (auto& group : options.get_all_option_group_definitions())
   {
-    int i = 1;
-  }*/
-
-  for (const auto& opt : aml_opts)
-  {
-    if (options.was_supplied(opt)) { options.remove_option(opt); }
+    if (group.m_name == "[Reduction] Automl Options")
+    {
+      for (auto& opt : group.m_options) { opt->m_keep = false; }
+    }
   }
 
   all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));
