@@ -10,7 +10,7 @@
       let pkgs = nixpkgs.legacyPackages.${system}; in
       let
         generate-compile-commands = ''
-          set -e
+          echo -n "Generating compile_commands.json... "
           rm -rf $TMPDIR/compile_commands_build
           mkdir -p $TMPDIR/compile_commands_build
           cmake -S . -B "$TMPDIR/compile_commands_build" \
@@ -23,7 +23,16 @@
             -DVW_GTEST_SYS_DEP=On \
             -DVW_EIGEN_SYS_DEP=On \
             -DBUILD_TESTING=Off \
-            -DVW_BUILD_VW_C_WRAPPER=Off
+            -DVW_BUILD_VW_C_WRAPPER=Off > cmake_compile_commands_output.txt 2>&1
+          if [ $? -ne 0 ]; then
+            echo "Failed"
+            echo
+            cat cmake_compile_commands_output.txt >&2
+            exit 1
+          else
+            echo "Done"
+            rm cmake_compile_commands_output.txt
+          fi
         '';
       in
       let
@@ -83,7 +92,7 @@
       let
         clang-tidy-diff-script = pkgs.writeShellScriptBin "vw-clang-tidy-diff" ''
           ${generate-compile-commands}
-          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path $TMPDIR/compile_commands_build -r '^.*\.(cc|h)\$' -quiet -use-color "$@"
+          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path $TMPDIR/compile_commands_build -r '^.*\.(cc|h)\$' -quiet -use-color "$@" <&0
         '';
       in
       {
