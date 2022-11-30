@@ -81,7 +81,13 @@ private:
   thread_pool _thread_pool;
   size_t _block_size;
 #ifdef BUILD_LAS_WITH_SIMD
-  bool _use_simd = false;
+  enum class simd_type
+  {
+    NO_SIMD,
+    AVX2,
+    AVX512
+  };
+  simd_type _use_simd = simd_type::NO_SIMD;
 #endif
   std::vector<std::future<void>> _futures;
   Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
