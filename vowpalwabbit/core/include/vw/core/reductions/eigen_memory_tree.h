@@ -90,7 +90,6 @@ struct emt_tree
   VW::workspace* all;
   std::shared_ptr<VW::rand_state> _random_state;
 
-  uint32_t tree_bound;  // how many memories before bounding the tree
   uint32_t leaf_split;  // how many memories before splitting a leaf node
   emt_scorer_type scorer_type;
   emt_router_type router_type;
@@ -100,9 +99,10 @@ struct emt_tree
   long begin;  // for timing performance
 
   std::unique_ptr<emt_node> root;
-  emt_lru* bounder;
+  std::unique_ptr<emt_lru> bounder;
 
   emt_tree();
+  ~emt_tree();
 };
 
 }  // namespace eigen_memory_tree

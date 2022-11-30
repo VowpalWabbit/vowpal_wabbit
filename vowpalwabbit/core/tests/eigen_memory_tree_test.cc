@@ -36,10 +36,10 @@ TEST(emt_tests, emt_params_test1)
   auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--eigen_memory_tree"));
   auto* tree = get_emt_tree(*vw);
 
-  EXPECT_EQ(tree->tree_bound, 0);
   EXPECT_EQ(tree->leaf_split, 100);
   EXPECT_EQ(tree->scorer_type, emt_scorer_type::self_consistent_rank);
   EXPECT_EQ(tree->router_type, emt_router_type::eigen);
+  EXPECT_EQ(tree->bounder->max_size, 0);
 
   VW::finish(*vw, false);
 }
@@ -51,10 +51,10 @@ TEST(emt_tests, emt_params_test2)
   auto vw = VW::initialize_experimental(std::move(args));
   auto tree = get_emt_tree(*vw);
 
-  EXPECT_EQ(tree->tree_bound, 20);
   EXPECT_EQ(tree->leaf_split, 50);
   EXPECT_EQ(tree->scorer_type, emt_scorer_type::distance);
   EXPECT_EQ(tree->router_type, emt_router_type::random);
+  EXPECT_EQ(tree->bounder->max_size, 20);
 
   VW::finish(*vw, false);
 }
@@ -306,10 +306,10 @@ TEST(emt_tests, test_emt_router_eigen)
   // which has a projection variance of 19.5
   // our oja method gave us 19.31 variance
 
-  EXPECT_NEAR(weights[0].second, -0.0905, .001);
-  EXPECT_NEAR(weights[1].second, -0.9177, .001);
-  EXPECT_NEAR(weights[2].second, 0.3218, .001);
-  EXPECT_NEAR(weights[3].second, 0.2145, .001);
+  EXPECT_NEAR(weights[0].second, -0.2695, .01);
+  EXPECT_NEAR(weights[1].second, -0.9211, .01);
+  EXPECT_NEAR(weights[2].second, 0.2336, .01);
+  EXPECT_NEAR(weights[3].second, 0.1558, .01);
   EXPECT_GE(var, 19.3);
 }
 

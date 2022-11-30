@@ -103,7 +103,6 @@ emt_node::emt_node()
 
 emt_tree::emt_tree()
 {
-  tree_bound = -1;
   leaf_split = 100;
 
   scorer_type = emt_scorer_type::self_consistent_rank;
@@ -113,8 +112,21 @@ emt_tree::emt_tree()
 
   all = nullptr;
   ex = nullptr;
-  root = nullptr;
   bounder = nullptr;
+  root = VW::make_unique<emt_node>();
+
+  // we set this up for repeated use later in the scorer.
+  // we will populate this examples features over and over.
+  ex = VW::make_unique<VW::example>();
+  ex->interactions = new std::vector<std::vector<VW::namespace_index>>();
+  ex->extent_interactions = new std::vector<std::vector<extent_term>>();
+  ex->indices.push_back(0);
+}
+
+emt_tree::~emt_tree()
+{
+  delete ex->interactions;
+  delete ex->extent_interactions;
 }
 
 /// <summary>
@@ -258,6 +270,10 @@ emt_feats emt_router_random(std::vector<emt_feats>& exs, VW::rand_state& rng)
 
 emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
 {
+  // for more on the method below please see:
+  //    Balsubramani, Akshay, Sanjoy Dasgupta, and Yoav Freund. "The fast convergence of
+  //    incremental PCA." Advances in neural information processing systems 26 (2013).
+
   auto weights = emt_router_random(exs, rng);
 
   std::map<int, float> sums;
@@ -315,19 +331,6 @@ emt_feats emt_router(std::vector<emt_feats> exs, emt_router_type router_type, VW
 emt_node* node_route(emt_node& cn, emt_example& ec)
 {
   return emt_inner(ec.base, cn.router_weights) < cn.router_decision ? cn.left.get() : cn.right.get();
-}
-
-void tree_init(emt_tree& b)
-{
-  b.root = VW::make_unique<emt_node>();
-  b.bounder = new emt_lru(b.tree_bound);
-
-  // we set this up for repeated use later in the scorer.
-  // we will populate this examples features over and over.
-  b.ex = std::move(std::unique_ptr<VW::example>(::VW::alloc_examples(1)));
-  b.ex->interactions = new std::vector<std::vector<VW::namespace_index>>();
-  b.ex->extent_interactions = new std::vector<std::vector<extent_term>>();
-  b.ex->indices.push_back(0);
 }
 
 emt_node* tree_route(emt_tree& b, emt_example& ec)
@@ -716,14 +719,17 @@ void save_load_tree(emt_tree& b, io_buf& model_file, bool read, bool text)
 
     int scorer_type = static_cast<int>(b.scorer_type);
     int router_type = static_cast<int>(b.router_type);
+    uint32_t tree_bound = b.bounder->max_size;
 
-    WRITEIT(b.tree_bound, "tree_bound");
     WRITEIT(b.leaf_split, "leaf_split");
+    WRITEIT(tree_bound, "tree_bound");
     WRITEIT(scorer_type, "scorer_type");
     WRITEIT(router_type, "router_type");
 
     b.scorer_type = static_cast<emt_scorer_type>(scorer_type);
     b.router_type = static_cast<emt_router_type>(router_type);
+
+    if (read) { b.bounder = VW::make_unique<emt_lru>(tree_bound); }
 
     b.root = std::move(save_load_node(b, std::move(b.root), model_file, read, text, msg));
     *(b.all->trace_message) << "done loading...." << std::endl;
@@ -742,7 +748,7 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
 
   auto t = VW::make_unique<VW::reductions::eigen_memory_tree::emt_tree>();
   bool _;
-  uint32_t scorer_type = 0, router_type = 0;
+  uint32_t scorer_type = 0, router_type = 0, tree_bound = 0;
 
   option_group_definition new_options("[Reduction] Eigen Memory Tree");
   new_options
@@ -750,7 +756,7 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
                .keep()
                .necessary()
                .help("Make an eigen memory tree with at most <n> memories"))
-      .add(make_option("tree", t->tree_bound)
+      .add(make_option("tree", tree_bound)
                .keep()
                .default_value(0)
                .help("Indicates the maximum number of memories the tree can have."))
@@ -774,11 +780,10 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
 
   t->scorer_type = static_cast<VW::reductions::eigen_memory_tree::emt_scorer_type>(scorer_type);
   t->router_type = static_cast<VW::reductions::eigen_memory_tree::emt_router_type>(router_type);
+  t->bounder = VW::make_unique<VW::reductions::eigen_memory_tree::emt_lru>(tree_bound);
 
   t->all = &all;
   t->_random_state = all.get_random_state();
-
-  tree_init(*t);
 
   VW::prediction_type_t pred_type;
   VW::label_type_t label_type;
@@ -793,15 +798,15 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
   auto end_pass = VW::reductions::eigen_memory_tree::end_pass;
   auto save_load = VW::reductions::eigen_memory_tree::save_load_tree;
 
-  auto& l = make_reduction_learner(std::move(t), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+  auto l = make_reduction_learner(std::move(t), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(eigen_memory_tree_setup))
-                .set_learn_returns_prediction(true)  // we set this to true otherwise bounding doesn't work as well
-                .set_end_pass(end_pass)
-                .set_save_load(save_load)
-                .set_output_prediction_type(pred_type)
-                .set_input_label_type(label_type);
+               .set_learn_returns_prediction(true)  // we set this to true otherwise bounding doesn't work as well
+               .set_end_pass(end_pass)
+               .set_save_load(save_load)
+               .set_output_prediction_type(pred_type)
+               .set_input_label_type(label_type);
 
-  l.set_finish_example(VW::details::finish_multiclass_example<VW::reductions::eigen_memory_tree::emt_tree&>);
+  l.set_finish_example(VW::details::finish_multiclass_example<VW::reductions::eigen_memory_tree::emt_tree>);
 
   return make_base(*l.build());
 }
