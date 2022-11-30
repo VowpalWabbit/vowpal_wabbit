@@ -3,17 +3,17 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/reductions/eigen_memory_tree.h"
+
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
-#include "vw/core/vw.h"
 #include "vw/core/rand_state.h"
+#include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
 
+#include <gtest/gtest.h>
 
 #include <string>
 #include <vector>
-
-#include <gtest/gtest.h>
 
 using namespace VW::reductions::eigen_memory_tree;
 
@@ -24,9 +24,7 @@ emt_tree* get_emt_tree(VW::workspace& all)
   std::vector<std::string> e_r;
   all.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "eigen_memory_tree") == e_r.end())
-  {
-    ADD_FAILURE() << "Eigen memory tree not found in enabled reductions";
-  }
+  { ADD_FAILURE() << "Eigen memory tree not found in enabled reductions"; }
 
   VW::LEARNER::single_learner* emt = as_singleline(all.l->get_learner_by_name_prefix("eigen_memory_tree"));
 
@@ -48,7 +46,8 @@ TEST(emt_tests, emt_params_test1)
 
 TEST(emt_tests, emt_params_test2)
 {
-  auto args = vwtest::make_args("--quiet", "--eigen_memory_tree", "--tree", "20", "--scorer", "2", "--router", "1", "--leaf", "50");
+  auto args = vwtest::make_args(
+      "--quiet", "--eigen_memory_tree", "--tree", "20", "--scorer", "2", "--router", "1", "--leaf", "50");
   auto vw = VW::initialize_experimental(std::move(args));
   auto tree = get_emt_tree(*vw);
 
@@ -186,7 +185,6 @@ TEST(emt_tests, test_emt_scale_add)
 
   EXPECT_EQ(emt_scale_add(1, v1, 1, v2), v3);
 
-
   v3.clear();
   v3.emplace_back(1, -1);
 
@@ -243,10 +241,10 @@ TEST(emt_tests, test_emt_normalize)
   EXPECT_EQ(v1, v2);
 
   v1.emplace_back(1, -3);
-  v1.emplace_back(5,  4);
+  v1.emplace_back(5, 4);
 
   v2.emplace_back(1, -.6);
-  v2.emplace_back(5,  .8);
+  v2.emplace_back(5, .8);
 
   emt_normalize(v1);
   EXPECT_EQ(v1, v2);
@@ -300,9 +298,9 @@ TEST(emt_tests, test_emt_router_eigen)
   float p2 = emt_inner(v2, weights);
   float p3 = emt_inner(v3, weights);
 
-  float E2  = (p1*p1+p2*p2+p3*p3)/3;
-  float E_2 = (p1+p2+p3)*(p1+p2+p3)/9;
-  float var = E2-E_2;
+  float E2 = (p1 * p1 + p2 * p2 + p3 * p3) / 3;
+  float E_2 = (p1 + p2 + p3) * (p1 + p2 + p3) / 9;
+  float var = E2 - E_2;
 
   // top eigen is [-0.1830,-0.9244,0.2782,0,0.1855]
   // which has a projection variance of 19.5
@@ -310,8 +308,8 @@ TEST(emt_tests, test_emt_router_eigen)
 
   EXPECT_NEAR(weights[0].second, -0.0905, .001);
   EXPECT_NEAR(weights[1].second, -0.9177, .001);
-  EXPECT_NEAR(weights[2].second,  0.3218, .001);
-  EXPECT_NEAR(weights[3].second,  0.2145, .001);
+  EXPECT_NEAR(weights[2].second, 0.3218, .001);
+  EXPECT_NEAR(weights[3].second, 0.2145, .001);
   EXPECT_GE(var, 19.3);
 }
 

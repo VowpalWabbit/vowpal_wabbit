@@ -78,9 +78,7 @@ emt_lru::K emt_lru::bound(emt_lru::K item)
   {
     V item_list_reference = (*item_map_reference).second;
     if (item_list_reference != list.begin())
-    {
-      list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference));
-    }
+    { list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference)); }
   }
 
   if (list.size() > max_size)
@@ -90,7 +88,10 @@ emt_lru::K emt_lru::bound(emt_lru::K item)
     map.erase(last_value);
     return last_value;
   }
-  else { return nullptr; }
+  else
+  {
+    return nullptr;
+  }
 }
 
 emt_node::emt_node()
@@ -140,16 +141,18 @@ public:
 float emt_median(std::vector<float>& array)
 {
   int size = array.size();
-  auto nth = array.begin() + size / 2; 
+  auto nth = array.begin() + size / 2;
 
-  if (size % 2 == 0) {
-    std::nth_element(array.begin(), nth  , array.end());
+  if (size % 2 == 0)
+  {
+    std::nth_element(array.begin(), nth, array.end());
     auto v1 = (*nth);
-    std::nth_element(array.begin(), nth-1, array.end());
-    auto v2 = *(nth-1);
-    return (v1+v2)/2.;
+    std::nth_element(array.begin(), nth - 1, array.end());
+    auto v2 = *(nth - 1);
+    return (v1 + v2) / 2.;
   }
-  else {
+  else
+  {
     std::nth_element(array.begin(), nth, array.end());
     return *nth;
   }
@@ -184,22 +187,19 @@ float emt_norm(const emt_feats& xs)
   return std::sqrt(sum_weights_sq);
 }
 
-void emt_scale(emt_feats &xs, float scalar)
+void emt_scale(emt_feats& xs, float scalar)
 {
-  for (auto &x : xs)
-  {
-    x.second *= scalar;
-  }
+  for (auto& x : xs) { x.second *= scalar; }
 }
 
-void emt_normalize(emt_feats &xs) { emt_scale(xs, 1 / emt_norm(xs)); }
+void emt_normalize(emt_feats& xs) { emt_scale(xs, 1 / emt_norm(xs)); }
 
 void emt_abs(emt_feats& fs)
 {
   for (auto& f : fs) { f.second = std::abs(f.second); }
 }
 
-emt_feats emt_scale_add(float s1, const emt_feats& f1, float s2, const emt_feats &f2)
+emt_feats emt_scale_add(float s1, const emt_feats& f1, float s2, const emt_feats& f2)
 {
   size_t idx1 = 0;
   size_t idx2 = 0;
@@ -300,10 +300,11 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
 
 emt_feats emt_router(std::vector<emt_feats> exs, emt_router_type router_type, VW::rand_state& rng)
 {
-  if (router_type == emt_router_type::random) {
-    return emt_router_random(exs, rng);
+  if (router_type == emt_router_type::random) { return emt_router_random(exs, rng); }
+  else
+  {
+    return emt_router_eigen(exs, rng);
   }
-  else { return emt_router_eigen(exs, rng); }
 }
 
 ////////////////////////////end of helper/////////////////////////
@@ -359,7 +360,10 @@ float scorer_initial(const VW::example& ex) { return 1 - std::exp(-std::sqrt(ex.
 void scorer_features(const emt_feats& f1, features& out)
 {
   out.clear();
-  for (auto p : f1) { if (p.second != 0) {out.push_back(p.second, p.first); } }
+  for (auto p : f1)
+  {
+    if (p.second != 0) { out.push_back(p.second, p.first); }
+  }
 }
 
 void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
@@ -434,9 +438,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 float scorer_predict(emt_tree& b, single_learner& base, const emt_example& pred_ex, const emt_example& leaf_ex)
 {
   if (b.scorer_type == emt_scorer_type::random)  // random scorer
-  {
-    return b._random_state->get_and_update_random();
-  }
+  { return b._random_state->get_and_update_random(); }
 
   else if (b.scorer_type == emt_scorer_type::distance)  // dist scorer
   {
@@ -565,17 +567,20 @@ void node_split(emt_tree& b, emt_node& cn)
   cn.router_weights = emt_router(exs, b.router_type, *b._random_state);
 
   std::vector<float> projs;
-  for (auto& ex :exs) { projs.push_back(emt_inner(ex, cn.router_weights)); }
+  for (auto& ex : exs) { projs.push_back(emt_inner(ex, cn.router_weights)); }
 
   cn.router_decision = emt_median(projs);
 
-  for (auto & ex: cn.examples) { node_route(cn, *ex)->examples.push_back(std::move(ex)); }
+  for (auto& ex : cn.examples) { node_route(cn, *ex)->examples.push_back(std::move(ex)); }
   cn.examples.clear();
 }
 
 void node_insert(emt_tree& b, emt_node& cn, std::unique_ptr<emt_example> ex)
 {
-  for (auto& cn_ex: cn.examples) { if (cn_ex->full == ex->full) { return; } }
+  for (auto& cn_ex : cn.examples)
+  {
+    if (cn_ex->full == ex->full) { return; }
+  }
   cn.examples.push_back(std::move(ex));
 }
 
@@ -656,10 +661,10 @@ void save_load_examples(emt_tree& b, emt_node& n, io_buf& model_file, bool& read
 
   for (auto& e : n.examples)
   {
-    for (auto& p : e->base) {
+    for (auto& p : e->base)
+    {
       WRITEIT(p.first, "base_index");
       WRITEIT(p.second, "base_value");
-
     }
     for (auto& p : e->full)
     {
@@ -673,13 +678,15 @@ void save_load_weights(emt_node& n, io_buf& model_file, bool& read, bool& text, 
 {
   uint32_t router_dims = 0;
 
-  for (auto& p : n.router_weights) {
+  for (auto& p : n.router_weights)
+  {
     WRITEIT(p.first, "router_index");
     WRITEIT(p.second, "router_value");
   }
 }
 
-std::unique_ptr<emt_node> save_load_node(emt_tree& b, std::unique_ptr<emt_node> n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+std::unique_ptr<emt_node> save_load_node(
+    emt_tree& b, std::unique_ptr<emt_node> n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
   WRITEITVAR(!read && !n, "is_null", is_null);
 
@@ -753,9 +760,10 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
                .help("Indicates the maximum number of memories a leaf can have."))
       .add(make_option("scorer", scorer_type)
                .keep()
-               .one_of({1,2,3,4})
+               .one_of({1, 2, 3, 4})
                .default_value(3)
-               .help("Indicates the type of scorer to use (1=random,2=distance,3=self consistent rank,4=not self consistent rank)"))
+               .help("Indicates the type of scorer to use (1=random,2=distance,3=self consistent rank,4=not self "
+                     "consistent rank)"))
       .add(make_option("router", router_type)
                .keep()
                .one_of({1, 2})

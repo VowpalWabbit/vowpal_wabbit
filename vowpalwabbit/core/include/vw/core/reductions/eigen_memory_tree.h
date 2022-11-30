@@ -6,8 +6,8 @@
 #include "vw/core/example.h"
 
 #include <list>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
 namespace VW
 {
@@ -17,7 +17,6 @@ VW::LEARNER::base_learner* eigen_memory_tree_setup(VW::setup_base_i& stack_build
 
 namespace eigen_memory_tree
 {
-
 using emt_feats = std::vector<std::pair<int, float>>;
 
 enum class emt_scorer_type
@@ -98,7 +97,7 @@ struct emt_tree
 
   std::unique_ptr<VW::example> ex;  // we create one of these which we re-use so we don't have to reallocate examples
 
-  long begin; // for timing performance
+  long begin;  // for timing performance
 
   std::unique_ptr<emt_node> root;
   emt_lru* bounder;
@@ -106,6 +105,6 @@ struct emt_tree
   emt_tree();
 };
 
-}  // namespace eigen_memory
+}  // namespace eigen_memory_tree
 }  // namespace reductions
 }  // namespace VW
