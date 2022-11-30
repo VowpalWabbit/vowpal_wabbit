@@ -14,7 +14,7 @@ namespace VW
 {
 namespace cb_explore_adf
 {
-inline bool cpu_supports_avx2() { return __builtin_cpu_supports("avx2"); }
+inline bool cpu_supports_avx2() { return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma"); }
 
 inline bool cpu_supports_avx512()
 {

@@ -136,7 +136,10 @@ one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t se
   if (use_explicit_simd)
   {
     if (cpu_supports_avx512()) { _use_simd = simd_type::AVX512; }
-    else if (cpu_supports_avx2()) { _use_simd = simd_type::AVX2; }
+    else if (cpu_supports_avx2())
+    {
+      _use_simd = simd_type::AVX2;
+    }
   }
 #endif
 }

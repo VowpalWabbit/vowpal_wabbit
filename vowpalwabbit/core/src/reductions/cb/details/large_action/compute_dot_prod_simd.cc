@@ -16,7 +16,7 @@ namespace cb_explore_adf
 {
 namespace
 {
-// Alternative implementations in case some intrinsics are missing. 
+// Alternative implementations in case some intrinsics are missing.
 
 // https://arxiv.org/pdf/1611.07612.pdf
 inline __m256i popcount64(const __m256i& v)

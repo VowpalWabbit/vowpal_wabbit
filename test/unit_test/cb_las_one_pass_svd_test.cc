@@ -181,9 +181,7 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
 {
   float (*compute_dot_prod_simd)(uint64_t, VW::workspace*, uint64_t, VW::example*);
   if (VW::cb_explore_adf::cpu_supports_avx512())
-  {
-    compute_dot_prod_simd = VW::cb_explore_adf::compute_dot_prod_avx512;
-  }
+  { compute_dot_prod_simd = VW::cb_explore_adf::compute_dot_prod_avx512; }
   else if (VW::cb_explore_adf::cpu_supports_avx2())
   {
     compute_dot_prod_simd = VW::cb_explore_adf::compute_dot_prod_avx2;
@@ -296,9 +294,7 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
   const int num_actions = 30;
   std::vector<std::string> examples;
   for (int i = 0; i < num_actions; ++i)
-  {
-    examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30));
-  }
+  { examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30)); }
 
   {
     // No interactions
