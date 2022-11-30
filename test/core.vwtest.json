@@ -5445,10 +5445,10 @@
   },
   {
     "id": 422,
-    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default block_size",
+    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default target_rate of 1",
     "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval",
     "diff_files": {
-      "stderr": "train-sets/ref/explore_eval_block_size_1.stderr"
+      "stderr": "train-sets/ref/explore_eval_tr_1.stderr"
     },
     "input_files": [
       "train-sets/explore_eval_egreedy.dat"
@@ -5456,10 +5456,10 @@
   },
   {
     "id": 423,
-    "desc": "explore_eval evaluate same policy as logged policy, with block_size > 1 there should be at most ((#examples / block_size) + 1) updates",
-    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --block_size 5",
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --target_rate 0.2",
     "diff_files": {
-      "stderr": "train-sets/ref/explore_eval_block_size_5.stderr"
+      "stderr": "train-sets/ref/explore_eval_tr_0.2.stderr"
     },
     "input_files": [
       "train-sets/explore_eval_egreedy.dat"
@@ -5467,13 +5467,24 @@
   },
   {
     "id": 424,
-    "desc": "creating model to be tested with -q :: and --invert_hash and hexfloat",
-    "vw_command": "-d train-sets/ccb_test_interactions.dat --ccb_explore_adf -q :: -f models/288.model --invert_hash ccb_quad.inv --hexfloat_weights",
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --squarecb -q UA --explore_eval --target_rate 0.2",
     "diff_files": {
-      "ccb_quad.inv": "pred-sets/ref/ccb_quad_hexfloat.inv"
+      "stderr": "train-sets/ref/explore_eval_sqcb.stderr"
     },
     "input_files": [
-      "train-sets/ccb_test_interactions.dat"
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 425,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --large_action_space --max_actions 5 -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_las.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
     ]
   }
 ]

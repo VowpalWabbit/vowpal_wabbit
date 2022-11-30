@@ -68,6 +68,25 @@ def create_test_dir(
         shutil.copy(str(file_to_copy), str(test_dest_file))
 
 
+def try_get_workspace_or_none(
+    cli: str,
+    quiet: bool,
+    color_enum: Type[Union[Color, NoColor]] = Color,
+    skip_missing_args: bool = False,
+):
+    try:
+        vw = vowpalwabbit.Workspace(cli, quiet=quiet)
+        return vw
+    except RuntimeError as e:
+        if skip_missing_args:
+            if "unrecognised option" in str(e):
+                print(
+                    f"{color_enum.LIGHT_PURPLE}Skipping this test as there are new cli arguments present{color_enum.ENDC}"
+                )
+                return None
+        raise e
+
+
 def generate_model_and_weights(
     test_id: int,
     command: str,
@@ -76,19 +95,14 @@ def generate_model_and_weights(
     skip_missing_args: bool = False,
 ) -> None:
     print(f"{color_enum.LIGHT_CYAN}id: {test_id}, command: {command}{color_enum.ENDC}")
-    if skip_missing_args:
-        try:
-            vw = vowpalwabbit.Workspace(command, quiet=True)
-        except RuntimeError as e:
-            if "unrecognised option" in str(e):
-                print(
-                    f"{color_enum.LIGHT_PURPLE}Skipping this test as there are new cli arguments present{color_enum.ENDC}"
-                )
-                return
-            else:
-                raise e
-    else:
-        vw = vowpalwabbit.Workspace(command, quiet=True)
+    vw = try_get_workspace_or_none(
+        cli=command,
+        quiet=True,
+        color_enum=color_enum,
+        skip_missing_args=skip_missing_args,
+    )
+    if vw is None:
+        return
     weights_dir = working_dir / "test_weights"
     weights_dir.mkdir(parents=True, exist_ok=True)
     with open(weights_dir / f"weights_{test_id}.json", "w") as weights_file:
@@ -96,7 +110,7 @@ def generate_model_and_weights(
             weights_file.write(vw.json_weights())
         except:
             print(
-                f"{color_enum.LIGHT_PURPLE}Weights could not be generated as base learner is KSVM"
+                f"{color_enum.LIGHT_PURPLE}Weights could not be generated as base learner is KSVM{color_enum.ENDC}"
             )
     test_models_dir = working_dir / "test_models"
     test_models_dir.mkdir(parents=True, exist_ok=True)
@@ -112,6 +126,11 @@ def load_model(
     skip_missing_args: bool = False,
 ) -> None:
     model_file = str(working_dir / "test_models" / f"model_{test_id}.vw")
+    if not os.path.isfile(model_file):
+        print(
+            f"{color_enum.LIGHT_CYAN}Model file [{model_file}] is not present, skipping this test{color_enum.ENDC}"
+        )
+        return
     load_command = f" -i {model_file}"
 
     # Some options must be manually kept when loading a model
@@ -142,12 +161,19 @@ def load_model(
     )
 
     try:
-        vw = vowpalwabbit.Workspace(load_command, quiet=True)
+        vw = try_get_workspace_or_none(
+            cli=load_command,
+            quiet=True,
+            color_enum=color_enum,
+            skip_missing_args=skip_missing_args,
+        )
+        if vw is None:
+            return
         try:
             new_weights = json.loads(vw.json_weights())
         except:
             print(
-                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is KSVM"
+                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is KSVM{color_enum.ENDC}"
             )
             return
         weights_dir = working_dir / "test_weights"
@@ -157,13 +183,6 @@ def load_model(
         assert new_weights == old_weights
         vw.finish()
     except Exception as e:
-        if skip_missing_args:
-            if "unrecognised option" in str(e):
-                print(
-                    f"{color_enum.LIGHT_PURPLE}Skipping this test as there are new cli arguments present{color_enum.ENDC}"
-                )
-                return
-
         print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
         raise e
 
@@ -172,6 +191,8 @@ def get_tests(
     model_working_dir: Path,
     working_dir: Path,
     explicit_tests: Optional[List[int]] = None,
+    color_enum: Type[Union[Color, NoColor]] = Color,
+    skip_missing_args: bool = False,
 ) -> List[TestData]:
     test_ref_dir: Path = Path(__file__).resolve().parent
 
@@ -217,7 +238,14 @@ def get_tests(
             )
             # Check experimental and loadable reductions
             os.chdir(model_working_dir.parent)
-            vw = vowpalwabbit.Workspace(test.command_line, quiet=True)
+            vw = try_get_workspace_or_none(
+                test.command_line,
+                quiet=True,
+                color_enum=color_enum,
+                skip_missing_args=skip_missing_args,
+            )
+            if vw is None:
+                continue
             skip_cmd = False
             for groups in vw.get_config().values():
                 for group in groups:
@@ -346,15 +374,21 @@ def main():
     else:
         temp_working_dir.mkdir(parents=True, exist_ok=True)
         test_output_dir.mkdir(parents=True, exist_ok=True)
-        tests = get_tests(test_output_dir, temp_working_dir, args.test)
+        tests = get_tests(
+            test_output_dir,
+            temp_working_dir,
+            args.test,
+            color_enum,
+            args.skip_missing_args,
+        )
 
         if args.generate_models:
-            generate_all(tests, test_output_dir, color_enum)
+            generate_all(tests, test_output_dir, color_enum, args.skip_missing_args)
         elif args.load_models:
-            load_all(tests, test_output_dir, color_enum)
+            load_all(tests, test_output_dir, color_enum, args.skip_missing_args)
         elif args.generate_and_load:
-            generate_all(tests, test_output_dir, color_enum)
-            load_all(tests, test_output_dir, color_enum)
+            generate_all(tests, test_output_dir, color_enum, args.skip_missing_args)
+            load_all(tests, test_output_dir, color_enum, args.skip_missing_args)
         else:
             print(
                 f"{color_enum.LIGHT_GREEN}Specify a run option, use --help for more info {color_enum.ENDC}"
