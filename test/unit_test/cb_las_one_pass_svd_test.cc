@@ -280,9 +280,12 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
     }
     return s;
   };
-  const std::vector<std::string> examples = {generate_example(/*num_namespaces=*/2, /*num_features=*/5),
-      generate_example(/*num_namespaces=*/1, /*num_features=*/10),
-      generate_example(/*num_namespaces=*/3, /*num_features=*/20)};
+  const int num_actions = 30;
+  std::vector<std::string> examples;
+  for (int i = 0; i < num_actions; ++i)
+  {
+    examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30));
+  }
 
   {
     // No interactions
@@ -318,7 +321,7 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
     vw_scalar->predict(ex_scalar);
     auto& scores_scalar = ex_scalar[0]->pred.a_s;
 
-    auto* vw_simd = VW::initialize("--cb_explore_adf --large_action_space --quiet --explicit_simd");
+    auto* vw_simd = VW::initialize("--cb_explore_adf --large_action_space --quiet -q :: --explicit_simd");
     VW::multi_ex ex_simd;
     for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
     vw_simd->predict(ex_simd);
