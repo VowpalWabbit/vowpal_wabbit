@@ -9,6 +9,9 @@
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system}; in
       let
+        # Note: this compile_commands.json does not work with clangd because it
+        # uses the nix clang-wrapper which abstracts enough away so that clangd
+        # can no longer find the right includes.
         generate-compile-commands = ''
           echo -n "Generating compile_commands.json... "
           rm -rf $TMPDIR/compile_commands_build
