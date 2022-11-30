@@ -8,6 +8,7 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_PRIME
 #include "vw/core/learner.h"
+#include "vw/core/multi_model_utils.h"
 #include "vw/core/vw_math.h"
 
 #include <boost/test/test_tools.hpp>
@@ -97,7 +98,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   ARE_SAME(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // all weights of offset 1 will be set to zero
-  weights.clear_offset(offset_to_clear, all.wpp);
+  VW::reductions::multi_model::clear_offset(weights, offset_to_clear, all.wpp);
 
   for (auto index : feature_indexes)
   {

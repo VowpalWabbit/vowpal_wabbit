@@ -8,6 +8,7 @@
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/confidence_sequence.h"
+#include "vw/core/multi_model_utils.h"
 
 // TODO: delete this three includes
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -106,11 +107,8 @@ void pre_save_load(VW::workspace& all, automl<CMType>& data)
   std::swap(*data.cm->_cb_adf_event_sum, data.cm->per_live_model_state_uint64[0]);
   std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
 
-  // Clear all non-champ weights
-  clear_non_champ_weights(data.cm->weights, data.cm->estimators.size(), data.cm->wpp);
-
   // Adjust champ weights to new single-model space
-  data.cm->weights.adjust_weights_single_model(data.cm->wpp, 0);
+  VW::reductions::multi_model::adjust_weights_single_model(data.cm->weights, 0, data.cm->wpp);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
