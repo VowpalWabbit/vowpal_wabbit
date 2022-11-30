@@ -141,25 +141,38 @@ void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
     }
   }
 }
+
+struct options_lrqfa_v1
+{
+  std::string lrqfa;
+};
+
+std::unique_ptr<options_lrqfa_v1> get__options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto lrqfa_opts = VW::make_unique<options_lrqfa_v1>();
+  option_group_definition new_options("[Reduction] Low Rank Quadratics FA");
+  new_options.add(
+      make_option("lrqfa", lrqfa_opts->lrqfa).keep().necessary().help("Use low rank quadratic features with field aware weights"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return lrqfa_opts;
+}
+
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  std::string lrqfa;
-  option_group_definition new_options("[Reduction] Low Rank Quadratics FA");
-  new_options.add(
-      make_option("lrqfa", lrqfa).keep().necessary().help("Use low rank quadratic features with field aware weights"));
-
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  auto lrqfa_opts = get__options_instance(all, all.logger, *stack_builder.get_options());
+  if (lrqfa_opts == nullptr) { return nullptr; }
 
   auto lrq = VW::make_unique<lrqfa_state>();
   lrq->all = &all;
 
-  if (lrqfa.find(':') != std::string::npos) { THROW("--lrqfa does not support wildcards ':'"); }
+  if (lrqfa_opts->lrqfa.find(':') != std::string::npos) { THROW("--lrqfa does not support wildcards ':'"); }
 
-  std::string lrqopt = VW::decode_inline_hex(lrqfa, all.logger);
+  std::string lrqopt = VW::decode_inline_hex(lrqfa_opts->lrqfa, all.logger);
   size_t last_index = lrqopt.find_last_not_of("0123456789");
   new (&lrq->field_name) std::string(lrqopt.substr(0, last_index + 1));  // make sure there is no duplicates
   lrq->k = atoi(lrqopt.substr(last_index + 1).c_str());

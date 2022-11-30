@@ -86,6 +86,25 @@ void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::exampl
   if (status.get_error_code() != VW::experimental::error_code::success)
   { VW_DBG(ec) << status.get_error_msg() << std::endl; }
 }
+
+struct options_get_pmf_v1
+{
+  bool invoked = false;
+};
+
+std::unique_ptr<options_get_pmf_v1> get_get_pmf_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto get_pmf_opts = VW::make_unique<options_get_pmf_v1>();
+  option_group_definition new_options("[Reduction] Continuous Actions: Convert to Pmf");
+  new_options.add(
+      make_option("get_pmf", get_pmf_opts->invoked).keep().necessary().help("Convert a single multiclass prediction to a pmf"));
+
+  // If reduction was not invoked, don't add anything
+  // to the reduction stack;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return get_pmf_opts;
+}
 }  // namespace
 
 // END sample_pdf reduction and reduction methods
@@ -94,22 +113,15 @@ void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::exampl
 // Setup reduction in stack
 VW::LEARNER::base_learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
-  option_group_definition new_options("[Reduction] Continuous Actions: Convert to Pmf");
-  bool invoked = false;
-  float epsilon = 0.0f;
-  new_options.add(
-      make_option("get_pmf", invoked).keep().necessary().help("Convert a single multiclass prediction to a pmf"));
-
-  // If reduction was not invoked, don't add anything
-  // to the reduction stack;
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto get_pmf_opts = get_get_pmf_options_instance(all, all.logger, *stack_builder.get_options());
+  if (get_pmf_opts == nullptr) { return nullptr; }
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
-  auto p_reduction = VW::make_unique<get_pmf>();
-  p_reduction->init(as_singleline(p_base), epsilon);
+  auto get_pmf_data = VW::make_unique<get_pmf>();
+  get_pmf_data->init(as_singleline(p_base), 0.0f);
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto* l = make_reduction_learner(std::move(get_pmf_data), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
                 .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .build();

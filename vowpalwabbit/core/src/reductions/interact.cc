@@ -150,35 +150,47 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::examp
   f1 = in.feat_store;
   ec.num_features = in.num_features;
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::interact_setup(VW::setup_base_i& stack_builder)
+struct options_interact_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string s;
+};
+
+std::unique_ptr<options_interact_v1> get_interact_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto interact_opts = VW::make_unique<options_interact_v1>();
   option_group_definition new_options("[Reduction] Interact via Elementwise Multiplication");
-  new_options.add(make_option("interact", s)
+  new_options.add(make_option("interact", interact_opts->s)
                       .keep()
                       .necessary()
                       .help("Put weights on feature products from namespaces <n1> and <n2>"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return interact_opts;
+}
+}  // namespace
 
-  if (s.length() != 2)
+VW::LEARNER::base_learner* VW::reductions::interact_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto interact_opts = get_interact_options_instance(all, all.logger, *stack_builder.get_options());
+  if (interact_opts == nullptr) { return nullptr; }
+
+  if (interact_opts->s.length() != 2)
   {
-    all.logger.err_error("Need two namespace arguments to interact: {} won't do EXITING", s);
+    all.logger.err_error("Need two namespace arguments to interact: {} won't do EXITING", interact_opts->s);
     return nullptr;
   }
 
-  auto data = VW::make_unique<interact>();
+  auto interact_data = VW::make_unique<interact>();
 
-  data->n1 = static_cast<unsigned char>(s[0]);
-  data->n2 = static_cast<unsigned char>(s[1]);
-  all.logger.err_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
-  data->all = &all;
+  interact_data->n1 = static_cast<unsigned char>(interact_opts->s[0]);
+  interact_data->n2 = static_cast<unsigned char>(interact_opts->s[1]);
+  all.logger.err_info("Interacting namespaces {0:c} and {1:c}", interact_data->n1, interact_data->n2);
+  interact_data->all = &all;
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+  auto* l = make_reduction_learner(std::move(interact_data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true, true>, predict_or_learn<false, true>, stack_builder.get_setupfn_name(interact_setup))
                 .build();
   return make_base(*l);

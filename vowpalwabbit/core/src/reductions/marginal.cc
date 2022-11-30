@@ -388,13 +388,9 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     }
   }
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
+struct options_marginal_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace* all = stack_builder.get_all_pointer();
-
   std::string marginal;
   float initial_denominator;
   float initial_numerator;
@@ -402,27 +398,42 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
   bool update_before_learn = false;
   bool unweighted_marginals = false;
   float decay;
+};
+
+std::unique_ptr<options_marginal_v1> get_marginal_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto marginal_opts = VW::make_unique<options_marginal_v1>();
   option_group_definition marginal_options("[Reduction] Marginal");
   marginal_options
-      .add(make_option("marginal", marginal).keep().necessary().help("Substitute marginal label estimates for ids"))
-      .add(make_option("initial_denominator", initial_denominator).default_value(1.f).help("Initial denominator"))
-      .add(make_option("initial_numerator", initial_numerator).default_value(0.5f).help("Initial numerator"))
-      .add(make_option("compete", compete).help("Enable competition with marginal features"))
-      .add(make_option("update_before_learn", update_before_learn).help("Update marginal values before learning"))
-      .add(make_option("unweighted_marginals", unweighted_marginals)
+      .add(make_option("marginal", marginal_opts->marginal).keep().necessary().help("Substitute marginal label estimates for ids"))
+      .add(make_option("initial_denominator", marginal_opts->initial_denominator).default_value(1.f).help("Initial denominator"))
+      .add(make_option("initial_numerator", marginal_opts->initial_numerator).default_value(0.5f).help("Initial numerator"))
+      .add(make_option("compete", marginal_opts->compete).help("Enable competition with marginal features"))
+      .add(make_option("update_before_learn", marginal_opts->update_before_learn).help("Update marginal values before learning"))
+      .add(make_option("unweighted_marginals", marginal_opts->unweighted_marginals)
                .help("Ignore importance weights when computing marginals"))
-      .add(make_option("decay", decay).default_value(0.f).help("Decay multiplier per event (1e-3 for example)"));
+      .add(make_option("decay", marginal_opts->decay).default_value(0.f).help("Decay multiplier per event (1e-3 for example)"));
 
   if (!options.add_parse_and_check_necessary(marginal_options)) { return nullptr; }
+  return marginal_opts;
+}
+}  // namespace
 
-  auto d = VW::make_unique<::data>(
-      initial_numerator, initial_denominator, decay, update_before_learn, unweighted_marginals, compete, all);
+VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto marginal_opts = get_marginal_options_instance(all, all.logger, *stack_builder.get_options());
+  if (marginal_opts == nullptr) { return nullptr; }
 
-  marginal = VW::decode_inline_hex(marginal, all->logger);
-  if (marginal.find(':') != std::string::npos) { THROW("Cannot use wildcard with marginal.") }
-  for (const auto ns : marginal) { d->id_features[static_cast<unsigned char>(ns)] = true; }
+  auto marginal_data = VW::make_unique<::data>(
+      marginal_opts->initial_numerator, marginal_opts->initial_denominator, marginal_opts->decay, marginal_opts->update_before_learn, marginal_opts->unweighted_marginals, marginal_opts->compete, &all);
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
+  marginal_opts->marginal = VW::decode_inline_hex(marginal_opts->marginal, all.logger);
+  if (marginal_opts->marginal.find(':') != std::string::npos) { THROW("Cannot use wildcard with marginal.") }
+  for (const auto ns : marginal_opts->marginal) { marginal_data->id_features[static_cast<unsigned char>(ns)] = true; }
+
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(marginal_data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
                 .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)

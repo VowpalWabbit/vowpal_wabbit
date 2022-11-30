@@ -430,34 +430,51 @@ void save_load_tree(log_multi& b, io_buf& model_file, bool read, bool text)
     }
   }
 }
-}  // namespace
 
-base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
+struct options_log_multi_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
+  uint32_t k;
+  bool progress;
+  uint32_t swap_resist;
+};
 
-  auto data = VW::make_unique<log_multi>();
+std::unique_ptr<options_log_multi_v1> get_log_multi_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto log_multi_opts = VW::make_unique<options_log_multi_v1>();
   option_group_definition new_options("[Reduction] Logarithmic Time Multiclass Tree");
-  new_options.add(make_option("log_multi", data->k).keep().necessary().help("Use online tree for multiclass"))
-      .add(make_option("no_progress", data->progress).help("Disable progressive validation"))
-      .add(make_option("swap_resistance", data->swap_resist)
+  new_options.add(make_option("log_multi", log_multi_opts->k).keep().necessary().help("Use online tree for multiclass"))
+      .add(make_option("no_progress", log_multi_opts->progress).help("Disable progressive validation"))
+      .add(make_option("swap_resistance", log_multi_opts->swap_resist)
                .default_value(4)
                .help("Higher = more resistance to swap, default=4"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return log_multi_opts;
+}
+}  // namespace
 
-  data->progress = !data->progress;
+base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto log_multi_opts = get_log_multi_options_instance(all, all.logger, *stack_builder.get_options());
+  if (log_multi_opts == nullptr) { return nullptr; }
+
+  auto log_multi_data = VW::make_unique<log_multi>();
+
+  log_multi_data->k = log_multi_opts->k;
+  log_multi_data->progress = !log_multi_opts->progress;
+  log_multi_data->swap_resist = log_multi_opts->swap_resist;
 
   std::string loss_function = "quantile";
   float loss_parameter = 0.5;
   all.loss = get_loss_function(all, loss_function, loss_parameter);
 
-  data->max_predictors = data->k - 1;
-  init_tree(*data.get());
+  log_multi_data->max_predictors = log_multi_data->k - 1;
+  init_tree(*log_multi_data.get());
 
-  size_t ws = data->max_predictors;
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+  size_t ws = log_multi_data->max_predictors;
+  auto* l = make_reduction_learner(std::move(log_multi_data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(log_multi_setup))
                 .set_params_per_weight(ws)
                 .set_finish_example(VW::details::finish_multiclass_example<log_multi&>)

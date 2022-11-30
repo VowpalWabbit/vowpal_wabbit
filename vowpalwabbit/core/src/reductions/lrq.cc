@@ -172,31 +172,45 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
     }
   }  // end for(max_iter)
 }
+
+struct options_lrq_v1
+{
+  std::vector<std::string> lrq_names;
+  bool dropout;
+};
+
+std::unique_ptr<options_lrq_v1> get__options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto lrq_opts = VW::make_unique<options_lrq_v1>();
+  option_group_definition new_options("[Reduction] Low Rank Quadratics");
+  new_options.add(make_option("lrq", lrq_opts->lrq_names).keep().necessary().help("Use low rank quadratic features"))
+      .add(make_option("lrqdropout", lrq_opts->dropout).keep().help("Use dropout training for low rank quadratic features"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return lrq_opts;
+}
 }  // namespace
 
 base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  auto lrq_opts = get__options_instance(all, all.logger, *stack_builder.get_options());
+  if (lrq_opts == nullptr) { return nullptr; }
   auto lrq = VW::make_unique<lrq_state>();
-  std::vector<std::string> lrq_names;
-  option_group_definition new_options("[Reduction] Low Rank Quadratics");
-  new_options.add(make_option("lrq", lrq_names).keep().necessary().help("Use low rank quadratic features"))
-      .add(make_option("lrqdropout", lrq->dropout).keep().help("Use dropout training for low rank quadratic features"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
+  lrq->dropout = lrq_opts->dropout;
   uint32_t maxk = 0;
   lrq->all = &all;
 
-  for (const auto& name : lrq_names)
+  for (const auto& name : lrq_opts->lrq_names)
   {
     if (name.find(':') != std::string::npos) { THROW("--lrq does not support wildcards ':'"); }
   }
 
-  for (auto& lrq_name : lrq_names) { lrq_name = VW::decode_inline_hex(lrq_name, all.logger); }
+  for (auto& lrq_name : lrq_opts->lrq_names) { lrq_name = VW::decode_inline_hex(lrq_name, all.logger); }
 
-  new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
+  new (&lrq->lrpairs) std::set<std::string>(lrq_opts->lrq_names.begin(), lrq_opts->lrq_names.end());
 
   lrq->initial_seed = lrq->seed = all.random_seed | 8675309;
 

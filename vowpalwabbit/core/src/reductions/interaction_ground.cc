@@ -77,15 +77,18 @@ void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     base.predict(ec_seq, 1);
   }
 }
-}  // namespace
 
-base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
+struct options_interaction_ground_v1
 {
-  options_i& options = *stack_builder.get_options();
   bool igl_option = false;
+};
 
+std::unique_ptr<options_interaction_ground_v1> get_interaction_ground_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto interaction_ground_opts = VW::make_unique<options_interaction_ground_v1>();
   option_group_definition new_options("[Reduction] Interaction Grounded Learning");
-  new_options.add(make_option("experimental_igl", igl_option)
+  new_options.add(make_option("experimental_igl", interaction_ground_opts->igl_option)
                       .keep()
                       .necessary()
                       .help("Do Interaction Grounding with multiline action dependent features")
@@ -93,16 +96,26 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  // number of weight vectors needed
-  size_t problem_multiplier = 2;  // One for reward and one for loss
-  auto ld = VW::make_unique<interaction_ground>();
-
   // Ensure cb_adf so we are reducing to something useful.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
+  return interaction_ground_opts;
+}
+}  // namespace
+
+base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto interaction_ground_opts = get_interaction_ground_options_instance(all, all.logger, *stack_builder.get_options());
+  if (interaction_ground_opts == nullptr) { return nullptr; }
+
+  // number of weight vectors needed
+  size_t problem_multiplier = 2;  // One for reward and one for loss
+  auto interaction_ground_data = VW::make_unique<interaction_ground>();
+
   auto* base = as_multiline(stack_builder.setup_base_learner());
   auto* l = make_reduction_learner(
-      std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
+      std::move(interaction_ground_data), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_input_label_type(label_type_t::CB)
                 .set_output_label_type(label_type_t::CB)
