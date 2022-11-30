@@ -114,8 +114,8 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   auto interaction_ground_data = VW::make_unique<interaction_ground>();
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
-  auto* l = make_reduction_learner(
-      std::move(interaction_ground_data), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
+  auto* l = make_reduction_learner(std::move(interaction_ground_data), base, learn, predict,
+      stack_builder.get_setupfn_name(interaction_ground_setup))
                 .set_params_per_weight(problem_multiplier)
                 .set_input_label_type(label_type_t::CB)
                 .set_output_label_type(label_type_t::CB)

@@ -179,13 +179,14 @@ struct options_lrq_v1
   bool dropout;
 };
 
-std::unique_ptr<options_lrq_v1> get__options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_lrq_v1> get__options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto lrq_opts = VW::make_unique<options_lrq_v1>();
   option_group_definition new_options("[Reduction] Low Rank Quadratics");
   new_options.add(make_option("lrq", lrq_opts->lrq_names).keep().necessary().help("Use low rank quadratic features"))
-      .add(make_option("lrqdropout", lrq_opts->dropout).keep().help("Use dropout training for low rank quadratic features"));
+      .add(make_option("lrqdropout", lrq_opts->dropout)
+               .keep()
+               .help("Use dropout training for low rank quadratic features"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return lrq_opts;

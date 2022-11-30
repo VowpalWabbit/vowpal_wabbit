@@ -147,13 +147,14 @@ struct options_lrqfa_v1
   std::string lrqfa;
 };
 
-std::unique_ptr<options_lrqfa_v1> get__options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_lrqfa_v1> get__options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto lrqfa_opts = VW::make_unique<options_lrqfa_v1>();
   option_group_definition new_options("[Reduction] Low Rank Quadratics FA");
-  new_options.add(
-      make_option("lrqfa", lrqfa_opts->lrqfa).keep().necessary().help("Use low rank quadratic features with field aware weights"));
+  new_options.add(make_option("lrqfa", lrqfa_opts->lrqfa)
+                      .keep()
+                      .necessary()
+                      .help("Use low rank quadratic features with field aware weights"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return lrqfa_opts;

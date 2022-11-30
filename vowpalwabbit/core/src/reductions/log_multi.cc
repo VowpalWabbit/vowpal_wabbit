@@ -474,8 +474,8 @@ base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  
   init_tree(*log_multi_data.get());
 
   size_t ws = log_multi_data->max_predictors;
-  auto* l = make_reduction_learner(std::move(log_multi_data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
-      stack_builder.get_setupfn_name(log_multi_setup))
+  auto* l = make_reduction_learner(std::move(log_multi_data), as_singleline(stack_builder.setup_base_learner()), learn,
+      predict, stack_builder.get_setupfn_name(log_multi_setup))
                 .set_params_per_weight(ws)
                 .set_finish_example(VW::details::finish_multiclass_example<log_multi&>)
                 .set_save_load(save_load_tree)
