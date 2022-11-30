@@ -23,7 +23,8 @@ inline void clear_offset(dense_parameters& weights, const size_t offset, const s
 {
   assert(offset < params_per_problem);
 
-  for (auto iterator_clear = weights.begin() + offset; iterator_clear < weights.end(); iterator_clear += params_per_problem)
+  for (auto iterator_clear = weights.begin() + offset; iterator_clear < weights.end();
+       iterator_clear += params_per_problem)
   {
     assert((iterator_clear.index_without_stride() & (params_per_problem - 1)) == offset);
     for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
@@ -55,6 +56,6 @@ inline void adjust_weights_single_model(dense_parameters& weights, const size_t 
     }
   }
 }
-}  // nmaespace multi_model
+}  // namespace multi_model
 }  // namespace reductions
 }  // namespace VW
