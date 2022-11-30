@@ -12,6 +12,11 @@
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
 
+// Eigen explicit vectorization may not work well with AVX2 when using smaller MAX_ALIGN_BYTES.
+// For more info:
+// https://eigen.tuxfamily.org/dox/TopicPreprocessorDirectives.html#TopicPreprocessorDirectivesPerformance
+#define EIGEN_MAX_ALIGN_BYTES 32
+
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <iostream>
