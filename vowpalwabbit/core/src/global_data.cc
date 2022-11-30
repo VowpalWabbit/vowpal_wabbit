@@ -462,6 +462,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   hash_inv = false;
   print_invert = false;
+  hexfloat_weights = false;
 
   // Set by the '--progress <arg>' option and affect sd->dump_interval
   progress_add = false;  // default is multiplicative progress dumps

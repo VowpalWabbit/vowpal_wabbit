@@ -1022,6 +1022,8 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
   }
   else
   {  // write binary or text
+    if (all.hexfloat_weights && (text || all.print_invert)) { msg << std::hexfloat; }
+
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
       i = v.index() >> weights.stride_shift();
