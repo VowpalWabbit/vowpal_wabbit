@@ -92,7 +92,7 @@
       let
         clang-tidy-diff-script = pkgs.writeShellScriptBin "vw-clang-tidy-diff" ''
           ${generate-compile-commands}
-          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path $TMPDIR/compile_commands_build -r '^.*\.(cc|h)\$' -quiet -use-color "$@" <&0
+          ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path $TMPDIR/compile_commands_build -quiet -use-color "$@" <&0
         '';
       in
       {
