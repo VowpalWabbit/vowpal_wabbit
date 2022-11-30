@@ -4,8 +4,8 @@
 
 #include "../automl_impl.h"
 #include "vw/core/interactions.h"
-#include "vw/core/vw.h"
 #include "vw/core/multi_model_utils.h"
+#include "vw/core/vw.h"
 
 namespace VW
 {
