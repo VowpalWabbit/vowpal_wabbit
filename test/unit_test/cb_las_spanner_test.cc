@@ -30,7 +30,8 @@ BOOST_AUTO_TEST_CASE(check_finding_max_volume)
       VW::cb_explore_adf::one_rank_spanner_state>
       largecb(
           /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits,
-          /*thread_pool_size*/ 0, /*block_size*/ 0, VW::cb_explore_adf::implementation_type::one_pass_svd);
+          /*thread_pool_size*/ 0, /*block_size*/ 0, /*use_explicit_simd=*/false,
+          VW::cb_explore_adf::implementation_type::one_pass_svd);
   largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
   Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
 
