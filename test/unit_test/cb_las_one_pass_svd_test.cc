@@ -283,9 +283,7 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
   const int num_actions = 30;
   std::vector<std::string> examples;
   for (int i = 0; i < num_actions; ++i)
-  {
-    examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30));
-  }
+  { examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30)); }
 
   {
     // No interactions
