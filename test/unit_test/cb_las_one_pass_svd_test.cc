@@ -24,19 +24,19 @@ BOOST_AUTO_TEST_SUITE(test_suite_las_one_pass_svd)
 BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
 {
   auto d = 3;
+  const std::string vw_cmd_common =
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet";
   std::vector<VW::workspace*> vws;
-
-  auto* vw_rs = VW::initialize(
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 1", nullptr,
-      false, nullptr, nullptr);
-
-  vws.push_back(vw_rs);
-
-  auto* vw_zs = VW::initialize(
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 0", nullptr,
-      false, nullptr, nullptr);
-
-  vws.push_back(vw_zs);
+  for (const int seed : {1, 0})
+  {
+    const auto vw_cmd = vw_cmd_common + " --random_seed " + std::to_string(seed);
+    for (const bool use_simd : {false, true})
+    {
+      const auto full_command = vw_cmd + (use_simd ? " --explicit_simd" : "");
+      auto* vw_ptr = VW::initialize(full_command, nullptr, false, nullptr, nullptr);
+      vws.push_back(vw_ptr);
+    }
+  }
 
   for (auto* vw_ptr : vws)
   {
@@ -85,19 +85,19 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
 BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 {
   auto d = 3;
+  const std::string vw_cmd_common =
+      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --noconstant";
   std::vector<VW::workspace*> vws;
-
-  auto* vw_rs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 3 --noconstant",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back(vw_rs);
-
-  auto* vw_zs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 0 --noconstant",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back(vw_zs);
+  for (int seed : {3, 0})
+  {
+    auto vw_cmd = vw_cmd_common + " --random_seed " + std::to_string(seed);
+    for (bool use_simd : {false, true})
+    {
+      auto full_command = vw_cmd + (use_simd ? " --explicit_simd" : "");
+      auto* vw_ptr = VW::initialize(full_command, nullptr, false, nullptr, nullptr);
+      vws.push_back(vw_ptr);
+    }
+  }
 
   for (auto* vw_ptr : vws)
   {
