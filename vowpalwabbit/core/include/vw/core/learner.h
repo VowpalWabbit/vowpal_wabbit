@@ -6,6 +6,7 @@
 
 #include "vw/core/multi_ex.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <iostream>
 #include <memory>
@@ -397,37 +398,22 @@ public:
       return;
     }
 
-    auto has_at_least_one_new_style_func = false;
     if (has_record_stats())
     {
-      if (is_multiline()) { record_stats(all, ec); }
-      else
-      {
-        record_stats(all, ec);
-      }
-      has_at_least_one_new_style_func = true;
+      record_stats(all, ec);
     }
 
     if (has_output_example())
     {
-      if (is_multiline()) { output_example(all, ec); }
-      else
-      {
-        output_example(all, ec);
-      }
-      has_at_least_one_new_style_func = true;
+      output_example(all, ec);
     }
 
     if (has_cleanup_example())
     {
-      if (is_multiline()) { cleanup_example(ec); }
-      else
-      {
-        cleanup_example(ec);
-      }
-      has_at_least_one_new_style_func = true;
+      cleanup_example(ec);
     }
 
+    const auto has_at_least_one_new_style_func = has_record_stats() || has_output_example() || has_cleanup_example();
     if (has_at_least_one_new_style_func)
     {
       VW::finish_example(all, ec);
@@ -806,17 +792,17 @@ public:
   }
 
   FluentBuilderT& set_output_example(
-      void (*fn_ptr)(const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&))
+      void (*fn_ptr)(VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&))
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.record_stats_f = (details::finish_example_data::output_example_fn)(fn_ptr);
+    learner_ptr->_finish_example_fd.output_example_f = (details::finish_example_data::output_example_fn)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_cleanup_example(void (*fn_ptr)(DataT&, ExampleT&))
+  FluentBuilderT& set_cleanup_example(void (*fn_ptr)(ExampleT&))
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.record_stats_f = (details::finish_example_data::cleanup_example_fn)(fn_ptr);
+    learner_ptr->_finish_example_fd.cleanup_example_f = (details::finish_example_data::cleanup_example_fn)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
@@ -973,6 +959,10 @@ public:
       : common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT, BaseLearnerT>(
             new learner<char, ExampleT>(*reinterpret_cast<learner<char, ExampleT>*>(base)), nullptr, name)
   {
+    // We explicitly overwrite the copy of the base's _finish_example_fd. This
+    // is to allow us to determine if the current reduction implements finish
+    // and in what way.
+    this->learner_ptr->_finish_example_fd = details::finish_example_data{};
     this->learner_ptr->_learn_fd.base = make_base(*base);
     this->learner_ptr->_sensitivity_fd.sensitivity_f =
         static_cast<details::sensitivity_data::fn>(details::recur_sensitivity);
@@ -1025,9 +1015,10 @@ public:
     this->learner_ptr->_finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
     this->learner_ptr->_sensitivity_fd.sensitivity_f =
         reinterpret_cast<details::sensitivity_data::fn>(details::noop_sensitivity_base);
-    this->learner_ptr->_finish_example_fd.data = this->learner_ptr->_learner_data.get();
-    this->learner_ptr->_finish_example_fd.finish_example_f =
-        reinterpret_cast<details::finish_example_data::fn>(VW::details::return_simple_example);
+
+    // TODO: consider removing this "default" and just making sure the learner itself does this.
+    this->set_output_example(VW::details::output_example_simple_label<DataT>);
+    this->set_record_stats(VW::details::record_stats_simple_label<DataT>);
 
     this->learner_ptr->_learn_fd.data = this->learner_ptr->_learner_data.get();
 
