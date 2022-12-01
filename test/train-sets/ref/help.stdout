@@ -158,6 +158,8 @@ Output Model Options:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
+    --hexfloat_weights                      Output hexfloat format for floats for human-readable final regressor.
+                                            Useful for debugging/comparing. (type: bool)
     --dump_json_weights_experimental arg    Output json representation of model parameters. (type: str, experimental)
     --dump_json_weights_include_feature_names_experimental
                                             Whether to include feature names in json output (type: bool,
@@ -255,8 +257,6 @@ Weight Options:
                                             experimental)
     --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
                                             bool, default: false, experimental)
-    --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
-                                            false, experimental)
     --aml_predict_only_model arg            transform input automl model into predict only automl model (type:
                                             str, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
@@ -565,8 +565,6 @@ Weight Options:
                                             experimental)
     --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
-    --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
-                                            false, experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
                                             (bonferroni correction) (type: bool, keep, experimental)
     --min_champ_examples arg                Minimum number of examples for any challenger to become champion
@@ -620,11 +618,9 @@ Weight Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=
                                             1 (type: float)
-    --block_size arg                        The examples will be processed in blocks of block_size. If an
-                                            example update is found in that block no other examples in the
-                                            block will be used to update the policy. If an example is not
-                                            used in the block then the quota rolls over and the next block
-                                            can update more than one examples (type: uint, default: 1)
+    --target_rate arg                       The target rate will be used to adjust the rejection rate in
+                                            order to achieve an update count of #examples * target_rate (type:
+                                            float)
 [Reduction] Follow the Regularized Leader - Coin Options:
     --coin                                  Coin betting optimizer (type: bool, keep, necessary)
     --ftrl_alpha arg                        Learning rate for FTRL optimization (type: float)

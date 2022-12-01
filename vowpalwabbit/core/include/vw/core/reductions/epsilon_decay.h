@@ -22,7 +22,7 @@ class epsilon_decay_data
 public:
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
       double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
-      bool constant_epsilon, uint32_t& wpp, bool lb_trick, uint64_t _min_champ_examples, float initial_epsilon,
+      bool constant_epsilon, uint32_t& wpp, uint64_t _min_champ_examples, float initial_epsilon,
       uint64_t shift_model_bounds);
   void update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
@@ -43,7 +43,6 @@ public:
   uint64_t _global_counter = 1;
   bool _constant_epsilon;
   uint32_t& _wpp;
-  bool _lb_trick;
   uint64_t _min_champ_examples;
   float _initial_epsilon;
   uint64_t _shift_model_bounds;
