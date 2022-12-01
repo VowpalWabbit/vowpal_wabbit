@@ -74,7 +74,7 @@ inline void compute8(const __m256& feature_values, const __m256i& feature_indice
   indices2 = _mm256_add_epi64(_mm256_and_si256(indices2, weights_masks), column_indices);
   __m256i popcounts2 = popcount64(indices2);
 
-  // popcounts always fit into 32 bits, so truncate and pack all 16 popcounts.
+  // popcounts always fit into 32 bits, so truncate and pack all 8 popcounts.
   __m256i popcounts = pack64to32(popcounts1, popcounts2);
   __m256i sparsity_indices = _mm256_slli_epi32(_mm256_and_si256(popcounts, all_ones), 1);
 

@@ -393,9 +393,7 @@ BOOST_AUTO_TEST_CASE(check_probabilities_when_d_is_larger)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -833,9 +831,7 @@ BOOST_AUTO_TEST_CASE(check_singular_value_sum_diff_for_diff_ranks_is_small)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
-    }
+    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
