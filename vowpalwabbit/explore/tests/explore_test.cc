@@ -284,7 +284,21 @@ TEST(explore_tests, enforce_minimum_probability_no_zeros)
 {
   std::vector<float> pdf = {0.9f, 0.1f, 0};
   EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, false, begin(pdf), end(pdf)));
-  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .2f, .0f}));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.7f, .3f, .0f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_all_zeros_and_dont_consider)
+{
+  std::vector<float> pdf = {0.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.0f, .0f, .0f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_all_zeros_and_consider)
+{
+  std::vector<float> pdf = {0.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.2f, .2f, .2f}));
 }
 
 TEST(explore_tests, enforce_minimum_probability_uniform)

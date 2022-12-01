@@ -168,17 +168,14 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
   for (auto it = pmf_first; it != pmf_last; ++it)
   {
     const auto value = *it;
-    if (consider_zero_valued_elements || value < minimum_probability) { n_changed += 1; }
+    if (value < minimum_probability && (consider_zero_valued_elements || value > 0)) { n_changed += 1; }
     else { p_unchanged += value; }
-    }
-    for (auto it = pmf_first; it != pmf_last; ++it)
-    {
-      const auto value = *it;
-      if (consider_zero_valued_elements || value > 0)
-      {
-        if (value < minimum_probability) { *it = minimum_probability; }
-        else { *it *= (1 - n_changed * minimum_probability) / p_unchanged; }
-      }
+  }
+  for (auto it = pmf_first; it != pmf_last; ++it)
+  {
+    const auto value = *it;
+    if (value < minimum_probability && (consider_zero_valued_elements || value > 0)) { *it = minimum_probability; }
+    else if (consider_zero_valued_elements || value > 0) { *it *= (1 - n_changed * minimum_probability) / p_unchanged; }
   }
 
   return S_EXPLORATION_OK;
