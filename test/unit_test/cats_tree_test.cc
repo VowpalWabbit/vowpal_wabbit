@@ -8,6 +8,7 @@
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/simple_label.h"
+#include "vw/io/logger.h"
 
 #include <boost/test/unit_test.hpp>
 
@@ -97,7 +98,7 @@ learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_re
       reduction_test_harness::predict,  // test_harness predict
       "test_learner", VW::prediction_type_t::SCALAR, VW::label_type_t::CB)
                           .set_output_example([](VW::workspace& all, shared_data& sd, const reduction_test_harness&,
-                                                  const VW::example&) {})
+                                                  const VW::example&, VW::io::logger&) {})
 
                           .build();  // Create a learner using the base reduction.
   return test_learner;

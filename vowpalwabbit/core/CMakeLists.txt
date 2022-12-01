@@ -382,7 +382,7 @@ endif()
 
 # Handle generated header
 configure_file(config.h.in ${CMAKE_CURRENT_BINARY_DIR}/include/vw/core/config.h)
-target_include_directories(vw_core PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/>)
+target_include_directories(vw_core PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include/> ${CMAKE_CURRENT_LIST_DIR}/../../ext_libs/)
 if(VW_INSTALL)
     install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
