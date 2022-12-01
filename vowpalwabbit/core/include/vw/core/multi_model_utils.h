@@ -28,9 +28,7 @@ inline void clear_offset(dense_parameters& weights, const size_t offset, const s
   {
     assert((iterator_clear.index_without_stride() & (params_per_problem - 1)) == offset);
     for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
-    {
-      *iterator_clear[stride_offset] = 0.0f;
-    }
+    { *iterator_clear[stride_offset] = 0.0f; }
   }
 }
 
@@ -43,7 +41,7 @@ inline void adjust_weights_single_model(dense_parameters& weights, const size_t 
   }
   for (auto weights_it = weights.begin() + offset; weights_it < weights.end(); weights_it += params_per_problem)
   {
-    if (weights_it.index() == 0) { continue; } // Index is same for 0
+    if (weights_it.index() == 0) { continue; }  // Index is same for 0
     uint32_t cb_ind = weights_it.index() / params_per_problem;
     for (uint64_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
     {
