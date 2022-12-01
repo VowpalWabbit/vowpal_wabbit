@@ -4,6 +4,9 @@
 #pragma once
 // This is the interface for a learning algorithm
 
+#include "vw/core/multi_ex.h"
+#include "vw/core/shared_data.h"
+
 #include <iostream>
 #include <memory>
 
@@ -26,11 +29,13 @@
 #include "vw/common/string_view.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
 #include "vw/core/memory.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/scope_exit.h"
+#include "vw/core/vw.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::LEARNER
@@ -125,10 +130,17 @@ class finish_example_data
 {
 public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
+  using record_stats_fn = void (*)(const VW::workspace&, shared_data& sd, const void* data, const void* ex);
+  using output_example_fn = void (*)(VW::workspace&, shared_data& sd, const void* data, const void* ex);
+  using cleanup_example_fn = void (*)(const void* data, const void* ex);
+
   void* data = nullptr;
   base_learner* base = nullptr;
   fn finish_example_f = nullptr;
   fn print_example_f = nullptr;
+  record_stats_fn record_stats_f = nullptr;
+  output_example_fn output_example_f = nullptr;
+  cleanup_example_fn cleanup_example_f = nullptr;
 };
 
 using merge_with_all_fn = void (*)(const std::vector<float>& per_model_weighting,
@@ -190,13 +202,22 @@ template <class T, class E>
 class learner
 {
   /// \private
-  void debug_log_message(example& ec, const std::string& msg)
+  void debug_log_message(const example& ec, const std::string& msg)
   {
     VW_DBG(ec) << "[" << _name << "." << msg << "]" << std::endl;
   }
 
+  // Used as a hook to intercept incorrect calls to the base learner.
+  void debug_log_message(const char& /* ec */, const std::string& msg)
+  {
+    auto message =
+        fmt::format("Learner: '{}', function: '{}' was called without first being cast to singleline or multiline.",
+            get_name(), msg);
+    THROW(message);
+  }
+
   /// \private
-  void debug_log_message(multi_ex& ec, const std::string& msg)
+  void debug_log_message(const multi_ex& ec, const std::string& msg)
   {
     VW_DBG(*ec[0]) << "[" << _name << "." << msg << "]" << std::endl;
   }
@@ -366,17 +387,99 @@ public:
   inline void NO_SANITIZE_UNDEFINED finish_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "finish_example");
-    _finish_example_fd.finish_example_f(all, _finish_example_fd.data, (void*)&ec);
+    // If the current learner implements finish - that takes priority.
+    // Else, we call the new style functions.
+    // Else, we forward to the base if a base exists.
+
+    if (has_legacy_finish())
+    {
+      _finish_example_fd.finish_example_f(all, _finish_example_fd.data, (void*)&ec);
+      return;
+    }
+
+    auto has_at_least_one_new_style_func = false;
+    if (has_record_stats())
+    {
+      if (is_multiline()) { record_stats(all, ec); }
+      else
+      {
+        record_stats(all, ec);
+      }
+      has_at_least_one_new_style_func = true;
+    }
+
+    if (has_output_example())
+    {
+      if (is_multiline()) { output_example(all, ec); }
+      else
+      {
+        output_example(all, ec);
+      }
+      has_at_least_one_new_style_func = true;
+    }
+
+    if (has_cleanup_example())
+    {
+      if (is_multiline()) { cleanup_example(ec); }
+      else
+      {
+        cleanup_example(ec);
+      }
+      has_at_least_one_new_style_func = true;
+    }
+
+    if (has_at_least_one_new_style_func)
+    {
+      VW::finish_example(all, ec);
+      return;
+    }
+
+    // Finish example used to utilize the copy forwarding semantics.
+    // Traverse until first hit to mimic this but with greater type safety.
+    auto* base = get_learn_base();
+    if (base != nullptr)
+    {
+      if (is_multiline() != base->is_multiline())
+      { THROW("Cannot forward finish_example call across multiline/singleline boundary."); }
+      if (base->is_multiline()) { as_multiline(base)->finish_example(all, (VW::multi_ex&)ec); }
+      else
+      {
+        as_singleline(base)->finish_example(all, (VW::example&)ec);
+      }
+    }
+    else
+    {
+      THROW("No finish functions were registered in the stack.");
+    }
   }
 
   inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)
   {
     debug_log_message(ec, "print_example");
-
-    if (_finish_example_fd.print_example_f == nullptr)
-      THROW("fatal: learner did not register print example fn: " + _name);
+    if (!has_legacy_print_example()) { THROW("fatal: learner did not register print example fn: " + _name); }
 
     _finish_example_fd.print_example_f(all, _finish_example_fd.data, (void*)&ec);
+  }
+
+  inline void NO_SANITIZE_UNDEFINED record_stats(VW::workspace& all, const E& ec)
+  {
+    debug_log_message(ec, "record_stats");
+    if (!has_record_stats()) { THROW("fatal: learner did not register record_stats fn: " + _name); }
+    _finish_example_fd.record_stats_f(all, *all.sd, _finish_example_fd.data, (void*)&ec);
+  }
+
+  inline void NO_SANITIZE_UNDEFINED output_example(VW::workspace& all, const E& ec)
+  {
+    debug_log_message(ec, "output_example");
+    if (!has_output_example()) { THROW("fatal: learner did not register output_example fn: " + _name); }
+    _finish_example_fd.output_example_f(all, *all.sd, _finish_example_fd.data, (void*)&ec);
+  }
+
+  inline void NO_SANITIZE_UNDEFINED cleanup_example(E& ec)
+  {
+    debug_log_message(ec, "cleanup_example");
+    if (!has_cleanup_example()) { THROW("fatal: learner did not register cleanup_example fn: " + _name); }
+    _finish_example_fd.cleanup_example_f(_finish_example_fd.data, (void*)&ec);
   }
 
   void get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
@@ -473,6 +576,11 @@ public:
     }
   }
 
+  VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_fd.finish_example_f != nullptr; }
+  VW_ATTR(nodiscard) bool has_legacy_print_example() const { return _finish_example_fd.print_example_f != nullptr; }
+  VW_ATTR(nodiscard) bool has_record_stats() const { return _finish_example_fd.record_stats_f != nullptr; }
+  VW_ATTR(nodiscard) bool has_output_example() const { return _finish_example_fd.output_example_f != nullptr; }
+  VW_ATTR(nodiscard) bool has_cleanup_example() const { return _finish_example_fd.cleanup_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_fn != nullptr) || (_merge_fn != nullptr); }
   VW_ATTR(nodiscard) bool has_add() const { return (_add_with_all_fn != nullptr) || (_add_fn != nullptr); }
   VW_ATTR(nodiscard) bool has_subtract() const
@@ -678,14 +786,37 @@ public:
   FluentBuilderT& set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&))
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.finish_example_f = (end_fptr_type)(fn_ptr);
+    learner_ptr->_finish_example_fd.finish_example_f = (details::finish_example_data::fn)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, const ExampleT&))
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.print_example_f = (end_fptr_type)(fn_ptr);
+    learner_ptr->_finish_example_fd.print_example_f = (details::finish_example_data::fn)(fn_ptr);
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_record_stats(
+      void (*fn_ptr)(const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&))
+  {
+    learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_finish_example_fd.record_stats_f = (details::finish_example_data::record_stats_fn)(fn_ptr);
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_output_example(
+      void (*fn_ptr)(const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&))
+  {
+    learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_finish_example_fd.record_stats_f = (details::finish_example_data::output_example_fn)(fn_ptr);
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_cleanup_example(void (*fn_ptr)(DataT&, ExampleT&))
+  {
+    learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_finish_example_fd.record_stats_f = (details::finish_example_data::cleanup_example_fn)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
@@ -748,6 +879,10 @@ public:
       : common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT, BaseLearnerT>(
             new learner<DataT, ExampleT>(*reinterpret_cast<learner<DataT, ExampleT>*>(base)), std::move(data), name)
   {
+    // We explicitly overwrite the copy of the base's _finish_example_fd. This
+    // is to allow us to determine if the current reduction implements finish
+    // and in what way.
+    this->learner_ptr->_finish_example_fd = details::finish_example_data{};
     this->learner_ptr->_learn_fd.base = make_base(*base);
     this->learner_ptr->_learn_fd.data = this->learner_ptr->_learner_data.get();
     this->learner_ptr->_sensitivity_fd.sensitivity_f =
