@@ -24,16 +24,14 @@ BOOST_AUTO_TEST_SUITE(test_suite_las_one_pass_svd)
 BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
 {
   auto d = 3;
-  const std::string vw_cmd_common =
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet";
   std::vector<VW::workspace*> vws;
   for (const int seed : {1, 0})
   {
-    const auto vw_cmd = vw_cmd_common + " --random_seed " + std::to_string(seed);
     for (const bool use_simd : {false, true})
     {
-      const auto full_command = vw_cmd + (use_simd ? " --explicit_simd" : "");
-      auto* vw_ptr = VW::initialize(full_command, nullptr, false, nullptr, nullptr);
+      auto* vw_ptr = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+              " --quiet --random_seed " + std::to_string(seed) + (use_simd ? " --explicit_simd" : ""),
+          nullptr, false, nullptr, nullptr);
       vws.push_back(vw_ptr);
     }
   }
@@ -85,16 +83,14 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
 BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 {
   auto d = 3;
-  const std::string vw_cmd_common =
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --noconstant";
   std::vector<VW::workspace*> vws;
-  for (int seed : {3, 0})
+  for (const int seed : {3, 0})
   {
-    auto vw_cmd = vw_cmd_common + " --random_seed " + std::to_string(seed);
-    for (bool use_simd : {false, true})
+    for (const bool use_simd : {false, true})
     {
-      auto full_command = vw_cmd + (use_simd ? " --explicit_simd" : "");
-      auto* vw_ptr = VW::initialize(full_command, nullptr, false, nullptr, nullptr);
+      auto* vw_ptr = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+              " --quiet --noconstant --random_seed " + std::to_string(seed) + (use_simd ? " --explicit_simd" : ""),
+          nullptr, false, nullptr, nullptr);
       vws.push_back(vw_ptr);
     }
   }
