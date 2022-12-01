@@ -69,12 +69,13 @@ private:
 class robust_mixture : public countable_discrete_base
 {
 public:
-  robust_mixture(double eta = 0.95f, double r = 2, double k = 1.5);
+  robust_mixture(double eta = 0.95f, double r = 2.0, double k = 1.5);
+  double polylog(double r, double eta);
   double get_log_weight(double j);
   double get_log_remaining_weight(double j);
   double get_s();
   double get_v(double lam_sqrt_tp1);
-  double add_obs(double x);
+  void add_obs(double x);
 
 private:
   double eta;
