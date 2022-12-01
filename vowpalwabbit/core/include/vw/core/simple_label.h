@@ -56,7 +56,7 @@ void record_stats_simple_label(const VW::workspace& all, shared_data& sd, const 
 template <typename UnusedDataT>
 void output_example_simple_label(VW::workspace& all, shared_data& sd, const UnusedDataT&, const VW::example& ec)
 {
-  output_example_simple_label(all,sd, ec);
+  output_example_simple_label(all, sd, ec);
 }
 }  // namespace details
 }  // namespace VW

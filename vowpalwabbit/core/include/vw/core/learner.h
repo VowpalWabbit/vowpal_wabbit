@@ -398,20 +398,11 @@ public:
       return;
     }
 
-    if (has_record_stats())
-    {
-      record_stats(all, ec);
-    }
+    if (has_record_stats()) { record_stats(all, ec); }
 
-    if (has_output_example())
-    {
-      output_example(all, ec);
-    }
+    if (has_output_example()) { output_example(all, ec); }
 
-    if (has_cleanup_example())
-    {
-      cleanup_example(ec);
-    }
+    if (has_cleanup_example()) { cleanup_example(ec); }
 
     const auto has_at_least_one_new_style_func = has_record_stats() || has_output_example() || has_cleanup_example();
     if (has_at_least_one_new_style_func)
@@ -791,8 +782,7 @@ public:
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_output_example(
-      void (*fn_ptr)(VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&))
+  FluentBuilderT& set_output_example(void (*fn_ptr)(VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&))
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.output_example_f = (details::finish_example_data::output_example_fn)(fn_ptr);
@@ -1015,10 +1005,6 @@ public:
     this->learner_ptr->_finisher_fd.func = static_cast<details::func_data::fn>(details::noop);
     this->learner_ptr->_sensitivity_fd.sensitivity_f =
         reinterpret_cast<details::sensitivity_data::fn>(details::noop_sensitivity_base);
-
-    // TODO: consider removing this "default" and just making sure the learner itself does this.
-    this->set_output_example(VW::details::output_example_simple_label<DataT>);
-    this->set_record_stats(VW::details::record_stats_simple_label<DataT>);
 
     this->learner_ptr->_learn_fd.data = this->learner_ptr->_learner_data.get();
 

@@ -31,6 +31,8 @@ VW::LEARNER::base_learner* VW::reductions::noop_setup(VW::setup_base_i& stack_bu
   // This can change if we change the finish function.
   auto ret = VW::LEARNER::make_no_data_base_learner(
       learn, learn, stack_builder.get_setupfn_name(noop_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+                 .set_output_example(VW::details::output_example_simple_label<char>)
+                 .set_record_stats(VW::details::record_stats_simple_label<char>)
                  .build();
   return VW::LEARNER::make_base(*ret);
 }

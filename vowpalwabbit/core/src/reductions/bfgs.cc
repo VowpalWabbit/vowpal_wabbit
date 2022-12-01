@@ -1230,5 +1230,7 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
                         .set_save_load(save_load)
                         .set_init_driver(init_driver)
                         .set_end_pass(end_pass)
+                        .set_output_example(VW::details::output_example_simple_label<bfgs>)
+                        .set_record_stats(VW::details::record_stats_simple_label<bfgs>)
                         .build());
 }
