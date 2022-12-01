@@ -536,23 +536,18 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
   }
 }
 
-void output_example(VW::workspace& all, ccb_data& c, const VW::multi_ex& ec_seq) {}
-
 void record_stats_ccb(
     const VW::workspace& all, shared_data& sd, const ccb_data& data, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   if (!ec_seq.empty() && !data.no_pred)
   {
-    if (ec_seq.empty()) { return; }
-
     size_t num_features = 0;
-    float loss = 0.;
-
-    for (auto* ec : data.slots) { num_features += ec->get_num_features(); }
+    for (const auto* ec : data.slots) { num_features += ec->get_num_features(); }
 
     // Is it hold out?
     size_t num_labeled = 0;
     const auto& preds = ec_seq[0]->pred.decision_scores;
+    float loss = 0.;
     for (size_t i = 0; i < data.slots.size(); i++)
     {
       auto* outcome = data.slots[i]->l.conditional_contextual_bandit.outcome;
@@ -572,26 +567,26 @@ void record_stats_ccb(
     { logger.err_warn("Unlabeled example in train set, was this intentional?"); }
 
     bool holdout_example = num_labeled > 0;
-    for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
+    for (const auto* example : ec_seq) { holdout_example &= example->test_only; }
 
     // TODO what does weight mean here?
-    all.sd->update(holdout_example, num_labeled > 0, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
+    sd.update(holdout_example, num_labeled > 0, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
   }
 }
 void output_example_ccb(
-    VW::workspace& all, shared_data& sd, const ccb_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+    VW::workspace& all, shared_data& /* sd */, const ccb_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   if (!ec_seq.empty() && !data.no_pred)
   {
+    // Print predictions
     for (auto& sink : all.final_prediction_sink)
     { VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
-    const auto& preds = ec_seq[0]->pred.decision_scores;
-    size_t num_features = 0;
-    float loss = 0.;
-
-    for (auto* ec : data.slots) { num_features += ec->get_num_features(); }
-    VW::print_update_ccb(all, data.slots, preds, num_features);
     VW::details::global_print_newline(all.final_prediction_sink, all.logger);
+
+    // Print progress
+    size_t num_features = 0;
+    for (auto* ec : data.slots) { num_features += ec->get_num_features(); }
+    VW::print_update_ccb(all, data.slots, ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, num_features);
   }
 }
 
@@ -599,8 +594,8 @@ void cleanup_example_ccb(ccb_data& data, VW::multi_ex& ec_seq)
 {
   if (!data.no_pred)
   {
-    for (auto& a_s : ec_seq[0]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
-    ec_seq[0]->pred.decision_scores.clear();
+    for (auto& a_s : ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
+    ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores.clear();
   }
 }
 
