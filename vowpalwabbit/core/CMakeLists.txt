@@ -373,7 +373,7 @@ vw_add_library(
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
 if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE))
-  set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc PROPERTIES COMPILE_FLAGS "-mfma")
+  set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx2")
   set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx512.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
   target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)
 endif()
