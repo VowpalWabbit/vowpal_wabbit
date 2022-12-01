@@ -92,7 +92,6 @@
 #include "vw/core/reductions/stagewise_poly.h"
 #include "vw/core/reductions/svrg.h"
 #include "vw/core/reductions/topk.h"
-#include "vw/core/reductions/uniform_exploration.h"
 
 void register_reductions(std::vector<reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
@@ -202,7 +201,6 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::cb_explore_adf_first_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_cover_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_bag_setup);
-  reductions.push_back(VW::reductions::uniform_exploration_setup);
   reductions.push_back(VW::reductions::cb_dro_setup);
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);
