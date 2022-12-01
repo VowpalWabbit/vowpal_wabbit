@@ -1,4 +1,4 @@
-creating features for following interactions: AA AB BB
+creating features for following interactions: AA AB AC AD AE AF BB BC BD BE BF CC CD CE CF DD DE DF EE EF FF
 using no cache
 Reading datafile = train-sets/automl_spin_off.txt
 num sources = 1
@@ -12,15 +12,15 @@ Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.016667 0.016667            1            1.0          0:1:1         1:0.49     6840
-0.016667 0.016667            2            2.0          1:1:1         2:0.97      294
-0.254167 0.491667            4            4.0          1:1:1         0:0.97      278
-0.372917 0.491667            8            8.0          0:1:1         0:0.97      253
-0.313542 0.254167           16           16.0          0:1:1         2:0.97      109
+0.016667 0.016667            1            1.0          0:1:1         2:0.97     8436
+0.016667 0.016667            2            2.0          1:1:1         2:0.97    18319
+0.016667 0.016667            4            4.0          1:1:1         0:0.97    23278
+0.016667 0.016667            8            8.0          0:1:1         2:0.97    13862
+0.016667 0.016667           16           16.0          0:1:1         2:0.97     2249
 
 finished run
 number of examples = 18
 weighted example sum = 18.000000
 weighted label sum = 0.000000
-average loss = 0.280556
-total feature number = 89864
+average loss = 0.069444
+total feature number = 293853
