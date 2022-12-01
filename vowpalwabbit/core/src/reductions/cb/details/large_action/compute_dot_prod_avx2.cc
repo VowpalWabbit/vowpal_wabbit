@@ -5,7 +5,6 @@
 #ifdef BUILD_LAS_WITH_SIMD
 
 #  include "compute_dot_prod_simd.h"
-
 #  include "kernel_impl.h"
 
 #  include <x86intrin.h>
@@ -16,7 +15,7 @@ namespace cb_explore_adf
 {
 namespace
 {
-// Alternative implementations in case some intrinsics are missing.
+// Alternative AVX2 implementations of necessary AVX512 intrinsics.
 
 // https://arxiv.org/pdf/1611.07612.pdf
 inline __m256i popcount64(const __m256i& v)
@@ -87,7 +86,7 @@ inline void compute8(const __m256& feature_values, const __m256i& feature_indice
   popcounts = pack64to32(popcounts1, popcounts2);
   __m256i value_indices = _mm256_add_epi32(sparsity_indices, _mm256_and_si256(popcounts, all_ones));
 
-  __m256 tmp = _mm256_permutexvar_ps(value_indices, value_maps);
+  __m256 tmp = _mm256_permutevar8x32_ps(value_maps, value_indices);
   sums = _mm256_fmadd_ps(feature_values, tmp, sums);
 }
 
@@ -169,120 +168,6 @@ float compute_dot_prod_avx2(uint64_t column_index, VW::workspace* _all, uint64_t
     }
   }
   return sum + horizontal_sum(sums);
-}
-
-// Process 16 features in parallel using AVX-512, resulting in the same output of 16 compute1() executions.
-inline void compute16(const __m512& feature_values, const __m512i& feature_indices1, const __m512i& feature_indices2,
-    const __m512i& offsets, const __m512i& weights_masks, const __m512i& column_indices, const __m512i& seeds,
-    __m512& sums)
-{
-  // value_maps must be the same as the scalar VALUE_MAP.
-  const __m512 value_maps = _mm512_setr4_ps(0, 0, 1.f, -1.f);
-  const __m512i perm_idx = _mm512_setr_epi32(0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30);
-  const __m512i all_ones = _mm512_set1_epi32(1);
-
-  __m512i indices1 = _mm512_add_epi64(feature_indices1, offsets);
-  __m512i indices2 = _mm512_add_epi64(feature_indices2, offsets);
-
-  indices1 = _mm512_add_epi64(_mm512_and_epi64(indices1, weights_masks), column_indices);
-  __m512i popcounts1 = _mm512_popcnt_epi64(indices1);
-  indices2 = _mm512_add_epi64(_mm512_and_epi64(indices2, weights_masks), column_indices);
-  __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
-
-  // popcounts always fit into 32 bits, so truncate and pack all 16 popcounts.
-  __m512i popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
-  __m512i sparsity_indices = _mm512_slli_epi32(_mm512_and_epi32(popcounts, all_ones), 1);
-
-  indices1 = _mm512_add_epi64(indices1, seeds);
-  popcounts1 = _mm512_popcnt_epi64(indices1);
-  indices2 = _mm512_add_epi64(indices2, seeds);
-  popcounts2 = _mm512_popcnt_epi64(indices2);
-
-  popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
-  __m512i value_indices = _mm512_add_epi32(sparsity_indices, _mm512_and_epi32(popcounts, all_ones));
-
-  __m512 tmp = _mm512_permutexvar_ps(value_indices, value_maps);
-  sums = _mm512_fmadd_ps(feature_values, tmp, sums);
-}
-
-// A data parallel implementation of the foreach_feature that processes 16 features at once.
-float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex)
-{
-  float sum = 0.f;
-  const uint64_t offset = ex->ft_offset;
-  const uint64_t weights_mask = _all->weights.mask();
-
-  __m512 sums = _mm512_setzero_ps();
-  const __m512i column_indices = _mm512_set1_epi64(column_index);
-  const __m512i seeds = _mm512_set1_epi64(seed);
-  const __m512i weights_masks = _mm512_set1_epi64(weights_mask);
-  const __m512i offsets = _mm512_set1_epi64(offset);
-
-  for (const auto& features : *ex)
-  {
-    const size_t num_features = features.size();
-    size_t i = 0;
-    for (; i + 16 <= num_features; i += 16)
-    {
-      // Unroll the 64-bit indices twice to align with 32-bit values.
-      __m512i indices1 = _mm512_loadu_si512(&features.indices[i]);
-      __m512i indices2 = _mm512_loadu_si512(&features.indices[i + 8]);
-      // If indices fit into 32 bits, convert indices to 32-bit here can speed up further.
-
-      __m512 values = _mm512_loadu_ps(&features.values[i]);
-      compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
-    }
-    for (; i < num_features; ++i)
-    {
-      // Handle tail of the loop using scalar implementation.
-      compute1(features.values[i], features.indices[i], offset, weights_mask, column_index, seed, sum);
-    }
-  }
-  const auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-  const auto& interactions =
-      red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions;
-  for (const auto& ns : interactions)
-  {
-    // TODO: other interactions, ignores & extent_interactions. The following only handles quadratics.
-    assert(ns.size() == 2);
-
-    const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
-    const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
-    const size_t num_features_ns1 = ex->feature_space[ns[1]].size();
-    const auto& ns0_indices = ex->feature_space[ns[0]].indices;
-    const auto& ns1_indices = ex->feature_space[ns[1]].indices;
-    const auto& ns0_values = ex->feature_space[ns[0]].values;
-    const auto& ns1_values = ex->feature_space[ns[1]].values;
-
-    for (size_t i = 0; i < num_features_ns0; ++i)
-    {
-      const uint64_t halfhash = VW::details::FNV_PRIME * ns0_indices[i];
-      const __m512i halfhashes = _mm512_set1_epi64(halfhash);
-      const float val = ns0_values[i];
-      const __m512 vals = _mm512_set1_ps(val);
-      size_t j = same_namespace ? i : 0;
-
-      for (; j + 16 <= num_features_ns1; j += 16)
-      {
-        __m512i indices1 = _mm512_loadu_si512(&ns1_indices[j]);
-        __m512i indices2 = _mm512_loadu_si512(&ns1_indices[j + 8]);
-        indices1 = _mm512_xor_epi64(indices1, halfhashes);
-        indices2 = _mm512_xor_epi64(indices2, halfhashes);
-
-        __m512 values = _mm512_loadu_ps(&ns1_values[j]);
-        values = _mm512_mul_ps(vals, values);
-
-        compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
-      }
-      for (; j < num_features_ns1; ++j)
-      {
-        float feature_value = val * ns1_values[j];
-        auto index = (ns1_indices[j] ^ halfhash);
-        compute1(feature_value, index, offset, weights_mask, column_index, seed, sum);
-      }
-    }
-  }
-  return sum + _mm512_reduce_add_ps(sums);
 }
 
 }  // namespace cb_explore_adf
