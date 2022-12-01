@@ -6,6 +6,7 @@
 
 #include "vw/core/model_utils.h"
 
+#include <boost/math/tools/minima.hpp>
 #include <cassert>
 #include <cmath>
 
@@ -89,10 +90,13 @@ double countable_discrete_base::log_wealth_mix(double mu, double s, double thres
   }
 }
 
-double countable_discrete_base::root_brentq(double, double, std::map<uint64_t, double>&, double, double)
+double countable_discrete_base::root_brentq(
+    double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu)
 {
-  // TODO: Find cpp equivalent
-  return 0.0;
+  uint64_t brent_bits = 24;
+  auto lw_lambda = [this, &s, &thres, &memo](
+                       double mu) -> double { return log_wealth_mix(mu, s, thres, memo) - thres; };
+  return boost::math::tools::brent_find_minima(lw_lambda, min_mu, max_mu, brent_bits).second;
 }
 
 double countable_discrete_base::lb_log_wealth(double alpha)
