@@ -36,12 +36,13 @@ public:
   Eigen::SparseMatrix<float> Y;
   Eigen::MatrixXf Z;
 
-  two_pass_svd_impl(
-      VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
+  two_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size,
+      size_t block_size, bool use_explicit_simd);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
   void generate_B(const multi_ex& examples, const std::vector<float>& shrink_factors);
+
   // testing only
   void _test_only_set_rank(uint64_t rank);
   bool _set_testing_components = false;
@@ -57,11 +58,13 @@ class one_pass_svd_impl
 {
 public:
   Eigen::MatrixXf AOmega;
-  one_pass_svd_impl(
-      VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size);
+
+  one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size,
+      size_t block_size, bool use_explicit_simd);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
       Eigen::MatrixXf& _V);
   void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
+
   // for testing purposes only
   void _test_only_set_rank(uint64_t rank);
   bool _set_testing_components = false;
@@ -72,6 +75,9 @@ private:
   uint64_t _seed;
   thread_pool _thread_pool;
   size_t _block_size;
+#ifdef BUILD_LAS_WITH_SIMD
+  bool _use_simd = false;
+#endif
   std::vector<std::future<void>> _futures;
   Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
 };
@@ -139,7 +145,7 @@ public:
 
   cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
       bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
-      size_t block_size, implementation_type impl_type);
+      size_t block_size, bool use_explicit_simd, implementation_type impl_type);
 
   ~cb_explore_adf_large_action_space() = default;
 
