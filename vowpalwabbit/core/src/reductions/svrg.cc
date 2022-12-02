@@ -146,7 +146,9 @@ void learn(svrg& s, base_learner& base, VW::example& ec)
   else  // Perform updates
   {
     if (s.prev_pass != pass && !s.all->quiet)
-    { *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl; }
+    {
+      *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl;
+    }
     update_inner(s, ec);
   }
 
@@ -167,10 +169,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;
     if (resume) { GD::save_load_online_state(*s.all, model_file, read, text, temp, temp_normalized_sum_norm_x); }
-    else
-    {
-      GD::save_load_regressor(*s.all, model_file, read, text);
-    }
+    else { GD::save_load_regressor(*s.all, model_file, read, text); }
   }
 }
 }  // namespace

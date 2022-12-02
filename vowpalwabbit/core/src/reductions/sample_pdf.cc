@@ -97,7 +97,9 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, VW::example& ec)
   }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << std::endl; }
+  {
+    VW_DBG(ec) << status.get_error_msg() << std::endl;
+  }
 }
 }  // namespace
 

@@ -45,10 +45,7 @@ public:
   {
     auto got = weights.find(klass);
     if (got == weights.end()) { return 1.0f; }
-    else
-    {
-      return got->second;
-    }
+    else { return got->second; }
   }
 };
 
@@ -77,10 +74,7 @@ void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base,
     update_example_weight<pred_type>(cweights, ec);
     base.learn(ec);
   }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 }
 }  // namespace
 
@@ -120,10 +114,7 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
     pred_ptr = predict_or_learn<false, VW::prediction_type_t::MULTICLASS>;
     pred_type = VW::prediction_type_t::MULTICLASS;
   }
-  else
-  {
-    THROW("--classweight not implemented for this type of prediction");
-  }
+  else { THROW("--classweight not implemented for this type of prediction"); }
 
   auto* l = make_reduction_learner(
       std::move(cweights), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(classweight_setup) + name_addition)

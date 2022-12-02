@@ -65,10 +65,7 @@ void dense_parameters::move_offsets(const size_t from, const size_t to, const si
       if (*iterator_to[stride_offset] != *iterator_from[stride_offset])
       {
         if (swap) { std::swap(*iterator_to[stride_offset], *iterator_from[stride_offset]); }
-        else
-        {
-          *iterator_to[stride_offset] = *iterator_from[stride_offset];
-        }
+        else { *iterator_to[stride_offset] = *iterator_from[stride_offset]; }
       }
     }
   }

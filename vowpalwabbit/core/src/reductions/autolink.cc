@@ -79,10 +79,7 @@ template <bool is_learn>
 void predict_or_learn(autolink& b, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   if (is_learn) { b.learn(base, ec); }
-  else
-  {
-    b.predict(base, ec);
-  }
+  else { b.predict(base, ec); }
 }
 
 VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)

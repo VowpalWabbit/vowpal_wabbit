@@ -40,7 +40,9 @@ void validate_compatibility(const std::vector<const VW::workspace*>& workspaces,
   {
     const auto* incompatible = VW::are_features_compatible(ref_model, **model_it);
     if (incompatible != nullptr)
-    { THROW("Model is incompatible with the destination model. Reason: " << incompatible); }
+    {
+      THROW("Model is incompatible with the destination model. Reason: " << incompatible);
+    }
   }
 
   bool at_least_one_has_no_preserve = false;
@@ -93,10 +95,7 @@ std::unique_ptr<VW::workspace> copy_workspace(const VW::workspace* ws, VW::io::l
   assert(ws != nullptr);
   auto command_line = VW::split_command_line(get_keep_command_line(*ws));
   if (logger == nullptr) { command_line.emplace_back("--quiet"); }
-  else
-  {
-    command_line.emplace_back("--driver_output_off");
-  }
+  else { command_line.emplace_back("--driver_output_off"); }
   command_line.emplace_back("--preserve_performance_counters");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
@@ -172,10 +171,7 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   // Get VW command line and create output workspace
   auto command_line = VW::split_command_line(get_keep_command_line(*workspaces_to_merge[0]));
   if (logger == nullptr) { command_line.emplace_back("--quiet"); }
-  else
-  {
-    command_line.emplace_back("--driver_output_off");
-  }
+  else { command_line.emplace_back("--driver_output_off"); }
   command_line.emplace_back("--preserve_performance_counters");
   auto dest_workspace = VW::initialize_experimental(
       VW::make_unique<VW::config::options_cli>(command_line), nullptr, nullptr, nullptr, logger);

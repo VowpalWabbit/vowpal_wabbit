@@ -28,7 +28,9 @@ public:
   {
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
-    { ec.pred.a_s.push_back(VW::action_score{_predictions[i].first, _predictions[i].second}); }
+    {
+      ec.pred.a_s.push_back(VW::action_score{_predictions[i].first, _predictions[i].second});
+    }
   }
 
   void test_learn(base_learner& base, VW::example& ec)
@@ -111,11 +113,10 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
       // where action + bandwidth > num_actions - 1
       // resulting in a span of max 2 * bandwidth
       if (pdf[i].left == 0 || pdf[i].right == num_actions - 1)
-      { BOOST_CHECK_LT(right_unit - left_unit, 2 * bandwidth); }
-      else
       {
-        BOOST_CHECK_EQUAL(right_unit - left_unit, 2 * bandwidth);
+        BOOST_CHECK_LT(right_unit - left_unit, 2 * bandwidth);
       }
+      else { BOOST_CHECK_EQUAL(right_unit - left_unit, 2 * bandwidth); }
     }
   }
 }
