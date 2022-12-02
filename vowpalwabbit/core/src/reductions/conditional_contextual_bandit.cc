@@ -537,7 +537,7 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
 }
 
 void record_stats_ccb(
-    const VW::workspace& all, shared_data& sd, const ccb_data& data, const VW::multi_ex& ec_seq, VW::io::logger& logger)
+    const VW::workspace& /* all */, shared_data& sd, const ccb_data& data, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   if (!ec_seq.empty() && !data.no_pred)
   {
