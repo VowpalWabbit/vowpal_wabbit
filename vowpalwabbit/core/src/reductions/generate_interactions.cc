@@ -40,10 +40,7 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
   }
 
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
   ec.interactions = saved_interactions;
 }
 
@@ -72,10 +69,7 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
   }
 
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
   ec.interactions = saved_interactions;
   ec.extent_interactions = saved_extent_interactions;
 }
@@ -217,7 +211,9 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.
   if (!(interactions_spec_contains_wildcards || interactions_spec_contains_extent_wildcards ||
           options.was_supplied("ccb_explore_adf")))
-  { return nullptr; }
+  {
+    return nullptr;
+  }
 
   if (options.was_supplied("large_action_space")) { store_in_reduction_features = true; }
 

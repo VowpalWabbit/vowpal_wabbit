@@ -80,13 +80,12 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
-  else
-  {
-    reduction.predict(ec, &status);
-  }
+  else { reduction.predict(ec, &status); }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << endl; }
+  {
+    VW_DBG(ec) << status.get_error_msg() << endl;
+  }
 }
 // END cats_pdf reduction and reduction methods
 ////////////////////////////////////////////////////

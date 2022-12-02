@@ -222,16 +222,15 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
       wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 0, 2);
       c.known_cost.action = known_index;
     }
-    else
-    {
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, CB::cb_class{}, *(examples[i]), 0, 2);
-    }
+    else { wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, CB::cb_class{}, *(examples[i]), 0, 2); }
 
     c.pred_scores.costs.push_back(wc);  // done
 
     // add correction if we observed cost for this action and regressor is wrong
     if (c.known_cost.probability != -1 && c.known_cost.action == i)
-    { wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p); }
+    {
+      wc.x += (c.known_cost.cost - wc.x) / std::max(c.known_cost.probability, clip_p);
+    }
     cs_labels.costs.push_back(wc);
   }
 }
@@ -274,28 +273,27 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& exa
   uint64_t saved_offset = examples[0]->ft_offset;
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit([&cb_labels, &prepped_cs_labels, saved_offset, &examples] {
-    // 3rd: restore cb_label for each example
-    // (**ec).l.cb = array.element.
-    // and restore offsets
-    for (size_t i = 0; i < examples.size(); ++i)
-    {
-      prepped_cs_labels[i] = std::move(examples[i]->l.cs);
-      examples[i]->l.cs.costs.clear();
-      examples[i]->l.cb = std::move(cb_labels[i]);
-      examples[i]->ft_offset = saved_offset;
-    }
-  });
+  auto restore_guard = VW::scope_exit(
+      [&cb_labels, &prepped_cs_labels, saved_offset, &examples]
+      {
+        // 3rd: restore cb_label for each example
+        // (**ec).l.cb = array.element.
+        // and restore offsets
+        for (size_t i = 0; i < examples.size(); ++i)
+        {
+          prepped_cs_labels[i] = std::move(examples[i]->l.cs);
+          examples[i]->l.cs.costs.clear();
+          examples[i]->l.cb = std::move(cb_labels[i]);
+          examples[i]->ft_offset = saved_offset;
+        }
+      });
 
   if (is_learn)
   {
     if (predict_first) { base.predict(examples, static_cast<int32_t>(id)); }
     base.learn(examples, static_cast<int32_t>(id));
   }
-  else
-  {
-    base.predict(examples, static_cast<int32_t>(id));
-  }
+  else { base.predict(examples, static_cast<int32_t>(id)); }
 }
 
 }  // namespace GEN_CS

@@ -140,10 +140,7 @@ inline uint32_t find_switch_node(log_multi& b)
   while (b.nodes[node].internal)
   {
     if (b.nodes[b.nodes[node].left].min_count < b.nodes[b.nodes[node].right].min_count) { node = b.nodes[node].left; }
-    else
-    {
-      node = b.nodes[node].right;
-    }
+    else { node = b.nodes[node].right; }
   }
   return node;
 }
@@ -157,10 +154,7 @@ inline void update_min_count(log_multi& b, uint32_t node)
     node = b.nodes[node].parent;
 
     if (b.nodes[node].min_count == b.nodes[prev].min_count) { break; }
-    else
-    {
-      b.nodes[node].min_count = min_left_right(b, b.nodes[node]);
-    }
+    else { b.nodes[node].min_count = min_left_right(b, b.nodes[node]); }
   }
 }
 
@@ -201,21 +195,17 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
       uint32_t swap_parent = b.nodes[swap_child].parent;
       uint32_t swap_grandparent = b.nodes[swap_parent].parent;
       if (b.nodes[swap_child].min_count != b.nodes[0].min_count)
-      { std::cout << "glargh " << b.nodes[swap_child].min_count << " != " << b.nodes[0].min_count << std::endl; }
+      {
+        std::cout << "glargh " << b.nodes[swap_child].min_count << " != " << b.nodes[0].min_count << std::endl;
+      }
       b.nbofswaps++;
 
       uint32_t nonswap_child;
       if (swap_child == b.nodes[swap_parent].right) { nonswap_child = b.nodes[swap_parent].left; }
-      else
-      {
-        nonswap_child = b.nodes[swap_parent].right;
-      }
+      else { nonswap_child = b.nodes[swap_parent].right; }
 
       if (swap_parent == b.nodes[swap_grandparent].left) { b.nodes[swap_grandparent].left = nonswap_child; }
-      else
-      {
-        b.nodes[swap_grandparent].right = nonswap_child;
-      }
+      else { b.nodes[swap_grandparent].right = nonswap_child; }
       b.nodes[nonswap_child].parent = swap_grandparent;
       update_min_count(b, nonswap_child);
 
@@ -246,10 +236,7 @@ void train_node(
     log_multi& b, single_learner& base, VW::example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
   if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk) { ec.l.simple.label = -1.f; }
-  else
-  {
-    ec.l.simple.label = 1.f;
-  }
+  else { ec.l.simple.label = 1.f; }
 
   base.learn(ec, b.nodes[current].base_predictor);  // depth
 
@@ -269,10 +256,7 @@ void train_node(
 inline uint32_t descend(node& n, float prediction)
 {
   if (prediction < 0) { return n.left; }
-  else
-  {
-    return n.right;
-  }
+  else { return n.right; }
 }
 
 void predict(log_multi& b, single_learner& base, VW::example& ec)

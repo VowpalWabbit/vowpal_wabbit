@@ -54,15 +54,14 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::persist(met
       nested_metrics.set_string("elements", VW::reductions::util::elements_to_string(elements));
     }
     if (_config_oracle.configs[estimators[live_slot].first.config_index].conf_type == config_type::Exclusion)
-    { nested_metrics.set_string("config_type", "exclusion"); }
+    {
+      nested_metrics.set_string("config_type", "exclusion");
+    }
     else if (_config_oracle.configs[estimators[live_slot].first.config_index].conf_type == config_type::Interaction)
     {
       nested_metrics.set_string("config_type", "inclusion");
     }
-    else
-    {
-      nested_metrics.set_string("config_type", "unknown");
-    }
+    else { nested_metrics.set_string("config_type", "unknown"); }
     metrics.set_metric_sink(live_slot_key, std::move(nested_metrics));
   }
   metrics.set_uint("total_champ_switches", total_champ_switches);

@@ -79,12 +79,15 @@ inline bool has_empty_interaction(const std::array<features, VW::NUM_NAMESPACES>
 inline bool has_empty_interaction(
     const std::array<features, VW::NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& namespace_indexes)
 {
-  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(), [&](extent_term idx) {
-    return std::find_if(feature_groups[idx.first].namespace_extents.begin(),
-               feature_groups[idx.first].namespace_extents.end(), [&idx](const VW::namespace_extent& extent) {
-                 return idx.second == extent.hash && ((extent.end_index - extent.begin_index) > 0);
-               }) == feature_groups[idx.first].namespace_extents.end();
-  });
+  return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
+      [&](extent_term idx)
+      {
+        return std::find_if(feature_groups[idx.first].namespace_extents.begin(),
+                   feature_groups[idx.first].namespace_extents.end(),
+                   [&idx](const VW::namespace_extent& extent) {
+                     return idx.second == extent.hash && ((extent.end_index - extent.begin_index) > 0);
+                   }) == feature_groups[idx.first].namespace_extents.end();
+      });
 }
 
 // The inline function below may be adjusted to change the way
@@ -144,10 +147,7 @@ void generate_generic_extent_combination_iterative(const std::array<features, VW
 
     auto it = current_fg.hash_extents_begin(current_term.second);
     if (prev_term == current_term) { std::advance(it, top.offset); }
-    else
-    {
-      top.offset = 0;
-    }
+    else { top.offset = 0; }
     size_t i = 0;
     auto end = current_fg.hash_extents_end(current_term.second);
     for (; it != end; ++it)
@@ -192,7 +192,9 @@ std::vector<VW::details::features_range_t> inline generate_generic_char_combinat
   std::vector<VW::details::features_range_t> inter;
   inter.reserve(terms.size());
   for (const auto& term : terms)
-  { inter.emplace_back(feature_groups[term].audit_begin(), feature_groups[term].audit_end()); }
+  {
+    inter.emplace_back(feature_groups[term].audit_begin(), feature_groups[term].audit_end());
+  }
   return inter;
 }
 
@@ -276,13 +278,17 @@ size_t process_cubic_interaction(
     const float first_ft_value = first_begin.value();
     size_t j = 0;
     if (same_namespace1)  // next index differs for permutations and simple combinations
-    { j = i; }
+    {
+      j = i;
+    }
 
     for (auto inner_second_begin = second_begin + j; inner_second_begin != second_end; ++inner_second_begin)
     {
       // f3 x k*(f2 x k*f1)
       if (Audit)
-      { audit_func(inner_second_begin.audit() != nullptr ? inner_second_begin.audit() : &EMPTY_AUDIT_STRINGS); }
+      {
+        audit_func(inner_second_begin.audit() != nullptr ? inner_second_begin.audit() : &EMPTY_AUDIT_STRINGS);
+      }
       feature_index halfhash = VW::details::FNV_PRIME * (halfhash1 ^ inner_second_begin.index());
       feature_value ft_value = interaction_value(first_ft_value, inner_second_begin.value());
 
@@ -346,10 +352,7 @@ size_t process_generic_interaction(const std::vector<VW::details::features_range
         next_data->current_it = next_data->begin_it;
         next_data->current_it += current_offset;
       }
-      else
-      {
-        next_data->current_it = next_data->begin_it;
-      }
+      else { next_data->current_it = next_data->begin_it; }
 
       if (Audit) { audit_func((*cur_data->current_it).audit()); }
 
@@ -380,8 +383,7 @@ size_t process_generic_interaction(const std::vector<VW::details::features_range
       kernel_func(begin, cur_data->end_it, ft_value, halfhash);
       // trying to go back increasing loop_idx of each namespace by the way
       bool go_further;
-      do
-      {
+      do {
         --cur_data;
         ++cur_data->current_it;
         go_further = cur_data->current_it == cur_data->end_it;
@@ -412,7 +414,8 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
   num_features = 0;
   // often used values
   const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
-                                     feature_value value, feature_index index) {
+                                     feature_value value, feature_index index)
+  {
     inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
@@ -458,11 +461,14 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
     if (has_empty_interaction(ec.feature_space, ns)) { continue; }
     if (std::any_of(ns.begin(), ns.end(),
             [](const extent_term& term) { return term.first == VW::details::WILDCARD_NAMESPACE; }))
-    { continue; }
+    {
+      continue;
+    }
 
     generate_generic_extent_combination_iterative(
         ec.feature_space, ns,
-        [&](const std::vector<VW::details::features_range_t>& combination) {
+        [&](const std::vector<VW::details::features_range_t>& combination)
+        {
           const size_t len = ns.size();
           if (len == 2)
           {

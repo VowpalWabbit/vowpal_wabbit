@@ -15,10 +15,7 @@ template <typename T>
 T correctedExp(T exponent)
 {
   if (isinf(exponent) && exponent < T(0)) { return T(0); }
-  else
-  {
-    return std::exp(exponent);
-  }
+  else { return std::exp(exponent); }
 }
 #else
 // std::exp is used because on Linux, not using the namespace caused a different implementation of

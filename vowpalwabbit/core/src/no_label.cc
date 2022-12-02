@@ -38,7 +38,7 @@ VW::label_parser no_label_parser_global = {
     [](const VW::polylabel& /* label */, const VW::reduction_features& /* red_features */, io_buf& /* cache */,
         const std::string&, bool) -> size_t { return 1; },
     // read_cached_label
-    [](VW::polylabel& /* label */, VW::reduction_features& /* red_features */, io_buf &
+    [](VW::polylabel& /* label */, VW::reduction_features& /* red_features */, io_buf&
         /* cache */) -> size_t { return 1; },
     // get_weight
     [](const VW::polylabel& /* label */, const VW::reduction_features& /* red_features */) { return 1.f; },

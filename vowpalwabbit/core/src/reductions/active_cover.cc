@@ -104,10 +104,7 @@ float query_decision(active_cover& a, single_learner& l, VW::example& ec, float 
   if (std::isnan(p)) { p = 1.f; }
 
   if (a.random_state->get_and_update_random() <= p) { return 1.f / p; }
-  else
-  {
-    return -1.f;
-  }
+  else { return -1.f; }
 }
 
 template <bool is_learn>
