@@ -301,6 +301,13 @@ TEST(explore_tests, enforce_minimum_probability_all_zeros_and_consider)
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.2f, .2f, .2f}));
 }
 
+TEST(explore_tests, enforce_minimum_probability_equal_to_amt)
+{
+  std::vector<float> pdf = {0.f, 2.f/3.f, 1.f/3.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(1.f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{1.f/3.f, 1.f/3.f, 1.f/3.f}));
+}
+
 TEST(explore_tests, enforce_minimum_probability_uniform)
 {
   std::vector<float> pdf = {0.9f, 0.1f, 0, 0};

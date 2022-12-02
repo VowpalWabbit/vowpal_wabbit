@@ -361,6 +361,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
       .add(make_option("epsilon", epsilon)
                .keep()
                .default_value(0.f)
+               .allow_override()
                .help("The minimum probability of an action is this value divided by the number of actions."));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
