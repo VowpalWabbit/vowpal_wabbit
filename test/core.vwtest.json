@@ -5486,5 +5486,18 @@
     "input_files": [
       "train-sets/explore_eval_egreedy.dat"
     ]
+  },
+  {
+    "id": 426,
+    "desc": "squarecb with epsilon",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -p squarecb_pred_epsilon.predict --epsilon 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/squarecb_epsilon.stderr",
+      "squarecb_pred_epsilon.predict": "pred-sets/ref/squarecb_pred_epsilon.predict",
+      "stdout": "train-sets/ref/squarecb_epsilon.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat"
+    ]
   }
 ]

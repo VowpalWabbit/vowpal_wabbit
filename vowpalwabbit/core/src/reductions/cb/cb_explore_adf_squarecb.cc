@@ -85,8 +85,8 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_
     , _c0(c0)
     , _min_cb_cost(min_cb_cost)
     , _max_cb_cost(max_cb_cost)
-    , _model_file_version(model_file_version)
     , _epsilon(epsilon)
+    , _model_file_version(model_file_version)
 {
 }
 
@@ -387,7 +387,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
   auto data = VW::make_unique<explore_type>(
-      with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
+      with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver, epsilon);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_squarecb_setup))
                 .set_input_label_type(VW::label_type_t::CB)
