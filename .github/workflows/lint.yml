@@ -96,6 +96,8 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Install clang-format
         # This is only needed if the diff check runs as it installs 'clang-format-diff'
         # 'clang-format' is available by default
@@ -119,7 +121,6 @@ jobs:
             echo "Cannot find .clang-format file!"
             exit 1
           fi
-          git fetch origin master:master
           git diff origin/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 > clang_format_diff.txt
           if [ -s clang_format_diff.txt ]; then
             cat clang_format_diff.txt
