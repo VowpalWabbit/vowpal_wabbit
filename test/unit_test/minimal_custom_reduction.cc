@@ -32,10 +32,7 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
   called_learn_predict = true;
 
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 }
 
 // minimal setup function for reduction

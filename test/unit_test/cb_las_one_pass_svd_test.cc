@@ -45,7 +45,9 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -106,7 +108,9 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -181,7 +185,8 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
 {
   if (!VW::cb_explore_adf::cpu_supports_avx512()) return;
 
-  auto generate_example = [](int num_namespaces, int num_features) {
+  auto generate_example = [](int num_namespaces, int num_features)
+  {
     std::string s;
     for (int i = 0; i < num_namespaces; ++i)
     {
@@ -270,7 +275,8 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
 
 BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 {
-  auto generate_example = [](int num_namespaces, int num_features) {
+  auto generate_example = [](int num_namespaces, int num_features)
+  {
     std::string s;
     for (int i = 0; i < num_namespaces; ++i)
     {
@@ -283,7 +289,9 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
   const int num_actions = 30;
   std::vector<std::string> examples;
   for (int i = 0; i < num_actions; ++i)
-  { examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30)); }
+  {
+    examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30));
+  }
 
   {
     // No interactions

@@ -334,10 +334,7 @@ public:
           fs_w.push_back(1.f, VW::hash_feature(vw_obj, "w=" + tmp + "$", ns_hash_w));
           tmp = "";
         }
-        else
-        {
-          tmp += c;
-        }
+        else { tmp += c; }
       }
       fs_w.push_back(1.f, VW::hash_feature(vw_obj, "w=" + tmp, ns_hash_w));
 
@@ -364,7 +361,9 @@ public:
           }
         }
         if (best_count > 0.)
-        { fs_d.push_back(best_count, VW::hash_feature(vw_obj, "best=" + std::string(1, best_char), ns_hash_d)); }
+        {
+          fs_d.push_back(best_count, VW::hash_feature(vw_obj, "best=" + std::string(1, best_char), ns_hash_d));
+        }
       }
 
       // input
@@ -386,10 +385,7 @@ public:
           fs_i.push_back(1.f, VW::hash_feature(vw_obj, "w=" + tmp, ns_hash_i));
           tmp = "";
         }
-        else
-        {
-          tmp += c;
-        }
+        else { tmp += c; }
       }
       fs_i.push_back(1.f, VW::hash_feature(vw_obj, "w=" + tmp, ns_hash_i));
 
@@ -473,10 +469,7 @@ Trie load_dictionary(const char* fname)
       space++;
       t.insert(space, atoi(str));
     }
-    else
-    {
-      t.insert(str);
-    }
+    else { t.insert(str); }
   }
   return t;
 }
@@ -508,7 +501,9 @@ void run_istream(Generator& gen, const char* fname, bool is_learn = true, size_t
     {
       gen.predict(dat, out);
       if (print_every > 0 && (n % print_every == 0))
-      { std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl; }
+      {
+        std::cout << gen.get_dist() << "\t" << out << "\t\t\t" << dat.in << " ||| " << dat.out << endl;
+      }
       dist += dat.weight * (float)gen.get_dist();
     }
   }

@@ -72,10 +72,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
   // If _greedify then always update the first policy once
   // for others the update count depends on drawing from a poisson
   if (_greedify && learner_index == 0) { return 1; }
-  else
-  {
-    return VW::reductions::bs::weight_gen(_random_state);
-  }
+  else { return VW::reductions::bs::weight_gen(_random_state); }
 }
 
 void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
@@ -104,10 +101,7 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex&
       size_t tied_actions = fill_tied(preds);
       for (size_t j = 0; j < tied_actions; ++j) { _top_actions[preds[j].action] += 1.f / tied_actions; }
     }
-    else
-    {
-      _top_actions[preds[0].action] += 1.f;
-    }
+    else { _top_actions[preds[0].action] += 1.f; }
   }
 
   _action_probs.clear();
@@ -134,7 +128,9 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, VW::multi_ex& e
                      << std::endl;
 
     for (uint32_t j = 0; j < learn_count; j++)
-    { VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i); }
+    {
+      VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
+    }
   }
 }
 

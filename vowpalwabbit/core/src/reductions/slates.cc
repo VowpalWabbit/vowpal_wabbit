@@ -122,10 +122,7 @@ std::string VW::reductions::generate_slates_label_printout(const std::vector<exa
     counter++;
     const auto& label = slot->l.slates;
     if (label.labeled) { label_ss << delim << label.probabilities[0].action; }
-    else
-    {
-      label_ss << delim << "?";
-    }
+    else { label_ss << delim << "?"; }
 
     delim = ",";
 
@@ -154,7 +151,9 @@ float get_estimate(const VW::action_scores& label_probs, float cost, const VW::d
   float p_over_ps = 0.f;
   const size_t number_of_slots = label_probs.size();
   for (size_t slot_index = 0; slot_index < number_of_slots; slot_index++)
-  { p_over_ps += (prediction_probs[slot_index][0].score / label_probs[slot_index].score); }
+  {
+    p_over_ps += (prediction_probs[slot_index][0].score / label_probs[slot_index].score);
+  }
   p_over_ps -= (number_of_slots - 1);
 
   return cost * p_over_ps;
@@ -200,7 +199,9 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   all.sd->update(holdout_example, is_labelled, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
+  {
+    VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger);
+  }
 
   VW::print_update_slates(all, slots, predictions, num_features);
 }
@@ -222,10 +223,7 @@ template <bool is_learn>
 void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   if (is_learn) { data.learn(base, examples); }
-  else
-  {
-    data.predict(base, examples);
-  }
+  else { data.predict(base, examples); }
 }
 }  // namespace
 

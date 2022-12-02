@@ -44,10 +44,7 @@ int VW::details::open_socket(const char* host, VW::io::logger& logger)
     std::string hostname(host, colon - host);
     he = gethostbyname(hostname.c_str());
   }
-  else
-  {
-    he = gethostbyname(host);
-  }
+  else { he = gethostbyname(host); }
 
   if (he == nullptr) THROWERRNO("gethostbyname(" << host << ")");
 

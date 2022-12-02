@@ -191,10 +191,7 @@ int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements
       prob = minimum_uniform;
       ++num_actions_touched;
     }
-    else
-    {
-      untouched_mass += prob;
-    }
+    else { untouched_mass += prob; }
   }
 
   if (touched_mass > 0.)
@@ -410,13 +407,14 @@ int sample_pdf(
 
   float total_pdf_mass = 0.f;
   for (It pdf_it = pdf_first; pdf_it != pdf_last; ++pdf_it)
-  { total_pdf_mass += (pdf_it->right - pdf_it->left) * pdf_it->pdf_value; }
+  {
+    total_pdf_mass += (pdf_it->right - pdf_it->left) * pdf_it->pdf_value;
+  }
   if (total_pdf_mass == 0.f) { return E_EXPLORATION_BAD_PDF; }
 
   constexpr float edge_avoid_factor = 1.0001f;
   float draw = 0.f;
-  do
-  {
+  do {
     draw = edge_avoid_factor * total_pdf_mass * exploration::uniform_random_merand48_advance(*p_seed);
   } while (draw >= total_pdf_mass);
 

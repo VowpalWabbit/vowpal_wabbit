@@ -41,7 +41,9 @@ void csv_parser::set_csv_separator(std::string& str, const std::string& name)
     }
 
     if ((result != str[0] && str.length() > 2) || result == str[0])
-    { THROW("Multiple characters passed as " << name << ": " << str); }
+    {
+      THROW("Multiple characters passed as " << name << ": " << str);
+    }
     str = result;
   }
 }
@@ -88,11 +90,15 @@ void csv_parser::handle_parse_args(csv_parser_options& parsed_options)
     for (size_t i = 0; i < strlen(csv_separator_forbid_chars); i++)
     {
       if (parsed_options.csv_separator[0] == csv_separator_forbid_chars[i])
-      { THROW("Forbidden field separator used: " << parsed_options.csv_separator[0]); }
+      {
+        THROW("Forbidden field separator used: " << parsed_options.csv_separator[0]);
+      }
     }
 
     if (parsed_options.csv_no_file_header && parsed_options.csv_header.empty())
-    { THROW("No header specified while --csv_no_file_header is set."); }
+    {
+      THROW("No header specified while --csv_no_file_header is set.");
+    }
   }
 }
 
@@ -145,10 +151,7 @@ private:
       THROW("CSV line " << _parser->line_num << " has " << _csv_line.size() << " elements, but the header has "
                         << _parser->header_fn.size() << " elements!");
     }
-    else if (!this_line_is_header)
-    {
-      parse_example();
-    }
+    else if (!this_line_is_header) { parse_example(); }
   }
 
   inline FORCE_INLINE void parse_ns_value()
@@ -160,18 +163,14 @@ private:
       std::string ns = " ";
       float value = 1.f;
       if (pair.size() != 2 || pair[1].empty())
-      { THROW("Malformed namespace value pair at cell " << i + 1 << ": " << ns_values[i]); }
-      else if (!pair[0].empty())
       {
-        ns = std::string{pair[0]};
+        THROW("Malformed namespace value pair at cell " << i + 1 << ": " << ns_values[i]);
       }
+      else if (!pair[0].empty()) { ns = std::string{pair[0]}; }
 
       value = string_to_float(pair[1]);
       if (std::isnan(value)) { THROW("NaN namespace value at cell " << i + 1 << ": " << ns_values[i]); }
-      else
-      {
-        _parser->ns_value[std::string{pair[0]}] = value;
-      }
+      else { _parser->ns_value[std::string{pair[0]}] = value; }
     }
   }
 
@@ -187,10 +186,7 @@ private:
         // Handle the tag column
         if (header_elements[i] == "_tag") { _parser->tag_list.emplace_back(i); }
         // Handle the label column
-        else if (header_elements[i] == "_label")
-        {
-          _parser->label_list.emplace_back(i);
-        }
+        else if (header_elements[i] == "_label") { _parser->label_list.emplace_back(i); }
 
         _parser->header_fn.emplace_back();
         _parser->header_ns.emplace_back();
@@ -219,7 +215,9 @@ private:
     }
 
     if (_parser->label_list.empty())
-    { _all->logger.err_warn("No '_label' column found in the header/CSV first line!"); }
+    {
+      _all->logger.err_warn("No '_label' column found in the header/CSV first line!");
+    }
   }
 
   inline FORCE_INLINE void parse_example()
@@ -321,10 +319,7 @@ private:
     if (!is_feature_float && _parser->options.csv_remove_outer_quotes) { remove_quotation_marks(string_feature_value); }
 
     if (is_feature_float) { _v = cur_channel_v * parsed_feature_value; }
-    else
-    {
-      _v = 1;
-    }
+    else { _v = 1; }
 
     // Case where feature value is string
     if (!is_feature_float)
@@ -341,10 +336,7 @@ private:
           (_all->example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash) & _all->parse_mask);
     }
     // Case where feature value is float and feature name is empty
-    else
-    {
-      word_hash = _channel_hash + _anon++;
-    }
+    else { word_hash = _channel_hash + _anon++; }
 
     // don't add 0 valued features to list of features
     if (_v == 0) { return; }
@@ -357,10 +349,7 @@ private:
         fs.space_names.emplace_back(
             VW::audit_strings(std::string{ns}, std::string{feature_name}, std::string{string_feature_value}));
       }
-      else
-      {
-        fs.space_names.emplace_back(VW::audit_strings(std::string{ns}, std::string{feature_name}));
-      }
+      else { fs.space_names.emplace_back(VW::audit_strings(std::string{ns}, std::string{feature_name})); }
     }
   }
 
@@ -506,10 +495,7 @@ size_t csv_parser::read_line(VW::workspace* all, VW::example* ae, io_buf& buf)
     CSV_parser parse_line(all, ae, csv_line, this);
   }
   // EOF is reached, reset for possible next file.
-  else
-  {
-    reset();
-  }
+  else { reset(); }
   return num_chars_initial;
 }
 }  // namespace parsers
