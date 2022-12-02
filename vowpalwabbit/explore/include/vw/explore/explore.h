@@ -68,6 +68,18 @@ template <typename It>
 int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pmf_first, It pmf_last);
 
 /**
+ * @brief Mix original PMF with uniform distribution.
+ *
+ * @tparam It It Iterator type of the pmf. Must be a RandomAccessIterator.
+ * @param uniform_epsilon The minimum amount of uniform distribution to be mixed with the pmf.
+ * @param pmf_first Iterator pointing to the pmf to be updated.
+ * @param pmf_last Iterator pointing to the pmf to be updated.
+ * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
+ */
+template <typename It>
+int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last);
+
+/**
  * @brief Sample an index from the provided pmf. If the pmf is not normalized it will be updated in-place.
  *
  * @tparam InputIt Iterator type of the pmf. Must be a RandomAccessIterator.
