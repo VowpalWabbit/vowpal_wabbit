@@ -119,6 +119,7 @@ jobs:
             echo "Cannot find .clang-format file!"
             exit 1
           fi
+          git fetch origin master
           git diff origin/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 > clang_format_diff.txt
           if [ -s clang_format_diff.txt ]; then
             cat clang_format_diff.txt
