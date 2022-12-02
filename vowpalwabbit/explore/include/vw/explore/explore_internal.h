@@ -187,7 +187,7 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
   size_t rho_idx = 0;  // rho = 0 should always trigger if statement below if uniform_epsilon < 1.
   float rho_sum = sorted_probs[0];
 
-  for (auto& prob : sorted_probs)
+  for (const auto prob : sorted_probs)
   {
     if (!consider_zero_valued_elements && prob == 0.f) { break; }
 
