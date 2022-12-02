@@ -108,10 +108,7 @@ template <bool is_learn>
 void predict_or_learn(topk& d, VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
 {
   if (is_learn) { d.learn(base, ec_seq); }
-  else
-  {
-    d.predict(base, ec_seq);
-  }
+  else { d.predict(base, ec_seq); }
 }
 
 void finish_example(VW::workspace& all, topk& d, VW::multi_ex& ec_seq)

@@ -99,10 +99,7 @@ private:
       ss << std::endl;
       THROW_EX(VW::strict_parse_exception, ss.str());
     }
-    else
-    {
-      warn_logger.err_warn("{}", ss.str());
-    }
+    else { warn_logger.err_warn("{}", ss.str()); }
   }
 
   inline FORCE_INLINE VW::string_view string_feature_value(VW::string_view sv)
@@ -161,7 +158,9 @@ private:
     size_t name_start = _read_idx;
     while (!(_read_idx >= _line.size() || _line[_read_idx] == ' ' || _line[_read_idx] == ':' ||
         _line[_read_idx] == '\t' || _line[_read_idx] == '|' || _line[_read_idx] == '\r'))
-    { ++_read_idx; }
+    {
+      ++_read_idx;
+    }
 
     return _line.substr(name_start, _read_idx - name_start);
   }
@@ -187,10 +186,7 @@ private:
         str_feat_value = string_feature_value(_line.substr(_read_idx));
         _v = 1;
       }
-      else
-      {
-        _v = _cur_channel_v * float_feature_value;
-      }
+      else { _v = _cur_channel_v * float_feature_value; }
 
       uint64_t word_hash;
       // Case where string:string or :string
@@ -207,10 +203,7 @@ private:
         word_hash = (_p->hasher(feature_name.data(), feature_name.length(), _channel_hash) & _parse_mask);
       }
       // Case where :float
-      else
-      {
-        word_hash = _channel_hash + _anon++;
-      }
+      else { word_hash = _channel_hash + _anon++; }
 
       if (_v == 0)
       {
@@ -227,10 +220,7 @@ private:
           fs.space_names.push_back(
               VW::audit_strings(std::string{_base}, std::string{feature_name}, std::string{str_feat_value}));
         }
-        else
-        {
-          fs.space_names.push_back(VW::audit_strings(std::string{_base}, std::string{feature_name}));
-        }
+        else { fs.space_names.push_back(VW::audit_strings(std::string{_base}, std::string{feature_name})); }
       }
 
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
@@ -247,10 +237,7 @@ private:
           if (affix_name.size() > len)
           {
             if (is_prefix) { affix_name.remove_suffix(affix_name.size() - len); }
-            else
-            {
-              affix_name.remove_prefix(affix_name.size() - len);
-            }
+            else { affix_name.remove_prefix(affix_name.size() - len); }
           }
 
           word_hash = _p->hasher(affix_name.data(), affix_name.length(), (uint64_t)_channel_hash) *
@@ -280,22 +267,10 @@ private:
         {
           char d = 0;
           if ((c >= '0') && (c <= '9')) { d = '0'; }
-          else if ((c >= 'a') && (c <= 'z'))
-          {
-            d = 'a';
-          }
-          else if ((c >= 'A') && (c <= 'Z'))
-          {
-            d = 'A';
-          }
-          else if (c == '.')
-          {
-            d = '.';
-          }
-          else
-          {
-            d = '#';
-          }
+          else if ((c >= 'a') && (c <= 'z')) { d = 'a'; }
+          else if ((c >= 'A') && (c <= 'Z')) { d = 'A'; }
+          else if (c == '.') { d = '.'; }
+          else { d = '#'; }
           // if ((spelling.size() == 0) || (spelling.last() != d))
           _spelling.push_back(d);
         }
@@ -505,10 +480,7 @@ public:
       this->_logger = &all.logger;
       list_name_space();
     }
-    else
-    {
-      ae->is_newline = true;
-    }
+    else { ae->is_newline = true; }
   }
 };
 
@@ -555,10 +527,7 @@ void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view e
   if (bar_idx != VW::string_view::npos)
   {
     if (all->audit || all->hash_inv) { tc_parser<true> parser_line(example.substr(bar_idx), *all, ae); }
-    else
-    {
-      tc_parser<false> parser_line(example.substr(bar_idx), *all, ae);
-    }
+    else { tc_parser<false> parser_line(example.substr(bar_idx), *all, ae); }
   }
 }
 

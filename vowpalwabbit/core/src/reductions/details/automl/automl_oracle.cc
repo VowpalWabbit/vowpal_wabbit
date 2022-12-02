@@ -126,10 +126,7 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
       if (!interactions.empty()) { interactions.clear(); }
       interactions = gen_cubic_interactions(ns_counter, config.elements);
     }
-    else
-    {
-      THROW("Unknown interaction type.");
-    }
+    else { THROW("Unknown interaction type."); }
   }
   else if (config.conf_type == config_type::Interaction)
   {
@@ -173,11 +170,10 @@ void config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
   // configs have become stale. Here we try to write over stale configs with new configs, and if no stale
   // configs exist we'll generate a new one.
   if (valid_config_size < configs.size())
-  { configs[valid_config_size].reset(std::move(new_elements), global_lease, conf_type); }
-  else
   {
-    configs.emplace_back(std::move(new_elements), global_lease, conf_type);
+    configs[valid_config_size].reset(std::move(new_elements), global_lease, conf_type);
   }
+  else { configs.emplace_back(std::move(new_elements), global_lease, conf_type); }
 
   float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
   index_queue.push(std::make_pair(priority, valid_config_size));
@@ -207,10 +203,7 @@ void oracle_rand_impl::gen_ns_groupings_at(const std::string& interaction_type,
     std::vector<namespace_index> idx{ns1, ns2, ns3};
     new_elements.insert(idx);
   }
-  else
-  {
-    THROW("Unknown interaction type.");
-  }
+  else { THROW("Unknown interaction type."); }
 }
 void one_diff_impl::gen_ns_groupings_at(const std::string& interaction_type,
     const interaction_vec_t& champ_interactions, const size_t num, set_ns_list_t::iterator& exclusion,
@@ -241,10 +234,7 @@ void one_diff_impl::gen_ns_groupings_at(const std::string& interaction_type,
         new_elements.insert(idx);
       }
     }
-    else
-    {
-      THROW("Unknown interaction type.");
-    }
+    else { THROW("Unknown interaction type."); }
   }
   else
   {

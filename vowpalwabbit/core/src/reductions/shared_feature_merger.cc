@@ -63,8 +63,9 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
   }
 
   // Guard example state restore against throws
-  auto restore_guard =
-      VW::scope_exit([has_example_header, &shared_example, &ec_seq, &store_shared_ex_in_reduction_features] {
+  auto restore_guard = VW::scope_exit(
+      [has_example_header, &shared_example, &ec_seq, &store_shared_ex_in_reduction_features]
+      {
         if (has_example_header)
         {
           for (auto& example : ec_seq)
@@ -86,10 +87,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
 
   if (ec_seq.empty()) { return; }
   if (is_learn) { base.learn(ec_seq); }
-  else
-  {
-    base.predict(ec_seq);
-  }
+  else { base.predict(ec_seq); }
 
   if (data.metrics)
   {
@@ -103,7 +101,9 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
 void persist(sfm_data& data, VW::metric_sink& metrics)
 {
   if (data.metrics)
-  { metrics.set_uint("sfm_count_learn_example_with_shared", data.metrics->count_learn_example_with_shared); }
+  {
+    metrics.set_uint("sfm_count_learn_example_with_shared", data.metrics->count_learn_example_with_shared);
+  }
 }
 }  // namespace
 

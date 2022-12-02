@@ -35,7 +35,9 @@ void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::multi_
     VW::example* label_example = CB_ADF::test_adf_sequence(examples);
 
     if (base.learn_returns_prediction || label_example == nullptr)
-    { data.update_predictions(examples, initial_action_size); }
+    {
+      data.update_predictions(examples, initial_action_size);
+    }
   }
   else
   {

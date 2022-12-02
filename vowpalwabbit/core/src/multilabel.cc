@@ -50,20 +50,18 @@ VW::label_parser multilabel = {
     [](VW::polylabel& label) { default_label(label.multilabels); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.multilabels, reuse_mem, words, logger); },
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_label(label.multilabels, reuse_mem, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text); },
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.multilabels);
-    },
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.multilabels); },
     // get_weight
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) {
-      return weight(label.multilabels);
-    },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */)
+    { return weight(label.multilabels); },
     // test_label
     [](const VW::polylabel& label) { return test_label(label.multilabels); },
     // label type
@@ -75,10 +73,7 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
   {
     std::stringstream label_string;
     if (is_test) { label_string << "unknown"; }
-    else
-    {
-      label_string << VW::to_string(ec.l.multilabels);
-    }
+    else { label_string << VW::to_string(ec.l.multilabels); }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
         VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);

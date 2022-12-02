@@ -145,10 +145,7 @@ float loss(const cbify& data, uint32_t label, uint32_t final_prediction)
 {
   float mult = data.flip_loss_sign ? -1.f : 1.f;
   if (label != final_prediction) { return mult * data.loss1; }
-  else
-  {
-    return mult * data.loss0;
-  }
+  else { return mult * data.loss0; }
 }
 
 float loss_cs(const cbify& data, const std::vector<VW::cs_class>& costs, uint32_t final_prediction)
@@ -232,7 +229,9 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW:
       data.regression_data.min_value + chosen_action * continuous_range / data.regression_data.num_actions;
 
   if (data.regression_data.loss_option == 0)
-  { cb.cost = get_squared_loss(data, converted_action, regression_label.label); }
+  {
+    cb.cost = get_squared_loss(data, converted_action, regression_label.label);
+  }
   else if (data.regression_data.loss_option == 1)
   {
     cb.cost = get_absolute_loss(data, converted_action, regression_label.label);
@@ -253,11 +252,10 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW:
     // for reporting average loss to be in the correct range (reverse normalizing)
     size_t siz = data.cb_label.costs.size();
     if (data.regression_data.loss_option == 0)
-    { data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range; }
-    else if (data.regression_data.loss_option == 1)
     {
-      data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range;
+      data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range * continuous_range;
     }
+    else if (data.regression_data.loss_option == 1) { data.cb_label.costs[siz - 1].cost = cb.cost * continuous_range; }
   }
 
   data.a_s = std::move(ec.pred.a_s);
@@ -299,7 +297,9 @@ void predict_or_learn_regression(cbify& data, single_learner& base, VW::example&
   cb_cont_lbl.pdf_value = ec.pred.pdf_value.pdf_value;
 
   if (data.regression_data.loss_option == 0)
-  { cb_cont_lbl.cost = get_squared_loss(data, ec.pred.pdf_value.action, regression_label.label); }
+  {
+    cb_cont_lbl.cost = get_squared_loss(data, ec.pred.pdf_value.action, regression_label.label);
+  }
   else if (data.regression_data.loss_option == 1)
   {
     cb_cont_lbl.cost = get_absolute_loss(data, ec.pred.pdf_value.action, regression_label.label);
@@ -352,10 +352,7 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
   VW::multiclass_label ld;
   VW::cs_label csl;
   if (use_cs) { csl = std::move(ec.l.cs); }
-  else
-  {
-    ld = std::move(ec.l.multi);
-  }
+  else { ld = std::move(ec.l.multi); }
 
   ec.l.cb.costs.clear();
   ec.pred.a_s.clear();
@@ -380,10 +377,7 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
   if (is_learn) { base.learn(ec); }
 
   if (use_cs) { ec.l.cs = std::move(csl); }
-  else
-  {
-    ec.l.multi = std::move(ld);
-  }
+  else { ec.l.multi = std::move(ld); }
 
   ec.pred.multiclass = action;
   ec.l.cb.costs.clear();
@@ -415,10 +409,7 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
   VW::cs_label csl;
 
   if (use_cs) { csl = ec.l.cs; }
-  else
-  {
-    ld = ec.l.multi;
-  }
+  else { ld = ec.l.multi; }
 
   CB::cb_class cl;
   cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
@@ -427,10 +418,7 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
   if (!cl.action) THROW("No action with non-zero probability found.");
 
   if (use_cs) { cl.cost = loss_cs(data, csl.costs, cl.action); }
-  else
-  {
-    cl.cost = loss(data, ld.label, cl.action);
-  }
+  else { cl.cost = loss(data, ld.label, cl.action); }
 
   // add cb label to chosen action
   auto& lab = data.adf_data.ecs[cl.action - 1]->l.cb;
@@ -473,10 +461,7 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_se
     auto& ec = *ec_seq[i];
     data.cb_as[i] = ec.pred.a_s;  // store action_score vector for later reuse.
     if (i == predicted_action - 1) { ec.pred.multiclass = predicted_action; }
-    else
-    {
-      ec.pred.multiclass = 0;
-    }
+    else { ec.pred.multiclass = 0; }
   }
 }
 
@@ -510,16 +495,10 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_s
     auto& ec = *ec_seq[i];
     data.cb_as[i] = std::move(ec.pred.a_s);  // store action_score vector for later reuse.
     if (i == cl.action - 1) { data.cb_label = ec.l.cb; }
-    else
-    {
-      data.cb_costs[i] = ec.l.cb.costs;
-    }
+    else { data.cb_costs[i] = ec.l.cb.costs; }
     ec.l.cs.costs = data.cs_costs[i];
     if (i == cl.action - 1) { ec.pred.multiclass = cl.action; }
-    else
-    {
-      ec.pred.multiclass = 0;
-    }
+    else { ec.pred.multiclass = 0; }
     ec.l.cb.costs.clear();
   }
 }
@@ -554,7 +533,9 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
   }
 
   for (const auto& sink : all.final_prediction_sink)
-  { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
+  {
+    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -639,14 +620,8 @@ void output_cb_reg_predictions(
     continuous_label_elm cost = label.costs[0];
     strm << cost.action << ":" << cost.cost << ":" << cost.pdf_value << std::endl;
   }
-  else if (label.costs.empty())
-  {
-    strm << "ERR No costs found." << std::endl;
-  }
-  else
-  {
-    strm << "ERR Too many costs found. Expecting one." << std::endl;
-  }
+  else if (label.costs.empty()) { strm << "ERR No costs found." << std::endl; }
+  else { strm << "ERR Too many costs found. Expecting one." << std::endl; }
   const std::string str = strm.str();
   for (auto& f : predict_file_descriptors) { f->write(str.c_str(), str.size()); }
 }
@@ -736,7 +711,9 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     if (data->use_adf) { THROW("Incompatible options: cb_explore_adf and cbify_reg"); }
     if (use_cs) { THROW("Incompatible options: cbify_cs and cbify_reg"); }
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-    { THROW("Min and max values must be supplied with cbify_reg"); }
+    {
+      THROW("Min and max values must be supplied with cbify_reg");
+    }
 
     if (use_discrete && options.was_supplied("cats")) { THROW("Incompatible options: cb_discrete and cats"); }
     else if (use_discrete)
@@ -798,7 +775,9 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     multi_learner* base = as_multiline(stack_builder.setup_base_learner());
 
     if (data->use_adf)
-    { data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions); }
+    {
+      data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
+    }
 
     if (use_cs)
     {

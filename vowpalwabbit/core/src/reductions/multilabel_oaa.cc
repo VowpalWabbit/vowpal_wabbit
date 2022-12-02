@@ -54,12 +54,11 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::examp
       }
       base.learn(ec, i);
     }
-    else
-    {
-      base.predict(ec, i);
-    }
+    else { base.predict(ec, i); }
     if ((o.link == "logistic" && ec.pred.scalar > 0.5) || (o.link != "logistic" && ec.pred.scalar > 0.0))
-    { preds.label_v.push_back(i); }
+    {
+      preds.label_v.push_back(i);
+    }
     if (o.probabilities) { ec.pred.scalars.push_back(std::move(ec.pred.scalar)); }
   }
   if (is_learn)
@@ -87,10 +86,7 @@ void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
     {
       if (i > 0) { output_string_stream << ' '; }
       if (all.sd->ldict) { output_string_stream << all.sd->ldict->get(i); }
-      else
-      {
-        output_string_stream << i;
-      }
+      else { output_string_stream << i; }
       output_string_stream << ':' << ec.pred.scalars[i];
     }
     const auto ss_str = output_string_stream.str();

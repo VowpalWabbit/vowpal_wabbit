@@ -119,11 +119,12 @@ label_parser the_label_parser = {
     [](polylabel& label) { CB::default_label<continuous_label>(label.cb_cont); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.cb_cont, red_features, reuse_mem, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_label(label.cb_cont, red_features, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& red_feats /*red_features*/, io_buf& cache,
-        const std::string& upstream_name, bool text) {
+        const std::string& upstream_name, bool text)
+    {
       size_t bytes = 0;
       bytes += VW::model_utils::write_model_field(cache, label.cb_cont, upstream_name, text);
       bytes += VW::model_utils::write_model_field(
@@ -131,7 +132,8 @@ label_parser the_label_parser = {
       return bytes;
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& red_feats /*red_features*/, io_buf& cache) {
+    [](polylabel& label, reduction_features& red_feats /*red_features*/, io_buf& cache)
+    {
       size_t bytes = 0;
       bytes += VW::model_utils::read_model_field(cache, label.cb_cont);
       bytes += VW::model_utils::read_model_field(

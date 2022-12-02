@@ -126,7 +126,9 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("no_predict")) { THROW("cb_dro cannot be used with no_predict"); }
 
   if (!options.was_supplied("cb_adf") && !options.was_supplied("cb_explore_adf"))
-  { THROW("cb_dro requires cb_adf or cb_explore_adf"); }
+  {
+    THROW("cb_dro requires cb_adf or cb_explore_adf");
+  }
 
   if (alpha <= 0 || alpha >= 1) { THROW("cb_dro_alpha must be in (0, 1)"); }
 

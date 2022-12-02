@@ -113,7 +113,9 @@ public:
   option_builder& allow_override(bool allow_override = true)
   {
     if (details::is_vector<typename T::value_type>::value)
-    { THROW("allow_override can only apply to scalar option types.") }
+    {
+      THROW("allow_override can only apply to scalar option types.")
+    }
     _option_obj.m_allow_override = allow_override;
     return *this;
   }
