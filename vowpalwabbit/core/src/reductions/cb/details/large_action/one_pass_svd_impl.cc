@@ -125,6 +125,8 @@ one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t se
 {
 #ifdef BUILD_LAS_WITH_SIMD
   _use_simd = (use_explicit_simd && cpu_supports_avx512());
+#else
+  _UNUSED(use_explicit_simd);
 #endif
 }
 

@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
     vw_scalar->predict(ex_scalar);
     auto& scores_scalar = ex_scalar[0]->pred.a_s;
 
-    auto* vw_simd = VW::initialize("--cb_explore_adf --large_action_space --quiet --explicit_simd");
+    auto* vw_simd = VW::initialize("--cb_explore_adf --large_action_space --quiet --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
     for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
     vw_simd->predict(ex_simd);
@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
     vw_scalar->predict(ex_scalar);
     auto& scores_scalar = ex_scalar[0]->pred.a_s;
 
-    auto* vw_simd = VW::initialize("--cb_explore_adf --large_action_space --quiet -q :: --explicit_simd");
+    auto* vw_simd = VW::initialize("--cb_explore_adf --large_action_space --quiet -q :: --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
     for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
     vw_simd->predict(ex_simd);
