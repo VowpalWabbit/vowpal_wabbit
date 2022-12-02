@@ -536,7 +536,7 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
   }
 }
 
-void record_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb_data& data, const VW::multi_ex& ec_seq,
+void update_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb_data& data, const VW::multi_ex& ec_seq,
     VW::io::logger& logger)
 {
   if (!ec_seq.empty() && !data.no_pred)
@@ -695,7 +695,7 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
                 .set_input_label_type(VW::label_type_t::CCB)
                 .set_output_label_type(VW::label_type_t::CB)
                 .set_output_example(output_example_ccb)
-                .set_record_stats(record_stats_ccb)
+                .set_update_stats(update_stats_ccb)
                 .set_cleanup_example(cleanup_example_ccb)
                 .set_save_load(save_load)
                 .build();

@@ -55,7 +55,7 @@ void VW::details::return_simple_example(VW::workspace& all, void*, VW::example& 
   VW::finish_example(all, ec);
 }
 
-void VW::details::record_stats_simple_label(
+void VW::details::update_stats_simple_label(
     const VW::workspace& /* all */, shared_data& sd, const VW::example& ec, VW::io::logger& /* logger */)
 {
   const auto& ld = ec.l.simple;

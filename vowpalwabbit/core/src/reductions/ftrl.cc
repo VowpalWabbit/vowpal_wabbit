@@ -483,7 +483,7 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
                .set_save_load(save_load)
                .set_end_pass(end_pass)
                .set_output_example(VW::details::output_example_simple_label<ftrl>)
-               .set_record_stats(VW::details::record_stats_simple_label<ftrl>)
+               .set_update_stats(VW::details::update_stats_simple_label<ftrl>)
                .build();
   return make_base(*l);
 }

@@ -131,7 +131,7 @@ class finish_example_data
 {
 public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
-  using record_stats_fn = void (*)(
+  using update_stats_fn = void (*)(
       const VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using output_example_fn = void (*)(
       VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
@@ -141,7 +141,7 @@ public:
   base_learner* base = nullptr;
   fn finish_example_f = nullptr;
   fn print_example_f = nullptr;
-  record_stats_fn record_stats_f = nullptr;
+  update_stats_fn update_stats_f = nullptr;
   output_example_fn output_example_f = nullptr;
   cleanup_example_fn cleanup_example_f = nullptr;
 };
@@ -400,13 +400,13 @@ public:
       return;
     }
 
-    if (has_record_stats()) { record_stats(all, ec); }
+    if (has_update_stats()) { update_stats(all, ec); }
 
     if (has_output_example()) { output_example(all, ec); }
 
     if (has_cleanup_example()) { cleanup_example(ec); }
 
-    const auto has_at_least_one_new_style_func = has_record_stats() || has_output_example() || has_cleanup_example();
+    const auto has_at_least_one_new_style_func = has_update_stats() || has_output_example() || has_cleanup_example();
     if (has_at_least_one_new_style_func)
     {
       VW::finish_example(all, ec);
@@ -440,11 +440,11 @@ public:
     _finish_example_fd.print_example_f(all, _finish_example_fd.data, (void*)&ec);
   }
 
-  inline void NO_SANITIZE_UNDEFINED record_stats(VW::workspace& all, const E& ec)
+  inline void NO_SANITIZE_UNDEFINED update_stats(VW::workspace& all, const E& ec)
   {
-    debug_log_message(ec, "record_stats");
-    if (!has_record_stats()) { THROW("fatal: learner did not register record_stats fn: " + _name); }
-    _finish_example_fd.record_stats_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
+    debug_log_message(ec, "update_stats");
+    if (!has_update_stats()) { THROW("fatal: learner did not register update_stats fn: " + _name); }
+    _finish_example_fd.update_stats_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
   }
 
   inline void NO_SANITIZE_UNDEFINED output_example(VW::workspace& all, const E& ec)
@@ -557,7 +557,7 @@ public:
 
   VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_fd.finish_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_legacy_print_example() const { return _finish_example_fd.print_example_f != nullptr; }
-  VW_ATTR(nodiscard) bool has_record_stats() const { return _finish_example_fd.record_stats_f != nullptr; }
+  VW_ATTR(nodiscard) bool has_update_stats() const { return _finish_example_fd.update_stats_f != nullptr; }
   VW_ATTR(nodiscard) bool has_output_example() const { return _finish_example_fd.output_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_cleanup_example() const { return _finish_example_fd.cleanup_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_fn != nullptr) || (_merge_fn != nullptr); }
@@ -776,13 +776,13 @@ public:
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  // Responsibilities of record stats:
+  // Responsibilities of update stats:
   // - Call shared_data::update
-  FluentBuilderT& set_record_stats(
+  FluentBuilderT& set_update_stats(
       void (*fn_ptr)(const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger))
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.record_stats_f = (details::finish_example_data::record_stats_fn)(fn_ptr);
+    learner_ptr->_finish_example_fd.update_stats_f = (details::finish_example_data::update_stats_fn)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
