@@ -536,8 +536,8 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
   }
 }
 
-void record_stats_ccb(
-    const VW::workspace& /* all */, shared_data& sd, const ccb_data& data, const VW::multi_ex& ec_seq, VW::io::logger& logger)
+void record_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb_data& data, const VW::multi_ex& ec_seq,
+    VW::io::logger& logger)
 {
   if (!ec_seq.empty() && !data.no_pred)
   {
@@ -573,8 +573,8 @@ void record_stats_ccb(
     sd.update(holdout_example, num_labeled > 0, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
   }
 }
-void output_example_ccb(
-    VW::workspace& all, shared_data& /* sd */, const ccb_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+void output_example_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_data& data, const VW::multi_ex& ec_seq,
+    VW::io::logger& /* unused */)
 {
   if (!ec_seq.empty() && !data.no_pred)
   {
@@ -594,7 +594,8 @@ void cleanup_example_ccb(ccb_data& data, VW::multi_ex& ec_seq)
 {
   if (!data.no_pred)
   {
-    for (auto& a_s : ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores) { return_collection(a_s, data.action_score_pool); }
+    for (auto& a_s : ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores)
+    { return_collection(a_s, data.action_score_pool); }
     ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores.clear();
   }
 }
