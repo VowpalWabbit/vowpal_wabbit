@@ -258,7 +258,7 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
 template <typename T, typename S>
 cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
-    size_t thread_pool_size, size_t block_size, implementation_type impl_type)
+    size_t thread_pool_size, size_t block_size, bool use_explicit_simd, implementation_type impl_type)
     : _d(d)
     , _all(all)
     , _counter(0)
@@ -266,7 +266,7 @@ cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint6
     , _impl_type(impl_type)
     , spanner_state(c, d)
     , shrink_fact_config(gamma_scale, gamma_exponent, apply_shrink_factor)
-    , impl(all, d, _seed, total_size, thread_pool_size, block_size)
+    , impl(all, d, _seed, total_size, thread_pool_size, block_size, use_explicit_simd)
 {
 }
 
@@ -302,7 +302,8 @@ template class cb_explore_adf_large_action_space<two_pass_svd_impl, one_rank_spa
 template <typename T, typename S>
 VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::multi_learner* base,
     implementation_type& impl_type, VW::workspace& all, bool with_metrics, uint64_t d, float gamma_scale,
-    float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size, size_t block_size)
+    float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size, size_t block_size,
+    bool use_explicit_simd)
 {
   using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space<T, S>>;
 
@@ -311,7 +312,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
   auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all,
-      seed, 1 << all.num_bits, thread_pool_size, block_size, impl_type);
+      seed, 1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
 
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
@@ -342,6 +343,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float c;
   bool apply_shrink_factor = false;
   bool use_two_pass_svd_impl = false;
+  bool use_simd_in_one_pass_svd_impl = false;
   // leave some resources available in the case of few core's (for parser)
   uint64_t thread_pool_size = (std::thread::hardware_concurrency() - 1) / 2;
   uint64_t block_size = 0;
@@ -378,6 +380,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .default_value(0)
                .help("Number of actions in a block to be scheduled for multithreading when using one pass svd "
                      "implementation (by default, block_size = num_actions / thread_pool_size)"))
+      .add(make_option("explicit_simd", use_simd_in_one_pass_svd_impl)
+               .experimental()
+               .help("Use explicit simd implementation in one pass svd. Only works with quadratics and no ignores. "
+                     "(Linux only)"))
       .add(make_option("two_pass_svd", use_two_pass_svd_impl)
                .experimental()
                .help("A more accurate svd that is much slower than the default (one pass svd)"));
@@ -413,12 +419,14 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   {
     auto impl_type = implementation_type::two_pass_svd;
     return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
+        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
+        /*use_explicit_simd=*/false);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
     return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size);
+        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
+        use_simd_in_one_pass_svd_impl);
   }
 }
