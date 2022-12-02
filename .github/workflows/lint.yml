@@ -95,9 +95,7 @@ jobs:
     name: lint.c++.formatting
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: recursive
+      - uses: actions/checkout@v3
       - name: Install clang-format
         # This is only needed if the diff check runs as it installs 'clang-format-diff'
         # 'clang-format' is available by default
