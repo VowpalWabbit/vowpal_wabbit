@@ -419,17 +419,13 @@ public:
     if (base != nullptr)
     {
       if (is_multiline() != base->is_multiline())
-      { THROW("Cannot forward finish_example call across multiline/singleline boundary."); }
-      if (base->is_multiline()) { as_multiline(base)->finish_example(all, (VW::multi_ex&)ec); }
-      else
       {
-        as_singleline(base)->finish_example(all, (VW::example&)ec);
+        THROW("Cannot forward finish_example call across multiline/singleline boundary.");
       }
+      if (base->is_multiline()) { as_multiline(base)->finish_example(all, (VW::multi_ex&)ec); }
+      else { as_singleline(base)->finish_example(all, (VW::example&)ec); }
     }
-    else
-    {
-      THROW("No finish functions were registered in the stack.");
-    }
+    else { THROW("No finish functions were registered in the stack."); }
   }
 
   inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)

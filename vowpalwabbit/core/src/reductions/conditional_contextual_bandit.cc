@@ -564,7 +564,9 @@ void update_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb
     }
 
     if (num_labeled > 0 && num_labeled < data.slots.size())
-    { logger.err_warn("Unlabeled example in train set, was this intentional?"); }
+    {
+      logger.err_warn("Unlabeled example in train set, was this intentional?");
+    }
 
     bool holdout_example = num_labeled > 0;
     for (const auto* example : ec_seq) { holdout_example &= example->test_only; }
@@ -580,7 +582,9 @@ void output_example_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_dat
   {
     // Print predictions
     for (auto& sink : all.final_prediction_sink)
-    { VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger); }
+    {
+      VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger);
+    }
     VW::details::global_print_newline(all.final_prediction_sink, all.logger);
 
     // Print progress
@@ -595,7 +599,9 @@ void cleanup_example_ccb(ccb_data& data, VW::multi_ex& ec_seq)
   if (!data.no_pred)
   {
     for (auto& a_s : ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores)
-    { return_collection(a_s, data.action_score_pool); }
+    {
+      return_collection(a_s, data.action_score_pool);
+    }
     ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores.clear();
   }
 }
