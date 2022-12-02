@@ -298,7 +298,7 @@ TEST(explore_tests, enforce_minimum_probability_all_zeros_and_consider)
 {
   std::vector<float> pdf = {0.f, 0.f, 0.f};
   EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, true, begin(pdf), end(pdf)));
-  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.2f, .2f, .2f}));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{1.f/3.f, 1.f/3.f, 1.f/3.f}));
 }
 
 TEST(explore_tests, enforce_minimum_probability_equal_to_amt)
@@ -328,6 +328,51 @@ TEST(explore_tests, enforce_minimum_probability_bad_range)
   float x;
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::enforce_minimum_probability(1.f, false, begin(pdf), end(pdf)));
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::enforce_minimum_probability(1.f, false, &x, &x - 3));
+}
+
+TEST(explore_tests, enforce_minimum_probability_uniform_1)
+{
+  std::vector<float> pdf = {0.9f, 0.1f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_uniform_2)
+{
+  std::vector<float> pdf = {0.8f, 0.1f, 0.1f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_uniform_unsorted)
+{
+  std::vector<float> pdf = {0.1f, 0.8f, 0.1f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.1f, .8f, .1f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_old_impl_bug_incl_zero)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_old_impl_bug_dont_incl_zero)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.85f, .15f, .0f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_zero_epsilon)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.0f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.89f, .11f, .0f}));
+
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.0f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.89f, .11f, .0f}));
 }
 
 TEST(explore_tests, sampling)

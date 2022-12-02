@@ -11,6 +11,7 @@
 #include <cstring>
 #include <numeric>
 #include <stdexcept>
+#include <vector>
 
 namespace exploration
 {
@@ -153,31 +154,58 @@ template <typename It>
 int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last,
     std::random_access_iterator_tag /* pmf_tag */)
 {
-  // iterators don't support <= in general
   if (pmf_first == pmf_last || pmf_last < pmf_first) { return E_EXPLORATION_BAD_RANGE; }
+
+  // Nothing to do
+  if (uniform_epsilon == 0.f) { return S_EXPLORATION_OK; }
+
   if (uniform_epsilon < 0.f || uniform_epsilon > 1.f) { return E_EXPLORATION_BAD_EPSILON; }
 
-  size_t num_actions = consider_zero_valued_elements
-      ? pmf_last - pmf_first
-      // If we aren't considering 0 elements, then we need to count the number of non-zero elements.
-      : std::count_if(pmf_first, pmf_last, [](float val) { return val != 0.f; });
-  const auto minimum_probability = uniform_epsilon / num_actions;
-  size_t n_changed = 0;
-  float p_unchanged = 0.f;
+  const auto num_actions = std::distance(pmf_first, pmf_last);
 
-  for (auto it = pmf_first; it != pmf_last; ++it)
+  size_t support_size = num_actions;
+  if (!consider_zero_valued_elements) { support_size -= std::count(pmf_first, pmf_last, 0.f); }
+
+  if (uniform_epsilon > 0.999f)  // uniform exploration
   {
-    const auto value = *it;
-    if (value < minimum_probability && (consider_zero_valued_elements || value > 0)) { n_changed += 1; }
-    else { p_unchanged += value; }
-  }
-  for (auto it = pmf_first; it != pmf_last; ++it)
-  {
-    const auto value = *it;
-    if (value < minimum_probability && (consider_zero_valued_elements || value > 0)) { *it = minimum_probability; }
-    else if (consider_zero_valued_elements || value > 0) { *it *= (1 - n_changed * minimum_probability) / p_unchanged; }
+    std::for_each(pmf_first, pmf_last, [support_size, consider_zero_valued_elements](float& prob) {
+      if (consider_zero_valued_elements || prob > 0) { prob = 1.f / support_size; }
+    });
+
+    return S_EXPLORATION_OK;
   }
 
+  // When consider_zero_valued_elements == false, uniform_epsilon is divided by the total
+  // number of actions but only nonzero elements are updated.
+  const auto minimum_probability = uniform_epsilon / support_size;
+
+  std::vector<float> sorted_probs(pmf_first, pmf_last);
+  std::sort(sorted_probs.begin(), sorted_probs.end(), std::greater<float>());
+
+  size_t idx = 0;
+  float running_sum = 0.f;
+  size_t rho_idx = 0;  // rho = 0 should always trigger if statement below if uniform_epsilon < 1.
+  float rho_sum = sorted_probs[0];
+
+  for (auto& prob : sorted_probs)
+  {
+    if (!consider_zero_valued_elements && prob == 0.f) { break; }
+
+    running_sum += prob;
+    if (prob > ((support_size - idx - 1) * minimum_probability + running_sum - 1.f) / (idx + 1.f) + minimum_probability)
+    {
+      rho_idx = idx;
+      rho_sum = running_sum;
+    }
+
+    idx += 1;
+  }
+
+  const auto tau = ((support_size - rho_idx - 1.f) * minimum_probability + rho_sum - 1.f) / (rho_idx + 1.f);
+
+  std::for_each(pmf_first, pmf_last, [tau, minimum_probability, consider_zero_valued_elements](float& prob) {
+    if (consider_zero_valued_elements || prob > 0) { prob = std::max(prob - tau, minimum_probability); }
+  });
   return S_EXPLORATION_OK;
 }
 
