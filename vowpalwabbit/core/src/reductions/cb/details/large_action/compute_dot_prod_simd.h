@@ -15,14 +15,19 @@ namespace VW
 {
 namespace cb_explore_adf
 {
+inline bool cpu_supports_avx2() { return __builtin_cpu_supports("avx2") && __builtin_cpu_supports("fma"); }
+
 inline bool cpu_supports_avx512()
 {
   return __builtin_cpu_supports("avx512f") && __builtin_cpu_supports("avx512bw") &&
       __builtin_cpu_supports("avx512vl") && __builtin_cpu_supports("avx512vpopcntdq");
 }
 
+// A data parallel implementation of the foreach_feature that processes 8 features at once.
+float compute_dot_prod_avx2(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex);
+
 // A data parallel implementation of the foreach_feature that processes 16 features at once.
-float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex);
+float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex);
 
 }  // namespace cb_explore_adf
 }  // namespace VW

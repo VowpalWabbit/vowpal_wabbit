@@ -330,14 +330,14 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_plaincb,
 
 #ifdef BUILD_LAS_WITH_SIMD
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_10features_1thread,
-    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
+    gen_cb_examples(1, 50000, 10, 300, 5, 5, 20000, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size 0")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_10features_1thread_simd,
-    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
+    gen_cb_examples(1, 50000, 10, 300, 5, 5, 20000, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size 0 "
     "--las_hint_explicit_simd")
     ->MinTime(15.0)
