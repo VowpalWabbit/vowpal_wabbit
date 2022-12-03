@@ -52,10 +52,7 @@ void copy_example_data(VW::example* dst, VW::example* src, bool oas = false)  //
     dst->l = src->l;
     dst->l.multi.label = src->l.multi.label;
   }
-  else
-  {
-    dst->l.multilabels.label_v = src->l.multilabels.label_v;
-  }
+  else { dst->l.multilabels.label_v = src->l.multilabels.label_v; }
   VW::copy_example_data(dst, src);
 }
 
@@ -80,10 +77,7 @@ void diag_kronecker_prod_fs_test(
     uint64_t ec2pos = f2.indices[idx2];
 
     if (ec1pos < ec2pos) { idx1++; }
-    else if (ec1pos > ec2pos)
-    {
-      idx2++;
-    }
+    else if (ec1pos > ec2pos) { idx2++; }
     else
     {
       prod_f.push_back(f1.values[idx1] * f2.values[idx2] / denominator, ec1pos);
@@ -114,10 +108,7 @@ void diag_kronecker_product_test(VW::example& ec1, VW::example& ec2, VW::example
     VW::namespace_index c1 = ec1.indices[idx1];
     VW::namespace_index c2 = ec2.indices[idx2];
     if (c1 < c2) { idx1++; }
-    else if (c1 > c2)
-    {
-      idx2++;
-    }
+    else if (c1 > c2) { idx2++; }
     else
     {
       diag_kronecker_prod_fs_test(ec1.feature_space[c1], ec2.feature_space[c2], ec.feature_space[c1],
@@ -366,10 +357,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     remove_at_index(b.nodes[cn].examples_index, loc_at_leaf);
     return ec_id;
   }
-  else
-  {
-    return -1;
-  }
+  else { return -1; }
 }
 
 // train the node with id cn, using the statistics stored in the node to
@@ -515,7 +503,9 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       std::max(static_cast<double>(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
-  { b.max_ex_in_leaf = static_cast<size_t>(std::max(b.nodes[cn].nl, b.nodes[cn].nr)); }
+  {
+    b.max_ex_in_leaf = static_cast<size_t>(std::max(b.nodes[cn].nl, b.nodes[cn].nr));
+  }
 }
 
 int compare_label(const void* a, const void* b) { return *(uint32_t*)a - *(uint32_t*)b; }
@@ -534,10 +524,7 @@ inline uint32_t over_lap(VW::v_array<uint32_t>& array_1, VW::v_array<uint32_t>& 
     uint32_t c1 = array_1[idx1];
     uint32_t c2 = array_2[idx2];
     if (c1 < c2) { idx1++; }
-    else if (c1 > c2)
-    {
-      idx2++;
-    }
+    else if (c1 > c2) { idx2++; }
     else
     {
       num_overlap++;
@@ -582,7 +569,9 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
   {
     ec.l.simple.label = -1.f;
     if (std::find(multilabels.label_v.begin(), multilabels.label_v.end(), leaf_labs[i]) != multilabels.label_v.end())
-    { ec.l.simple.label = 1.f; }
+    {
+      ec.l.simple.label = 1.f;
+    }
     base.learn(ec, b.max_routers + 1 + leaf_labs[i]);
   }
   ec.pred.multilabels = preds;
@@ -636,10 +625,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW
         base.predict(*b.kprod_ec, b.max_routers);
         score = b.kprod_ec->partial_prediction;
       }
-      else
-      {
-        score = normalized_linear_prod(b, &ec, b.examples[loc]);
-      }
+      else { score = normalized_linear_prod(b, &ec, b.examples[loc]); }
 
       if (score > max_score)
       {
@@ -649,10 +635,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW
     }
     return max_pos;
   }
-  else
-  {
-    return -1;
-  }
+  else { return -1; }
 }
 
 // for any two examples, use number of overlap labels to indicate the similarity between these two examples.
@@ -717,10 +700,7 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
   {
     closest_ec = pick_nearest(b, base, cn, ec);
     if (closest_ec != -1) { ec.pred.multiclass = b.examples[closest_ec]->l.multi.label; }
-    else
-    {
-      ec.pred.multiclass = 0;
-    }
+    else { ec.pred.multiclass = 0; }
 
     if (ec.l.multi.label != ec.pred.multiclass)
     {
@@ -867,10 +847,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
     base.predict(ec, b.nodes[cn].base_router);
     float prediction = ec.pred.scalar;
     if (insertion == false) { cn = prediction < 0 ? b.nodes[cn].left : b.nodes[cn].right; }
-    else
-    {
-      cn = insert_descent(b.nodes[cn], prediction);
-    }
+    else { cn = insert_descent(b.nodes[cn], prediction); }
   }
   path.push_back(cn);  // push back the leaf
 
@@ -889,7 +866,9 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   {
     b.nodes[cn].examples_index.push_back(ec_array_index);
     if ((b.nodes[cn].examples_index.size() >= b.max_leaf_examples) && (b.nodes.size() + 2 < b.max_nodes))
-    { split_leaf(b, base, cn); }
+    {
+      split_leaf(b, base, cn);
+    }
   }
 }
 
@@ -942,10 +921,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       {  // crop the weight, otherwise sometimes cause NAN outputs.
         ec.weight = 100.f;
       }
-      else if (ec.weight < .01f)
-      {
-        ec.weight = 0.01f;
-      }
+      else if (ec.weight < .01f) { ec.weight = 0.01f; }
       ec.l.simple = {objective < 0. ? -1.f : 1.f};
       ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
       base.learn(ec, b.nodes[cn].base_router);
@@ -1006,7 +982,9 @@ void insert_example(memory_tree& b, single_learner& base, const uint32_t& ec_arr
 
     // if the number of examples exceeds the max_leaf_examples, and not reach the max_nodes - 2 yet, we split:
     if ((b.nodes[cn].examples_index.size() >= b.max_leaf_examples) && (b.nodes.size() + 2 <= b.max_nodes))
-    { split_leaf(b, base, cn); }
+    {
+      split_leaf(b, base, cn);
+    }
   }
 }
 
@@ -1027,10 +1005,7 @@ void experience_replay(memory_tree& b, single_learner& base)
         VW::v_array<uint64_t> tmp_path;
         route_to_leaf(b, base, ec_id, 0, tmp_path, true);
       }
-      else
-      {
-        insert_example(b, base, ec_id);
-      }
+      else { insert_example(b, base, ec_id); }
     }
   }
 }
@@ -1052,10 +1027,7 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
                   << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
                   << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       }
-      else
-      {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
-      }
+      else { std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl; }
     }
 
     clock_t begin = clock();
@@ -1088,11 +1060,10 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
     if (b.iter % 5000 == 0)
     {
       if (b.oas == false)
-      { std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl; }
-      else
       {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl;
       }
+      else { std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl; }
     }
   }
 }

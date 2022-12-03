@@ -163,7 +163,9 @@ void to_flat::create_ccb_label(VW::example* v, ExampleBuilder& ex_builder)
       if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
       {
         for (auto const& action : v->l.conditional_contextual_bandit.explicit_included_actions)
-        { explicit_included_actions.push_back(action); }
+        {
+          explicit_included_actions.push_back(action);
+        }
       }
       ex_builder.label =
           VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, outcome, &explicit_included_actions).Union();
@@ -172,7 +174,9 @@ void to_flat::create_ccb_label(VW::example* v, ExampleBuilder& ex_builder)
     else if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
     {
       for (auto const& action : v->l.conditional_contextual_bandit.explicit_included_actions)
-      { explicit_included_actions.push_back(action); }
+      {
+        explicit_included_actions.push_back(action);
+      }
       ex_builder.label =
           VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, &explicit_included_actions).Union();
       ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
@@ -261,7 +265,9 @@ void to_flat::create_slates_label(VW::example* v, ExampleBuilder& ex_builder)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     for (auto const& as : v->l.slates.probabilities)
-    { action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(_builder, as.action, as.score)); }
+    {
+      action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(_builder, as.action, as.score));
+    }
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, v->l.slates.labeled, 0.0, 0U, &action_scores)
                            .Union();
@@ -323,7 +329,9 @@ flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespac
     else
     {
       for (auto it = begin; it != end; ++it)
-      { fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, it.value(), it.index())); }
+      {
+        fts.push_back(VW::parsers::flatbuffer::CreateFeatureDirect(_builder, nullptr, it.value(), it.index()));
+      }
       namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, index, &fts, hash);
     }
     _share_examples[refid] = namespace_offset;
@@ -459,10 +467,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         all.example_parser->ready_parsed_examples.try_pop(ae);
         continue;
       }
-      else
-      {
-        ex_builder.is_newline = true;
-      }
+      else { ex_builder.is_newline = true; }
     }
     else
     {

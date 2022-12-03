@@ -82,7 +82,9 @@ void push_ns(VW::example* ex, const char* ns, std::vector<namespace_builder<audi
     // Close last
     auto& top = namespaces.back();
     if (!top.ftrs->namespace_extents.empty() && top.ftrs->namespace_extents.back().end_index == 0)
-    { top.ftrs->end_ns_extent(); }
+    {
+      top.ftrs->end_ns_extent();
+    }
   }
   // Add new
   n.ftrs->start_ns_extent(n.namespace_hash);
@@ -99,7 +101,9 @@ void pop_ns(VW::example* ex, std::vector<namespace_builder<audit>>& namespaces)
     auto feature_group = ns.feature_group;
     // Do not insert feature_group if it already exists.
     if (std::find(ex->indices.begin(), ex->indices.end(), feature_group) == ex->indices.end())
-    { ex->indices.push_back(feature_group); }
+    {
+      ex->indices.push_back(feature_group);
+    }
   }
 
   ns.ftrs->end_ns_extent();

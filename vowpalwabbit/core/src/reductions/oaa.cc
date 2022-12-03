@@ -237,10 +237,7 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
       for (uint32_t i = 0; i < o.k; i++) { ec.pred.scalars[i] *= inv_sum_prob; }
     }
   }
-  else
-  {
-    ec.pred.multiclass = prediction;
-  }
+  else { ec.pred.multiclass = prediction; }
 }
 
 // TODO: partial code duplication with multiclass.cc:finish_example
@@ -261,10 +258,7 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
     correct_class_prob = ec.pred.scalars[((o.indexing == 0) ? ec.l.multi.label : ec.l.multi.label - 1) % o.k];
     if (correct_class_prob > 0) { multiclass_log_loss = -std::log(correct_class_prob) * ec.weight; }
     if (ec.test_only) { all.sd->holdout_multiclass_log_loss += multiclass_log_loss; }
-    else
-    {
-      all.sd->multiclass_log_loss += multiclass_log_loss;
-    }
+    else { all.sd->multiclass_log_loss += multiclass_log_loss; }
   }
   // === Compute `prediction` and zero_one_loss
   // We have already computed `prediction` in predict_or_learn,
@@ -286,10 +280,7 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
     uint32_t corrected_label = (o.indexing == 0) ? i : i + 1;
     if (i > 0) { output_string_stream << ' '; }
     if (all.sd->ldict) { output_string_stream << all.sd->ldict->get(corrected_label); }
-    else
-    {
-      output_string_stream << corrected_label;
-    }
+    else { output_string_stream << corrected_label; }
     output_string_stream << ':' << ec.pred.scalars[i];
   }
   const auto ss_str = output_string_stream.str();
@@ -306,10 +297,7 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
 
   // === Print progress report
   if (probabilities) { VW::details::print_multiclass_update_with_probability(all, ec, pred_lbl); }
-  else
-  {
-    VW::details::print_multiclass_update_with_score(all, ec, pred_lbl);
-  }
+  else { VW::details::print_multiclass_update_with_score(all, ec, pred_lbl); }
   VW::finish_example(all, ec);
 }
 }  // namespace

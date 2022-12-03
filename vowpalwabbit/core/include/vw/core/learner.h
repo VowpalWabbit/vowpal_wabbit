@@ -274,10 +274,7 @@ public:
           pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
                                          // "fix" this by moving)
         }
-        else
-        {
-          pred[c].scalar = ec.partial_prediction;
-        }
+        else { pred[c].scalar = ec.partial_prediction; }
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         details::increment_offset(ec, increment, 1);
@@ -421,14 +418,8 @@ public:
       _merge_with_all_fn(
           per_model_weighting, all_workspaces, all_data, output_workspace, output_learner._learner_data.get());
     }
-    else if (_merge_fn != nullptr)
-    {
-      _merge_fn(per_model_weighting, all_data, output_learner._learner_data.get());
-    }
-    else
-    {
-      THROW("learner " << _name << " does not support merging.");
-    }
+    else if (_merge_fn != nullptr) { _merge_fn(per_model_weighting, all_data, output_learner._learner_data.get()); }
+    else { THROW("learner " << _name << " does not support merging."); }
   }
 
   void NO_SANITIZE_UNDEFINED add(const VW::workspace& base_ws, const VW::workspace& delta_ws,
@@ -446,10 +437,7 @@ public:
     {
       _add_fn(base_l->_learner_data.get(), delta_l->_learner_data.get(), output_l->_learner_data.get());
     }
-    else
-    {
-      THROW("learner " << name << " does not support adding a delta.");
-    }
+    else { THROW("learner " << name << " does not support adding a delta."); }
   }
 
   void NO_SANITIZE_UNDEFINED subtract(const VW::workspace& ws1, const VW::workspace& ws2, const base_learner* l1,
@@ -467,10 +455,7 @@ public:
     {
       _subtract_fn(l1->_learner_data.get(), l2->_learner_data.get(), output_l->_learner_data.get());
     }
-    else
-    {
-      THROW("learner " << name << " does not support subtraction to generate a delta.");
-    }
+    else { THROW("learner " << name << " does not support subtraction to generate a delta."); }
   }
 
   VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_fn != nullptr) || (_merge_fn != nullptr); }
@@ -564,15 +549,14 @@ void multiline_learn_or_predict(multi_learner& base, multi_ex& examples, const u
   }
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit([&saved_offsets, &examples] {
-    for (size_t i = 0; i < examples.size(); i++) { examples[i]->ft_offset = saved_offsets[i]; }
-  });
+  auto restore_guard = VW::scope_exit(
+      [&saved_offsets, &examples]
+      {
+        for (size_t i = 0; i < examples.size(); i++) { examples[i]->ft_offset = saved_offsets[i]; }
+      });
 
   if (is_learn) { base.learn(examples, id); }
-  else
-  {
-    base.predict(examples, id);
-  }
+  else { base.predict(examples, id); }
 }
 
 VW_WARNING_STATE_PUSH
@@ -937,7 +921,9 @@ public:
   learner<DataT, ExampleT>* build()
   {
     if (this->learner_ptr->_merge_fn != nullptr && this->learner_ptr->_merge_with_all_fn != nullptr)
-    { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
+    {
+      THROW("cannot set both merge_with_all and merge_with_all_fn");
+    }
     return this->learner_ptr;
   }
 };

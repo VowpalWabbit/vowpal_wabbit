@@ -175,10 +175,7 @@ void shared_data::update(bool test_example, bool labeled_example, float loss, fl
   else
   {
     if (labeled_example) { weighted_labeled_examples += weight; }
-    else
-    {
-      weighted_unlabeled_examples += weight;
-    }
+    else { weighted_unlabeled_examples += weight; }
     sum_loss += loss;
     sum_loss_since_last_dump += loss;
     total_features += num_features;
@@ -191,10 +188,7 @@ void shared_data::update_dump_interval(bool progress_add, float progress_arg)
   sum_loss_since_last_dump = 0.0;
   old_weighted_labeled_examples = weighted_labeled_examples;
   if (progress_add) { dump_interval = static_cast<float>(weighted_examples()) + progress_arg; }
-  else
-  {
-    dump_interval = static_cast<float>(weighted_examples()) * progress_arg;
-  }
+  else { dump_interval = static_cast<float>(weighted_examples()) * progress_arg; }
 }
 
 // Column width, precision constants:
@@ -254,10 +248,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   std::ostringstream label_buf, pred_buf;
 
   if (label < FLT_MAX) { label_buf << num_to_fixed_string(label, PREC_CURRENT_LABEL); }
-  else
-  {
-    label_buf << "unknown";
-  }
+  else { label_buf << "unknown"; }
 
   pred_buf << num_to_fixed_string(prediction, PREC_CURRENT_PREDICT);
 
@@ -271,10 +262,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   std::ostringstream label_buf, pred_buf;
 
   if (label < INT_MAX) { label_buf << label; }
-  else
-  {
-    label_buf << "unknown";
-  }
+  else { label_buf << "unknown"; }
 
   pred_buf << prediction;
 
@@ -303,13 +291,12 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   if (!holdout_set_off && current_pass >= 1)
   {
     if (holdout_sum_loss == 0. && weighted_holdout_examples == 0.) { avg_loss = "unknown"; }
-    else
-    {
-      avg_loss = num_to_fixed_string(holdout_sum_loss / weighted_holdout_examples, PREC_AVG_LOSS);
-    }
+    else { avg_loss = num_to_fixed_string(holdout_sum_loss / weighted_holdout_examples, PREC_AVG_LOSS); }
 
     if (holdout_sum_loss_since_last_dump == 0. && weighted_holdout_examples_since_last_dump == 0.)
-    { since_last = "unknown"; }
+    {
+      since_last = "unknown";
+    }
     else
     {
       since_last = num_to_fixed_string(
@@ -324,11 +311,10 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   else
   {
     if (weighted_labeled_examples > 0.)
-    { avg_loss = num_to_fixed_string(sum_loss / weighted_labeled_examples, PREC_AVG_LOSS); }
-    else
     {
-      avg_loss = "n.a.";
+      avg_loss = num_to_fixed_string(sum_loss / weighted_labeled_examples, PREC_AVG_LOSS);
     }
+    else { avg_loss = "n.a."; }
 
     if (weighted_labeled_examples == old_weighted_labeled_examples) { since_last = "n.a."; }
     else
@@ -367,19 +353,13 @@ void shared_data::print_summary(std::ostream& output, const shared_data& sd, con
   if (holdout_set_off)
   {
     if (sd.weighted_labeled_examples > 0) { output << sd.sum_loss / sd.weighted_labeled_examples; }
-    else
-    {
-      output << "n.a.";
-    }
+    else { output << "n.a."; }
   }
   else if ((sd.holdout_best_loss == FLT_MAX) || (sd.holdout_best_loss == FLT_MAX * 0.5))
   {
     output << "undefined (no holdout)";
   }
-  else
-  {
-    output << sd.holdout_best_loss << " h";
-  }
+  else { output << sd.holdout_best_loss << " h"; }
   if (sd.report_multiclass_log_loss)
   {
     if (holdout_set_off)

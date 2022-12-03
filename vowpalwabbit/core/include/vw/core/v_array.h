@@ -147,10 +147,7 @@ public:
         // just shrink to 1 for now (alternatively, call delete_v())
         reserve_nocheck(1);
       }
-      else
-      {
-        reserve_nocheck(size());
-      }
+      else { reserve_nocheck(size()); }
     }
   }
 
@@ -342,7 +339,9 @@ private:
 
     T* temp = static_cast<T*>(std::realloc(_begin, sizeof(T) * length));
     if (temp == nullptr)
-    { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
+    {
+      THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?");
+    }
     _begin = temp;
 
     _end = _begin + std::min(old_len, length);

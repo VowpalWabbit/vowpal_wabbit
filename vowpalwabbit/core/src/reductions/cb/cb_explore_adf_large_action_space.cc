@@ -132,10 +132,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::save_
   if (io.num_files() == 0) { return; }
 
   if (read) { model_utils::read_model_field(io, _counter); }
-  else
-  {
-    model_utils::write_model_field(io, _counter, "cb large action space storing example counter", text);
-  }
+  else { model_utils::write_model_field(io, _counter, "cb large action space storing example counter", text); }
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
@@ -206,10 +203,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
   while (it != preds.end())
   {
     if (!spanner_state.is_action_in_spanner(it->action) && it->action != best_action) { it = preds.erase(it); }
-    else
-    {
-      it++;
-    }
+    else { it++; }
   }
 }
 
@@ -288,10 +282,7 @@ void shrink_factor_config::calculate_shrink_factor(
       shrink_factors.push_back(std::sqrt(1 + max_actions + gamma / (4.0f * max_actions) * (preds[i].score - min_ck)));
     }
   }
-  else
-  {
-    shrink_factors.resize(preds.size(), 1.f);
-  }
+  else { shrink_factors.resize(preds.size(), 1.f); }
 }
 
 template class cb_explore_adf_large_action_space<one_pass_svd_impl, one_rank_spanner_state>;
@@ -380,10 +371,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                .default_value(0)
                .help("Number of actions in a block to be scheduled for multithreading when using one pass svd "
                      "implementation (by default, block_size = num_actions / thread_pool_size)"))
-      .add(make_option("explicit_simd", use_simd_in_one_pass_svd_impl)
+      .add(make_option("las_hint_explicit_simd", use_simd_in_one_pass_svd_impl)
                .experimental()
                .help("Use explicit simd implementation in one pass svd. Only works with quadratics and no ignores. "
-                     "(Linux only)"))
+                     "(x86 Linux only)"))
       .add(make_option("two_pass_svd", use_two_pass_svd_impl)
                .experimental()
                .help("A more accurate svd that is much slower than the default (one pass svd)"));

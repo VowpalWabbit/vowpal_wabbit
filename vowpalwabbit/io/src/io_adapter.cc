@@ -301,10 +301,7 @@ file_adapter::file_adapter(const char* filename, file_mode mode)
   }
 #else
   if (_mode == file_mode::READ) { _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE); }
-  else
-  {
-    _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-  }
+  else { _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666); }
 #endif
 
   if (_file_descriptor == -1 && *filename != '\0') { THROWERRNO("can't open: " << filename); }

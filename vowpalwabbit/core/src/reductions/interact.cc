@@ -89,14 +89,8 @@ void multiply(features& f_dest, features& f_src2, interact& in)
       i1++;
       i2++;
     }
-    else if (cur_id1 < cur_id2)
-    {
-      i1++;
-    }
-    else
-    {
-      i2++;
-    }
+    else if (cur_id1 < cur_id2) { i1++; }
+    else { i2++; }
     prev_id1 = cur_id1;
     prev_id2 = cur_id2;
   }
@@ -111,10 +105,7 @@ void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::examp
   if (!contains_valid_namespaces(f1, f2, in, in.all->logger))
   {
     if (is_learn) { base.learn(ec); }
-    else
-    {
-      base.predict(ec);
-    }
+    else { base.predict(ec); }
 
     return;
   }

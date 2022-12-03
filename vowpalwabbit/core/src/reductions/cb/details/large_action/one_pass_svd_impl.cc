@@ -73,7 +73,8 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   auto calculate_aomega_row = [compute_dot_prod](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p,
                                   VW::workspace* _all, uint64_t _seed, const multi_ex& examples,
                                   Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors,
-                                  float scaling_factor) -> void {
+                                  float scaling_factor) -> void
+  {
     for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
       VW::example* ex = examples[row_index];
@@ -136,11 +137,10 @@ one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t se
   if (use_explicit_simd)
   {
     if (cpu_supports_avx512()) { _use_simd = simd_type::AVX512; }
-    else if (cpu_supports_avx2())
-    {
-      _use_simd = simd_type::AVX2;
-    }
+    else if (cpu_supports_avx2()) { _use_simd = simd_type::AVX2; }
   }
+#else
+  _UNUSED(use_explicit_simd);
 #endif
 }
 

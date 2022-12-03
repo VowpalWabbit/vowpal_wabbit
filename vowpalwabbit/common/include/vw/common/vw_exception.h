@@ -168,7 +168,9 @@ inline std::string strerror_to_string(int error_number)
   locale_t locale = newlocale(LC_ALL_MASK, "", static_cast<locale_t>(nullptr));
 
   if (locale == static_cast<locale_t>(nullptr))
-  { return "Failed to create locale when getting error message for errno: " + std::to_string(error_number); }
+  {
+    return "Failed to create locale when getting error message for errno: " + std::to_string(error_number);
+  }
 
   // Even if error_number is unknown, will return a "Unknown error nnn" message.
   std::string message = strerror_l(error_number, locale);
@@ -227,30 +229,26 @@ inline std::string strerror_to_string(int error_number)
 #ifdef VW_NOEXCEPT
 
 #  define THROW_OR_RETURN_NORMAL(args, retval) \
-    do                                         \
-    {                                          \
+    do {                                       \
       return retval;                           \
     } while (0)
 
 #  define THROW_OR_RETURN_VOID(args) \
-    do                               \
-    {                                \
+    do {                             \
       return;                        \
     } while (0)
 
 #else  // VW_NOEXCEPT defined
 
 #  define THROW_OR_RETURN_NORMAL(args, retval)                  \
-    do                                                          \
-    {                                                           \
+    do {                                                        \
       std::ostringstream __msgA;                                \
       __msgA << args;                                           \
       throw VW::vw_exception(__FILE__, __LINE__, __msgA.str()); \
     } while (0)
 
 #  define THROW_OR_RETURN_VOID(args)                            \
-    do                                                          \
-    {                                                           \
+    do {                                                        \
       std::ostringstream __msgB;                                \
       __msgB << args;                                           \
       throw VW::vw_exception(__FILE__, __LINE__, __msgB.str()); \

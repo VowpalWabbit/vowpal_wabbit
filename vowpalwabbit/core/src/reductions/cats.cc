@@ -94,13 +94,12 @@ void predict_or_learn(VW::reductions::cats::cats& reduction, single_learner&, VW
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
-  else
-  {
-    reduction.predict(ec, &status);
-  }
+  else { reduction.predict(ec, &status); }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << endl; }
+  {
+    VW_DBG(ec) << status.get_error_msg() << endl;
+  }
 }
 
 // END cats reduction and reduction methods
