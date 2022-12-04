@@ -552,6 +552,17 @@ Weight Options:
 [Reduction] Debug Metrics Options:
     --extra_metrics arg                     Specify filename to write metrics to. Note: There is no fixed
                                             schema (type: str, necessary)
+[Reduction] Eigen Memory Tree Options:
+    --eigen_memory_tree                     Make an eigen memory tree
+    --emt_tree arg                          Indicates the maximum number of memories the tree can have (type:
+                                            uint, default: 0, keep)
+    --emt_leaf arg                          Indicates the maximum number of memories a leaf can have (type:
+                                            uint, default: 100, keep)
+    --emt_scorer arg                        Indicates the type of scorer to use (1=random;2=distance;3=self
+                                            consistent rank;4=not self consistent rank) (type: uint, default:
+                                            3, choices {1, 2, 3, 4}, keep)
+    --emt_router arg                        Indicates the type of router to use (1=random;2=eigen) (type:
+                                            uint, default: 2, choices {1, 2}, keep)
 [Reduction] Epsilon-Decaying Exploration Options:
     --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary,
                                             experimental)
@@ -612,9 +623,6 @@ Weight Options:
     --block_size arg                        Number of actions in a block to be scheduled for multithreading
                                             when using one pass svd implementation (by default, block_size
                                             = num_actions / thread_pool_size) (type: uint, default: 0)
-    --las_hint_explicit_simd                Use explicit simd implementation in one pass svd. Only works
-                                            with quadratics and no ignores. (x86 Linux only) (type: bool,
-                                            experimental)
     --two_pass_svd                          A more accurate svd that is much slower than the default (one
                                             pass svd) (type: bool, experimental)
 [Reduction] Explore Evaluation Options:
