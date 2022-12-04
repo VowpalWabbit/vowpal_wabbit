@@ -300,10 +300,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     {
       index = iter->first >> stride_shift;
       if (sm.m_all->hash_inv) { msg << sm.inverse_hashes[iter->first]; }
-      else
-      {
-        msg << index;
-      }
+      else { msg << index; }
       msg << ":";
     }
     bin_text_read_write_fixed(io, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
@@ -322,10 +319,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     }
     bin_text_read_write_fixed(io, reinterpret_cast<char*>(&denominator), sizeof(denominator), read, msg, text);
     if (read) { sm.marginals.insert(std::make_pair(index << stride_shift, std::make_pair(numerator, denominator))); }
-    else
-    {
-      ++iter;
-    }
+    else { ++iter; }
   }
 
   if (sm.compete)
@@ -381,10 +375,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         expert e2 = {r2, c2, w2};
         sm.expert_state.insert(std::make_pair(index << stride_shift, std::make_pair(e1, e2)));
       }
-      else
-      {
-        ++exp_iter;
-      }
+      else { ++exp_iter; }
     }
   }
 }

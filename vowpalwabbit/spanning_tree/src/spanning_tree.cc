@@ -39,10 +39,7 @@ static int socket_sort(const void* s1, const void* s2)
   client* socket1 = (client*)s1;
   client* socket2 = (client*)s2;
   if (socket1->client_ip != socket2->client_ip) { return socket1->client_ip - socket2->client_ip; }
-  else
-  {
-    return (static_cast<int>(socket1->socket) - static_cast<int>(socket2->socket));
-  }
+  else { return (static_cast<int>(socket1->socket) - static_cast<int>(socket2->socket)); }
 }
 
 int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset)
@@ -70,10 +67,7 @@ int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset
     parent[right_child] = oroot;
     kid_count[oroot] = 2;
   }
-  else
-  {
-    kid_count[oroot] = 1;
-  }
+  else { kid_count[oroot] = 1; }
 
   return oroot;
 }
@@ -194,27 +188,39 @@ void spanning_tree::run()
 
     size_t nonce = 0;
     if (recv(f, reinterpret_cast<char*>(&nonce), sizeof(nonce), 0) != sizeof(nonce))
-    { THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): nonce read failed, exiting"); }
+    {
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): nonce read failed, exiting");
+    }
     else
     {
       if (!_quiet)
-      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): nonce=" << nonce << std::endl; }
+      {
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): nonce=" << nonce << std::endl;
+      }
     }
     size_t total = 0;
     if (recv(f, reinterpret_cast<char*>(&total), sizeof(total), 0) != sizeof(total))
-    { THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): total node count read failed, exiting"); }
+    {
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): total node count read failed, exiting");
+    }
     else
     {
       if (!_quiet)
-      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): total=" << total << std::endl; }
+      {
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): total=" << total << std::endl;
+      }
     }
     size_t id = 0;
     if (recv(f, reinterpret_cast<char*>(&id), sizeof(id), 0) != sizeof(id))
-    { THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): node id read failed, exiting"); }
+    {
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): node id read failed, exiting");
+    }
     else
     {
       if (!_quiet)
-      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): node id=" << id << std::endl; }
+      {
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): node id=" << id << std::endl;
+      }
     }
 
     int ok = true;
@@ -278,7 +284,9 @@ void spanning_tree::run()
       parent[root] = -1;
 
       for (size_t i = 0; i < total; i++)
-      { fail_send(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i])); }
+      {
+        fail_send(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
+      }
 
       uint16_t* client_ports = static_cast<uint16_t*>(calloc(total, sizeof(uint16_t)));
 

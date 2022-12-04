@@ -100,10 +100,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
     w = (u + l) / 2.f;
     v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
     if (v > 0) { u = w; }
-    else
-    {
-      l = w;
-    }
+    else { l = w; }
     if (std::fabs(v) <= tol || u - l <= tol) { break; }
   }
 
@@ -196,10 +193,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
     for (size_t i = 0; i < preds.size(); ++i)
     {
       if (preds[i].action == a_opt || (!_first_only && _min_costs[preds[i].action] == min_cost)) { preds[i].score = 1; }
-      else
-      {
-        preds[i].score = 0;
-      }
+      else { preds[i].score = 0; }
     }
   }
   else  // elimination variant
@@ -212,10 +206,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
     for (size_t i = 0; i < preds.size(); ++i)
     {
       if (_min_costs[preds[i].action] <= min_max_cost) { preds[i].score = 1; }
-      else
-      {
-        preds[i].score = 0;
-      }
+      else { preds[i].score = 0; }
       // explore uniformly on support
       exploration::enforce_minimum_probability(
           1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));

@@ -73,10 +73,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, VW::example&
   // Explore tau times, then act according to optimal.
   bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
   if (learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 
   auto& probs = ec.pred.a_s;
   probs.clear();
@@ -101,10 +98,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example
   // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
   // ec.pred.a_s = probs; will restore the than free'd memory
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 
   auto& probs = ec.pred.a_s;
   probs.clear();
@@ -134,10 +128,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
     uint32_t count = VW::reductions::bs::weight_gen(data.random_state);
     bool learn = is_learn && count > 0;
     if (learn) { base.learn(ec, i); }
-    else
-    {
-      base.predict(ec, i);
-    }
+    else { base.predict(ec, i); }
     uint32_t chosen = ec.pred.multiclass - 1;
     probs[chosen].score += prob;
     if (is_learn)
@@ -159,10 +150,7 @@ void get_cover_probabilities(
   {
     // get predicted cost-sensitive predictions
     if (i == 0) { data.cs->predict(ec, i); }
-    else
-    {
-      data.cs->predict(ec, i + 1);
-    }
+    else { data.cs->predict(ec, i + 1); }
     uint32_t pred = ec.pred.multiclass;
     probs[pred - 1].score += additive_probability;
     data.preds.push_back(pred);
@@ -219,10 +207,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
     auto optional_cost = get_observed_cost_cb(data.cb_label);
     // cost observed, not default
     if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
-    else
-    {
-      data.cbcs.known_cost = CB::cb_class{};
-    }
+    else { data.cbcs.known_cost = CB::cb_class{}; }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
     for (uint32_t i = 0; i < num_actions; i++) { probabilities[i] = 0.f; }
 
@@ -241,11 +226,10 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
       }
       if (i != 0) { data.cs->learn(ec, i + 1); }
       if (probabilities[pred] < min_prob)
-      { norm += std::max(0.f, additive_probability - (min_prob - probabilities[pred])); }
-      else
       {
-        norm += additive_probability;
+        norm += std::max(0.f, additive_probability - (min_prob - probabilities[pred]));
       }
+      else { norm += additive_probability; }
       probabilities[pred] += additive_probability;
     }
     data.second_cs_label = std::move(ec.l.cs);
@@ -281,7 +265,9 @@ float calc_loss(cb_explore& data, VW::example& ec, const CB::label& ld)
   if (optional_cost.first == true)
   {
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
-    { loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score; }
+    {
+      loss += get_cost_estimate(optional_cost.second, c.pred_scores, i + 1) * ec.pred.a_s[i].score;
+    }
   }
 
   return loss;
@@ -364,7 +350,9 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   if (!options.was_supplied("cb_force_legacy")) { return nullptr; }
 
   if (options.was_supplied("indexing"))
-  { THROW("--indexing is not compatible with contextual bandits, please remove this option") }
+  {
+    THROW("--indexing is not compatible with contextual bandits, please remove this option")
+  }
 
   data->random_state = all.get_random_state();
   uint32_t num_actions = data->cbcs.num_actions;

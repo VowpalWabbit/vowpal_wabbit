@@ -11,10 +11,7 @@
 hash_func_t get_hasher(const std::string& s)
 {
   if (s == "strings") { return hashstring; }
-  else if (s == "all")
-  {
-    return hashall;
-  }
+  else if (s == "all") { return hashall; }
   else
     THROW("Unknown hash function: " << s);
 }

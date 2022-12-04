@@ -143,13 +143,17 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       {
         _config_oracle.configs[estimators[live_slot].first.config_index].lease *= 2;
         if (!estimators[live_slot].first.eligible_to_inactivate || swap_eligible_to_inactivate(estimators, live_slot))
-        { continue; }
+        {
+          continue;
+        }
       }
       // Skip over removed configs in index queue, and do nothing we we run out of eligible configs
       while (!_config_oracle.index_queue.empty() &&
           _config_oracle.configs[_config_oracle.index_queue.top().second].state ==
               VW::reductions::automl::config_state::Removed)
-      { _config_oracle.index_queue.pop(); }
+      {
+        _config_oracle.index_queue.pop();
+      }
       if (_config_oracle.index_queue.empty() && !_config_oracle.repopulate_index_queue(ns_counter)) { continue; }
 
       // Only inactivate current config if lease is reached
@@ -364,19 +368,18 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   int64_t current_champ = static_cast<int64_t>(cm->current_champ);
   assert(current_champ == 0);
 
-  auto restore_guard = VW::scope_exit([&ec, &incoming_interactions]() {
-    for (example* ex : ec) { ex->interactions = incoming_interactions; }
-  });
+  auto restore_guard = VW::scope_exit(
+      [&ec, &incoming_interactions]()
+      {
+        for (example* ex : ec) { ex->interactions = incoming_interactions; }
+      });
 
   // Learn and update estimators of challengers
   for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < cm->estimators.size();
        ++current_slot_index)
   {
     if (!debug_reverse_learning_order) { live_slot = current_slot_index; }
-    else
-    {
-      live_slot = cm->estimators.size() - current_slot_index;
-    }
+    else { live_slot = cm->estimators.size() - current_slot_index; }
     cm->do_learning(base, ec, live_slot);
     cm->estimators[live_slot].first._estimator.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
   }
@@ -386,7 +389,9 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   cm->do_learning(base, ec, current_champ);
 
   for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
-  { cm->estimators[live_slot].second.update(1, r); }
+  {
+    cm->estimators[live_slot].second.update(1, r);
+  }
 }
 
 template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence>>;

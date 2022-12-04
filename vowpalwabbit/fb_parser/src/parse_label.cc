@@ -60,7 +60,9 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
     {
       l->conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
       for (const auto& exp_included_action : *(label->explicit_included_actions()))
-      { l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action); }
+      {
+        l->conditional_contextual_bandit.explicit_included_actions.push_back(exp_included_action);
+      }
     }
 
     if (label->outcome() != nullptr)
@@ -114,15 +116,9 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
   if (sd->ldict)
   {
     if (named_label.empty()) { l->multi.label = static_cast<uint32_t>(-1); }
-    else
-    {
-      l->multi.label = static_cast<uint32_t>(sd->ldict->get(VW::string_view(named_label), logger));
-    }
+    else { l->multi.label = static_cast<uint32_t>(sd->ldict->get(VW::string_view(named_label), logger)); }
   }
-  else
-  {
-    l->multi.label = label->label();
-  }
+  else { l->multi.label = label->label(); }
   l->multi.weight = label->weight();
 }
 
@@ -153,10 +149,7 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
 
     for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
   }
-  else
-  {
-    THROW("Example type not understood")
-  }
+  else { THROW("Example type not understood") }
 }
 
 void parser::parse_continuous_action_label(polylabel* l, const VW::parsers::flatbuffer::ContinuousLabel* label)

@@ -24,10 +24,7 @@ float safe_probability(float prob, VW::io::logger& logger)
         prob);
     return 1e-3f;
   }
-  else
-  {
-    return prob;
-  }
+  else { return prob; }
 }
 
 // Multiline version
@@ -40,7 +37,9 @@ void gen_cs_example_ips(const VW::multi_ex& examples, VW::cs_label& cs_labels, V
 
     VW::cs_class wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
-    { wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p), logger); }
+    {
+      wc.x = ld.costs[0].cost / safe_probability(std::max(ld.costs[0].probability, clip_p), logger);
+    }
     cs_labels.costs.push_back(wc);
   }
 }
@@ -159,10 +158,7 @@ void gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset,
     VW::cs_class wc = {0., current_action, 0., 0.};
 
     if (current_action == chosen_action) { wc.x = action_val.score + sign_offset; }
-    else
-    {
-      wc.x = action_val.score - sign_offset;
-    }
+    else { wc.x = action_val.score - sign_offset; }
 
     // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to
     // 0.

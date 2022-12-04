@@ -182,10 +182,7 @@ size_t predict_entity(
   // record loss
   float loss = 0.0;
   if (prediction == LABEL_SKIP) { loss = my_task_data->skip_cost; }
-  else if (prediction != ex->l.multi.label)
-  {
-    loss = my_task_data->entity_cost;
-  }
+  else if (prediction != ex->l.multi.label) { loss = my_task_data->entity_cost; }
   sch.loss(loss);
   return prediction;
 }
@@ -212,7 +209,9 @@ size_t predict_relation(
   {
     if (!my_task_data->constraints || hist[0] == static_cast<size_t>(0) ||
         check_constraints(hist[0], hist[1], my_task_data->y_allowed_relation[j]))
-    { constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]); }
+    {
+      constrained_relation_labels.push_back(my_task_data->y_allowed_relation[j]);
+    }
   }
 
   size_t prediction;
@@ -272,10 +271,7 @@ size_t predict_relation(
   else if (prediction != ex->l.multi.label)
   {
     if (ex->l.multi.label == R_NONE) { loss = my_task_data->relation_none_cost; }
-    else
-    {
-      loss = my_task_data->relation_cost;
-    }
+    else { loss = my_task_data->relation_cost; }
   }
   sch.loss(loss);
   return prediction;
@@ -289,10 +285,7 @@ void entity_first_decoding(Search::search& sch, VW::multi_ex& ec, VW::v_array<si
   for (size_t i = 0; i < ec.size(); i++)
   {
     if (i < n_ent) { predictions[i] = predict_entity(sch, ec[i], predictions, static_cast<ptag>(i), isLdf); }
-    else
-    {
-      predictions[i] = predict_relation(sch, ec[i], predictions, static_cast<ptag>(i), isLdf);
-    }
+    else { predictions[i] = predict_relation(sch, ec[i], predictions, static_cast<ptag>(i), isLdf); }
   }
 }
 
@@ -348,7 +341,9 @@ void er_allow_skip_decoding(Search::search& sch, VW::multi_ex& ec, VW::v_array<s
       if (must_predict) { my_task_data->allow_skip = false; }
       size_t prediction = 0;
       if (i < n_ent)  // do entity recognition
-      { prediction = predict_entity(sch, ec[i], predictions, i); }
+      {
+        prediction = predict_entity(sch, ec[i], predictions, i);
+      }
       else  // do relation recognition
       {
         prediction = predict_relation(sch, ec[i], predictions, i);

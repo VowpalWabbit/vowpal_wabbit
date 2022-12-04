@@ -48,7 +48,9 @@ void parse_multiclass_label(VW::multiclass_label& ld, const VW::named_labels* ld
         char* char_after_int = nullptr;
         ld.label = int_of_string(words[0], char_after_int, logger);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-        { THROW("Malformed example: label has trailing character(s): " << *char_after_int); }
+        {
+          THROW("Malformed example: label has trailing character(s): " << *char_after_int);
+        }
       }
       ld.weight = 1.0;
       break;
@@ -59,7 +61,9 @@ void parse_multiclass_label(VW::multiclass_label& ld, const VW::named_labels* ld
         char* char_after_int = nullptr;
         ld.label = int_of_string(words[0], char_after_int, logger);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-        { THROW("Malformed example: label has trailing character(s): " << *char_after_int); }
+        {
+          THROW("Malformed example: label has trailing character(s): " << *char_after_int);
+        }
       }
       ld.weight = float_of_string(words[1], logger);
       break;
@@ -76,20 +80,18 @@ VW::label_parser multiclass_label_parser_global = {
     [](VW::polylabel& label) { default_label(label.multi); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& /* reuse_mem */,
-        const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_multiclass_label(label.multi, ldict, words, logger); },
+        const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_multiclass_label(label.multi, ldict, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.multi, upstream_name, text); },
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.multi, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.multi);
-    },
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.multi); },
     // get_weight
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) {
-      return multiclass_label_weight(label.multi);
-    },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */)
+    { return multiclass_label_weight(label.multi); },
     // test_label
     [](const VW::polylabel& label) { return test_multiclass_label(label.multi); },
     // label type
@@ -145,10 +147,7 @@ void print_update(VW::workspace& all, VW::example& ec, uint32_t prediction)
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     if (!all.sd->ldict) { T(all, ec, prediction); }
-    else
-    {
-      print_label_pred(all, ec, ec.pred.multiclass);
-    }
+    else { print_label_pred(all, ec, ec.pred.multiclass); }
   }
 }
 }  // namespace

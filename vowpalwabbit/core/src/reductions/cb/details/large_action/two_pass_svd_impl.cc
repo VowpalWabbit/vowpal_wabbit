@@ -208,7 +208,7 @@ void two_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
   if (_set_testing_components) { _V = Y * svd.matrixV(); }
 }
 
-two_pass_svd_impl::two_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t, size_t)
+two_pass_svd_impl::two_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t, size_t, bool)
     : _all(all), _d(d), _seed(seed)
 {
 }

@@ -185,7 +185,9 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
       {
         float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];
         for (uint32_t j = 0; j < stride_size; ++j)
-        { ARE_SAME((&(*first_weight))[j], (&(*other))[j], AUTO_ML_FLOAT_TOL); }
+        {
+          ARE_SAME((&(*first_weight))[j], (&(*other))[j], AUTO_ML_FLOAT_TOL);
+        }
       }
     }
   }
@@ -297,10 +299,14 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl_w_iterations)
   auto end = weights_qcolcol.end();
 
   if (*qcolcol_it != 0.0f)
-  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+  {
+    qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]);
+  }
 
   while (qcolcol_it.next_non_zero(end) < end)
-  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+  {
+    qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]);
+  }
 
   std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
 
