@@ -11,7 +11,7 @@ vw_add_library(
     NAME "common"
     TYPE "HEADER_ONLY"
     SOURCES ${vw_common_sources}
-    PUBLIC_DEPS string_view_lite
+    PUBLIC_DEPS nonstd::string-view-lite
     DESCRIPTION "Common utilities that are shared by every project. The only dependencies permitted are polyfill/vocabulary types"
     EXCEPTION_DESCRIPTION "Yes, also supports `VW_NOEXCEPT`"
     ENABLE_INSTALL

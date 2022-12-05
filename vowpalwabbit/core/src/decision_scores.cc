@@ -69,14 +69,14 @@ std::string to_string(const VW::decision_scores_t& decision_scores, int decimal_
   return ss.str();
 }
 
-void print_update_ccb(
-    VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
+void print_update_ccb(VW::workspace& all, const std::vector<example*>& slots,
+    const VW::decision_scores_t& decision_scores, size_t num_features)
 {
   print_update(all, slots, decision_scores, num_features, reductions::ccb::generate_ccb_label_printout);
 }
 
-void print_update_slates(
-    VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores, size_t num_features)
+void print_update_slates(VW::workspace& all, const std::vector<example*>& slots,
+    const VW::decision_scores_t& decision_scores, size_t num_features)
 {
   print_update(all, slots, decision_scores, num_features, VW::reductions::generate_slates_label_printout);
 }
