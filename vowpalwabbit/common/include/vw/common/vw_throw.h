@@ -4,7 +4,6 @@
 
 #pragma once
 
-
 #define VW_EXPAND(x) x
 #define VW_GET_MACRO(_1, _2, NAME, ...) NAME
 // UNUSED is used to silence the warning: warning: ISO C++11 requires at least one argument for the "..." in a variadic
@@ -31,34 +30,34 @@
 #  include <sstream>
 
 // ease error handling and also log filename and line number
-#  define THROW(args)                                             \
-    {                                                             \
-      std::ostringstream __msg;                                   \
-      __msg << args;                                              \
+#  define THROW(args)                                            \
+    {                                                            \
+      std::ostringstream __msg;                                  \
+      __msg << args;                                             \
       throw VW::vw_exception(VW_FILENAME, VW_LINE, __msg.str()); \
     }
 
-#  define THROW_EX(ex, args)                        \
-    {                                               \
-      std::ostringstream __msg;                     \
-      __msg << args;                                \
+#  define THROW_EX(ex, args)                       \
+    {                                              \
+      std::ostringstream __msg;                    \
+      __msg << args;                               \
       throw ex(VW_FILENAME, VW_LINE, __msg.str()); \
     }
 
 #  define VW_ASSERT(condition, args) \
     if (!(condition)) { THROW(args); }
 
-#  define THROW_OR_RETURN_NORMAL(args, retval)                  \
-    do {                                                        \
-      std::ostringstream __msgA;                                \
-      __msgA << args;                                           \
+#  define THROW_OR_RETURN_NORMAL(args, retval)                    \
+    do {                                                          \
+      std::ostringstream __msgA;                                  \
+      __msgA << args;                                             \
       throw VW::vw_exception(VW_FILENAME, VW_LINE, __msgA.str()); \
     } while (0)
 
-#  define THROW_OR_RETURN_VOID(args)                            \
-    do {                                                        \
-      std::ostringstream __msgB;                                \
-      __msgB << args;                                           \
+#  define THROW_OR_RETURN_VOID(args)                              \
+    do {                                                          \
+      std::ostringstream __msgB;                                  \
+      __msgB << args;                                             \
       throw VW::vw_exception(VW_FILENAME, VW_LINE, __msgB.str()); \
     } while (0)
 

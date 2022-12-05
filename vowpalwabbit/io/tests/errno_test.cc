@@ -6,6 +6,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <cerrno>
 
 TEST(errno_tests, check_strerr_can_retrieve_error_message)
