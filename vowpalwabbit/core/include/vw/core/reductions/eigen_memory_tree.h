@@ -4,6 +4,7 @@
 
 #pragma once
 #include "vw/core/example.h"
+#include "vw/core/rand_state.h"
 
 #include <list>
 #include <unordered_map>
@@ -49,8 +50,8 @@ emt_feats emt_scale_add(float, const emt_feats&, float, const emt_feats&);
 
 emt_feats emt_router_eigen(std::vector<emt_feats>&, VW::rand_state&);
 
-template <typename I, typename R>
-void emt_shuffle(I first, I last, R* rng)
+template <typename RandomIt>
+void emt_shuffle(RandomIt first, RandomIt last, VW::rand_state* rng)
 {
   // This is Richard Durstenfeld's method popularized by Donald Knuth in The Art of Computer Programming.
   // This algorithm is unbiased (i.e., all possible permutations are equally likely to occur).

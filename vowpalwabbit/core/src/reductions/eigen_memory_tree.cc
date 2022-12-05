@@ -302,7 +302,6 @@ emt_feats emt_router(std::vector<emt_feats> exs, emt_router_type router_type, VW
   if (router_type == emt_router_type::random) { return emt_router_random(exs, rng); }
   else { return emt_router_eigen(exs, rng); }
 }
-
 ////////////////////////////end of helper/////////////////////////
 //////////////////////////////////////////////////////////////////
 
