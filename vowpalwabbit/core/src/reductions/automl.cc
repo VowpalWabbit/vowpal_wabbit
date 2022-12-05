@@ -129,10 +129,7 @@ void pre_save_load(VW::workspace& all, automl<CMType>& data)
     for (auto& ns : interaction)
     {
       if (ns == ' ') { interaction_string += "\\x20"; }
-      else
-      {
-        interaction_string += ns;
-      }
+      else { interaction_string += ns; }
     }
     interactions_opt.push_back(interaction_string);
   }
@@ -145,10 +142,7 @@ void save_load_aml(automl<CMType>& aml, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }
-  else if (!aml.should_save_predict_only_model)
-  {
-    VW::model_utils::write_model_field(io, aml, "_automl", text);
-  }
+  else if (!aml.should_save_predict_only_model) { VW::model_utils::write_model_field(io, aml, "_automl", text); }
 }
 
 // Basic implementation of scheduler to pick new configs when one runs out of lease.

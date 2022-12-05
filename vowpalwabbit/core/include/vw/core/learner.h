@@ -363,7 +363,9 @@ public:
   inline void NO_SANITIZE_UNDEFINED pre_save_load(VW::workspace& all)
   {
     if (_pre_save_load_fd.pre_save_load_f != nullptr)
-    { _pre_save_load_fd.pre_save_load_f(all, _pre_save_load_fd.data); }
+    {
+      _pre_save_load_fd.pre_save_load_f(all, _pre_save_load_fd.data);
+    }
     if (_pre_save_load_fd.base) { _pre_save_load_fd.base->pre_save_load(all); }
   }
 

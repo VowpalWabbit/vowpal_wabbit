@@ -28,7 +28,9 @@ inline void clear_offset(dense_parameters& weights, const size_t offset, const s
   {
     assert((iterator_clear.index_without_stride() & (params_per_problem - 1)) == offset);
     for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
-    { *iterator_clear[stride_offset] = 0.0f; }
+    {
+      *iterator_clear[stride_offset] = 0.0f;
+    }
   }
 }
 

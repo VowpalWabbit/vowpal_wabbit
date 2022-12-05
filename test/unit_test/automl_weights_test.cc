@@ -377,10 +377,14 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
   auto qcolcol_end = weights_qcolcol.end();
 
   if (*qcolcol_it != 0.0f)
-  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+  {
+    qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]);
+  }
 
   while (qcolcol_it.next_non_zero(qcolcol_end) < qcolcol_end)
-  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+  {
+    qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]);
+  }
 
   std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
 
@@ -388,10 +392,14 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
   auto automl_end = weights_automl.end();
 
   if (*automl_it != 0.0f)
-  { automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]); }
+  {
+    automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]);
+  }
 
   while (automl_it.next_non_zero(automl_end) < automl_end)
-  { automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]); }
+  {
+    automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]);
+  }
 
   std::sort(automl_weights_vector.begin(), automl_weights_vector.end());
 
@@ -445,10 +453,14 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model_cubic)
   auto qcolcol_end = weights_qcolcol.end();
 
   if (*qcolcol_it != 0.0f)
-  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+  {
+    qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]);
+  }
 
   while (qcolcol_it.next_non_zero(qcolcol_end) < qcolcol_end)
-  { qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]); }
+  {
+    qcolcol_weights_vector.emplace_back(*qcolcol_it[0], *qcolcol_it[1], *qcolcol_it[2], *qcolcol_it[3]);
+  }
 
   std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
 
@@ -456,10 +468,14 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model_cubic)
   auto automl_end = weights_automl.end();
 
   if (*automl_it != 0.0f)
-  { automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]); }
+  {
+    automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]);
+  }
 
   while (automl_it.next_non_zero(automl_end) < automl_end)
-  { automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]); }
+  {
+    automl_weights_vector.emplace_back(*automl_it[0], *automl_it[1], *automl_it[2], *automl_it[3]);
+  }
 
   std::sort(automl_weights_vector.begin(), automl_weights_vector.end());
 
