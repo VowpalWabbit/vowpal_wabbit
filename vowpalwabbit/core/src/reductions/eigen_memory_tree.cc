@@ -128,22 +128,6 @@ emt_tree::~emt_tree()
   delete ex->extent_interactions;
 }
 
-/// <summary>
-/// This has been added so that we can shuffle and have repeatable results based on VW's internal random number
-/// generator and its seed
-/// </summary>
-struct emt_rng
-{
-  VW::rand_state* state;
-
-public:
-  emt_rng(VW::rand_state* state) { (*this).state = state; }
-
-  using result_type = size_t;
-  static constexpr result_type min() { return 0; }
-  static constexpr result_type max() { return 1000; }
-  result_type operator()() { return static_cast<size_t>(state->get_and_update_random() * .999 * emt_rng::max()); }
-};
 ////////////////////////end of definitions/////////////////
 ///////////////////////////////////////////////////////////
 
@@ -296,7 +280,7 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
     // closer to the true top eigen vector
     // in experiments
     float n = 1;
-    std::shuffle(centered_exs.begin(), centered_exs.end(), emt_rng(&rng));
+    emt_shuffle(centered_exs.begin(), centered_exs.end(), &rng);
 
     for (emt_feats fs : centered_exs)
     {
@@ -480,7 +464,7 @@ void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, const emt_exa
     if (cn.examples.size() < 2) { return; }
 
     // shuffle the examples to break ties randomly
-    std::shuffle(cn.examples.begin(), cn.examples.end(), emt_rng(b._random_state.get()));
+    emt_shuffle(cn.examples.begin(), cn.examples.end(), b._random_state.get());
 
     float preferred_score = FLT_MAX;
     float preferred_error = FLT_MAX;
@@ -593,7 +577,7 @@ emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, const em
   emt_example* best_example = cn.examples[0].get();
 
   // shuffle the examples to break ties randomly
-  std::shuffle(cn.examples.begin(), cn.examples.end(), emt_rng(b._random_state.get()));
+  emt_shuffle(cn.examples.begin(), cn.examples.end(), b._random_state.get());
 
   for (auto const& example : cn.examples)
   {

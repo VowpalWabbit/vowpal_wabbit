@@ -306,13 +306,26 @@ TEST(emt_tests, test_emt_router_eigen)
 
   // top eigen is [-0.1830,-0.9244,0.2782,0,0.1855]
   // which has a projection variance of 19.5
-  // our oja method gave us 19.31 variance
+  // our oja method gave us 19.29 variance
 
-  // EXPECT_NEAR(weights[0].second, -0.2695, .01);
-  // EXPECT_NEAR(weights[1].second, -0.9211, .01);
-  // EXPECT_NEAR(weights[2].second, 0.2336, .01);
-  // EXPECT_NEAR(weights[3].second, 0.1558, .01);
-  EXPECT_GE(var, 15.0);
+  EXPECT_NEAR(weights[0].second, -0.0863, .01);
+  EXPECT_NEAR(weights[1].second, -0.9171, .01);
+  EXPECT_NEAR(weights[2].second, 0.3237, .01);
+  EXPECT_NEAR(weights[3].second, 0.2158, .01);
+  EXPECT_GE(var, 19.29);
+}
+
+TEST(emt_tests, test_emt_shuffle)
+{
+  VW::rand_state rng(2);
+
+  std::vector<int> v1 {1,2,3};
+
+  emt_shuffle(v1.begin(), v1.end(), &rng);
+
+  EXPECT_EQ(v1[0], 2);
+  EXPECT_EQ(v1[1], 3);
+  EXPECT_EQ(v1[2], 1);
 }
 
 }  // namespace eigen_memory_tree_test
