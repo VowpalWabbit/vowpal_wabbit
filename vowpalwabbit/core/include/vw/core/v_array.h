@@ -12,6 +12,7 @@
 #include <ostream>
 #include <type_traits>
 #include <utility>
+#include <algorithm>
 
 namespace VW
 {
