@@ -45,6 +45,23 @@ void return_simple_example(VW::workspace& all, void*, VW::example& ec);
 bool summarize_holdout_set(VW::workspace& all, size_t& no_win_counter);
 void print_update(VW::workspace& all, const VW::example& ec);
 void output_and_account_example(VW::workspace& all, const VW::example& ec);
+void update_stats_simple_label(
+    const VW::workspace& /* all */, shared_data& sd, const VW::example& ec, VW::io::logger& logger);
+void output_example_simple_label(
+    VW::workspace& all, shared_data& /* sd */, const VW::example& ec, VW::io::logger& logger);
+
+template <typename UnusedDataT>
+void update_stats_simple_label(const VW::workspace& all, shared_data& sd, const UnusedDataT& /* unused */,
+    const VW::example& ec, VW::io::logger& logger)
+{
+  update_stats_simple_label(all, sd, ec, logger);
+}
+template <typename UnusedDataT>
+void output_example_simple_label(
+    VW::workspace& all, shared_data& sd, const UnusedDataT& /* unused */, const VW::example& ec, VW::io::logger& logger)
+{
+  output_example_simple_label(all, sd, ec, logger);
+}
 }  // namespace details
 }  // namespace VW
 

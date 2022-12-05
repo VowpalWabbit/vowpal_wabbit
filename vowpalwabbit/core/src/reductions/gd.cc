@@ -1509,6 +1509,8 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
                                         .set_merge_with_all(GD::merge)
                                         .set_add_with_all(GD::add)
                                         .set_subtract_with_all(GD::subtract)
+                                        .set_output_example(VW::details::output_example_simple_label<GD::gd>)
+                                        .set_update_stats(VW::details::update_stats_simple_label<GD::gd>)
                                         .build();
   return make_base(*l);
 }
