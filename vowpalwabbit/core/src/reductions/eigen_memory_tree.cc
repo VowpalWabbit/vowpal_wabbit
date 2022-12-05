@@ -563,8 +563,8 @@ void node_split(emt_tree& b, emt_node& cn)
   std::vector<emt_feats> exs;
   for (auto& ex : cn.examples) { exs.push_back(ex->base); }
 
-  cn.left = std::move(VW::make_unique<emt_node>());
-  cn.right = std::move(VW::make_unique<emt_node>());
+  cn.left = VW::make_unique<emt_node>();
+  cn.right = VW::make_unique<emt_node>();
   cn.router_weights = emt_router(exs, b.router_type, *b._random_state);
 
   std::vector<float> projs;
@@ -657,7 +657,7 @@ void save_load_examples(emt_node& n, io_buf& model_file, bool& read, bool& text,
 
   if (read)
   {
-    for (uint32_t i = 0; i < n_examples; i++) { n.examples.push_back(std::move(VW::make_unique<emt_example>())); }
+    for (uint32_t i = 0; i < n_examples; i++) { n.examples.push_back(VW::make_unique<emt_example>()); }
   }
 
   for (auto& e : n.examples)
@@ -727,7 +727,7 @@ void save_load_tree(emt_tree& b, io_buf& model_file, bool read, bool text)
 
     if (read) { b.bounder = VW::make_unique<emt_lru>(tree_bound); }
 
-    b.root = std::move(save_load_node(b, std::move(b.root), model_file, read, text, msg));
+    b.root = save_load_node(b, std::move(b.root), model_file, read, text, msg);
     *(b.all->trace_message) << "done loading...." << std::endl;
   }
 }
