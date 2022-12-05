@@ -101,7 +101,7 @@ float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64
   if (!extent_interactions.empty())
   {
     // TODO: Add support for extent_interactions.
-    THROW("Extent_interactions have not been supported yet in LAS SIMD implementations");
+    THROW("Extent_interactions are not supported yet in LAS SIMD implementations");
   }
 
   for (const auto& ns : interactions)
@@ -109,7 +109,7 @@ float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64
     if (ns.size() != 2)
     {
       // TODO: Add support for interactions other than quadratics.
-      THROW("Generic interactions have not been supported yet in LAS SIMD implementations")
+      THROW("Generic interactions are not supported yet in LAS SIMD implementations")
     }
 
     const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));

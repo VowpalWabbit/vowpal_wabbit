@@ -202,7 +202,8 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
     {
       s += " |";
       s += static_cast<char>('A' + i);
-      for (int j = 0; j < num_features; ++j) s += " a" + std::to_string(rand() % 1000);
+      for (int j = 0; j < num_features; ++j)
+        s += std::string(" ") + static_cast<char>('a' + i) + std::to_string(rand() % 1000);
     }
     return s;
   };
@@ -292,7 +293,8 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
     {
       s += " |";
       s += static_cast<char>('A' + i);
-      for (int j = 0; j < num_features; ++j) s += " a" + std::to_string(rand() % 1000);
+      for (int j = 0; j < num_features; ++j)
+        s += std::string(" ") + static_cast<char>('a' + i) + std::to_string(rand() % 1000);
     }
     return s;
   };
@@ -300,7 +302,8 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
   std::vector<std::string> examples;
   for (int i = 0; i < num_actions; ++i)
   {
-    examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30));
+    examples.push_back(
+        generate_example(/*num_namespaces=*/std::max(1, rand() % 5), /*num_features=*/std::max(1, rand() % 30)));
   }
 
   {
@@ -397,7 +400,7 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 
     auto match_message = [](const VW::vw_exception& ex)
     {
-      std::string expected_message = "Generic interactions have not been supported yet in LAS SIMD implementations";
+      std::string expected_message = "Generic interactions are not supported yet in LAS SIMD implementations";
       BOOST_CHECK_EQUAL(ex.what(), expected_message);
       return true;
     };
@@ -417,7 +420,7 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 
     auto match_message = [](const VW::vw_exception& ex)
     {
-      std::string expected_message = "Extent_interactions have not been supported yet in LAS SIMD implementations";
+      std::string expected_message = "Extent_interactions are not supported yet in LAS SIMD implementations";
       BOOST_CHECK_EQUAL(ex.what(), expected_message);
       return true;
     };
