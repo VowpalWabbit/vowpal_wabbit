@@ -55,10 +55,19 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   const float scaling_factor = 1.f / std::sqrt(p);
   AOmega.resize(num_actions, p);
 
-#ifdef BUILD_LAS_WITH_SIMD
-  auto compute_dot_prod = _use_simd ? compute_dot_prod_simd : compute_dot_prod_scalar;
-#else
   auto compute_dot_prod = compute_dot_prod_scalar;
+#ifdef BUILD_LAS_WITH_SIMD
+  switch (_use_simd)
+  {
+    case (simd_type::AVX512):
+      compute_dot_prod = compute_dot_prod_avx512;
+      break;
+    case (simd_type::AVX2):
+      compute_dot_prod = compute_dot_prod_avx2;
+      break;
+    default:
+      compute_dot_prod = compute_dot_prod_scalar;
+  }
 #endif
 
   auto calculate_aomega_row = [compute_dot_prod](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p,
@@ -124,7 +133,12 @@ one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t se
     : _all(all), _d(d), _seed(seed), _thread_pool(thread_pool_size), _block_size(block_size)
 {
 #ifdef BUILD_LAS_WITH_SIMD
-  _use_simd = (use_explicit_simd && cpu_supports_avx512());
+  _use_simd = simd_type::NO_SIMD;
+  if (use_explicit_simd)
+  {
+    if (cpu_supports_avx512()) { _use_simd = simd_type::AVX512; }
+    else if (cpu_supports_avx2()) { _use_simd = simd_type::AVX2; }
+  }
 #else
   _UNUSED(use_explicit_simd);
 #endif
