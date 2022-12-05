@@ -78,7 +78,9 @@ emt_lru::K emt_lru::bound(emt_lru::K item)
   {
     V item_list_reference = (*item_map_reference).second;
     if (item_list_reference != list.begin())
-    { list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference)); }
+    {
+      list.splice(list.begin(), list, item_list_reference, std::next(item_list_reference));
+    }
   }
 
   if (list.size() > max_size)
@@ -88,10 +90,7 @@ emt_lru::K emt_lru::bound(emt_lru::K item)
     map.erase(last_value);
     return last_value;
   }
-  else
-  {
-    return nullptr;
-  }
+  else { return nullptr; }
 }
 
 emt_node::emt_node()
@@ -317,10 +316,7 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
 emt_feats emt_router(std::vector<emt_feats> exs, emt_router_type router_type, VW::rand_state& rng)
 {
   if (router_type == emt_router_type::random) { return emt_router_random(exs, rng); }
-  else
-  {
-    return emt_router_eigen(exs, rng);
-  }
+  else { return emt_router_eigen(exs, rng); }
 }
 
 ////////////////////////////end of helper/////////////////////////
@@ -441,7 +437,9 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 float scorer_predict(emt_tree& b, single_learner& base, const emt_example& pred_ex, const emt_example& leaf_ex)
 {
   if (b.scorer_type == emt_scorer_type::random)  // random scorer
-  { return b._random_state->get_and_update_random(); }
+  {
+    return b._random_state->get_and_update_random();
+  }
 
   else if (b.scorer_type == emt_scorer_type::distance)  // dist scorer
   {
@@ -751,11 +749,7 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
   uint32_t scorer_type = 0, router_type = 0, tree_bound = 0;
 
   option_group_definition new_options("[Reduction] Eigen Memory Tree");
-  new_options
-      .add(make_option("eigen_memory_tree", _)
-               .keep()
-               .necessary()
-               .help("Make an eigen memory tree"))
+  new_options.add(make_option("eigen_memory_tree", _).keep().necessary().help("Make an eigen memory tree"))
       .add(make_option("emt_tree", tree_bound)
                .keep()
                .default_value(0)

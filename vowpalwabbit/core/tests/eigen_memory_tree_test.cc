@@ -24,7 +24,9 @@ emt_tree* get_emt_tree(VW::workspace& all)
   std::vector<std::string> e_r;
   all.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "eigen_memory_tree") == e_r.end())
-  { ADD_FAILURE() << "Eigen memory tree not found in enabled reductions"; }
+  {
+    ADD_FAILURE() << "Eigen memory tree not found in enabled reductions";
+  }
 
   VW::LEARNER::single_learner* emt = as_singleline(all.l->get_learner_by_name_prefix("eigen_memory_tree"));
 
@@ -46,8 +48,8 @@ TEST(emt_tests, emt_params_test1)
 
 TEST(emt_tests, emt_params_test2)
 {
-  auto args = vwtest::make_args(
-      "--quiet", "--eigen_memory_tree", "--emt_tree", "20", "--emt_scorer", "2", "--emt_router", "1", "--emt_leaf", "50");
+  auto args = vwtest::make_args("--quiet", "--eigen_memory_tree", "--emt_tree", "20", "--emt_scorer", "2",
+    "--emt_router", "1", "--emt_leaf", "50");
   auto vw = VW::initialize_experimental(std::move(args));
   auto tree = get_emt_tree(*vw);
 
