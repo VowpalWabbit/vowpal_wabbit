@@ -172,8 +172,8 @@ float emt_median(std::vector<float>& array)
 float emt_inner(const emt_feats& xs, const emt_feats& ys)
 {
   float sum = 0;
-  int xi = 0;
-  int yi = 0;
+  unsigned long xi = 0;
+  unsigned long yi = 0;
 
   while (xi < xs.size() && yi < ys.size())
   {
@@ -576,7 +576,7 @@ void node_split(emt_tree& b, emt_node& cn)
   cn.examples.clear();
 }
 
-void node_insert(emt_tree& b, emt_node& cn, std::unique_ptr<emt_example> ex)
+void node_insert(emt_node& cn, std::unique_ptr<emt_example> ex)
 {
   for (auto& cn_ex : cn.examples)
   {
@@ -651,7 +651,7 @@ void end_pass(emt_tree& b)
 
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
-void save_load_examples(emt_tree& b, emt_node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+void save_load_examples(emt_node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
   WRITEITVAR(n.examples.size(), "n_examples", n_examples);
 
@@ -677,8 +677,6 @@ void save_load_examples(emt_tree& b, emt_node& n, io_buf& model_file, bool& read
 
 void save_load_weights(emt_node& n, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
-  uint32_t router_dims = 0;
-
   for (auto& p : n.router_weights)
   {
     WRITEIT(p.first, "router_index");

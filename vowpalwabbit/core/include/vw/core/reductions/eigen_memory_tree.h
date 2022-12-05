@@ -67,7 +67,7 @@ struct emt_lru
   std::list<K> list;
   std::unordered_map<K, V> map;
 
-  int max_size;
+  unsigned long max_size;
 
   emt_lru(unsigned long);
   K bound(K);
