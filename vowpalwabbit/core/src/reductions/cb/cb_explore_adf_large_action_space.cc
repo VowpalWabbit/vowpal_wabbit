@@ -373,7 +373,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
                      "implementation (by default, block_size = num_actions / thread_pool_size)"))
       .add(make_option("las_hint_explicit_simd", use_simd_in_one_pass_svd_impl)
                .experimental()
-               .help("Use explicit simd implementation in one pass svd. Only works with quadratics and no ignores. "
+               .help("Use explicit simd implementation in one pass svd. Only works with quadratic interactions. "
                      "(x86 Linux only)"))
       .add(make_option("two_pass_svd", use_two_pass_svd_impl)
                .experimental()
