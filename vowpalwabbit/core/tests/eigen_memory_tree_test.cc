@@ -319,7 +319,7 @@ TEST(emt_tests, test_emt_shuffle)
 {
   VW::rand_state rng(2);
 
-  std::vector<int> v1 {1,2,3};
+  std::vector<int> v1{1, 2, 3};
 
   emt_shuffle(v1.begin(), v1.end(), &rng);
 
