@@ -12,6 +12,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include "vw/config/option_builder.h"
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
+#include "vw/io/errno_handling.h"
 #include "vw/spanning_tree/spanning_tree.h"
 
 #ifdef _WIN32

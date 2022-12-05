@@ -10,6 +10,7 @@
 #include "vw/core/model_utils.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/v_array.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 void VW::details::print_action_score(
@@ -24,7 +25,7 @@ void VW::details::print_action_score(
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
 std::ostream& VW::operator<<(std::ostream& os, const action_score& a_s)

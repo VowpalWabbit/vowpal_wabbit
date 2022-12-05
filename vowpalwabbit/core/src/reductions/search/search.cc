@@ -27,6 +27,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <algorithm>
@@ -2558,7 +2559,7 @@ std::vector<VW::cs_label> read_allowed_transitions(action A, const char* filenam
 {
   FILE* f;
   if (VW::file_open(&f, filename, "r") != 0)
-    THROW("error: could not read file " << filename << " (" << VW::strerror_to_string(errno)
+    THROW("error: could not read file " << filename << " (" << VW::io::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 
   bool* bg = calloc_or_throw<bool>((static_cast<size_t>(A + 1)) * (A + 1));
