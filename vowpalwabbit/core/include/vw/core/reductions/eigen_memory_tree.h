@@ -49,22 +49,19 @@ emt_feats emt_scale_add(float, const emt_feats&, float, const emt_feats&);
 
 emt_feats emt_router_eigen(std::vector<emt_feats>&, VW::rand_state&);
 
-template<typename I, typename R>
+template <typename I, typename R>
 void emt_shuffle(I first, I last, R* rng)
 {
   // This is Richard Durstenfeld's method popularized by Donald Knuth in The Art of Computer Programming.
   // This algorithm is unbiased (i.e., all possible permutations are equally likely to occur).
 
   auto n = std::distance(first, last);
-
   if (n < 2) { return; }
 
-  auto i = 0;
-
-  for (int i = 0; i < n - 1; i++) 
+  for (int i = 0; i < n - 1; i++)
   {
     int j = static_cast<int>(rng->get_and_update_random() * .999 * (n - i));
-    std::iter_swap(first + i,first + j);
+    std::iter_swap(first + i, first + j);
   }
 }
 
