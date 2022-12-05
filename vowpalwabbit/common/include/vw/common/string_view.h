@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "nonstd/string_view.h"
+#include "nonstd/string_view.hpp"
 
 // This is a special case of the namespacing rules since it is a commonly used type.
 namespace VW
