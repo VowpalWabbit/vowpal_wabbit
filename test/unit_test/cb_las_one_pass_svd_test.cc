@@ -202,7 +202,8 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
     {
       s += " |";
       s += static_cast<char>('A' + i);
-      for (int j = 0; j < num_features; ++j) s += " a" + std::to_string(rand() % 1000);
+      for (int j = 0; j < num_features; ++j)
+        s += std::string(" ") + static_cast<char>('a' + i) + std::to_string(rand() % 1000);
     }
     return s;
   };
@@ -292,7 +293,8 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
     {
       s += " |";
       s += static_cast<char>('A' + i);
-      for (int j = 0; j < num_features; ++j) s += " a" + std::to_string(rand() % 1000);
+      for (int j = 0; j < num_features; ++j)
+        s += std::string(" ") + static_cast<char>('a' + i) + std::to_string(rand() % 1000);
     }
     return s;
   };
@@ -300,18 +302,21 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
   std::vector<std::string> examples;
   for (int i = 0; i < num_actions; ++i)
   {
-    examples.push_back(generate_example(/*num_namespaces=*/rand() % 5, /*num_features=*/rand() % 30));
+    examples.push_back(
+        generate_example(/*num_namespaces=*/std::max(1, rand() % 5), /*num_features=*/std::max(1, rand() % 30)));
   }
 
   {
     // No interactions
-    auto* vw_scalar = VW::initialize("--cb_explore_adf --large_action_space --quiet");
+    const std::string vw_cmd = "--cb_explore_adf --large_action_space --quiet";
+
+    auto* vw_scalar = VW::initialize(vw_cmd);
     VW::multi_ex ex_scalar;
     for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
     vw_scalar->predict(ex_scalar);
     auto& scores_scalar = ex_scalar[0]->pred.a_s;
 
-    auto* vw_simd = VW::initialize("--cb_explore_adf --large_action_space --quiet --las_hint_explicit_simd");
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
     for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
     vw_simd->predict(ex_simd);
@@ -331,13 +336,15 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
   }
   {
     // Quadratic interactions
-    auto* vw_scalar = VW::initialize("--cb_explore_adf --large_action_space --quiet -q ::");
+    const std::string vw_cmd = "--cb_explore_adf --large_action_space --quiet -q ::";
+
+    auto* vw_scalar = VW::initialize(vw_cmd);
     VW::multi_ex ex_scalar;
     for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
     vw_scalar->predict(ex_scalar);
     auto& scores_scalar = ex_scalar[0]->pred.a_s;
 
-    auto* vw_simd = VW::initialize("--cb_explore_adf --large_action_space --quiet -q :: --las_hint_explicit_simd");
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
     for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
     vw_simd->predict(ex_simd);
@@ -352,6 +359,73 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 
     vw_scalar->finish_example(ex_scalar);
     VW::finish(*vw_scalar);
+    vw_simd->finish_example(ex_simd);
+    VW::finish(*vw_simd);
+  }
+  {
+    // Ignore & ignore_linear
+    const std::string vw_cmd = "--cb_explore_adf --large_action_space --quiet -q :: --ignore A --ignore_linear B";
+
+    auto* vw_scalar = VW::initialize(vw_cmd);
+    VW::multi_ex ex_scalar;
+    for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
+    vw_scalar->predict(ex_scalar);
+    auto& scores_scalar = ex_scalar[0]->pred.a_s;
+
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
+    VW::multi_ex ex_simd;
+    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    vw_simd->predict(ex_simd);
+    auto& scores_simd = ex_simd[0]->pred.a_s;
+
+    BOOST_CHECK_EQUAL(scores_scalar.size(), scores_simd.size());
+    for (size_t i = 0; i < scores_scalar.size(); ++i)
+    {
+      BOOST_CHECK_EQUAL(scores_scalar[i].action, scores_simd[i].action);
+      BOOST_CHECK_CLOSE(scores_scalar[i].score, scores_simd[i].score, FLOAT_TOL);
+    }
+
+    vw_scalar->finish_example(ex_scalar);
+    VW::finish(*vw_scalar);
+    vw_simd->finish_example(ex_simd);
+    VW::finish(*vw_simd);
+  }
+  {
+    // Cubics & generic interactions are not supported yet
+    const std::string vw_cmd = "--cb_explore_adf --large_action_space --quiet --cubic :::";
+
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
+    VW::multi_ex ex_simd;
+    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+
+    auto match_message = [](const VW::vw_exception& ex)
+    {
+      std::string expected_message = "Generic interactions are not supported yet in LAS SIMD implementations";
+      BOOST_CHECK_EQUAL(ex.what(), expected_message);
+      return true;
+    };
+    BOOST_CHECK_EXCEPTION(vw_simd->predict(ex_simd), VW::vw_exception, match_message);
+
+    vw_simd->finish_example(ex_simd);
+    VW::finish(*vw_simd);
+  }
+  {
+    // Extent interactions are not supported yet
+    const std::string vw_cmd =
+        "--cb_explore_adf --large_action_space --quiet --experimental_full_name_interactions A|B";
+
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
+    VW::multi_ex ex_simd;
+    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+
+    auto match_message = [](const VW::vw_exception& ex)
+    {
+      std::string expected_message = "Extent_interactions are not supported yet in LAS SIMD implementations";
+      BOOST_CHECK_EQUAL(ex.what(), expected_message);
+      return true;
+    };
+    BOOST_CHECK_EXCEPTION(vw_simd->predict(ex_simd), VW::vw_exception, match_message);
+
     vw_simd->finish_example(ex_simd);
     VW::finish(*vw_simd);
   }
