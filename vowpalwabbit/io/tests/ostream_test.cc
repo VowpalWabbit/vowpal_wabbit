@@ -13,7 +13,8 @@
 
 TEST(custom_ostream_tests, test_custom_ostream)
 {
-  auto output_func = [](void* context, const char* buffer, size_t num_bytes) -> ssize_t {
+  auto output_func = [](void* context, const char* buffer, size_t num_bytes) -> ssize_t
+  {
     std::string input(buffer, num_bytes);
     EXPECT_TRUE(context == nullptr);
     EXPECT_EQ(input, "This is the test input, 123\n");

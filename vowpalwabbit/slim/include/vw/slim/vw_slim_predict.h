@@ -127,7 +127,9 @@ public:
     // only 0-valued hash_seed supported
     int hash_seed;
     if (find_opt_int(_command_line_arguments, "--hash_seed", hash_seed) && hash_seed)
-    { return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED; }
+    {
+      return E_VW_PREDICT_ERR_HASH_SEED_NOT_SUPPORTED;
+    }
 
     _interactions.clear();
     find_opt(_command_line_arguments, "-q", _interactions);
@@ -183,10 +185,7 @@ public:
       {
         _exploration = vw_predict_exploration::epsilon_greedy;
       }
-      else
-      {
-        return E_VW_PREDICT_ERR_CB_EXPLORATION_MISSING;
-      }
+      else { return E_VW_PREDICT_ERR_CB_EXPLORATION_MISSING; }
     }
 
     // VW style check_sum validation

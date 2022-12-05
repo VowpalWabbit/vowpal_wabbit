@@ -28,10 +28,7 @@ inline void format_indicies(example* a, std::stringstream& sstream)
   for (auto ns : a->indices)
   {
     if (ns == 0) { sstream << "NULL:0"; }
-    else
-    {
-      sstream << '\'' << static_cast<char>(ns) << "\':" << ns << ',';
-    }
+    else { sstream << '\'' << static_cast<char>(ns) << "\':" << ns << ','; }
   }
 }
 

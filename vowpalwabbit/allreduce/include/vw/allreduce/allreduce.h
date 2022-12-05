@@ -302,10 +302,7 @@ private:
               FD_CLR(_socks.children[i], &fds);
             }
           }
-          else if (_socks.children[i] != -1 && child_read_pos[i] != n)
-          {
-            FD_SET(_socks.children[i], &fds);
-          }
+          else if (_socks.children[i] != -1 && child_read_pos[i] != n) { FD_SET(_socks.children[i], &fds); }
         }
       }
       if (_socks.parent == -1 && child_read_pos[0] == n && child_read_pos[1] == n) { parent_sent_pos = n; }

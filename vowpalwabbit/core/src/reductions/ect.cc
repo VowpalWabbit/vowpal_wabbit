@@ -131,15 +131,9 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
         e.directions.push_back(d);
         uint32_t direction_index = static_cast<uint32_t>(e.directions.size()) - 1;
         if (e.directions[left].tournament == i) { e.directions[left].winner = direction_index; }
-        else
-        {
-          e.directions[left].loser = direction_index;
-        }
+        else { e.directions[left].loser = direction_index; }
         if (e.directions[right].tournament == i) { e.directions[right].winner = direction_index; }
-        else
-        {
-          e.directions[right].loser = direction_index;
-        }
+        else { e.directions[right].loser = direction_index; }
         if (e.directions[left].last) { e.directions[left].winner = direction_index; }
 
         if (tournaments[i].size() == 2 && (i == 0 || tournaments[i - 1].empty()))
@@ -152,10 +146,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
           }
           e.final_nodes.push_back(static_cast<uint32_t>(e.directions.size() - 1));
         }
-        else
-        {
-          new_tournaments[i].push_back(id);
-        }
+        else { new_tournaments[i].push_back(id); }
         if (i + 1 < tournaments.size()) { new_tournaments[i + 1].push_back(id); }
         else
         {  // loser eliminated.
@@ -205,10 +196,7 @@ uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
     base.learn(ec, id - e.k);
 
     if (ec.pred.scalar > e.class_boundary) { id = e.directions[id].right; }
-    else
-    {
-      id = e.directions[id].left;
-    }
+    else { id = e.directions[id].left; }
   }
   return id + 1;
 }
@@ -227,13 +215,9 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
 
   uint32_t id = e.directions[mc.label - 1].winner;
   bool left = e.directions[id].left == mc.label - 1;
-  do
-  {
+  do {
     if (left) { simple_temp.label = -1; }
-    else
-    {
-      simple_temp.label = 1;
-    }
+    else { simple_temp.label = 1; }
 
     ec.l.simple = simple_temp;
     base.learn(ec, id - e.k);
@@ -247,10 +231,7 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
     if (won)
     {
       if (!e.directions[id].last) { left = e.directions[e.directions[id].winner].left == id; }
-      else
-      {
-        e.tournaments_won.push_back(true);
-      }
+      else { e.tournaments_won.push_back(true); }
       id = e.directions[id].winner;
     }
     else
@@ -260,17 +241,16 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
         left = e.directions[e.directions[id].loser].left == id;
         if (e.directions[id].loser == 0) { e.tournaments_won.push_back(false); }
       }
-      else
-      {
-        e.tournaments_won.push_back(false);
-      }
+      else { e.tournaments_won.push_back(false); }
       id = e.directions[id].loser;
     }
   } while (id != 0);
 
   // TODO: error? warn? info? what level is this supposed to be?
   if (e.tournaments_won.empty())
-  { e.logger.out_error("Internal error occurred. tournaments_won was empty which should not be possible."); }
+  {
+    e.logger.out_error("Internal error occurred. tournaments_won was empty which should not be possible.");
+  }
 
   // tournaments_won is a bit vector determining which tournaments the label won.
   for (size_t i = 0; i < e.tree_height; i++)
@@ -286,10 +266,7 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
       else  // query to do
       {
         if (left) { simple_temp.label = -1; }
-        else
-        {
-          simple_temp.label = 1;
-        }
+        else { simple_temp.label = 1; }
         ec.l.simple = simple_temp;
         ec.weight = static_cast<float>(1 << (e.tree_height - i - 1));
 
@@ -298,14 +275,13 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
         base.learn(ec, problem_number);
 
         if (ec.pred.scalar > e.class_boundary) { e.tournaments_won[j] = right; }
-        else
-        {
-          e.tournaments_won[j] = left;
-        }
+        else { e.tournaments_won[j] = left; }
       }
 
       if (e.tournaments_won.size() % 2 == 1)
-      { e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1]; }
+      {
+        e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1];
+      }
       e.tournaments_won.resize_but_with_stl_behavior((1 + e.tournaments_won.size()) / 2);
     }
   }

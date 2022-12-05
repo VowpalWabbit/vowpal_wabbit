@@ -34,8 +34,7 @@ float merand48_boxmuller(uint64_t& index)
   float x1 = 0.0;
   float x2 = 0.0;
   float temp = 0.0;
-  do
-  {
+  do {
     x1 = 2.0f * merand48(index) - 1.0f;
     x2 = 2.0f * merand48(index) - 1.0f;
     temp = x1 * x1 + x2 * x2;

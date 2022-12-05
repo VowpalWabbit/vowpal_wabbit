@@ -29,18 +29,9 @@ enum class parser_type
 parser_type to_parser_type(const std::string& str)
 {
   if (str == "text") { return parser_type::TEXT; }
-  else if (str == "dsjson")
-  {
-    return parser_type::DSJSON;
-  }
-  else if (str == "csv")
-  {
-    return parser_type::CSV;
-  }
-  else
-  {
-    throw std::runtime_error("Unknown input type: " + str);
-  }
+  else if (str == "dsjson") { return parser_type::DSJSON; }
+  else if (str == "csv") { return parser_type::CSV; }
+  else { throw std::runtime_error("Unknown input type: " + str); }
 }
 
 int main(int argc, char** argv)
@@ -113,10 +104,7 @@ int main(int argc, char** argv)
     }
     file.close();
   }
-  else
-  {
-    std::cerr << "error: could not open file: '" << file_name << "'\n";
-  }
+  else { std::cerr << "error: could not open file: '" << file_name << "'\n"; }
 
   // Other option is the parser can use this io_buf. It's using more memory for no good reason, unless we run out it
   // shouldnt matter in this test tool.

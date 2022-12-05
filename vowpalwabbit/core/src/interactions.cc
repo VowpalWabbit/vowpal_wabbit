@@ -100,11 +100,13 @@ float calculate_count_and_sum_ft_sq_for_combinations(const std::array<features, 
         results.resize(order_of_inter);
         std::fill(results.begin(), results.end(), 0.f);
 
-        for_each_value(feature_spaces, *interaction_term_it, [&](float value) {
-          const float x = value * value;
-          results[0] += x;
-          for (size_t j = 1; j < order_of_inter; ++j) { results[j] += results[j - 1] * x; }
-        });
+        for_each_value(feature_spaces, *interaction_term_it,
+            [&](float value)
+            {
+              const float x = value * value;
+              results[0] += x;
+              for (size_t j = 1; j < order_of_inter; ++j) { results[j] += results[j - 1] * x; }
+            });
 
         sum_feat_sq_in_inter *= results[order_of_inter - 1];
         if (sum_feat_sq_in_inter == 0.f) { break; }

@@ -74,7 +74,9 @@ API char* ComputeDiffDescriptionSimpleLabels(example* ex1, example* ex2)
 
   if ((vw_net_native::FloatEqual(ld1->label, ld2->label) && vw_net_native::FloatEqual(ex1_initial, ex2_initial) &&
           vw_net_native::FloatEqual(ex1->weight, ex2->weight)))
-  { return nullptr; }
+  {
+    return nullptr;
+  }
 
   std::stringstream sstream;
   sstream << "Label differ. label " << ld1->label << " vs " << ld2->label << ". initial" << ex1_initial << " vs "

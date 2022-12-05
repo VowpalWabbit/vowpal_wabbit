@@ -255,7 +255,9 @@ public:
   {
     // Seek to the first valid position.
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
-    { ++_index_current; }
+    {
+      ++_index_current;
+    }
   }
 
   using iterator_category = std::forward_iterator_tag;
@@ -280,7 +282,9 @@ public:
   {
     ++_index_current;
     while (_index_current != _feature_group->namespace_extents.end() && _index_current->hash != _hash)
-    { ++_index_current; }
+    {
+      ++_index_current;
+    }
 
     return *this;
   }

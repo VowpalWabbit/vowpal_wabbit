@@ -71,22 +71,21 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
     data.adf_data.ecs[chosen_action]->l.cb = std::move(new_ld);
   }
 
-  auto restore_guard = VW::scope_exit([&backup_ld, &data, &chosen_action, &is_test_label, &new_ld] {
-    if (!is_test_label && chosen_action < data.adf_data.num_actions)
-    {
-      new_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
-      data.adf_data.ecs[chosen_action]->l.cb = std::move(backup_ld);
-    }
-  });
+  auto restore_guard = VW::scope_exit(
+      [&backup_ld, &data, &chosen_action, &is_test_label, &new_ld]
+      {
+        if (!is_test_label && chosen_action < data.adf_data.num_actions)
+        {
+          new_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
+          data.adf_data.ecs[chosen_action]->l.cb = std::move(backup_ld);
+        }
+      });
 
   if (!base.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
   if (is_learn) { base.learn(data.adf_data.ecs); }
 
   if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
-  else
-  {
-    ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
-  }
+  else { ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1; }
 }
 
 void finish_example(VW::workspace& all, cb_to_cb_adf& c, VW::example& ec)
@@ -151,7 +150,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
 
   // ANY model created with older version should default to --cb_force_legacy
   if (all.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
-  { compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF); }
+  {
+    compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF);
+  }
 
   // not compatible with adf
   if (options.was_supplied("cbify_reg")) { compat_old_cb = true; }

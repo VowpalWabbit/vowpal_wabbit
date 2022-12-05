@@ -35,10 +35,7 @@ void do_weighting(size_t normalized_idx, uint64_t length, const float* local_wei
         weight[normalized_idx] *= ratio;  // A crude max
       }
     }
-    else
-    {
-      *weight = 0;
-    }
+    else { *weight = 0; }
   }
 }
 

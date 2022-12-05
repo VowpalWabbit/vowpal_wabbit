@@ -5,7 +5,6 @@
 #ifdef BUILD_LAS_WITH_SIMD
 
 #  include "compute_dot_prod_simd.h"
-
 #  include "kernel_impl.h"
 
 #  include <x86intrin.h>
@@ -39,7 +38,7 @@ inline void compute16(const __m512& feature_values, const __m512i& feature_indic
   indices2 = _mm512_add_epi64(_mm512_and_epi64(indices2, weights_masks), column_indices);
   __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
 
-  // popcounts always fit into 32 bits, so truncate and merge all 16 popcounts.
+  // popcounts always fit into 32 bits, so truncate and pack all 16 popcounts.
   __m512i popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
   __m512i sparsity_indices = _mm512_slli_epi32(_mm512_and_epi32(popcounts, all_ones), 1);
 
@@ -56,7 +55,7 @@ inline void compute16(const __m512& feature_values, const __m512i& feature_indic
 }
 
 // A data parallel implementation of the foreach_feature that processes 16 features at once.
-float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex)
+float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex)
 {
   float sum = 0.f;
   const uint64_t offset = ex->ft_offset;
