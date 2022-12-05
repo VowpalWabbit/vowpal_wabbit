@@ -28,7 +28,7 @@ TEST(cache_tests, write_and_read_example)
   io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
-  VW::details::cache_temp_buffer temp_buffer;
+  VW::parsers::cache::details::cache_temp_buffer temp_buffer;
   VW::write_example_to_cache(
       io_writer, &src_ex, workspace->example_parser->lbl_parser, workspace->parse_mask, temp_buffer);
   io_writer.flush();
@@ -78,7 +78,7 @@ TEST(cache_tests, write_and_read_large_example)
   io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
-  VW::details::cache_temp_buffer temp_buffer;
+  VW::parsers::cache::details::cache_temp_buffer temp_buffer;
   VW::write_example_to_cache(
       io_writer, &src_ex, workspace->example_parser->lbl_parser, workspace->parse_mask, temp_buffer);
   io_writer.flush();
@@ -114,14 +114,14 @@ TEST(cache_tests, write_and_read_tag)
   io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
-  VW::details::cache_tag(io_writer, tag);
+  VW::parsers::cache::details::cache_tag(io_writer, tag);
   io_writer.flush();
 
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   v_array<char> read_tag;
-  VW::details::read_cached_tag(io_reader, read_tag);
+  VW::parsers::cache::details::read_cached_tag(io_reader, read_tag);
 
   EXPECT_THAT(tag, Pointwise(Eq(), read_tag));
 }
@@ -133,14 +133,14 @@ TEST(cache_tests, write_and_read_index)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::namespace_index index = 79;
-  VW::details::cache_index(io_writer, index);
+  VW::parsers::cache::details::cache_index(io_writer, index);
   io_writer.flush();
 
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::namespace_index read_index = 0;
-  VW::details::read_cached_index(io_reader, read_index);
+  VW::parsers::cache::details::read_cached_index(io_reader, read_index);
 
   EXPECT_EQ(index, read_index);
 }
@@ -159,7 +159,7 @@ TEST(cache_tests, write_and_read_features)
   feats.push_back(1.1f, 675 & mask);
   feats.push_back(1.34f, 1 & mask);
   feats.push_back(1.1f, 567 & mask);
-  VW::details::cache_features(io_writer, feats, mask);
+  VW::parsers::cache::details::cache_features(io_writer, feats, mask);
   io_writer.flush();
 
   io_buf io_reader;
@@ -167,7 +167,7 @@ TEST(cache_tests, write_and_read_features)
 
   features read_feats;
   bool sorted = false;
-  VW::details::read_cached_features(io_reader, read_feats, sorted);
+  VW::parsers::cache::details::read_cached_features(io_reader, read_feats, sorted);
 
   EXPECT_EQ(feats.size(), read_feats.size());
   for (auto it = feats.begin(), read_it = read_feats.begin(); it != feats.end(); ++it, ++read_it)

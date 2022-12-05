@@ -73,8 +73,8 @@ void send_features(io_buf* b, VW::example& ec, uint32_t mask)
   for (VW::namespace_index ns : ec.indices)
   {
     if (ns == VW::details::CONSTANT_NAMESPACE) { continue; }
-    VW::details::cache_index(*b, ns);
-    VW::details::cache_features(*b, ec.feature_space[ns], mask);
+    VW::parsers::cache::details::cache_index(*b, ns);
+    VW::parsers::cache::details::cache_features(*b, ec.feature_space[ns], mask);
   }
   b->flush();
 }
@@ -101,7 +101,7 @@ void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, VW::example& ec)
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   s.all->example_parser->lbl_parser.cache_label(
       ec.l, ec.ex_reduction_features, *s.buf, "", false);  // send label information.
-  VW::details::cache_tag(*s.buf, ec.tag);
+  VW::parsers::cache::details::cache_tag(*s.buf, ec.tag);
   send_features(s.buf, ec, static_cast<uint32_t>(s.all->parse_mask));
   s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] = &ec;
 }
