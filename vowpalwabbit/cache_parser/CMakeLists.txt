@@ -10,6 +10,7 @@ vw_add_library(
     PUBLIC_DEPS vw_common vw_core
     DESCRIPTION "Read and write VW examples with internal cache format."
     EXCEPTION_DESCRIPTION "Yes"
+    ENABLE_INSTALL
 )
 
 vw_add_test_executable(
