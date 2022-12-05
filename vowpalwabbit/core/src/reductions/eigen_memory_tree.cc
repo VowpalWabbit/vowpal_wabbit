@@ -636,7 +636,7 @@ void learn(emt_tree& b, single_learner& base, VW::example& ec)
   node_predict(b, base, cn, *ex, ec);  // vw learners predict and learn
 
   tree_bound(b, ex.get());
-  node_insert(b, cn, std::move(ex));
+  node_insert(cn, std::move(ex));
   node_split(b, cn);
 }
 
@@ -694,7 +694,7 @@ std::unique_ptr<emt_node> save_load_node(
 
   WRITEIT(n->router_decision, "decision");
 
-  save_load_examples(b, *n, model_file, read, text, msg);
+  save_load_examples(*n, model_file, read, text, msg);
   save_load_weights(*n, model_file, read, text, msg);
 
   n->left = save_load_node(b, std::move(n->left), model_file, read, text, msg);
