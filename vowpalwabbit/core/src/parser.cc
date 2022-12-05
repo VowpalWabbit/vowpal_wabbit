@@ -54,8 +54,8 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #  include <netinet/in.h>
 #endif
 
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/common/vw_exception.h"
-#include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/interactions.h"
 #include "vw/core/parse_args.h"
@@ -172,7 +172,7 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   return cache_numbits;
 }
 
-void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::read_example_from_cache; }
+void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::parsers::cache::read_example_from_cache; }
 
 void set_string_reader(VW::workspace& all)
 {
@@ -220,7 +220,7 @@ void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = fals
 {
   if (all.example_parser->input.isbinary())
   {
-    all.example_parser->reader = VW::read_example_from_cache;
+    all.example_parser->reader = VW::parsers::cache::read_example_from_cache;
     all.print_by_ref = binary_print_result_by_ref;
   }
   else if (json || dsjson) { set_json_reader(all, dsjson); }
@@ -705,8 +705,8 @@ void setup_example(VW::workspace& all, VW::example* ae)
 
   if (all.example_parser->write_cache)
   {
-    VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask,
-        all.example_parser->cache_temp_buffer_obj);
+    VW::parsers::cache::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser,
+        all.parse_mask, all.example_parser->cache_temp_buffer_obj);
   }
 
   // Require all extents to be complete in an VW::example.

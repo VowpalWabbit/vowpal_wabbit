@@ -1,5 +1,5 @@
 #include "benchmarks_common.h"
-#include "vw/core/cache.h"
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/parser.h"
 #include "vw/core/vw.h"
@@ -25,8 +25,9 @@ std::shared_ptr<std::vector<char>> get_cache_buffer(const std::string& es)
   auto* ae = &VW::get_unused_example(vw);
   VW::read_line(*vw, ae, const_cast<char*>(es.c_str()));
 
-  VW::details::cache_temp_buffer temp_buf;
-  VW::write_example_to_cache(vw->example_parser->output, ae, vw->example_parser->lbl_parser, vw->parse_mask, temp_buf);
+  VW::parsers::cache::details::cache_temp_buffer temp_buf;
+  VW::parsers::cache::write_example_to_cache(
+      vw->example_parser->output, ae, vw->example_parser->lbl_parser, vw->parse_mask, temp_buf);
   vw->example_parser->output.flush();
   VW::finish_example(*vw, *ae);
   VW::finish(*vw);
@@ -49,7 +50,7 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
 
   for (auto _ : state)
   {
-    VW::read_example_from_cache(vw, io_buffer, examples);
+    VW::parsers::cache::read_example_from_cache(vw, io_buffer, examples);
     VW::empty_example(*vw, *examples[0]);
     io_buffer.reset();
     benchmark::ClobberMemory();

@@ -17,6 +17,7 @@
 #  include <mutex>
 #endif
 
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/example.h"

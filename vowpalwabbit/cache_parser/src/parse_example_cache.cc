@@ -4,9 +4,9 @@
 
 #include "vw/cache_parser/parse_example_cache.h"
 
+#include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/io_buf.h"
-#include "vw/core/example.h"
 #include "vw/core/parser.h"
 #include "vw/io/io_adapter.h"
 
@@ -183,8 +183,8 @@ void VW::parsers::cache::details::cache_features(io_buf& cache, const features& 
   std::memcpy(storage_size_loc, &storage_size, sizeof(size_t));
 }
 
-void VW::parsers::cache::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parser& lbl_parser, uint64_t parse_mask,
-    VW::parsers::cache::details::cache_temp_buffer& temp_buffer)
+void VW::parsers::cache::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parser& lbl_parser,
+    uint64_t parse_mask, VW::parsers::cache::details::cache_temp_buffer& temp_buffer)
 {
   temp_buffer.backing_buffer->clear();
   io_buf& temp_cache = temp_buffer.temporary_cache_buffer;

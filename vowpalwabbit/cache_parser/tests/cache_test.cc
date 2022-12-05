@@ -2,8 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/cache.h"
-
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
@@ -29,7 +28,7 @@ TEST(cache_tests, write_and_read_example)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::parsers::cache::details::cache_temp_buffer temp_buffer;
-  VW::write_example_to_cache(
+  VW::parsers::cache::write_example_to_cache(
       io_writer, &src_ex, workspace->example_parser->lbl_parser, workspace->parse_mask, temp_buffer);
   io_writer.flush();
 
@@ -39,7 +38,7 @@ TEST(cache_tests, write_and_read_example)
   VW::multi_ex examples;
   VW::example dest_ex;
   examples.push_back(&dest_ex);
-  VW::read_example_from_cache(workspace.get(), io_reader, examples);
+  VW::parsers::cache::read_example_from_cache(workspace.get(), io_reader, examples);
 
   EXPECT_EQ(dest_ex.indices.size(), 2);
   EXPECT_EQ(dest_ex.feature_space['n'].size(), 3);
@@ -79,7 +78,7 @@ TEST(cache_tests, write_and_read_large_example)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::parsers::cache::details::cache_temp_buffer temp_buffer;
-  VW::write_example_to_cache(
+  VW::parsers::cache::write_example_to_cache(
       io_writer, &src_ex, workspace->example_parser->lbl_parser, workspace->parse_mask, temp_buffer);
   io_writer.flush();
 
@@ -89,7 +88,7 @@ TEST(cache_tests, write_and_read_large_example)
   VW::multi_ex examples;
   VW::example dest_ex;
   examples.push_back(&dest_ex);
-  VW::read_example_from_cache(workspace.get(), io_reader, examples);
+  VW::parsers::cache::read_example_from_cache(workspace.get(), io_reader, examples);
 
   EXPECT_EQ(src_ex.indices.size(), dest_ex.indices.size());
   for (auto idx : {' ', 'a', 'b', 'c', 'd', 'e', 'f'})

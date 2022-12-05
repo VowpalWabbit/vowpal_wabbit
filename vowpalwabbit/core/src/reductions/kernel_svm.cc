@@ -6,7 +6,6 @@
 
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
-#include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"

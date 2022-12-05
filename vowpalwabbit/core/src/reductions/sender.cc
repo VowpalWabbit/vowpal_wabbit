@@ -27,8 +27,8 @@
 #  include <netdb.h>
 #endif
 
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/config/options.h"
-#include "vw/core/cache.h"
 #include "vw/core/global_data.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/loss_functions.h"

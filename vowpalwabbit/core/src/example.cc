@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/example.h"
 
-#include "vw/core/cache.h"
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/interactions.h"
 #include "vw/core/model_utils.h"
