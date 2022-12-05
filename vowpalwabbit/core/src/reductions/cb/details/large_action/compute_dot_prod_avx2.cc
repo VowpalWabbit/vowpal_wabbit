@@ -103,33 +103,50 @@ float compute_dot_prod_avx2(uint64_t column_index, VW::workspace* _all, uint64_t
   const __m256i weights_masks = _mm256_set1_epi64x(weights_mask);
   const __m256i offsets = _mm256_set1_epi64x(offset);
 
-  for (const auto& features : *ex)
+  const bool ignore_some_linear = _all->ignore_some_linear;
+  const auto& ignore_linear = _all->ignore_linear;
+  for (auto i = ex->begin(); i != ex->end(); ++i)
   {
+    if (ignore_some_linear && ignore_linear[i.index()]) { continue; }
+    const auto& features = *i;
     const size_t num_features = features.size();
-    size_t i = 0;
-    for (; i + 8 <= num_features; i += 8)
+    size_t j = 0;
+    for (; j + 8 <= num_features; j += 8)
     {
       // Unroll the 64-bit indices twice to align with 32-bit values.
-      __m256i indices1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&features.indices[i]));
-      __m256i indices2 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&features.indices[i + 4]));
+      __m256i indices1 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&features.indices[j]));
+      __m256i indices2 = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(&features.indices[j + 4]));
       // If indices fit into 32 bits, convert indices to 32-bit here can speed up further.
 
-      __m256 values = _mm256_loadu_ps(&features.values[i]);
+      __m256 values = _mm256_loadu_ps(&features.values[j]);
       compute8(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
     }
-    for (; i < num_features; ++i)
+    for (; j < num_features; ++j)
     {
       // Handle tail of the loop using scalar implementation.
-      compute1(features.values[i], features.indices[i], offset, weights_mask, column_index, seed, sum);
+      compute1(features.values[j], features.indices[j], offset, weights_mask, column_index, seed, sum);
     }
   }
+
   const auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
   const auto& interactions =
       red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions;
+  const auto& extent_interactions = red_features.generated_extent_interactions
+      ? *red_features.generated_extent_interactions
+      : *ex->extent_interactions;
+  if (!extent_interactions.empty())
+  {
+    // TODO: Add support for extent_interactions.
+    THROW("Extent_interactions have not been supported yet in LAS SIMD implementations");
+  }
+
   for (const auto& ns : interactions)
   {
-    // TODO: other interactions, ignores & extent_interactions. The following only handles quadratics.
-    assert(ns.size() == 2);
+    if (ns.size() != 2)
+    {
+      // TODO: Add support for interactions other than quadratics.
+      THROW("Generic interactions have not been supported yet in LAS SIMD implementations")
+    }
 
     const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
     const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
@@ -167,6 +184,7 @@ float compute_dot_prod_avx2(uint64_t column_index, VW::workspace* _all, uint64_t
       }
     }
   }
+
   return sum + horizontal_sum(sums);
 }
 
