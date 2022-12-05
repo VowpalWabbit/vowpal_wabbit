@@ -563,8 +563,8 @@ void update_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb
   }
 }
 
-void output_example_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_data& data, const VW::multi_ex& ec_seq,
-    VW::io::logger& /* unused */)
+void output_example_prediction_ccb(
+    VW::workspace& all, const ccb_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   if (!ec_seq.empty() && !data.no_pred)
   {
@@ -574,10 +574,18 @@ void output_example_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_dat
       VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger);
     }
     VW::details::global_print_newline(all.final_prediction_sink, all.logger);
+  }
+}
 
+void print_update_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_data& data, const VW::multi_ex& ec_seq,
+    VW::io::logger& /* unused */)
+{
+  if (!ec_seq.empty() && !data.no_pred)
+  {
     // Print progress
     size_t num_features = 0;
     for (auto* ec : data.slots) { num_features += ec->get_num_features(); }
+
     VW::print_update_ccb(all, data.slots, ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, num_features);
   }
 }
@@ -696,7 +704,8 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
                 .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
                 .set_input_label_type(VW::label_type_t::CCB)
                 .set_output_label_type(VW::label_type_t::CB)
-                .set_output_example(output_example_ccb)
+                .set_output_example_prediction(output_example_prediction_ccb)
+                .set_print_update(::print_update_ccb)
                 .set_update_stats(update_stats_ccb)
                 .set_cleanup_example(cleanup_example_ccb)
                 .set_save_load(save_load)

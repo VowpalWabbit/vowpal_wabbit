@@ -808,8 +808,9 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_save_load(save_load)
                 .set_finish(finish_kernel_svm)
-                .set_output_example(VW::details::output_example_simple_label<svm_params>)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svm_params>)
                 .set_update_stats(VW::details::update_stats_simple_label<svm_params>)
+                .set_print_update(VW::details::print_update_simple_label<svm_params>)
                 .build();
 
   return make_base(*l);
