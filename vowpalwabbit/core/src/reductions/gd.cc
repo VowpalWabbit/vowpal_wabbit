@@ -188,8 +188,8 @@ void end_pass(gd& g)
 
   if (all.all_reduce != nullptr)
   {
-    if (all.weights.adaptive) { accumulate_weighted_avg(all, all.weights); }
-    else { accumulate_avg(all, all.weights, 0); }
+    if (all.weights.adaptive) { VW::details::accumulate_weighted_avg(all, all.weights); }
+    else { VW::details::accumulate_avg(all, all.weights, 0); }
   }
   all.eta *= all.eta_decay_rate;
   if (all.save_per_pass) { save_predictor(all, all.final_regressor_name, all.current_pass); }
