@@ -78,18 +78,9 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::exampl
       float k = floorf((o.N - i - s) / 2);
       int64_t c;
       if (o.N - (i + 1) < 0) { c = 0; }
-      else if (k > o.N - (i + 1))
-      {
-        c = 0;
-      }
-      else if (k < 0)
-      {
-        c = 0;
-      }
-      else if (o.C[o.N - (i + 1)][static_cast<int64_t>(k)] != -1)
-      {
-        c = o.C[o.N - (i + 1)][static_cast<int64_t>(k)];
-      }
+      else if (k > o.N - (i + 1)) { c = 0; }
+      else if (k < 0) { c = 0; }
+      else if (o.C[o.N - (i + 1)][static_cast<int64_t>(k)] != -1) { c = o.C[o.N - (i + 1)][static_cast<int64_t>(k)]; }
       else
       {
         c = VW::math::choose(o.N - (i + 1), static_cast<int64_t>(k));
@@ -123,10 +114,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::exampl
   ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
-  else
-  {
-    ec.loss = ec.weight;
-  }
+  else { ec.loss = ec.weight; }
 }
 
 //-----------------------------------------------------------------
@@ -182,10 +170,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
   ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
-  else
-  {
-    ec.loss = ec.weight;
-  }
+  else { ec.loss = ec.weight; }
 }
 
 template <bool is_learn>
@@ -263,10 +248,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   ec.pred.scalar = VW::math::sign(final_prediction);
 
   if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
-  else
-  {
-    ec.loss = ec.weight;
-  }
+  else { ec.loss = ec.weight; }
 }
 
 void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
@@ -439,10 +421,7 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
     pred_ptr = predict_or_learn_adaptive<false>;
     save_load_fn = save_load_sampling;
   }
-  else
-  {
-    THROW("Unrecognized boosting algorithm: \'" << data->alg << "\'.");
-  }
+  else { THROW("Unrecognized boosting algorithm: \'" << data->alg << "\'."); }
 
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
       pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)

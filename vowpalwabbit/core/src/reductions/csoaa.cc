@@ -43,18 +43,12 @@ inline void inner_loop(single_learner& base, VW::example& ec, uint32_t i, float 
     ec.weight = (cost == FLT_MAX) ? 0.f : 1.f;
     ec.l.simple.label = cost;
     if (indexing == 0) { base.learn(ec, i); }
-    else
-    {
-      base.learn(ec, i - 1);
-    }
+    else { base.learn(ec, i - 1); }
   }
   else
   {
     if (indexing == 0) { base.predict(ec, i); }
-    else
-    {
-      base.predict(ec, i - 1);
-    }
+    else { base.predict(ec, i - 1); }
   }
 
   partial_prediction = ec.partial_prediction;
@@ -119,7 +113,9 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   if (!ld.costs.empty())
   {
     for (auto& cl : ld.costs)
-    { inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, c.indexing); }
+    {
+      inner_loop<is_learn>(base, ec, cl.class_index, cl.x, prediction, score, cl.partial_prediction, c.indexing);
+    }
     ec.partial_prediction = score;
   }
   else if (dont_learn)
@@ -151,7 +147,9 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
   {
     float temp;
     for (uint32_t i = 1; i <= c.num_classes; i++)
-    { inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing); }
+    {
+      inner_loop<false>(base, ec, i, FLT_MAX, prediction, score, temp, c.indexing);
+    }
   }
 
   if (ec.passthrough)
@@ -173,10 +171,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
       ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 2, margin);
       ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 2 + 1 + second_best, 1.);
     }
-    else
-    {
-      ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 3, 1.);
-    }
+    else { ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 3, 1.); }
   }
 
   ec.pred.multiclass = prediction;
@@ -198,7 +193,9 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("probabilities"))
-  { THROW("csoaa does not support probabilities flag, please use oaa or multilabel_oaa"); }
+  {
+    THROW("csoaa does not support probabilities flag, please use oaa or multilabel_oaa");
+  }
   c->search = options.was_supplied("search");
 
   c->pred = calloc_or_throw<VW::polyprediction>(c->num_classes);

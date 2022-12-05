@@ -72,26 +72,11 @@ void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat
 std::string ns_to_str(unsigned char ns)
 {
   if (ns == VW::details::CONSTANT_NAMESPACE) { return "[constant]"; }
-  else if (ns == VW::details::CCB_SLOT_NAMESPACE)
-  {
-    return "[ccbslot]";
-  }
-  else if (ns == VW::details::CCB_ID_NAMESPACE)
-  {
-    return "[ccbid]";
-  }
-  else if (ns == VW::details::WILDCARD_NAMESPACE)
-  {
-    return "[wild]";
-  }
-  else if (ns == VW::details::DEFAULT_NAMESPACE)
-  {
-    return "[default]";
-  }
-  else
-  {
-    return std::string(1, ns);
-  }
+  else if (ns == VW::details::CCB_SLOT_NAMESPACE) { return "[ccbslot]"; }
+  else if (ns == VW::details::CCB_ID_NAMESPACE) { return "[ccbid]"; }
+  else if (ns == VW::details::WILDCARD_NAMESPACE) { return "[wild]"; }
+  else if (ns == VW::details::DEFAULT_NAMESPACE) { return "[default]"; }
+  else { return std::string(1, ns); }
 }
 
 std::string interaction_vec_t_to_string(

@@ -214,7 +214,9 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 
   if (data->num_actions == 0) { return nullptr; }
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-  { THROW("Min and max values must be supplied with cb_continuous"); }
+  {
+    THROW("Min and max values must be supplied with cb_continuous");
+  }
 
   float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
@@ -229,7 +231,9 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
   if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
 
   if (data->bandwidth >= (data->max_value - data->min_value))
-  { all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf."); }
+  {
+    all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf.");
+  }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions
@@ -238,10 +242,7 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
   {
     data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width);
   }
-  else
-  {
-    data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width) + 1;
-  }
+  else { data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width) + 1; }
 
   options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
 

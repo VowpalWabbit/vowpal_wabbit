@@ -8,8 +8,9 @@
 #include <gtest/gtest.h>
 
 // fills the inner vector at index vector_index with the size_of_inner_vector numbers of vector_index's
-auto fill_one_vector = [](size_t vector_index, std::vector<std::vector<size_t>>& vector_of_vectors,
-                           size_t size_of_inner_vector) {
+auto fill_one_vector =
+    [](size_t vector_index, std::vector<std::vector<size_t>>& vector_of_vectors, size_t size_of_inner_vector)
+{
   vector_of_vectors[vector_index].resize(size_of_inner_vector, vector_index);
   return size_of_inner_vector;
 };
@@ -49,7 +50,9 @@ TEST(test_suite_thread_pool, test_thread_pool_with_zero_threads)
   std::vector<std::future<size_t>> fts;
 
   for (size_t i = 0; i < vector_of_vectors.size(); i++)
-  { fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
+  {
+    fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size));
+  }
 
   for (auto& ft : fts)
   {
@@ -72,7 +75,9 @@ TEST(test_suite_thread_pool, test_thread_pool_with_more_threads_than_tasks)
   std::vector<std::future<size_t>> fts;
 
   for (size_t i = 0; i < vector_of_vectors.size(); i++)
-  { fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
+  {
+    fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size));
+  }
 
   for (auto& ft : fts)
   {
@@ -95,7 +100,9 @@ TEST(test_suite_thread_pool, test_thread_pool_with_less_threads_than_tasks)
   std::vector<std::future<size_t>> fts;
 
   for (size_t i = 0; i < vector_of_vectors.size(); i++)
-  { fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size)); }
+  {
+    fts.emplace_back(thread_pool.submit(fill_one_vector, i, std::ref(vector_of_vectors), inner_vectors_size));
+  }
 
   for (auto& ft : fts)
   {

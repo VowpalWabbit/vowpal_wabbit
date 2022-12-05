@@ -99,7 +99,9 @@ size_t VW::details::read_cached_features(io_buf& input, features& feats, bool& s
   total += storage;
   char* read_head = nullptr;
   if (input.buf_read(read_head, storage) < storage)
-  { THROW("Ran out of cache while reading example. File may be truncated."); }
+  {
+    THROW("Ran out of cache while reading example. File may be truncated.");
+  }
 
   char* end = read_head + storage;
   uint64_t last = 0;
@@ -170,10 +172,7 @@ void VW::details::cache_features(io_buf& cache, const features& feats, uint64_t 
     last = feat_index;
 
     if (feat_it.value() == 1.) { write_head = variable_length_int_encode(write_head, diff); }
-    else if (feat_it.value() == -1.)
-    {
-      write_head = variable_length_int_encode(write_head, diff | NEG_ONE);
-    }
+    else if (feat_it.value() == -1.) { write_head = variable_length_int_encode(write_head, diff | NEG_ONE); }
     else
     {
       write_head = variable_length_int_encode(write_head, diff | GENERAL);

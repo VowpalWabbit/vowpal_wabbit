@@ -117,10 +117,7 @@ void freegrad_predict(freegrad& fg, VW::example& ec)
   {
     // Set the project radius either to the user-specified value, or adap tively
     if (fg.adaptiveradius) { projection_radius = fg.epsilon * sqrtf(fg.update_data.sum_normalized_grad_norms); }
-    else
-    {
-      projection_radius = fg.radius;
-    }
+    else { projection_radius = fg.radius; }
     // Compute the projected predict if applicable
     if (norm_w_pred > projection_radius) { fg.update_data.predict *= projection_radius / norm_w_pred; }
   }
@@ -189,14 +186,15 @@ void inner_freegrad_update_after_prediction(freegrad_update_data& d, float x, fl
   {
     // Set the project radius either to the user-specified value, or adaptively
     if (d.freegrad_data_ptr->adaptiveradius)
-    { projection_radius = d.freegrad_data_ptr->epsilon * sqrtf(d.sum_normalized_grad_norms); }
-    else
     {
-      projection_radius = d.freegrad_data_ptr->radius;
+      projection_radius = d.freegrad_data_ptr->epsilon * sqrtf(d.sum_normalized_grad_norms);
     }
+    else { projection_radius = d.freegrad_data_ptr->radius; }
 
     if (norm_w_pred > projection_radius && g_dot_w < 0)
-    { tilde_gradient = gradient - (g_dot_w * w[W]) / std::pow(norm_w_pred, 2.f); }
+    {
+      tilde_gradient = gradient - (g_dot_w * w[W]) / std::pow(norm_w_pred, 2.f);
+    }
   }
 
   // Only do something if a non-zero gradient has been observed
@@ -263,7 +261,9 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
   // Update the maximum gradient norm value
   clipped_grad_norm = sqrtf(fg.update_data.squared_norm_clipped_grad);
   if (clipped_grad_norm > fg.update_data.maximum_clipped_gradient_norm)
-  { fg.update_data.maximum_clipped_gradient_norm = clipped_grad_norm; }
+  {
+    fg.update_data.maximum_clipped_gradient_norm = clipped_grad_norm;
+  }
 
   if (fg.update_data.maximum_clipped_gradient_norm > 0)
   {
@@ -300,10 +300,7 @@ void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
       GD::save_load_online_state(
           *all, model_file, read, text, fg.total_weight, fg.normalized_sum_norm_x, nullptr, fg.freegrad_size);
     }
-    else
-    {
-      GD::save_load_regressor(*all, model_file, read, text);
-    }
+    else { GD::save_load_regressor(*all, model_file, read, text); }
   }
 }
 
@@ -314,10 +311,14 @@ void end_pass(freegrad& fg)
   if (!all.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, fg.no_win_counter))
-    { finalize_regressor(all, all.final_regressor_name); }
+    {
+      finalize_regressor(all, all.final_regressor_name);
+    }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
-    { set_done(all); }
+    {
+      set_done(all);
+    }
   }
 }
 }  // namespace
@@ -394,6 +395,8 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())
                 .set_save_load(save_load)
                 .set_end_pass(end_pass)
+                .set_output_example(VW::details::output_example_simple_label<freegrad>)
+                .set_update_stats(VW::details::update_stats_simple_label<freegrad>)
                 .build();
 
   return make_base(*l);

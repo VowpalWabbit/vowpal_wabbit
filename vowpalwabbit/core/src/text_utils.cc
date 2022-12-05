@@ -41,10 +41,7 @@ std::string VW::decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
         res.push_back(arg[pos++]);
       }
     }
-    else
-    {
-      res.push_back(arg[pos++]);
-    }
+    else { res.push_back(arg[pos++]); }
   }
 
   // Copy last 2 characters

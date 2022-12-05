@@ -55,6 +55,22 @@ void VW::details::return_simple_example(VW::workspace& all, void*, VW::example& 
   VW::finish_example(all, ec);
 }
 
+void VW::details::update_stats_simple_label(
+    const VW::workspace& /* all */, shared_data& sd, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  const auto& ld = ec.l.simple;
+  sd.update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
+  if (ld.label != FLT_MAX && !ec.test_only) { sd.weighted_labels += (static_cast<double>(ld.label)) * ec.weight; }
+}
+
+void VW::details::output_example_simple_label(
+    VW::workspace& all, shared_data& /* sd */, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
+  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
+  VW::details::print_update(all, ec);
+}
+
 bool VW::details::summarize_holdout_set(VW::workspace& all, size_t& no_win_counter)
 {
   float this_loss = (all.sd->weighted_holdout_examples_since_last_pass > 0)

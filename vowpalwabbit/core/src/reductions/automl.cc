@@ -37,9 +37,11 @@ void predict_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
     assert(ex->interactions == incoming_interactions);
   }
 
-  auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
-    for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
-  });
+  auto restore_guard = VW::scope_exit(
+      [&ec, &incoming_interactions]
+      {
+        for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
+      });
 
   for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[data.cm->current_champ].first.live_interactions); }
 
@@ -69,10 +71,7 @@ template <typename CMType, bool verbose>
 void persist(automl<CMType>& data, VW::metric_sink& metrics)
 {
   if (verbose) { data.cm->persist(metrics, true); }
-  else
-  {
-    data.cm->persist(metrics, false);
-  }
+  else { data.cm->persist(metrics, false); }
 }
 
 template <typename CMType>
@@ -84,9 +83,11 @@ void finish_example(VW::workspace& all, automl<CMType>& data, VW::multi_ex& ec)
   for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
 
   {
-    auto restore_guard = VW::scope_exit([&ec, &incoming_interactions] {
-      for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
-    });
+    auto restore_guard = VW::scope_exit(
+        [&ec, &incoming_interactions]
+        {
+          for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
+        });
 
     data.adf_learner->print_example(all, ec);
   }
@@ -183,14 +184,8 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
   priority_func* calc_priority;
 
   if (priority_type == "none") { calc_priority = &calc_priority_empty; }
-  else if (priority_type == "favor_popular_namespaces")
-  {
-    calc_priority = &calc_priority_favor_popular_namespaces;
-  }
-  else
-  {
-    THROW("Invalid priority function provided");
-  }
+  else if (priority_type == "favor_popular_namespaces") { calc_priority = &calc_priority_favor_popular_namespaces; }
+  else { THROW("Invalid priority function provided"); }
 
   // Note that all.wpp will not be set correctly until after setup
   assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe" ||
@@ -349,7 +344,9 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   config_type conf_type = (oracle_type == "one_diff_inclusion") ? config_type::Interaction : config_type::Exclusion;
 
   if (conf_type == config_type::Interaction && oracle_type == "rand")
-  { THROW("--config_type interaction cannot be used with --oracle_type rand"); }
+  {
+    THROW("--config_type interaction cannot be used with --oracle_type rand");
+  }
 
   // only this has been tested
   if (base_learner->is_multiline())

@@ -221,10 +221,7 @@ template <bool is_learn>
 void cb_explore_adf_rnd::base_learn_or_predict(multi_learner& base, VW::multi_ex& examples, uint32_t id)
 {
   if (is_learn) { base.learn(examples, id); }
-  else
-  {
-    base.predict(examples, id);
-  }
+  else { base.predict(examples, id); }
 }
 
 template <bool is_learn>

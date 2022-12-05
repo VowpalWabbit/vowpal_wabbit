@@ -117,7 +117,9 @@ public:
     _m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
     if (_m_one_of.size() > 0 && (_m_one_of.find(value) == _m_one_of.end()))
-    { m_one_of_err = invalid_choice_error(value); }
+    {
+      m_one_of_err = invalid_choice_error(value);
+    }
     return *this;
   }
 
