@@ -22,7 +22,7 @@ namespace
 class topk
 {
 public:
-  using container_t = std::multimap<float, v_array<char>>;
+  using container_t = std::multimap<float, VW::v_array<char>>;
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 
@@ -32,7 +32,7 @@ public:
   void clear_container();
 
 private:
-  void update_priority_queue(float pred, v_array<char>& tag);
+  void update_priority_queue(float pred, const VW::v_array<char>& tag);
 
   const uint32_t _k_num;
   container_t _pr_queue;
@@ -58,7 +58,7 @@ void topk::learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
   }
 }
 
-void topk::update_priority_queue(float pred, v_array<char>& tag)
+void topk::update_priority_queue(float pred, const VW::v_array<char>& tag)
 {
   if (_pr_queue.size() < _k_num) { _pr_queue.insert({pred, tag}); }
   else if (_pr_queue.begin()->first < pred)
