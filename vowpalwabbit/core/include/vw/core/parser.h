@@ -17,6 +17,7 @@
 #  include <mutex>
 #endif
 
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/example.h"
@@ -34,20 +35,6 @@ namespace VW
 void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 void setup_examples(VW::workspace& all, VW::multi_ex& examples);
-namespace details
-{
-class cache_temp_buffer
-{
-public:
-  std::shared_ptr<std::vector<char>> backing_buffer;
-  io_buf temporary_cache_buffer;
-  cache_temp_buffer()
-  {
-    backing_buffer = std::make_shared<std::vector<char>>();
-    temporary_cache_buffer.add_file(VW::io::create_vector_writer(backing_buffer));
-  }
-};
-}  // namespace details
 }  // namespace VW
 
 class input_options;
@@ -85,7 +72,7 @@ public:
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
   io_buf output;    // Where to output the cache.
-  VW::details::cache_temp_buffer cache_temp_buffer_obj;
+  VW::parsers::cache::details::cache_temp_buffer cache_temp_buffer_obj;
   std::string currentname;
   std::string finalname;
 
