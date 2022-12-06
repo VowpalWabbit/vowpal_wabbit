@@ -18,6 +18,7 @@ Implementation by Miro Dudik.
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <sys/timeb.h>
 
@@ -662,16 +663,16 @@ int process_pass(VW::workspace& all, bfgs& b)
   {
     if (all.all_reduce != nullptr)
     {
-      accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
+      VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
       float temp = static_cast<float>(b.importance_weight_sum);
-      b.importance_weight_sum = accumulate_scalar(all, temp);
+      b.importance_weight_sum = VW::details::accumulate_scalar(all, temp);
     }
     // finalize_preconditioner(all, b, all.l2_lambda);
     if (all.all_reduce != nullptr)
     {
       float temp = static_cast<float>(b.loss_sum);
-      b.loss_sum = accumulate_scalar(all, temp);  // Accumulate loss_sums
-      accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
+      b.loss_sum = VW::details::accumulate_scalar(all, temp);  // Accumulate loss_sums
+      VW::details::accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
     if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
     if (!all.quiet)
@@ -710,8 +711,8 @@ int process_pass(VW::workspace& all, bfgs& b)
       if (all.all_reduce != nullptr)
       {
         float t = static_cast<float>(b.loss_sum);
-        b.loss_sum = accumulate_scalar(all, t);  // Accumulate loss_sums
-        accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
+        b.loss_sum = VW::details::accumulate_scalar(all, t);  // Accumulate loss_sums
+        VW::details::accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
       }
       if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
       if (!all.quiet)
@@ -824,7 +825,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       if (all.all_reduce != nullptr)
       {
         float t = static_cast<float>(b.curvature);
-        b.curvature = accumulate_scalar(all, t);  // Accumulate curvatures
+        b.curvature = VW::details::accumulate_scalar(all, t);  // Accumulate curvatures
       }
       if (all.l2_lambda > 0.) { b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda); }
       float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
@@ -864,7 +865,7 @@ int process_pass(VW::workspace& all, bfgs& b)
   {
     if (all.all_reduce != nullptr)
     {
-      accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
+      VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
     }
     // preconditioner_to_regularizer(all, b, all.l2_lambda);
   }
@@ -1200,7 +1201,8 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
                         .set_save_load(save_load)
                         .set_init_driver(init_driver)
                         .set_end_pass(end_pass)
-                        .set_output_example(VW::details::output_example_simple_label<bfgs>)
+                        .set_output_example_prediction(VW::details::output_example_prediction_simple_label<bfgs>)
                         .set_update_stats(VW::details::update_stats_simple_label<bfgs>)
+                        .set_print_update(VW::details::print_update_simple_label<bfgs>)
                         .build());
 }

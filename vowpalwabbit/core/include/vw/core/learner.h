@@ -142,7 +142,9 @@ public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
   using update_stats_fn = void (*)(
       const VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
-  using output_example_fn = void (*)(
+  using output_example_prediction_fn = void (*)(
+      VW::workspace&, const void* data, const void* ex, VW::io::logger& logger);
+  using print_update_fn = void (*)(
       VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using cleanup_example_fn = void (*)(const void* data, const void* ex);
 
@@ -151,7 +153,8 @@ public:
   fn finish_example_f = nullptr;
   fn print_example_f = nullptr;
   update_stats_fn update_stats_f = nullptr;
-  output_example_fn output_example_f = nullptr;
+  output_example_prediction_fn output_example_prediction_f = nullptr;
+  print_update_fn print_update_f = nullptr;
   cleanup_example_fn cleanup_example_f = nullptr;
 };
 
@@ -418,11 +421,16 @@ public:
 
     if (has_update_stats()) { update_stats(all, ec); }
 
-    if (has_output_example()) { output_example(all, ec); }
+    if (has_output_example_prediction()) { output_example_prediction(all, ec); }
+
+    const bool should_print_driver_update =
+        all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+    if (has_print_update() && should_print_driver_update) { print_update(all, ec); }
 
     if (has_cleanup_example()) { cleanup_example(ec); }
 
-    const auto has_at_least_one_new_style_func = has_update_stats() || has_output_example() || has_cleanup_example();
+    const auto has_at_least_one_new_style_func =
+        has_update_stats() || has_output_example_prediction() || has_print_update() || has_cleanup_example();
     if (has_at_least_one_new_style_func)
     {
       VW::finish_example(all, ec);
@@ -459,11 +467,18 @@ public:
     _finish_example_fd.update_stats_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
   }
 
-  inline void NO_SANITIZE_UNDEFINED output_example(VW::workspace& all, const E& ec)
+  inline void NO_SANITIZE_UNDEFINED output_example_prediction(VW::workspace& all, const E& ec)
   {
-    debug_log_message(ec, "output_example");
-    if (!has_output_example()) { THROW("fatal: learner did not register output_example fn: " + _name); }
-    _finish_example_fd.output_example_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
+    debug_log_message(ec, "output_example_prediction");
+    if (!has_output_example_prediction()) { THROW("fatal: learner did not register output_example fn: " + _name); }
+    _finish_example_fd.output_example_prediction_f(all, _finish_example_fd.data, (void*)&ec, all.logger);
+  }
+
+  inline void NO_SANITIZE_UNDEFINED print_update(VW::workspace& all, const E& ec)
+  {
+    debug_log_message(ec, "print_update");
+    if (!has_print_update()) { THROW("fatal: learner did not register print_update fn: " + _name); }
+    _finish_example_fd.print_update_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
   }
 
   inline void NO_SANITIZE_UNDEFINED cleanup_example(E& ec)
@@ -558,7 +573,11 @@ public:
   VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_fd.finish_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_legacy_print_example() const { return _finish_example_fd.print_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_update_stats() const { return _finish_example_fd.update_stats_f != nullptr; }
-  VW_ATTR(nodiscard) bool has_output_example() const { return _finish_example_fd.output_example_f != nullptr; }
+  VW_ATTR(nodiscard) bool has_print_update() const { return _finish_example_fd.print_update_f != nullptr; }
+  VW_ATTR(nodiscard) bool has_output_example_prediction() const
+  {
+    return _finish_example_fd.output_example_prediction_f != nullptr;
+  }
   VW_ATTR(nodiscard) bool has_cleanup_example() const { return _finish_example_fd.cleanup_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_fn != nullptr) || (_merge_fn != nullptr); }
   VW_ATTR(nodiscard) bool has_add() const { return (_add_with_all_fn != nullptr) || (_add_fn != nullptr); }
@@ -786,14 +805,25 @@ public:
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  // Responsibilities of output example:
+  // Responsibilities of output example prediction:
   // - Output predictions
-  // - Call shared_data::print_update
-  FluentBuilderT& set_output_example(
-      void (*fn_ptr)(VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_output_example_prediction(
+      void (*fn_ptr)(VW::workspace& all, const DataT&, const ExampleT&, VW::io::logger& logger))
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.output_example_f = (details::finish_example_data::output_example_fn)(fn_ptr);
+    learner_ptr->_finish_example_fd.output_example_prediction_f =
+        (details::finish_example_data::output_example_prediction_fn)(fn_ptr);
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  // Responsibilities of output example prediction:
+  // - Call shared_data::print_update
+  // Note this is only called when required based on the user specified backoff and logging settings.
+  FluentBuilderT& set_print_update(
+      void (*fn_ptr)(VW::workspace& all, shared_data&, const DataT&, const ExampleT&, VW::io::logger& logger))
+  {
+    learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_finish_example_fd.print_update_f = (details::finish_example_data::print_update_fn)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
