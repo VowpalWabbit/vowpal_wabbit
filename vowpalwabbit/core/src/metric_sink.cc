@@ -5,6 +5,7 @@
 #include "vw/core/metric_sink.h"
 
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
 
 void VW::metric_sink::throw_if_not_overwrite_and_key_exists(const std::string& key, bool overwrite)
 {

@@ -114,7 +114,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const VW::v_array<
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 
@@ -129,7 +129,7 @@ void print_raw_text_by_ref(
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
 void set_mm(shared_data* sd, float label)

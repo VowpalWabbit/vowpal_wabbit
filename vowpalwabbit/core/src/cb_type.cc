@@ -5,6 +5,7 @@
 #include "vw/core/cb_type.h"
 
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
 
 #include <cassert>
 

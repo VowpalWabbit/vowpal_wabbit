@@ -19,6 +19,7 @@
 
 #ifndef VW_NOEXCEPT
 #  include "vw/common/vw_exception.h"
+#  include "vw/common/vw_throw.h"
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:
