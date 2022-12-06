@@ -18,7 +18,7 @@ VW::LEARNER::base_learner* eigen_memory_tree_setup(VW::setup_base_i& stack_build
 
 namespace eigen_memory_tree
 {
-using emt_feats = std::vector<std::pair<int, float>>;
+using emt_feats = std::vector<std::pair<uint64_t, float>>;
 
 enum class emt_scorer_type
 {
@@ -51,18 +51,18 @@ emt_feats emt_scale_add(float, const emt_feats&, float, const emt_feats&);
 emt_feats emt_router_eigen(std::vector<emt_feats>&, VW::rand_state&);
 
 template <typename RandomIt>
-void emt_shuffle(RandomIt first, RandomIt last, VW::rand_state* rng)
+void emt_shuffle(RandomIt& first, RandomIt& last, VW::rand_state* rng)
 {
   // This is Richard Durstenfeld's method popularized by Donald Knuth in The Art of Computer Programming.
   // This algorithm is unbiased (i.e., all possible permutations are equally likely to occur).
 
-  auto n = std::distance(first, last);
+  auto n = std::distance(&first, &last);
   if (n < 2) { return; }
 
   for (int i = 0; i < n - 1; i++)
   {
     int j = static_cast<int>(rng->get_and_update_random() * .999 * (n - i));
-    std::iter_swap(first + i, first + j);
+    std::iter_swap(&first + i, &first + j);
   }
 }
 
