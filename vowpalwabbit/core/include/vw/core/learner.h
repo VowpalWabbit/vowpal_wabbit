@@ -118,6 +118,15 @@ public:
   fn save_load_f = nullptr;
 };
 
+class pre_save_load_data
+{
+public:
+  using fn = void (*)(VW::workspace& all, void* data);
+  void* data = nullptr;
+  base_learner* base = nullptr;
+  fn pre_save_load_f;
+};
+
 class save_metric_data
 {
 public:
@@ -351,6 +360,16 @@ public:
       throw VW::save_load_model_exception(vwex.filename(), vwex.line_number(), better_msg.str());
     }
     if (_save_load_fd.base) { _save_load_fd.base->save_load(io, read, text); }
+  }
+
+  // called to edit the command-line from a reduction. Autorecursive
+  inline void NO_SANITIZE_UNDEFINED pre_save_load(VW::workspace& all)
+  {
+    if (_pre_save_load_fd.pre_save_load_f != nullptr)
+    {
+      _pre_save_load_fd.pre_save_load_f(all, _pre_save_load_fd.data);
+    }
+    if (_pre_save_load_fd.base) { _pre_save_load_fd.base->pre_save_load(all); }
   }
 
   // called when metrics is enabled.  Autorecursive.
@@ -595,6 +614,7 @@ private:
   details::save_load_data _save_load_fd;
   details::func_data _end_pass_fd;
   details::func_data _end_examples_fd;
+  details::pre_save_load_data _pre_save_load_fd;
   details::save_metric_data _persist_metrics_fd;
   details::func_data _finisher_fd;
   std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
@@ -821,6 +841,14 @@ public:
     learner_ptr->_persist_metrics_fd.save_metric_f = (details::save_metric_data::fn)fn_ptr;
     learner_ptr->_persist_metrics_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_persist_metrics_fd.base = learner_ptr->_learn_fd.base;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_pre_save_load(void (*fn_ptr)(VW::workspace& all, DataT&))
+  {
+    learner_ptr->_pre_save_load_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_pre_save_load_fd.pre_save_load_f = (details::pre_save_load_data::fn)fn_ptr;
+    learner_ptr->_pre_save_load_fd.base = learner_ptr->_learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 

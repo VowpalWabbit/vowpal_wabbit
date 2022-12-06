@@ -42,7 +42,7 @@ public:
   std::string user_ns;
   std::string action_ns;
 
-  cb_sim(uint64_t seed = 0);
+  cb_sim(uint64_t seed = 0, bool use_default_ns = false);
   float get_reaction(const std::map<std::string, std::string>& context, const std::string& action,
       bool add_noise = false, bool swap_reward = false, float scale_reward = 1.f);
   std::vector<std::string> to_vw_example_format(const std::map<std::string, std::string>& context,
