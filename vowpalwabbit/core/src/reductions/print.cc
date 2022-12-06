@@ -67,8 +67,9 @@ VW::LEARNER::base_learner* VW::reductions::print_setup(VW::setup_base_i& stack_b
   all.weights.stride_shift(0);
   auto* learner = VW::LEARNER::make_base_learner(VW::make_unique<print>(&all), learn, learn,
       stack_builder.get_setupfn_name(print_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                      .set_output_example(VW::details::output_example_simple_label<print>)
+                      .set_output_example_prediction(VW::details::output_example_prediction_simple_label<print>)
                       .set_update_stats(VW::details::update_stats_simple_label<print>)
+                      .set_print_update(VW::details::print_update_simple_label<print>)
                       .build();
   return VW::LEARNER::make_base(*learner);
 }
