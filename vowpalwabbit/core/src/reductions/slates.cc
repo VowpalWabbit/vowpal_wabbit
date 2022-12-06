@@ -167,7 +167,7 @@ void update_stats_slates(const VW::workspace& /* all */, shared_data& sd, const 
   float loss = 0.;
   bool is_labelled = ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.labeled;
   float cost = is_labelled ? ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.cost : 0.f;
-  v_array<VW::action_score> label_probs;
+  VW::v_array<VW::action_score> label_probs;
 
   for (auto* ec : ec_seq)
   {
