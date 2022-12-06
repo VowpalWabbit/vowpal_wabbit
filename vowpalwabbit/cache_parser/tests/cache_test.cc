@@ -101,7 +101,7 @@ TEST(cache_tests, write_and_read_large_example)
 
 TEST(cache_tests, write_and_read_tag)
 {
-  v_array<char> tag;
+  VW::v_array<char> tag;
   tag.push_back('m');
   tag.push_back('y');
   tag.push_back(' ');
@@ -119,9 +119,8 @@ TEST(cache_tests, write_and_read_tag)
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
-  v_array<char> read_tag;
+  VW::v_array<char> read_tag;
   VW::parsers::cache::details::read_cached_tag(io_reader, read_tag);
-
   EXPECT_THAT(tag, Pointwise(Eq(), read_tag));
 }
 
