@@ -159,7 +159,8 @@ float get_estimate(const VW::action_scores& label_probs, float cost, const VW::d
   return cost * p_over_ps;
 }
 
-void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/, const VW::multi_ex& ec_seq)
+void update_stats_slates(const VW::workspace& /* all */, shared_data& sd, const VW::reductions::slates_data& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
 {
   VW::multi_ex slots;
   size_t num_features = 0;
@@ -191,32 +192,43 @@ void output_example(VW::workspace& all, const VW::reductions::slates_data& /*c*/
   label_probs.clear();
 
   bool holdout_example = is_labelled;
-  if (holdout_example != false)
+  if (holdout_example)
   {
     for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
   }
+  sd.update(holdout_example, is_labelled, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
+}
 
-  all.sd->update(holdout_example, is_labelled, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
-
+void output_example_prediction_slates(VW::workspace& all, const VW::reductions::slates_data& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+{
   for (auto& sink : all.final_prediction_sink)
   {
     VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger);
+  }
+  VW::details::global_print_newline(all.final_prediction_sink, all.logger);
+}
+
+void print_update_slates(VW::workspace& all, shared_data& /* sd */, const VW::reductions::slates_data& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+{
+  const auto& predictions = ec_seq[0]->pred.decision_scores;
+  VW::multi_ex slots;
+  size_t num_features = 0;
+  for (auto* ec : ec_seq)
+  {
+    num_features += ec->get_num_features();
+
+    if (ec->l.slates.type == VW::slates::example_type::SLOT) { slots.push_back(ec); }
   }
 
   VW::print_update_slates(all, slots, predictions, num_features);
 }
 
-void finish_multiline_example(VW::workspace& all, VW::reductions::slates_data& data, VW::multi_ex& ec_seq)
+void cleanup_example_slates(VW::reductions::slates_data& /* data */, VW::multi_ex& ec_seq)
 {
-  if (!ec_seq.empty())
-  {
-    output_example(all, data, ec_seq);
-    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
-    for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.clear(); }
-    ec_seq[0]->pred.decision_scores.clear();
-  }
-
-  VW::finish_example(all, ec_seq);
+  for (auto& action_scores : ec_seq[0]->pred.decision_scores) { action_scores.clear(); }
+  ec_seq[0]->pred.decision_scores.clear();
 }
 
 template <bool is_learn>
@@ -253,7 +265,10 @@ VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_
                 .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
                 .set_input_label_type(VW::label_type_t::SLATES)
                 .set_output_label_type(VW::label_type_t::CCB)
-                .set_finish_example(finish_multiline_example)
+                .set_output_example_prediction(output_example_prediction_slates)
+                .set_print_update(::print_update_slates)
+                .set_update_stats(update_stats_slates)
+                .set_cleanup_example(cleanup_example_slates)
                 .build();
   return VW::LEARNER::make_base(*l);
 }

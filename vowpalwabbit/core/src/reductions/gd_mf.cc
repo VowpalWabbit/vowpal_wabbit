@@ -393,6 +393,9 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .set_end_pass(end_pass)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<gdmf>)
+                .set_update_stats(VW::details::update_stats_simple_label<gdmf>)
+                .set_print_update(VW::details::print_update_simple_label<gdmf>)
                 .build();
 
   return make_base(*l);

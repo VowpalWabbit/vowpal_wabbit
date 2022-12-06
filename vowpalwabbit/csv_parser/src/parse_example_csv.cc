@@ -15,6 +15,8 @@ namespace VW
 {
 namespace parsers
 {
+namespace csv
+{
 int parse_csv_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
   bool keep_reading = all->custom_parser->next(*all, buf, examples);
@@ -105,7 +107,7 @@ void csv_parser::handle_parse_args(csv_parser_options& parsed_options)
 class CSV_parser
 {
 public:
-  CSV_parser(VW::workspace* all, VW::example* ae, VW::string_view csv_line, VW::parsers::csv_parser* parser)
+  CSV_parser(VW::workspace* all, VW::example* ae, VW::string_view csv_line, VW::parsers::csv::csv_parser* parser)
       : _parser(parser), _all(all), _ae(ae)
   {
     if (csv_line.empty()) { THROW("Malformed CSV, empty line at " << _parser->line_num << "!"); }
@@ -118,13 +120,13 @@ public:
   ~CSV_parser() {}
 
 private:
-  VW::parsers::csv_parser* _parser;
+  VW::parsers::csv::csv_parser* _parser;
   VW::workspace* _all;
   VW::example* _ae;
   VW::v_array<VW::string_view> _csv_line;
   std::vector<std::string> _token_storage;
-  size_t _anon;
-  uint64_t _channel_hash;
+  size_t _anon{};
+  uint64_t _channel_hash{};
 
   inline FORCE_INLINE void parse_line()
   {
@@ -498,5 +500,7 @@ size_t csv_parser::read_line(VW::workspace* all, VW::example* ae, io_buf& buf)
   else { reset(); }
   return num_chars_initial;
 }
+
+}  // namespace csv
 }  // namespace parsers
 }  // namespace VW
