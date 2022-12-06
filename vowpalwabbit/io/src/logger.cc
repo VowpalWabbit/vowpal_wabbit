@@ -5,6 +5,7 @@
 #include "vw/io/logger.h"
 
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
 
 #include <spdlog/logger.h>
 #include <spdlog/sinks/base_sink.h>
