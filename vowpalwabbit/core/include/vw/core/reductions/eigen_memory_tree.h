@@ -70,7 +70,7 @@ struct emt_example
 {
   emt_feats base;  // base example only includes the base features without interaction flags
   emt_feats full;  // full example includes the interactions that were passed in as flags
-  uint32_t label;
+  uint32_t label = 0;
 
   emt_example();
   emt_example(VW::workspace&, VW::example*);
@@ -84,22 +84,20 @@ struct emt_lru
   std::list<K> list;
   std::unordered_map<K, V> map;
 
-  unsigned long max_size;
+  uint64_t max_size;
 
-  emt_lru(unsigned long);
+  emt_lru(uint64_t);
   K bound(K);
 };
 
 struct emt_node
 {
-  double router_decision;
-  std::unique_ptr<emt_node> left;
-  std::unique_ptr<emt_node> right;
+  double router_decision = 0;
+  std::unique_ptr<emt_node> left = nullptr;
+  std::unique_ptr<emt_node> right = nullptr;
   emt_feats router_weights;
 
   std::vector<std::unique_ptr<emt_example>> examples;
-
-  emt_node();
 };
 
 struct emt_tree
@@ -113,7 +111,7 @@ struct emt_tree
 
   std::unique_ptr<VW::example> ex;  // we create one of these which we re-use so we don't have to reallocate examples
 
-  long begin;  // for timing performance
+  int64_t begin;  // for timing performance
 
   std::unique_ptr<emt_node> root;
   std::unique_ptr<emt_lru> bounder;

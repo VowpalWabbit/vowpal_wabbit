@@ -93,13 +93,6 @@ emt_lru::K emt_lru::bound(emt_lru::K item)
   else { return nullptr; }
 }
 
-emt_node::emt_node()
-{
-  left = nullptr;
-  right = nullptr;
-  router_decision = 0;
-}
-
 emt_tree::emt_tree()
 {
   leaf_split = 100;
@@ -351,22 +344,25 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 {
   VW::example& out = *b.ex;
 
+  const auto x = 'x';
+  const auto z = 'z';
+
   if (b.scorer_type == emt_scorer_type::self_consistent_rank)
   {
     out.indices.clear();
-    out.indices.push_back('x');
+    out.indices.push_back(x);
 
     out.interactions->clear();
 
-    out.feature_space['x'].clear();
-    out.feature_space['z'].clear();
+    out.feature_space[x].clear();
+    out.feature_space[z].clear();
 
     emt_feats feat_diff = emt_scale_add(1, ex1.full, -1, ex2.full);
     emt_abs(feat_diff);
-    scorer_features(feat_diff, out.feature_space['x']);
+    scorer_features(feat_diff, out.feature_space[x]);
 
-    out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq;
-    out.num_features = out.feature_space['x'].size();
+    out.total_sum_feat_sq = out.feature_space[x].sum_feat_sq;
+    out.num_features = out.feature_space[x].size();
 
     out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = scorer_initial(out);
   }
@@ -374,27 +370,27 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
   if (b.scorer_type == emt_scorer_type::not_self_consistent_rank)
   {
     out.indices.clear();
-    out.indices.push_back('x');
-    out.indices.push_back('z');
+    out.indices.push_back(x);
+    out.indices.push_back(z);
 
     out.interactions->clear();
-    out.interactions->push_back({'x', 'z'});
+    out.interactions->push_back({x, z});
 
     b.all->ignore_some_linear = true;
-    b.all->ignore_linear['x'] = true;
-    b.all->ignore_linear['z'] = true;
+    b.all->ignore_linear[x] = true;
+    b.all->ignore_linear[z] = true;
 
-    scorer_features(ex1.full, out.feature_space['x']);
-    scorer_features(ex2.full, out.feature_space['z']);
+    scorer_features(ex1.full, out.feature_space[x]);
+    scorer_features(ex2.full, out.feature_space[z]);
 
     // when we receive ex1 and ex2 their features are indexed on top of eachother. In order
     // to make sure VW recognizes the features from the two examples as separate features
     // we apply a map of multiplying by 2 and then offseting by 1 on the second example.
-    for (auto& j : out.feature_space['x'].indices) { j = j * 2; }
-    for (auto& j : out.feature_space['z'].indices) { j = j * 2 + 1; }
+    for (auto& j : out.feature_space[x].indices) { j = j * 2; }
+    for (auto& j : out.feature_space[z].indices) { j = j * 2 + 1; }
 
-    out.total_sum_feat_sq = out.feature_space['x'].sum_feat_sq + out.feature_space['z'].sum_feat_sq;
-    out.num_features = out.feature_space['x'].size() + out.feature_space['z'].size();
+    out.total_sum_feat_sq = out.feature_space[x].sum_feat_sq + out.feature_space[z].sum_feat_sq;
+    out.num_features = out.feature_space[x].size() + out.feature_space[z].size();
   }
 
   // We cache metadata about model weights adjacent to them. For example if we have
