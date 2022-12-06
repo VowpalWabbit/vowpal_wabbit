@@ -225,7 +225,8 @@ std::unique_ptr<options_pmf_to_pdf_v1> get_pmf_to_pdf_options_instance(
     THROW("Min and max values must be supplied with cb_continuous");
   }
 
-  float leaf_width = (pmf_to_pdf_opts->max_value - pmf_to_pdf_opts->min_value) / (pmf_to_pdf_opts->num_actions);  // aka unit range
+  float leaf_width =
+      (pmf_to_pdf_opts->max_value - pmf_to_pdf_opts->min_value) / (pmf_to_pdf_opts->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
 
   if (!(pmf_to_pdf_opts->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
@@ -249,8 +250,8 @@ std::unique_ptr<options_pmf_to_pdf_v1> get_pmf_to_pdf_options_instance(
   if (!options.was_supplied("bandwidth"))
   {
     pmf_to_pdf_opts->bandwidth = half_leaf_width;
-    logger.err_info(
-        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", pmf_to_pdf_opts->bandwidth);
+    logger.err_info("Bandwidth was not supplied, setting default to half the continuous action unit range: {}",
+        pmf_to_pdf_opts->bandwidth);
   }
 
   return pmf_to_pdf_opts;

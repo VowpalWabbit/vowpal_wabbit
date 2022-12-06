@@ -112,9 +112,11 @@ std::unique_ptr<options_sample_pdf_v1> get_sample_pdf_options_instance(
 {
   auto sample_pdf_opts = VW::make_unique<options_sample_pdf_v1>();
   option_group_definition new_options("[Reduction] Continuous Actions: Sample Pdf");
-  new_options.add(
-      make_option("sample_pdf", sample_pdf_opts->invoked).keep().necessary().help("Sample a pdf and pick a continuous valued action"));
-  
+  new_options.add(make_option("sample_pdf", sample_pdf_opts->invoked)
+                      .keep()
+                      .necessary()
+                      .help("Sample a pdf and pick a continuous valued action"));
+
   // If sample_pdf reduction was not invoked, don't add anything
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
