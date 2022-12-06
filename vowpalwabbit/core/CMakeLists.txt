@@ -57,6 +57,7 @@ set(vw_core_headers
   include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
+  include/vw/core/multi_model_utils.h
   include/vw/core/multiclass.h
   include/vw/core/multilabel.h
   include/vw/core/named_labels.h
