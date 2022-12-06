@@ -6,6 +6,7 @@
 
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #ifndef _WIN32
@@ -274,7 +275,7 @@ void reset_source(VW::workspace& all, size_t numbits)
       socklen_t size = sizeof(client_address);
       int f =
           static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
-      if (f < 0) THROW("accept: " << VW::strerror_to_string(errno));
+      if (f < 0) THROW("accept: " << VW::io::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
       int one = 1;
@@ -408,13 +409,13 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
     all.example_parser->bound_sock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
-    if (all.example_parser->bound_sock < 0) { THROW(fmt::format("socket: {}", VW::strerror_to_string(errno))); }
+    if (all.example_parser->bound_sock < 0) { THROW(fmt::format("socket: {}", VW::io::strerror_to_string(errno))); }
 
     int on = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) <
         0)
     {
-      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
+      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::io::strerror_to_string(errno) << endl;
     }
 
     // Enable TCP Keep Alive to prevent socket leaks
@@ -422,7 +423,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enable_tka),
             sizeof(enable_tka)) < 0)
     {
-      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
+      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::io::strerror_to_string(errno) << endl;
     }
 
     sockaddr_in address;
@@ -434,10 +435,12 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
     // attempt to bind to socket
     if (::bind(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
+    {
       THROWERRNO("bind");
+    }
 
     // listen on socket
-    if (listen(all.example_parser->bound_sock, 1) < 0) THROWERRNO("listen");
+    if (listen(all.example_parser->bound_sock, 1) < 0) { THROWERRNO("listen"); }
 
     // write port file
     if (all.options->was_supplied("port_file"))
@@ -445,7 +448,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       socklen_t address_size = sizeof(address);
       if (getsockname(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), &address_size) < 0)
       {
-        *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl;
+        *(all.trace_message) << "getsockname: " << VW::io::strerror_to_string(errno) << endl;
       }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());

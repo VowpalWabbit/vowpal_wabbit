@@ -12,6 +12,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cerrno>
@@ -149,7 +150,7 @@ void print_result(
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
 void output_example(VW::workspace& all, bootstrap_data& d, const VW::example& ec)
@@ -191,7 +192,7 @@ void predict_or_learn(bootstrap_data& d, single_learner& base, VW::example& ec)
 
   for (size_t i = 1; i <= d.num_bootstrap_rounds; i++)
   {
-    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(d.random_state));
+    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(*d.random_state));
 
     if (is_learn) { base.learn(ec, i - 1); }
     else { base.predict(ec, i - 1); }
