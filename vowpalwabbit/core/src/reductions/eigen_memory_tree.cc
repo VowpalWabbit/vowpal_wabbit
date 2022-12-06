@@ -143,7 +143,7 @@ float emt_median(std::vector<float>& array)
     std::nth_element(array.begin(), nth, array.end());
     auto v1 = (*nth);
     std::nth_element(array.begin(), nth - 1, array.end());
-    auto v2 = *(nth - 1);
+    const auto v2 = *(nth - 1);
     return (v1 + v2) / 2.;
   }
   else
