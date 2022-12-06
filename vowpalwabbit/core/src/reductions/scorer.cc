@@ -76,20 +76,32 @@ inline float logistic(float in) { return 1.f / (1.f + correctedExp(-in)); }
 inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
+struct options_scorer_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   std::string link;
+};
+
+std::unique_ptr<options_scorer_v1> get_scorer_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto scorer_opts = VW::make_unique<options_scorer_v1>();
   option_group_definition new_options("[Reduction] Scorer");
-  new_options.add(make_option("link", link)
+  new_options.add(make_option("link", scorer_opts->link)
                       .default_value("identity")
                       .keep()
                       .one_of({"identity", "logistic", "glf1", "poisson"})
                       .help("Specify the link function"));
   options.add_and_parse(new_options);
+  return scorer_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto scorer_opts = get_scorer_options_instance(all, all.logger, *stack_builder.get_options());
+  if (scorer_opts == nullptr) { return nullptr; }
 
   using predict_or_learn_fn_t = void (*)(scorer&, VW::LEARNER::single_learner&, VW::example&);
   using multipredict_fn_t =
@@ -99,39 +111,39 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
   predict_or_learn_fn_t predict_fn;
   std::string name = stack_builder.get_setupfn_name(scorer_setup);
 
-  if (link == "identity")
+  if (scorer_opts->link == "identity")
   {
     learn_fn = predict_or_learn<true, id>;
     predict_fn = predict_or_learn<false, id>;
     name += "-identity";
   }
-  else if (link == "logistic")
+  else if (scorer_opts->link == "logistic")
   {
     learn_fn = predict_or_learn<true, logistic>;
     predict_fn = predict_or_learn<false, logistic>;
     name += "-logistic";
     multipredict_f = multipredict<logistic>;
   }
-  else if (link == "glf1")
+  else if (scorer_opts->link == "glf1")
   {
     learn_fn = predict_or_learn<true, glf1>;
     predict_fn = predict_or_learn<false, glf1>;
     name += "-glf1";
     multipredict_f = multipredict<glf1>;
   }
-  else if (link == "poisson")
+  else if (scorer_opts->link == "poisson")
   {
     learn_fn = predict_or_learn<true, expf>;
     predict_fn = predict_or_learn<false, expf>;
     name += "-poisson";
     multipredict_f = multipredict<expf>;
   }
-  else { THROW("Unknown link function: " << link); }
+  else { THROW("Unknown link function: " << scorer_opts->link); }
 
-  auto s = VW::make_unique<scorer>(&all);
+  auto scorer_data = VW::make_unique<scorer>(&all);
   // This always returns a base_learner.
   auto* base = as_singleline(stack_builder.setup_base_learner());
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(s), base, learn_fn, predict_fn, name)
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(scorer_data), base, learn_fn, predict_fn, name)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)

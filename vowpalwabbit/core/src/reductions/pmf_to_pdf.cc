@@ -183,74 +183,99 @@ namespace
 {
 void predict(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, VW::example& ec) { data.predict(ec); }
 void learn(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, VW::example& ec) { data.learn(ec); }
-}  // namespace
 
-base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
+struct options_pmf_to_pdf_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
+  uint32_t num_actions;
+  float bandwidth;
+  float min_value;
+  float max_value;
+  bool first_only;
+  uint32_t tree_bandwidth;
+};
 
+std::unique_ptr<options_pmf_to_pdf_v1> get_pmf_to_pdf_options_instance(
+    const VW::workspace&, VW::io::logger& logger, options_i& options)
+{
+  auto pmf_to_pdf_opts = VW::make_unique<options_pmf_to_pdf_v1>();
   option_group_definition new_options("[Reduction] Convert Discrete PMF into Continuous PDF");
   new_options
-      .add(make_option("pmf_to_pdf", data->num_actions)
+      .add(make_option("pmf_to_pdf", pmf_to_pdf_opts->num_actions)
                .default_value(0)
                .necessary()
                .keep()
                .help("Number of discrete actions <k> for pmf_to_pdf"))
-      .add(make_option("min_value", data->min_value).keep().help("Minimum continuous value"))
-      .add(make_option("max_value", data->max_value).keep().help("Maximum continuous value"))
-      .add(make_option("bandwidth", data->bandwidth)
+      .add(make_option("min_value", pmf_to_pdf_opts->min_value).keep().help("Minimum continuous value"))
+      .add(make_option("max_value", pmf_to_pdf_opts->max_value).keep().help("Maximum continuous value"))
+      .add(make_option("bandwidth", pmf_to_pdf_opts->bandwidth)
                .keep()
                .help("Bandwidth (radius) of randomization around discrete actions in terms of continuous range. By "
                      "default will be set to half of the continuous action unit-range resulting in smoothing that "
                      "stays inside the action space unit-range:\nunit_range = (max_value - "
                      "min_value)/num-of-actions\ndefault bandwidth = unit_range / 2.0"))
-      .add(make_option("first_only", data->first_only)
+      .add(make_option("first_only", pmf_to_pdf_opts->first_only)
                .keep()
                .help("Use user provided first action or user provided pdf or uniform random"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (data->num_actions == 0) { return nullptr; }
+  if (pmf_to_pdf_opts->num_actions == 0) { return nullptr; }
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
   {
     THROW("Min and max values must be supplied with cb_continuous");
   }
 
-  float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
+  float leaf_width = (pmf_to_pdf_opts->max_value - pmf_to_pdf_opts->min_value) / (pmf_to_pdf_opts->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
 
-  if (!options.was_supplied("bandwidth"))
-  {
-    data->bandwidth = half_leaf_width;
-    all.logger.err_info(
-        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", data->bandwidth);
-  }
+  if (!(pmf_to_pdf_opts->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
 
-  if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
-
-  if (data->bandwidth >= (data->max_value - data->min_value))
+  if (pmf_to_pdf_opts->bandwidth >= (pmf_to_pdf_opts->max_value - pmf_to_pdf_opts->min_value))
   {
-    all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf.");
+    logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf.");
   }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions
-  if (data->bandwidth <= half_leaf_width) { data->tree_bandwidth = 0; }
-  else if (std::fmod((data->bandwidth), leaf_width) == 0)
+  if (pmf_to_pdf_opts->bandwidth <= half_leaf_width) { pmf_to_pdf_opts->tree_bandwidth = 0; }
+  else if (std::fmod((pmf_to_pdf_opts->bandwidth), leaf_width) == 0)
   {
-    data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width);
+    pmf_to_pdf_opts->tree_bandwidth = static_cast<uint32_t>((pmf_to_pdf_opts->bandwidth) / leaf_width);
   }
-  else { data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width) + 1; }
+  else { pmf_to_pdf_opts->tree_bandwidth = static_cast<uint32_t>((pmf_to_pdf_opts->bandwidth) / leaf_width) + 1; }
 
-  options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
+  options.replace("tree_bandwidth", std::to_string(pmf_to_pdf_opts->tree_bandwidth));
+
+  if (!options.was_supplied("bandwidth"))
+  {
+    pmf_to_pdf_opts->bandwidth = half_leaf_width;
+    logger.err_info(
+        "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", pmf_to_pdf_opts->bandwidth);
+  }
+
+  return pmf_to_pdf_opts;
+}
+}  // namespace
+
+base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto pmf_to_pdf_opts = get_pmf_to_pdf_options_instance(all, all.logger, *stack_builder.get_options());
+  if (pmf_to_pdf_opts == nullptr) { return nullptr; }
+  auto pmf_to_pdf_data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
+
+  pmf_to_pdf_data->num_actions = pmf_to_pdf_opts->num_actions;
+  pmf_to_pdf_data->min_value = pmf_to_pdf_opts->min_value;
+  pmf_to_pdf_data->max_value = pmf_to_pdf_opts->max_value;
+  pmf_to_pdf_data->bandwidth = pmf_to_pdf_opts->bandwidth;
+  pmf_to_pdf_data->first_only = pmf_to_pdf_opts->first_only;
+  pmf_to_pdf_data->tree_bandwidth = pmf_to_pdf_opts->tree_bandwidth;
 
   auto* p_base = as_singleline(stack_builder.setup_base_learner());
-  data->_p_base = p_base;
+  pmf_to_pdf_data->_p_base = p_base;
 
   auto* l = VW::LEARNER::make_reduction_learner(
-      std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
+      std::move(pmf_to_pdf_data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
                 .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 // .set_output_label_type(label_type_t::CB)

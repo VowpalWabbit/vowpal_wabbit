@@ -508,48 +508,71 @@ void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
   }
 }
 
+struct options_recall_tree_v1
+{
+  uint64_t max_candidates;
+  uint64_t max_depth;
+  uint32_t k;
+  bool node_only;
+  float bern_hyper;
+  bool randomized_routing;
+};
+
+std::unique_ptr<options_recall_tree_v1> get_recall_tree_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto recall_tree_opts = VW::make_unique<options_recall_tree_v1>();
+  option_group_definition new_options("[Reduction] Recall Tree");
+  new_options.add(make_option("recall_tree", recall_tree_opts->k).keep().necessary().help("Use online tree for multiclass"))
+      .add(make_option("max_candidates", recall_tree_opts->max_candidates).keep().help("Maximum number of labels per leaf in the tree"))
+      .add(make_option("bern_hyper", recall_tree_opts->bern_hyper).default_value(1.f).help("Recall tree depth penalty"))
+      .add(make_option("max_depth", recall_tree_opts->max_depth).keep().help("Maximum depth of the tree, default log_2 (#classes)"))
+      .add(make_option("node_only", recall_tree_opts->node_only).keep().help("Only use node features, not full path features"))
+      .add(make_option("randomized_routing", recall_tree_opts->randomized_routing).keep().help("Randomized routing"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  recall_tree_opts->max_candidates = options.was_supplied("max_candidates")
+      ? VW::cast_to_smaller_type<size_t>(recall_tree_opts->max_candidates)
+      : std::min(recall_tree_opts->k, 4 * static_cast<uint32_t>(ceil(log(recall_tree_opts->k) / log(2.0))));
+  recall_tree_opts->max_depth = options.was_supplied("max_depth")
+      ? VW::cast_to_smaller_type<size_t>(recall_tree_opts->max_depth)
+      : static_cast<uint32_t>(std::ceil(std::log(recall_tree_opts->k) / std::log(2.0)));
+
+  return recall_tree_opts;
+}
 }  // namespace
 
 base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto tree = VW::make_unique<recall_tree>();
-  option_group_definition new_options("[Reduction] Recall Tree");
-  uint64_t max_candidates = 0;
-  uint64_t max_depth = 0;
-  new_options.add(make_option("recall_tree", tree->k).keep().necessary().help("Use online tree for multiclass"))
-      .add(make_option("max_candidates", max_candidates).keep().help("Maximum number of labels per leaf in the tree"))
-      .add(make_option("bern_hyper", tree->bern_hyper).default_value(1.f).help("Recall tree depth penalty"))
-      .add(make_option("max_depth", max_depth).keep().help("Maximum depth of the tree, default log_2 (#classes)"))
-      .add(make_option("node_only", tree->node_only).keep().help("Only use node features, not full path features"))
-      .add(make_option("randomized_routing", tree->randomized_routing).keep().help("Randomized routing"));
+  auto recall_tree_opts = get_recall_tree_options_instance(all, all.logger, *stack_builder.get_options());
+  if (recall_tree_opts == nullptr) { return nullptr; }
+  auto recall_tree_data = VW::make_unique<recall_tree>();
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  recall_tree_data->max_candidates = recall_tree_opts->max_candidates;
+  recall_tree_data->max_depth = recall_tree_opts->max_depth;
+  recall_tree_data->k = recall_tree_opts->k;
+  recall_tree_data->bern_hyper = recall_tree_opts->bern_hyper;
+  recall_tree_data->node_only = recall_tree_opts->node_only;
+  recall_tree_data->randomized_routing = recall_tree_opts->randomized_routing;
+  recall_tree_data->all = &all;
+  recall_tree_data->random_state = all.get_random_state();
 
-  tree->all = &all;
-  tree->random_state = all.get_random_state();
-  tree->max_candidates = options.was_supplied("max_candidates")
-      ? VW::cast_to_smaller_type<size_t>(max_candidates)
-      : std::min(tree->k, 4 * static_cast<uint32_t>(ceil(log(tree->k) / log(2.0))));
-  tree->max_depth = options.was_supplied("max_depth")
-      ? VW::cast_to_smaller_type<size_t>(max_depth)
-      : static_cast<uint32_t>(std::ceil(std::log(tree->k) / std::log(2.0)));
-
-  init_tree(*tree.get());
+  init_tree(*recall_tree_data.get());
 
   if (!all.quiet)
   {
     *(all.trace_message) << "recall_tree:"
-                         << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
-                         << " max_depth = " << tree->max_depth << " routing = "
-                         << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic")
+                         << " node_only = " << recall_tree_data->node_only << " bern_hyper = " << recall_tree_data->bern_hyper
+                         << " max_depth = " << recall_tree_data->max_depth << " routing = "
+                         << (all.training ? (recall_tree_data->randomized_routing ? "randomized" : "deterministic")
                                           : "n/a testonly")
                          << std::endl;
   }
 
-  size_t ws = tree->max_routers + tree->k;
-  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
+  size_t ws = recall_tree_data->max_routers + recall_tree_data->k;
+  auto* l = make_reduction_learner(std::move(recall_tree_data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(recall_tree_setup))
                 .set_params_per_weight(ws)
                 .set_finish_example(VW::details::finish_multiclass_example<recall_tree&>)
