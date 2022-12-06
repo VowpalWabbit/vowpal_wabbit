@@ -65,7 +65,7 @@ socket_t VW::all_reduce_sockets::sock_connect(const uint32_t ip, const int port,
   while ((ret = connect(sock, reinterpret_cast<sockaddr*>(&far_end), sizeof(far_end))) == -1 && count < 100)
   {
     count++;
-    logger.err_error("connection attempt {0} failed: {1}", count, VW::strerror_to_string(errno));
+    logger.err_error("connection attempt {0} failed: {1}", count, VW::io::strerror_to_string(errno));
 #ifdef _WIN32
     Sleep(1);
 #else
@@ -92,7 +92,7 @@ socket_t VW::all_reduce_sockets::getsock(VW::io::logger& logger)
   int on = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) < 0)
   {
-    logger.err_error("setsockopt SO_REUSEADDR: {}", VW::strerror_to_string(errno));
+    logger.err_error("setsockopt SO_REUSEADDR: {}", VW::io::strerror_to_string(errno));
   }
 #endif
 
@@ -100,7 +100,7 @@ socket_t VW::all_reduce_sockets::getsock(VW::io::logger& logger)
   int enable_tka = 1;
   if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enable_tka), sizeof(enable_tka)) < 0)
   {
-    logger.err_error("setsockopt SO_KEEPALIVE: {}", VW::strerror_to_string(errno));
+    logger.err_error("setsockopt SO_KEEPALIVE: {}", VW::io::strerror_to_string(errno));
   }
 
   return sock;
@@ -189,7 +189,7 @@ void VW::all_reduce_sockets::all_reduce_init(VW::io::logger& logger)
       {
         if (listen(sock, kid_count) < 0)
         {
-          logger.err_error("Listen: {}", VW::strerror_to_string(errno));
+          logger.err_error("Listen: {}", VW::io::strerror_to_string(errno));
           CLOSESOCK(sock);
           sock = getsock(logger);
         }
@@ -212,7 +212,7 @@ void VW::all_reduce_sockets::all_reduce_init(VW::io::logger& logger)
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, reinterpret_cast<char*>(&parent_ip), dotted_quad, INET_ADDRSTRLEN))
     {
-      logger.err_error("Read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::strerror_to_string(errno));
+      logger.err_error("Read parent_ip={0}(inet_ntop: {1})", parent_ip, VW::io::strerror_to_string(errno));
     }
     else { logger.err_info("Read parent_ip={}", dotted_quad); }
   }
@@ -298,7 +298,7 @@ void VW::all_reduce_sockets::broadcast(char* buffer, const size_t n)
 
       size_t count = std::min(details::AR_BUF_SIZE, n - parent_read_pos);
       int read_size = recv(_socks.parent, buffer + parent_read_pos, static_cast<int>(count), 0);
-      if (read_size == -1) { THROW("recv from parent: " << VW::strerror_to_string(errno)); }
+      if (read_size == -1) { THROW("recv from parent: " << VW::io::strerror_to_string(errno)); }
       parent_read_pos += read_size;
     }
   }

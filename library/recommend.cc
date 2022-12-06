@@ -4,6 +4,7 @@
 #include "vw/config/options_cli.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 
 #include <unistd.h>
 
@@ -155,19 +156,19 @@ int main(int argc, char* argv[])
 
   if (VW::file_open(&fB, blacklistfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", blacklistfilename.c_str(), VW::strerror_to_string(errno).c_str());
+    fprintf(stderr, "can't open %s: %s\n", blacklistfilename.c_str(), VW::io::strerror_to_string(errno).c_str());
     cerr << help_message << endl;
     exit(2);
   }
   if (VW::file_open(&fU, userfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", userfilename.c_str(), VW::strerror_to_string(errno).c_str());
+    fprintf(stderr, "can't open %s: %s\n", userfilename.c_str(), VW::io::strerror_to_string(errno).c_str());
     cerr << help_message << endl;
     exit(2);
   }
   if (VW::file_open(&fI, itemfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", itemfilename.c_str(), VW::strerror_to_string(errno).c_str());
+    fprintf(stderr, "can't open %s: %s\n", itemfilename.c_str(), VW::io::strerror_to_string(errno).c_str());
     cerr << help_message << endl;
     exit(2);
   }

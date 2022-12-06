@@ -11,6 +11,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>
@@ -67,7 +68,7 @@ void confidence_print_result(
     auto ss_string(ss.str());
     ssize_t len = ss_string.size();
     ssize_t t = f->write(ss_string.c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 

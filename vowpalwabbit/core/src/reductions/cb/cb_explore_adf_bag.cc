@@ -72,7 +72,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
   // If _greedify then always update the first policy once
   // for others the update count depends on drawing from a poisson
   if (_greedify && learner_index == 0) { return 1; }
-  else { return VW::reductions::bs::weight_gen(_random_state); }
+  else { return VW::reductions::bs::weight_gen(*_random_state); }
 }
 
 void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
