@@ -615,8 +615,7 @@ Weight Options:
                                             when using one pass svd implementation (by default, block_size
                                             = num_actions / thread_pool_size) (type: uint, default: 0)
     --las_hint_explicit_simd                Use explicit simd implementation in one pass svd. Only works
-                                            with quadratics and no ignores. (x86 Linux only) (type: bool,
-                                            experimental)
+                                            with quadratic interactions. (x86 Linux only) (type: bool, experimental)
     --two_pass_svd                          A more accurate svd that is much slower than the default (one
                                             pass svd) (type: bool, experimental)
 [Reduction] Explore Evaluation Options:
