@@ -181,7 +181,7 @@ int main(int argc, char** argv)
 #ifdef VW_BUILD_CSV
     VW::multi_ex examples;
     examples.push_back(&VW::get_unused_example(vw));
-    while (VW::parsers::parse_csv_examples(vw, file_contents_as_io_buf, examples) != 0)
+    while (VW::parsers::csv::parse_csv_examples(vw, file_contents_as_io_buf, examples) != 0)
     {
       VW::finish_example(*vw, *examples[0]);
       examples.clear();
