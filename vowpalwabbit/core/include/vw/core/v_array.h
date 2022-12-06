@@ -277,7 +277,7 @@ public:
     assert(it >= begin());
     assert(it <= end());
     const auto idx = static_cast<size_t>(it - begin());
-    assert(first >= last);
+    assert(first <= last);
     const auto num_elements = static_cast<size_t>(std::distance(first, last));
     make_space_at(idx, num_elements);
     std::copy(first, last, begin() + idx);
