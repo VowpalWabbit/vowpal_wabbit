@@ -355,6 +355,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
                .default_value("mtr")
                .one_of({"mtr"})
                .help("Contextual bandit method to use. SquareCB only supports supervised regression (mtr)"))
+      // Note: this behaviour is semantically different than adding a uniform distribution on all actions
+      // as done in epsilon greedy.
       .add(make_option("epsilon", epsilon)
                .keep()
                .default_value(0.f)
