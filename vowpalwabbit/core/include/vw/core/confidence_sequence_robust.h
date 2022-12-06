@@ -14,38 +14,6 @@
 
 namespace VW
 {
-class lower_cs_base
-{
-public:
-  void add_obs(double x);
-  double get_ci(double alpha);
-};
-
-class countable_discrete_base : public lower_cs_base
-{
-public:
-  countable_discrete_base(double lambda_max = 0.5, double xi = 1.6);
-  double lambertw(double x);
-  double get_ci(double alpha);
-  double get_lam_sqrt_tp1(double j);
-  double get_log_weight(double j);
-  double get_log_remaining_weight(double j);
-  double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j);
-  double log_sum_exp(std::vector<double> a);
-  double log_wealth_mix(double mu, double s, double thres, std::map<uint64_t, double>& memo);
-  double root_brentq(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu);
-  double lb_log_wealth(double alpha);
-  double get_s();
-  double get_v(double lam_sqrt_tp1);
-
-  double xi;
-  uint64_t t;
-  double log_xi;
-
-private:
-  double lambda_max;
-};
-
 class g_tilde
 {
 public:
@@ -66,10 +34,18 @@ private:
   uint64_t t;
 };
 
-class robust_mixture : public countable_discrete_base
+class countable_discrete_base
 {
 public:
-  robust_mixture(double eta = 0.95f, double r = 2.0, double k = 1.5);
+  countable_discrete_base(double eta = 0.95f, double r = 2.0, double k = 1.5, double lambda_max = 0.5, double xi = 1.6);
+  double lambertw(double x);
+  double get_ci(double alpha);
+  double get_lam_sqrt_tp1(double j);
+  double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j);
+  double log_sum_exp(std::vector<double> a);
+  double log_wealth_mix(double mu, double s, double thres, std::map<uint64_t, double>& memo);
+  double root_brentq(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu);
+  double lb_log_wealth(double alpha);
   double polylog(double r, double eta);
   double get_log_weight(double j);
   double get_log_remaining_weight(double j);
@@ -77,7 +53,10 @@ public:
   double get_v(double lam_sqrt_tp1);
   void add_obs(double x);
 
-private:
+  double xi;
+  uint64_t t;
+  double log_xi;
+  double lambda_max;
   double eta;
   double r;
   g_tilde gt;
@@ -94,8 +73,8 @@ public:
   std::pair<double, double> get_ci(double alpha);
 
 private:
-  robust_mixture lower;
-  robust_mixture upper;
+  countable_discrete_base lower;
+  countable_discrete_base upper;
 };
 
 namespace model_utils
