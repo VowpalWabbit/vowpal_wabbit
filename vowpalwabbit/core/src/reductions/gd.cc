@@ -1403,7 +1403,9 @@ std::unique_ptr<options_gd_v1> get_gd_options_instance(const VW::workspace& all,
   gd_opts->l2_state_supplied = options.was_supplied("l2_state");
   gd_opts->feature_mask_supplied = options.was_supplied("feature_mask");
   if (!all.holdout_set_off)
-  { gd_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value(); }
+  {
+    gd_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value();
+  }
   gd_opts->learning_rate_supplied = options.was_supplied("learning_rate") || options.was_supplied("l");
   gd_opts->initial_t_supplied = options.was_supplied("initial_t");
   return gd_opts;

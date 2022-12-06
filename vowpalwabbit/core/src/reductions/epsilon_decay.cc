@@ -382,7 +382,9 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   if (epsilon_decay_opts->model_count < 1) { THROW("Model count must be 1 or greater"); }
 
   if (!epsilon_decay_opts->fixed_significance_level)
-  { epsilon_decay_opts->epsilon_decay_significance_level /= epsilon_decay_opts->model_count; }
+  {
+    epsilon_decay_opts->epsilon_decay_significance_level /= epsilon_decay_opts->model_count;
+  }
 
   auto epsilon_decay_data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(
       epsilon_decay_opts->model_count, epsilon_decay_opts->min_scope,

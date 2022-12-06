@@ -381,7 +381,9 @@ std::unique_ptr<options_cb_explore_v1> get_cb_explore_options_instance(
   cb_explore_opts->bag_supplied = options.was_supplied("bag");
   cb_explore_opts->first_supplied = options.was_supplied("first");
   if (cb_explore_opts->epsilon < 0.0 || cb_explore_opts->epsilon > 1.0)
-  { THROW("The value of epsilon must be in [0,1]"); }
+  {
+    THROW("The value of epsilon must be in [0,1]");
+  }
   return cb_explore_opts;
 }
 

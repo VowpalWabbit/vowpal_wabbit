@@ -200,7 +200,9 @@ std::unique_ptr<options_cb_to_cb_adf_v1> get_cb_to_cb_adf_options_instance(
   }
 
   if (cb_to_cb_adf_opts->num_actions <= 0 && !cb_to_cb_adf_opts->override_cbify)
-  { THROW("cb num actions must be positive"); }
+  {
+    THROW("cb num actions must be positive");
+  }
 
   return cb_to_cb_adf_opts;
 }

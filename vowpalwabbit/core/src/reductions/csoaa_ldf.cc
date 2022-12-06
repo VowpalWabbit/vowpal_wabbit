@@ -727,7 +727,9 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
           "--probabilities should be used only with --loss_function=logistic, currently using: {}", loss_function_type);
     }
     if (!csoaa_ldf_data->treat_as_classifier)
-    { all.logger.out_warn("--probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)"); }
+    {
+      all.logger.out_warn("--probabilities should be used with --csoaa_ldf=mc (or --oaa, --multilabel_oaa)");
+    }
   }
 
   all.example_parser->emptylines_separate_examples =

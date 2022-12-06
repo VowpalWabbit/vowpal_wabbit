@@ -357,7 +357,9 @@ std::unique_ptr<options_freegrad_v1> get_freegrad_options_instance(
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   freegrad_opts->radius_supplied = options.was_supplied("radius");
   if (!all.holdout_set_off)
-  { freegrad_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value(); }
+  {
+    freegrad_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+  }
   return freegrad_opts;
 }
 

@@ -1147,9 +1147,13 @@ std::unique_ptr<options_bfgs_v1> get_bfgs_options_instance(
   bfgs_opts->bfgs_enabled = options.add_parse_and_check_necessary(bfgs_options);
   if (!conjugate_gradient_enabled && !bfgs_opts->bfgs_enabled) { return nullptr; }
   if (conjugate_gradient_enabled && bfgs_opts->bfgs_enabled)
-  { THROW("'conjugate_gradient' and 'bfgs' cannot be used together."); }
+  {
+    THROW("'conjugate_gradient' and 'bfgs' cannot be used together.");
+  }
   if (!all.holdout_set_off)
-  { bfgs_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value(); }
+  {
+    bfgs_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value();
+  }
   return bfgs_opts;
 }
 

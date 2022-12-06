@@ -215,10 +215,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   c.cb_type = VW::cb_type_from_string(cb_algs_opts->type_string);
   auto base = as_singleline(stack_builder.setup_base_learner());
   if (cb_algs_opts->eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
-  else
-  {
-    all.example_parser->lbl_parser = CB::cb_label;
-  }
+  else { all.example_parser->lbl_parser = CB::cb_label; }
   c.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   std::string name_addition = cb_algs_opts->eval ? "-eval" : "";

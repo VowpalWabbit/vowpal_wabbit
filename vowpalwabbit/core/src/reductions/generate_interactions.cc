@@ -232,7 +232,9 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.
   if (!(interactions_spec_contains_wildcards || interactions_spec_contains_extent_wildcards ||
           generate_interactions_opts->ccb_explore_adf_supplied))
-  { return nullptr; }
+  {
+    return nullptr;
+  }
 
   if (generate_interactions_opts->large_action_space_supplied) { store_in_reduction_features = true; }
 

@@ -201,7 +201,9 @@ std::unique_ptr<options_csoaa_v1> get_csoaa_options_instance(const VW::workspace
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("probabilities"))
-  { THROW("csoaa does not support probabilities flag, please use oaa or multilabel_oaa"); }
+  {
+    THROW("csoaa does not support probabilities flag, please use oaa or multilabel_oaa");
+  }
   csoaa_opts->search = options.was_supplied("search");
   return csoaa_opts;
 }

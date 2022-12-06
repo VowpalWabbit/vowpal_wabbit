@@ -360,11 +360,15 @@ std::unique_ptr<options_gd_mf_v1> get_gd_mf_options_instance(
     THROW("normalized adaptive updates is not implemented for matrix factorization");
 
   if (options.was_supplied("bfgs") || options.was_supplied("conjugate_gradient"))
-  { THROW("bfgs is not implemented for matrix factorization"); }
+  {
+    THROW("bfgs is not implemented for matrix factorization");
+  }
   gd_mf_opts->learning_rate_not_supplied = !options.was_supplied("learning_rate") && !options.was_supplied("l");
   gd_mf_opts->initial_t_supplied = options.was_supplied("initial_t");
   if (!all.holdout_set_off)
-  { gd_mf_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value(); }
+  {
+    gd_mf_opts->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
+  }
   return gd_mf_opts;
 }
 

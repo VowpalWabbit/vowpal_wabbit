@@ -804,7 +804,9 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   kernel_svm_data->pool_pos = 0;
 
   if (!kernel_svm_opts->subsample_supplied && kernel_svm_data->para_active)
-  { kernel_svm_data->subsample = static_cast<size_t>(ceil(kernel_svm_data->pool_size / all.all_reduce->total)); }
+  {
+    kernel_svm_data->subsample = static_cast<size_t>(ceil(kernel_svm_data->pool_size / all.all_reduce->total));
+  }
 
   kernel_svm_data->lambda = all.l2_lambda;
   if (kernel_svm_data->lambda == 0.) { kernel_svm_data->lambda = 1.; }
@@ -825,10 +827,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
     kernel_svm_data->kernel_params = &calloc_or_throw<int>();
     *(static_cast<int*>(kernel_svm_data->kernel_params)) = kernel_svm_opts->degree;
   }
-  else
-  {
-    kernel_svm_data->kernel_type = SVM_KER_LIN;
-  }
+  else { kernel_svm_data->kernel_type = SVM_KER_LIN; }
 
   kernel_svm_data->all->weights.stride_shift(0);
 

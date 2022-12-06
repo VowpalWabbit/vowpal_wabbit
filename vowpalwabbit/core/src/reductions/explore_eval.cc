@@ -330,10 +330,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   if (explore_eval_opts->target_rate_supplied) { explore_eval_data->target_rate_on = true; }
 
   if (explore_eval_opts->multiplier_supplied) { explore_eval_data->fixed_multiplier = true; }
-  else
-  {
-    explore_eval_data->multiplier = 1;
-  }
+  else { explore_eval_data->multiplier = 1; }
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
