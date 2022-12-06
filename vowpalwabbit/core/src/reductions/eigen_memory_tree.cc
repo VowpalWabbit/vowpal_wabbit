@@ -134,7 +134,7 @@ emt_tree::~emt_tree()
 //////////////////////////////////////////////////////////
 float emt_median(std::vector<float>& array)
 {
-  int size = array.size();
+  const auto size = array.size();
   auto nth = array.begin() + size / 2;
 
   if (size % 2 == 0)
