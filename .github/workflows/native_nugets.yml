@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -61,8 +61,8 @@ jobs:
           -DVW_INSTALL=On
       - name: Build and install
         run: |
-          cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
-          cmake --build build --config Release -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
+          cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper vw_cache_parser
+          cmake --build build --config Release -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper vw_cache_parser
 
           # Install debug first so that release overwrites the exe and nothing else
           cmake --install build --prefix ./nuget_staging --config Debug

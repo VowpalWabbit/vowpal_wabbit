@@ -47,9 +47,16 @@ class reader;
 class writer;
 }  // namespace io
 
+namespace parsers
+{
+namespace cache
+{
 namespace details
 {
 class cache_temp_buffer;
 }
+
+}  // namespace cache
+}  // namespace parsers
 
 }  // namespace VW
