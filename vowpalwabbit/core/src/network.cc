@@ -19,6 +19,7 @@
 #endif
 
 #include "vw/common/vw_exception.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cerrno>
@@ -46,10 +47,10 @@ int VW::details::open_socket(const char* host, VW::io::logger& logger)
   }
   else { he = gethostbyname(host); }
 
-  if (he == nullptr) THROWERRNO("gethostbyname(" << host << ")");
+  if (he == nullptr) { THROWERRNO("gethostbyname(" << host << ")"); }
 
   int sd = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
-  if (sd == -1) THROWERRNO("socket");
+  if (sd == -1) { THROWERRNO("socket"); }
 
   sockaddr_in far_end;
   far_end.sin_family = AF_INET;
@@ -57,7 +58,9 @@ int VW::details::open_socket(const char* host, VW::io::logger& logger)
   far_end.sin_addr = *reinterpret_cast<in_addr*>(he->h_addr);
   memset(&far_end.sin_zero, '\0', 8);
   if (connect(sd, reinterpret_cast<sockaddr*>(&far_end), sizeof(far_end)) == -1)
+  {
     THROWERRNO("connect(" << host << ':' << port << ")");
+  }
 
   char id = '\0';
   if (

@@ -125,7 +125,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
   float prob = 1.f / static_cast<float>(data.bag_size);
   for (size_t i = 0; i < data.bag_size; i++)
   {
-    uint32_t count = VW::reductions::bs::weight_gen(data.random_state);
+    uint32_t count = VW::reductions::bs::weight_gen(*data.random_state);
     bool learn = is_learn && count > 0;
     if (learn) { base.learn(ec, i); }
     else { base.predict(ec, i); }

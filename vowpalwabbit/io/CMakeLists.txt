@@ -3,7 +3,9 @@ set(vw_io_sources
     include/vw/io/io_adapter.h
     include/vw/io/logger.h
     include/vw/io/owning_stream.h
+    include/vw/io/errno_handling.h
     src/io_adapter.cc
+    src/errno_handling.cc
     src/logger.cc
 )
 
@@ -29,5 +31,9 @@ endif()
 
 vw_add_test_executable(
     FOR_LIB "io"
-    SOURCES tests/io_adapter_test.cc tests/ostream_test.cc tests/main.cc
+    SOURCES
+      tests/errno_test.cc
+      tests/io_adapter_test.cc
+      tests/main.cc
+      tests/ostream_test.cc
 )
