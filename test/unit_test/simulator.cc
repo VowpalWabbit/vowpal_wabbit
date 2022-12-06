@@ -12,13 +12,13 @@
 
 namespace simulator
 {
-cb_sim::cb_sim(uint64_t seed)
+cb_sim::cb_sim(uint64_t seed, bool use_default_ns)
     : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
     //, actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
     , actions({"politics", "sports", "music"})
     , user_ns("User")
-    , action_ns("Action")
+    , action_ns(use_default_ns ? "" : "Action")
 {
   random_state.set_random_state(seed);
   callback_count = 0;
