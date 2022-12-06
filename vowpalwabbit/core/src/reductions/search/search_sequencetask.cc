@@ -165,10 +165,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
     data->encoding = encoding_type::BILOU;
     num_actions = num_actions * 2 - 1;
   }
-  else
-  {
-    data->encoding = encoding_type::BIO;
-  }
+  else { data->encoding = encoding_type::BIO; }
 
   data->allowed_actions.clear();
 
@@ -373,10 +370,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
   }
   float loss = 0.;
   if (max_label > max_prediction) { loss = data.false_negative_cost / data.negative_weight; }
-  else if (max_prediction > max_label)
-  {
-    loss = 1.;
-  }
+  else if (max_prediction > max_label) { loss = 1.; }
   sch.loss(loss);
 
   if (sch.output().good()) { sch.output() << max_prediction; }

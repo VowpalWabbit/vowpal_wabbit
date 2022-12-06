@@ -114,10 +114,7 @@ public:
       for (auto& it : action_scores)
       {
         if (it.action == 0) { it.action = chosen_action; }
-        else if (it.action == chosen_action)
-        {
-          it.action = 0;
-        }
+        else if (it.action == chosen_action) { it.action = 0; }
       }
     }
   }
@@ -174,10 +171,7 @@ void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, data); }
-  else
-  {
-    VW::model_utils::write_model_field(io, data, "_challenger", text);
-  }
+  else { VW::model_utils::write_model_field(io, data, "_challenger", text); }
 }
 
 void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)

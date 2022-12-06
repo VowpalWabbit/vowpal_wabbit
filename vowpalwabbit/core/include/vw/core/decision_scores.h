@@ -20,8 +20,8 @@ void print_decision_scores(VW::io::writer* f, const VW::decision_scores_t& decis
 std::string to_string(
     const VW::decision_scores_t& decision_scores, int decimal_precision = VW::details::DEFAULT_FLOAT_PRECISION);
 
-void print_update_ccb(VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
-    size_t num_features);
-void print_update_slates(VW::workspace& all, std::vector<example*>& slots, const VW::decision_scores_t& decision_scores,
-    size_t num_features);
+void print_update_ccb(VW::workspace& all, const std::vector<example*>& slots,
+    const VW::decision_scores_t& decision_scores, size_t num_features);
+void print_update_slates(VW::workspace& all, const std::vector<example*>& slots,
+    const VW::decision_scores_t& decision_scores, size_t num_features);
 }  // namespace VW

@@ -71,11 +71,10 @@ void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   // figure out which is better by our current estimate.
   if (ig.total_uniform_cost - ig.total_importance_weighted_cost >
       ig.total_uniform_reward - ig.total_importance_weighted_reward)
-  { base.predict(ec_seq); }
-  else
   {
-    base.predict(ec_seq, 1);
+    base.predict(ec_seq);
   }
+  else { base.predict(ec_seq, 1); }
 }
 
 struct options_interaction_ground_v1

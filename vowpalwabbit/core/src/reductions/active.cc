@@ -84,10 +84,7 @@ template <bool is_learn>
 void predict_or_learn_active(active& a, single_learner& base, VW::example& ec)
 {
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 
   if (ec.l.simple.label == FLT_MAX)
   {
@@ -130,11 +127,15 @@ void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
-  { all.sd->weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight); }
+  {
+    all.sd->weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight);
+  }
 
   float ai = -1;
   if (ld.label == FLT_MAX)
-  { ai = query_decision(a, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples)); }
+  {
+    ai = query_decision(a, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
+  }
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
   for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, all.logger); }
@@ -146,10 +147,7 @@ template <bool simulation>
 void return_active_example(VW::workspace& all, active& a, VW::example& ec)
 {
   if (simulation) { VW::details::output_and_account_example(all, ec); }
-  else
-  {
-    output_and_account_example(all, a, ec);
-  }
+  else { output_and_account_example(all, a, ec); }
   VW::finish_example(all, ec);
 }
 

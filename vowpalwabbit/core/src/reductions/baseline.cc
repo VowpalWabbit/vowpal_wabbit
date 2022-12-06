@@ -69,10 +69,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
   if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec))
   {
     if (is_learn) { base.learn(ec); }
-    else
-    {
-      base.predict(ec);
-    }
+    else { base.predict(ec); }
     return;
   }
 
@@ -90,10 +87,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
     simple_red_features.initial = data.ec.pred.scalar;
     base.predict(ec);
   }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 
   if (is_learn)
   {
@@ -121,10 +115,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
       base.learn(data.ec);
       data.all->eta /= multiplier;
     }
-    else
-    {
-      base.learn(data.ec);
-    }
+    else { base.learn(data.ec); }
 
     // regress residual
     auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();

@@ -74,10 +74,7 @@ inline void audit_regressor_feature(audit_regressor_data_obj& dat, const float, 
 {
   parameters& weights = dat.all->weights;
   if (weights[ft_idx] != 0) { ++dat.values_audited; }
-  else
-  {
-    return;
-  }
+  else { return; }
 
   std::string ns_pre;
   for (const auto& s : dat.ns_pre) { ns_pre += s; }
@@ -152,7 +149,9 @@ void audit_regressor(audit_regressor_data_obj& rd, VW::LEARNER::single_learner& 
         else
         {
           for (size_t j = 0; j < fs.size(); ++j)
-          { audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indices[j]) + ec.ft_offset); }
+          {
+            audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indices[j]) + ec.ft_offset);
+          }
         }
       }
 
@@ -236,7 +235,9 @@ void init_driver(audit_regressor_data_obj& dat)
   // checks a few settings that might be applied after audit_regressor_setup() is called
   if ((dat.all->options->was_supplied("cache_file") || dat.all->options->was_supplied("cache")) &&
       !dat.all->options->was_supplied("kill_cache"))
-  { THROW("audit_regressor is incompatible with a cache file. Use it in single pass mode only.") }
+  {
+    THROW("audit_regressor is incompatible with a cache file. Use it in single pass mode only.")
+  }
 
   dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved without --predict_only_model
   dat.all->sd->example_number = 0;
@@ -257,10 +258,7 @@ void init_driver(audit_regressor_data_obj& dat)
   // count non-null feature values in regressor
   dat.loaded_regressor_values = 0;
   if (dat.all->weights.sparse) { dat.loaded_regressor_values += count_non_zero(dat.all->weights.sparse_weights); }
-  else
-  {
-    dat.loaded_regressor_values += count_non_zero(dat.all->weights.dense_weights);
-  }
+  else { dat.loaded_regressor_values += count_non_zero(dat.all->weights.dense_weights); }
 
   if (dat.loaded_regressor_values == 0) { THROW("regressor has no non-zero weights. Nothing to audit.") }
 

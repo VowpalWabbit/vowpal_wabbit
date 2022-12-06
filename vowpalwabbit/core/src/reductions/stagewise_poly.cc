@@ -164,10 +164,7 @@ inline bool cycle_get(const stagewise_poly& poly, uint64_t wid)
   // note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
   if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & CYCLE_BIT) > 0) { return true; }
-  else
-  {
-    return false;
-  }
+  else { return false; }
 }
 
 inline void cycle_toggle(stagewise_poly& poly, uint64_t wid)
@@ -223,10 +220,7 @@ inline uint64_t child_wid(const stagewise_poly& poly, uint64_t wi_atomic, uint64
   assert((wi_general & (stride_shift(poly, 1) - 1)) == 0);
 
   if (wi_atomic == constant_feat_masked(poly)) { return wi_general; }
-  else if (wi_general == constant_feat_masked(poly))
-  {
-    return wi_atomic;
-  }
+  else if (wi_general == constant_feat_masked(poly)) { return wi_atomic; }
   else
   {
     // This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
@@ -548,26 +542,17 @@ void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
     }
     poly.last_example_counter = ec.example_counter;
   }
-  else
-  {
-    predict(poly, base, ec);
-  }
+  else { predict(poly, base, ec); }
 }
 
 void reduce_min_max(uint8_t& v1, const uint8_t& v2)
 {
   bool parent_or_depth;
   if (v1 & INDICATOR_BIT) { parent_or_depth = true; }
-  else
-  {
-    parent_or_depth = false;
-  }
+  else { parent_or_depth = false; }
   bool p_or_d2;
   if (v2 & INDICATOR_BIT) { p_or_d2 = true; }
-  else
-  {
-    p_or_d2 = false;
-  }
+  else { p_or_d2 = false; }
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
@@ -580,10 +565,7 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
   else
   {
     if (v1 == DEFAULT_DEPTH) { v1 = v2; }
-    else if (v2 != DEFAULT_DEPTH)
-    {
-      v1 = (v1 <= v2) ? v1 : v2;
-    }
+    else if (v2 != DEFAULT_DEPTH) { v1 = (v1 <= v2) ? v1 : v2; }
   }
 }
 
@@ -611,9 +593,10 @@ void end_pass(stagewise_poly& poly)
      */
     VW::details::all_reduce<uint8_t, reduce_min_max>(all, poly.depthsbits, depthsbits_sizeof(poly));
 
-    sum_input_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
-    sum_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
-    num_examples_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(num_examples_inc)));
+    sum_input_sparsity_inc =
+        static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
+    sum_sparsity_inc = static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
+    num_examples_inc = static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(num_examples_inc)));
   }
 
   poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;

@@ -48,10 +48,7 @@ void insert_dsjson_metrics(
       metrics.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
           ds_metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot);
     }
-    else
-    {
-      metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->dsjson_sum_cost_original_baseline);
-    }
+    else { metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->dsjson_sum_cost_original_baseline); }
   }
 }
 
@@ -114,10 +111,7 @@ void list_to_json_file(const std::string& filename, const VW::metric_sink& metri
     json_metrics_writer json_writer(writer);
     metrics.visit(json_writer);
   }
-  else
-  {
-    logger.err_warn("skipping metrics. could not open file for metrics: {}", filename);
-  }
+  else { logger.err_warn("skipping metrics. could not open file for metrics: {}", filename); }
 }
 void persist(metrics_data& data, VW::metric_sink& metrics)
 {

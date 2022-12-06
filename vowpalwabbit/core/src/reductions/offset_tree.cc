@@ -207,8 +207,7 @@ void offset_tree::learn(LEARNER::single_learner& base, example& ec)
   auto& nodes = binary_tree.nodes;
 
   tree_node node = nodes[global_action - 1];
-  do
-  {  // ascend
+  do {  // ascend
     const auto previous_id = node.id;
     node = nodes[node.parent_id];
 

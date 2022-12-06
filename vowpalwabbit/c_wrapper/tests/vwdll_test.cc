@@ -20,7 +20,9 @@ void check_weights_equal(T& first, T& second)
   auto second_begin = second.begin();
   auto second_end = second.end();
   for (; first_begin != first_end && second_begin != second_end; ++first_begin, ++second_begin)
-  { EXPECT_FLOAT_EQ(*first_begin, *second_begin); }
+  {
+    EXPECT_FLOAT_EQ(*first_begin, *second_begin);
+  }
   EXPECT_EQ(first_begin, first_end);
   EXPECT_EQ(second_begin, second_end);
 }
@@ -65,10 +67,7 @@ TEST(vwdll_test, vw_dll_parsed_and_constructed_example_parity)
   EXPECT_EQ(vw1->weights.sparse, vw2->weights.sparse);
 
   if (vw1->weights.sparse) { check_weights_equal(vw1->weights.sparse_weights, vw2->weights.sparse_weights); }
-  else
-  {
-    check_weights_equal(vw1->weights.dense_weights, vw2->weights.dense_weights);
-  }
+  else { check_weights_equal(vw1->weights.dense_weights, vw2->weights.dense_weights); }
 
   VW_ReleaseFeatureSpace(fs, 2);
 

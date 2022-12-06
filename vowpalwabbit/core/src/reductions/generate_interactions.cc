@@ -40,10 +40,7 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
   }
 
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
   ec.interactions = saved_interactions;
 }
 
@@ -72,10 +69,7 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
   }
 
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
   ec.interactions = saved_interactions;
   ec.extent_interactions = saved_extent_interactions;
 }

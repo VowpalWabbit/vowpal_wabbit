@@ -57,6 +57,7 @@ set(vw_core_headers
   include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
+  include/vw/core/multi_model_utils.h
   include/vw/core/multiclass.h
   include/vw/core/multilabel.h
   include/vw/core/named_labels.h
@@ -75,7 +76,7 @@ set(vw_core_headers
   include/vw/core/prediction_type.h
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
-   include/vw/core/qr_decomposition.h
+  include/vw/core/qr_decomposition.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
@@ -259,6 +260,8 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc
+  src/reductions/cb/details/large_action/compute_dot_prod_avx512.cc
   src/reductions/cb/details/large_action/one_pass_svd_impl.cc
   src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
   src/reductions/cb/details/large_action/two_pass_svd_impl.cc
@@ -369,6 +372,12 @@ vw_add_library(
 )
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
+
+if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
+  set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx2")
+  set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx512.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
+  target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)
+endif()
 
 if(VW_BUILD_CSV)
   target_link_libraries(vw_core PRIVATE vw_csv_parser)

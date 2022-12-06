@@ -28,7 +28,9 @@ public:
   {
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
-    { ec.pred.a_s.push_back(VW::action_score{_predictions[i].first, _predictions[i].second}); }
+    {
+      ec.pred.a_s.push_back(VW::action_score{_predictions[i].first, _predictions[i].second});
+    }
   }
 
   void test_learn(base_learner& base, VW::example& ec)
@@ -64,6 +66,10 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
       "test_learner", VW::prediction_type_t::ACTION_SCORES, VW::label_type_t::CONTINUOUS)
+                          // Set it to something so that the compat VW::finish_example shim is put in place.
+                          .set_output_example_prediction([](VW::workspace& all, const reduction_test_harness&,
+                                                             const VW::example&, VW::io::logger&) {})
+
                           .build();  // Create a learner using the base reduction.
   return test_learner;
 }
@@ -107,11 +113,10 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
       // where action + bandwidth > num_actions - 1
       // resulting in a span of max 2 * bandwidth
       if (pdf[i].left == 0 || pdf[i].right == num_actions - 1)
-      { BOOST_CHECK_LT(right_unit - left_unit, 2 * bandwidth); }
-      else
       {
-        BOOST_CHECK_EQUAL(right_unit - left_unit, 2 * bandwidth);
+        BOOST_CHECK_LT(right_unit - left_unit, 2 * bandwidth);
       }
+      else { BOOST_CHECK_EQUAL(right_unit - left_unit, 2 * bandwidth); }
     }
   }
 }

@@ -46,10 +46,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
 
   ec.l.simple.label = existing_label;
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 
   if (is_confidence_after_training) { sensitivity = base.sensitivity(ec); }
 
@@ -80,12 +77,16 @@ void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
-  { all.sd->weighted_labels += static_cast<double>(ld.label) * static_cast<double>(ec.weight); }
+  {
+    all.sd->weighted_labels += static_cast<double>(ld.label) * static_cast<double>(ec.weight);
+  }
   all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
 
   all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
   for (const auto& sink : all.final_prediction_sink)
-  { confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, all.logger); }
+  {
+    confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, all.logger);
+  }
 
   VW::details::print_update(all, ec);
 }

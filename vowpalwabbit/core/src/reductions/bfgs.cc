@@ -18,6 +18,7 @@ Implementation by Miro Dudik.
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <sys/timeb.h>
 
@@ -204,7 +205,9 @@ double regularizer_direction_magnitude(VW::workspace& /* all */, bfgs& b, double
   if (b.regularizers == nullptr)
   {
     for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-    { ret += regularizer * (&(*iter))[W_DIR] * (&(*iter))[W_DIR]; }
+    {
+      ret += regularizer * (&(*iter))[W_DIR] * (&(*iter))[W_DIR];
+    }
   }
   else
   {
@@ -225,10 +228,7 @@ double regularizer_direction_magnitude(VW::workspace& all, bfgs& b, float regula
   if (regularizer == 0.) { return ret; }
 
   if (all.weights.sparse) { return regularizer_direction_magnitude(all, b, regularizer, all.weights.sparse_weights); }
-  else
-  {
-    return regularizer_direction_magnitude(all, b, regularizer, all.weights.dense_weights);
-  }
+  else { return regularizer_direction_magnitude(all, b, regularizer, all.weights.dense_weights); }
 }
 
 template <class T>
@@ -237,7 +237,9 @@ float direction_magnitude(VW::workspace& /* all */, T& weights)
   // compute direction magnitude
   double ret = 0.;
   for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
-  { ret += ((double)(&(*iter))[W_DIR]) * (&(*iter))[W_DIR]; }
+  {
+    ret += ((double)(&(*iter))[W_DIR]) * (&(*iter))[W_DIR];
+  }
 
   return static_cast<float>(ret);
 }
@@ -246,10 +248,7 @@ float direction_magnitude(VW::workspace& all)
 {
   // compute direction magnitude
   if (all.weights.sparse) { return direction_magnitude(all, all.weights.sparse_weights); }
-  else
-  {
-    return direction_magnitude(all, all.weights.dense_weights);
-  }
+  else { return direction_magnitude(all, all.weights.dense_weights); }
 }
 
 template <class T>
@@ -281,11 +280,10 @@ void bfgs_iter_start(
 void bfgs_iter_start(VW::workspace& all, bfgs& b, float* mem, int& lastj, double importance_weight_sum, int& origin)
 {
   if (all.weights.sparse)
-  { bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.sparse_weights); }
-  else
   {
-    bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.dense_weights);
+    bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.sparse_weights);
   }
+  else { bfgs_iter_start(all, b, mem, lastj, importance_weight_sum, origin, all.weights.dense_weights); }
 }
 
 template <class T>
@@ -417,10 +415,7 @@ void bfgs_iter_middle(
 void bfgs_iter_middle(VW::workspace& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int& origin)
 {
   if (all.weights.sparse) { bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.sparse_weights); }
-  else
-  {
-    bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.dense_weights);
-  }
+  else { bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.dense_weights); }
 }
 
 template <class T>
@@ -519,10 +514,7 @@ double add_regularization(VW::workspace& all, bfgs& b, float regularization, T& 
 double add_regularization(VW::workspace& all, bfgs& b, float regularization)
 {
   if (all.weights.sparse) { return add_regularization(all, b, regularization, all.weights.sparse_weights); }
-  else
-  {
-    return add_regularization(all, b, regularization, all.weights.dense_weights);
-  }
+  else { return add_regularization(all, b, regularization, all.weights.dense_weights); }
 }
 
 template <class T>
@@ -559,10 +551,7 @@ void finalize_preconditioner(VW::workspace& /* all */, bfgs& b, float regulariza
 void finalize_preconditioner(VW::workspace& all, bfgs& b, float regularization)
 {
   if (all.weights.sparse) { finalize_preconditioner(all, b, regularization, all.weights.sparse_weights); }
-  else
-  {
-    finalize_preconditioner(all, b, regularization, all.weights.dense_weights);
-  }
+  else { finalize_preconditioner(all, b, regularization, all.weights.dense_weights); }
 }
 
 template <class T>
@@ -592,15 +581,14 @@ void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regulariza
   }
 
   for (typename T::iterator w = weights.begin(); w != weights.end(); ++w)
-  { b.regularizers[2 * (w.index() >> weights.stride_shift()) + 1] = *w; }
+  {
+    b.regularizers[2 * (w.index() >> weights.stride_shift()) + 1] = *w;
+  }
 }
 void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regularization)
 {
   if (all.weights.sparse) { preconditioner_to_regularizer(all, b, regularization, all.weights.sparse_weights); }
-  else
-  {
-    preconditioner_to_regularizer(all, b, regularization, all.weights.dense_weights);
-  }
+  else { preconditioner_to_regularizer(all, b, regularization, all.weights.dense_weights); }
 }
 
 template <class T>
@@ -620,10 +608,7 @@ void regularizer_to_weight(VW::workspace& /* all */, bfgs& b, T& weights)
 void regularizer_to_weight(VW::workspace& all, bfgs& b)
 {
   if (all.weights.sparse) { regularizer_to_weight(all, b, all.weights.sparse_weights); }
-  else
-  {
-    regularizer_to_weight(all, b, all.weights.dense_weights);
-  }
+  else { regularizer_to_weight(all, b, all.weights.dense_weights); }
 }
 
 void zero_state(VW::workspace& all)
@@ -648,26 +633,22 @@ double derivative_in_direction(VW::workspace& /* all */, bfgs& b, float* mem, in
 double derivative_in_direction(VW::workspace& all, bfgs& b, float* mem, int& origin)
 {
   if (all.weights.sparse) { return derivative_in_direction(all, b, mem, origin, all.weights.sparse_weights); }
-  else
-  {
-    return derivative_in_direction(all, b, mem, origin, all.weights.dense_weights);
-  }
+  else { return derivative_in_direction(all, b, mem, origin, all.weights.dense_weights); }
 }
 
 template <class T>
 void update_weight(VW::workspace& /* all */, float step_size, T& w)
 {
   for (typename T::iterator iter = w.begin(); iter != w.end(); ++iter)
-  { (&(*iter))[W_XT] += step_size * (&(*iter))[W_DIR]; }
+  {
+    (&(*iter))[W_XT] += step_size * (&(*iter))[W_DIR];
+  }
 }
 
 void update_weight(VW::workspace& all, float step_size)
 {
   if (all.weights.sparse) { update_weight(all, step_size, all.weights.sparse_weights); }
-  else
-  {
-    update_weight(all, step_size, all.weights.dense_weights);
-  }
+  else { update_weight(all, step_size, all.weights.dense_weights); }
 }
 
 int process_pass(VW::workspace& all, bfgs& b)
@@ -682,16 +663,16 @@ int process_pass(VW::workspace& all, bfgs& b)
   {
     if (all.all_reduce != nullptr)
     {
-      accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
+      VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
       float temp = static_cast<float>(b.importance_weight_sum);
-      b.importance_weight_sum = accumulate_scalar(all, temp);
+      b.importance_weight_sum = VW::details::accumulate_scalar(all, temp);
     }
     // finalize_preconditioner(all, b, all.l2_lambda);
     if (all.all_reduce != nullptr)
     {
       float temp = static_cast<float>(b.loss_sum);
-      b.loss_sum = accumulate_scalar(all, temp);  // Accumulate loss_sums
-      accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
+      b.loss_sum = VW::details::accumulate_scalar(all, temp);  // Accumulate loss_sums
+      VW::details::accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
     if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
     if (!all.quiet)
@@ -722,161 +703,160 @@ int process_pass(VW::workspace& all, bfgs& b)
     }
   }
   else
-      /********************************************************************/
-      /* B) GRADIENT CALCULATED *******************************************/
-      /********************************************************************/
-      if (b.gradient_pass)  // We just finished computing all gradients
-  {
-    if (all.all_reduce != nullptr)
+    /********************************************************************/
+    /* B) GRADIENT CALCULATED *******************************************/
+    /********************************************************************/
+    if (b.gradient_pass)  // We just finished computing all gradients
     {
-      float t = static_cast<float>(b.loss_sum);
-      b.loss_sum = accumulate_scalar(all, t);  // Accumulate loss_sums
-      accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
-    }
-    if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
-    if (!all.quiet)
-    {
-      if (!all.holdout_set_off && b.current_pass >= 1)
+      if (all.all_reduce != nullptr)
       {
-        if (all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.)
+        float t = static_cast<float>(b.loss_sum);
+        b.loss_sum = VW::details::accumulate_scalar(all, t);  // Accumulate loss_sums
+        VW::details::accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
+      }
+      if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
+      if (!all.quiet)
+      {
+        if (!all.holdout_set_off && b.current_pass >= 1)
         {
-          fprintf(stderr, "%2lu ", static_cast<long unsigned int>(b.current_pass) + 1);
-          fprintf(stderr, "h unknown    ");
+          if (all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.)
+          {
+            fprintf(stderr, "%2lu ", static_cast<long unsigned int>(b.current_pass) + 1);
+            fprintf(stderr, "h unknown    ");
+          }
+          else
+          {
+            fprintf(stderr, "%2lu h%-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
+                all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
+          }
         }
         else
         {
-          fprintf(stderr, "%2lu h%-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
-              all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
+          fprintf(stderr, "%2lu %-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
+              b.loss_sum / b.importance_weight_sum);
         }
       }
-      else
-      {
-        fprintf(stderr, "%2lu %-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
-            b.loss_sum / b.importance_weight_sum);
-      }
-    }
-    double wolfe1;
-    double new_step = wolfe_eval(
-        all, b, b.mem, b.loss_sum, b.previous_loss_sum, b.step_size, b.importance_weight_sum, b.origin, wolfe1);
+      double wolfe1;
+      double new_step = wolfe_eval(
+          all, b, b.mem, b.loss_sum, b.previous_loss_sum, b.step_size, b.importance_weight_sum, b.origin, wolfe1);
 
-    /********************************************************************/
-    /* B0) DERIVATIVE ZERO: MINIMUM FOUND *******************************/
-    /********************************************************************/
-    if (std::isnan(static_cast<float>(wolfe1)))
-    {
-      fprintf(stderr, "\n");
-      fprintf(stdout, "Derivative 0 detected.\n");
-      b.step_size = 0.0;
-      status = LEARN_CONV;
-    }
-    /********************************************************************/
-    /* B1) LINE SEARCH FAILED *******************************************/
-    /********************************************************************/
-    else if (b.backstep_on && (wolfe1 < b.wolfe1_bound || b.loss_sum > b.previous_loss_sum))
-    {
-      // curvature violated, or we stepped too far last time: step back
-      b.t_end_global = std::chrono::system_clock::now();
-      b.net_time = static_cast<double>(
-          std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-      float ratio = (b.step_size == 0.f) ? 0.f : static_cast<float>(new_step) / b.step_size;
-      if (!all.quiet) { fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step); }
-      b.predictions.clear();
-      update_weight(all, static_cast<float>(-b.step_size + new_step));
-      b.step_size = static_cast<float>(new_step);
-      zero_derivative(all);
-      b.loss_sum = 0.;
-    }
-
-    /********************************************************************/
-    /* B2) LINE SEARCH SUCCESSFUL OR DISABLED          ******************/
-    /*     DETERMINE NEXT SEARCH DIRECTION             ******************/
-    /********************************************************************/
-    else
-    {
-      double rel_decrease = (b.previous_loss_sum - b.loss_sum) / b.previous_loss_sum;
-      if (!std::isnan(static_cast<float>(rel_decrease)) && b.backstep_on && fabs(rel_decrease) < b.rel_threshold)
+      /********************************************************************/
+      /* B0) DERIVATIVE ZERO: MINIMUM FOUND *******************************/
+      /********************************************************************/
+      if (std::isnan(static_cast<float>(wolfe1)))
       {
-        fprintf(stdout,
-            "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
-            "If you want to optimize further, decrease termination threshold.\n",
-            static_cast<long int>(b.current_pass) + 1, b.rel_threshold * 100.0);
+        fprintf(stderr, "\n");
+        fprintf(stdout, "Derivative 0 detected.\n");
+        b.step_size = 0.0;
         status = LEARN_CONV;
       }
-      b.previous_loss_sum = b.loss_sum;
-      b.loss_sum = 0.;
-      b.example_number = 0;
-      b.curvature = 0;
-      b.step_size = 1.0;
-
-      try
+      /********************************************************************/
+      /* B1) LINE SEARCH FAILED *******************************************/
+      /********************************************************************/
+      else if (b.backstep_on && (wolfe1 < b.wolfe1_bound || b.loss_sum > b.previous_loss_sum))
       {
-        bfgs_iter_middle(all, b, b.mem, b.rho, b.alpha, b.lastj, b.origin);
-      }
-      catch (const curv_exception&)
-      {
-        fprintf(stdout, "In bfgs_iter_middle: %s", CURV_MESSAGE);
-        b.step_size = 0.0;
-        status = LEARN_CURV;
-      }
-
-      if (b.hessian_on)
-      {
-        b.gradient_pass = false;  // now start computing curvature
-      }
-      else
-      {
-        float d_mag = direction_magnitude(all);
+        // curvature violated, or we stepped too far last time: step back
         b.t_end_global = std::chrono::system_clock::now();
         b.net_time = static_cast<double>(
             std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-        if (!all.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
+        float ratio = (b.step_size == 0.f) ? 0.f : static_cast<float>(new_step) / b.step_size;
+        if (!all.quiet) { fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step); }
         b.predictions.clear();
-        update_weight(all, b.step_size);
+        update_weight(all, static_cast<float>(-b.step_size + new_step));
+        b.step_size = static_cast<float>(new_step);
+        zero_derivative(all);
+        b.loss_sum = 0.;
+      }
+
+      /********************************************************************/
+      /* B2) LINE SEARCH SUCCESSFUL OR DISABLED          ******************/
+      /*     DETERMINE NEXT SEARCH DIRECTION             ******************/
+      /********************************************************************/
+      else
+      {
+        double rel_decrease = (b.previous_loss_sum - b.loss_sum) / b.previous_loss_sum;
+        if (!std::isnan(static_cast<float>(rel_decrease)) && b.backstep_on && fabs(rel_decrease) < b.rel_threshold)
+        {
+          fprintf(stdout,
+              "\nTermination condition reached in pass %ld: decrease in loss less than %.3f%%.\n"
+              "If you want to optimize further, decrease termination threshold.\n",
+              static_cast<long int>(b.current_pass) + 1, b.rel_threshold * 100.0);
+          status = LEARN_CONV;
+        }
+        b.previous_loss_sum = b.loss_sum;
+        b.loss_sum = 0.;
+        b.example_number = 0;
+        b.curvature = 0;
+        b.step_size = 1.0;
+
+        try
+        {
+          bfgs_iter_middle(all, b, b.mem, b.rho, b.alpha, b.lastj, b.origin);
+        }
+        catch (const curv_exception&)
+        {
+          fprintf(stdout, "In bfgs_iter_middle: %s", CURV_MESSAGE);
+          b.step_size = 0.0;
+          status = LEARN_CURV;
+        }
+
+        if (b.hessian_on)
+        {
+          b.gradient_pass = false;  // now start computing curvature
+        }
+        else
+        {
+          float d_mag = direction_magnitude(all);
+          b.t_end_global = std::chrono::system_clock::now();
+          b.net_time = static_cast<double>(
+              std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
+          if (!all.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
+          b.predictions.clear();
+          update_weight(all, b.step_size);
+        }
       }
     }
-  }
 
-  /********************************************************************/
-  /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
-  /********************************************************************/
-  else  // just finished all second gradients
-  {
-    if (all.all_reduce != nullptr)
+    /********************************************************************/
+    /* C) NOT FIRST PASS, CURVATURE CALCULATED **************************/
+    /********************************************************************/
+    else  // just finished all second gradients
     {
-      float t = static_cast<float>(b.curvature);
-      b.curvature = accumulate_scalar(all, t);  // Accumulate curvatures
-    }
-    if (all.l2_lambda > 0.) { b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda); }
-    float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
-    if (b.curvature == 0. && dd != 0.)
-    {
-      fprintf(stdout, "%s", CURV_MESSAGE);
-      b.step_size = 0.0;
-      status = LEARN_CURV;
-    }
-    else if (dd == 0.)
-    {
-      fprintf(stdout, "Derivative 0 detected.\n");
-      b.step_size = 0.0;
-      status = LEARN_CONV;
-    }
-    else
-    {
-      b.step_size = -dd / static_cast<float>(b.curvature);
-    }
+      if (all.all_reduce != nullptr)
+      {
+        float t = static_cast<float>(b.curvature);
+        b.curvature = VW::details::accumulate_scalar(all, t);  // Accumulate curvatures
+      }
+      if (all.l2_lambda > 0.) { b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda); }
+      float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
+      if (b.curvature == 0. && dd != 0.)
+      {
+        fprintf(stdout, "%s", CURV_MESSAGE);
+        b.step_size = 0.0;
+        status = LEARN_CURV;
+      }
+      else if (dd == 0.)
+      {
+        fprintf(stdout, "Derivative 0 detected.\n");
+        b.step_size = 0.0;
+        status = LEARN_CONV;
+      }
+      else { b.step_size = -dd / static_cast<float>(b.curvature); }
 
-    float d_mag = direction_magnitude(all);
+      float d_mag = direction_magnitude(all);
 
-    b.predictions.clear();
-    update_weight(all, b.step_size);
-    b.t_end_global = std::chrono::system_clock::now();
-    b.net_time = static_cast<double>(
-        std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
+      b.predictions.clear();
+      update_weight(all, b.step_size);
+      b.t_end_global = std::chrono::system_clock::now();
+      b.net_time = static_cast<double>(
+          std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-    if (!all.quiet)
-    { fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size); }
-    b.gradient_pass = true;
-  }  // now start computing derivatives.
+      if (!all.quiet)
+      {
+        fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
+      }
+      b.gradient_pass = true;
+    }  // now start computing derivatives.
   b.current_pass++;
   b.first_pass = false;
   b.preconditioner_pass = false;
@@ -885,7 +865,7 @@ int process_pass(VW::workspace& all, bfgs& b)
   {
     if (all.all_reduce != nullptr)
     {
-      accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
+      VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
     }
     // preconditioner_to_regularizer(all, b, all.l2_lambda);
   }
@@ -951,7 +931,9 @@ void end_pass(bfgs& b)
       {
         *(b.all->trace_message) << "Maximum number of passes reached. ";
         if (!b.output_regularizer)
-        { *(b.all->trace_message) << "To optimize further, increase the number of passes\n"; }
+        {
+          *(b.all->trace_message) << "To optimize further, increase the number of passes\n";
+        }
         if (b.output_regularizer)
         {
           *(b.all->trace_message) << "\nRegular model file has been created. ";
@@ -972,7 +954,9 @@ void end_pass(bfgs& b)
       if (!all->holdout_set_off)
       {
         if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
-        { finalize_regressor(*all, all->final_regressor_name); }
+        {
+          finalize_regressor(*all, all->final_regressor_name);
+        }
         if (b.early_stop_thres == b.no_win_counter)
         {
           set_done(*all);
@@ -1009,10 +993,7 @@ void learn(bfgs& b, base_learner& base, VW::example& ec)
   if (b.current_pass <= b.final_pass)
   {
     if (test_example(ec)) { predict<audit>(b, base, ec); }
-    else
-    {
-      process_example(*all, b, ec);
-    }
+    else { process_example(*all, b, ec); }
   }
 }
 
@@ -1025,8 +1006,7 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool
 
   if (b.output_regularizer && !read) { preconditioner_to_regularizer(*(b.all), b, b.all->l2_lambda); }
 
-  do
-  {
+  do {
     brw = 1;
     VW::weight* v;
     if (read)
@@ -1125,10 +1105,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
     bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
 
     if (reg_vector) { save_load_regularizer(*all, b, model_file, read, text); }
-    else
-    {
-      GD::save_load_regressor(*all, model_file, read, text);
-    }
+    else { GD::save_load_regressor(*all, model_file, read, text); }
   }
 }
 
@@ -1212,16 +1189,10 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
   if (!all.quiet)
   {
     if (bfgs_data->m > 0) { *(all.trace_message) << "enabling BFGS based optimization "; }
-    else
-    {
-      *(all.trace_message) << "enabling conjugate gradient optimization via BFGS ";
-    }
+    else { *(all.trace_message) << "enabling conjugate gradient optimization via BFGS "; }
 
     if (bfgs_data->hessian_on) { *(all.trace_message) << "with curvature calculation" << std::endl; }
-    else
-    {
-      *(all.trace_message) << "**without** curvature calculation" << std::endl;
-    }
+    else { *(all.trace_message) << "**without** curvature calculation" << std::endl; }
   }
 
   if (all.numpasses < 2 && all.training) { THROW("At least 2 passes must be used for BFGS"); }
@@ -1251,5 +1222,8 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
                         .set_save_load(save_load)
                         .set_init_driver(init_driver)
                         .set_end_pass(end_pass)
+                        .set_output_example_prediction(VW::details::output_example_prediction_simple_label<bfgs>)
+                        .set_update_stats(VW::details::update_stats_simple_label<bfgs>)
+                        .set_print_update(VW::details::print_update_simple_label<bfgs>)
                         .build());
 }

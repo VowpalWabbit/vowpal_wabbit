@@ -78,13 +78,12 @@ void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::exampl
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
-  else
-  {
-    reduction.predict(ec, &status);
-  }
+  else { reduction.predict(ec, &status); }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << std::endl; }
+  {
+    VW_DBG(ec) << status.get_error_msg() << std::endl;
+  }
 }
 
 struct options_get_pmf_v1

@@ -221,8 +221,7 @@ int report_error(status_builder& sb, const First& first, const Rest&... rest)
  * @brief Error reporting macro for just returning an error code.
  */
 #  define RETURN_ERROR(status, code, ...)                                                         \
-    do                                                                                            \
-    {                                                                                             \
+    do {                                                                                          \
       if (status != nullptr)                                                                      \
       {                                                                                           \
         VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code); \
@@ -239,8 +238,7 @@ int report_error(status_builder& sb, const First& first, const Rest&... rest)
  * @brief Error reporting macro that takes a list of parameters
  */
 #  define RETURN_ERROR_ARG(status, code, ...)                                                     \
-    do                                                                                            \
-    {                                                                                             \
+    do {                                                                                          \
       if (status != nullptr)                                                                      \
       {                                                                                           \
         VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code); \

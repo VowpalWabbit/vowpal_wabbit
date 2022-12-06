@@ -40,10 +40,7 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
     BOOST_CHECK_CLOSE(ec.l.simple.label, 0.195748, 1E-3);
     base.learn(ec);
   }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 }
 
 // minimal setup function for reduction
@@ -83,10 +80,7 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
     BOOST_CHECK_EQUAL(enabled_reductions[2], "count_label");
     BOOST_CHECK_EQUAL(enabled_reductions[3], "test_reduction_name");
   }
-  else
-  {
-    BOOST_CHECK(false);
-  }
+  else { BOOST_CHECK(false); }
 
   return make_base(*ret);
 }

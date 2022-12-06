@@ -18,7 +18,9 @@ void add_grams(
     {
       uint64_t new_index = fs.indices[i];
       for (size_t n = 1; n < gram_mask.size(); n++)
-      { new_index = new_index * VW::details::QUADRATIC_CONSTANT + fs.indices[i + gram_mask[n]]; }
+      {
+        new_index = new_index * VW::details::QUADRATIC_CONSTANT + fs.indices[i + gram_mask[n]];
+      }
 
       fs.push_back(1., new_index);
       if (!fs.space_names.empty())
@@ -53,10 +55,7 @@ void compile_gram(const std::vector<std::string>& grams, std::array<uint32_t, VW
       logger.err_info("Generating {0}-{1} for all namespaces.", n, descriptor);
       for (size_t j = 0; j < VW::NUM_NAMESPACES; j++) { dest[j] = n; }
     }
-    else if (gram.size() == 1)
-    {
-      logger.out_error("The namespace index must be specified before the n");
-    }
+    else if (gram.size() == 1) { logger.out_error("The namespace index must be specified before the n"); }
     else
     {
       int n = atoi(gram.c_str() + 1);

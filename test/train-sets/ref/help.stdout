@@ -257,8 +257,6 @@ Weight Options:
                                             experimental)
     --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
                                             bool, default: false, experimental)
-    --aml_predict_only_model arg            transform input automl model into predict only automl model (type:
-                                            str, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
@@ -612,6 +610,8 @@ Weight Options:
     --block_size arg                        Number of actions in a block to be scheduled for multithreading
                                             when using one pass svd implementation (by default, block_size
                                             = num_actions / thread_pool_size) (type: uint, default: 0)
+    --las_hint_explicit_simd                Use explicit simd implementation in one pass svd. Only works
+                                            with quadratic interactions. (x86 Linux only) (type: bool, experimental)
     --two_pass_svd                          A more accurate svd that is much slower than the default (one
                                             pass svd) (type: bool, experimental)
 [Reduction] Explore Evaluation Options:

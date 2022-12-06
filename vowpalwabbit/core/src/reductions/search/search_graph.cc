@@ -346,7 +346,9 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
     int i1 = static_cast<int>(i[1]);
     if ((i0 == static_cast<int>(VW::details::NEIGHBOR_NAMESPACE)) ||
         (i1 == static_cast<int>(VW::details::NEIGHBOR_NAMESPACE)))
-    { ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size(); }
+    {
+      ec[n]->num_features += ec[n]->feature_space[i0].size() * ec[n]->feature_space[i1].size();
+    }
   }
 }
 

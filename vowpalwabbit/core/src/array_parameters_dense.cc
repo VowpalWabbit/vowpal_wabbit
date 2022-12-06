@@ -65,26 +65,8 @@ void dense_parameters::move_offsets(const size_t from, const size_t to, const si
       if (*iterator_to[stride_offset] != *iterator_from[stride_offset])
       {
         if (swap) { std::swap(*iterator_to[stride_offset], *iterator_from[stride_offset]); }
-        else
-        {
-          *iterator_to[stride_offset] = *iterator_from[stride_offset];
-        }
+        else { *iterator_to[stride_offset] = *iterator_from[stride_offset]; }
       }
-    }
-  }
-}
-
-// ***** NOTE: params_per_problem must be of form 2^n *****
-void dense_parameters::clear_offset(const size_t offset, const size_t params_per_problem)
-{
-  assert(offset < params_per_problem);
-
-  for (auto iterator_clear = begin() + offset; iterator_clear < end(); iterator_clear += params_per_problem)
-  {
-    assert((iterator_clear.index_without_stride() & (params_per_problem - 1)) == offset);
-    for (size_t stride_offset = 0; stride_offset < stride(); stride_offset++)
-    {
-      if (*iterator_clear[stride_offset] != 0.0f) { *iterator_clear[stride_offset] = 0.0f; }
     }
   }
 }

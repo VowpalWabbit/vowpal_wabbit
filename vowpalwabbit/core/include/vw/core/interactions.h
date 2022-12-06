@@ -132,13 +132,11 @@ void sort_and_filter_duplicate_interactions(
   {
     // remove duplicates
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
-          return a.first < b.first;
-        });
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
+        { return a.first < b.first; });
     auto last = unique(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
-          return a.first == b.first;
-        });
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
+        { return a.first == b.first; });
     vec_sorted.erase(last, vec_sorted.end());
 
     // report number of removed interactions
@@ -146,9 +144,8 @@ void sort_and_filter_duplicate_interactions(
 
     // restore original order
     std::stable_sort(vec_sorted.begin(), vec_sorted.end(),
-        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b) {
-          return a.second < b.second;
-        });
+        [](std::pair<std::vector<T>, size_t> const& a, std::pair<std::vector<T>, size_t> const& b)
+        { return a.second < b.second; });
   }
 
   // we have original vector and vector with duplicates removed + corresponding indexes in original vector
@@ -186,7 +183,9 @@ std::vector<std::vector<T>> generate_namespace_combinations_with_repetition(
         static_cast<uint64_t>(namespaces.size()), static_cast<uint64_t>(num_to_pick)));
     // If this is too large for size_t thats fine we just wont reserve.
     if (static_cast<uint64_t>(num_combinations) < static_cast<uint64_t>(std::numeric_limits<size_t>::max()))
-    { result.reserve(static_cast<size_t>(num_combinations)); }
+    {
+      result.reserve(static_cast<size_t>(num_combinations));
+    }
   }
 
   auto last_index = namespaces.size() - 1;
@@ -273,10 +272,7 @@ std::vector<std::vector<VW::namespace_index>> compile_interaction(
       insertion_indices.push_back(i);
       insertion_ns.push_back(interaction[i]);
     }
-    else
-    {
-      num_wildcards++;
-    }
+    else { num_wildcards++; }
   }
 
   // Quadratic fast path or generic generation function.
@@ -303,10 +299,7 @@ std::vector<std::vector<extent_term>> compile_extent_interaction(
       insertion_indices.push_back(i);
       insertion_ns.push_back(interaction[i]);
     }
-    else
-    {
-      num_wildcards++;
-    }
+    else { num_wildcards++; }
   }
 
   auto result = generate_func(_all_seen_extents, num_wildcards);
@@ -331,10 +324,7 @@ std::vector<std::vector<VW::namespace_index>> compile_interactions(
       auto compiled = compile_interaction<generate_func, leave_duplicate_interactions>(inter, indices);
       std::copy(compiled.begin(), compiled.end(), std::back_inserter(final_interactions));
     }
-    else
-    {
-      final_interactions.push_back(inter);
-    }
+    else { final_interactions.push_back(inter); }
   }
   std::sort(final_interactions.begin(), final_interactions.end(), INTERACTIONS::sort_interactions_comparator);
   size_t removed_cnt = 0;
@@ -357,10 +347,7 @@ std::vector<std::vector<extent_term>> compile_extent_interactions(
       auto compiled = compile_extent_interaction<generate_func, leave_duplicate_interactions>(inter, indices);
       std::copy(compiled.begin(), compiled.end(), std::back_inserter(final_interactions));
     }
-    else
-    {
-      final_interactions.push_back(inter);
-    }
+    else { final_interactions.push_back(inter); }
   }
   size_t removed_cnt = 0;
   size_t sorted_cnt = 0;
@@ -421,7 +408,9 @@ public:
         if (extent.hash == 0 || extent.hash >= std::numeric_limits<unsigned char>::max() ||
             (extent.hash < std::numeric_limits<unsigned char>::max() &&
                 is_interaction_ns(static_cast<unsigned char>(extent.hash))))
-        { _all_seen_extents.insert({ns_index, extent.hash}); }
+        {
+          _all_seen_extents.insert({ns_index, extent.hash});
+        }
       }
     }
 

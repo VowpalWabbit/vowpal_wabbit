@@ -146,10 +146,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
     }
 
     if (is_learn) { base.learn(ec); }
-    else
-    {
-      base.predict(ec);
-    }
+    else { base.predict(ec); }
 
     // Restore example
     if (iter == 0)

@@ -169,10 +169,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
   while (!(cur_node.is_leaf))
   {
     if (cur_node.right_only) { cur_node = nodes[cur_node.right_id]; }
-    else if (cur_node.left_only)
-    {
-      cur_node = nodes[cur_node.left_id];
-    }
+    else if (cur_node.left_only) { cur_node = nodes[cur_node.left_id]; }
     else
     {
       ec.partial_prediction = 0.f;
@@ -181,10 +178,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       VW_DBG(ec) << "tree_c: predict() after base.predict() " << VW::debug::scalar_pred_to_string(ec)
                  << ", nodeid = " << cur_node.id << std::endl;
       if (ec.pred.scalar < 0) { cur_node = nodes[cur_node.left_id]; }
-      else
-      {
-        cur_node = nodes[cur_node.right_id];
-      }
+      else { cur_node = nodes[cur_node.right_id]; }
     }
   }
   ec.l.cb = std::move(saved_label);
@@ -215,22 +209,10 @@ constexpr float LEFT = -1.0f;
 float cats_tree::return_cost(const tree_node& w)
 {
   if (w.id < _a.node_id) { return 0; }
-  else if (w.id == _a.node_id)
-  {
-    return _a.cost;
-  }
-  else if (w.id < _b.node_id)
-  {
-    return _cost_star;
-  }
-  else if (w.id == _b.node_id)
-  {
-    return _b.cost;
-  }
-  else
-  {
-    return 0;
-  }
+  else if (w.id == _a.node_id) { return _a.cost; }
+  else if (w.id < _b.node_id) { return _cost_star; }
+  else if (w.id == _b.node_id) { return _b.cost; }
+  else { return 0; }
 }
 
 void cats_tree::learn(LEARNER::single_learner& base, example& ec)
@@ -279,10 +261,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           // pick a uniform random number between 0.0 - .001f
           float random_draw = merand48(new_random_seed) * weight_th;
           if (random_draw < ec.weight) { ec.weight = weight_th; }
-          else
-          {
-            filter = true;
-          }
+          else { filter = true; }
         }
         if (!filter)
         {
@@ -309,10 +288,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         }
       }
       if (i == 0) { a_parent_cost = cost_parent; }
-      else
-      {
-        b_parent_cost = cost_parent;
-      }
+      else { b_parent_cost = cost_parent; }
     }
     _a = {nodes[_a.node_id].parent_id, a_parent_cost};
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};

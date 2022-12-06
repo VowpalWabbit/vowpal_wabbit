@@ -40,7 +40,9 @@ void save(example& ec, VW::workspace& all)
   std::string final_regressor_name = all.final_regressor_name;
 
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
-  { final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5); }
+  {
+    final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
+  }
 
   if (!all.quiet) { *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl; }
   ::save_predictor(all, final_regressor_name, 0);
@@ -123,18 +125,9 @@ public:
     {  // 1+ nonconstant feature. (most common case first)
       _context.template process<example, learn_ex>(*ec);
     }
-    else if (ec->end_pass)
-    {
-      _context.template process<example, end_pass>(*ec);
-    }
-    else if (is_save_cmd(ec))
-    {
-      _context.template process<example, save>(*ec);
-    }
-    else
-    {
-      _context.template process<example, learn_ex>(*ec);
-    }
+    else if (ec->end_pass) { _context.template process<example, end_pass>(*ec); }
+    else if (is_save_cmd(ec)) { _context.template process<example, save>(*ec); }
+    else { _context.template process<example, learn_ex>(*ec); }
   }
 
   void process_remaining() {}
@@ -204,14 +197,8 @@ private:
       // Explicitly do not process the end-of-pass examples here: It needs to be done
       // after learning on the collected multi_ex
     }
-    else if (is_save_cmd(ec))
-    {
-      _context.template process<example, save>(*ec);
-    }
-    else
-    {
-      return complete_multi_ex(ec);
-    }
+    else if (is_save_cmd(ec)) { _context.template process<example, save>(*ec); }
+    else { return complete_multi_ex(ec); }
     return false;
   }
 
@@ -300,7 +287,8 @@ void generic_driver_onethread(VW::workspace& all)
   single_instance_context context(all);
   handler_type handler(context);
   custom_examples_queue examples_queue;
-  auto multi_ex_fptr = [&handler, &examples_queue](VW::workspace& /*all*/, const VW::multi_ex& examples) {
+  auto multi_ex_fptr = [&handler, &examples_queue](VW::workspace& /*all*/, const VW::multi_ex& examples)
+  {
     examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };
@@ -312,24 +300,15 @@ void generic_driver_onethread(VW::workspace& all)
 void generic_driver_onethread(VW::workspace& all)
 {
   if (all.l->is_multiline()) { generic_driver_onethread<multi_example_handler<single_instance_context>>(all); }
-  else
-  {
-    generic_driver_onethread<single_example_handler<single_instance_context>>(all);
-  }
+  else { generic_driver_onethread<single_example_handler<single_instance_context>>(all); }
 }
 
 float VW::LEARNER::details::recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
   if (label_type == VW::label_type_t::CB) { return CB::ec_is_example_header(ec); }
-  else if (label_type == VW::label_type_t::CCB)
-  {
-    return reductions::ccb::ec_is_example_header(ec);
-  }
-  else if (label_type == VW::label_type_t::CS)
-  {
-    return VW::is_cs_example_header(ec);
-  }
+  else if (label_type == VW::label_type_t::CCB) { return reductions::ccb::ec_is_example_header(ec); }
+  else if (label_type == VW::label_type_t::CS) { return VW::is_cs_example_header(ec); }
   return false;
 }
 
@@ -355,7 +334,9 @@ void VW::LEARNER::details::learner_build_diagnostic(VW::io::logger& logger, VW::
   }
 
   if (merge_fn_ptr != nullptr && merge_with_all_fn_ptr != nullptr)
-  { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
+  {
+    THROW("cannot set both merge_with_all and merge_with_all_fn");
+  }
 }
 void VW::LEARNER::details::debug_increment_depth(example& ex)
 {

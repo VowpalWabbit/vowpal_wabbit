@@ -170,7 +170,9 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
   ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   if (ec.l.simple.label != FLT_MAX)
-  { ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
+  {
+    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  }
 
   if (all.audit) { mf_print_audit_features(d, ec, 0); }
 
@@ -181,17 +183,16 @@ float mf_predict(gdmf& d, VW::example& ec)
 {
   VW::workspace& all = *d.all;
   if (all.weights.sparse) { return mf_predict(d, ec, all.weights.sparse_weights); }
-  else
-  {
-    return mf_predict(d, ec, all.weights.dense_weights);
-  }
+  else { return mf_predict(d, ec, all.weights.dense_weights); }
 }
 
 template <class T>
 void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
 {
   for (size_t i = 0; i < fs.size(); i++)
-  { (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset]; }
+  {
+    (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset];
+  }
 }
 
 template <class T>
@@ -241,10 +242,7 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
 void mf_train(gdmf& d, VW::example& ec)
 {
   if (d.all->weights.sparse) { mf_train(d, ec, d.all->weights.sparse_weights); }
-  else
-  {
-    mf_train(d, ec, d.all->weights.dense_weights);
-  }
+  else { mf_train(d, ec, d.all->weights.dense_weights); }
 }
 
 void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
@@ -266,9 +264,8 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
-      auto weight_initializer = [stride](VW::weight* weights, uint64_t index) {
-        initialize_weights(weights, index, stride);
-      };
+      auto weight_initializer = [stride](VW::weight* weights, uint64_t index)
+      { initialize_weights(weights, index, stride); };
 
       all.weights.set_default(weight_initializer);
     }
@@ -277,11 +274,12 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   if (model_file.num_files() > 0)
   {
     if (!all.weights.not_null())
-    { THROW("Model weights object was not initialized when trying to data load into it."); }
+    {
+      THROW("Model weights object was not initialized when trying to data load into it.");
+    }
     uint64_t i = 0;
     size_t brw = 1;
-    do
-    {
+    do {
       brw = 0;
       size_t K = d.rank * 2 + 1;  // NOLINT
       std::stringstream msg;
@@ -318,10 +316,14 @@ void end_pass(gdmf& d)
   if (!all->holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
-    { finalize_regressor(*all, all->final_regressor_name); }
+    {
+      finalize_regressor(*all, all->final_regressor_name);
+    }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
-    { set_done(*all); }
+    {
+      set_done(*all);
+    }
   }
 }
 
@@ -409,6 +411,9 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .set_end_pass(end_pass)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<gdmf>)
+                .set_update_stats(VW::details::update_stats_simple_label<gdmf>)
+                .set_print_update(VW::details::print_update_simple_label<gdmf>)
                 .build();
 
   return make_base(*l);

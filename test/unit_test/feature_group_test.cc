@@ -131,10 +131,12 @@ BOOST_AUTO_TEST_CASE(iterate_extents_test)
 {
   auto* vw = VW::initialize("--quiet");
   auto* ex = VW::read_example(*vw, "|user_info a b c |user_geo a b c d |other a b c d e |user_info a b");
-  auto cleanup = VW::scope_exit([&]() {
-    VW::finish_example(*vw, *ex);
-    VW::finish(*vw);
-  });
+  auto cleanup = VW::scope_exit(
+      [&]()
+      {
+        VW::finish_example(*vw, *ex);
+        VW::finish(*vw);
+      });
 
   {
     auto begin = ex->feature_space['u'].hash_extents_begin(VW::hash_space(*vw, "user_info"));

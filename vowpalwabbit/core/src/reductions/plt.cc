@@ -127,15 +127,14 @@ void learn(plt& p, single_learner& base, VW::example& ec)
         {
           uint32_t n_child = p.kary * n + i;
           if (n_child < p.t && p.positive_nodes.find(n_child) == p.positive_nodes.end())
-          { p.negative_nodes.insert(n_child); }
+          {
+            p.negative_nodes.insert(n_child);
+          }
         }
       }
     }
   }
-  else
-  {
-    p.negative_nodes.insert(0);
-  }
+  else { p.negative_nodes.insert(0); }
 
   ec.l.simple = {1.f};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
@@ -171,10 +170,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   for (auto label : multilabels.label_v)
   {
     if (label < p.k) { p.true_labels.insert(label); }
-    else
-    {
-      p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
-    }
+    else { p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1); }
   }
 
   p.node_queue.clear();  // clear node queue
@@ -353,7 +349,9 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (all.loss->get_type() != "logistic")
-  { THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type()); }
+  {
+    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type());
+  }
 
   tree->all = &all;
 
@@ -372,10 +370,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     if (!all.training)
     {
       if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
-      else
-      {
-        *(all.trace_message) << "threshold = " << tree->threshold << std::endl;
-      }
+      else { *(all.trace_message) << "threshold = " << tree->threshold << std::endl; }
     }
   }
 

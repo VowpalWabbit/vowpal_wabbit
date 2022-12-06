@@ -93,8 +93,7 @@ public:
         {
           // box-muller tranform: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
           // redraw until r1 should be strictly positive
-          do
-          {
+          do {
             r1 = random_state->get_and_update_random();
             r2 = random_state->get_and_update_random();
           } while (r1 == 0.f);
@@ -112,13 +111,19 @@ public:
         double temp = 0;
 
         for (uint32_t i = 0; i < length; i++)
-        { temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k]; }
+        {
+          temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k];
+        }
         for (uint32_t i = 0; i < length; i++)
-        { (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k]; }
+        {
+          (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k];
+        }
       }
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
-      { norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j]; }
+      {
+        norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j];
+      }
       norm = std::sqrt(norm);
       for (uint32_t i = 0; i < length; i++) { (&(weights.strided_index(i)))[j] /= static_cast<float>(norm); }
     }
@@ -141,10 +146,7 @@ public:
       float temp = data.AZx[i] * data.sketch_cnt;
 
       if (t == 1) { ev[i] = gamma * temp * temp; }
-      else
-      {
-        ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * temp * temp;
-      }
+      else { ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * temp * temp; }
     }
   }
 
@@ -430,7 +432,9 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, 
   data.g /= 2;  // for half square loss
 
   if (oja_newton_ptr.normalize)
-  { GD::foreach_feature<oja_n_update_data, update_normalization>(*oja_newton_ptr.all, ec, data); }
+  {
+    GD::foreach_feature<oja_n_update_data, update_normalization>(*oja_newton_ptr.all, ec, data);
+  }
 
   oja_newton_ptr.buffer[oja_newton_ptr.cnt] = &ec;
   oja_newton_ptr.weight_buffer[oja_newton_ptr.cnt++] = data.g / 2;
@@ -470,7 +474,9 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, 
   {
     oja_newton_ptr.cnt = 0;
     for (int k = 0; k < oja_newton_ptr.epoch_size; k++)
-    { VW::finish_example(*oja_newton_ptr.all, *oja_newton_ptr.buffer[k]); }
+    {
+      VW::finish_example(*oja_newton_ptr.all, *oja_newton_ptr.buffer[k]);
+    }
   }
 }
 
@@ -493,10 +499,7 @@ void save_load(OjaNewton& oja_newton_ptr, io_buf& model_file, bool read, bool te
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;
     if (resume) { GD::save_load_online_state(all, model_file, read, text, temp, temp_normalized_sum_norm_x); }
-    else
-    {
-      GD::save_load_regressor(all, model_file, read, text);
-    }
+    else { GD::save_load_regressor(all, model_file, read, text); }
   }
 }
 
