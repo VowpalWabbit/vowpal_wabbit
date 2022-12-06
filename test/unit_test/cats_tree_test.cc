@@ -97,8 +97,8 @@ learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_re
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
       "test_learner", VW::prediction_type_t::SCALAR, VW::label_type_t::CB)
-                          .set_output_example([](VW::workspace& all, shared_data& sd, const reduction_test_harness&,
-                                                  const VW::example&, VW::io::logger&) {})
+                          .set_output_example_prediction([](VW::workspace& all, const reduction_test_harness&,
+                                                             const VW::example&, VW::io::logger&) {})
 
                           .build();  // Create a learner using the base reduction.
   return test_learner;

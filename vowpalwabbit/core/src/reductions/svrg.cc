@@ -193,8 +193,9 @@ base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                .set_output_example(VW::details::output_example_simple_label<svrg>)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svrg>)
                 .set_update_stats(VW::details::update_stats_simple_label<svrg>)
+                .set_print_update(VW::details::print_update_simple_label<svrg>)
                 .set_save_load(save_load)
                 .build();
   return make_base(*l);

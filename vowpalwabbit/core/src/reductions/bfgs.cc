@@ -18,6 +18,7 @@ Implementation by Miro Dudik.
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <sys/timeb.h>
 
@@ -1200,7 +1201,8 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
                         .set_save_load(save_load)
                         .set_init_driver(init_driver)
                         .set_end_pass(end_pass)
-                        .set_output_example(VW::details::output_example_simple_label<bfgs>)
+                        .set_output_example_prediction(VW::details::output_example_prediction_simple_label<bfgs>)
                         .set_update_stats(VW::details::update_stats_simple_label<bfgs>)
+                        .set_print_update(VW::details::print_update_simple_label<bfgs>)
                         .build());
 }

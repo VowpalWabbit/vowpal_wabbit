@@ -47,8 +47,8 @@ VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, VW::multi_ex>* make_test
   return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
       static_cast<func>(predict_fptr), "mock_reduction", VW::prediction_type_t::DECISION_PROBS, VW::label_type_t::CCB)
       // Set it to something so that the compat VW::finish_example shim is put in place.
-      .set_output_example([](VW::workspace& all, shared_data& sd, const test_base<LearnFunc, PredictFunc>&,
-                              const VW::multi_ex&, VW::io::logger&) {})
+      .set_output_example_prediction(
+          [](VW::workspace& all, const test_base<LearnFunc, PredictFunc>&, const VW::multi_ex&, VW::io::logger&) {})
       .build();
 }
 
