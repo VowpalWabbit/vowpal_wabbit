@@ -191,12 +191,12 @@ struct options_mf_v1
   uint64_t rank;
 };
 
-std::unique_ptr<options_mf_v1> get_mf_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_mf_v1> get_mf_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto mf_opts = VW::make_unique<options_mf_v1>();
   option_group_definition new_options("[Reduction] Matrix Factorization Reduction");
-  new_options.add(make_option("new_mf", mf_opts->rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
+  new_options.add(
+      make_option("new_mf", mf_opts->rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return mf_opts;

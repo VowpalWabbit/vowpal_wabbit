@@ -429,8 +429,7 @@ struct options_nn_v1
   bool multitask = false;
 };
 
-std::unique_ptr<options_nn_v1> get_nn_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_nn_v1> get_nn_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto nn_opts = VW::make_unique<options_nn_v1>();
   option_group_definition new_options("[Reduction] Neural Network");
@@ -440,8 +439,11 @@ std::unique_ptr<options_nn_v1> get_nn_options_instance(
                .keep()
                .help("Train or test sigmoidal feedforward network with input passthrough"))
       .add(make_option("multitask", nn_opts->multitask).keep().help("Share hidden layer across all reduced tasks"))
-      .add(make_option("dropout", nn_opts->dropout).keep().help("Train or test sigmoidal feedforward network using dropout"))
-      .add(make_option("meanfield", nn_opts->meanfield).help("Train or test sigmoidal feedforward network using mean field"));
+      .add(make_option("dropout", nn_opts->dropout)
+               .keep()
+               .help("Train or test sigmoidal feedforward network using dropout"))
+      .add(make_option("meanfield", nn_opts->meanfield)
+               .help("Train or test sigmoidal feedforward network using mean field"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return nn_opts;

@@ -1237,7 +1237,9 @@ std::unique_ptr<options_memory_tree_v1> get_memory_tree_options_instance(
                .necessary()
                .default_value(0)
                .help("Make a memory tree with at most <n> nodes"))
-      .add(make_option("max_number_of_labels", memory_tree_opts->max_num_labels).default_value(10).help("Max number of unique label"))
+      .add(make_option("max_number_of_labels", memory_tree_opts->max_num_labels)
+               .default_value(10)
+               .help("Max number of unique label"))
       .add(make_option("leaf_example_multiplier", memory_tree_opts->leaf_example_multiplier)
                .default_value(1)
                .help("Multiplier on examples per leaf (default = log nodes)"))
@@ -1251,7 +1253,8 @@ std::unique_ptr<options_memory_tree_v1> get_memory_tree_options_instance(
       .add(make_option("dream_at_update", memory_tree_opts->dream_at_update)
                .default_value(0)
                .help("Turn on dream operations at reward based update as well"))
-      .add(make_option("online", memory_tree_opts->online).help("Turn on dream operations at reward based update as well"));
+      .add(make_option("online", memory_tree_opts->online)
+               .help("Turn on dream operations at reward based update as well"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return memory_tree_opts;
@@ -1276,13 +1279,15 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
 
   memory_tree_data->max_nodes = VW::cast_to_smaller_type<size_t>(memory_tree_opts->max_nodes);
   memory_tree_data->max_num_labels = VW::cast_to_smaller_type<size_t>(memory_tree_opts->max_num_labels);
-  memory_tree_data->leaf_example_multiplier = VW::cast_to_smaller_type<size_t>(memory_tree_opts->leaf_example_multiplier);
+  memory_tree_data->leaf_example_multiplier =
+      VW::cast_to_smaller_type<size_t>(memory_tree_opts->leaf_example_multiplier);
   memory_tree_data->all = &all;
   memory_tree_data->random_state = all.get_random_state();
   memory_tree_data->current_pass = 0;
   memory_tree_data->final_pass = all.numpasses;
 
-  memory_tree_data->max_leaf_examples = static_cast<size_t>(memory_tree_data->leaf_example_multiplier * (log(memory_tree_data->max_nodes) / log(2)));
+  memory_tree_data->max_leaf_examples =
+      static_cast<size_t>(memory_tree_data->leaf_example_multiplier * (log(memory_tree_data->max_nodes) / log(2)));
 
   init_tree(*memory_tree_data);
 
@@ -1318,8 +1323,8 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
     label_type = VW::label_type_t::MULTILABEL;
   }
 
-  auto l = make_reduction_learner(std::move(memory_tree_data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
-      stack_builder.get_setupfn_name(memory_tree_setup))
+  auto l = make_reduction_learner(std::move(memory_tree_data), as_singleline(stack_builder.setup_base_learner()), learn,
+      predict, stack_builder.get_setupfn_name(memory_tree_setup))
                .set_params_per_weight(num_learners)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)

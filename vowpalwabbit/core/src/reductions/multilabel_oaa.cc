@@ -109,8 +109,12 @@ std::unique_ptr<options_multilabel_oaa_v1> get_multilabel_oaa_options_instance(
   auto multilabel_oaa_opts = VW::make_unique<options_multilabel_oaa_v1>();
   option_group_definition new_options("[Reduction] Multilabel One Against All");
   new_options
-      .add(make_option("multilabel_oaa", multilabel_oaa_opts->k).keep().necessary().help("One-against-all multilabel with <k> labels"))
-      .add(make_option("probabilities", multilabel_oaa_opts->probabilities).help("Predict probabilities of all classes"))
+      .add(make_option("multilabel_oaa", multilabel_oaa_opts->k)
+               .keep()
+               .necessary()
+               .help("One-against-all multilabel with <k> labels"))
+      .add(
+          make_option("probabilities", multilabel_oaa_opts->probabilities).help("Predict probabilities of all classes"))
       .add(make_option("link", multilabel_oaa_opts->link)
                .default_value("identity")
                .keep()

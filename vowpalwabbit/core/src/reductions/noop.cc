@@ -20,8 +20,7 @@ struct options_noop_v1
   bool noop = false;
 };
 
-std::unique_ptr<options_noop_v1> get_noop_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_noop_v1> get_noop_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto noop_opts = VW::make_unique<options_noop_v1>();
   option_group_definition new_options("[Reduction] Noop Base Learner");

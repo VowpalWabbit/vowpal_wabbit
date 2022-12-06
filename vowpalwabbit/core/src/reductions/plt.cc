@@ -338,8 +338,7 @@ struct options_plt_v1
   uint32_t top_k;
 };
 
-std::unique_ptr<options_plt_v1> get_plt_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_plt_v1> get_plt_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto plt_opts = VW::make_unique<options_plt_v1>();
   option_group_definition new_options("[Reduction] Probabilistic Label Tree");
@@ -416,8 +415,8 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict<true>;
   }
 
-  auto* l = make_reduction_learner(std::move(plt_data), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
-      stack_builder.get_setupfn_name(plt_setup) + name_addition)
+  auto* l = make_reduction_learner(std::move(plt_data), as_singleline(stack_builder.setup_base_learner()), learn,
+      pred_ptr, stack_builder.get_setupfn_name(plt_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::MULTILABELS)
                 .set_input_label_type(VW::label_type_t::MULTILABEL)

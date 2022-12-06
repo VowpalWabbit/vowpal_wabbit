@@ -310,8 +310,7 @@ struct options_oaa_v1
   uint32_t indexing = 2;
 };
 
-std::unique_ptr<options_oaa_v1> get_oaa_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_oaa_v1> get_oaa_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto oaa_opts = VW::make_unique<options_oaa_v1>();
   option_group_definition new_options("[Reduction] One Against All");
