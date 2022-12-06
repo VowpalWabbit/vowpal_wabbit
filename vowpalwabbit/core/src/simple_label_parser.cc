@@ -7,7 +7,6 @@
 
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
-#include "vw/core/cache.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
