@@ -159,7 +159,9 @@ void compute_recall_lbest(const recall_tree& b, node& n)
   double mass_at_k = 0;
 
   for (node_pred* ls = n.preds.begin(); ls != n.preds.end() && ls < n.preds.begin() + b.max_candidates; ++ls)
-  { mass_at_k += ls->label_count; }
+  {
+    mass_at_k += ls->label_count;
+  }
 
   float f = static_cast<float>(mass_at_k) / static_cast<float>(n.n);
   float stdf = std::sqrt(f * (1.f - f) / static_cast<float>(n.n));

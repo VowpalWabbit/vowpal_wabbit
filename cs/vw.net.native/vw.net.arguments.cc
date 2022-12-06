@@ -12,7 +12,9 @@ API void GetWorkspaceBasicArguments(
   args->power_t = workspace->vw->power_t;
 
   if (workspace->vw->options->was_supplied("cb"))
-  { args->cb_number_of_actions = (int)workspace->vw->options->get_typed_option<uint32_t>("cb").value(); }
+  {
+    args->cb_number_of_actions = (int)workspace->vw->options->get_typed_option<uint32_t>("cb").value();
+  }
 }
 
 API const char* GetWorkspaceDataFilename(vw_net_native::workspace_context* workspace)

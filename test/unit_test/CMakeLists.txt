@@ -63,7 +63,7 @@ add_executable(vw-unit-test.out
   weights_test.cc
 )
 
-if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE))
+if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
   target_compile_definitions(vw-unit-test.out PUBLIC BUILD_LAS_WITH_SIMD)
 endif()
 

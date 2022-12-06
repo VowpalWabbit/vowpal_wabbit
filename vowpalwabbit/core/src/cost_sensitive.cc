@@ -85,7 +85,9 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
       if (eq_shared)
       {
         if (reuse_mem.tokens.size() != 1)
-        { logger.err_error("shared feature vectors should not have costs on: {}", words[0]); }
+        {
+          logger.err_error("shared feature vectors should not have costs on: {}", words[0]);
+        }
         else
         {
           VW::cs_class f = {-FLT_MAX, 0, 0., 0.};
@@ -95,7 +97,9 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
       if (eq_label)
       {
         if (reuse_mem.tokens.size() != 2)
-        { logger.err_error("label feature vectors should have exactly one cost on: {}", words[0]); }
+        {
+          logger.err_error("label feature vectors should have exactly one cost on: {}", words[0]);
+        }
         else
         {
           VW::cs_class f = {float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
@@ -150,19 +154,13 @@ void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::ex
           num_current_features += (ec_seq->size() - 1) *
               (ecc->get_num_features() - ecc->feature_space[VW::details::CONSTANT_NAMESPACE].size());
         }
-        else
-        {
-          num_current_features += ecc->get_num_features();
-        }
+        else { num_current_features += ecc->get_num_features(); }
       }
     }
 
     std::string label_buf;
     if (is_test) { label_buf = "unknown"; }
-    else
-    {
-      label_buf = "known";
-    }
+    else { label_buf = "known"; }
 
     if (action_scores || all.sd->ldict)
     {
@@ -170,15 +168,9 @@ void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::ex
       if (all.sd->ldict)
       {
         if (action_scores) { pred_buf << all.sd->ldict->get(ec.pred.a_s[0].action); }
-        else
-        {
-          pred_buf << all.sd->ldict->get(prediction);
-        }
+        else { pred_buf << all.sd->ldict->get(prediction); }
       }
-      else
-      {
-        pred_buf << ec.pred.a_s[0].action;
-      }
+      else { pred_buf << ec.pred.a_s[0].action; }
       if (action_scores) { pred_buf << "....."; }
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
           num_current_features, all.progress_add, all.progress_arg);
@@ -209,7 +201,9 @@ void VW::details::output_cs_example(
       if (cl.x < min) { min = cl.x; }
     }
     if (chosen_loss == FLT_MAX)
-    { all.logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {{1..k}} range?"); }
+    {
+      all.logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {{1..k}} range?");
+    }
 
     loss = (chosen_loss - min) * ec.weight;
     // TODO(alberto): add option somewhere to allow using absolute loss instead?
@@ -221,7 +215,9 @@ void VW::details::output_cs_example(
   for (auto& sink : all.final_prediction_sink)
   {
     if (!all.sd->ldict)
-    { all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger); }
+    {
+      all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger);
+    }
     else
     {
       VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
@@ -262,16 +258,15 @@ VW::label_parser cs_label_parser_global = {
     [](VW::polylabel& label) { default_cs_label(label.cs); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* ldict, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.cs, reuse_mem, ldict, words, logger); },
+        const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_label(label.cs, reuse_mem, ldict, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.cs, upstream_name, text); },
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.cs, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.cs);
-    },
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.cs); },
     // get_weight
     [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) { return cs_weight(label.cs); },
     // test_label

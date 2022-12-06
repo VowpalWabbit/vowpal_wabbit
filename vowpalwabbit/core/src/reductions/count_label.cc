@@ -33,10 +33,7 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
   VW::count_label(*sd, ec.l.simple.label);
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 }
 
 template <bool is_learn>
@@ -46,10 +43,7 @@ void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, V
   for (const auto* ex : ec_seq) { VW::count_label(*sd, ex->l.simple.label); }
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec_seq); }
-  else
-  {
-    base.predict(ec_seq);
-  }
+  else { base.predict(ec_seq); }
 }
 
 // This reduction must delegate finish to the one it is above as this is just a utility counter.

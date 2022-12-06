@@ -46,6 +46,10 @@
         "VW_EIGEN_SYS_DEP": {
           "type": "BOOL",
           "value": "ON"
+        },
+        "VW_STRING_VIEW_LITE_SYS_DEP": {
+          "type": "BOOL",
+          "value": "ON"
         }
       }
     },

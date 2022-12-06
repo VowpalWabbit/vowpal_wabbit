@@ -168,11 +168,10 @@ void cb_adf::learn_sm(multi_learner& base, VW::multi_ex& examples)
     _backup_nf.push_back(static_cast<uint32_t>(examples[current_action]->num_features));
 
     if (current_action == chosen_action)
-    { examples[current_action]->weight *= example_weight * (1.0f - action_score.score); }
-    else
     {
-      examples[current_action]->weight *= example_weight * action_score.score;
+      examples[current_action]->weight *= example_weight * (1.0f - action_score.score);
     }
+    else { examples[current_action]->weight *= example_weight * action_score.score; }
 
     if (examples[current_action]->weight <= 1e-15) { examples[current_action]->weight = 0; }
   }
@@ -254,20 +253,14 @@ void cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
         break;
       case VW::cb_type_t::MTR:
         if (_no_predict) { learn_mtr<false>(base, ec_seq); }
-        else
-        {
-          learn_mtr<true>(base, ec_seq);
-        }
+        else { learn_mtr<true>(base, ec_seq); }
         break;
       case VW::cb_type_t::SM:
         learn_sm(base, ec_seq);
         break;
     }
   }
-  else if (learn_returns_prediction())
-  {
-    predict(base, ec_seq);
-  }
+  else if (learn_returns_prediction()) { predict(base, ec_seq); }
 }
 
 void cb_adf::predict(multi_learner& base, VW::multi_ex& ec_seq)
@@ -291,10 +284,7 @@ bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq
 
   bool labeled_example = true;
   if (gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(gen_cs.known_cost, gen_cs.pred_scores, action); }
-  else
-  {
-    labeled_example = false;
-  }
+  else { labeled_example = false; }
 
   bool holdout_example = labeled_example;
   for (auto const& i : ec_seq) { holdout_example &= i->test_only; }
@@ -313,7 +303,9 @@ void output_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec
 
   uint32_t action = ec.pred.a_s[0].action;
   for (auto& sink : all.final_prediction_sink)
-  { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, all.logger); }
+  {
+    all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -330,10 +322,7 @@ void output_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec
   }
 
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
-  else
-  {
-    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
-  }
+  else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
 void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec, const VW::multi_ex& ec_seq)
@@ -345,7 +334,9 @@ void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::exampl
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
+  {
+    VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -360,10 +351,7 @@ void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::exampl
   }
 
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
-  else
-  {
-    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
-  }
+  else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
 void output_example_seq(VW::workspace& all, CB_ADF::cb_adf& data, const VW::multi_ex& ec_seq)
@@ -376,7 +364,9 @@ void output_example_seq(VW::workspace& all, CB_ADF::cb_adf& data, const VW::mult
       output_example(all, data, *ec_seq.front(), ec_seq);
 
       if (all.raw_prediction != nullptr)
-      { all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger); }
+      {
+        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+      }
     }
   }
 }
@@ -400,7 +390,9 @@ void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
 {
   if (c.get_model_file_ver() != nullptr &&
       *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
-  { return; }
+  {
+    return;
+  }
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
   bin_text_read_write_fixed(
@@ -478,7 +470,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   }
 
   if (options.was_supplied("indexing"))
-  { THROW("--indexing is not compatible with contextual bandits, please remove this option") }
+  {
+    THROW("--indexing is not compatible with contextual bandits, please remove this option")
+  }
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;  // default for IPS
@@ -503,7 +497,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   }
 
   if (clip_p > 0.f && cb_type == VW::cb_type_t::SM)
-  { all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped."); }
+  {
+    all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped.");
+  }
 
   // Push necessary flags.
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||

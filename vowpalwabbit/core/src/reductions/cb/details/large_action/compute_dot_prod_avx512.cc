@@ -5,7 +5,6 @@
 #ifdef BUILD_LAS_WITH_SIMD
 
 #  include "compute_dot_prod_simd.h"
-
 #  include "kernel_impl.h"
 
 #  include <x86intrin.h>
@@ -39,7 +38,7 @@ inline void compute16(const __m512& feature_values, const __m512i& feature_indic
   indices2 = _mm512_add_epi64(_mm512_and_epi64(indices2, weights_masks), column_indices);
   __m512i popcounts2 = _mm512_popcnt_epi64(indices2);
 
-  // popcounts always fit into 32 bits, so truncate and merge all 16 popcounts.
+  // popcounts always fit into 32 bits, so truncate and pack all 16 popcounts.
   __m512i popcounts = _mm512_permutex2var_epi32(popcounts1, perm_idx, popcounts2);
   __m512i sparsity_indices = _mm512_slli_epi32(_mm512_and_epi32(popcounts, all_ones), 1);
 
@@ -56,7 +55,7 @@ inline void compute16(const __m512& feature_values, const __m512i& feature_indic
 }
 
 // A data parallel implementation of the foreach_feature that processes 16 features at once.
-float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex)
+float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64_t seed, VW::example* ex)
 {
   float sum = 0.f;
   const uint64_t offset = ex->ft_offset;
@@ -68,33 +67,50 @@ float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, uint64_t
   const __m512i weights_masks = _mm512_set1_epi64(weights_mask);
   const __m512i offsets = _mm512_set1_epi64(offset);
 
-  for (const auto& features : *ex)
+  const bool ignore_some_linear = _all->ignore_some_linear;
+  const auto& ignore_linear = _all->ignore_linear;
+  for (auto i = ex->begin(); i != ex->end(); ++i)
   {
+    if (ignore_some_linear && ignore_linear[i.index()]) { continue; }
+    const auto& features = *i;
     const size_t num_features = features.size();
-    size_t i = 0;
-    for (; i + 16 <= num_features; i += 16)
+    size_t j = 0;
+    for (; j + 16 <= num_features; j += 16)
     {
       // Unroll the 64-bit indices twice to align with 32-bit values.
-      __m512i indices1 = _mm512_loadu_si512(&features.indices[i]);
-      __m512i indices2 = _mm512_loadu_si512(&features.indices[i + 8]);
+      __m512i indices1 = _mm512_loadu_si512(&features.indices[j]);
+      __m512i indices2 = _mm512_loadu_si512(&features.indices[j + 8]);
       // If indices fit into 32 bits, convert indices to 32-bit here can speed up further.
 
-      __m512 values = _mm512_loadu_ps(&features.values[i]);
+      __m512 values = _mm512_loadu_ps(&features.values[j]);
       compute16(values, indices1, indices2, offsets, weights_masks, column_indices, seeds, sums);
     }
-    for (; i < num_features; ++i)
+    for (; j < num_features; ++j)
     {
       // Handle tail of the loop using scalar implementation.
-      compute1(features.values[i], features.indices[i], offset, weights_mask, column_index, seed, sum);
+      compute1(features.values[j], features.indices[j], offset, weights_mask, column_index, seed, sum);
     }
   }
+
   const auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
   const auto& interactions =
       red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions;
+  const auto& extent_interactions = red_features.generated_extent_interactions
+      ? *red_features.generated_extent_interactions
+      : *ex->extent_interactions;
+  if (!extent_interactions.empty())
+  {
+    // TODO: Add support for extent_interactions.
+    THROW("Extent_interactions are not supported yet in LAS SIMD implementations");
+  }
+
   for (const auto& ns : interactions)
   {
-    // TODO: other interactions, ignores & extent_interactions. The following only handles quadratics.
-    assert(ns.size() == 2);
+    if (ns.size() != 2)
+    {
+      // TODO: Add support for interactions other than quadratics.
+      THROW("Generic interactions are not supported yet in LAS SIMD implementations")
+    }
 
     const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
     const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
@@ -132,6 +148,7 @@ float compute_dot_prod_simd(uint64_t column_index, VW::workspace* _all, uint64_t
       }
     }
   }
+
   return sum + _mm512_reduce_add_ps(sums);
 }
 

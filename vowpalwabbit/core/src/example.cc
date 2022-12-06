@@ -96,10 +96,7 @@ void copy_example_metadata(example* dst, const example* src)
 
   dst->partial_prediction = src->partial_prediction;
   if (src->passthrough == nullptr) { dst->passthrough = nullptr; }
-  else
-  {
-    dst->passthrough = new features(*src->passthrough);
-  }
+  else { dst->passthrough = new features(*src->passthrough); }
   dst->loss = src->loss;
   dst->weight = src->weight;
   dst->confidence = src->confidence;
@@ -210,10 +207,7 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
   {  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
-  else
-  {
-    ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift();
-  }
+  else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);
@@ -278,7 +272,9 @@ void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const f
   assert(del_target.size() >= fs.size());
   assert(!ec.indices.empty());
   if (ec.indices.back() == ns && ec.feature_space[static_cast<size_t>(ns)].size() == fs.size())
-  { ec.indices.pop_back(); }
+  {
+    ec.indices.pop_back();
+  }
   ec.reset_total_sum_feat_sq();
   ec.num_features -= fs.size();
   del_target.truncate_to(del_target.size() - fs.size(), fs.sum_feat_sq);
