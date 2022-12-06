@@ -31,7 +31,7 @@ public:
   bool chain_hash_json;
   bool flatbuffer = false;
 #ifdef VW_BUILD_CSV
-  std::unique_ptr<VW::parsers::csv_parser_options> csv_opts;
+  std::unique_ptr<VW::parsers::csv::csv_parser_options> csv_opts;
 #endif
 };
 

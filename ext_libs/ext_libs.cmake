@@ -77,7 +77,11 @@ else()
   endif()
 endif()
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+if (VW_STRING_VIEW_LITE_SYS_DEP)
+  find_package(string-view-lite CONFIG REQUIRED)
+else()
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+endif()
 
 if(BUILD_FLATBUFFERS)
   find_package(Flatbuffers CONFIG QUIET)

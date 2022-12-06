@@ -15,6 +15,7 @@
 #include "vw/core/vw.h"
 #include "vw/core/vw_math.h"
 #include "vw/core/vw_versions.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cerrno>
@@ -118,7 +119,7 @@ void active_print_result(
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
 void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)

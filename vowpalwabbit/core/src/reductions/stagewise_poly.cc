@@ -593,9 +593,10 @@ void end_pass(stagewise_poly& poly)
      */
     VW::details::all_reduce<uint8_t, reduce_min_max>(all, poly.depthsbits, depthsbits_sizeof(poly));
 
-    sum_input_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
-    sum_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
-    num_examples_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(num_examples_inc)));
+    sum_input_sparsity_inc =
+        static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
+    sum_sparsity_inc = static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
+    num_examples_inc = static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(num_examples_inc)));
   }
 
   poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;

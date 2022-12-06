@@ -136,3 +136,5 @@
 #else
 #  define NO_SANITIZE_UNDEFINED
 #endif
+
+#define _UNUSED(x) ((void)(x))  // NOLINT

@@ -17,9 +17,9 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <cstdint>
 #include <iostream>
 
-void add_float(float& c1, const float& c2) { c1 += c2; }
+static void add_float(float& c1, const float& c2) { c1 += c2; }
 
-void accumulate(VW::workspace& all, parameters& weights, size_t offset)
+void VW::details::accumulate(VW::workspace& all, parameters& weights, size_t offset)
 {
   uint64_t length = UINT64_ONE << all.num_bits;  // This is size of gradient
   float* local_grad = new float[length];
@@ -59,14 +59,14 @@ void accumulate(VW::workspace& all, parameters& weights, size_t offset)
   delete[] local_grad;
 }
 
-float accumulate_scalar(VW::workspace& all, float local_sum)
+float VW::details::accumulate_scalar(VW::workspace& all, float local_sum)
 {
   float temp = local_sum;
   VW::details::all_reduce<float, add_float>(all, &temp, 1);
   return temp;
 }
 
-void accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
+void VW::details::accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
 {
   uint32_t length = 1 << all.num_bits;  // This is size of gradient
   float numnodes = static_cast<float>(all.all_reduce->total);
@@ -107,27 +107,7 @@ void accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
   delete[] local_grad;
 }
 
-float max_elem(float* arr, int length)
-{
-  float max = arr[0];
-  for (int i = 1; i < length; i++)
-  {
-    if (arr[i] > max) { max = arr[i]; }
-  }
-  return max;
-}
-
-float min_elem(float* arr, int length)
-{
-  float min = arr[0];
-  for (int i = 1; i < length; i++)
-  {
-    if (arr[i] < min && arr[i] > 0.001) { min = arr[i]; }
-  }
-  return min;
-}
-
-void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
+void VW::details::accumulate_weighted_avg(VW::workspace& all, parameters& weights)
 {
   if (!weights.adaptive)
   {
