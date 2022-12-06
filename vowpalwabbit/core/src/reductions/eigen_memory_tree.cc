@@ -59,7 +59,7 @@ emt_example::emt_example(VW::workspace& all, VW::example* ex)
   VW::free_flatten_example(ex2);
 }
 
-emt_lru::emt_lru(unsigned long max_size) { (*this).max_size = max_size; }
+emt_lru::emt_lru(uint64_t max_size) { (*this).max_size = max_size; }
 
 emt_lru::K emt_lru::bound(emt_lru::K item)
 {
