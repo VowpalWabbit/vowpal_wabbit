@@ -188,8 +188,8 @@ void end_pass(gd& g)
 
   if (all.all_reduce != nullptr)
   {
-    if (all.weights.adaptive) { accumulate_weighted_avg(all, all.weights); }
-    else { accumulate_avg(all, all.weights, 0); }
+    if (all.weights.adaptive) { VW::details::accumulate_weighted_avg(all, all.weights); }
+    else { VW::details::accumulate_avg(all, all.weights, 0); }
   }
   all.eta *= all.eta_decay_rate;
   if (all.save_per_pass) { save_predictor(all, all.final_regressor_name, all.current_pass); }
@@ -1497,20 +1497,22 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(static_cast<uint32_t>(GD::ceil_log_2(stride - 1)));
 
   auto* bare = g.get();
-  learner<GD::gd, VW::example>* l = make_base_learner(std::move(g), g->learn, bare->predict,
-      stack_builder.get_setupfn_name(gd_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                                        .set_learn_returns_prediction(true)
-                                        .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                                        .set_sensitivity(bare->sensitivity)
-                                        .set_multipredict(bare->multipredict)
-                                        .set_update(bare->update)
-                                        .set_save_load(GD::save_load)
-                                        .set_end_pass(GD::end_pass)
-                                        .set_merge_with_all(GD::merge)
-                                        .set_add_with_all(GD::add)
-                                        .set_subtract_with_all(GD::subtract)
-                                        .set_output_example(VW::details::output_example_simple_label<GD::gd>)
-                                        .set_update_stats(VW::details::update_stats_simple_label<GD::gd>)
-                                        .build();
+  learner<GD::gd, VW::example>* l =
+      make_base_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
+          VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+          .set_learn_returns_prediction(true)
+          .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+          .set_sensitivity(bare->sensitivity)
+          .set_multipredict(bare->multipredict)
+          .set_update(bare->update)
+          .set_save_load(GD::save_load)
+          .set_end_pass(GD::end_pass)
+          .set_merge_with_all(GD::merge)
+          .set_add_with_all(GD::add)
+          .set_subtract_with_all(GD::subtract)
+          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<GD::gd>)
+          .set_update_stats(VW::details::update_stats_simple_label<GD::gd>)
+          .set_print_update(VW::details::print_update_simple_label<GD::gd>)
+          .build();
   return make_base(*l);
 }

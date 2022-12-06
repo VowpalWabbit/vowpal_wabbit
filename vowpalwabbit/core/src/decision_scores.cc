@@ -22,18 +22,15 @@ template <typename LabelPrintFunc>
 void print_update(VW::workspace& all, const VW::multi_ex& slots, const VW::decision_scores_t& decision_scores,
     size_t num_features, LabelPrintFunc label_print_func)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  std::ostringstream pred_ss;
+  std::string delim;
+  for (const auto& slot : decision_scores)
   {
-    std::ostringstream pred_ss;
-    std::string delim;
-    for (const auto& slot : decision_scores)
-    {
-      pred_ss << delim << slot[0].action;
-      delim = ",";
-    }
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_print_func(slots),
-        pred_ss.str(), num_features, all.progress_add, all.progress_arg);
+    pred_ss << delim << slot[0].action;
+    delim = ",";
   }
+  all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_print_func(slots),
+      pred_ss.str(), num_features, all.progress_add, all.progress_arg);
 }
 
 namespace VW

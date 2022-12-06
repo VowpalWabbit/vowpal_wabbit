@@ -395,8 +395,9 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())
                 .set_save_load(save_load)
                 .set_end_pass(end_pass)
-                .set_output_example(VW::details::output_example_simple_label<freegrad>)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<freegrad>)
                 .set_update_stats(VW::details::update_stats_simple_label<freegrad>)
+                .set_print_update(VW::details::print_update_simple_label<freegrad>)
                 .build();
 
   return make_base(*l);
