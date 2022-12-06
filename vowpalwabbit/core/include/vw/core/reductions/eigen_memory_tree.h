@@ -72,7 +72,7 @@ struct emt_example
   emt_feats full;  // full example includes the interactions that were passed in as flags
   uint32_t label = 0;
 
-  emt_example();
+  emt_example() = default;
   emt_example(VW::workspace&, VW::example*);
 };
 

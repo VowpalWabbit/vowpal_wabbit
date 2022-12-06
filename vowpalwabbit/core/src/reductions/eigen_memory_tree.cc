@@ -39,8 +39,6 @@ namespace eigen_memory_tree
 {
 ////////////////////////////definitions/////////////////////
 ////////////////////////////////////////////////////////////
-emt_example::emt_example() { label = 0; }
-
 emt_example::emt_example(VW::workspace& all, VW::example* ex)
 {
   label = ex->l.multi.label;
