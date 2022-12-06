@@ -5,6 +5,8 @@
 #include "vw/spanning_tree/spanning_tree.h"
 
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
+#include "vw/io/errno_handling.h"
 
 #include <cerrno>
 #include <cmath>
@@ -101,7 +103,9 @@ spanning_tree::spanning_tree(uint16_t port, bool quiet) : _stop(false), _port(po
 
   int on = 1;
   if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) < 0)
+  {
     THROWERRNO("setsockopt SO_REUSEADDR: ");
+  }
 
   sockaddr_in address;
   address.sin_family = AF_INET;
@@ -109,13 +113,17 @@ spanning_tree::spanning_tree(uint16_t port, bool quiet) : _stop(false), _port(po
 
   address.sin_port = htons(port);
   if (::bind(_sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
+  {
     THROWERRNO("bind failed for " << inet_ntop(AF_INET, &address.sin_addr, addr_buf, INET_ADDRSTRLEN));
+  }
 
   sockaddr_in bound_addr;
   memset(&bound_addr, 0, sizeof(bound_addr));
   socklen_t len = sizeof(bound_addr);
   if (::getsockname(_sock, reinterpret_cast<sockaddr*>(&bound_addr), &len) < 0)
+  {
     THROWERRNO("getsockname: " << inet_ntop(AF_INET, &bound_addr.sin_addr, addr_buf, INET_ADDRSTRLEN));
+  }
 
   // which port did we bind too (if _port is 0 this will give us the actual port)
   _port = ntohs(bound_addr.sin_port);
@@ -155,7 +163,7 @@ void spanning_tree::run()
   std::map<size_t, partial> partial_nodesets;
   while (!_stop)
   {
-    if (listen(_sock, 1024) < 0) THROWERRNO("listen: ");
+    if (listen(_sock, 1024) < 0) { THROWERRNO("listen: "); }
 
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
@@ -172,13 +180,17 @@ void spanning_tree::run()
 
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN))
+    {
       THROWERRNO("inet_ntop: ");
+    }
 
     char hostname[NI_MAXHOST];
     char serv_info[NI_MAXSERV];
     if (getnameinfo(reinterpret_cast<sockaddr*>(&client_address), sizeof(sockaddr), hostname, NI_MAXHOST, serv_info,
             NI_MAXSERV, 0))
+    {
       THROWERRNO("getnameinfo: ");
+    }
 
     if (!_quiet)
     {

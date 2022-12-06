@@ -8,6 +8,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/core/memory.h"
 
+#include <algorithm>
 #include <cassert>
 #include <ostream>
 #include <type_traits>
