@@ -8,6 +8,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>
@@ -90,7 +91,7 @@ void print_result(VW::io::writer* file_descriptor,
     ss << '\n';
     ssize_t len = ss.str().size();
     auto t = file_descriptor->write(ss.str().c_str(), len);
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 

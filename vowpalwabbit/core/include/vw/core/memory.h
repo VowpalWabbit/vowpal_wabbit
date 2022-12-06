@@ -4,6 +4,7 @@
 
 #pragma once
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
 
 #include <cstdio>
 #include <cstdlib>

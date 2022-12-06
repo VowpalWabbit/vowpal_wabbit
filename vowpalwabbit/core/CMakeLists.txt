@@ -57,6 +57,7 @@ set(vw_core_headers
   include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
+  include/vw/core/multi_model_utils.h
   include/vw/core/multiclass.h
   include/vw/core/multilabel.h
   include/vw/core/named_labels.h
@@ -197,7 +198,6 @@ set(vw_core_sources
   src/array_parameters_dense.cc
   src/array_parameters_sparse.cc
   src/best_constant.cc
-  src/cache.cc
   src/cb_continuous_label.cc
   src/cb_type.cc
   src/cb.cc
@@ -358,7 +358,7 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
@@ -419,7 +419,6 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
-      tests/cache_test.cc
       tests/flat_example_test.cc
       tests/main.cc
       tests/merge_test.cc

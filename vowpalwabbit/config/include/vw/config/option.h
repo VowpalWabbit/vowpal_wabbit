@@ -5,6 +5,7 @@
 #pragma once
 
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
 
 #include <memory>
 #include <set>

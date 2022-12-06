@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/cache.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/v_array.h"
 
