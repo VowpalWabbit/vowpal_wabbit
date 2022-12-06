@@ -168,9 +168,11 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
 
   if (uniform_epsilon > 0.999f)  // uniform exploration
   {
-    std::for_each(pmf_first, pmf_last, [support_size, consider_zero_valued_elements](float& prob) {
-      if (consider_zero_valued_elements || prob > 0) { prob = 1.f / support_size; }
-    });
+    std::for_each(pmf_first, pmf_last,
+        [support_size, consider_zero_valued_elements](float& prob)
+        {
+          if (consider_zero_valued_elements || prob > 0) { prob = 1.f / support_size; }
+        });
 
     return S_EXPLORATION_OK;
   }
@@ -203,9 +205,11 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
 
   const auto tau = ((support_size - rho_idx - 1.f) * minimum_probability + rho_sum - 1.f) / (rho_idx + 1.f);
 
-  std::for_each(pmf_first, pmf_last, [tau, minimum_probability, consider_zero_valued_elements](float& prob) {
-    if (consider_zero_valued_elements || prob > 0) { prob = std::max(prob - tau, minimum_probability); }
-  });
+  std::for_each(pmf_first, pmf_last,
+      [tau, minimum_probability, consider_zero_valued_elements](float& prob)
+      {
+        if (consider_zero_valued_elements || prob > 0) { prob = std::max(prob - tau, minimum_probability); }
+      });
   return S_EXPLORATION_OK;
 }
 
