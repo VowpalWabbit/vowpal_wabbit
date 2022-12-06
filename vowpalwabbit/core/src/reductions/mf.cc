@@ -185,21 +185,33 @@ void learn(mf& data, single_learner& base, VW::example& ec)
   ec.pred.scalar = predicted;
   ec.interactions = saved_interactions;
 }
+
+struct options_mf_v1
+{
+  uint64_t rank;
+};
+
+std::unique_ptr<options_mf_v1> get_mf_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto mf_opts = VW::make_unique<options_mf_v1>();
+  option_group_definition new_options("[Reduction] Matrix Factorization Reduction");
+  new_options.add(make_option("new_mf", mf_opts->rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return mf_opts;
+}
 }  // namespace
 
 base_learner* VW::reductions::mf_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<mf>();
-  uint64_t rank;
-  option_group_definition new_options("[Reduction] Matrix Factorization Reduction");
-  new_options.add(make_option("new_mf", rank).keep().necessary().help("Rank for reduction-based matrix factorization"));
+  auto mf_opts = get_mf_options_instance(all, all.logger, *stack_builder.get_options());
+  if (mf_opts == nullptr) { return nullptr; }
+  auto mf_data = VW::make_unique<mf>();
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  data->rank = VW::cast_to_smaller_type<size_t>(rank);
-  data->all = &all;
+  mf_data->rank = VW::cast_to_smaller_type<size_t>(mf_opts->rank);
+  mf_data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
   auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
@@ -208,9 +220,9 @@ base_learner* VW::reductions::mf_setup(VW::setup_base_i& stack_builder)
 
   all.random_positive_weights = true;
 
-  size_t ws = 2 * data->rank + 1;
+  size_t ws = 2 * mf_data->rank + 1;
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn,
+  auto* l = make_reduction_learner(std::move(mf_data), as_singleline(stack_builder.setup_base_learner()), learn,
       predict<false>, stack_builder.get_setupfn_name(mf_setup))
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)

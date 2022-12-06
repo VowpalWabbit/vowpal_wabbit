@@ -283,7 +283,6 @@ std::unique_ptr<options_mwt_v1> get_mwt_options_instance(const VW::workspace&, V
   }
   return mwt_opts;
 }
-
 }  // namespace
 
 base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)

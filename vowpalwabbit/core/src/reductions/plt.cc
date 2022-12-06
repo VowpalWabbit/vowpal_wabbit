@@ -329,62 +329,83 @@ void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
     }
   }
 }
-}  // namespace
 
-base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
+struct options_plt_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto tree = VW::make_unique<plt>();
+  uint32_t k;
+  uint32_t kary;
+  float threshold;
+  uint32_t top_k;
+};
+
+std::unique_ptr<options_plt_v1> get_plt_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto plt_opts = VW::make_unique<options_plt_v1>();
   option_group_definition new_options("[Reduction] Probabilistic Label Tree");
-  new_options.add(make_option("plt", tree->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
-      .add(make_option("kary_tree", tree->kary).keep().default_value(2).help("Use <k>-ary tree"))
-      .add(make_option("threshold", tree->threshold)
+  new_options.add(make_option("plt", plt_opts->k).keep().necessary().help("Probabilistic Label Tree with <k> labels"))
+      .add(make_option("kary_tree", plt_opts->kary).keep().default_value(2).help("Use <k>-ary tree"))
+      .add(make_option("threshold", plt_opts->threshold)
                .default_value(0.5)
                .help("Predict labels with conditional marginal probability greater than <thr> threshold"))
-      .add(make_option("top_k", tree->top_k)
+      .add(make_option("top_k", plt_opts->top_k)
                .default_value(0)
                .help("Predict top-<k> labels instead of labels above threshold"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return plt_opts;
+}
+}  // namespace
+
+base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto plt_opts = get_plt_options_instance(all, all.logger, *stack_builder.get_options());
+  if (plt_opts == nullptr) { return nullptr; }
+  auto plt_data = VW::make_unique<plt>();
+
+  plt_data->k = plt_opts->k;
+  plt_data->kary = plt_opts->kary;
+  plt_data->threshold = plt_opts->threshold;
+  plt_data->top_k = plt_opts->top_k;
 
   if (all.loss->get_type() != "logistic")
   {
     THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type());
   }
 
-  tree->all = &all;
+  plt_data->all = &all;
 
   // calculate number of tree nodes
-  const double a = std::pow(tree->kary, std::floor(std::log(tree->k) / std::log(tree->kary)));
-  const double b = tree->k - a;
-  const double c = std::ceil(b / (tree->kary - 1.0));
-  const double d = (tree->kary * a - 1.0) / (tree->kary - 1.0);
-  const double e = tree->k - (a - c);
-  tree->t = static_cast<uint32_t>(e + d);
-  tree->ti = tree->t - tree->k;
+  const double a = std::pow(plt_data->kary, std::floor(std::log(plt_data->k) / std::log(plt_data->kary)));
+  const double b = plt_data->k - a;
+  const double c = std::ceil(b / (plt_data->kary - 1.0));
+  const double d = (plt_data->kary * a - 1.0) / (plt_data->kary - 1.0);
+  const double e = plt_data->k - (a - c);
+  plt_data->t = static_cast<uint32_t>(e + d);
+  plt_data->ti = plt_data->t - plt_data->k;
 
   if (!all.quiet)
   {
-    *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
+    *(all.trace_message) << "PLT k = " << plt_data->k << "\nkary_tree = " << plt_data->kary << std::endl;
     if (!all.training)
     {
-      if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
-      else { *(all.trace_message) << "threshold = " << tree->threshold << std::endl; }
+      if (plt_data->top_k > 0) { *(all.trace_message) << "top_k = " << plt_data->top_k << std::endl; }
+      else { *(all.trace_message) << "threshold = " << plt_data->threshold << std::endl; }
     }
   }
 
   // resize VW::v_arrays
-  tree->nodes_time.resize_but_with_stl_behavior(tree->t);
-  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
-  tree->node_preds.resize(tree->kary);
-  if (tree->top_k > 0) { tree->tp_at.resize_but_with_stl_behavior(tree->top_k); }
+  plt_data->nodes_time.resize_but_with_stl_behavior(plt_data->t);
+  std::fill(plt_data->nodes_time.begin(), plt_data->nodes_time.end(), all.initial_t);
+  plt_data->node_preds.resize(plt_data->kary);
+  if (plt_data->top_k > 0) { plt_data->tp_at.resize_but_with_stl_behavior(plt_data->top_k); }
 
-  size_t ws = tree->t;
+  size_t ws = plt_data->t;
   std::string name_addition;
   void (*pred_ptr)(plt&, single_learner&, VW::example&);
 
-  if (tree->top_k > 0)
+  if (plt_data->top_k > 0)
   {
     name_addition = "-top_k";
     pred_ptr = predict<false>;
@@ -395,7 +416,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict<true>;
   }
 
-  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
+  auto* l = make_reduction_learner(std::move(plt_data), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
       stack_builder.get_setupfn_name(plt_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_output_prediction_type(VW::prediction_type_t::MULTILABELS)

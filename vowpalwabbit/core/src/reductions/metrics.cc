@@ -52,7 +52,7 @@ void insert_dsjson_metrics(
   }
 }
 
-class metrics_data
+class metrics_data_obj
 {
 public:
   std::string out_file;
@@ -113,14 +113,14 @@ void list_to_json_file(const std::string& filename, const VW::metric_sink& metri
   }
   else { logger.err_warn("skipping metrics. could not open file for metrics: {}", filename); }
 }
-void persist(metrics_data& data, VW::metric_sink& metrics)
+void persist(metrics_data_obj& data, VW::metric_sink& metrics)
 {
   metrics.set_uint("total_predict_calls", data.predict_count);
   metrics.set_uint("total_learn_calls", data.learn_count);
 }
 
 template <bool is_learn, typename T, typename E>
-void predict_or_learn(metrics_data& data, T& base, E& ec)
+void predict_or_learn(metrics_data_obj& data, T& base, E& ec)
 {
   if (is_learn)
   {
@@ -156,25 +156,40 @@ void VW::reductions::output_metrics(VW::workspace& all)
   }
 }
 
-VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
+struct options_metrics_v1
 {
-  options_i& options = *stack_builder.get_options();
-  auto data = VW::make_unique<metrics_data>();
+  std::string out_file;
+};
 
+std::unique_ptr<options_metrics_v1> get_metrics_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto metrics_opts = VW::make_unique<options_metrics_v1>();
   option_group_definition new_options("[Reduction] Debug Metrics");
-  new_options.add(make_option("extra_metrics", data->out_file)
+  new_options.add(make_option("extra_metrics", metrics_opts->out_file)
                       .necessary()
                       .help("Specify filename to write metrics to. Note: There is no fixed schema"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return metrics_opts;
+}
 
-  if (data->out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
+VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto metrics_opts = get_metrics_options_instance(all, all.logger, *stack_builder.get_options());
+  if (metrics_opts == nullptr) { return nullptr; }
+  auto metrics_data = VW::make_unique<metrics_data_obj>();
+
+  metrics_data->out_file = metrics_opts->out_file;
+
+  if (metrics_data->out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
 
   auto* base_learner = stack_builder.setup_base_learner();
 
   if (base_learner->is_multiline())
   {
-    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+    auto* l = make_reduction_learner(std::move(metrics_data), as_multiline(base_learner),
         predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>,
         stack_builder.get_setupfn_name(metrics_setup))
                   .set_output_prediction_type(base_learner->get_output_prediction_type())
@@ -185,7 +200,7 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
   }
   else
   {
-    auto* l = make_reduction_learner(std::move(data), as_singleline(base_learner),
+    auto* l = make_reduction_learner(std::move(metrics_data), as_singleline(base_learner),
         predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>,
         stack_builder.get_setupfn_name(metrics_setup))
                   .set_output_prediction_type(base_learner->get_output_prediction_type())

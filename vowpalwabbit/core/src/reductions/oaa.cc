@@ -300,28 +300,49 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   else { VW::details::print_multiclass_update_with_score(all, ec, pred_lbl); }
   VW::finish_example(all, ec);
 }
-}  // namespace
-VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_builder)
+
+struct options_oaa_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<oaa>(all.logger, all.indexing);
+  uint64_t k;
+  uint64_t num_subsample;
   bool probabilities = false;
   bool scores = false;
+  uint32_t indexing = 2;
+};
+
+std::unique_ptr<options_oaa_v1> get_oaa_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto oaa_opts = VW::make_unique<options_oaa_v1>();
   option_group_definition new_options("[Reduction] One Against All");
-  new_options.add(make_option("oaa", data->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
-      .add(make_option("oaa_subsample", data->num_subsample)
+  new_options.add(make_option("oaa", oaa_opts->k).keep().necessary().help("One-against-all multiclass with <k> labels"))
+      .add(make_option("oaa_subsample", oaa_opts->num_subsample)
                .help("Subsample this number of negative examples when learning"))
-      .add(make_option("probabilities", probabilities).help("Predict probabilities of all classes"))
-      .add(make_option("scores", scores).help("Output raw scores per class"))
-      .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
+      .add(make_option("probabilities", oaa_opts->probabilities).help("Predict probabilities of all classes"))
+      .add(make_option("scores", oaa_opts->scores).help("Output raw scores per class"))
+      .add(make_option("indexing", oaa_opts->indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // oaa does logistic link manually for probabilities because the unlinked values are required
   // in base.update(). This implemenation will provide correct probabilities regardless
   // of whether --link logistic is included or not.
-  if (probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
+  if (oaa_opts->probabilities && options.was_supplied("link")) { options.replace("link", "identity"); }
+
+  return oaa_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto oaa_opts = get_oaa_options_instance(all, all.logger, *stack_builder.get_options());
+  if (oaa_opts == nullptr) { return nullptr; }
+  auto data = VW::make_unique<oaa>(all.logger, all.indexing);
+
+  data->k = oaa_opts->k;
+  data->num_subsample = oaa_opts->num_subsample;
+  all.indexing = oaa_opts->indexing;
 
   if (all.sd->ldict && (data->k != all.sd->ldict->getK()))
     THROW("There are " << all.sd->ldict->getK() << " named labels. Use that as the argument to oaa.")
@@ -360,10 +381,10 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   std::string name_addition;
   VW::prediction_type_t pred_type;
   void (*finish_ptr)(VW::workspace&, oaa&, VW::example&);
-  if (probabilities || scores)
+  if (oaa_opts->probabilities || oaa_opts->scores)
   {
     pred_type = VW::prediction_type_t::SCALARS;
-    if (probabilities)
+    if (oaa_opts->probabilities)
     {
       auto loss_function_type = all.loss->get_type();
       if (loss_function_type != "logistic")

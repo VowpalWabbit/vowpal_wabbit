@@ -419,70 +419,90 @@ void finish_example(VW::workspace& all, nn&, VW::example& ec)
   auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
   VW::details::return_simple_example(all, nullptr, ec);
 }
+
+struct options_nn_v1
+{
+  bool meanfield = false;
+  uint32_t k = 0;
+  bool dropout = false;
+  bool inpass = false;
+  bool multitask = false;
+};
+
+std::unique_ptr<options_nn_v1> get_nn_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto nn_opts = VW::make_unique<options_nn_v1>();
+  option_group_definition new_options("[Reduction] Neural Network");
+  new_options
+      .add(make_option("nn", nn_opts->k).keep().necessary().help("Sigmoidal feedforward network with <k> hidden units"))
+      .add(make_option("inpass", nn_opts->inpass)
+               .keep()
+               .help("Train or test sigmoidal feedforward network with input passthrough"))
+      .add(make_option("multitask", nn_opts->multitask).keep().help("Share hidden layer across all reduced tasks"))
+      .add(make_option("dropout", nn_opts->dropout).keep().help("Train or test sigmoidal feedforward network using dropout"))
+      .add(make_option("meanfield", nn_opts->meanfield).help("Train or test sigmoidal feedforward network using mean field"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return nn_opts;
+}
 }  // namespace
 
 base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto n = VW::make_unique<nn>();
-  bool meanfield = false;
-  option_group_definition new_options("[Reduction] Neural Network");
-  new_options
-      .add(make_option("nn", n->k).keep().necessary().help("Sigmoidal feedforward network with <k> hidden units"))
-      .add(make_option("inpass", n->inpass)
-               .keep()
-               .help("Train or test sigmoidal feedforward network with input passthrough"))
-      .add(make_option("multitask", n->multitask).keep().help("Share hidden layer across all reduced tasks"))
-      .add(make_option("dropout", n->dropout).keep().help("Train or test sigmoidal feedforward network using dropout"))
-      .add(make_option("meanfield", meanfield).help("Train or test sigmoidal feedforward network using mean field"));
+  auto nn_opts = get_nn_options_instance(all, all.logger, *stack_builder.get_options());
+  if (nn_opts == nullptr) { return nullptr; }
+  auto nn_data = VW::make_unique<nn>();
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  nn_data->k = nn_opts->k;
+  nn_data->inpass = nn_opts->inpass;
+  nn_data->multitask = nn_opts->multitask;
+  nn_data->dropout = nn_opts->dropout;
+  nn_data->all = &all;
+  nn_data->random_state = all.get_random_state();
 
-  n->all = &all;
-  n->random_state = all.get_random_state();
-
-  if (n->multitask && !all.quiet)
+  if (nn_data->multitask && !all.quiet)
   {
     all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
   }
 
-  if (options.was_supplied("meanfield"))
+  if (nn_opts->meanfield)
   {
-    n->dropout = false;
+    nn_data->dropout = false;
     all.logger.err_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
   }
 
-  if (n->dropout && !all.quiet)
+  if (nn_data->dropout && !all.quiet)
   {
     all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
   }
 
-  if (n->inpass && !all.quiet)
+  if (nn_data->inpass && !all.quiet)
   {
     all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
   }
 
-  n->finished_setup = false;
-  n->squared_loss = get_loss_function(all, "squared", 0);
+  nn_data->finished_setup = false;
+  nn_data->squared_loss = get_loss_function(all, "squared", 0);
 
-  n->xsubi = all.random_seed;
+  nn_data->xsubi = all.random_seed;
 
-  n->save_xsubi = n->xsubi;
+  nn_data->save_xsubi = nn_data->xsubi;
 
-  n->hidden_units = calloc_or_throw<float>(n->k);
-  n->dropped_out = calloc_or_throw<bool>(n->k);
-  n->hidden_units_pred = calloc_or_throw<VW::polyprediction>(n->k);
-  n->hiddenbias_pred = calloc_or_throw<VW::polyprediction>(n->k);
+  nn_data->hidden_units = calloc_or_throw<float>(nn_data->k);
+  nn_data->dropped_out = calloc_or_throw<bool>(nn_data->k);
+  nn_data->hidden_units_pred = calloc_or_throw<VW::polyprediction>(nn_data->k);
+  nn_data->hiddenbias_pred = calloc_or_throw<VW::polyprediction>(nn_data->k);
 
   auto base = as_singleline(stack_builder.setup_base_learner());
-  n->increment = base->increment;  // Indexing of output layer is odd.
-  nn& nv = *n.get();
+  nn_data->increment = base->increment;  // Indexing of output layer is odd.
+  nn& nv = *nn_data.get();
 
-  size_t ws = n->k + 1;
+  size_t ws = nn_data->k + 1;
   auto* multipredict_f = (nv.multitask) ? multipredict : nullptr;
 
-  auto* l = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
+  auto* l = make_reduction_learner(std::move(nn_data), base, predict_or_learn_multi<true, true>,
       predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
