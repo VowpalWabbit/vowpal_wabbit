@@ -580,7 +580,10 @@ void output_example_prediction_ccb(
 void print_update_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_data& data, const VW::multi_ex& ec_seq,
     VW::io::logger& /* unused */)
 {
-  if (!ec_seq.empty() && !data.no_pred)
+  const bool should_print_driver_update =
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+
+  if (should_print_driver_update && !ec_seq.empty() && !data.no_pred)
   {
     // Print progress
     size_t num_features = 0;

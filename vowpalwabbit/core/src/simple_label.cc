@@ -67,8 +67,14 @@ void VW::details::update_stats_simple_label(
 void VW::details::print_update_simple_label(
     VW::workspace& all, shared_data& sd, const VW::example& ec, VW::io::logger& /* logger */)
 {
-  sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
-      ec.get_num_features(), all.progress_add, all.progress_arg);
+  const bool should_print_driver_update =
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+
+  if (should_print_driver_update)
+  {
+    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
+        ec.get_num_features(), all.progress_add, all.progress_arg);
+  }
 }
 
 void VW::details::output_example_prediction_simple_label(
