@@ -10,7 +10,7 @@
 namespace exploration
 {
 /**
- * @brief Generates epsilon-greedy style exploration distribution.
+ * @brief Experimental: Generates epsilon-greedy style exploration distribution.
  *
  * @tparam It Iterator type of the pre-allocated pmf. Must be a RandomAccessIterator.
  * @param epsilon Minimum probability used to explore among options. Each action is explored with at least
