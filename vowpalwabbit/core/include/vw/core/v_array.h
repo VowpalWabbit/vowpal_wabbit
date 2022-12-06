@@ -115,15 +115,21 @@ public:
 
   bool empty() const { return _begin == _end; }
 
-  T& operator[](size_t i) const {
+  T& operator[](size_t i) const
+  {
     assert(i < size());
-    return _begin[i]; }
-  size_t size() const {
+    return _begin[i];
+  }
+  size_t size() const
+  {
     assert(_end >= _begin);
-    return static_cast<size_t>(_end - _begin); }
-  size_t capacity() const {
+    return static_cast<size_t>(_end - _begin);
+  }
+  size_t capacity() const
+  {
     assert(_end_array >= _begin);
-    return static_cast<size_t>(_end_array - _begin); }
+    return static_cast<size_t>(_end_array - _begin);
+  }
 
   /**
    * \brief Change the size of the container.
