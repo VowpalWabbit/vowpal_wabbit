@@ -21,7 +21,8 @@ using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
-void MWT::print_scalars(VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger)
+void MWT::print_scalars(
+    VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -57,7 +58,7 @@ public:
 class mwt
 {
 public:
-  std::array<bool, VW::NUM_NAMESPACES> namespaces{};            // the set of namespaces to evaluate.
+  std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
@@ -179,8 +180,7 @@ void update_stats_mwt(const VW::workspace& /* all */, shared_data& sd, const mwt
     }
   }
   sd.update(ec.test_only, data.optional_observation.first, loss, 1.f, ec.get_num_features());
-  }
-
+}
 
 void output_example_prediction_mwt(
     VW::workspace& all, const mwt& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
@@ -188,8 +188,8 @@ void output_example_prediction_mwt(
   for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
 }
 
-void print_update_mwt(VW::workspace& all, shared_data& /* sd */, const mwt& data, const VW::example& ec,
-    VW::io::logger& /* unused */)
+void print_update_mwt(
+    VW::workspace& all, shared_data& /* sd */, const mwt& data, const VW::example& ec, VW::io::logger& /* unused */)
 {
   if (data.learn)
   {
@@ -201,7 +201,7 @@ void print_update_mwt(VW::workspace& all, shared_data& /* sd */, const mwt& data
     else { label_buf = " known"; }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
-          static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
+        static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
   }
 }
 
