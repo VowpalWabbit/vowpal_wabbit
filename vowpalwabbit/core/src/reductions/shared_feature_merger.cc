@@ -105,26 +105,42 @@ void persist(sfm_data& data, VW::metric_sink& metrics)
     metrics.set_uint("sfm_count_learn_example_with_shared", data.metrics->count_learn_example_with_shared);
   }
 }
+
+struct options_shared_feature_merger_v1
+{
+  bool extra_metrics_supplied;
+  bool large_action_space_supplied;
+};
+
+std::unique_ptr<options_shared_feature_merger_v1> get_shared_feature_merger_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto shared_feature_merger_opts = VW::make_unique<options_shared_feature_merger_v1>();
+  shared_feature_merger_opts->extra_metrics_supplied = options.was_supplied("extra_metrics");
+  shared_feature_merger_opts->large_action_space_supplied = options.was_supplied("large_action_space");
+  return shared_feature_merger_opts;
+}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup_base_i& stack_builder)
 {
-  VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  auto shared_feature_merger_opts = get_shared_feature_merger_options_instance(all, all.logger, *stack_builder.get_options());
+  if (shared_feature_merger_opts == nullptr) { return nullptr; }
   auto* base = stack_builder.setup_base_learner();
   if (base == nullptr) { return nullptr; }
   std::set<label_type_t> sfm_labels = {label_type_t::CB, label_type_t::CS};
   if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
 
-  auto data = VW::make_unique<sfm_data>();
-  if (options.was_supplied("extra_metrics")) { data->metrics = VW::make_unique<sfm_metrics>(); }
-  if (options.was_supplied("large_action_space")) { data->store_shared_ex_in_reduction_features = true; }
+  auto shared_feature_merger_data = VW::make_unique<sfm_data>();
+  if (shared_feature_merger_opts->extra_metrics_supplied) { shared_feature_merger_data->metrics = VW::make_unique<sfm_metrics>(); }
+  if (shared_feature_merger_opts->large_action_space_supplied) { shared_feature_merger_data->store_shared_ex_in_reduction_features = true; }
 
   auto* multi_base = VW::LEARNER::as_multiline(base);
-  data->label_type = all.example_parser->lbl_parser.label_type;
+  shared_feature_merger_data->label_type = all.example_parser->lbl_parser.label_type;
 
   // Both label and prediction types inherit that of base.
-  auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true>,
+  auto* learner = VW::LEARNER::make_reduction_learner(std::move(shared_feature_merger_data), multi_base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(shared_feature_merger_setup))
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .set_persist_metrics(persist)

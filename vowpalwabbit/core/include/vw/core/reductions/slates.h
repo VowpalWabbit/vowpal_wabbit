@@ -16,7 +16,7 @@ namespace VW
 {
 namespace reductions
 {
-class slates_data
+class slates_data_obj
 {
 public:
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
