@@ -241,60 +241,76 @@ void cb_explore_adf_regcb::save_load(io_buf& io, bool read, bool text)
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_base_i& stack_builder)
+struct options_cbea_regcb_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
   bool cb_explore_adf_option = false;
   bool regcb = false;
-  const std::string mtr = "mtr";
-  std::string type_string(mtr);
+  std::string type_string = "mtr";
   bool regcbopt = false;
   float c0 = 0.;
   bool first_only = false;
   float min_cb_cost = 0.;
   float max_cb_cost = 0.;
-  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (RegCB)");
+  bool with_metrics;
+};
+
+std::unique_ptr<options_cbea_regcb_v1> get_cbea_regcb_options_instance(
+    const VW::workspace&, VW::io::logger& logger, VW::config::options_i& options)
+{
+  auto cbea_regcb_opts = VW::make_unique<options_cbea_regcb_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (RegCB)");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_regcb_opts->cb_explore_adf_option)
                .necessary()
                .keep()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("regcb", regcb).necessary().keep().help("RegCB-elim exploration"))
-      .add(make_option("regcbopt", regcbopt).keep().help("RegCB optimistic exploration"))
-      .add(make_option("mellowness", c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
-      .add(make_option("cb_min_cost", min_cb_cost).keep().default_value(0.f).help("Lower bound on cost"))
-      .add(make_option("cb_max_cost", max_cb_cost).keep().default_value(1.f).help("Upper bound on cost"))
-      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
-      .add(make_option("cb_type", type_string)
+      .add(make_option("regcb", cbea_regcb_opts->regcb).necessary().keep().help("RegCB-elim exploration"))
+      .add(make_option("regcbopt", cbea_regcb_opts->regcbopt).keep().help("RegCB optimistic exploration"))
+      .add(make_option("mellowness", cbea_regcb_opts->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
+      .add(make_option("cb_min_cost", cbea_regcb_opts->min_cb_cost).keep().default_value(0.f).help("Lower bound on cost"))
+      .add(make_option("cb_max_cost", cbea_regcb_opts->max_cb_cost).keep().default_value(1.f).help("Upper bound on cost"))
+      .add(make_option("first_only", cbea_regcb_opts->first_only).keep().help("Only explore the first action in a tie-breaking event"))
+      .add(make_option("cb_type", cbea_regcb_opts->type_string)
                .keep()
                .default_value("mtr")
                .one_of({"mtr"})
                .help("Contextual bandit method to use. RegCB only supports supervised regression (mtr)"));
 
-  auto enabled = options.add_parse_and_check_necessary(new_options);
+  bool enabled = options.add_parse_and_check_necessary(new_options);
 
-  if (regcbopt && !regcb)
+  if (cbea_regcb_opts->regcbopt && !cbea_regcb_opts->regcb)
   {
-    all.logger.err_warn(
+    logger.err_warn(
         "RegCB used to be able to be enabled with either --regcb or --regcbopt. Enabling with --regcbopt only is now "
         "deprecated. Please add --regcb to your command line in addition to --regcbopt.");
     enabled = true;
   }
-  if (!enabled) { return nullptr; }
+
+  if(!enabled)  { return nullptr; }
 
   // Ensure serialization of cb_type in all cases.
   if (!options.was_supplied("cb_type"))
   {
-    options.insert("cb_type", type_string);
+    options.insert("cb_type", cbea_regcb_opts->type_string);
     options.add_and_parse(new_options);
   }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+
+  cbea_regcb_opts->with_metrics = options.was_supplied("extra_metrics");
+
+  return cbea_regcb_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_regcb_opts = get_cbea_regcb_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_regcb_opts == nullptr) { return nullptr; }
 
   // Set explore_type
   size_t problem_multiplier = 1;
@@ -302,12 +318,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
-  auto data = VW::make_unique<explore_type>(
-      with_metrics, regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  auto cbea_regcb_data = VW::make_unique<explore_type>(
+      cbea_regcb_opts->with_metrics, cbea_regcb_opts->regcbopt, cbea_regcb_opts->c0, cbea_regcb_opts->first_only, cbea_regcb_opts->min_cb_cost, cbea_regcb_opts->max_cb_cost, all.model_file_ver);
+  auto* l = make_reduction_learner(std::move(cbea_regcb_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_regcb_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)

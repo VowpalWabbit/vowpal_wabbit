@@ -253,65 +253,77 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, VW::multi_ex
       -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_base_i& stack_builder)
+struct options_cbea_rnd_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
   float alpha = 0.;
   float invlambda = 0.;
   uint32_t numrnd = 1;
-  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (rnd)");
+  bool with_metrics;
+};
+
+std::unique_ptr<options_cbea_rnd_v1> get_cbea_rnd_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto cbea_rnd_opts = VW::make_unique<options_cbea_rnd_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (rnd)");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_rnd_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon)
+      .add(make_option("epsilon", cbea_rnd_opts->epsilon)
                .keep()
                .default_value(0.f)
                .allow_override()
                .help("Minimum exploration probability"))
-      .add(make_option("rnd", numrnd).keep().default_value(1).necessary().help("Rnd based exploration"))
-      .add(make_option("rnd_alpha", alpha)
+      .add(make_option("rnd", cbea_rnd_opts->numrnd).keep().default_value(1).necessary().help("Rnd based exploration"))
+      .add(make_option("rnd_alpha", cbea_rnd_opts->alpha)
                .keep()
                .allow_override()
                .default_value(0.1f)
                .help("CI width for rnd (bigger => more exploration on repeating features)"))
-      .add(make_option("rnd_invlambda", invlambda)
+      .add(make_option("rnd_invlambda", cbea_rnd_opts->invlambda)
                .keep()
                .allow_override()
                .default_value(0.1f)
                .help("Covariance regularization strength rnd (bigger => more exploration on new features)"));
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  if (alpha <= 0) { THROW("The value of rnd_alpha must be positive.") }
-
-  if (invlambda <= 0) { THROW("The value of rnd_invlambda must be positive.") }
-
-  if (numrnd < 1) { THROW("The value of numrnd must be at least 1.") }
-
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+  cbea_rnd_opts->with_metrics = options.was_supplied("extra_metrics");
 
-  size_t problem_multiplier = 1 + numrnd;
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return cbea_rnd_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_rnd_opts = get_cbea_rnd_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_rnd_opts == nullptr) { return nullptr; }
+
+  if (cbea_rnd_opts->alpha <= 0) { THROW("The value of rnd_alpha must be positive.") }
+
+  if (cbea_rnd_opts->invlambda <= 0) { THROW("The value of rnd_invlambda must be positive.") }
+
+  if (cbea_rnd_opts->numrnd < 1) { THROW("The value of numrnd must be at least 1.") }
+
+  size_t problem_multiplier = 1 + cbea_rnd_opts->numrnd;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
-  auto data = VW::make_unique<explore_type>(
-      with_metrics, epsilon, alpha, invlambda, numrnd, base->increment * problem_multiplier, &all);
+  auto cbea_rnd_data = VW::make_unique<explore_type>(
+      cbea_rnd_opts->with_metrics, cbea_rnd_opts->epsilon, cbea_rnd_opts->alpha, cbea_rnd_opts->invlambda, cbea_rnd_opts->numrnd, base->increment * problem_multiplier, &all);
 
-  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  if (cbea_rnd_opts->epsilon < 0.0 || cbea_rnd_opts->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+  auto* l = make_reduction_learner(std::move(cbea_rnd_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_rnd_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)

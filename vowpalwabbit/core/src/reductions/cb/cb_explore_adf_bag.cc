@@ -147,29 +147,33 @@ void print_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_ba
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
   cb_explore_adf_base<cb_explore_adf_bag>::print_multiline_example(all, data, ec_seq);
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_base_i& stack_builder)
+struct options_cbea_bag_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
   uint64_t bag_size = 0;
   bool greedify = false;
   bool first_only = false;
-  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (bagging)");
+  bool with_metrics;
+};
+
+std::unique_ptr<options_cbea_bag_v1> get_cbea_bag_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto cbea_bag_opts = VW::make_unique<options_cbea_bag_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (bagging)");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_bag_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(
-          make_option("epsilon", epsilon).keep().default_value(0.f).allow_override().help("Epsilon-greedy exploration"))
-      .add(make_option("bag", bag_size).keep().necessary().help("Bagging-based exploration"))
-      .add(make_option("greedify", greedify).keep().help("Always update first policy once in bagging"))
-      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
+          make_option("epsilon", cbea_bag_opts->epsilon).keep().default_value(0.f).allow_override().help("Epsilon-greedy exploration"))
+      .add(make_option("bag", cbea_bag_opts->bag_size).keep().necessary().help("Bagging-based exploration"))
+      .add(make_option("greedify", cbea_bag_opts->greedify).keep().help("Always update first policy once in bagging"))
+      .add(make_option("first_only", cbea_bag_opts->first_only).keep().help("Only explore the first action in a tie-breaking event"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -180,17 +184,25 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
   // handles calling
   // predict before training is called.
   if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
+  cbea_bag_opts->with_metrics = options.was_supplied("extra_metrics");
+  return cbea_bag_opts;
+}
+}  // namespace
 
-  size_t problem_multiplier = VW::cast_to_smaller_type<size_t>(bag_size);
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_bag_opts = get_cbea_bag_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_bag_opts == nullptr) { return nullptr; }
+
+  size_t problem_multiplier = VW::cast_to_smaller_type<size_t>(cbea_bag_opts->bag_size);
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
-  auto data = VW::make_unique<explore_type>(
-      with_metrics, epsilon, VW::cast_to_smaller_type<size_t>(bag_size), greedify, first_only, all.get_random_state());
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  auto cbea_bag_data = VW::make_unique<explore_type>(
+      cbea_bag_opts->with_metrics, cbea_bag_opts->epsilon, VW::cast_to_smaller_type<size_t>(cbea_bag_opts->bag_size), cbea_bag_opts->greedify, cbea_bag_opts->first_only, all.get_random_state());
+  auto* l = make_reduction_learner(std::move(cbea_bag_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_bag_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)

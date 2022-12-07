@@ -89,24 +89,28 @@ void cb_explore_adf_first::save_load(io_buf& io, bool read, bool text)
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), read, msg, text);
   }
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_base_i& stack_builder)
+struct options_cbea_first_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
   bool cb_explore_adf_option = false;
   uint64_t tau = 0;
   float epsilon = 0.;
-  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (tau-first)");
+  bool with_metrics;
+};
+
+std::unique_ptr<options_cbea_first_v1> get_cbea_first_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto cbea_first_opts = VW::make_unique<options_cbea_first_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (tau-first)");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_first_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("first", tau).keep().necessary().help("Tau-first exploration"))
-      .add(make_option("epsilon", epsilon)
+      .add(make_option("first", cbea_first_opts->tau).keep().necessary().help("Tau-first exploration"))
+      .add(make_option("epsilon", cbea_first_opts->epsilon)
                .default_value(0.f)
                .keep()
                .allow_override()
@@ -116,20 +120,28 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+  cbea_first_opts->with_metrics = options.was_supplied("extra_metrics");
+  return cbea_first_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_first_opts = get_cbea_first_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_first_opts == nullptr) { return nullptr; }
 
   size_t problem_multiplier = 1;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
-  auto data =
-      VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(tau), epsilon, all.model_file_ver);
+  auto cbea_first_data =
+      VW::make_unique<explore_type>(cbea_first_opts->with_metrics, VW::cast_to_smaller_type<size_t>(cbea_first_opts->tau), cbea_first_opts->epsilon, all.model_file_ver);
 
-  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  if (cbea_first_opts->epsilon < 0.0 || cbea_first_opts->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+  auto* l = make_reduction_learner(std::move(cbea_first_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_first_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)

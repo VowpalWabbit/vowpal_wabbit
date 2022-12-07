@@ -234,14 +234,9 @@ void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_base_i& stack_builder)
+struct options_cbea_cover_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
-
   bool cb_explore_adf_option = false;
   std::string type_string = "mtr";
   uint64_t cover_size = 0;
@@ -249,23 +244,31 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   bool nounif = false;
   bool first_only = false;
   float epsilon = 0.;
+  bool epsilon_decay;
+  bool with_metrics;
+};
 
-  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (online cover)");
+std::unique_ptr<options_cbea_cover_v1> get_cbea_cover_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto cbea_cover_opts = VW::make_unique<options_cbea_cover_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (online cover)");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_cover_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("cover", cover_size).keep().necessary().help("Online cover based exploration"))
-      .add(make_option("psi", psi).keep().default_value(1.0f).help("Disagreement parameter for cover"))
-      .add(make_option("nounif", nounif).keep().help("Do not explore uniformly on zero-probability actions in cover"))
-      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"))
-      .add(make_option("cb_type", type_string)
+      .add(make_option("cover", cbea_cover_opts->cover_size).keep().necessary().help("Online cover based exploration"))
+      .add(make_option("psi", cbea_cover_opts->psi).keep().default_value(1.0f).help("Disagreement parameter for cover"))
+      .add(make_option("nounif", cbea_cover_opts->nounif).keep().help("Do not explore uniformly on zero-probability actions in cover"))
+      .add(make_option("first_only", cbea_cover_opts->first_only).keep().help("Only explore the first action in a tie-breaking event"))
+      .add(make_option("cb_type", cbea_cover_opts->type_string)
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dr", "mtr"})
                .help("Contextual bandit method to use"))
-      .add(make_option("epsilon", epsilon)
+      .add(make_option("epsilon", cbea_cover_opts->epsilon)
                .keep()
                .allow_override()
                .default_value(0.05f)
@@ -276,14 +279,40 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   // Ensure serialization of cb_type in all cases.
   if (!options.was_supplied("cb_type"))
   {
-    options.insert("cb_type", type_string);
+    options.insert("cb_type", cbea_cover_opts->type_string);
     options.add_and_parse(new_options);
   }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  auto cb_type = VW::cb_type_from_string(type_string);
+  if (options.was_supplied("epsilon"))
+  {
+    // fixed epsilon during learning
+    cbea_cover_opts->epsilon_decay = false;
+  }
+  else
+  {
+    cbea_cover_opts->epsilon = 1.f;
+    cbea_cover_opts->epsilon_decay = true;
+  }
+
+  if(VW::cb_type_from_string(cbea_cover_opts->type_string) == VW::cb_type_t::SM)
+  {
+    options.replace("cb_type", "mtr");
+  }
+  cbea_cover_opts->with_metrics = options.was_supplied("extra_metrics");
+  return cbea_cover_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_cover_opts = get_cbea_cover_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_cover_opts == nullptr) { return nullptr; }
+
+  auto cb_type = VW::cb_type_from_string(cbea_cover_opts->type_string);
   switch (cb_type)
   {
     case VW::cb_type_t::DR:
@@ -296,13 +325,12 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
     case VW::cb_type_t::SM:
       all.logger.err_warn(
           "cb_type must be in {{'ips','dr','mtr'}}; resetting to mtr. Input received: {}", VW::to_string(cb_type));
-      options.replace("cb_type", "mtr");
       cb_type = VW::cb_type_t::MTR;
       break;
   }
 
   // Set explore_type
-  size_t problem_multiplier = cover_size + 1;
+  size_t problem_multiplier = cbea_cover_opts->cover_size + 1;
 
   // Cover is using doubly robust without the cooperation of the base reduction
   if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
@@ -310,27 +338,13 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool epsilon_decay;
-  if (options.was_supplied("epsilon"))
-  {
-    // fixed epsilon during learning
-    epsilon_decay = false;
-  }
-  else
-  {
-    epsilon = 1.f;
-    epsilon_decay = true;
-  }
-
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   auto* scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
-  auto data =
-      VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon,
-          epsilon_decay, first_only, as_multiline(all.cost_sensitive), scorer, cb_type, all.model_file_ver, all.logger);
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  auto cbea_cover_data =
+      VW::make_unique<explore_type>(cbea_cover_opts->with_metrics, VW::cast_to_smaller_type<size_t>(cbea_cover_opts->cover_size), cbea_cover_opts->psi, cbea_cover_opts->nounif, cbea_cover_opts->epsilon,
+          cbea_cover_opts->epsilon_decay, cbea_cover_opts->first_only, as_multiline(all.cost_sensitive), scorer, cb_type, all.model_file_ver, all.logger);
+  auto* l = make_reduction_learner(std::move(cbea_cover_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)

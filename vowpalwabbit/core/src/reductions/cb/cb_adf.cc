@@ -429,32 +429,35 @@ void learn(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.lea
 
 void predict(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
-}  // namespace
-VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
+struct options_cb_adf_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   bool cb_adf_option = false;
   std::string type_string = "mtr";
-
-  VW::cb_type_t cb_type;
   bool rank_all;
   float clip_p;
   bool no_predict = false;
+  VW::cb_type_t cb_type;
+  // number of weight vectors needed
+  size_t problem_multiplier = 1;  // default for IPS
+};
 
+std::unique_ptr<options_cb_adf_v1> get_cb_adf_options_instance(
+    const VW::workspace&, VW::io::logger& logger, options_i& options)
+{
+  auto cb_adf_opts = VW::make_unique<options_cb_adf_v1>();
   option_group_definition new_options("[Reduction] Contextual Bandit with Action Dependent Features");
   new_options
-      .add(make_option("cb_adf", cb_adf_option)
+      .add(make_option("cb_adf", cb_adf_opts->cb_adf_option)
                .keep()
                .necessary()
                .help("Do Contextual Bandit learning with multiline action dependent features"))
-      .add(make_option("rank_all", rank_all).keep().help("Return actions sorted by score order"))
-      .add(make_option("no_predict", no_predict).help("Do not do a prediction when training"))
-      .add(make_option("clip_p", clip_p)
+      .add(make_option("rank_all", cb_adf_opts->rank_all).keep().help("Return actions sorted by score order"))
+      .add(make_option("no_predict", cb_adf_opts->no_predict).help("Do not do a prediction when training"))
+      .add(make_option("clip_p", cb_adf_opts->clip_p)
                .keep()
                .default_value(0.f)
                .help("Clipping probability in importance weight. Default: 0.f (no clipping)"))
-      .add(make_option("cb_type", type_string)
+      .add(make_option("cb_type", cb_adf_opts->type_string)
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
@@ -465,7 +468,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))
   {
-    options.insert("cb_type", type_string);
+    options.insert("cb_type", cb_adf_opts->type_string);
     options.add_and_parse(new_options);
   }
 
@@ -474,35 +477,28 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
     THROW("--indexing is not compatible with contextual bandits, please remove this option")
   }
 
-  // number of weight vectors needed
-  size_t problem_multiplier = 1;  // default for IPS
   bool check_baseline_enabled = false;
 
   try
   {
-    cb_type = VW::cb_type_from_string(type_string);
+    cb_adf_opts->cb_type = VW::cb_type_from_string(cb_adf_opts->type_string);
   }
   catch (const VW::vw_exception& /*exception*/)
   {
-    all.logger.err_warn(
-        "cb_type must be in {{'ips','dr','mtr','dm','sm'}}; resetting to mtr. Input was: '{}'", type_string);
-    cb_type = VW::cb_type_t::MTR;
+    logger.err_warn(
+        "cb_type must be in {{'ips','dr','mtr','dm','sm'}}; resetting to mtr. Input was: '{}'", cb_adf_opts->type_string);
+    cb_adf_opts->cb_type = VW::cb_type_t::MTR;
   }
 
-  if (cb_type == VW::cb_type_t::DR)
+  if (cb_adf_opts->cb_type == VW::cb_type_t::DR)
   {
-    problem_multiplier = 2;
+    cb_adf_opts->problem_multiplier = 2;
     // only use baseline when manually enabled for loss estimation
     check_baseline_enabled = true;
   }
 
-  if (clip_p > 0.f && cb_type == VW::cb_type_t::SM)
-  {
-    all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped.");
-  }
-
   // Push necessary flags.
-  if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||
+  if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || cb_adf_opts->rank_all ||
       !options.was_supplied("csoaa_rank"))
   {
     if (!options.was_supplied("csoaa_ldf")) { options.insert("csoaa_ldf", "multiline"); }
@@ -512,20 +508,35 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = VW::make_unique<CB_ADF::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
+  return cb_adf_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cb_adf_opts = get_cb_adf_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cb_adf_opts == nullptr) { return nullptr; }
+
+  if (cb_adf_opts->clip_p > 0.f && cb_adf_opts->cb_type == VW::cb_type_t::SM)
+  {
+    all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped.");
+  }
+
+  auto cb_adf_data = VW::make_unique<CB_ADF::cb_adf>(cb_adf_opts->cb_type, cb_adf_opts->rank_all, cb_adf_opts->clip_p, cb_adf_opts->no_predict, &all);
 
   auto base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  CB_ADF::cb_adf* bare = ld.get();
-  bool lrp = ld->learn_returns_prediction();
-  auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
+  CB_ADF::cb_adf* bare = cb_adf_data.get();
+  bool lrp = cb_adf_data->learn_returns_prediction();
+  auto* l = make_reduction_learner(std::move(cb_adf_data), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CS)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_learn_returns_prediction(lrp)
-                .set_params_per_weight(problem_multiplier)
+                .set_params_per_weight(cb_adf_opts->problem_multiplier)
                 .set_finish_example(::finish_multiline_example)
                 .set_print_example(::update_and_output)
                 .set_save_load(::save_load)

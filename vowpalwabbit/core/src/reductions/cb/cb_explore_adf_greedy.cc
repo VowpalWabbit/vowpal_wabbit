@@ -84,29 +84,32 @@ void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& ba
     update_example_prediction(examples);
   }
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup_base_i& stack_builder)
+struct options_cbea_greedy_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
   bool cb_explore_adf_option = false;
   float epsilon = 0.;
   bool first_only = false;
+  bool with_metrics;
+};
 
-  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (greedy)");
+std::unique_ptr<options_cbea_greedy_v1> get_cbea_greedy_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto cbea_greedy_opts = VW::make_unique<options_cbea_greedy_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (greedy)");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_greedy_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("epsilon", epsilon)
+      .add(make_option("epsilon", cbea_greedy_opts->epsilon)
                .default_value(0.05f)
                .keep()
                .allow_override()
                .help("Epsilon-greedy exploration"))
-      .add(make_option("first_only", first_only).keep().help("Only explore the first action in a tie-breaking event"));
+      .add(make_option("first_only", cbea_greedy_opts->first_only).keep().help("Only explore the first action in a tie-breaking event"));
 
   // This is a special case "cb_explore_adf" is needed to enable this. BUT it is only enabled when all of the other
   // "cb_explore_adf" types are disabled. This is why we don't check the return value of the
@@ -119,7 +122,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
       options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("squarecb") ||
       options.was_supplied("rnd") || options.was_supplied("softmax") || options.was_supplied("synthcover"));
 
-  if (!cb_explore_adf_option || !use_greedy) { return nullptr; }
+  if (!cbea_greedy_opts->cb_explore_adf_option || !use_greedy) { return nullptr; }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf"))
@@ -127,19 +130,28 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
     options.insert("cb_adf", "");
     options.insert("no_predict", "");
   }
+  cbea_greedy_opts->with_metrics = options.was_supplied("extra_metrics");
+
+  return cbea_greedy_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_greedy_opts = get_cbea_greedy_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_greedy_opts == nullptr) { return nullptr; }
 
   size_t problem_multiplier = 1;
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
-  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, first_only);
+  auto cbea_greedy_data = VW::make_unique<explore_type>(cbea_greedy_opts->with_metrics, cbea_greedy_opts->epsilon, cbea_greedy_opts->first_only);
 
-  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  if (cbea_greedy_opts->epsilon < 0.0 || cbea_greedy_opts->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+  auto* l = make_reduction_learner(std::move(cbea_greedy_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_label_type(VW::label_type_t::CB)

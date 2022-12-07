@@ -302,10 +302,10 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
 
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
-  auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all,
+  auto cbea_large_action_space_data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all,
       seed, 1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
 
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  auto* l = make_reduction_learner(std::move(cbea_large_action_space_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)
@@ -321,11 +321,8 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
   return make_base(*l);
 }
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
+struct options_cbea_large_action_space_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
@@ -338,55 +335,62 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   // leave some resources available in the case of few core's (for parser)
   uint64_t thread_pool_size = (std::thread::hardware_concurrency() - 1) / 2;
   uint64_t block_size = 0;
+  bool with_metrics;
+};
 
-  config::option_group_definition new_options(
+std::unique_ptr<options_cbea_large_action_space_v1> get_cbea_large_action_space_options_instance(
+    const VW::workspace&, VW::io::logger& logger, VW::config::options_i& options)
+{
+  auto cbea_large_action_space_opts = VW::make_unique<options_cbea_large_action_space_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_large_action_space_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("large_action_space", large_action_space)
+      .add(make_option("large_action_space", cbea_large_action_space_opts->large_action_space)
                .necessary()
                .keep()
                .help("Large action space filtering")
                .experimental())
-      .add(make_option("max_actions", d)
+      .add(make_option("max_actions", cbea_large_action_space_opts->d)
                .keep()
                .allow_override()
                .default_value(20)
                .help("Max number of actions to hold")
                .experimental())
-      .add(make_option("spanner_c", c)
+      .add(make_option("spanner_c", cbea_large_action_space_opts->c)
                .keep()
                .allow_override()
                .default_value(2)
                .help("Parameter for computing c-approximate spanner")
                .experimental())
-      .add(make_option("thread_pool_size", thread_pool_size)
+      .add(make_option("thread_pool_size", cbea_large_action_space_opts->thread_pool_size)
                .help("Number of threads in the thread pool that will be used when running with one pass svd "
                      "implementation (default svd implementation option). Default thread pool size will be half of the "
                      "available hardware threads"))
-      .add(make_option("block_size", block_size)
+      .add(make_option("block_size", cbea_large_action_space_opts->block_size)
                .default_value(0)
                .help("Number of actions in a block to be scheduled for multithreading when using one pass svd "
                      "implementation (by default, block_size = num_actions / thread_pool_size)"))
-      .add(make_option("las_hint_explicit_simd", use_simd_in_one_pass_svd_impl)
+      .add(make_option("las_hint_explicit_simd", cbea_large_action_space_opts->use_simd_in_one_pass_svd_impl)
                .experimental()
                .help("Use explicit simd implementation in one pass svd. Only works with quadratic interactions. "
                      "(x86 Linux only)"))
-      .add(make_option("two_pass_svd", use_two_pass_svd_impl)
+      .add(make_option("two_pass_svd", cbea_large_action_space_opts->use_two_pass_svd_impl)
                .experimental()
                .help("A more accurate svd that is much slower than the default (one pass svd)"));
 
-  auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
+  auto enabled = options.add_parse_and_check_necessary(new_options) && cbea_large_action_space_opts->large_action_space;
   if (!enabled) { return nullptr; }
 
   if (options.was_supplied("squarecb"))
   {
-    apply_shrink_factor = true;
-    gamma_scale = options.get_typed_option<float>("gamma_scale").value();
-    gamma_exponent = options.get_typed_option<float>("gamma_exponent").value();
+    cbea_large_action_space_opts->apply_shrink_factor = true;
+    cbea_large_action_space_opts->gamma_scale = options.get_typed_option<float>("gamma_scale").value();
+    cbea_large_action_space_opts->gamma_exponent = options.get_typed_option<float>("gamma_exponent").value();
   }
 
   if (options.was_supplied("cb_type"))
@@ -394,30 +398,38 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     auto cb_type = options.get_typed_option<std::string>("cb_type").value();
     if (cb_type != "mtr")
     {
-      all.logger.err_warn(
+      logger.err_warn(
           "Only cb_type 'mtr' is currently supported with large action spaces, resetting to mtr. Input was: '{}'",
           cb_type);
       options.replace("cb_type", "mtr");
     }
   }
+  cbea_large_action_space_opts->with_metrics = options.was_supplied("extra_metrics");
+
+  return cbea_large_action_space_opts;
+}
+
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_large_action_space_opts = get_cbea_large_action_space_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_large_action_space_opts == nullptr) { return nullptr; }
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
-  if (use_two_pass_svd_impl)
+  if (cbea_large_action_space_opts->use_two_pass_svd_impl)
   {
     auto impl_type = implementation_type::two_pass_svd;
     return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
+        cbea_large_action_space_opts->with_metrics, cbea_large_action_space_opts->d, cbea_large_action_space_opts->gamma_scale, cbea_large_action_space_opts->gamma_exponent, cbea_large_action_space_opts->c, cbea_large_action_space_opts->apply_shrink_factor, cbea_large_action_space_opts->thread_pool_size, cbea_large_action_space_opts->block_size,
         /*use_explicit_simd=*/false);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
     return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
-        use_simd_in_one_pass_svd_impl);
+        cbea_large_action_space_opts->with_metrics, cbea_large_action_space_opts->d, cbea_large_action_space_opts->gamma_scale, cbea_large_action_space_opts->gamma_exponent, cbea_large_action_space_opts->c, cbea_large_action_space_opts->apply_shrink_factor, cbea_large_action_space_opts->thread_pool_size, cbea_large_action_space_opts->block_size,
+        cbea_large_action_space_opts->use_simd_in_one_pass_svd_impl);
   }
 }

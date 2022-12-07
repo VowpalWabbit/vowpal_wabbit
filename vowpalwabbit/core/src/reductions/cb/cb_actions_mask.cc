@@ -46,16 +46,30 @@ void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::multi_
   }
 }
 
+struct options_cb_actions_mask_v1
+{
+  bool large_action_space_supplied;
+};
+
+std::unique_ptr<options_cb_actions_mask_v1> get_cb_actions_mask_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto cb_actions_mask_opts = VW::make_unique<options_cb_actions_mask_v1>();
+  cb_actions_mask_opts->large_action_space_supplied = options.was_supplied("large_action_space");
+  if (!cb_actions_mask_opts->large_action_space_supplied) { return nullptr; }
+  return cb_actions_mask_opts;
+}
+
 VW::LEARNER::base_learner* VW::reductions::cb_actions_mask_setup(VW::setup_base_i& stack_builder)
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  auto data = VW::make_unique<VW::reductions::cb_actions_mask>();
-
-  if (!options.was_supplied("large_action_space")) { return nullptr; }
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cb_actions_mask_opts = get_cb_actions_mask_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cb_actions_mask_opts == nullptr) { return nullptr; }
+  auto cb_actions_mask_data = VW::make_unique<VW::reductions::cb_actions_mask>();
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(cb_actions_mask_data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(cb_actions_mask_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)

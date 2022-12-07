@@ -56,36 +56,52 @@ void cb_explore_adf_softmax::predict_or_learn_impl(VW::LEARNER::multi_learner& b
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
-}  // namespace
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_softmax_setup(VW::setup_base_i& stack_builder)
+
+struct options_cbea_softmax_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
   bool cb_explore_adf_option = false;
   bool softmax = false;
   float epsilon = 0.;
   float lambda = 0.;
-  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (softmax)");
+  bool with_metrics;
+};
+
+std::unique_ptr<options_cbea_softmax_v1> get_cbea_softmax_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto cbea_softmax_opts = VW::make_unique<options_cbea_softmax_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (softmax)");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_softmax_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(
-          make_option("epsilon", epsilon).default_value(0.f).keep().allow_override().help("Epsilon-greedy exploration"))
-      .add(make_option("softmax", softmax).keep().necessary().help("Softmax exploration"))
-      .add(make_option("lambda", lambda).keep().allow_override().default_value(1.f).help("Parameter for softmax"));
+          make_option("epsilon", cbea_softmax_opts->epsilon).default_value(0.f).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(make_option("softmax", cbea_softmax_opts->softmax).keep().necessary().help("Softmax exploration"))
+      .add(make_option("lambda", cbea_softmax_opts->lambda).keep().allow_override().default_value(1.f).help("Parameter for softmax"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (lambda < 0)
-  {  // Lambda should always be positive because we are using a cost basis.
-    lambda = -lambda;
-  }
-
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+  cbea_softmax_opts->with_metrics = options.was_supplied("extra_metrics");
+
+  return cbea_softmax_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_softmax_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_softmax_opts = get_cbea_softmax_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_softmax_opts == nullptr) { return nullptr; }
+
+  if (cbea_softmax_opts->lambda < 0)
+  {  // Lambda should always be positive because we are using a cost basis.
+    cbea_softmax_opts->lambda = -cbea_softmax_opts->lambda;
+  }
 
   // Set explore_type
   size_t problem_multiplier = 1;
@@ -93,13 +109,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_softmax_setup(VW::setu
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_softmax>;
-  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, lambda);
+  auto cbea_softmax_data = VW::make_unique<explore_type>(cbea_softmax_opts->with_metrics, cbea_softmax_opts->epsilon, cbea_softmax_opts->lambda);
 
-  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  if (cbea_softmax_opts->epsilon < 0.0 || cbea_softmax_opts->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+  auto* l = make_reduction_learner(std::move(cbea_softmax_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_softmax_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)

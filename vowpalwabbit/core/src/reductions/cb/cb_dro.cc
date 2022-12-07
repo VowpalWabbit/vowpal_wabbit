@@ -18,10 +18,10 @@ using namespace VW::config;
 
 namespace
 {
-class cb_dro_data
+class cb_dro_data_obj
 {
 public:
-  explicit cb_dro_data(double alpha, double tau, double wmax) : _chisq(alpha, tau, 0, wmax) {}
+  explicit cb_dro_data_obj(double alpha, double tau, double wmax) : _chisq(alpha, tau, 0, wmax) {}
 
   bool is_valid() { return _chisq.is_valid(); }
 
@@ -94,29 +94,32 @@ private:
   std::vector<float> _save_weight;
 };
 template <bool is_learn, bool is_explore>
-void learn_or_predict(cb_dro_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(cb_dro_data_obj& data, multi_learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn, is_explore>(base, examples);
 }
-}  // namespace
 
-base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
+struct options_cb_dro_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   float alpha;
   float tau;
   float wmax;
   bool cb_dro_option = false;
+  bool cb_explore_adf_supplied;
+};
 
+std::unique_ptr<options_cb_dro_v1> get_cb_dro_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto cb_dro_opts = VW::make_unique<options_cb_dro_v1>();
   option_group_definition new_options("[Reduction] CB Distributionally Robust Optimization");
-  new_options.add(make_option("cb_dro", cb_dro_option).keep().necessary().help("Use DRO for cb learning"))
-      .add(make_option("cb_dro_alpha", alpha).default_value(0.05f).keep().help("Confidence level for cb dro"))
-      .add(make_option("cb_dro_tau", tau)
+  new_options.add(make_option("cb_dro", cb_dro_opts->cb_dro_option).keep().necessary().help("Use DRO for cb learning"))
+      .add(make_option("cb_dro_alpha", cb_dro_opts->alpha).default_value(0.05f).keep().help("Confidence level for cb dro"))
+      .add(make_option("cb_dro_tau", cb_dro_opts->tau)
                .default_value(BASELINE_DEFAULT_TAU)
                .keep()
                .help("Time constant for count decay for cb dro"))
-      .add(make_option("cb_dro_wmax", wmax)
+      .add(make_option("cb_dro_wmax", cb_dro_opts->wmax)
                .default_value(std::numeric_limits<float>::infinity())
                .keep()
                .help("Maximum importance weight for cb_dro"));
@@ -129,30 +132,40 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
   {
     THROW("cb_dro requires cb_adf or cb_explore_adf");
   }
+  cb_dro_opts->cb_explore_adf_supplied = options.was_supplied("cb_explore_adf");
+  return cb_dro_opts;
+}
+}  // namespace
 
-  if (alpha <= 0 || alpha >= 1) { THROW("cb_dro_alpha must be in (0, 1)"); }
+base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cb_dro_opts = get_cb_dro_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cb_dro_opts == nullptr) { return nullptr; }
 
-  if (tau <= 0 || tau > 1) { THROW("cb_dro_tau must be in (0, 1]"); }
+  if (cb_dro_opts->alpha <= 0 || cb_dro_opts->alpha >= 1) { THROW("cb_dro_alpha must be in (0, 1)"); }
 
-  if (wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
+  if (cb_dro_opts->tau <= 0 || cb_dro_opts->tau > 1) { THROW("cb_dro_tau must be in (0, 1]"); }
+
+  if (cb_dro_opts->wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
 
   if (!all.quiet)
   {
     *(all.trace_message) << "Using DRO for CB learning" << std::endl;
-    *(all.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
-    *(all.trace_message) << "cb_dro_tau = " << tau << std::endl;
-    *(all.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
+    *(all.trace_message) << "cb_dro_alpha = " << cb_dro_opts->alpha << std::endl;
+    *(all.trace_message) << "cb_dro_tau = " << cb_dro_opts->tau << std::endl;
+    *(all.trace_message) << "cb_dro_wmax = " << cb_dro_opts->wmax << std::endl;
   }
 
-  auto data = VW::make_unique<cb_dro_data>(alpha, tau, wmax);
+  auto cb_dro_data = VW::make_unique<cb_dro_data_obj>(cb_dro_opts->alpha, cb_dro_opts->tau, cb_dro_opts->wmax);
 
-  if (!data->is_valid()) { THROW("invalid cb_dro parameter values supplied"); }
+  if (!cb_dro_data->is_valid()) { THROW("invalid cb_dro parameter values supplied"); }
 
-  void (*learn_ptr)(cb_dro_data&, multi_learner&, VW::multi_ex&);
-  void (*pred_ptr)(cb_dro_data&, multi_learner&, VW::multi_ex&);
+  void (*learn_ptr)(cb_dro_data_obj&, multi_learner&, VW::multi_ex&);
+  void (*pred_ptr)(cb_dro_data_obj&, multi_learner&, VW::multi_ex&);
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  if (options.was_supplied("cb_explore_adf"))
+  if (cb_dro_opts->cb_explore_adf_supplied)
   {
     learn_ptr = learn_or_predict<true, true>;
     pred_ptr = learn_or_predict<false, true>;
@@ -168,7 +181,7 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
   }
 
   auto* base = stack_builder.setup_base_learner();
-  auto* l = make_reduction_learner(std::move(data), as_multiline(base), learn_ptr, pred_ptr,
+  auto* l = make_reduction_learner(std::move(cb_dro_data), as_multiline(base), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_label_type(VW::label_type_t::CB)
