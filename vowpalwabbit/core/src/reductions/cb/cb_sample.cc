@@ -128,8 +128,10 @@ std::unique_ptr<options_cb_sample_v1> get_cb_sample_options_instance(
   auto cb_sample_opts = VW::make_unique<options_cb_sample_v1>();
 
   option_group_definition new_options("[Reduction] CB Sample");
-  new_options.add(
-      make_option("cb_sample", cb_sample_opts->cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action"));
+  new_options.add(make_option("cb_sample", cb_sample_opts->cb_sample_option)
+                      .keep()
+                      .necessary()
+                      .help("Sample from CB pdf and swap top action"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return cb_sample_opts;

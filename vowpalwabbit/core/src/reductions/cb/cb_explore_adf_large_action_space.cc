@@ -302,11 +302,11 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
 
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
-  auto cbea_large_action_space_data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all,
-      seed, 1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
+  auto cbea_large_action_space_data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c,
+      apply_shrink_factor, &all, seed, 1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
 
-  auto* l = make_reduction_learner(std::move(cbea_large_action_space_data), base, explore_type::learn, explore_type::predict,
-      stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
+  auto* l = make_reduction_learner(std::move(cbea_large_action_space_data), base, explore_type::learn,
+      explore_type::predict, stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
@@ -412,7 +412,8 @@ std::unique_ptr<options_cbea_large_action_space_v1> get_cbea_large_action_space_
 VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
 {
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto cbea_large_action_space_opts = get_cbea_large_action_space_options_instance(all, all.logger, *stack_builder.get_options());
+  auto cbea_large_action_space_opts =
+      get_cbea_large_action_space_options_instance(all, all.logger, *stack_builder.get_options());
   if (cbea_large_action_space_opts == nullptr) { return nullptr; }
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
@@ -422,14 +423,20 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   {
     auto impl_type = implementation_type::two_pass_svd;
     return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-        cbea_large_action_space_opts->with_metrics, cbea_large_action_space_opts->d, cbea_large_action_space_opts->gamma_scale, cbea_large_action_space_opts->gamma_exponent, cbea_large_action_space_opts->c, cbea_large_action_space_opts->apply_shrink_factor, cbea_large_action_space_opts->thread_pool_size, cbea_large_action_space_opts->block_size,
+        cbea_large_action_space_opts->with_metrics, cbea_large_action_space_opts->d,
+        cbea_large_action_space_opts->gamma_scale, cbea_large_action_space_opts->gamma_exponent,
+        cbea_large_action_space_opts->c, cbea_large_action_space_opts->apply_shrink_factor,
+        cbea_large_action_space_opts->thread_pool_size, cbea_large_action_space_opts->block_size,
         /*use_explicit_simd=*/false);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
     return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-        cbea_large_action_space_opts->with_metrics, cbea_large_action_space_opts->d, cbea_large_action_space_opts->gamma_scale, cbea_large_action_space_opts->gamma_exponent, cbea_large_action_space_opts->c, cbea_large_action_space_opts->apply_shrink_factor, cbea_large_action_space_opts->thread_pool_size, cbea_large_action_space_opts->block_size,
+        cbea_large_action_space_opts->with_metrics, cbea_large_action_space_opts->d,
+        cbea_large_action_space_opts->gamma_scale, cbea_large_action_space_opts->gamma_exponent,
+        cbea_large_action_space_opts->c, cbea_large_action_space_opts->apply_shrink_factor,
+        cbea_large_action_space_opts->thread_pool_size, cbea_large_action_space_opts->block_size,
         cbea_large_action_space_opts->use_simd_in_one_pass_svd_impl);
   }
 }

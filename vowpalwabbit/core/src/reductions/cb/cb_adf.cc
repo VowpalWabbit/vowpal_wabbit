@@ -485,8 +485,8 @@ std::unique_ptr<options_cb_adf_v1> get_cb_adf_options_instance(
   }
   catch (const VW::vw_exception& /*exception*/)
   {
-    logger.err_warn(
-        "cb_type must be in {{'ips','dr','mtr','dm','sm'}}; resetting to mtr. Input was: '{}'", cb_adf_opts->type_string);
+    logger.err_warn("cb_type must be in {{'ips','dr','mtr','dm','sm'}}; resetting to mtr. Input was: '{}'",
+        cb_adf_opts->type_string);
     cb_adf_opts->cb_type = VW::cb_type_t::MTR;
   }
 
@@ -523,27 +523,29 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
     all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped.");
   }
 
-  auto cb_adf_data = VW::make_unique<CB_ADF::cb_adf>(cb_adf_opts->cb_type, cb_adf_opts->rank_all, cb_adf_opts->clip_p, cb_adf_opts->no_predict, &all);
+  auto cb_adf_data = VW::make_unique<CB_ADF::cb_adf>(
+      cb_adf_opts->cb_type, cb_adf_opts->rank_all, cb_adf_opts->clip_p, cb_adf_opts->no_predict, &all);
 
   auto base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
   CB_ADF::cb_adf* bare = cb_adf_data.get();
   bool lrp = cb_adf_data->learn_returns_prediction();
-  auto* l = make_reduction_learner(std::move(cb_adf_data), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CS)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_learn_returns_prediction(lrp)
-                .set_params_per_weight(cb_adf_opts->problem_multiplier)
-                .set_finish_example(::finish_multiline_example)
-                .set_print_example(::update_and_output)
-                .set_save_load(::save_load)
-                .set_merge(::cb_adf_merge)
-                .set_add(::cb_adf_add)
-                .set_subtract(::cb_adf_subtract)
-                .build(&all.logger);
+  auto* l =
+      make_reduction_learner(std::move(cb_adf_data), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
+          .set_input_label_type(VW::label_type_t::CB)
+          .set_output_label_type(VW::label_type_t::CS)
+          .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+          .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+          .set_learn_returns_prediction(lrp)
+          .set_params_per_weight(cb_adf_opts->problem_multiplier)
+          .set_finish_example(::finish_multiline_example)
+          .set_print_example(::update_and_output)
+          .set_save_load(::save_load)
+          .set_merge(::cb_adf_merge)
+          .set_add(::cb_adf_add)
+          .set_subtract(::cb_adf_subtract)
+          .build(&all.logger);
 
   bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));
 

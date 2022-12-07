@@ -653,7 +653,6 @@ void finish_multiline_example(VW::workspace& all, cbify&, VW::multi_ex& ec_seq)
 
 struct options_cbify_v1
 {
-
   bool use_cs;
   bool use_reg;  // todo: check
   bool use_discrete;
@@ -670,8 +669,7 @@ struct options_cbify_v1
   bool cb_explore_adf_supplied;
 };
 
-std::unique_ptr<options_cbify_v1> get_cbify_options_instance(
-    const VW::workspace&, VW::io::logger&, options_i& options)
+std::unique_ptr<options_cbify_v1> get_cbify_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto cbify_opts = VW::make_unique<options_cbify_v1>();
   option_group_definition new_options("[Reduction] CBify");
@@ -680,7 +678,8 @@ std::unique_ptr<options_cbify_v1> get_cbify_options_instance(
                .keep()
                .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
-      .add(make_option("cbify_cs", cbify_opts->use_cs).help("Consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("cbify_cs", cbify_opts->use_cs)
+               .help("Consume cost-sensitive classification examples instead of multiclass"))
       .add(make_option("cbify_reg", cbify_opts->use_reg)
                .help("Consume regression examples instead of multiclass and cost sensitive"))
       .add(make_option("cats", cbify_opts->cb_continuous_num_actions)
@@ -722,7 +721,10 @@ std::unique_ptr<options_cbify_v1> get_cbify_options_instance(
       THROW("Min and max values must be supplied with cbify_reg");
     }
 
-    if (cbify_opts->use_discrete && options.was_supplied("cats")) { THROW("Incompatible options: cb_discrete and cats"); }
+    if (cbify_opts->use_discrete && options.was_supplied("cats"))
+    {
+      THROW("Incompatible options: cb_discrete and cats");
+    }
     else if (cbify_opts->use_discrete)
     {
       std::stringstream ss;
@@ -809,7 +811,8 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
 
     if (cbify_data->use_adf)
     {
-      cbify_data->adf_data.init_adf_data(cbify_opts->num_actions, base->increment, all.interactions, all.extent_interactions);
+      cbify_data->adf_data.init_adf_data(
+          cbify_opts->num_actions, base->increment, all.interactions, all.extent_interactions);
     }
 
     if (cbify_opts->use_cs)
@@ -830,8 +833,8 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       name_addition = "-adf";
       all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
-    l = make_reduction_learner(
-        std::move(cbify_data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
+    l = make_reduction_learner(std::move(cbify_data), base, learn_ptr, predict_ptr,
+        stack_builder.get_setupfn_name(cbify_setup) + name_addition)
             .set_input_label_type(in_label_type)
             .set_output_label_type(out_label_type)
             .set_output_prediction_type(in_pred_type)
@@ -892,8 +895,8 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       name_addition = "";
       all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
-    l = make_reduction_learner(
-        std::move(cbify_data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
+    l = make_reduction_learner(std::move(cbify_data), base, learn_ptr, predict_ptr,
+        stack_builder.get_setupfn_name(cbify_setup) + name_addition)
             .set_input_label_type(in_label_type)
             .set_output_label_type(out_label_type)
             .set_input_prediction_type(in_pred_type)
@@ -935,7 +938,8 @@ std::unique_ptr<options_cbifyldf_v1> get_cbifyldf_options_instance(
   if (options.was_supplied("baseline"))
   {
     std::stringstream ss;
-    ss << std::max(std::abs(cbifyldf_opts->loss0), std::abs(cbifyldf_opts->loss1)) / (cbifyldf_opts->loss1 - cbifyldf_opts->loss0);
+    ss << std::max(std::abs(cbifyldf_opts->loss0), std::abs(cbifyldf_opts->loss1)) /
+            (cbifyldf_opts->loss1 - cbifyldf_opts->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 

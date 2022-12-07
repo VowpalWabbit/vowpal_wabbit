@@ -160,15 +160,22 @@ std::unique_ptr<options_cbea_synthcover_v1> get_cbea_synthcover_options_instance
 {
   auto cbea_synthcover_opts = VW::make_unique<options_cbea_synthcover_v1>();
   using VW::config::make_option;
-  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (synthetic cover)");
+  VW::config::option_group_definition new_options(
+      "[Reduction] Contextual Bandit Exploration with ADF (synthetic cover)");
   new_options
       .add(make_option("cb_explore_adf", cbea_synthcover_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(
-          make_option("epsilon", cbea_synthcover_opts->epsilon).default_value(0.f).keep().allow_override().help("Epsilon-greedy exploration"))
-      .add(make_option("synthcover", cbea_synthcover_opts->use_synthcover).keep().necessary().help("Use synthetic cover exploration"))
+      .add(make_option("epsilon", cbea_synthcover_opts->epsilon)
+               .default_value(0.f)
+               .keep()
+               .allow_override()
+               .help("Epsilon-greedy exploration"))
+      .add(make_option("synthcover", cbea_synthcover_opts->use_synthcover)
+               .keep()
+               .necessary()
+               .help("Use synthetic cover exploration"))
       .add(make_option("synthcoverpsi", cbea_synthcover_opts->psi)
                .keep()
                .default_value(0.1f)
@@ -196,7 +203,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
   auto cbea_synthcover_opts = get_cbea_synthcover_options_instance(all, all.logger, *stack_builder.get_options());
   if (cbea_synthcover_opts == nullptr) { return nullptr; }
 
-
   if (cbea_synthcover_opts->synthcoversize <= 0) { THROW("synthcoversize must be >= 1"); }
   if (cbea_synthcover_opts->epsilon < 0) { THROW("epsilon must be non-negative"); }
   if (cbea_synthcover_opts->psi <= 0) { THROW("synthcoverpsi must be positive"); }
@@ -205,7 +211,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
   {
     *(all.trace_message) << "Using synthcover for CB exploration" << std::endl;
     *(all.trace_message) << "synthcoversize = " << cbea_synthcover_opts->synthcoversize << std::endl;
-    if (cbea_synthcover_opts->epsilon > 0) { *(all.trace_message) << "epsilon = " << cbea_synthcover_opts->epsilon << std::endl; }
+    if (cbea_synthcover_opts->epsilon > 0)
+    {
+      *(all.trace_message) << "epsilon = " << cbea_synthcover_opts->epsilon << std::endl;
+    }
     *(all.trace_message) << "synthcoverpsi = " << cbea_synthcover_opts->psi << std::endl;
   }
 
@@ -214,8 +223,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
-  auto cbea_synthcover_data = VW::make_unique<explore_type>(cbea_synthcover_opts->with_metrics, cbea_synthcover_opts->epsilon, cbea_synthcover_opts->psi,
-      VW::cast_to_smaller_type<size_t>(cbea_synthcover_opts->synthcoversize), all.get_random_state(), all.model_file_ver);
+  auto cbea_synthcover_data =
+      VW::make_unique<explore_type>(cbea_synthcover_opts->with_metrics, cbea_synthcover_opts->epsilon,
+          cbea_synthcover_opts->psi, VW::cast_to_smaller_type<size_t>(cbea_synthcover_opts->synthcoversize),
+          all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(std::move(cbea_synthcover_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_synthcover_setup))
                 .set_input_label_type(VW::label_type_t::CB)

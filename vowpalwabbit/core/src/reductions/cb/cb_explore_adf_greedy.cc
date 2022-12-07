@@ -109,7 +109,9 @@ std::unique_ptr<options_cbea_greedy_v1> get_cbea_greedy_options_instance(
                .keep()
                .allow_override()
                .help("Epsilon-greedy exploration"))
-      .add(make_option("first_only", cbea_greedy_opts->first_only).keep().help("Only explore the first action in a tie-breaking event"));
+      .add(make_option("first_only", cbea_greedy_opts->first_only)
+               .keep()
+               .help("Only explore the first action in a tie-breaking event"));
 
   // This is a special case "cb_explore_adf" is needed to enable this. BUT it is only enabled when all of the other
   // "cb_explore_adf" types are disabled. This is why we don't check the return value of the
@@ -148,9 +150,13 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
-  auto cbea_greedy_data = VW::make_unique<explore_type>(cbea_greedy_opts->with_metrics, cbea_greedy_opts->epsilon, cbea_greedy_opts->first_only);
+  auto cbea_greedy_data = VW::make_unique<explore_type>(
+      cbea_greedy_opts->with_metrics, cbea_greedy_opts->epsilon, cbea_greedy_opts->first_only);
 
-  if (cbea_greedy_opts->epsilon < 0.0 || cbea_greedy_opts->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+  if (cbea_greedy_opts->epsilon < 0.0 || cbea_greedy_opts->epsilon > 1.0)
+  {
+    THROW("The value of epsilon must be in [0,1]");
+  }
   auto* l = make_reduction_learner(std::move(cbea_greedy_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)

@@ -114,7 +114,10 @@ std::unique_ptr<options_cb_dro_v1> get_cb_dro_options_instance(
   auto cb_dro_opts = VW::make_unique<options_cb_dro_v1>();
   option_group_definition new_options("[Reduction] CB Distributionally Robust Optimization");
   new_options.add(make_option("cb_dro", cb_dro_opts->cb_dro_option).keep().necessary().help("Use DRO for cb learning"))
-      .add(make_option("cb_dro_alpha", cb_dro_opts->alpha).default_value(0.05f).keep().help("Confidence level for cb dro"))
+      .add(make_option("cb_dro_alpha", cb_dro_opts->alpha)
+               .default_value(0.05f)
+               .keep()
+               .help("Confidence level for cb dro"))
       .add(make_option("cb_dro_tau", cb_dro_opts->tau)
                .default_value(BASELINE_DEFAULT_TAU)
                .keep()

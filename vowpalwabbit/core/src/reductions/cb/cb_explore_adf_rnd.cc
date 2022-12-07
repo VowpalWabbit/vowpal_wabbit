@@ -293,7 +293,7 @@ std::unique_ptr<options_cbea_rnd_v1> get_cbea_rnd_options_instance(
                .help("Covariance regularization strength rnd (bigger => more exploration on new features)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  
+
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
   cbea_rnd_opts->with_metrics = options.was_supplied("extra_metrics");
@@ -320,8 +320,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
-  auto cbea_rnd_data = VW::make_unique<explore_type>(
-      cbea_rnd_opts->with_metrics, cbea_rnd_opts->epsilon, cbea_rnd_opts->alpha, cbea_rnd_opts->invlambda, cbea_rnd_opts->numrnd, base->increment * problem_multiplier, &all);
+  auto cbea_rnd_data =
+      VW::make_unique<explore_type>(cbea_rnd_opts->with_metrics, cbea_rnd_opts->epsilon, cbea_rnd_opts->alpha,
+          cbea_rnd_opts->invlambda, cbea_rnd_opts->numrnd, base->increment * problem_multiplier, &all);
 
   if (cbea_rnd_opts->epsilon < 0.0 || cbea_rnd_opts->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(std::move(cbea_rnd_data), base, explore_type::learn, explore_type::predict,

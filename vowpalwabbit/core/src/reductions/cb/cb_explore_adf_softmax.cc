@@ -77,10 +77,17 @@ std::unique_ptr<options_cbea_softmax_v1> get_cbea_softmax_options_instance(
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(
-          make_option("epsilon", cbea_softmax_opts->epsilon).default_value(0.f).keep().allow_override().help("Epsilon-greedy exploration"))
+      .add(make_option("epsilon", cbea_softmax_opts->epsilon)
+               .default_value(0.f)
+               .keep()
+               .allow_override()
+               .help("Epsilon-greedy exploration"))
       .add(make_option("softmax", cbea_softmax_opts->softmax).keep().necessary().help("Softmax exploration"))
-      .add(make_option("lambda", cbea_softmax_opts->lambda).keep().allow_override().default_value(1.f).help("Parameter for softmax"));
+      .add(make_option("lambda", cbea_softmax_opts->lambda)
+               .keep()
+               .allow_override()
+               .default_value(1.f)
+               .help("Parameter for softmax"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -110,9 +117,13 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_softmax_setup(VW::setu
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_softmax>;
-  auto cbea_softmax_data = VW::make_unique<explore_type>(cbea_softmax_opts->with_metrics, cbea_softmax_opts->epsilon, cbea_softmax_opts->lambda);
+  auto cbea_softmax_data = VW::make_unique<explore_type>(
+      cbea_softmax_opts->with_metrics, cbea_softmax_opts->epsilon, cbea_softmax_opts->lambda);
 
-  if (cbea_softmax_opts->epsilon < 0.0 || cbea_softmax_opts->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+  if (cbea_softmax_opts->epsilon < 0.0 || cbea_softmax_opts->epsilon > 1.0)
+  {
+    THROW("The value of epsilon must be in [0,1]");
+  }
   auto* l = make_reduction_learner(std::move(cbea_softmax_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_softmax_setup))
                 .set_input_label_type(VW::label_type_t::CB)

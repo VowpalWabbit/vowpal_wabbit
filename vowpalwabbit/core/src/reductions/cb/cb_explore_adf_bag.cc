@@ -169,11 +169,16 @@ std::unique_ptr<options_cbea_bag_v1> get_cbea_bag_options_instance(
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(
-          make_option("epsilon", cbea_bag_opts->epsilon).keep().default_value(0.f).allow_override().help("Epsilon-greedy exploration"))
+      .add(make_option("epsilon", cbea_bag_opts->epsilon)
+               .keep()
+               .default_value(0.f)
+               .allow_override()
+               .help("Epsilon-greedy exploration"))
       .add(make_option("bag", cbea_bag_opts->bag_size).keep().necessary().help("Bagging-based exploration"))
       .add(make_option("greedify", cbea_bag_opts->greedify).keep().help("Always update first policy once in bagging"))
-      .add(make_option("first_only", cbea_bag_opts->first_only).keep().help("Only explore the first action in a tie-breaking event"));
+      .add(make_option("first_only", cbea_bag_opts->first_only)
+               .keep()
+               .help("Only explore the first action in a tie-breaking event"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -200,8 +205,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
-  auto cbea_bag_data = VW::make_unique<explore_type>(
-      cbea_bag_opts->with_metrics, cbea_bag_opts->epsilon, VW::cast_to_smaller_type<size_t>(cbea_bag_opts->bag_size), cbea_bag_opts->greedify, cbea_bag_opts->first_only, all.get_random_state());
+  auto cbea_bag_data = VW::make_unique<explore_type>(cbea_bag_opts->with_metrics, cbea_bag_opts->epsilon,
+      VW::cast_to_smaller_type<size_t>(cbea_bag_opts->bag_size), cbea_bag_opts->greedify, cbea_bag_opts->first_only,
+      all.get_random_state());
   auto* l = make_reduction_learner(std::move(cbea_bag_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_bag_setup))
                 .set_input_label_type(VW::label_type_t::CB)

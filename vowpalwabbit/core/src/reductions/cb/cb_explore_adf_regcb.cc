@@ -268,10 +268,21 @@ std::unique_ptr<options_cbea_regcb_v1> get_cbea_regcb_options_instance(
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
       .add(make_option("regcb", cbea_regcb_opts->regcb).necessary().keep().help("RegCB-elim exploration"))
       .add(make_option("regcbopt", cbea_regcb_opts->regcbopt).keep().help("RegCB optimistic exploration"))
-      .add(make_option("mellowness", cbea_regcb_opts->c0).keep().default_value(0.1f).help("RegCB mellowness parameter c_0. Default 0.1"))
-      .add(make_option("cb_min_cost", cbea_regcb_opts->min_cb_cost).keep().default_value(0.f).help("Lower bound on cost"))
-      .add(make_option("cb_max_cost", cbea_regcb_opts->max_cb_cost).keep().default_value(1.f).help("Upper bound on cost"))
-      .add(make_option("first_only", cbea_regcb_opts->first_only).keep().help("Only explore the first action in a tie-breaking event"))
+      .add(make_option("mellowness", cbea_regcb_opts->c0)
+               .keep()
+               .default_value(0.1f)
+               .help("RegCB mellowness parameter c_0. Default 0.1"))
+      .add(make_option("cb_min_cost", cbea_regcb_opts->min_cb_cost)
+               .keep()
+               .default_value(0.f)
+               .help("Lower bound on cost"))
+      .add(make_option("cb_max_cost", cbea_regcb_opts->max_cb_cost)
+               .keep()
+               .default_value(1.f)
+               .help("Upper bound on cost"))
+      .add(make_option("first_only", cbea_regcb_opts->first_only)
+               .keep()
+               .help("Only explore the first action in a tie-breaking event"))
       .add(make_option("cb_type", cbea_regcb_opts->type_string)
                .keep()
                .default_value("mtr")
@@ -288,7 +299,7 @@ std::unique_ptr<options_cbea_regcb_v1> get_cbea_regcb_options_instance(
     enabled = true;
   }
 
-  if(!enabled)  { return nullptr; }
+  if (!enabled) { return nullptr; }
 
   // Ensure serialization of cb_type in all cases.
   if (!options.was_supplied("cb_type"))
@@ -319,8 +330,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
-  auto cbea_regcb_data = VW::make_unique<explore_type>(
-      cbea_regcb_opts->with_metrics, cbea_regcb_opts->regcbopt, cbea_regcb_opts->c0, cbea_regcb_opts->first_only, cbea_regcb_opts->min_cb_cost, cbea_regcb_opts->max_cb_cost, all.model_file_ver);
+  auto cbea_regcb_data =
+      VW::make_unique<explore_type>(cbea_regcb_opts->with_metrics, cbea_regcb_opts->regcbopt, cbea_regcb_opts->c0,
+          cbea_regcb_opts->first_only, cbea_regcb_opts->min_cb_cost, cbea_regcb_opts->max_cb_cost, all.model_file_ver);
   auto* l = make_reduction_learner(std::move(cbea_regcb_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_regcb_setup))
                 .set_input_label_type(VW::label_type_t::CB)

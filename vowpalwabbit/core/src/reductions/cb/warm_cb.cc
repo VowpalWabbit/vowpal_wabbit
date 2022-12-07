@@ -578,7 +578,8 @@ std::unique_ptr<options_warm_cb_v1> get_warm_cb_options_instance(
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (warm_cb_opts->use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
+  if (warm_cb_opts->use_cs &&
+      (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
   {
     THROW("label corruption on cost-sensitive examples not currently supported");
   }
@@ -594,7 +595,8 @@ std::unique_ptr<options_warm_cb_v1> get_warm_cb_options_instance(
   if (options.was_supplied("baseline"))
   {
     std::stringstream ss;
-    ss << std::max(std::abs(warm_cb_opts->loss0), std::abs(warm_cb_opts->loss1)) / (warm_cb_opts->loss1 - warm_cb_opts->loss0);
+    ss << std::max(std::abs(warm_cb_opts->loss0), std::abs(warm_cb_opts->loss1)) /
+            (warm_cb_opts->loss1 - warm_cb_opts->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 
@@ -613,7 +615,7 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto warm_cb_opts = get_warm_cb_options_instance(all, all.logger, *stack_builder.get_options());
   if (warm_cb_opts == nullptr) { return nullptr; }
-  
+
   auto warm_cb_data = VW::make_unique<warm_cb>();
 
   warm_cb_data->loss0 = warm_cb_opts->loss0;

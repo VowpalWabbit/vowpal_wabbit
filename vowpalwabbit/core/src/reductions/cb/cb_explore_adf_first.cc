@@ -137,10 +137,13 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
-  auto cbea_first_data =
-      VW::make_unique<explore_type>(cbea_first_opts->with_metrics, VW::cast_to_smaller_type<size_t>(cbea_first_opts->tau), cbea_first_opts->epsilon, all.model_file_ver);
+  auto cbea_first_data = VW::make_unique<explore_type>(cbea_first_opts->with_metrics,
+      VW::cast_to_smaller_type<size_t>(cbea_first_opts->tau), cbea_first_opts->epsilon, all.model_file_ver);
 
-  if (cbea_first_opts->epsilon < 0.0 || cbea_first_opts->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+  if (cbea_first_opts->epsilon < 0.0 || cbea_first_opts->epsilon > 1.0)
+  {
+    THROW("The value of epsilon must be in [0,1]");
+  }
   auto* l = make_reduction_learner(std::move(cbea_first_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_first_setup))
                 .set_input_label_type(VW::label_type_t::CB)
