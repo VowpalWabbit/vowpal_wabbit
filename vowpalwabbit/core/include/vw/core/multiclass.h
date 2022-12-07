@@ -18,10 +18,7 @@ public:
   multiclass_label(uint32_t label, float weight);
   void reset_to_default();
 
-  bool is_labelled() const
-  {
-    return label != static_cast<uint32_t>(-1);
-  }
+  bool is_labelled() const { return label != static_cast<uint32_t>(-1); }
 };
 
 extern VW::label_parser multiclass_label_parser_global;

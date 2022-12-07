@@ -166,8 +166,7 @@ void VW::details::finish_multiclass_example(VW::workspace& all, VW::example& ec,
   float loss = 0;
   if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labelled()) { loss = ec.weight; }
 
-  all.sd->update(ec.test_only, update_loss && (ec.l.multi.is_labelled()), loss, ec.weight,
-      ec.get_num_features());
+  all.sd->update(ec.test_only, update_loss && (ec.l.multi.is_labelled()), loss, ec.weight, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {

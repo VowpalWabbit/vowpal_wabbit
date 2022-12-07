@@ -377,7 +377,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   uint64_t k_value = data->k;
   auto* base = as_singleline(stack_builder.setup_base_learner());
   void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&) = nullptr;
-  void (*pred_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&)= nullptr;
+  void (*pred_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&) = nullptr;
   std::string name_addition;
   VW::prediction_type_t pred_type;
 
@@ -439,8 +439,8 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   {
     learn_ptr = learn_randomized;
     // Override the update stats func.
-    update_stats_func =
-        [](const VW::workspace& /* all */, shared_data& sd, const oaa&, const VW::example& ec, VW::io::logger& /* logger */)
+    update_stats_func = [](const VW::workspace& /* all */, shared_data& sd, const oaa&, const VW::example& ec,
+                            VW::io::logger& /* logger */)
     {
       float loss = 0;
       if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labelled()) { loss = ec.weight; }
