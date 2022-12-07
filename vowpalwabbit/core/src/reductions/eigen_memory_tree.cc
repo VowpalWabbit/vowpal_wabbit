@@ -289,7 +289,7 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
   return weights;
 }
 
-emt_feats emt_router(std::vector<emt_feats> exs, emt_router_type router_type, VW::rand_state& rng)
+emt_feats emt_router(std::vector<emt_feats>& exs, emt_router_type router_type, VW::rand_state& rng)
 {
   if (router_type == emt_router_type::random) { return emt_router_random(exs, rng); }
   else { return emt_router_eigen(exs, rng); }
