@@ -219,7 +219,9 @@ std::unique_ptr<options_automl_v1> get_automl_options_instance(
                .default_value(-1)
                .help("Set number of priority challengers to use")
                .experimental())
-      .add(make_option("verbose_metrics", automl_opts->verbose_metrics).help("Extended metrics for debugging").experimental())
+      .add(make_option("verbose_metrics", automl_opts->verbose_metrics)
+               .help("Extended metrics for debugging")
+               .experimental())
       .add(make_option("interaction_type", automl_opts->interaction_type)
                .keep()
                .default_value("quadratic")
@@ -296,8 +298,8 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
   automl_data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
   automl_data->cm->_sd_gravity = &(all.sd->gravity);
 
-  auto* l = make_reduction_learner(std::move(automl_data), as_multiline(base_learner), learn_automl<config_manager_type, true>,
-      predict_automl<config_manager_type, true>,
+  auto* l = make_reduction_learner(std::move(automl_data), as_multiline(base_learner),
+      learn_automl<config_manager_type, true>, predict_automl<config_manager_type, true>,
       stack_builder.get_setupfn_name(VW::reductions::automl_setup))
                 .set_params_per_weight(ppw)  // refactor pm
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
@@ -320,9 +322,15 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   auto automl_opts = get_automl_options_instance(all, all.logger, *stack_builder.get_options());
   if (automl_opts == nullptr) { return nullptr; }
 
-  if (automl_opts->priority_challengers < 0) { automl_opts->priority_challengers = (static_cast<int>(automl_opts->max_live_configs) - 1) / 2; }
+  if (automl_opts->priority_challengers < 0)
+  {
+    automl_opts->priority_challengers = (static_cast<int>(automl_opts->max_live_configs) - 1) / 2;
+  }
 
-  if (!automl_opts->fixed_significance_level) { automl_opts->automl_significance_level /= automl_opts->max_live_configs; }
+  if (!automl_opts->fixed_significance_level)
+  {
+    automl_opts->automl_significance_level /= automl_opts->max_live_configs;
+  }
 
   if (automl_opts->max_live_configs > MAX_CONFIGS)
   {
@@ -349,7 +357,8 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
       {"ccb_explore_adf", "audit_regressor", "baseline", "cb_explore_adf_rnd", "cb_to_cb_adf", "cbify", "replay_c",
           "replay_b", "replay_m", "memory_tree", "new_mf", "nn", "stage_poly"});
 
-  config_type conf_type = (automl_opts->oracle_type == "one_diff_inclusion") ? config_type::Interaction : config_type::Exclusion;
+  config_type conf_type =
+      (automl_opts->oracle_type == "one_diff_inclusion") ? config_type::Interaction : config_type::Exclusion;
 
   if (conf_type == config_type::Interaction && automl_opts->oracle_type == "rand")
   {
@@ -362,28 +371,34 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     if (automl_opts->oracle_type == "one_diff")
     {
       return make_automl_with_impl<config_oracle<one_diff_impl>, VW::confidence_sequence>(stack_builder, base_learner,
-          automl_opts->max_live_configs, automl_opts->verbose_metrics, automl_opts->oracle_type, automl_opts->global_lease, all, automl_opts->priority_challengers, automl_opts->interaction_type,
-          automl_opts->priority_type, automl_opts->automl_significance_level, automl_opts->ccb_on, automl_opts->predict_only_model, automl_opts->reversed_learning_order, conf_type);
+          automl_opts->max_live_configs, automl_opts->verbose_metrics, automl_opts->oracle_type,
+          automl_opts->global_lease, all, automl_opts->priority_challengers, automl_opts->interaction_type,
+          automl_opts->priority_type, automl_opts->automl_significance_level, automl_opts->ccb_on,
+          automl_opts->predict_only_model, automl_opts->reversed_learning_order, conf_type);
     }
     else if (automl_opts->oracle_type == "rand")
     {
       return make_automl_with_impl<config_oracle<oracle_rand_impl>, VW::confidence_sequence>(stack_builder,
-          base_learner, automl_opts->max_live_configs, automl_opts->verbose_metrics, automl_opts->oracle_type, automl_opts->global_lease, all, automl_opts->priority_challengers,
-          automl_opts->interaction_type, automl_opts->priority_type, automl_opts->automl_significance_level, automl_opts->ccb_on, automl_opts->predict_only_model,
-          automl_opts->reversed_learning_order, conf_type);
+          base_learner, automl_opts->max_live_configs, automl_opts->verbose_metrics, automl_opts->oracle_type,
+          automl_opts->global_lease, all, automl_opts->priority_challengers, automl_opts->interaction_type,
+          automl_opts->priority_type, automl_opts->automl_significance_level, automl_opts->ccb_on,
+          automl_opts->predict_only_model, automl_opts->reversed_learning_order, conf_type);
     }
     else if (automl_opts->oracle_type == "champdupe")
     {
       return make_automl_with_impl<config_oracle<champdupe_impl>, VW::confidence_sequence>(stack_builder, base_learner,
-          automl_opts->max_live_configs, automl_opts->verbose_metrics, automl_opts->oracle_type, automl_opts->global_lease, all, automl_opts->priority_challengers, automl_opts->interaction_type,
-          automl_opts->priority_type, automl_opts->automl_significance_level, automl_opts->ccb_on, automl_opts->predict_only_model, automl_opts->reversed_learning_order, conf_type);
+          automl_opts->max_live_configs, automl_opts->verbose_metrics, automl_opts->oracle_type,
+          automl_opts->global_lease, all, automl_opts->priority_challengers, automl_opts->interaction_type,
+          automl_opts->priority_type, automl_opts->automl_significance_level, automl_opts->ccb_on,
+          automl_opts->predict_only_model, automl_opts->reversed_learning_order, conf_type);
     }
     else if (automl_opts->oracle_type == "one_diff_inclusion")
     {
       return make_automl_with_impl<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>(stack_builder,
-          base_learner, automl_opts->max_live_configs, automl_opts->verbose_metrics, automl_opts->oracle_type, automl_opts->global_lease, all, automl_opts->priority_challengers,
-          automl_opts->interaction_type, automl_opts->priority_type, automl_opts->automl_significance_level, automl_opts->ccb_on, automl_opts->predict_only_model,
-          automl_opts->reversed_learning_order, conf_type);
+          base_learner, automl_opts->max_live_configs, automl_opts->verbose_metrics, automl_opts->oracle_type,
+          automl_opts->global_lease, all, automl_opts->priority_challengers, automl_opts->interaction_type,
+          automl_opts->priority_type, automl_opts->automl_significance_level, automl_opts->ccb_on,
+          automl_opts->predict_only_model, automl_opts->reversed_learning_order, conf_type);
     }
   }
   else

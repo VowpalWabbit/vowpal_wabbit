@@ -125,7 +125,8 @@ std::unique_ptr<options_shared_feature_merger_v1> get_shared_feature_merger_opti
 VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup_base_i& stack_builder)
 {
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto shared_feature_merger_opts = get_shared_feature_merger_options_instance(all, all.logger, *stack_builder.get_options());
+  auto shared_feature_merger_opts =
+      get_shared_feature_merger_options_instance(all, all.logger, *stack_builder.get_options());
   if (shared_feature_merger_opts == nullptr) { return nullptr; }
   auto* base = stack_builder.setup_base_learner();
   if (base == nullptr) { return nullptr; }
@@ -133,15 +134,21 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
   if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
 
   auto shared_feature_merger_data = VW::make_unique<sfm_data>();
-  if (shared_feature_merger_opts->extra_metrics_supplied) { shared_feature_merger_data->metrics = VW::make_unique<sfm_metrics>(); }
-  if (shared_feature_merger_opts->large_action_space_supplied) { shared_feature_merger_data->store_shared_ex_in_reduction_features = true; }
+  if (shared_feature_merger_opts->extra_metrics_supplied)
+  {
+    shared_feature_merger_data->metrics = VW::make_unique<sfm_metrics>();
+  }
+  if (shared_feature_merger_opts->large_action_space_supplied)
+  {
+    shared_feature_merger_data->store_shared_ex_in_reduction_features = true;
+  }
 
   auto* multi_base = VW::LEARNER::as_multiline(base);
   shared_feature_merger_data->label_type = all.example_parser->lbl_parser.label_type;
 
   // Both label and prediction types inherit that of base.
-  auto* learner = VW::LEARNER::make_reduction_learner(std::move(shared_feature_merger_data), multi_base, predict_or_learn<true>,
-      predict_or_learn<false>, stack_builder.get_setupfn_name(shared_feature_merger_setup))
+  auto* learner = VW::LEARNER::make_reduction_learner(std::move(shared_feature_merger_data), multi_base,
+      predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(shared_feature_merger_setup))
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .set_persist_metrics(persist)
                       .build();

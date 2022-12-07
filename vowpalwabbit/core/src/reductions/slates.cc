@@ -159,8 +159,8 @@ float get_estimate(const VW::action_scores& label_probs, float cost, const VW::d
   return cost * p_over_ps;
 }
 
-void update_stats_slates(const VW::workspace& /* all */, shared_data& sd, const VW::reductions::slates_data_obj& /* data */,
-    const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
+void update_stats_slates(const VW::workspace& /* all */, shared_data& sd,
+    const VW::reductions::slates_data_obj& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
 {
   VW::multi_ex slots;
   size_t num_features = 0;
@@ -276,8 +276,8 @@ VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::slates::slates_label_parser;
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(slates_data), base, learn_or_predict<true>, learn_or_predict<false>,
-      stack_builder.get_setupfn_name(slates_setup))
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(slates_data), base, learn_or_predict<true>,
+      learn_or_predict<false>, stack_builder.get_setupfn_name(slates_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_prediction_type(VW::prediction_type_t::DECISION_PROBS)
                 .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
