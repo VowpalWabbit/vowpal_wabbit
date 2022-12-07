@@ -650,112 +650,145 @@ void finish_multiline_example(VW::workspace& all, cbify&, VW::multi_ex& ec_seq)
   }
   VW::finish_example(all, ec_seq);
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_builder)
+struct options_cbify_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  uint32_t num_actions = 0;
-  uint32_t cb_continuous_num_actions = 0;
-  auto data = VW::make_unique<::cbify>();
+
   bool use_cs;
   bool use_reg;  // todo: check
   bool use_discrete;
+  uint32_t num_actions = 0;
+  uint32_t cb_continuous_num_actions = 0;
+  float min_value = 0.f;
+  float max_value = 0.f;
+  int loss_option = 0;
+  int loss_report = 0;
+  float loss_01_ratio = 0.f;
+  float loss0;
+  float loss1;
+  bool flip_loss_sign;
+  bool cb_explore_adf_supplied;
+};
 
+std::unique_ptr<options_cbify_v1> get_cbify_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto cbify_opts = VW::make_unique<options_cbify_v1>();
   option_group_definition new_options("[Reduction] CBify");
   new_options
-      .add(make_option("cbify", num_actions)
+      .add(make_option("cbify", cbify_opts->num_actions)
                .keep()
                .necessary()
                .help("Convert multiclass on <k> classes into a contextual bandit problem"))
-      .add(make_option("cbify_cs", use_cs).help("Consume cost-sensitive classification examples instead of multiclass"))
-      .add(make_option("cbify_reg", use_reg)
+      .add(make_option("cbify_cs", cbify_opts->use_cs).help("Consume cost-sensitive classification examples instead of multiclass"))
+      .add(make_option("cbify_reg", cbify_opts->use_reg)
                .help("Consume regression examples instead of multiclass and cost sensitive"))
-      .add(make_option("cats", cb_continuous_num_actions)
+      .add(make_option("cats", cbify_opts->cb_continuous_num_actions)
                .default_value(0)
                .keep()
                .help("Continuous action tree with smoothing"))
-      .add(make_option("cb_discrete", use_discrete)
+      .add(make_option("cb_discrete", cbify_opts->use_discrete)
                .keep()
                .help("Discretizes continuous space and adds cb_explore as option"))
-      .add(make_option("min_value", data->regression_data.min_value).keep().help("Minimum continuous value"))
-      .add(make_option("max_value", data->regression_data.max_value).keep().help("Maximum continuous value"))
-      .add(make_option("loss_option", data->regression_data.loss_option)
+      .add(make_option("min_value", cbify_opts->min_value).keep().help("Minimum continuous value"))
+      .add(make_option("max_value", cbify_opts->max_value).keep().help("Maximum continuous value"))
+      .add(make_option("loss_option", cbify_opts->loss_option)
                .default_value(0)
                .one_of({0, 1, 2})
                .help("Loss options for regression - 0:squared, 1:absolute, 2:0/1"))
-      .add(make_option("loss_report", data->regression_data.loss_report)
+      .add(make_option("loss_report", cbify_opts->loss_report)
                .default_value(0)
                .one_of({0, 1})
                .help("Loss report option - 0:normalized, 1:denormalized"))
-      .add(make_option("loss_01_ratio", data->regression_data.loss_01_ratio)
+      .add(make_option("loss_01_ratio", cbify_opts->loss_01_ratio)
                .default_value(0.1f)
                .help("Ratio of zero loss for 0/1 loss"))
-      .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"))
-      .add(make_option("flip_loss_sign", data->flip_loss_sign)
+      .add(make_option("loss0", cbify_opts->loss0).default_value(0.f).help("Loss for correct label"))
+      .add(make_option("loss1", cbify_opts->loss1).default_value(1.f).help("Loss for incorrect label"))
+      .add(make_option("flip_loss_sign", cbify_opts->flip_loss_sign)
                .keep()
                .help("Flip sign of loss (use reward instead of loss)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  data->regression_data.num_actions = num_actions;
-  data->use_adf = options.was_supplied("cb_explore_adf");
-  data->app_seed = VW::uniform_hash("vw", 2, 0);
-  data->all = &all;
-
-  if (use_reg)
+  cbify_opts->cb_explore_adf_supplied = options.was_supplied("cb_explore_adf");
+  if (cbify_opts->use_reg)
   {
     // Check invalid parameter combinations
-    if (data->use_adf) { THROW("Incompatible options: cb_explore_adf and cbify_reg"); }
-    if (use_cs) { THROW("Incompatible options: cbify_cs and cbify_reg"); }
+    if (cbify_opts->cb_explore_adf_supplied) { THROW("Incompatible options: cb_explore_adf and cbify_reg"); }
+    if (cbify_opts->use_cs) { THROW("Incompatible options: cbify_cs and cbify_reg"); }
     if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     {
       THROW("Min and max values must be supplied with cbify_reg");
     }
 
-    if (use_discrete && options.was_supplied("cats")) { THROW("Incompatible options: cb_discrete and cats"); }
-    else if (use_discrete)
+    if (cbify_opts->use_discrete && options.was_supplied("cats")) { THROW("Incompatible options: cb_discrete and cats"); }
+    else if (cbify_opts->use_discrete)
     {
       std::stringstream ss;
-      ss << num_actions;
+      ss << cbify_opts->num_actions;
       options.insert("cb_explore", ss.str());
     }
     else if (options.was_supplied("cats"))
     {
-      if (cb_continuous_num_actions != num_actions)
+      if (cbify_opts->cb_continuous_num_actions != cbify_opts->num_actions)
         THROW("Different number of actions specified for cbify and cb_continuous");
     }
     else
     {
       std::stringstream ss;
-      ss << num_actions;
+      ss << cbify_opts->num_actions;
       options.insert("cats", ss.str());
     }
   }
   else
   {
-    if (!options.was_supplied("cb_explore") && !data->use_adf)
+    if (!options.was_supplied("cb_explore") && !cbify_opts->cb_explore_adf_supplied)
     {
       std::stringstream ss;
-      ss << num_actions;
+      ss << cbify_opts->num_actions;
       options.insert("cb_explore", ss.str());
     }
   }
 
-  if (data->use_adf && (options.was_supplied("regcb") || options.was_supplied("squarecb")))
+  if (cbify_opts->cb_explore_adf_supplied && (options.was_supplied("regcb") || options.was_supplied("squarecb")))
   {
-    options.insert("cb_min_cost", std::to_string(data->loss0));
-    options.insert("cb_max_cost", std::to_string(data->loss1));
+    options.insert("cb_min_cost", std::to_string(cbify_opts->loss0));
+    options.insert("cb_max_cost", std::to_string(cbify_opts->loss1));
   }
 
   if (options.was_supplied("baseline"))
   {
     std::stringstream ss;
-    ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
+    ss << std::max(std::abs(cbify_opts->loss0), std::abs(cbify_opts->loss1)) / (cbify_opts->loss1 - cbify_opts->loss0);
     options.insert("lr_multiplier", ss.str());
   }
+
+  return cbify_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbify_opts = get_cbify_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbify_opts == nullptr) { return nullptr; }
+
+  auto cbify_data = VW::make_unique<::cbify>();
+
+  cbify_data->regression_data.min_value = cbify_opts->min_value;
+  cbify_data->regression_data.max_value = cbify_opts->max_value;
+  cbify_data->regression_data.loss_option = cbify_opts->loss_option;
+  cbify_data->regression_data.loss_report = cbify_opts->loss_report;
+  cbify_data->regression_data.loss_01_ratio = cbify_opts->loss_01_ratio;
+  cbify_data->loss0 = cbify_opts->loss0;
+  cbify_data->loss1 = cbify_opts->loss1;
+  cbify_data->flip_loss_sign = cbify_opts->flip_loss_sign;
+
+  cbify_data->regression_data.num_actions = cbify_opts->num_actions;
+  cbify_data->use_adf = cbify_opts->cb_explore_adf_supplied;
+  cbify_data->app_seed = VW::uniform_hash("vw", 2, 0);
+  cbify_data->all = &all;
 
   learner<cbify, VW::example>* l;
   void (*finish_ptr)(VW::workspace&, cbify&, VW::example&);
@@ -765,7 +798,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
   VW::prediction_type_t in_pred_type;
   VW::prediction_type_t out_pred_type;
 
-  if (data->use_adf)
+  if (cbify_data->use_adf)
   {
     out_label_type = VW::label_type_t::CB;
     in_pred_type = VW::prediction_type_t::MULTICLASS;
@@ -774,12 +807,12 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     void (*predict_ptr)(cbify&, multi_learner&, VW::example&);
     multi_learner* base = as_multiline(stack_builder.setup_base_learner());
 
-    if (data->use_adf)
+    if (cbify_data->use_adf)
     {
-      data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
+      cbify_data->adf_data.init_adf_data(cbify_opts->num_actions, base->increment, all.interactions, all.extent_interactions);
     }
 
-    if (use_cs)
+    if (cbify_opts->use_cs)
     {
       in_label_type = VW::label_type_t::CS;
       learn_ptr = learn_adf<true>;
@@ -798,7 +831,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
     l = make_reduction_learner(
-        std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
+        std::move(cbify_data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
             .set_input_label_type(in_label_type)
             .set_output_label_type(out_label_type)
             .set_output_prediction_type(in_pred_type)
@@ -811,12 +844,12 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     void (*learn_ptr)(cbify&, single_learner&, VW::example&);
     void (*predict_ptr)(cbify&, single_learner&, VW::example&);
     single_learner* base = as_singleline(stack_builder.setup_base_learner());
-    if (use_reg)
+    if (cbify_opts->use_reg)
     {
       in_label_type = VW::label_type_t::SIMPLE;
       out_pred_type = VW::prediction_type_t::SCALAR;
       all.example_parser->lbl_parser = simple_label_parser_global;
-      if (use_discrete)
+      if (cbify_opts->use_discrete)
       {
         out_label_type = VW::label_type_t::CB;
         in_pred_type = VW::prediction_type_t::ACTION_PROBS;
@@ -835,7 +868,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
         name_addition = "-reg";
       }
     }
-    else if (use_cs)
+    else if (cbify_opts->use_cs)
     {
       in_label_type = VW::label_type_t::CS;
       out_label_type = VW::label_type_t::CB;
@@ -860,7 +893,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
     l = make_reduction_learner(
-        std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
+        std::move(cbify_data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
             .set_input_label_type(in_label_type)
             .set_output_label_type(out_label_type)
             .set_input_prediction_type(in_pred_type)
@@ -873,41 +906,57 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
   return make_base(*l);
 }
 
-VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stack_builder)
+struct options_cbifyldf_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<cbify>();
   bool cbify_ldf_option = false;
+  float loss0;
+  float loss1;
+};
 
+std::unique_ptr<options_cbifyldf_v1> get_cbifyldf_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto cbifyldf_opts = VW::make_unique<options_cbifyldf_v1>();
   option_group_definition new_options("[Reduction] Make csoaa_ldf into Contextual Bandit");
   new_options
-      .add(make_option("cbify_ldf", cbify_ldf_option)
+      .add(make_option("cbify_ldf", cbifyldf_opts->cbify_ldf_option)
                .keep()
                .necessary()
                .help("Convert csoaa_ldf into a contextual bandit problem"))
-      .add(make_option("loss0", data->loss0).default_value(0.f).help("Loss for correct label"))
-      .add(make_option("loss1", data->loss1).default_value(1.f).help("Loss for incorrect label"));
+      .add(make_option("loss0", cbifyldf_opts->loss0).default_value(0.f).help("Loss for correct label"))
+      .add(make_option("loss1", cbifyldf_opts->loss1).default_value(1.f).help("Loss for incorrect label"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  data->app_seed = VW::uniform_hash("vw", 2, 0);
-  data->all = &all;
-  data->use_adf = true;
-
   if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
-  options.insert("cb_min_cost", std::to_string(data->loss0));
-  options.insert("cb_max_cost", std::to_string(data->loss1));
+  options.insert("cb_min_cost", std::to_string(cbifyldf_opts->loss0));
+  options.insert("cb_max_cost", std::to_string(cbifyldf_opts->loss1));
 
   if (options.was_supplied("baseline"))
   {
     std::stringstream ss;
-    ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
+    ss << std::max(std::abs(cbifyldf_opts->loss0), std::abs(cbifyldf_opts->loss1)) / (cbifyldf_opts->loss1 - cbifyldf_opts->loss0);
     options.insert("lr_multiplier", ss.str());
   }
 
+  return cbifyldf_opts;
+}
+
+VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbifyldf_opts = get_cbifyldf_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbifyldf_opts == nullptr) { return nullptr; }
+  auto cbifyldf_data = VW::make_unique<cbify>();
+
+  cbifyldf_data->loss0 = cbifyldf_opts->loss0;
+  cbifyldf_data->loss1 = cbifyldf_opts->loss1;
+  cbifyldf_data->app_seed = VW::uniform_hash("vw", 2, 0);
+  cbifyldf_data->all = &all;
+  cbifyldf_data->use_adf = true;
+
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning_ldf, do_actual_predict_ldf,
+  auto* l = make_reduction_learner(std::move(cbifyldf_data), base, do_actual_learning_ldf, do_actual_predict_ldf,
       stack_builder.get_setupfn_name(cbifyldf_setup))
                 .set_input_label_type(VW::label_type_t::CS)
                 .set_output_label_type(VW::label_type_t::CB)

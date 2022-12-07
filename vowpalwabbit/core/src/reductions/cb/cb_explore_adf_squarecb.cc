@@ -294,17 +294,12 @@ void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
     bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
-}  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::setup_base_i& stack_builder)
+struct options_cbea_squarecb_v1
 {
-  VW::config::options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  using config::make_option;
   bool cb_explore_adf_option = false;
   bool squarecb = false;
   std::string type_string = "mtr";
-
   // Basic SquareCB parameters
   float gamma_scale = 1.;
   float gamma_exponent = 0.;
@@ -314,38 +309,45 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
   float c0 = 0.;
   float min_cb_cost = 0.;
   float max_cb_cost = 0.;
+  bool with_metrics;
+};
 
-  config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (SquareCB)");
+std::unique_ptr<options_cbea_squarecb_v1> get_cbea_squarecb_options_instance(
+    const VW::workspace&, VW::io::logger&, VW::config::options_i& options)
+{
+  auto cbea_squarecb_opts = VW::make_unique<options_cbea_squarecb_v1>();
+  using VW::config::make_option;
+  VW::config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (SquareCB)");
   new_options
-      .add(make_option("cb_explore_adf", cb_explore_adf_option)
+      .add(make_option("cb_explore_adf", cbea_squarecb_opts->cb_explore_adf_option)
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("squarecb", squarecb).keep().necessary().help("SquareCB exploration"))
-      .add(make_option("gamma_scale", gamma_scale)
+      .add(make_option("squarecb", cbea_squarecb_opts->squarecb).keep().necessary().help("SquareCB exploration"))
+      .add(make_option("gamma_scale", cbea_squarecb_opts->gamma_scale)
                .keep()
                .default_value(10.f)
                .help("Sets SquareCB greediness parameter to gamma=[gamma_scale]*[num examples]^1/2"))
-      .add(make_option("gamma_exponent", gamma_exponent)
+      .add(make_option("gamma_exponent", cbea_squarecb_opts->gamma_exponent)
                .keep()
                .default_value(.5f)
                .help("Exponent on [num examples] in SquareCB greediness parameter gamma"))
-      .add(make_option("elim", elim)
+      .add(make_option("elim", cbea_squarecb_opts->elim)
                .keep()
                .help("Only perform SquareCB exploration over plausible actions (computed via RegCB strategy)"))
-      .add(make_option("mellowness", c0)
+      .add(make_option("mellowness", cbea_squarecb_opts->c0)
                .keep()
                .default_value(0.001f)
                .help("Mellowness parameter c_0 for computing plausible action set. Only used with --elim"))
-      .add(make_option("cb_min_cost", min_cb_cost)
+      .add(make_option("cb_min_cost", cbea_squarecb_opts->min_cb_cost)
                .keep()
                .default_value(0.f)
                .help("Lower bound on cost. Only used with --elim"))
-      .add(make_option("cb_max_cost", max_cb_cost)
+      .add(make_option("cb_max_cost", cbea_squarecb_opts->max_cb_cost)
                .keep()
                .default_value(1.f)
                .help("Upper bound on cost. Only used with --elim"))
-      .add(make_option("cb_type", type_string)
+      .add(make_option("cb_type", cbea_squarecb_opts->type_string)
                .keep()
                .default_value("mtr")
                .one_of({"mtr"})
@@ -356,12 +358,23 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))
   {
-    options.insert("cb_type", type_string);
+    options.insert("cb_type", cbea_squarecb_opts->type_string);
     options.add_and_parse(new_options);
   }
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+  cbea_squarecb_opts->with_metrics = options.was_supplied("extra_metrics");
+
+  return cbea_squarecb_opts;
+}
+}  // namespace
+
+VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cbea_squarecb_opts = get_cbea_squarecb_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cbea_squarecb_opts == nullptr) { return nullptr; }
 
   // Set explore_type
   size_t problem_multiplier = 1;
@@ -369,12 +382,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
-  auto data = VW::make_unique<explore_type>(
-      with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  auto cbea_squarecb_data = VW::make_unique<explore_type>(
+      cbea_squarecb_opts->with_metrics, cbea_squarecb_opts->gamma_scale, cbea_squarecb_opts->gamma_exponent, cbea_squarecb_opts->elim, cbea_squarecb_opts->c0, cbea_squarecb_opts->min_cb_cost, cbea_squarecb_opts->max_cb_cost, all.model_file_ver);
+  auto* l = make_reduction_learner(std::move(cbea_squarecb_data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_squarecb_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)

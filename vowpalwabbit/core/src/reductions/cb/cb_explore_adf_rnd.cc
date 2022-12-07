@@ -292,11 +292,12 @@ std::unique_ptr<options_cbea_rnd_v1> get_cbea_rnd_options_instance(
                .default_value(0.1f)
                .help("Covariance regularization strength rnd (bigger => more exploration on new features)"));
 
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
   cbea_rnd_opts->with_metrics = options.was_supplied("extra_metrics");
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   return cbea_rnd_opts;
 }
 }  // namespace

@@ -94,34 +94,33 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, VW::example& e
   }
 }
 
-}  // namespace
-// END sample_pdf reduction and reduction methods
-////////////////////////////////////////////////////
-
-// Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
+struct options_cb_explore_pdf_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  option_group_definition new_options("[Reduction] Continuous Actions: cb_explore_pdf");
   bool invoked = false;
   float epsilon;
   float min;
   float max;
   bool first_only = false;
+};
+
+std::unique_ptr<options_cb_explore_pdf_v1> get_cb_explore_pdf_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto cb_explore_pdf_opts = VW::make_unique<options_cb_explore_pdf_v1>();
+  option_group_definition new_options("[Reduction] Continuous Actions: cb_explore_pdf");
   new_options
-      .add(make_option("cb_explore_pdf", invoked)
+      .add(make_option("cb_explore_pdf", cb_explore_pdf_opts->invoked)
                .keep()
                .necessary()
                .help("Sample a pdf and pick a continuous valued action"))
-      .add(make_option("epsilon", epsilon)
+      .add(make_option("epsilon", cb_explore_pdf_opts->epsilon)
                .keep()
                .allow_override()
                .default_value(0.05f)
                .help("Epsilon-greedy exploration"))
-      .add(make_option("min_value", min).keep().default_value(0.0f).help("Min value for continuous range"))
-      .add(make_option("max_value", max).keep().default_value(1.0f).help("Max value for continuous range"))
-      .add(make_option("first_only", first_only)
+      .add(make_option("min_value", cb_explore_pdf_opts->min).keep().default_value(0.0f).help("Min value for continuous range"))
+      .add(make_option("max_value", cb_explore_pdf_opts->max).keep().default_value(1.0f).help("Max value for continuous range"))
+      .add(make_option("first_only", cb_explore_pdf_opts->first_only)
                .keep()
                .help("Use user provided first action or user provided pdf or uniform random"));
 
@@ -131,16 +130,28 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i
 
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
     THROW("Min and max values must be supplied with cb_explore_pdf");
+  return cb_explore_pdf_opts;
+}
+}  // namespace
+// END sample_pdf reduction and reduction methods
+////////////////////////////////////////////////////
+
+// Setup reduction in stack
+VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto cb_explore_pdf_opts = get_cb_explore_pdf_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cb_explore_pdf_opts == nullptr) { return nullptr; }
 
   auto* p_base = stack_builder.setup_base_learner();
-  auto p_reduction = VW::make_unique<cb_explore_pdf>();
-  p_reduction->init(as_singleline(p_base));
-  p_reduction->epsilon = epsilon;
-  p_reduction->min_value = min;
-  p_reduction->max_value = max;
-  p_reduction->first_only = first_only;
+  auto cb_explore_pdf_data = VW::make_unique<cb_explore_pdf>();
+  cb_explore_pdf_data->init(as_singleline(p_base));
+  cb_explore_pdf_data->epsilon = cb_explore_pdf_opts->epsilon;
+  cb_explore_pdf_data->min_value = cb_explore_pdf_opts->min;
+  cb_explore_pdf_data->max_value = cb_explore_pdf_opts->max;
+  cb_explore_pdf_data->first_only = cb_explore_pdf_opts->first_only;
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto* l = make_reduction_learner(std::move(cb_explore_pdf_data), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cb_explore_pdf_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CONTINUOUS)

@@ -25,11 +25,11 @@ using namespace VW::config;
 namespace
 {
 // cb_sample is used to automatically sample and swap from a cb explore pdf.
-class cb_sample_data
+class cb_sample_data_obj
 {
 public:
-  explicit cb_sample_data(std::shared_ptr<VW::rand_state>& random_state) : _random_state(random_state) {}
-  explicit cb_sample_data(std::shared_ptr<VW::rand_state>&& random_state) : _random_state(random_state) {}
+  explicit cb_sample_data_obj(std::shared_ptr<VW::rand_state>& random_state) : _random_state(random_state) {}
+  explicit cb_sample_data_obj(std::shared_ptr<VW::rand_state>&& random_state) : _random_state(random_state) {}
 
   template <bool is_learn>
   inline void learn_or_predict(multi_learner& base, VW::multi_ex& examples)
@@ -112,27 +112,39 @@ private:
   std::shared_ptr<VW::rand_state> _random_state;
 };
 template <bool is_learn>
-void learn_or_predict(cb_sample_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(cb_sample_data_obj& data, multi_learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
+}
+
+struct options_cb_sample_v1
+{
+  bool cb_sample_option = false;
+};
+
+std::unique_ptr<options_cb_sample_v1> get_cb_sample_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto cb_sample_opts = VW::make_unique<options_cb_sample_v1>();
+
+  option_group_definition new_options("[Reduction] CB Sample");
+  new_options.add(
+      make_option("cb_sample", cb_sample_opts->cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action"));
+
+  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return cb_sample_opts;
 }
 }  // namespace
 
 base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  bool cb_sample_option = false;
+  auto cb_sample_opts = get_cb_sample_options_instance(all, all.logger, *stack_builder.get_options());
+  if (cb_sample_opts == nullptr) { return nullptr; }
 
-  option_group_definition new_options("[Reduction] CB Sample");
-  new_options.add(
-      make_option("cb_sample", cb_sample_option).keep().necessary().help("Sample from CB pdf and swap top action"));
+  auto cb_sample_data = VW::make_unique<cb_sample_data_obj>(all.get_random_state());
 
-  if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-
-  auto data = VW::make_unique<cb_sample_data>(all.get_random_state());
-
-  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
+  auto* l = make_reduction_learner(std::move(cb_sample_data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(cb_sample_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)
