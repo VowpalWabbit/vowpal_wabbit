@@ -6,6 +6,7 @@
 #include "explore.h"
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -220,6 +221,31 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
 
   return enforce_minimum_probability(
       uniform_epsilon, consider_zero_valued_elements, pmf_first, pmf_last, pmf_category());
+}
+
+template <typename It>
+int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last, std::random_access_iterator_tag /* pmf_tag */)
+{
+  if (pmf_first == pmf_last || pmf_last < pmf_first) { return E_EXPLORATION_BAD_RANGE; }
+
+  size_t num_actions = std::distance(pmf_first, pmf_last);
+  const auto scale = (1.f - uniform_epsilon);
+  for (It d = pmf_first; d != pmf_last; ++d)
+  {
+    auto& prob = *d;
+    prob *= scale;
+    prob += uniform_epsilon / num_actions;
+  }
+
+  return S_EXPLORATION_OK;
+}
+
+template <typename It>
+int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last)
+{
+  using pmf_category = typename std::iterator_traits<It>::iterator_category;
+
+  return mix_with_uniform(uniform_epsilon, pmf_first, pmf_last, pmf_category());
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds

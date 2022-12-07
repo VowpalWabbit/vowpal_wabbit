@@ -423,9 +423,7 @@ public:
 
     if (has_output_example_prediction()) { output_example_prediction(all, ec); }
 
-    const bool should_print_driver_update =
-        all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
-    if (has_print_update() && should_print_driver_update) { print_update(all, ec); }
+    if (has_print_update()) { print_update(all, ec); }
 
     if (has_cleanup_example()) { cleanup_example(ec); }
 

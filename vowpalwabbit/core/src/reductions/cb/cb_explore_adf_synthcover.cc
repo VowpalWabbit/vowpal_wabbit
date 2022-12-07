@@ -53,7 +53,7 @@ private:
 
   VW::version_struct _model_file_version;
 
-  v_array<VW::action_score> _action_probs;
+  VW::v_array<VW::action_score> _action_probs;
   float _min_cost;
   float _max_cost;
   template <bool is_learn>
