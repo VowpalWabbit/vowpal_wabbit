@@ -4,6 +4,7 @@
 
 #include "vw/explore/explore.h"
 
+#include "vw/core/action_score.h"
 #include "vw/core/prob_dist_cont.h"
 #include "vw/core/reductions/cb/cb_explore_pdf.h"
 
@@ -366,4 +367,71 @@ TEST(explore_tests, sampling_rank_negative_pdf)
       S_EXPLORATION_OK, exploration::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
   EXPECT_THAT(expected_pdf, Pointwise(FloatNear(1e-2f), pdf));
   EXPECT_THAT(0, chosen_index);
+}
+
+TEST(explore_tests, mix_with_uniform_test)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 1.f});
+  probs.push_back(VW::action_score{2, 0.f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  exploration::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.8f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.1f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
+}
+
+TEST(explore_tests, mix_with_uniform_floats_test)
+{
+  std::vector<float> pdf = {1.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::mix_with_uniform(0.3f, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(explore_tests, mix_with_uniform_test_2)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 0.9f});
+  probs.push_back(VW::action_score{2, 0.1f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  exploration::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.73f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.17f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
+}
+
+TEST(explore_tests, mix_with_uniform_test_3)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 0.8f});
+  probs.push_back(VW::action_score{2, 0.2f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  exploration::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.66f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.24f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
 }
