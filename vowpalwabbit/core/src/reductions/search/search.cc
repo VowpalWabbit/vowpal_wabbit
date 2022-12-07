@@ -3174,7 +3174,8 @@ std::unique_ptr<options_search_v1> get_search_options_instance(
                .help("Some tasks allow you to specify how much history their depend on; specify that here"))
       .add(make_option("search_no_caching", search_opts->no_caching)
                .help("Turn off the built-in caching ability (makes things slower, but technically more safe)"))
-      .add(make_option("search_xv", search_opts->xv).help("Train two separate policies, alternating prediction/learning"))
+      .add(make_option("search_xv", search_opts->xv)
+               .help("Train two separate policies, alternating prediction/learning"))
       .add(make_option("search_perturb_oracle", search_opts->perturb_oracle)
                .default_value(0.f)
                .help("Perturb the oracle on rollin with this probability"))
@@ -3183,7 +3184,9 @@ std::unique_ptr<options_search_v1> get_search_options_instance(
       .add(make_option("search_active_verify", search_opts->active_csoaa_verify)
                .help("Verify that active learning is doing the right thing (arg = multiplier, should be = "
                      "cost_range * range_c)"))
-      .add(make_option("search_save_every_k_runs", search_opts->save_every_k_runs).default_value(0).help("Save model every k runs"));
+      .add(make_option("search_save_every_k_runs", search_opts->save_every_k_runs)
+               .default_value(0)
+               .help("Save model every k runs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -3244,8 +3247,14 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   else
     THROW("error: --search_interpolation must be 'data' or 'policy'");
 
-  if ((search_opts->rollout_string == "policy") || (search_opts->rollout_string == "learn")) { priv.rollout_method = roll_method::POLICY; }
-  else if ((search_opts->rollout_string == "oracle") || (search_opts->rollout_string == "ref")) { priv.rollout_method = roll_method::ORACLE; }
+  if ((search_opts->rollout_string == "policy") || (search_opts->rollout_string == "learn"))
+  {
+    priv.rollout_method = roll_method::POLICY;
+  }
+  else if ((search_opts->rollout_string == "oracle") || (search_opts->rollout_string == "ref"))
+  {
+    priv.rollout_method = roll_method::ORACLE;
+  }
   else if ((search_opts->rollout_string == "mix_per_state")) { priv.rollout_method = roll_method::MIX_PER_STATE; }
   else if ((search_opts->rollout_string == "mix_per_roll") || (search_opts->rollout_string == "mix"))
   {
@@ -3257,8 +3266,14 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
     priv.no_caching = true;
   }
 
-  if ((search_opts->rollin_string == "policy") || (search_opts->rollin_string == "learn")) { priv.rollin_method = roll_method::POLICY; }
-  else if ((search_opts->rollin_string == "oracle") || (search_opts->rollin_string == "ref")) { priv.rollin_method = roll_method::ORACLE; }
+  if ((search_opts->rollin_string == "policy") || (search_opts->rollin_string == "learn"))
+  {
+    priv.rollin_method = roll_method::POLICY;
+  }
+  else if ((search_opts->rollin_string == "oracle") || (search_opts->rollin_string == "ref"))
+  {
+    priv.rollin_method = roll_method::ORACLE;
+  }
   else if ((search_opts->rollin_string == "mix_per_state")) { priv.rollin_method = roll_method::MIX_PER_STATE; }
   else if ((search_opts->rollin_string == "mix_per_roll") || (search_opts->rollin_string == "mix"))
   {
@@ -3357,7 +3372,8 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   {
     if (search_opts->help_supplied)
     {
-      THROW("fail: unknown task for --search_task '" << search_opts->task_string << "'; use --search_task list to get a list");
+      THROW("fail: unknown task for --search_task '" << search_opts->task_string
+                                                     << "'; use --search_task list to get a list");
     }
   }
   priv.metatask = nullptr;
@@ -3386,8 +3402,14 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
-  if (priv.task && priv.task->initialize) { priv.task->initialize(*search_data.get(), priv.A, *stack_builder.get_options()); }
-  if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*search_data.get(), priv.A, *stack_builder.get_options()); }
+  if (priv.task && priv.task->initialize)
+  {
+    priv.task->initialize(*search_data.get(), priv.A, *stack_builder.get_options());
+  }
+  if (priv.metatask && priv.metatask->initialize)
+  {
+    priv.metatask->initialize(*search_data.get(), priv.A, *stack_builder.get_options());
+  }
   priv.meta_t = 0;
 
   VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
@@ -3418,8 +3440,8 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
 
   // base is multiline
   learner<search, VW::multi_ex>* l =
-      VW::LEARNER::make_reduction_learner(std::move(search_data), base, do_actual_learning<true>, do_actual_learning<false>,
-          stack_builder.get_setupfn_name(search_setup))
+      VW::LEARNER::make_reduction_learner(std::move(search_data), base, do_actual_learning<true>,
+          do_actual_learning<false>, stack_builder.get_setupfn_name(search_setup))
           .set_learn_returns_prediction(true)
           .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
           .set_finish_example(finish_multiline_example)
