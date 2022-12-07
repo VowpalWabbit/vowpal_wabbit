@@ -142,14 +142,12 @@ std::unique_ptr<options_topk_v1> get_topk_options_instance(
 
 VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-
-  auto topk_opts = get_topk_options_instance(all, all.logger, options);
+  auto topk_opts = get_topk_options_instance(all, all.logger, *stack_builder.get_options());
   if(topk_opts == nullptr) { return nullptr; }
 
-  auto data = VW::make_unique<topk>(topk_opts->k);
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+  auto topk_data = VW::make_unique<topk>(topk_opts->k);
+  auto* l = VW::LEARNER::make_reduction_learner(std::move(topk_data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
                 .set_learn_returns_prediction(true)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
