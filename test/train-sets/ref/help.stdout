@@ -383,6 +383,8 @@ Weight Options:
                                             1, keep)
     --cb_type arg                           Contextual bandit method to use. SquareCB only supports supervised
                                             regression (mtr) (type: str, default: mtr, choices {mtr}, keep)
+    --epsilon arg                           The minimum probability of an action is this value divided by
+                                            the number of actions. (type: float, default: 0, keep)
 [Reduction] Contextual Bandit Exploration with ADF (bagging) Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
