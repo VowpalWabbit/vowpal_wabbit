@@ -12,6 +12,7 @@
 #include <cstring>
 #include <numeric>
 #include <stdexcept>
+#include <vector>
 
 namespace exploration
 {
@@ -151,80 +152,75 @@ int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt p
 }
 
 template <typename It>
-int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pmf_first, It pmf_last,
+int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last,
     std::random_access_iterator_tag /* pmf_tag */)
 {
-  // iterators don't support <= in general
   if (pmf_first == pmf_last || pmf_last < pmf_first) { return E_EXPLORATION_BAD_RANGE; }
 
-  size_t num_actions = pmf_last - pmf_first;
+  // Nothing to do
+  if (uniform_epsilon == 0.f) { return S_EXPLORATION_OK; }
 
-  if (minimum_uniform > 0.999)  // uniform exploration
+  if (uniform_epsilon < 0.f || uniform_epsilon > 1.f) { return E_EXPLORATION_BAD_EPSILON; }
+
+  const auto num_actions = std::distance(pmf_first, pmf_last);
+
+  size_t support_size = num_actions;
+  if (!consider_zero_valued_elements) { support_size -= std::count(pmf_first, pmf_last, 0.f); }
+
+  if (uniform_epsilon > 0.999f)  // uniform exploration
   {
-    size_t support_size = num_actions;
-    if (!update_zero_elements)
-    {
-      for (It d = pmf_first; d != pmf_last; ++d)
-      {
-        if (*d == 0) { support_size--; }
-      }
-    }
-
-    for (It d = pmf_first; d != pmf_last; ++d)
-    {
-      if (update_zero_elements || *d > 0) { *d = 1.f / support_size; }
-    }
+    std::for_each(pmf_first, pmf_last,
+        [support_size, consider_zero_valued_elements](float& prob)
+        {
+          if (consider_zero_valued_elements || prob > 0) { prob = 1.f / support_size; }
+        });
 
     return S_EXPLORATION_OK;
   }
 
-  minimum_uniform /= num_actions;
-  float touched_mass = 0.;
-  float untouched_mass = 0.;
-  uint16_t num_actions_touched = 0;
+  // When consider_zero_valued_elements == false, uniform_epsilon is divided by the total
+  // number of actions but only nonzero elements are updated.
+  const auto minimum_probability = uniform_epsilon / support_size;
 
-  for (It d = pmf_first; d != pmf_last; ++d)
+  std::vector<float> sorted_probs(pmf_first, pmf_last);
+  std::sort(sorted_probs.begin(), sorted_probs.end(), std::greater<float>());
+
+  size_t idx = 0;
+  float running_sum = 0.f;
+  size_t rho_idx = 0;  // rho = 0 should always trigger if statement below if uniform_epsilon < 1.
+  float rho_sum = sorted_probs[0];
+
+  for (const auto prob : sorted_probs)
   {
-    auto& prob = *d;
-    if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= minimum_uniform)
+    if (!consider_zero_valued_elements && prob == 0.f) { break; }
+
+    running_sum += prob;
+    if (prob > ((support_size - idx - 1) * minimum_probability + running_sum - 1.f) / (idx + 1.f) + minimum_probability)
     {
-      touched_mass += minimum_uniform;
-      prob = minimum_uniform;
-      ++num_actions_touched;
+      rho_idx = idx;
+      rho_sum = running_sum;
     }
-    else { untouched_mass += prob; }
+
+    idx += 1;
   }
 
-  if (touched_mass > 0.)
-  {
-    if (touched_mass > 0.999)
-    {
-      minimum_uniform = (1.f - untouched_mass) / static_cast<float>(num_actions_touched);
-      for (It d = pmf_first; d != pmf_last; ++d)
-      {
-        auto& prob = *d;
-        if ((prob > 0 || (prob == 0 && update_zero_elements)) && prob <= minimum_uniform) { prob = minimum_uniform; }
-      }
-    }
-    else
-    {
-      float ratio = (1.f - touched_mass) / untouched_mass;
-      for (It d = pmf_first; d != pmf_last; ++d)
-      {
-        if (*d > minimum_uniform) { *d *= ratio; }
-      }
-    }
-  }
+  const auto tau = ((support_size - rho_idx - 1.f) * minimum_probability + rho_sum - 1.f) / (rho_idx + 1.f);
 
+  std::for_each(pmf_first, pmf_last,
+      [tau, minimum_probability, consider_zero_valued_elements](float& prob)
+      {
+        if (consider_zero_valued_elements || prob > 0) { prob = std::max(prob - tau, minimum_probability); }
+      });
   return S_EXPLORATION_OK;
 }
 
 template <typename It>
-int enforce_minimum_probability(float minimum_uniform, bool update_zero_elements, It pmf_first, It pmf_last)
+int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last)
 {
   using pmf_category = typename std::iterator_traits<It>::iterator_category;
 
-  return enforce_minimum_probability(minimum_uniform, update_zero_elements, pmf_first, pmf_last, pmf_category());
+  return enforce_minimum_probability(
+      uniform_epsilon, consider_zero_valued_elements, pmf_first, pmf_last, pmf_category());
 }
 
 template <typename It>
