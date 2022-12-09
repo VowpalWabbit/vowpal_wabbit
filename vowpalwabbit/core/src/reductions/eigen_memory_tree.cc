@@ -117,7 +117,6 @@ emt_tree::~emt_tree()
   delete ex->interactions;
   delete ex->extent_interactions;
 }
-
 ////////////////////////end of definitions/////////////////
 ///////////////////////////////////////////////////////////
 
@@ -723,7 +722,7 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
   uint32_t scorer_type = 0, router_type = 0, tree_bound = 0;
 
   option_group_definition new_options("[Reduction] Eigen Memory Tree");
-  new_options.add(make_option("eigen_memory_tree", _).keep().necessary().help("Make an eigen memory tree"))
+  new_options.add(make_option("emt", _).keep().necessary().help("Make an eigen memory tree"))
       .add(make_option("emt_tree", tree_bound)
                .keep()
                .default_value(0)

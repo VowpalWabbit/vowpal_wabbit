@@ -23,19 +23,19 @@ emt_tree* get_emt_tree(VW::workspace& all)
 {
   std::vector<std::string> e_r;
   all.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "eigen_memory_tree") == e_r.end())
+  if (std::find(e_r.begin(), e_r.end(), "emt") == e_r.end())
   {
     ADD_FAILURE() << "Eigen memory tree not found in enabled reductions";
   }
 
-  VW::LEARNER::single_learner* emt = as_singleline(all.l->get_learner_by_name_prefix("eigen_memory_tree"));
+  VW::LEARNER::single_learner* emt = as_singleline(all.l->get_learner_by_name_prefix("emt"));
 
   return (emt_tree*)emt->get_internal_type_erased_data_pointer_test_use_only();
 }
 
 TEST(emt_tests, emt_params_test1)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--eigen_memory_tree"));
+  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt"));
   auto* tree = get_emt_tree(*vw);
 
   EXPECT_EQ(tree->leaf_split, 100);
@@ -48,7 +48,7 @@ TEST(emt_tests, emt_params_test1)
 
 TEST(emt_tests, emt_params_test2)
 {
-  auto args = vwtest::make_args("--quiet", "--eigen_memory_tree", "--emt_tree", "20", "--emt_scorer", "2",
+  auto args = vwtest::make_args("--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "2",
       "--emt_router", "1", "--emt_leaf", "50");
   auto vw = VW::initialize_experimental(std::move(args));
   auto tree = get_emt_tree(*vw);
@@ -63,7 +63,7 @@ TEST(emt_tests, emt_params_test2)
 
 TEST(emt_tests, emt_exact_match_sans_router_test)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--eigen_memory_tree"));
+  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt"));
 
   auto* ex1 = VW::read_example(*vw, "1 | 1 2 3");
   auto* ex2 = VW::read_example(*vw, "2 | 2 3 4");
@@ -87,7 +87,7 @@ TEST(emt_tests, emt_exact_match_sans_router_test)
 
 TEST(emt_tests, emt_exact_match_with_router_test)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--eigen_memory_tree", "--emt_leaf", "5"));
+  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 
   for (int i = 0; i < 10; i++)
   {
@@ -109,7 +109,7 @@ TEST(emt_tests, emt_exact_match_with_router_test)
 
 TEST(emt_tests, emt_bounding)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--eigen_memory_tree", "--emt_tree", "5"));
+  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_tree", "5"));
   auto* tree = get_emt_tree(*vw);
 
   for (int i = 0; i < 10; i++)
@@ -128,7 +128,7 @@ TEST(emt_tests, emt_bounding)
 
 TEST(emt_tests, emt_split)
 {
-  auto args = vwtest::make_args("--quiet", "--eigen_memory_tree", "--emt_tree", "10", "--emt_leaf", "3");
+  auto args = vwtest::make_args("--quiet", "--emt", "--emt_tree", "10", "--emt_leaf", "3");
   auto vw = VW::initialize_experimental(std::move(args));
   auto* tree = get_emt_tree(*vw);
 
