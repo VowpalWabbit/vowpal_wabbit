@@ -8,6 +8,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/simple_label.h"
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/errno_handling.h"
 
@@ -58,6 +59,7 @@ public:
   std::vector<sent_example_info> delay_ring;
   size_t sent_index = 0;
   size_t received_index = 0;
+  VW::parsers::cache::details::cache_temp_buffer cache_buffer;
 };
 
 void open_sockets(sender& s, const std::string& host)
@@ -65,20 +67,6 @@ void open_sockets(sender& s, const std::string& host)
   s.socket = VW::io::wrap_socket_descriptor(VW::details::open_socket(host.c_str(), s.all->logger));
   s.socket_reader = s.socket->get_reader();
   s.socket_output_buffer.add_file(s.socket->get_writer());
-}
-
-void send_features(io_buf& send_buffer, const VW::example& ec, uint32_t mask)
-{
-  // note: subtracting 1 b/c not sending constant
-  send_buffer.write_value(static_cast<unsigned char>(ec.indices.size() - 1));
-
-  for (VW::namespace_index ns : ec.indices)
-  {
-    if (ns == VW::details::CONSTANT_NAMESPACE) { continue; }
-    VW::parsers::cache::details::cache_index(send_buffer, ns);
-    VW::parsers::cache::details::cache_features(send_buffer, ec.feature_space[ns], mask);
-  }
-  send_buffer.flush();
 }
 
 void update_stats_sender(shared_data& sd, const sent_example_info& info, float loss)
@@ -128,10 +116,8 @@ void send_example(sender& s, VW::LEARNER::base_learner& /* non_existent_base */,
   if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  s.all->example_parser->lbl_parser.cache_label(
-      ec.l, ec.ex_reduction_features, s.socket_output_buffer, "", false);  // send label information.
-  VW::parsers::cache::details::cache_tag(s.socket_output_buffer, ec.tag);
-  send_features(s.socket_output_buffer, ec, static_cast<uint32_t>(s.all->parse_mask));
+  VW::parsers::cache::write_example_to_cache(s.socket_output_buffer, &ec, s.all->example_parser->lbl_parser, s.all->parse_mask, s.cache_buffer);
+  s.socket_output_buffer.flush();
   s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] =
       sent_example_info{ec.l.simple, ec.weight, ec.test_only, ec.get_num_features(), ec.tag};
 }

@@ -5551,5 +5551,19 @@
     "input_files": [
       "train-sets/cb_load.dat"
     ]
+  },
+  {
+    "id": 431,
+    "desc": "Test sender reduction",
+    "diff_files": {
+      "stderr": "test-sets/ref/sender.stderr",
+      "stdout": "test-sets/ref/sender.stdout",
+      "sender_test.predict": "pred-sets/ref/sender.predict"
+    },
+    "bash_command": "python3 ./sender_test.py --vw {VW} --input_file train-sets/0001.dat",
+    "input_files": [
+      "sender_test.py",
+      "train-sets/0001.dat"
+    ]
   }
 ]
