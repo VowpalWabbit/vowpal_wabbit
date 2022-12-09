@@ -40,6 +40,12 @@ struct sent_example_info
   // This info is not sent back.
   uint64_t num_features{};
   VW::v_array<char> tag;
+
+  sent_example_info() = default;
+  sent_example_info(VW::simple_label l, float w, bool t, uint64_t n, VW::v_array<char> tg)
+      : label(l), weight(w), test_only(t), num_features(n), tag(std::move(tg))
+  {
+  }
 };
 
 class sender
