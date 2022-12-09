@@ -18,14 +18,9 @@ if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
   endif()
 endif()
 
-set(LINUX_ARM64_OPT_FLAGS "")
-if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64|arm64|ARM64")
-  set(LINUX_ARM64_OPT_FLAGS -mcpu=neoverse-n1)
-endif()
-
 # Add -ffast-math for speed, remove for testability.
 # no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
-set(LINUX_RELEASE_CONFIG -fno-strict-aliasing ${LINUX_X86_64_OPT_FLAGS} ${LINUX_ARM64_OPT_FLAGS} -fno-stack-check -fomit-frame-pointer)
+set(LINUX_RELEASE_CONFIG -fno-strict-aliasing ${LINUX_X86_64_OPT_FLAGS} -fno-stack-check -fomit-frame-pointer)
 set(LINUX_DEBUG_CONFIG -fno-stack-check)
 
 #Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
