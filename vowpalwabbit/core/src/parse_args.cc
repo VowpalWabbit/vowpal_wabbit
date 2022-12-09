@@ -621,7 +621,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   bool noconstant;
   bool leave_duplicate_interactions;
   std::string affix;
-  uint64_t hash_seed;
 
   option_group_definition feature_options("Feature");
   feature_options
@@ -630,7 +629,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .keep()
                .one_of({"strings", "all"})
                .help("How to hash the features"))
-      .add(make_option("hash_seed", hash_seed).keep().default_value(0).help("Seed for hash function"))
+      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("Seed for hash function"))
       .add(make_option("ignore", ignores).keep().help("Ignore namespaces beginning with character <arg>"))
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
@@ -691,8 +690,6 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       .add(make_option("cubic", cubics).keep().help("Create and use cubic features"));
 
   options.add_and_parse(feature_options);
-
-  all.hash_seed = VW::cast_to_smaller_type<uint32_t>(hash_seed);
 
   // feature manipulation
   all.example_parser->hasher = get_hasher(hash_function);
