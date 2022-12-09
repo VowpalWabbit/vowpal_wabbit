@@ -3,7 +3,7 @@ import argparse
 import subprocess
 import os
 
-DAEMON_PORT = 26551
+DAEMON_PORT = 26558
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -18,7 +18,13 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    daemon_opts = [args.vw, "--daemon", "--foreground", "--num_children=1"]
+    daemon_opts = [
+        args.vw,
+        "--daemon",
+        "--foreground",
+        f"--port={DAEMON_PORT}",
+        "--num_children=1",
+    ]
 
     print("Starting vw daemon with args: " + " ".join(daemon_opts[1:]))
     vw_daemon_proc = subprocess.Popen(
@@ -28,9 +34,9 @@ if __name__ == "__main__":
     sender_opts = [
         args.vw,
         "--sendto",
-        f"localhost",
+        f"localhost:{DAEMON_PORT}",
         f"--data={args.input_file}",
-        f"--predictions=sender_test.predict",
+        "--predictions=sender_test.predict",
     ]
     print("Starting vw sender with args: " + " ".join(sender_opts[1:]))
     sender_proc = subprocess.Popen(

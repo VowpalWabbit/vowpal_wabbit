@@ -1,5 +1,5 @@
-Starting vw daemon with args: --daemon --foreground --num_children=1
-Starting vw sender with args: --sendto localhost --data=train-sets/0001.dat --predictions=sender_test.predict
+Starting vw daemon with args: --daemon --foreground --port=26558 --num_children=1
+Starting vw sender with args: --sendto localhost:26558 --data=train-sets/0001.dat --predictions=sender_test.predict
 Sender STDOUT: 
 
 Sender STDERR: 
