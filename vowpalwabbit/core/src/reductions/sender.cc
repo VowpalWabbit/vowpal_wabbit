@@ -4,11 +4,11 @@
 
 #include "vw/core/reductions/sender.h"
 
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/core/daemon_utils.h"
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/simple_label.h"
-#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/errno_handling.h"
 
@@ -116,7 +116,8 @@ void send_example(sender& s, VW::LEARNER::base_learner& /* non_existent_base */,
   if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
-  VW::parsers::cache::write_example_to_cache(s.socket_output_buffer, &ec, s.all->example_parser->lbl_parser, s.all->parse_mask, s.cache_buffer);
+  VW::parsers::cache::write_example_to_cache(
+      s.socket_output_buffer, &ec, s.all->example_parser->lbl_parser, s.all->parse_mask, s.cache_buffer);
   s.socket_output_buffer.flush();
   s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] =
       sent_example_info{ec.l.simple, ec.weight, ec.test_only, ec.get_num_features(), ec.tag};

@@ -18,12 +18,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    daemon_opts = [
-        args.vw,
-        "--daemon",
-        "--foreground",
-        "--num_children=1"
-    ]
+    daemon_opts = [args.vw, "--daemon", "--foreground", "--num_children=1"]
 
     print("Starting vw daemon with args: " + " ".join(daemon_opts[1:]))
     vw_daemon_proc = subprocess.Popen(
@@ -35,7 +30,7 @@ if __name__ == "__main__":
         "--sendto",
         f"localhost",
         f"--data={args.input_file}",
-        f"--predictions=sender_test.predict"
+        f"--predictions=sender_test.predict",
     ]
     print("Starting vw sender with args: " + " ".join(sender_opts[1:]))
     sender_proc = subprocess.Popen(
@@ -51,8 +46,7 @@ if __name__ == "__main__":
     if return_code != 0:
         print("VW failed")
         # Kill entire process group
-        subprocess.run(['pkill', '-9', 'vw'], check=True)
-
+        subprocess.run(["pkill", "-9", "vw"], check=True)
 
     # Check if daemon failed.
     daemon_none_or_return_code = vw_daemon_proc.poll()
@@ -64,4 +58,4 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Kill entire process group
-    subprocess.run(['pkill', '-9', 'vw'], check=True)
+    subprocess.run(["pkill", "-9", "vw"], check=True)
