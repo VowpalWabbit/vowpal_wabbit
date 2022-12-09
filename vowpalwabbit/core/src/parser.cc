@@ -4,6 +4,7 @@
 
 #include "vw/core/parser.h"
 
+#include "vw/core/daemon_utils.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/io/errno_handling.h"
@@ -222,7 +223,7 @@ void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = fals
   if (all.example_parser->input.isbinary())
   {
     all.example_parser->reader = VW::parsers::cache::read_example_from_cache;
-    all.print_by_ref = binary_print_result_by_ref;
+    all.print_by_ref = VW::details::binary_print_result_by_ref;
   }
   else if (json || dsjson) { set_json_reader(all, dsjson); }
   else { set_string_reader(all); }

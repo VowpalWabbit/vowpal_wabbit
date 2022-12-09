@@ -13,6 +13,7 @@ set(vw_core_headers
   include/vw/core/cb_label_parser.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
+  include/vw/core/daemon_utils.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
   include/vw/core/ccb_label.h
@@ -297,6 +298,7 @@ set(vw_core_sources
   src/reductions/details/automl/automl_oracle.cc
   src/reductions/details/automl/automl_util.cc
   src/reductions/ect.cc
+  src/daemon_utils.cc
   src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
   src/reductions/freegrad.cc

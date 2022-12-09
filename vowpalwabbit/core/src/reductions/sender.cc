@@ -4,25 +4,17 @@
 
 #include "vw/core/reductions/sender.h"
 
+#include "vw/core/daemon_utils.h"
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
+#include "vw/core/simple_label.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/io/errno_handling.h"
 
 #include <vector>
 #ifdef _WIN32
 #  define NOMINMAX
 #  include <WinSock2.h>
-#  ifndef SHUT_RD
-#    define SHUT_RD SD_RECEIVE
-#  endif
-
-#  ifndef SHUT_WR
-#    define SHUT_WR SD_SEND
-#  endif
-
-#  ifndef SHUT_RDWR
-#    define SHUT_RDWR SD_BOTH
-#  endif
 #else
 #  include <netdb.h>
 #endif
@@ -39,83 +31,115 @@ using namespace VW::config;
 
 namespace
 {
+struct sent_example_info
+{
+  VW::simple_label label;
+  float weight{};
+  bool test_only{};
+  // Note: this will not include counts of interacted features.
+  // This info is not sent back.
+  uint64_t num_features{};
+  VW::v_array<char> tag;
+};
+
 class sender
 {
 public:
-  io_buf* buf = nullptr;
+  io_buf socket_output_buffer;
   std::unique_ptr<VW::io::socket> socket;
   std::unique_ptr<VW::io::reader> socket_reader;
   VW::workspace* all = nullptr;  // loss example_queue_limit others
-  VW::example** delay_ring = nullptr;
+  std::vector<sent_example_info> delay_ring;
   size_t sent_index = 0;
   size_t received_index = 0;
-
-  ~sender()
-  {
-    free(delay_ring);
-    delete buf;
-  }
 };
 
 void open_sockets(sender& s, const std::string& host)
 {
   s.socket = VW::io::wrap_socket_descriptor(VW::details::open_socket(host.c_str(), s.all->logger));
   s.socket_reader = s.socket->get_reader();
-  s.buf = new io_buf();
-  s.buf->add_file(s.socket->get_writer());
+  s.socket_output_buffer.add_file(s.socket->get_writer());
 }
 
-void send_features(io_buf* b, VW::example& ec, uint32_t mask)
+void send_features(io_buf& send_buffer, const VW::example& ec, uint32_t mask)
 {
   // note: subtracting 1 b/c not sending constant
-  b->write_value(static_cast<unsigned char>(ec.indices.size() - 1));
+  send_buffer.write_value(static_cast<unsigned char>(ec.indices.size() - 1));
 
   for (VW::namespace_index ns : ec.indices)
   {
     if (ns == VW::details::CONSTANT_NAMESPACE) { continue; }
-    VW::parsers::cache::details::cache_index(*b, ns);
-    VW::parsers::cache::details::cache_features(*b, ec.feature_space[ns], mask);
+    VW::parsers::cache::details::cache_index(send_buffer, ns);
+    VW::parsers::cache::details::cache_features(send_buffer, ec.feature_space[ns], mask);
   }
-  b->flush();
+  send_buffer.flush();
+}
+
+void update_stats_sender(shared_data& sd, const sent_example_info& info, float loss)
+{
+  sd.update(info.test_only, info.label.label != FLT_MAX, loss, info.weight, info.num_features);
+  if (info.label.label != FLT_MAX && !info.test_only)
+  {
+    sd.weighted_labels += (static_cast<double>(info.label.label)) * info.weight;
+  }
+}
+
+void output_example_prediction_sender(
+    VW::workspace& all, const sent_example_info& info, float prediction, VW::io::logger& logger)
+{
+  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), prediction, 0, info.tag, logger); }
+}
+
+void print_update_sender(VW::workspace& all, shared_data& sd, const sent_example_info& info, float prediction)
+{
+  const bool should_print_driver_update = sd.weighted_examples() >= sd.dump_interval && !all.quiet;
+
+  if (should_print_driver_update)
+  {
+    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, info.label.label, prediction,
+        info.num_features, all.progress_add, all.progress_arg);
+  }
 }
 
 void receive_result(sender& s)
 {
-  float res;
-  float weight;
+  float prediction{};
+  float weight{};
 
-  get_prediction(s.socket_reader.get(), res, weight);
-  VW::example& ec = *s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
-  ec.pred.scalar = res;
+  VW::details::get_prediction(s.socket_reader.get(), prediction, weight);
+  const auto& sent_info = s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
 
-  auto& ld = ec.l.simple;
-  ec.loss = s.all->loss->get_loss(s.all->sd, ec.pred.scalar, ld.label) * ec.weight;
+  const auto& ld = sent_info.label;
+  const auto loss = s.all->loss->get_loss(s.all->sd, prediction, ld.label) * sent_info.weight;
 
-  VW::details::return_simple_example(*(s.all), nullptr, ec);
+  update_stats_sender(*(s.all->sd), sent_info, loss);
+  output_example_prediction_sender(*s.all, sent_info, prediction, s.all->logger);
+  print_update_sender(*s.all, *(s.all->sd), sent_info, prediction);
 }
 
-void learn(sender& s, VW::LEARNER::base_learner& /*unused*/, VW::example& ec)
+void send_example(sender& s, VW::LEARNER::base_learner& /* non_existent_base */, VW::example& ec)
 {
   if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   s.all->example_parser->lbl_parser.cache_label(
-      ec.l, ec.ex_reduction_features, *s.buf, "", false);  // send label information.
-  VW::parsers::cache::details::cache_tag(*s.buf, ec.tag);
-  send_features(s.buf, ec, static_cast<uint32_t>(s.all->parse_mask));
-  s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] = &ec;
+      ec.l, ec.ex_reduction_features, s.socket_output_buffer, "", false);  // send label information.
+  VW::parsers::cache::details::cache_tag(s.socket_output_buffer, ec.tag);
+  send_features(s.socket_output_buffer, ec, static_cast<uint32_t>(s.all->parse_mask));
+  s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] =
+      sent_example_info{ec.l.simple, ec.weight, ec.test_only, ec.get_num_features(), ec.tag};
 }
-
-void finish_example(VW::workspace& /*unused*/, sender& /*unused*/, VW::example& /*unused*/) {}
 
 void end_examples(sender& s)
 {
   // close our outputs to signal finishing.
   while (s.received_index != s.sent_index) { receive_result(s); }
-  s.buf->close_files();
+  s.socket_output_buffer.close_files();
 }
 }  // namespace
 
+// This reduction does not actually produce a prediction despite claiming it
+// does, since it waits to receive the result and then outputs it.
 VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
@@ -131,11 +155,13 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
   open_sockets(*s, host);
 
   s->all = &all;
-  s->delay_ring = calloc_or_throw<VW::example*>(all.example_parser->example_queue_limit);
-
-  auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, learn, stack_builder.get_setupfn_name(sender_setup),
-      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_finish_example(::finish_example)
+  s->delay_ring.resize(all.example_parser->example_queue_limit);
+  auto* l = VW::LEARNER::make_base_learner(std::move(s), send_example, send_example,
+      stack_builder.get_setupfn_name(sender_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+                // Set at least one of update_stats, output_example_prediction or print_update so that the old finish
+                // has an implementation.
+                .set_update_stats(
+                    [](const VW::workspace&, shared_data&, const sender&, const VW::example&, VW::io::logger&) {})
                 .set_end_examples(end_examples)
                 .build();
   return make_base(*l);
