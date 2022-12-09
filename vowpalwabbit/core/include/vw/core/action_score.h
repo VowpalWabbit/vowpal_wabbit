@@ -69,6 +69,7 @@ public:
   size_t operator-(const action_scores_score_iterator& other) const { return _p - other._p; }
 
   float& operator*() { return _p->score; }
+  float operator*() const { return _p->score; }
 
 private:
   action_score* _p;
