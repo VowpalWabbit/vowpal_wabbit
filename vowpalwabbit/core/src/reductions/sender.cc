@@ -145,10 +145,10 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
   if (!options.add_parse_and_check_necessary(sender_options)) { return nullptr; }
 
   auto s = VW::make_unique<sender>();
-  open_sockets(*s, host);
-
   s->all = &all;
   s->delay_ring.resize(all.example_parser->example_queue_limit);
+  open_sockets(*s, host);
+
   auto* l = VW::LEARNER::make_base_learner(std::move(s), send_example, send_example,
       stack_builder.get_setupfn_name(sender_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 // Set at least one of update_stats, output_example_prediction or print_update so that the old finish
