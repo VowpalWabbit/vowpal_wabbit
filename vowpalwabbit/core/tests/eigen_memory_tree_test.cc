@@ -48,8 +48,8 @@ TEST(emt_tests, emt_params_test1)
 
 TEST(emt_tests, emt_params_test2)
 {
-  auto args = vwtest::make_args("--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "2",
-      "--emt_router", "1", "--emt_leaf", "50");
+  auto args = vwtest::make_args(
+      "--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "2", "--emt_router", "1", "--emt_leaf", "50");
   auto vw = VW::initialize_experimental(std::move(args));
   auto tree = get_emt_tree(*vw);
 
