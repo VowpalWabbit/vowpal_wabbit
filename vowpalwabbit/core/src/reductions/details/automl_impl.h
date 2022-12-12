@@ -20,7 +20,7 @@ namespace automl
 {
 namespace
 {
-constexpr uint64_t MAX_CONFIGS = 10;
+constexpr uint64_t MAX_CONFIGS = 129;
 constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 }  // namespace
 
@@ -280,7 +280,6 @@ public:
   }
   // This fn gets called before learning any example
   void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
-  // inner loop of learn driven by # MAX_CONFIGS
   void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
 };
 }  // namespace automl
