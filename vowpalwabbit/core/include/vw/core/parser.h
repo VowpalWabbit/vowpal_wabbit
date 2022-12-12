@@ -124,7 +124,7 @@ public:
   std::string last_event_time;
 };
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_options& input_options);
 
 // parser control
 void lock_done(parser& p);

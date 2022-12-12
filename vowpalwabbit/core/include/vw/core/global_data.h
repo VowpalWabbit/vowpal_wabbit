@@ -164,7 +164,6 @@ public:
   std::string data_filename;
 
   bool daemon;
-  uint64_t num_children;
 
   bool save_per_pass;
   float initial_weight;
@@ -283,11 +282,6 @@ public:
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
   std::unique_ptr<loss_function> loss;
-
-  bool stdin_off;
-
-  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input
-                           // when loaded instead.
 
   // runtime accounting variables.
   float initial_t;
