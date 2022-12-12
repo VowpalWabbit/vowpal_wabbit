@@ -241,7 +241,7 @@ Weight Options:
 [Reduction] Automl Options:
     --automl arg                            Set number of live configs (type: uint, default: 4, keep, necessary,
                                             experimental)
-    --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
+    --default_lease arg                      Set initial lease for automl interactions (type: uint, default:
                                             4000, keep, experimental)
     --cm_type arg                           Set type of config manager (type: str, default: interaction,
                                             choices {interaction}, keep, experimental)
