@@ -21,7 +21,6 @@ namespace automl
 namespace
 {
 constexpr uint64_t MAX_CONFIGS = 129;
-constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 }  // namespace
 
 using interaction_vec_t = std::vector<std::vector<namespace_index>>;
@@ -154,6 +153,8 @@ public:
 private:
   size_t current;
 };
+
+constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 
 class oracle_rand_impl
 {
