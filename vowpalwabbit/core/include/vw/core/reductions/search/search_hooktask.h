@@ -12,8 +12,9 @@ void run_setup(Search::search&, VW::multi_ex&);
 void run_takedown(Search::search&, VW::multi_ex&);
 extern Search::search_task task;
 
-struct task_data
+class task_data
 {
+public:
   void (*run_f)(Search::search&) = nullptr;
   void (*run_setup_f)(Search::search&) = nullptr;
   void (*run_takedown_f)(Search::search&) = nullptr;

@@ -4,9 +4,12 @@
 
 #include "vw/core/reductions/pmf_to_pdf.h"
 
+#include "vw/config/option_group_definition.h"
+#include "vw/config/options.h"
 #include "vw/core/cb_label_parser.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/guard.h"
+#include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -109,7 +112,7 @@ void pmf_to_pdf_reduction::predict(example& ec)
 {
   auto swap_label = VW::swap_guard(ec.l.cb, temp_lbl_cb);
 
-  const auto& reduction_features = ec._reduction_features.template get<VW::continuous_actions::reduction_features>();
+  const auto& reduction_features = ec.ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
   if (first_only && reduction_features.is_chosen_action_set())
   {
     float chosen_action = reduction_features.chosen_action;
@@ -211,7 +214,9 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 
   if (data->num_actions == 0) { return nullptr; }
   if (!options.was_supplied("min_value") || !options.was_supplied("max_value"))
-  { THROW("Min and max values must be supplied with cb_continuous"); }
+  {
+    THROW("Min and max values must be supplied with cb_continuous");
+  }
 
   float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
   float half_leaf_width = leaf_width / 2.f;
@@ -226,7 +231,9 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
   if (!(data->bandwidth >= 0.0f)) { THROW("error: Bandwidth must be positive"); }
 
   if (data->bandwidth >= (data->max_value - data->min_value))
-  { all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf."); }
+  {
+    all.logger.err_warn("Bandwidth is larger than continuous action range, this will result in a uniform pdf.");
+  }
 
   // Translate user provided bandwidth which is in terms of continuous action range (max_value - min_value)
   // to the internal tree bandwidth which is in terms of #actions
@@ -235,10 +242,7 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
   {
     data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width);
   }
-  else
-  {
-    data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width) + 1;
-  }
+  else { data->tree_bandwidth = static_cast<uint32_t>((data->bandwidth) / leaf_width) + 1; }
 
   options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
 
@@ -247,10 +251,10 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
-                .set_output_prediction_type(VW::prediction_type_t::pdf)
-                .set_input_label_type(VW::label_type_t::continuous)
-                // .set_output_label_type(label_type_t::cb)
-                // .set_input_prediction_type(prediction_type_t::action_scores)
+                .set_output_prediction_type(VW::prediction_type_t::PDF)
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
+                // .set_output_label_type(label_type_t::CB)
+                // .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
                 .build();
   return make_base(*l);
 }

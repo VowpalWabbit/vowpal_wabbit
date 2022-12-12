@@ -29,32 +29,32 @@ void generic_output_example(
   all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
-  { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
+  {
+    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
-    std::stringstream outputStringStream;
+    std::stringstream output_string_stream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
       cb_class cl = ld.costs[i];
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << cl.action << ':' << cl.partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   bool is_ld_test_label = CB::is_test_label(ld);
   if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, known_cost); }
-  else
-  {
-    print_update(all, is_ld_test_label, ec, nullptr, false, nullptr);
-  }
+  else { print_update(all, is_ld_test_label, ec, nullptr, false, nullptr); }
 }
 }  // namespace CB_ALGS
 namespace
 {
-struct cb
+class cb
 {
+public:
   cb_to_cs cbcs;
   VW::io::logger logger;
 
@@ -68,28 +68,26 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
-  else
-  {
-    c.known_cost = CB::cb_class{};
-  }
+  else { c.known_cost = CB::cb_class{}; }
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
-  { data.logger.err_error("invalid action: {}", c.known_cost.action); }
+  {
+    data.logger.err_error("invalid action: {}", c.known_cost.action);
+  }
 
   // generate a cost-sensitive example to update classifiers
   gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
 
-  if (c.cb_type != VW::cb_type_t::dm)
+  if (c.cb_type != VW::cb_type_t::DM)
   {
     if (is_learn) { base.learn(ec); }
-    else
-    {
-      base.predict(ec);
-    }
+    else { base.predict(ec); }
 
     for (size_t i = 0; i < ec.l.cb.costs.size(); i++)
-    { ec.l.cb.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction; }
+    {
+      ec.l.cb.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
+    }
   }
 }
 
@@ -101,14 +99,13 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
-  else
-  {
-    c.known_cost = CB::cb_class{};
-  }
+  else { c.known_cost = CB::cb_class{}; }
   gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
   for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
-  { ec.l.cb_eval.event.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction; }
+  {
+    ec.l.cb_eval.event.costs[i].partial_prediction = ec.l.cs.costs[i].partial_prediction;
+  }
 
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
@@ -179,20 +176,20 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   c.cb_type = VW::cb_type_from_string(type_string);
   switch (c.cb_type)
   {
-    case VW::cb_type_t::dr:
+    case VW::cb_type_t::DR:
       break;
-    case VW::cb_type_t::dm:
+    case VW::cb_type_t::DM:
       if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
       problem_multiplier = 1;
       break;
-    case VW::cb_type_t::ips:
+    case VW::cb_type_t::IPS:
       problem_multiplier = 1;
       break;
-    case VW::cb_type_t::mtr:
-    case VW::cb_type_t::sm:
+    case VW::cb_type_t::MTR:
+    case VW::cb_type_t::SM:
       data->logger.err_warn(
           "cb_type must be in {{'ips','dm','dr'}}; resetting to dr. Input received: {}", VW::to_string(c.cb_type));
-      c.cb_type = VW::cb_type_t::dr;
+      c.cb_type = VW::cb_type_t::DR;
       break;
   }
 
@@ -205,24 +202,21 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 
   auto base = as_singleline(stack_builder.setup_base_learner());
   if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
-  else
-  {
-    all.example_parser->lbl_parser = CB::cb_label;
-  }
-  c.scorer = all.scorer;
+  else { all.example_parser->lbl_parser = CB::cb_label; }
+  c.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   std::string name_addition = eval ? "-eval" : "";
   auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
   auto predict_ptr = eval ? predict_eval : predict_or_learn<false>;
-  auto label_type = eval ? VW::label_type_t::cb_eval : VW::label_type_t::cb;
+  auto label_type = eval ? VW::label_type_t::CB_EVAL : VW::label_type_t::CB;
   auto finish_ex = eval ? eval_finish_example : ::finish_example;
 
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
                 .set_input_label_type(label_type)
-                .set_output_label_type(VW::label_type_t::cs)
-                .set_input_prediction_type(VW::prediction_type_t::multiclass)
-                .set_output_prediction_type(VW::prediction_type_t::multiclass)
+                .set_output_label_type(VW::label_type_t::CS)
+                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_params_per_weight(problem_multiplier)
                 .set_learn_returns_prediction(eval)
                 .set_finish_example(finish_ex)

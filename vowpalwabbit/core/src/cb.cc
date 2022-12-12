@@ -76,10 +76,7 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
     if (reuse_mem.tokens[0] == "shared")
     {
       if (reuse_mem.tokens.size() == 1) { f.probability = -1.f; }
-      else
-      {
-        logger.err_warn("shared feature vectors should not have costs");
-      }
+      else { logger.err_warn("shared feature vectors should not have costs"); }
     }
 
     ld.costs.push_back(f);
@@ -91,22 +88,21 @@ VW::label_parser cb_label = {
     [](VW::polylabel& label) { CB::default_label(label.cb); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { CB::parse_label(label.cb, reuse_mem, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { CB::parse_label(label.cb, reuse_mem, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.cb, upstream_name, text); },
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.cb, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.cb);
-    },
+    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.cb); },
     // get_weight
     [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/) { return label.cb.weight; },
     // test_label
     [](const VW::polylabel& label) { return CB::is_test_label(label.cb); },
     // Label type
-    VW::label_type_t::cb};
+    VW::label_type_t::CB};
 
 bool ec_is_example_header(VW::example const& ec)  // example headers just have "shared"
 {
@@ -121,7 +117,7 @@ std::string known_cost_to_str(const CB::cb_class* known_cost)
   if (known_cost == nullptr) { return " known"; }
 
   std::stringstream label_string;
-  label_string.precision(VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION);
+  label_string.precision(VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION);
   label_string << known_cost->action << ":" << known_cost->cost << ":" << known_cost->probability;
   return label_string.str();
 }
@@ -143,20 +139,14 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
         if (CB::ec_is_example_header(*(*ec_seq)[i]))
         {
           num_features += (ec_seq->size() - 1) *
-              ((*ec_seq)[i]->get_num_features() - (*ec_seq)[i]->feature_space[constant_namespace].size());
+              ((*ec_seq)[i]->get_num_features() - (*ec_seq)[i]->feature_space[VW::details::CONSTANT_NAMESPACE].size());
         }
-        else
-        {
-          num_features += (*ec_seq)[i]->get_num_features();
-        }
+        else { num_features += (*ec_seq)[i]->get_num_features(); }
       }
     }
     std::string label_buf;
     if (is_test) { label_buf = "unknown"; }
-    else
-    {
-      label_buf = known_cost_to_str(known_cost);
-    }
+    else { label_buf = known_cost_to_str(known_cost); }
 
     if (action_scores)
     {
@@ -164,12 +154,9 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
       if (!ec.pred.a_s.empty())
       {
         pred_buf << fmt::format("{}:{}", ec.pred.a_s[0].action,
-            VW::fmt_float(ec.pred.a_s[0].score, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
+            VW::fmt_float(ec.pred.a_s[0].score, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
       }
-      else
-      {
-        pred_buf << "no action";
-      }
+      else { pred_buf << "no action"; }
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
           num_features, all.progress_add, all.progress_arg);
     }
@@ -211,22 +198,21 @@ VW::label_parser cb_eval = {
     [](VW::polylabel& label) { CB_EVAL::default_label(label.cb_eval); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { CB_EVAL::parse_label(label.cb_eval, reuse_mem, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.cb_eval, upstream_name, text); },
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.cb_eval, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.cb_eval);
-    },
+    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.cb_eval); },
     // get_weight
     [](const VW::polylabel& /*label*/, const VW::reduction_features& /*red_features*/) { return 1.f; },
     // test_label
     [](const VW::polylabel& label) { return CB_EVAL::test_label(label.cb_eval); },
     // Label type
-    VW::label_type_t::cb_eval};
+    VW::label_type_t::CB_EVAL};
 
 }  // namespace CB_EVAL
 
@@ -257,7 +243,6 @@ size_t write_model_field(io_buf& io, const CB::cb_class& cbc, const std::string&
 size_t read_model_field(io_buf& io, CB::label& cb)
 {
   size_t bytes = 0;
-  cb.costs.clear();
   bytes += read_model_field(io, cb.costs);
   bytes += read_model_field(io, cb.weight);
   return bytes;

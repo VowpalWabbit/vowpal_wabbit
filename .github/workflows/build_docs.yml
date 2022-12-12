@@ -16,22 +16,26 @@ on:
       - published
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   cpp:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Configure
         run: |
-          mkdir build
-          cd build
-          cmake .. -DBUILD_DOCS=On
+          sudo apt update
+          sudo apt install doxygen graphviz
       - name: Build docs
         run: |
-          cd build
-          make doc
+          cd doc
+          doxygen --version
+          doxygen
       - name: Upload built docs
         uses: actions/upload-artifact@v1
         with:
@@ -43,6 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - run: |
           sudo apt update
           sudo apt install -y ninja-build
@@ -61,11 +67,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - run: echo "/opt/python/cp39-cp39/bin" >> $GITHUB_PATH
+        with:
+          submodules: recursive
+      - run: echo "/opt/python/cp310-cp310/bin" >> $GITHUB_PATH
       - name: Build wheel
         shell: bash
         run: |
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp39-cp39/include/python3.9/'" --verbose
+          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
@@ -77,10 +85,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - uses: actions/setup-node@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: '3.9'
+          python-version: '3.10'
       - name: If this is a push build then set version to latest
         if: ${{ github.event_name == 'push' }}
         run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
@@ -150,6 +160,7 @@ jobs:
           echo $GITHUB_WORKSPACE
       - uses: actions/checkout@v1
         with:
+          submodules: recursive
           repository: VowpalWabbit/docs
           ref: master
           # For some reason, path is relative to the directory above GITHUB_WORKSPACE

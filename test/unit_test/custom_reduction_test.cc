@@ -10,6 +10,7 @@
 
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/core/learner.h"
 #include "vw/core/reduction_stack.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
@@ -39,10 +40,7 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
     BOOST_CHECK_CLOSE(ec.l.simple.label, 0.195748, 1E-3);
     base.learn(ec);
   }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 }
 
 // minimal setup function for reduction
@@ -82,10 +80,7 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
     BOOST_CHECK_EQUAL(enabled_reductions[2], "count_label");
     BOOST_CHECK_EQUAL(enabled_reductions[3], "test_reduction_name");
   }
-  else
-  {
-    BOOST_CHECK(false);
-  }
+  else { BOOST_CHECK(false); }
 
   return make_base(*ret);
 }
@@ -107,24 +102,25 @@ void reset_test_state()
 //
 // custom_builder can be augmented to do heavier edits (reorder/remove)
 // on reduction_stack
-struct custom_builder : VW::default_reduction_stack_setup
+class custom_builder : public VW::default_reduction_stack_setup
 {
+public:
   custom_builder()
   {
     // this is the reduction stack of function pointers
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[0]), "gd");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[1]), "ksvm");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[2]), "ftrl");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[0]), "gd");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[1]), "ksvm");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[2]), "ftrl");
 
-    BOOST_CHECK_GT(reduction_stack.size(), 77);
+    BOOST_CHECK_GT(_reduction_stack.size(), 77);
     // erase "ksvm" just as a proof of concept
     // see custom_reduction_builder_check_throw below
-    reduction_stack.erase(reduction_stack.begin() + 1);
+    _reduction_stack.erase(_reduction_stack.begin() + 1);
 
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[0]), "gd");
-    BOOST_CHECK_EQUAL(std::get<0>(reduction_stack[1]), "ftrl");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[0]), "gd");
+    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[1]), "ftrl");
 
-    reduction_stack.emplace_back("test_reduction_name", toy_reduction::test_reduction_setup<true>);
+    _reduction_stack.emplace_back("test_reduction_name", toy_reduction::test_reduction_setup<true>);
   }
 };
 

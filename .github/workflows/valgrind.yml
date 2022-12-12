@@ -5,6 +5,10 @@ on:
     branches:
       - '*'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   build-valgrind:
     name: ubuntu2004.amd64.valgrind-build
@@ -13,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - name: Build C++ VW binary
         run: ./.scripts/linux/build-minimal.sh Release
       - name: Upload vw binary
@@ -46,6 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - uses: actions/download-artifact@v2
         with:
           name: vw

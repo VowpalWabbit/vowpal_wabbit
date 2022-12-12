@@ -6,7 +6,6 @@
 
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
-#include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
@@ -19,8 +18,10 @@
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
+#include "vw/core/version.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_allreduce.h"
+#include "vw/core/vw_versions.h"
 #include "vw/io/logger.h"
 
 #include <cassert>
@@ -44,13 +45,14 @@ using std::endl;
 
 namespace
 {
-struct svm_params;
+class svm_params;
 
 static size_t num_kernel_evals = 0;
 static size_t num_cache_evals = 0;
 
-struct svm_example
+class svm_example
 {
+public:
   VW::v_array<float> krow;
   VW::flat_example ex;
 
@@ -60,8 +62,9 @@ struct svm_example
   int clear_kernels();
 };
 
-struct svm_model
+class svm_model
 {
+public:
   size_t num_support;
   VW::v_array<svm_example*> support_vec;
   VW::v_array<float> alpha;
@@ -90,8 +93,9 @@ void free_svm_model(svm_model* model)
   free(model);
 }
 
-struct svm_params
+class svm_params
 {
+public:
   size_t current_pass = 0;
   bool active = false;
   bool active_pool_greedy = false;
@@ -120,7 +124,7 @@ struct svm_params
   float loss_sum = 0.f;
 
   VW::workspace* all = nullptr;  // flatten, parallel
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
 
   ~svm_params()
   {
@@ -142,7 +146,6 @@ svm_example::~svm_example()
   // VW::flat_example* fec = &calloc_or_throw<VW::flat_example>();
   //*fec = ex;
   // free_flatten_example(fec);  // free contents of flat example and frees fec.
-  if (ex.tag_len > 0) { free(ex.tag); }
 }
 
 float kernel_function(const VW::flat_example* fec1, const VW::flat_example* fec2, void* params, size_t kernel_type);
@@ -167,10 +170,7 @@ int svm_example::compute_kernels(svm_params& params)
       alloc += 1;
     }
   }
-  else
-  {
-    num_cache_evals += n;
-  }
+  else { num_cache_evals += n; }
   return alloc;
 }
 
@@ -282,6 +282,11 @@ void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
     *params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
+  else if (params.all->model_file_ver > VW::version_definitions::EMPTY_VERSION_FILE &&
+      params.all->model_file_ver < VW::version_definitions::VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX)
+  {
+    THROW("Models using ksvm from before version 9.6 are not compatable with this version of VW.")
+  }
 
   save_load_svm_model(params, model_file, read, text);
 }
@@ -355,11 +360,10 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
     ec_arr[i]->compute_kernels(params);
     // std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
     if (ec_arr[i]->krow.size() > 0)
-    { scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda; }
-    else
     {
-      scores[i] = 0;
+      scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda;
     }
+    else { scores[i] = 0; }
   }
 }
 
@@ -386,13 +390,12 @@ size_t suboptimality(svm_model* model, double* subopt)
   {
     float tmp = model->alpha[i] * model->support_vec[i]->ex.l.simple.label;
     const auto& simple_red_features =
-        model->support_vec[i]->ex._reduction_features.template get<simple_label_reduction_features>();
+        model->support_vec[i]->ex.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
-    { subopt[i] = fabs(model->delta[i]); }
-    else
     {
-      subopt[i] = 0;
+      subopt[i] = fabs(model->delta[i]);
     }
+    else { subopt[i] = 0; }
 
     if (subopt[i] > max_val)
     {
@@ -452,10 +455,10 @@ bool update(svm_params& params, size_t pos)
   svm_model* model = params.model;
   bool overshoot = false;
   svm_example* fec = model->support_vec[pos];
-  label_data& ld = fec->ex.l.simple;
+  auto& ld = fec->ex.l.simple;
   fec->compute_kernels(params);
   float* inprods = fec->krow.begin();
-  float alphaKi = dense_dot(inprods, model->alpha, model->num_support);
+  float alphaKi = dense_dot(inprods, model->alpha, model->num_support);  // NOLINT
   model->delta[pos] = alphaKi * ld.label / params.lambda - 1;
   float alpha_old = model->alpha[pos];
   alphaKi -= model->alpha[pos] * inprods[pos];
@@ -464,12 +467,9 @@ bool update(svm_params& params, size_t pos)
   float proj = alphaKi * ld.label;
   float ai = (params.lambda - proj) / inprods[pos];
 
-  const auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = fec->ex.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   if (ai > simple_red_features.weight) { ai = simple_red_features.weight; }
-  else if (ai < 0)
-  {
-    ai = 0;
-  }
+  else if (ai < 0) { ai = 0; }
 
   ai *= ld.label;
   float diff = ai - alpha_old;
@@ -484,15 +484,12 @@ bool update(svm_params& params, size_t pos)
 
   for (size_t i = 0; i < model->num_support; i++)
   {
-    label_data& ldi = model->support_vec[i]->ex.l.simple;
+    auto& ldi = model->support_vec[i]->ex.l.simple;
     model->delta[i] += diff * inprods[i] * ldi.label / params.lambda;
   }
 
   if (std::fabs(ai) <= 1.0e-10) { remove(params, pos); }
-  else
-  {
-    model->alpha[pos] = ai;
-  }
+  else { model->alpha[pos] = ai; }
 
   return overshoot;
 }
@@ -523,7 +520,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
   size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
   sizes[all.all_reduce->node] = b->unflushed_bytes_count();
-  all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
+  VW::details::all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
   size_t prev_sum = 0, total_sum = 0;
   for (size_t i = 0; i < all.all_reduce->total; i++)
@@ -538,7 +535,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     size_t bytes_copied = b->copy_to(queries + prev_sum, total_sum - prev_sum);
     if (bytes_copied < b->unflushed_bytes_count()) THROW("kernel_svm: Failed to alloc enough space.");
 
-    all_reduce<char, copy_char>(all, queries, total_sum);
+    VW::details::all_reduce<char, copy_char>(all, queries, total_sum);
     b->replace_buffer(queries, total_sum);
 
     size_t num_read = 0;
@@ -553,10 +550,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
         train_pool[i] = true;
         params.pool_pos++;
       }
-      else
-      {
-        break;
-      }
+      else { break; }
 
       num_read += b->unflushed_bytes_count();
       if (num_read == prev_sum) { params.local_begin = i + 1; }
@@ -582,7 +576,9 @@ void train(svm_params& params)
     {
       std::multimap<double, size_t> scoremap;
       for (size_t i = 0; i < params.pool_pos; i++)
-      { scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i)); }
+      {
+        scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i));
+      }
 
       std::multimap<double, size_t>::iterator iter = scoremap.begin();
       iter = scoremap.begin();
@@ -601,10 +597,10 @@ void train(svm_params& params)
             (1.0f +
                 expf(static_cast<float>(params.active_c * std::fabs(scores[i])) *
                     static_cast<float>(pow(params.pool[i]->ex.example_counter, 0.5f))));
-        if (params._random_state->get_and_update_random() < queryp)
+        if (params.random_state->get_and_update_random() < queryp)
         {
           svm_example* fec = params.pool[i];
-          auto& simple_red_features = fec->ex._reduction_features.template get<simple_label_reduction_features>();
+          auto& simple_red_features = fec->ex.ex_reduction_features.template get<VW::simple_label_reduction_features>();
           simple_red_features.weight *= 1 / queryp;
           train_pool[i] = 1;
         }
@@ -633,10 +629,7 @@ void train(svm_params& params)
       {
         if (train_pool[i]) { model_pos = add(params, params.pool[i]); }
       }
-      else
-      {
-        model_pos = add(params, params.pool[i]);
-      }
+      else { model_pos = add(params, params.pool[i]); }
 
       if (model_pos >= 0)
       {
@@ -647,14 +640,16 @@ void train(svm_params& params)
         {
           if (model->num_support == 0) { break; }
           int randi = 1;
-          if (params._random_state->get_and_update_random() < 0.5) { randi = 0; }
+          if (params.random_state->get_and_update_random() < 0.5) { randi = 0; }
           if (randi)
           {
             size_t max_pos = suboptimality(model, subopt);
             if (subopt[max_pos] > 0)
             {
               if (!overshoot && max_pos == static_cast<size_t>(model_pos) && max_pos > 0 && j == 0)
-              { *params.all->trace_message << "Shouldn't reprocess right after process." << endl; }
+              {
+                *params.all->trace_message << "Shouldn't reprocess right after process." << endl;
+              }
               if (max_pos * model->num_support <= params.maxcache) { make_hot_sv(params, max_pos); }
               update(params, max_pos);
             }
@@ -662,7 +657,7 @@ void train(svm_params& params)
           else
           {
             size_t rand_pos =
-                static_cast<size_t>(floorf(params._random_state->get_and_update_random() * model->num_support));
+                static_cast<size_t>(floorf(params.random_state->get_and_update_random() * model->num_support));
             update(params, rand_pos);
           }
         }
@@ -769,7 +764,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   params->maxcache = 1024 * 1024 * 1024;
   params->loss_sum = 0.;
   params->all = &all;
-  params->_random_state = all.get_random_state();
+  params->random_state = all.get_random_state();
 
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and
@@ -781,7 +776,9 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   params->pool_pos = 0;
 
   if (!options.was_supplied("subsample") && params->para_active)
-  { params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total)); }
+  {
+    params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total));
+  }
 
   params->lambda = all.l2_lambda;
   if (params->lambda == 0.) { params->lambda = 1.; }
@@ -802,17 +799,17 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
     params->kernel_params = &calloc_or_throw<int>();
     *(static_cast<int*>(params->kernel_params)) = degree;
   }
-  else
-  {
-    params->kernel_type = SVM_KER_LIN;
-  }
+  else { params->kernel_type = SVM_KER_LIN; }
 
   params->all->weights.stride_shift(0);
 
   auto* l = make_base_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_save_load(save_load)
                 .set_finish(finish_kernel_svm)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svm_params>)
+                .set_update_stats(VW::details::update_stats_simple_label<svm_params>)
+                .set_print_update(VW::details::print_update_simple_label<svm_params>)
                 .build();
 
   return make_base(*l);

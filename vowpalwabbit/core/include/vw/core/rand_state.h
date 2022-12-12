@@ -9,11 +9,8 @@
 
 namespace VW
 {
-struct rand_state
+class rand_state
 {
-private:
-  uint64_t _random_state = 0;
-
 public:
   rand_state() = default;
 
@@ -59,6 +56,9 @@ public:
    * @param new_state new state value
    */
   void set_random_state(uint64_t new_state) noexcept { _random_state = new_state; }
+
+private:
+  uint64_t _random_state = 0;
 };
 
 }  // namespace VW

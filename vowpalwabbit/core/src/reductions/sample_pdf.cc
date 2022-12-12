@@ -6,10 +6,12 @@
 
 #include "vw/config/options.h"
 #include "vw/core/api_status.h"
+#include "vw/core/cb_continuous_label.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
 #include "vw/core/guard.h"
+#include "vw/core/learner.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
@@ -24,14 +26,15 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_sample_pdf
+#define VW_DEBUG_LOG vw_dbg::CB_SAMPLE_PDF
 
 namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN sample_pdf reduction and reduction methods
-struct sample_pdf
+class sample_pdf
 {
+public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 
@@ -94,7 +97,9 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, VW::example& ec)
   }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << std::endl; }
+  {
+    VW_DBG(ec) << status.get_error_msg() << std::endl;
+  }
 }
 }  // namespace
 
@@ -121,7 +126,7 @@ VW::LEARNER::base_learner* VW::reductions::sample_pdf_setup(VW::setup_base_i& st
   // This learner will assume the label type from base, so should not call set_input_label_type
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(sample_pdf_setup))
-                .set_output_prediction_type(VW::prediction_type_t::action_pdf_value)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
                 .build();
 
   return VW::LEARNER::make_base(*l);

@@ -6,6 +6,7 @@
 
 #include "vw/config/options.h"
 #include "vw/core/interactions.h"
+#include "vw/core/learner.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -18,17 +19,18 @@
 
 using namespace VW::config;
 
-static constexpr size_t num_cols = 3;
-static constexpr std::array<VW::column_definition, num_cols> AUDIT_REGRESSOR_COLUMNS = {
+static constexpr size_t NUM_COLS = 3;
+static constexpr std::array<VW::column_definition, NUM_COLS> AUDIT_REGRESSOR_COLUMNS = {
     VW::column_definition(8, VW::align_type::left, VW::wrap_type::wrap_space),    // example counter
     VW::column_definition(9, VW::align_type::right, VW::wrap_type::wrap_space),   // values audited
     VW::column_definition(12, VW::align_type::right, VW::wrap_type::wrap_space),  // total progress
 };
-static const std::array<std::string, num_cols> AUDIT_REGRESSOR_HEADER = {
+static const std::array<std::string, NUM_COLS> AUDIT_REGRESSOR_HEADER = {
     "example\ncounter", "values\naudited", "total\nprogress"};
 
-struct audit_regressor_data
+class audit_regressor_data
 {
+public:
   audit_regressor_data(VW::workspace* all, std::unique_ptr<VW::io::writer>&& output) : all(all)
   {
     out_file.add_file(std::move(output));
@@ -72,10 +74,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
 {
   parameters& weights = dat.all->weights;
   if (weights[ft_idx] != 0) { ++dat.values_audited; }
-  else
-  {
-    return;
-  }
+  else { return; }
 
   std::string ns_pre;
   for (const auto& s : dat.ns_pre) { ns_pre += s; }
@@ -109,7 +108,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
                  << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
       for (size_t k = 0; k < all.lda; k++)
       {
-        weight& w = weights[(fs.indices[j] + k)];
+        VW::weight& w = weights[(fs.indices[j] + k)];
         tempstream << ':' << w;
         w = 0.;
       }
@@ -150,7 +149,9 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
         else
         {
           for (size_t j = 0; j < fs.size(); ++j)
-          { audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indices[j]) + ec.ft_offset); }
+          {
+            audit_regressor_feature(rd, fs.values[j], static_cast<uint32_t>(fs.indices[j]) + ec.ft_offset);
+          }
         }
       }
 
@@ -160,14 +161,14 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.sparse_weights, num_interacted_features,
-            rd.all->_generate_interactions_object_cache);
+            rd.all->generate_interactions_object_cache_state);
       }
       else
       {
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features,
-            rd.all->_generate_interactions_object_cache);
+            rd.all->generate_interactions_object_cache_state);
       }
 
       ec.ft_offset += rd.increment;
@@ -234,7 +235,9 @@ void init_driver(audit_regressor_data& dat)
   // checks a few settings that might be applied after audit_regressor_setup() is called
   if ((dat.all->options->was_supplied("cache_file") || dat.all->options->was_supplied("cache")) &&
       !dat.all->options->was_supplied("kill_cache"))
-  { THROW("audit_regressor is incompatible with a cache file. Use it in single pass mode only.") }
+  {
+    THROW("audit_regressor is incompatible with a cache file. Use it in single pass mode only.")
+  }
 
   dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved without --predict_only_model
   dat.all->sd->example_number = 0;
@@ -255,10 +258,7 @@ void init_driver(audit_regressor_data& dat)
   // count non-null feature values in regressor
   dat.loaded_regressor_values = 0;
   if (dat.all->weights.sparse) { dat.loaded_regressor_values += count_non_zero(dat.all->weights.sparse_weights); }
-  else
-  {
-    dat.loaded_regressor_values += count_non_zero(dat.all->weights.dense_weights);
-  }
+  else { dat.loaded_regressor_values += count_non_zero(dat.all->weights.dense_weights); }
 
   if (dat.loaded_regressor_values == 0) { THROW("regressor has no non-zero weights. Nothing to audit.") }
 

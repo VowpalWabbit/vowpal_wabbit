@@ -8,6 +8,7 @@
 #include "vw/core/ccb_label.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
 
@@ -16,8 +17,9 @@
 #include <vector>
 
 template <typename LearnFunc, typename PredictFunc>
-struct test_base
+class test_base
 {
+public:
   LearnFunc test_learn_func;
   PredictFunc test_predict_func;
 
@@ -43,7 +45,10 @@ VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, VW::multi_ex>* make_test
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
   return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
-      static_cast<func>(predict_fptr), "mock_reduction", VW::prediction_type_t::decision_probs, VW::label_type_t::ccb)
+      static_cast<func>(predict_fptr), "mock_reduction", VW::prediction_type_t::DECISION_PROBS, VW::label_type_t::CCB)
+      // Set it to something so that the compat VW::finish_example shim is put in place.
+      .set_output_example_prediction(
+          [](VW::workspace& all, const test_base<LearnFunc, PredictFunc>&, const VW::multi_ex&, VW::io::logger&) {})
       .build();
 }
 
@@ -58,30 +63,31 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
   examples.push_back(VW::read_example(vw, "slates slot 0:0.8 | ignore_me"));
   examples.push_back(VW::read_example(vw, "slates slot 1:0.6 | ignore_me"));
 
-  auto mock_learn_or_pred = [](VW::multi_ex& examples) {
+  auto mock_learn_or_pred = [](VW::multi_ex& examples)
+  {
     BOOST_CHECK_EQUAL(examples.size(), 6);
-    BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, CCB::example_type::shared);
-    BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-    BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, CCB::example_type::action);
-    BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, CCB::example_type::action);
+    BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+    BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+    BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+    BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
 
-    BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+    BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
     BOOST_CHECK_CLOSE(examples[4]->l.conditional_contextual_bandit.outcome->cost, 0.8f, FLOAT_TOL);
-    check_collections_with_float_tolerance(examples[4]->l.conditional_contextual_bandit.outcome->probabilities,
-        std::vector<ACTION_SCORE::action_score>{{0, 0.8f}});
+    check_collections_with_float_tolerance(
+        examples[4]->l.conditional_contextual_bandit.outcome->probabilities, std::vector<VW::action_score>{{0, 0.8f}});
     check_collections_exact(
         examples[4]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{0});
-    BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, CCB::example_type::slot);
+    BOOST_CHECK_EQUAL(examples[5]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
     BOOST_CHECK_CLOSE(examples[5]->l.conditional_contextual_bandit.outcome->cost, 0.8f, FLOAT_TOL);
-    check_collections_with_float_tolerance(examples[5]->l.conditional_contextual_bandit.outcome->probabilities,
-        std::vector<ACTION_SCORE::action_score>{{2, 0.6f}});
+    check_collections_with_float_tolerance(
+        examples[5]->l.conditional_contextual_bandit.outcome->probabilities, std::vector<VW::action_score>{{2, 0.6f}});
     check_collections_exact(
         examples[5]->l.conditional_contextual_bandit.explicit_included_actions, std::vector<uint32_t>{1, 2});
 
     // Prepare and return the prediction
-    VW::v_array<ACTION_SCORE::action_score> slot_zero;
+    VW::v_array<VW::action_score> slot_zero;
     slot_zero.push_back({0, 1.0});
-    VW::v_array<ACTION_SCORE::action_score> slot_one;
+    VW::v_array<VW::action_score> slot_one;
     slot_one.push_back({1, 0.5});
     slot_one.push_back({2, 0.5});
     examples[0]->pred.decision_scores.push_back(slot_zero);
@@ -93,10 +99,9 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
 
   // This confirms that the reductions converted the CCB space decision scores back to slates action index space.
   BOOST_CHECK_EQUAL(examples[0]->pred.decision_scores.size(), 2);
+  check_collections_with_float_tolerance(examples[0]->pred.decision_scores[0], std::vector<VW::action_score>{{0, 1.f}});
   check_collections_with_float_tolerance(
-      examples[0]->pred.decision_scores[0], std::vector<ACTION_SCORE::action_score>{{0, 1.f}});
-  check_collections_with_float_tolerance(
-      examples[0]->pred.decision_scores[1], std::vector<ACTION_SCORE::action_score>{{0, 0.5f}, {1, 0.5f}});
+      examples[0]->pred.decision_scores[1], std::vector<VW::action_score>{{0, 0.5f}, {1, 0.5f}});
 
   vw.finish_example(examples);
   VW::finish(vw);

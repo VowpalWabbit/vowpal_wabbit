@@ -7,8 +7,10 @@
 #include "vw/config/options.h"
 #include "vw/core/action_score.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
@@ -29,20 +31,8 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_synthcover
+class cb_explore_adf_synthcover
 {
-private:
-  float _epsilon;
-  float _psi;
-  size_t _synthcoversize;
-  std::shared_ptr<VW::rand_state> _random_state;
-
-  VW::version_struct _model_file_version;
-
-  v_array<ACTION_SCORE::action_score> _action_probs;
-  float _min_cost;
-  float _max_cost;
-
 public:
   cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
       std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
@@ -56,6 +46,16 @@ public:
   void save_load(io_buf& model_file, bool read, bool text);
 
 private:
+  float _epsilon;
+  float _psi;
+  size_t _synthcoversize;
+  std::shared_ptr<VW::rand_state> _random_state;
+
+  VW::version_struct _model_file_version;
+
+  VW::v_array<VW::action_score> _action_probs;
+  float _min_cost;
+  float _max_cost;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };
@@ -88,7 +88,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     _max_cost = std::max(logged.cost, _max_cost);
   }
 
-  ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
+  VW::action_scores& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
@@ -102,14 +102,14 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   }
 
   for (size_t i = 0; i < num_actions; i++) { preds[i].score = VW::math::clamp(preds[i].score, _min_cost, _max_cost); }
-  std::make_heap(preds.begin(), preds.end(), VW::action_score_compare_gt);
+  std::make_heap(preds.begin(), preds.end(), std::greater<VW::action_score>());
 
   _action_probs.clear();
   for (uint32_t i = 0; i < num_actions; i++) { _action_probs.push_back({i, 0.}); }
 
   for (uint32_t i = 0; i < _synthcoversize;)
   {
-    std::pop_heap(preds.begin(), preds.end(), VW::action_score_compare_gt);
+    std::pop_heap(preds.begin(), preds.end(), std::greater<VW::action_score>());
     auto minpred = preds.back();
     preds.pop_back();
 
@@ -121,12 +121,12 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     }
 
     preds.push_back(minpred);
-    std::push_heap(preds.begin(), preds.end(), VW::action_score_compare_gt);
+    std::push_heap(preds.begin(), preds.end(), std::greater<VW::action_score>());
   }
 
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
 
-  std::sort(_action_probs.begin(), _action_probs.end(), VW::action_score_compare_gt);
+  std::sort(_action_probs.begin(), _action_probs.end(), std::greater<VW::action_score>());
 
   for (size_t i = 0; i < num_actions; i++) { preds[i] = _action_probs[i]; }
 }
@@ -204,10 +204,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
       VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_synthcover_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)

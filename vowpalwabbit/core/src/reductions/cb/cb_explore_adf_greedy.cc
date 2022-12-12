@@ -6,10 +6,13 @@
 
 #include "vw/config/options.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
+#include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
 
@@ -21,12 +24,8 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_greedy
+class cb_explore_adf_greedy
 {
-private:
-  float _epsilon;
-  bool _first_only;
-
 public:
   cb_explore_adf_greedy(float epsilon, bool first_only);
   ~cb_explore_adf_greedy() = default;
@@ -39,6 +38,8 @@ public:
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
+  float _epsilon;
+  bool _first_only;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
@@ -51,10 +52,10 @@ cb_explore_adf_greedy::cb_explore_adf_greedy(float epsilon, bool first_only)
 
 void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
 {
-  ACTION_SCORE::action_scores& preds = examples[0]->pred.a_s;
+  VW::action_scores& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
-  auto& ep_fts = examples[0]->_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+  auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
   float actual_ep = (ep_fts.valid_epsilon_supplied()) ? ep_fts.epsilon : _epsilon;
 
   size_t tied_actions = fill_tied(preds);
@@ -65,10 +66,7 @@ void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
   {
     for (size_t i = 0; i < tied_actions; ++i) { preds[i].score += (1.f - actual_ep) / tied_actions; }
   }
-  else
-  {
-    preds[0].score += 1.f - actual_ep;
-  }
+  else { preds[0].score += 1.f - actual_ep; }
 }
 
 template <bool is_learn>
@@ -144,10 +142,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)

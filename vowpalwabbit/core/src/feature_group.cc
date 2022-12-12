@@ -11,8 +11,9 @@
 #include <utility>
 #include <vector>
 
-struct feature_slice  // a helper struct for functions using the set {v,i,space_name}
+class feature_slice  // a helper class for functions using the set {v,i,space_name}
 {
+public:
   feature_value x;
   feature_index weight_index;
   VW::audit_strings space_name;
@@ -91,7 +92,9 @@ void features::concat(const features& other)
   }
 
   if (!other.space_names.empty())
-  { space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end()); }
+  {
+    space_names.insert(space_names.end(), other.space_names.begin(), other.space_names.end());
+  }
 
   // If the back of the current list and the front of the other list have the same hash then merge the extent.
   size_t offset = 0;
@@ -122,7 +125,9 @@ void features::push_back(feature_value v, feature_index i, uint64_t hash)
 {
   // If there is an open extent but of a different hash - we must close it before we do anything.
   if (!namespace_extents.empty() && namespace_extents.back().hash != hash && (namespace_extents.back().end_index == 0))
-  { end_ns_extent(); }
+  {
+    end_ns_extent();
+  }
 
   // We only need to extend the extent if it has had its end index set. If the end index is 0, then we assume the extent
   // is open and will be closed before the example is finished being constructed.
@@ -132,10 +137,7 @@ void features::push_back(feature_value v, feature_index i, uint64_t hash)
   const bool should_create_new = namespace_extents.empty() || namespace_extents.back().hash != hash;
 
   if (should_extend_existing) { namespace_extents.back().end_index++; }
-  else if (should_create_new)
-  {
-    namespace_extents.emplace_back(indices.size(), indices.size() + 1, hash);
-  }
+  else if (should_create_new) { namespace_extents.emplace_back(indices.size(), indices.size() + 1, hash); }
 
   values.push_back(v);
   indices.push_back(i);
@@ -257,7 +259,8 @@ bool features::sort(uint64_t parse_mask)
   if (indices.empty()) { return false; }
   // Compared indices are masked even though the saved values are not necessarilly masked.
   const auto comparator = [parse_mask](feature_index index_first, feature_index index_second, feature_value value_first,
-                              feature_value value_second) {
+                              feature_value value_second)
+  {
     const auto masked_index_first = index_first & parse_mask;
     const auto masked_index_second = index_second & parse_mask;
     return (masked_index_first < masked_index_second) ||
@@ -266,10 +269,7 @@ bool features::sort(uint64_t parse_mask)
   auto flat_extents = VW::details::flatten_namespace_extents(namespace_extents, indices.size());
   const auto dest_index_vec = sort_permutation(indices, values, comparator);
   if (!space_names.empty()) { apply_permutation_in_place(dest_index_vec, values, indices, flat_extents, space_names); }
-  else
-  {
-    apply_permutation_in_place(dest_index_vec, values, indices, flat_extents);
-  }
+  else { apply_permutation_in_place(dest_index_vec, values, indices, flat_extents); }
   namespace_extents = VW::details::unflatten_namespace_extents(flat_extents);
   return true;
 }

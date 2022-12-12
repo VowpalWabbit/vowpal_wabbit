@@ -88,3 +88,7 @@ set_target_properties(VowpalWabbit PROPERTIES
   VS_GLOBAL_AllowUnsafeBlocks "True"
   VS_GLOBAL_DocumentationFile "VowpalWabbit.xml"
 )
+
+install(TARGETS VowpalWabbit
+  RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/${VW_NET_FRAMEWORK_TFM}"
+)

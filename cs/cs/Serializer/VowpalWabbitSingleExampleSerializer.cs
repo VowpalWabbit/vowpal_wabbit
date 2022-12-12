@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="VowpalWabbitSerializer.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -8,7 +8,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using VW.Labels;
@@ -55,8 +55,8 @@ namespace VW.Serializer
         {
             if (compiler == null)
                 throw new ArgumentNullException("compiler");
-            Contract.Ensures(vw != null);
-            Contract.EndContractBlock();
+            if (vw == null)
+                throw new ArgumentNullException("vw");
 
             this.vw = vw;
             this.compiler = compiler;
@@ -124,7 +124,7 @@ namespace VW.Serializer
         /// <returns>The resulting VW string.</returns>
         public string SerializeToString(TExample example, ILabel label = null, int? index = null, Dictionary<string, string> dictionary = null, Dictionary<object, string> fastDictionary = null)
         {
-            Contract.Requires(example != null);
+            Debug.Assert(example != null);
 
             using (var context = new VowpalWabbitMarshalContext(vw, dictionary, fastDictionary))
             {
@@ -157,8 +157,8 @@ namespace VW.Serializer
         /// <remarks>If <typeparamref name="TExample"/> is annotated using the Cachable attribute, examples are returned from cache.</remarks>
         public VowpalWabbitExample Serialize(TExample example, ILabel label = null, int? index = null)
         {
-            Contract.Requires(example != null);
-            Contract.Requires(index == null);
+            Debug.Assert(example != null);
+            Debug.Assert(index == null);
 
             if (this.exampleCache == null || label != null)
             {

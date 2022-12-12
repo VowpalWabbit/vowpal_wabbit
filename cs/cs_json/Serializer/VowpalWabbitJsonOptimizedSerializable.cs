@@ -51,6 +51,7 @@ namespace VW.Serializer
 
                         using (var reader = new JsonTextReader(new StringReader(json)))
                         {
+                            reader.DateParseHandling = DateParseHandling.None;
                             jsonBuilder.Parse(reader, ctx, new Namespace(ctx.VW, feature.Name));
                         }
                     }

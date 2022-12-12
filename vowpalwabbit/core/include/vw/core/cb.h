@@ -15,14 +15,15 @@
 
 namespace VW
 {
-struct example;
+class example;
 using multi_ex = std::vector<example*>;
 }  // namespace VW
 namespace CB
 {
 // By default a cb class does not contain an observed cost.
-struct cb_class
+class cb_class
 {
+public:
   float cost = FLT_MAX;      // the cost of this class
   uint32_t action = 0;       // the index of this class
   float probability = -1.f;  // new for bandit setting, specifies the probability the data collection policy chose this
@@ -40,8 +41,9 @@ struct cb_class
   constexpr bool has_observed_cost() const { return (cost != FLT_MAX && probability > .0); }
 };
 
-struct label
+class label
 {
+public:
   std::vector<cb_class> costs;
   float weight = 1.f;
 };
@@ -57,8 +59,9 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
 
 namespace CB_EVAL
 {
-struct label
+class label
 {
+public:
   uint32_t action = 0;
   CB::label event;
 };

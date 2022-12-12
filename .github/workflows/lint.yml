@@ -9,6 +9,10 @@ on:
     branches:
       - '*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   typecheck-build:
     name: lint.python.typecheck-build
@@ -22,6 +26,8 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - name: Build wheel
         shell: bash
         run: |
@@ -44,6 +50,8 @@ jobs:
         - { version: "3.9" }
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - name: Download Wheel
         uses: actions/download-artifact@v1
         with:
@@ -73,6 +81,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Setup python
         uses: actions/setup-python@v2
         with:
@@ -83,9 +93,11 @@ jobs:
           python -m black --check . --exclude ext_libs/ || (echo -e "---\nTo fix, run:\n\tpython -m black . --exclude ext_libs"; exit 1)
   cpp-formatting:
     name: lint.c++.formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Install clang-format
         # This is only needed if the diff check runs as it installs 'clang-format-diff'
         # 'clang-format' is available by default
@@ -105,31 +117,42 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
+          if [[ ! -f .clang-format ]]; then
+            echo "Cannot find .clang-format file!"
+            exit 1
+          fi
           git diff origin/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 > clang_format_diff.txt
           if [ -s clang_format_diff.txt ]; then
             cat clang_format_diff.txt
             echo "::error:: Formatting issues found"
             echo "To fix:"
-            echo -e "\tEnsure there is an upstream remote that points to: https://github.com/VowpalWabbit/vowpal_wabbit.git"
-            echo -e "\tRun: \"git fetch upstream\""
-            echo -e "\tUse Docker: https://gist.github.com/jackgerrits/2736da5ffff871f7830aed6b55c0c73e"
-            echo -e "\tOr, Run: \"git diff upstream/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 -i\""
+            echo -e "\tUse the clang-format.sh script in docker mode:"
+            echo -e "\t\tRun: \"./utl/clang-format.sh docker fix\""
+            echo -e "\tOr, install the right verson of clang-format locally"
+            echo -e "\t\tRun: \"git diff upstream/master...HEAD -U0 --no-color | clang-format-diff -r '^.*\.(cc|h)$' -p1 -i\""
+            echo -e "\tBe sure to check your version of clang-format. The version used here is..."
+            clang-format --version
             exit 1
           else
             echo "No formatting issues found in the PR diff."
           fi
   run-clang-tidy:
     name: lint.c++.clang-tidy
-    container:
-      image: vowpalwabbit/ubuntu2004-dev:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Install Ninja
-        shell: bash
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v18
+      - name: Run clang-tidy
         run: |
-          apt update
-          apt install -y libspdlog-dev libfmt-dev libboost-math-dev
-      - name: Run clang tidy
-        shell: bash
-        run: ./.scripts/linux/run-clang-tidy.sh
+          echo "::group::nix develop -c vw-clang-tidy"
+          nix develop -c vw-clang-tidy | tee tidy_out.txt || true
+          # Prevent false positives for THROW("error: ...") by using the prepended :
+          grep -A 3 ": error: " tidy_out.txt > tidy_onlyerrors.txt || true
+          echo "::endgroup::"
+          if [ -s tidy_onlyerrors.txt ]; then
+            # file has contents
+            echo "::group::clang-tidy errors"
+            cat tidy_onlyerrors.txt
+            echo "::endgroup::"
+            exit 11
+          fi

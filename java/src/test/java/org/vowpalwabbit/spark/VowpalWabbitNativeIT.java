@@ -402,4 +402,34 @@ public class VowpalWabbitNativeIT {
             }
         }
     }
+
+    @Test
+    public void testMergeModels() throws Exception {
+        VowpalWabbitNative vw1 = null;
+        VowpalWabbitNative vw2 = null;
+        VowpalWabbitNative vwMerged = null;
+
+        try {
+            vw1 = new VowpalWabbitNative("--quiet");
+            vw1.learnFromString("0 | price:.23 sqft:.25 age:.05 2006");
+            vw2 = new VowpalWabbitNative("--quiet");
+            vw2.learnFromString("1 'second_house | price:.18 sqft:.15 age:.35 1976");
+
+            vwMerged = VowpalWabbitNative.mergeModels(null, new VowpalWabbitNative[] { vw1, vw2 });
+
+            assertEquals(1.0, vw1.getPerformanceStatistics().getWeightedExampleSum(), 0.001);
+            assertEquals(1.0, vw2.getPerformanceStatistics().getWeightedExampleSum(), 0.001);
+            assertEquals(2.0, vwMerged.getPerformanceStatistics().getWeightedExampleSum(), 0.001);
+        } finally {
+            if (vw1 != null) {
+                vw1.close();
+            }
+            if (vw2 != null) {
+                vw2.close();
+            }
+            if (vwMerged != null) {
+                vwMerged.close();
+            }
+        }
+    }
 }

@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include "vw/common/vw_exception.h"
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,8 +21,9 @@ namespace io
 {
 namespace details
 {
-struct socket_closer
+class socket_closer
 {
+public:
   socket_closer(int fd);
   ~socket_closer();
 
@@ -33,8 +32,9 @@ private:
 };
 }  // namespace details
 
-struct reader
+class reader
 {
+public:
   reader(bool is_resettable) : _is_resettable(is_resettable) {}
   virtual ~reader() = default;
 
@@ -47,7 +47,7 @@ struct reader
   /// This function will throw if the reader does not support reseting. Users
   /// should check if this io_adapter is resetable before trying to reset.
   /// \throw VW::vw_exception if reader does not support resetting.
-  virtual void reset() { THROW("Reset not supported for this io_adapter"); }
+  virtual void reset();
 
   /// \returns true if this reader can be reset, otherwise false
   bool is_resettable() const { return _is_resettable; }
@@ -61,8 +61,9 @@ private:
   bool _is_resettable;
 };
 
-struct writer
+class writer
 {
+public:
   writer() = default;
   virtual ~writer() = default;
 
@@ -81,8 +82,9 @@ struct writer
   writer& operator=(writer&& other) = delete;
 };
 
-struct socket
+class socket
 {
+public:
   socket(int fd) : _socket_fd(fd) { _closer = std::make_shared<details::socket_closer>(fd); }
   ~socket() = default;
   std::unique_ptr<reader> get_reader();

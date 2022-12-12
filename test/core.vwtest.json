@@ -304,7 +304,7 @@
   {
     "id": 24,
     "desc": "active-learning -- training",
-    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3",
+    "vw_command": "-k --active --simulation --mellowness 0.000001 -d train-sets/rcv1_small.dat -l 10 --initial_t 10 --random_seed 3 --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/active-simulation.t24.stderr",
       "stdout": "train-sets/ref/active-simulation.t24.stdout"
@@ -3144,7 +3144,7 @@
   },
   {
     "id": 244,
-    "desc": "Flatbuffer CB_eval test",
+    "desc": "Flatbuffer CB_EVAL test",
     "vw_command": "-d train-sets/rcv1_cb_eval.fb --cb 2 --eval --flatbuffer",
     "diff_files": {
       "stderr": "train-sets/ref/rcv1_cb_eval_fb.stderr",
@@ -5082,7 +5082,7 @@
   {
     "id": 394,
     "desc": "Test using automl with ccb",
-    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json",
+    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json --oracle_type one_diff",
     "diff_files": {
       "aml_ccb_metrics.json": "test-sets/ref/aml_ccb_metrics.json"
     },
@@ -5293,7 +5293,7 @@
   {
     "id": 411,
     "desc": "automl with cb_adf",
-    "vw_command": "-f automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --oracle_type rand",
+    "vw_command": "-f models/automl.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_adf --extra_metrics metrics_.json --readable_model automl_readable.txt --oracle_type rand",
     "diff_files": {
       "stderr": "train-sets/ref/cb_adf_dsjson_metrics_.stderr",
       "metrics_.json": "test-sets/ref/metrics_cbadfautoml.json",
@@ -5371,6 +5371,185 @@
     },
     "input_files": [
       "train-sets/csoaa_ldf_multiline_with_shared.txt"
+    ]
+  },
+  {
+    "id": 417,
+    "desc": "set up automl model to test overrides",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -f models/automl_override.model --automl 4 --global_lease 100 --priority_type favor_popular_namespaces --priority_challengers 1 --oracle_type rand --automl_significance_level .1",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_test_set_override.stderr",
+      "stdout": "train-sets/ref/automl_test_set_override.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 418,
+    "desc": "load automl model with overrides",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -i models/automl_override.model --automl 4 --global_lease 200 --priority_type none --priority_challengers 2 --oracle_type one_diff --automl_significance_level .2",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_test_load_override.stderr",
+      "stdout": "train-sets/ref/automl_test_load_override.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json",
+      "models/automl_override.model"
+    ],
+    "depends_on": [
+      417
+    ]
+  },
+  {
+    "id": 419,
+    "desc": "Save model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -f models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_save.stderr",
+      "stdout": "train-sets/ref/ksvm_model_save.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat"
+    ]
+  },
+  {
+    "id": 420,
+    "desc": "Load model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -i models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_load.stderr",
+      "stdout": "train-sets/ref/ksvm_model_load.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat",
+      "models/ksvm_flat.model"
+    ],
+    "depends_on": [
+      419
+    ]
+  },
+  {
+    "id": 421,
+    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default target_rate of 1",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_tr_1.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 422,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_tr_0.2.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 423,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --squarecb -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_sqcb.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 424,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --large_action_space --max_actions 5 -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_las.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 425,
+    "desc": "Spin off automl model to lower bitsize to cb_explore",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off.m -b 18 --predict_only_model --automl 2 --debug_reversed_learn",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 426,
+    "desc": "Load spun off automl model and output invert hash",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/aml_spin_off.m -b 17 --invert_hash aml_spinoff.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load.stderr",
+      "aml_spinoff.inv": "pred-sets/ref/aml_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/aml_spin_off.m"
+    ],
+    "depends_on": [
+      425
+    ]
+  },
+  {
+    "id": 427,
+    "desc": "Generate similar model to spun off automl using standard cb_explore_adf",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_aml_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 428,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/aml_spin_off_cb.m -b 17 --invert_hash aml_spinoff_cb.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load.stderr",
+      "aml_spinoff_cb.inv": "pred-sets/ref/aml_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/aml_spin_off_cb.m"
+    ],
+    "depends_on": [
+      427
+    ]
+  },
+  {
+    "id": 429,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and automl spinoff",
+    "bash_command": "diff models/aml_spin_off.m models/aml_spin_off_cb.m",
+    "input_files": [
+      "models/aml_spin_off.m",
+      "models/aml_spin_off_cb.m"
+    ],
+    "depends_on": [
+      425, 427
+    ]
+  },
+  {
+    "id": 430,
+    "desc": "squarecb with epsilon",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -p squarecb_pred_epsilon.predict --epsilon 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/squarecb_epsilon.stderr",
+      "squarecb_pred_epsilon.predict": "pred-sets/ref/squarecb_pred_epsilon.predict",
+      "stdout": "train-sets/ref/squarecb_epsilon.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat"
     ]
   }
 ]

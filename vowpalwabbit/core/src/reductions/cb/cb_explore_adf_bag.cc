@@ -6,8 +6,10 @@
 
 #include "vw/config/options.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/core/parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -28,21 +30,10 @@ using namespace VW::cb_explore_adf;
 
 namespace
 {
-struct cb_explore_adf_bag
+class cb_explore_adf_bag
 {
-private:
-  float _epsilon;
-  size_t _bag_size;
-  bool _greedify;
-  bool _first_only;
-  std::shared_ptr<VW::rand_state> _random_state;
-
-  v_array<ACTION_SCORE::action_score> _action_probs;
-  std::vector<float> _scores;
-  std::vector<float> _top_actions;
-
 public:
-  using PredictionT = v_array<ACTION_SCORE::action_score>;
+  using PredictionT = VW::v_array<VW::action_score>;
 
   cb_explore_adf_bag(
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state);
@@ -54,6 +45,15 @@ public:
   const PredictionT& get_cached_prediction() { return _action_probs; };
 
 private:
+  float _epsilon;
+  size_t _bag_size;
+  bool _greedify;
+  bool _first_only;
+  std::shared_ptr<VW::rand_state> _random_state;
+
+  VW::v_array<VW::action_score> _action_probs;
+  std::vector<float> _scores;
+  std::vector<float> _top_actions;
   uint32_t get_bag_learner_update_count(uint32_t learner_index);
 };
 
@@ -72,16 +72,13 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
   // If _greedify then always update the first policy once
   // for others the update count depends on drawing from a poisson
   if (_greedify && learner_index == 0) { return 1; }
-  else
-  {
-    return VW::reductions::bs::weight_gen(_random_state);
-  }
+  else { return VW::reductions::bs::weight_gen(*_random_state); }
 }
 
 void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(examples.size());
   if (num_actions == 0)
   {
@@ -104,10 +101,7 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex&
       size_t tied_actions = fill_tied(preds);
       for (size_t j = 0; j < tied_actions; ++j) { _top_actions[preds[j].action] += 1.f / tied_actions; }
     }
-    else
-    {
-      _top_actions[preds[0].action] += 1.f;
-    }
+    else { _top_actions[preds[0].action] += 1.f; }
   }
 
   _action_probs.clear();
@@ -134,7 +128,9 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, VW::multi_ex& e
                      << std::endl;
 
     for (uint32_t j = 0; j < learn_count; j++)
-    { VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i); }
+    {
+      VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
+    }
   }
 }
 
@@ -196,10 +192,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
       with_metrics, epsilon, VW::cast_to_smaller_type<size_t>(bag_size), greedify, first_only, all.get_random_state());
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_bag_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(finish_bag_example)
                 .set_print_example(print_bag_example)

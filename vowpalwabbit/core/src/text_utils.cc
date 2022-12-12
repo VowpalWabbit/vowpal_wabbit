@@ -13,10 +13,10 @@
 
 std::string VW::decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
 {
-  constexpr size_t NUMBER_OF_HEX_CHARS = 2;
+  static constexpr size_t NUMBER_OF_HEX_CHARS = 2;
   // "\x" + hex chars
-  constexpr size_t LENGTH_OF_HEX_TOKEN = 2 + NUMBER_OF_HEX_CHARS;
-  constexpr size_t HEX_BASE = 16;
+  static constexpr size_t LENGTH_OF_HEX_TOKEN = 2 + NUMBER_OF_HEX_CHARS;
+  static constexpr size_t HEX_BASE = 16;
 
   // Too short to be hex encoded.
   if (arg.size() < LENGTH_OF_HEX_TOKEN) { return std::string{arg}; }
@@ -41,10 +41,7 @@ std::string VW::decode_inline_hex(VW::string_view arg, VW::io::logger& logger)
         res.push_back(arg[pos++]);
       }
     }
-    else
-    {
-      res.push_back(arg[pos++]);
-    }
+    else { res.push_back(arg[pos++]); }
   }
 
   // Copy last 2 characters

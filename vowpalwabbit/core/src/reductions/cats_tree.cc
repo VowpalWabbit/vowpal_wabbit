@@ -5,6 +5,7 @@
 #include "vw/core/reductions/cats_tree.h"
 
 #include "vw/common/hash.h"
+#include "vw/config/options.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/global_data.h"
 #include "vw/core/guard.h"
@@ -25,7 +26,7 @@ using CB::cb_class;
 using std::vector;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cats_tree
+#define VW_DEBUG_LOG vw_dbg::CATS_TREE
 
 namespace VW
 {
@@ -168,10 +169,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
   while (!(cur_node.is_leaf))
   {
     if (cur_node.right_only) { cur_node = nodes[cur_node.right_id]; }
-    else if (cur_node.left_only)
-    {
-      cur_node = nodes[cur_node.left_id];
-    }
+    else if (cur_node.left_only) { cur_node = nodes[cur_node.left_id]; }
     else
     {
       ec.partial_prediction = 0.f;
@@ -180,10 +178,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
       VW_DBG(ec) << "tree_c: predict() after base.predict() " << VW::debug::scalar_pred_to_string(ec)
                  << ", nodeid = " << cur_node.id << std::endl;
       if (ec.pred.scalar < 0) { cur_node = nodes[cur_node.left_id]; }
-      else
-      {
-        cur_node = nodes[cur_node.right_id];
-      }
+      else { cur_node = nodes[cur_node.right_id]; }
     }
   }
   ec.l.cb = std::move(saved_label);
@@ -214,22 +209,10 @@ constexpr float LEFT = -1.0f;
 float cats_tree::return_cost(const tree_node& w)
 {
   if (w.id < _a.node_id) { return 0; }
-  else if (w.id == _a.node_id)
-  {
-    return _a.cost;
-  }
-  else if (w.id < _b.node_id)
-  {
-    return _cost_star;
-  }
-  else if (w.id == _b.node_id)
-  {
-    return _b.cost;
-  }
-  else
-  {
-    return 0;
-  }
+  else if (w.id == _a.node_id) { return _a.cost; }
+  else if (w.id < _b.node_id) { return _cost_star; }
+  else if (w.id == _b.node_id) { return _b.cost; }
+  else { return 0; }
 }
 
 void cats_tree::learn(LEARNER::single_learner& base, example& ec)
@@ -278,10 +261,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           // pick a uniform random number between 0.0 - .001f
           float random_draw = merand48(new_random_seed) * weight_th;
           if (random_draw < ec.weight) { ec.weight = weight_th; }
-          else
-          {
-            filter = true;
-          }
+          else { filter = true; }
         }
         if (!filter)
         {
@@ -308,10 +288,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         }
       }
       if (i == 0) { a_parent_cost = cost_parent; }
-      else
-      {
-        b_parent_cost = cost_parent;
-      }
+      else { b_parent_cost = cost_parent; }
     }
     _a = {nodes[_a.node_id].parent_id, a_parent_cost};
     _b = {nodes[_b.node_id].parent_id, b_parent_cost};
@@ -389,8 +366,8 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
   auto* l = make_reduction_learner(
       std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
                 .set_params_per_weight(params_per_weight)
-                .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_input_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_input_label_type(VW::label_type_t::CB)
                 .build();
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);

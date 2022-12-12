@@ -3,6 +3,8 @@
 // license as described in the file LICENSE.
 
 #include "test_common.h"
+#include "vw/core/learner.h"
+#include "vw/core/metric_sink.h"
 #include "vw/core/rand48.h"
 #include "vw/core/vw.h"
 

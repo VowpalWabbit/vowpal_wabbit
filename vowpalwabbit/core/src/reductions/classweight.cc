@@ -15,8 +15,9 @@ using namespace VW::config;
 
 namespace
 {
-struct classweights
+class classweights
 {
+public:
   std::unordered_map<uint32_t, float> weights;
 
   void load_string(std::string const& source)
@@ -44,10 +45,7 @@ struct classweights
   {
     auto got = weights.find(klass);
     if (got == weights.end()) { return 1.0f; }
-    else
-    {
-      return got->second;
-    }
+    else { return got->second; }
   }
 };
 
@@ -56,10 +54,10 @@ void update_example_weight(classweights& cweights, VW::example& ec)
 {
   switch (pred_type)
   {
-    case VW::prediction_type_t::scalar:
+    case VW::prediction_type_t::SCALAR:
       ec.weight *= cweights.get_class_weight(static_cast<uint32_t>(ec.l.simple.label));
       break;
-    case VW::prediction_type_t::multiclass:
+    case VW::prediction_type_t::MULTICLASS:
       ec.weight *= cweights.get_class_weight(ec.l.multi.label);
       break;
     default:
@@ -76,10 +74,7 @@ void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base,
     update_example_weight<pred_type>(cweights, ec);
     base.learn(ec);
   }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 }
 }  // namespace
 
@@ -105,24 +100,21 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
   void (*pred_ptr)(classweights&, VW::LEARNER::single_learner&, VW::example&);
   VW::prediction_type_t pred_type;
 
-  if (base->get_output_prediction_type() == VW::prediction_type_t::scalar)
+  if (base->get_output_prediction_type() == VW::prediction_type_t::SCALAR)
   {
     name_addition = "-scalar";
-    learn_ptr = predict_or_learn<true, VW::prediction_type_t::scalar>;
-    pred_ptr = predict_or_learn<false, VW::prediction_type_t::scalar>;
-    pred_type = VW::prediction_type_t::scalar;
+    learn_ptr = predict_or_learn<true, VW::prediction_type_t::SCALAR>;
+    pred_ptr = predict_or_learn<false, VW::prediction_type_t::SCALAR>;
+    pred_type = VW::prediction_type_t::SCALAR;
   }
-  else if (base->get_output_prediction_type() == VW::prediction_type_t::multiclass)
+  else if (base->get_output_prediction_type() == VW::prediction_type_t::MULTICLASS)
   {
     name_addition = "-multi";
-    learn_ptr = predict_or_learn<true, VW::prediction_type_t::multiclass>;
-    pred_ptr = predict_or_learn<false, VW::prediction_type_t::multiclass>;
-    pred_type = VW::prediction_type_t::multiclass;
+    learn_ptr = predict_or_learn<true, VW::prediction_type_t::MULTICLASS>;
+    pred_ptr = predict_or_learn<false, VW::prediction_type_t::MULTICLASS>;
+    pred_type = VW::prediction_type_t::MULTICLASS;
   }
-  else
-  {
-    THROW("--classweight not implemented for this type of prediction");
-  }
+  else { THROW("--classweight not implemented for this type of prediction"); }
 
   auto* l = make_reduction_learner(
       std::move(cweights), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(classweight_setup) + name_addition)

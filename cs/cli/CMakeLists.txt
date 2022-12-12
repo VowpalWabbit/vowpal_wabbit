@@ -66,10 +66,6 @@ target_add_nuget_references(VowpalWabbit.Core "${VowpalWabbit.Core_NUGET_REFEREN
 target_link_libraries(VowpalWabbit.Core
     PUBLIC VowpalWabbit.Common
     PRIVATE vw_core vw_spanning_tree
-    # Workaround an issue where RapidJSON needed to be exported to install the target. This is
-    # actually a private dependency and so do not "link" when processing targets for installation.
-    # https://gitlab.kitware.com/cmake/cmake/issues/15415
-    $<BUILD_INTERFACE:RapidJSON>
 )
 
 target_compile_options(VowpalWabbit.Core PRIVATE
@@ -88,4 +84,8 @@ set_target_properties(VowpalWabbit.Core PROPERTIES
     VS_DOTNET_TARGET_FRAMEWORK_VERSION ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}
     VS_GLOBAL_ROOTNAMESPACE VowpalWabbit.Core
     VS_GLOBAL_CLRSupport "True"
+)
+
+install(TARGETS VowpalWabbit.Core
+  RUNTIME DESTINATION "${CMAKE_INSTALL_LIBDIR}/${VW_NET_FRAMEWORK_TFM}"
 )

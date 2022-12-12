@@ -17,8 +17,9 @@ using std::vector;
 
 namespace
 {
-struct reduction_test_harness
+class reduction_test_harness
 {
+public:
   reduction_test_harness() : _curr_idx(0) {}
 
   void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }
@@ -27,19 +28,22 @@ struct reduction_test_harness
   {
     ec.pred.a_s.clear();
     for (uint32_t i = 0; i < _predictions.size(); i++)
-    { ec.pred.a_s.push_back(ACTION_SCORE::action_score{_predictions[i].first, _predictions[i].second}); }
+    {
+      ec.pred.a_s.push_back(VW::action_score{_predictions[i].first, _predictions[i].second});
+    }
   }
 
   void test_learn(base_learner& base, VW::example& ec)
   { /*noop*/
   }
 
-  static void predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
+  // use NO_SANITIZE_UNDEFINED because reference base_learner& base may be bound to nullptr
+  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
+  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
   {
     test_reduction.test_learn(base, ec);
   };
@@ -61,7 +65,11 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
-      "test_learner", VW::prediction_type_t::action_scores, VW::label_type_t::continuous)
+      "test_learner", VW::prediction_type_t::ACTION_SCORES, VW::label_type_t::CONTINUOUS)
+                          // Set it to something so that the compat VW::finish_example shim is put in place.
+                          .set_output_example_prediction([](VW::workspace& all, const reduction_test_harness&,
+                                                             const VW::example&, VW::io::logger&) {})
+
                           .build();  // Create a learner using the base reduction.
   return test_learner;
 }
@@ -105,11 +113,10 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
       // where action + bandwidth > num_actions - 1
       // resulting in a span of max 2 * bandwidth
       if (pdf[i].left == 0 || pdf[i].right == num_actions - 1)
-      { BOOST_CHECK_LT(right_unit - left_unit, 2 * bandwidth); }
-      else
       {
-        BOOST_CHECK_EQUAL(right_unit - left_unit, 2 * bandwidth);
+        BOOST_CHECK_LT(right_unit - left_unit, 2 * bandwidth);
       }
+      else { BOOST_CHECK_EQUAL(right_unit - left_unit, 2 * bandwidth); }
     }
   }
 }

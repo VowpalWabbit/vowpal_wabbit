@@ -13,8 +13,9 @@
 
 using namespace VW::config;
 
-struct autolink
+class autolink
 {
+public:
   autolink(uint32_t poly_degree, uint32_t stride_shift);
   void predict(VW::LEARNER::single_learner& base, VW::example& ec) const;
   void learn(VW::LEARNER::single_learner& base, VW::example& ec) const;
@@ -53,13 +54,13 @@ void autolink::prepare_example(VW::LEARNER::single_learner& base, VW::example& e
   float base_pred = ec.pred.scalar;
 
   // Add features of label.
-  ec.indices.push_back(autolink_namespace);
-  features& fs = ec.feature_space[autolink_namespace];
+  ec.indices.push_back(VW::details::AUTOLINK_NAMESPACE);
+  features& fs = ec.feature_space[VW::details::AUTOLINK_NAMESPACE];
   for (size_t i = 0; i < _poly_degree; i++)
   {
     if (base_pred != 0.f)
     {
-      fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift), autolink_namespace);
+      fs.push_back(base_pred, AUTOCONSTANT + (i << _stride_shift), VW::details::AUTOLINK_NAMESPACE);
       base_pred *= ec.pred.scalar;
     }
   }
@@ -68,7 +69,7 @@ void autolink::prepare_example(VW::LEARNER::single_learner& base, VW::example& e
 
 void autolink::reset_example(VW::example& ec)
 {
-  features& fs = ec.feature_space[autolink_namespace];
+  features& fs = ec.feature_space[VW::details::AUTOLINK_NAMESPACE];
   ec.reset_total_sum_feat_sq();
   fs.clear();
   ec.indices.pop_back();
@@ -78,10 +79,7 @@ template <bool is_learn>
 void predict_or_learn(autolink& b, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   if (is_learn) { b.learn(base, ec); }
-  else
-  {
-    b.predict(base, ec);
-  }
+  else { b.predict(base, ec); }
 }
 
 VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)
@@ -98,7 +96,7 @@ VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stac
   auto* base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(autolink_reduction), base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(autolink_setup))
-                      .set_output_prediction_type(VW::prediction_type_t::scalar)
+                      .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                       .set_learn_returns_prediction(base->learn_returns_prediction)
                       .build();
   return make_base(*learner);

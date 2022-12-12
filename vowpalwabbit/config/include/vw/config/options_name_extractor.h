@@ -15,8 +15,9 @@ namespace VW
 {
 namespace config
 {
-struct options_name_extractor : options_i
+class options_name_extractor : public options_i
 {
+public:
   std::string generated_name;
   std::set<std::string> m_added_help_group_names;
 

@@ -52,7 +52,9 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
         }
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
-        { lock_done(*all.example_parser); }
+        {
+          lock_done(*all.example_parser);
+        }
         example_number = 0;
       }
 
@@ -62,7 +64,7 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
   catch (VW::vw_exception& e)
   {
     VW::return_multiple_example(all, examples);
-    all.logger.err_error("vw example #{0}({1}:{2}): {3}", example_number, e.Filename(), e.LineNumber(), e.what());
+    all.logger.err_error("vw example #{0}({1}:{2}): {3}", example_number, e.filename(), e.line_number(), e.what());
 
     // Stash the exception so it can be thrown on the main thread.
     all.example_parser->exc_ptr = std::current_exception();

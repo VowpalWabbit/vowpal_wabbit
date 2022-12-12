@@ -6,7 +6,6 @@
 
 #include <cassert>
 #include <queue>
-#include <set>
 #include <stack>
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
@@ -26,73 +25,76 @@
 namespace VW
 {
 template <typename T>
-struct default_cleanup
+class default_cleanup
 {
+public:
   void operator()(T*) {}
 };
 
 template <typename T>
-struct default_initializer
+class default_initializer
 {
+public:
   T* operator()(T* obj) { return obj; }
 };
 
 template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
-struct no_lock_object_pool
+class no_lock_object_pool
 {
+public:
   no_lock_object_pool() = default;
   no_lock_object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
-      : m_initializer(initializer), m_initial_chunk_size(initial_chunk_size), m_chunk_size(chunk_size)
+      : _initializer(initializer), _initial_chunk_size(initial_chunk_size), _chunk_size(chunk_size)
   {
     new_chunk(initial_chunk_size);
   }
 
   ~no_lock_object_pool()
   {
-    assert(m_pool.size() == size());
-    while (!m_pool.empty())
+    assert(_pool.size() == size());
+    while (!_pool.empty())
     {
-      auto front = m_pool.front();
-      m_cleanup(front);
-      m_pool.pop();
+      auto front = _pool.front();
+      _cleanup(front);
+      _pool.pop();
     }
   }
 
   void return_object(T* obj)
   {
     assert(is_from_pool(obj));
-    m_pool.push(obj);
+    _pool.push(obj);
   }
 
   T* get_object()
   {
-    if (m_pool.empty()) { new_chunk(m_chunk_size); }
+    if (_pool.empty()) { new_chunk(_chunk_size); }
 
-    auto obj = m_pool.front();
-    m_pool.pop();
+    auto obj = _pool.front();
+    _pool.pop();
     return obj;
   }
 
-  bool empty() const { return m_pool.empty(); }
+  bool empty() const { return _pool.empty(); }
 
   size_t size() const
   {
     size_t size = 0;
-    auto num_chunks = m_chunk_bounds.size();
+    auto num_chunks = _chunk_bounds.size();
 
-    if (m_chunk_bounds.size() > 0 && m_initial_chunk_size > 0)
+    if (_chunk_bounds.size() > 0 && _initial_chunk_size > 0)
     {
-      size += m_initial_chunk_size;
+      size += _initial_chunk_size;
       num_chunks--;
     }
 
-    size += num_chunks * m_chunk_size;
+    size += num_chunks * _chunk_size;
     return size;
   }
 
   bool is_from_pool(const T* obj) const
   {
-    for (auto& bound : m_chunk_bounds)
+    for (auto& bound : _chunk_bounds)
     {
       if (obj >= bound.first && obj <= bound.second) { return true; }
     }
@@ -105,91 +107,93 @@ private:
   {
     if (size == 0) { return; }
 
-    m_chunks.push_back(std::unique_ptr<T[]>(new T[size]));
-    auto& chunk = m_chunks.back();
-    m_chunk_bounds.push_back({&chunk[0], &chunk[size - 1]});
+    _chunks.push_back(std::unique_ptr<T[]>(new T[size]));
+    auto& chunk = _chunks.back();
+    _chunk_bounds.push_back({&chunk[0], &chunk[size - 1]});
 
-    for (size_t i = 0; i < size; i++) { m_pool.push(m_initializer(&chunk[i])); }
+    for (size_t i = 0; i < size; i++) { _pool.push(_initializer(&chunk[i])); }
   }
 
-  TInitializer m_initializer;
-  TCleanup m_cleanup;
-  size_t m_initial_chunk_size = 0;
-  size_t m_chunk_size = 8;
+  TInitializer _initializer;
+  TCleanup _cleanup;
+  size_t _initial_chunk_size = 0;
+  size_t _chunk_size = 8;
 
-  std::vector<std::unique_ptr<T[]>> m_chunks;
-  std::vector<std::pair<T*, T*>> m_chunk_bounds;
-  std::queue<T*> m_pool;
+  std::vector<std::unique_ptr<T[]>> _chunks;
+  std::vector<std::pair<T*, T*>> _chunk_bounds;
+  std::queue<T*> _pool;
 };
 
 template <typename T>
-struct moved_object_pool
+class moved_object_pool
 {
+public:
   moved_object_pool() = default;
 
-  void reclaim_object(T&& obj) { m_pool.push(std::move(obj)); }
+  void reclaim_object(T&& obj) { _pool.push(std::move(obj)); }
 
   void acquire_object(T& dest)
   {
-    if (m_pool.empty())
+    if (_pool.empty())
     {
       dest = T();
       return;
     }
 
-    dest = std::move(m_pool.top());
-    m_pool.pop();
+    dest = std::move(_pool.top());
+    _pool.pop();
   }
 
-  bool empty() const { return m_pool.empty(); }
+  bool empty() const { return _pool.empty(); }
 
-  size_t size() const { return m_pool.size(); }
+  size_t size() const { return _pool.size(); }
 
 private:
-  std::stack<T> m_pool;
+  std::stack<T> _pool;
 };
 
 template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
-struct object_pool
+class object_pool
 {
+public:
   object_pool() = default;
   object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
-      : inner_pool(initial_chunk_size, initializer, chunk_size)
+      : _inner_pool(initial_chunk_size, initializer, chunk_size)
   {
   }
 
   void return_object(T* obj)
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    inner_pool.return_object(obj);
+    std::unique_lock<std::mutex> lock(_lock);
+    _inner_pool.return_object(obj);
   }
 
   T* get_object()
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.get_object();
+    std::unique_lock<std::mutex> lock(_lock);
+    return _inner_pool.get_object();
   }
 
   bool empty() const
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.empty();
+    std::unique_lock<std::mutex> lock(_lock);
+    return _inner_pool.empty();
   }
 
   size_t size() const
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.size();
+    std::unique_lock<std::mutex> lock(_lock);
+    return _inner_pool.size();
   }
 
   bool is_from_pool(const T* obj) const
   {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.is_from_pool(obj);
+    std::unique_lock<std::mutex> lock(_lock);
+    return _inner_pool.is_from_pool(obj);
   }
 
 private:
-  mutable std::mutex m_lock;
-  no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
+  mutable std::mutex _lock;
+  no_lock_object_pool<T, TInitializer, TCleanup> _inner_pool;
 };
 }  // namespace VW

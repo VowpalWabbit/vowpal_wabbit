@@ -4,24 +4,20 @@
 
 #pragma once
 
-#include "vw/core/vw_fwd.h"
-
-#include <cstdint>
+#include "vw/cache_parser/parse_example_cache.h"
+#include "vw/common/future_compat.h"
 
 namespace VW
 {
-namespace details
+VW_DEPRECATED("VW::write_example_to_cache moved to VW::parsers::cache::write_example_to_cache")
+inline void write_example_to_cache(io_buf& output, VW::example* ex_ptr, VW::label_parser& lbl_parser,
+    uint64_t parse_mask, VW::parsers::cache::details::cache_temp_buffer& temp_buffer)
 {
-void cache_tag(io_buf& cache, const VW::v_array<char>& tag);
-void cache_index(io_buf& cache, VW::namespace_index index);
-void cache_features(io_buf& cache, const features& feats, uint64_t mask);
-size_t read_cached_tag(io_buf& cache, VW::v_array<char>& tag);
-size_t read_cached_index(io_buf& input, VW::namespace_index& index);
-size_t read_cached_features(io_buf& input, features& feats, bool& sorted);
-}  // namespace details
-
-// What is written by write_example_to_cache can be read by read_example_from_cache
-void write_example_to_cache(io_buf& output, VW::example* ex_ptr, VW::label_parser& lbl_parser, uint64_t parse_mask,
-    VW::details::cache_temp_buffer& temp_buffer);
-int read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples);
+  return VW::parsers::cache::write_example_to_cache(output, ex_ptr, lbl_parser, parse_mask, temp_buffer);
+}
+VW_DEPRECATED("VW::read_example_from_cache moved to VW::parsers::cache::read_example_from_cache")
+inline int read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples)
+{
+  return VW::parsers::cache::read_example_from_cache(all, input, examples);
+}
 }  // namespace VW

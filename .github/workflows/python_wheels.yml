@@ -14,6 +14,10 @@ on:
     branches:
       - '*'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   linux-python-build:
     name: manylinux.amd64.py${{ matrix.config.version}}.build
@@ -32,6 +36,8 @@ jobs:
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - name: Build wheel
         shell: bash
         run: |
@@ -54,6 +60,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v1
+        with:
+          submodules: recursive
       - uses: actions/download-artifact@v1
         with:
           name: manylinux_amd64_${{ matrix.version }}
@@ -84,7 +92,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          submodules: "recursive"
+          submodules: recursive
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
@@ -105,7 +113,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           architecture: 'x64'
       - uses: actions/download-artifact@v1
         with:
@@ -119,6 +127,8 @@ jobs:
         shell: bash
         run: pip install python_source_distribution/*.tar.gz
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Install dependencies
         shell: bash
         run: |
@@ -143,6 +153,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Set up QEMU
       id: qemu
       uses: docker/setup-qemu-action@v1
@@ -177,6 +189,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - name: Set up QEMU
       id: qemu
       uses: docker/setup-qemu-action@v1
@@ -191,6 +205,7 @@ jobs:
             bash -exc 'apt-get update && \
             apt install software-properties-common -y && \
             add-apt-repository ppa:deadsnakes/ppa -y && \
+            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata && \
             apt install -y ${{ env.py }} && \
             apt install -y ${{ env.py }}-venv && \
             ${{ env.py }} -m venv .env && \
@@ -205,7 +220,7 @@ jobs:
             deactivate'
   macos-python-build:
     name: macos.amd64.py${{ matrix.config.version }}.build
-    runs-on: macos-10.15
+    runs-on: macos-11
     strategy:
       matrix:
         config:
@@ -217,6 +232,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
@@ -235,13 +252,15 @@ jobs:
   macos-python-test:
     name: macos.amd64.py${{ matrix.version }}.test
     needs: macos-python-build
-    runs-on: macos-10.15
+    runs-on: macos-11
     strategy:
       matrix:
         version: [3.6, 3.7, 3.8, 3.9, "3.10"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.version }}
@@ -263,7 +282,7 @@ jobs:
     runs-on: windows-2019
     env:
       VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
-      VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
+      VCPKG_REF: 6ca56aeb457f033d344a7106cb3f9f1abf8f4e98
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
     strategy:
       matrix:
@@ -280,6 +299,7 @@ jobs:
           python-version: ${{ matrix.config.version }}
       - uses: actions/checkout@v2
         with:
+          submodules: recursive
           path: ${{github.workspace}}\vowpal_wabbit
       - uses: actions/checkout@v2
         with:
@@ -325,6 +345,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.version }}

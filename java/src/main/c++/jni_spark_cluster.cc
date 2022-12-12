@@ -1,4 +1,4 @@
-#include "jni_spark_vw_generated.h"
+#include "org_vowpalwabbit_spark_ClusterSpanningTree.h"
 #include "util.h"
 #include "vw/spanning_tree/spanning_tree.h"
 

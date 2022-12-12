@@ -12,20 +12,20 @@
 
 namespace simulator
 {
-cb_sim::cb_sim(uint64_t seed)
+cb_sim::cb_sim(uint64_t seed, bool use_default_ns)
     : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
     //, actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
     , actions({"politics", "sports", "music"})
     , user_ns("User")
-    , action_ns("Action")
+    , action_ns(use_default_ns ? "" : "Action")
 {
   random_state.set_random_state(seed);
   callback_count = 0;
 }
 
-float cb_sim::get_reaction(
-    const std::map<std::string, std::string>& context, const std::string& action, bool add_noise, bool swap_reward)
+float cb_sim::get_reaction(const std::map<std::string, std::string>& context, const std::string& action, bool add_noise,
+    bool swap_reward, float scale_reward)
 {
   float like_reward = USER_LIKED_ARTICLE;
   float dislike_reward = USER_DISLIKED_ARTICLE;
@@ -39,21 +39,15 @@ float cb_sim::get_reaction(
   if (context.at("user") == "Tom")
   {
     if (context.at("time_of_day") == "morning" && action == "politics") { reward = like_reward; }
-    else if (context.at("time_of_day") == "afternoon" && action == "music")
-    {
-      reward = like_reward;
-    }
+    else if (context.at("time_of_day") == "afternoon" && action == "music") { reward = like_reward; }
   }
   else if (context.at("user") == "Anna")
   {
     if (context.at("time_of_day") == "morning" && action == "sports") { reward = like_reward; }
-    else if (context.at("time_of_day") == "afternoon" && action == "politics")
-    {
-      reward = like_reward;
-    }
+    else if (context.at("time_of_day") == "afternoon" && action == "politics") { reward = like_reward; }
   }
 
-  if (swap_reward) { return (reward == like_reward) ? dislike_reward : like_reward; }
+  if (swap_reward) { return scale_reward * ((reward == like_reward) ? dislike_reward : like_reward); }
   return reward;
 }
 
@@ -131,7 +125,8 @@ void cb_sim::call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_
 }
 
 std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_iterations, callback_map& callbacks,
-    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features, const std::vector<uint64_t>& swap_after)
+    bool do_learn, size_t shift, bool add_noise, uint64_t num_useless_features, const std::vector<uint64_t>& swap_after,
+    float scale_reward)
 {
   // check if there's a callback for the first possible element,
   // in this case most likely 0th event
@@ -162,14 +157,16 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
     std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
     // Add useless features if specified
     for (uint64_t j = 0; j < num_useless_features; ++j)
-    { context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j))); }
+    {
+      context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j)));
+    }
     auto action_prob = get_action(vw, context);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;
 
     // 4. Get cost of the action we chose
     // Check for reward swap
-    float cost = get_reaction(context, chosen_action, add_noise, swap_reward);
+    float cost = get_reaction(context, chosen_action, add_noise, swap_reward, scale_reward);
     cost_sum += cost;
 
     if (do_learn)
@@ -241,12 +238,12 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
 }
 
 std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed,
-    const std::vector<uint64_t>& swap_after)
+    const std::vector<uint64_t>& swap_after, float scale_reward)
 {
   BOOST_CHECK(true);
   auto* vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
-  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, false, 0, swap_after);
+  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, false, 0, swap_after, scale_reward);
   VW::finish(*vw);
   return ctr;
 }
