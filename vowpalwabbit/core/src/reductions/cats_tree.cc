@@ -5,6 +5,7 @@
 #include "vw/core/reductions/cats_tree.h"
 
 #include "vw/common/hash.h"
+#include "vw/config/options.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/global_data.h"
 #include "vw/core/guard.h"
@@ -25,7 +26,7 @@ using CB::cb_class;
 using std::vector;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cats_tree
+#define VW_DEBUG_LOG vw_dbg::CATS_TREE
 
 namespace VW
 {
@@ -389,8 +390,8 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
   auto* l = make_reduction_learner(
       std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
                 .set_params_per_weight(params_per_weight)
-                .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_input_label_type(VW::label_type_t::cb)
+                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_input_label_type(VW::label_type_t::CB)
                 .build();
   all.example_parser->lbl_parser = CB::cb_label;
   return make_base(*l);

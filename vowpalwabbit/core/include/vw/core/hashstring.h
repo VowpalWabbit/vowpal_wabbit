@@ -38,4 +38,4 @@ inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
 
 using hash_func_t = uint64_t (*)(const char*, size_t, uint64_t);
 
-hash_func_t getHasher(const std::string& s);
+hash_func_t get_hasher(const std::string& s);

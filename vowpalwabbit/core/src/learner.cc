@@ -146,6 +146,43 @@ private:
 template <typename context_type>
 class multi_example_handler
 {
+public:
+  multi_example_handler(const context_type context) : _context(context) {}
+  ~multi_example_handler() = default;
+
+  void on_example(example* ec)
+  {
+    if (try_complete_multi_ex(ec))
+    {
+      _context.template process<multi_ex, learn_multi_ex>(_ec_seq);
+      _ec_seq.clear();
+    }
+    // after we learn, cleanup is_newline or end_pass example
+    if (ec->end_pass)
+    {
+      // Because the end_pass example is used to complete the in-flight multi_ex prior
+      // to this call we should have no more in-flight multi_ex here.
+      assert(_ec_seq.empty());
+      _context.template process<example, end_pass>(*ec);
+    }
+    else if (ec->is_newline)
+    {
+      // Because the is_newline example is used to complete the in-flight multi_ex prior
+      // to this call we should have no more in-flight multi_ex here.
+      assert(_ec_seq.empty());
+      VW::finish_example(_context.get_master(), *ec);
+    }
+  }
+
+  void process_remaining()
+  {
+    if (!_ec_seq.empty())
+    {
+      _context.template process<multi_ex, learn_multi_ex>(_ec_seq);
+      _ec_seq.clear();
+    }
+  }
+
 private:
   bool complete_multi_ex(example* ec)
   {
@@ -153,10 +190,10 @@ private:
     const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
 
-    if (!is_newline && !ec->end_pass) { ec_seq.push_back(ec); }
+    if (!is_newline && !ec->end_pass) { _ec_seq.push_back(ec); }
     // A terminating example can occur when there have been no featureful examples
     // collected. In this case, do not trigger a learn.
-    return (is_newline || ec->end_pass) && !ec_seq.empty();
+    return (is_newline || ec->end_pass) && !_ec_seq.empty();
   }
 
   bool try_complete_multi_ex(example* ec)
@@ -178,46 +215,8 @@ private:
     return false;
   }
 
-public:
-  multi_example_handler(const context_type context) : _context(context) {}
-  ~multi_example_handler() = default;
-
-  void on_example(example* ec)
-  {
-    if (try_complete_multi_ex(ec))
-    {
-      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
-      ec_seq.clear();
-    }
-    // after we learn, cleanup is_newline or end_pass example
-    if (ec->end_pass)
-    {
-      // Because the end_pass example is used to complete the in-flight multi_ex prior
-      // to this call we should have no more in-flight multi_ex here.
-      assert(ec_seq.empty());
-      _context.template process<example, end_pass>(*ec);
-    }
-    else if (ec->is_newline)
-    {
-      // Because the is_newline example is used to complete the in-flight multi_ex prior
-      // to this call we should have no more in-flight multi_ex here.
-      assert(ec_seq.empty());
-      VW::finish_example(_context.get_master(), *ec);
-    }
-  }
-
-  void process_remaining()
-  {
-    if (!ec_seq.empty())
-    {
-      _context.template process<multi_ex, learn_multi_ex>(ec_seq);
-      ec_seq.clear();
-    }
-  }
-
-private:
   context_type _context;
-  multi_ex ec_seq;
+  multi_ex _ec_seq;
 };
 
 // ready_examples_queue / custom_examples_queue - adapters for connecting example handler to parser produce-consume loop
@@ -322,17 +321,86 @@ void generic_driver_onethread(VW::workspace& all)
 float VW::LEARNER::details::recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
-  if (label_type == VW::label_type_t::cb) { return CB::ec_is_example_header(ec); }
-  else if (label_type == VW::label_type_t::ccb)
+  if (label_type == VW::label_type_t::CB) { return CB::ec_is_example_header(ec); }
+  else if (label_type == VW::label_type_t::CCB)
   {
     return reductions::ccb::ec_is_example_header(ec);
   }
-  else if (label_type == VW::label_type_t::cs)
+  else if (label_type == VW::label_type_t::CS)
   {
-    return COST_SENSITIVE::ec_is_example_header(ec);
+    return VW::is_cs_example_header(ec);
   }
   return false;
 }
 
 }  // namespace LEARNER
 }  // namespace VW
+
+void VW::LEARNER::details::learner_build_diagnostic(VW::io::logger& logger, VW::string_view this_name,
+    VW::string_view base_name, prediction_type_t in_pred_type, prediction_type_t base_out_pred_type,
+    label_type_t out_label_type, label_type_t base_in_label_type, details::merge_fn merge_fn_ptr,
+    details::merge_with_all_fn merge_with_all_fn_ptr)
+{
+  if (in_pred_type != base_out_pred_type)
+  {
+    logger.err_warn(
+        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
+        "reduction: {}.",
+        to_string(in_pred_type), this_name, to_string(base_out_pred_type), base_name);
+  }
+  if (out_label_type != base_in_label_type)
+  {
+    logger.err_warn("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
+        to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
+  }
+
+  if (merge_fn_ptr != nullptr && merge_with_all_fn_ptr != nullptr)
+  { THROW("cannot set both merge_with_all and merge_with_all_fn"); }
+}
+void VW::LEARNER::details::debug_increment_depth(example& ex)
+{
+  if (vw_dbg::TRACK_STACK) { ++ex.debug_current_reduction_depth; }
+}
+void VW::LEARNER::details::debug_increment_depth(multi_ex& ec_seq)
+{
+  if (vw_dbg::TRACK_STACK)
+  {
+    for (auto& ec : ec_seq) { ++ec->debug_current_reduction_depth; }
+  }
+}
+void VW::LEARNER::details::debug_decrement_depth(example& ex)
+{
+  if (vw_dbg::TRACK_STACK) { --ex.debug_current_reduction_depth; }
+}
+void VW::LEARNER::details::debug_decrement_depth(multi_ex& ec_seq)
+{
+  if (vw_dbg::TRACK_STACK)
+  {
+    for (auto& ec : ec_seq) { --ec->debug_current_reduction_depth; }
+  }
+}
+void VW::LEARNER::details::increment_offset(example& ex, const size_t increment, const size_t i)
+{
+  ex.ft_offset += static_cast<uint32_t>(increment * i);
+  debug_increment_depth(ex);
+}
+void VW::LEARNER::details::increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
+{
+  for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
+  debug_increment_depth(ec_seq);
+}
+void VW::LEARNER::details::decrement_offset(example& ex, const size_t increment, const size_t i)
+{
+  assert(ex.ft_offset >= increment * i);
+  ex.ft_offset -= static_cast<uint32_t>(increment * i);
+  debug_decrement_depth(ex);
+}
+void VW::LEARNER::details::decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
+{
+  for (auto ec : ec_seq)
+  {
+    assert(ec->ft_offset >= increment * i);
+    ec->ft_offset -= static_cast<uint32_t>(increment * i);
+  }
+  debug_decrement_depth(ec_seq);
+}

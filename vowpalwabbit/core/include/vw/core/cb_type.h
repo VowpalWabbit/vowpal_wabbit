@@ -12,11 +12,11 @@ namespace VW
 {
 enum class cb_type_t : uint32_t
 {
-  dr,
-  dm,
-  ips,
-  mtr,
-  sm
+  DR,
+  DM,
+  IPS,
+  MTR,
+  SM
 };
 
 cb_type_t cb_type_from_string(string_view str);

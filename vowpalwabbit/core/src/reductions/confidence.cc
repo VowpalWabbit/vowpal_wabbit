@@ -21,8 +21,9 @@ using namespace VW::config;
 
 namespace
 {
-struct confidence
+class confidence
 {
+public:
   VW::workspace* all = nullptr;
 };
 
@@ -75,7 +76,7 @@ void confidence_print_result(
 
 void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
 {
-  label_data& ld = ec.l.simple;
+  auto& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only)
@@ -86,7 +87,7 @@ void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
   for (const auto& sink : all.final_prediction_sink)
   { confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, all.logger); }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 void return_confidence_example(VW::workspace& all, confidence& /* c */, VW::example& ec)
@@ -143,8 +144,8 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
       stack_builder.get_setupfn_name(confidence_setup))
                 .set_learn_returns_prediction(true)
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_finish_example(return_confidence_example)
                 .build();
 

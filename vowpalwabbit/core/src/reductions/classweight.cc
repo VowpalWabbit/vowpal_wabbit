@@ -15,8 +15,9 @@ using namespace VW::config;
 
 namespace
 {
-struct classweights
+class classweights
 {
+public:
   std::unordered_map<uint32_t, float> weights;
 
   void load_string(std::string const& source)
@@ -56,10 +57,10 @@ void update_example_weight(classweights& cweights, VW::example& ec)
 {
   switch (pred_type)
   {
-    case VW::prediction_type_t::scalar:
+    case VW::prediction_type_t::SCALAR:
       ec.weight *= cweights.get_class_weight(static_cast<uint32_t>(ec.l.simple.label));
       break;
-    case VW::prediction_type_t::multiclass:
+    case VW::prediction_type_t::MULTICLASS:
       ec.weight *= cweights.get_class_weight(ec.l.multi.label);
       break;
     default:
@@ -105,19 +106,19 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
   void (*pred_ptr)(classweights&, VW::LEARNER::single_learner&, VW::example&);
   VW::prediction_type_t pred_type;
 
-  if (base->get_output_prediction_type() == VW::prediction_type_t::scalar)
+  if (base->get_output_prediction_type() == VW::prediction_type_t::SCALAR)
   {
     name_addition = "-scalar";
-    learn_ptr = predict_or_learn<true, VW::prediction_type_t::scalar>;
-    pred_ptr = predict_or_learn<false, VW::prediction_type_t::scalar>;
-    pred_type = VW::prediction_type_t::scalar;
+    learn_ptr = predict_or_learn<true, VW::prediction_type_t::SCALAR>;
+    pred_ptr = predict_or_learn<false, VW::prediction_type_t::SCALAR>;
+    pred_type = VW::prediction_type_t::SCALAR;
   }
-  else if (base->get_output_prediction_type() == VW::prediction_type_t::multiclass)
+  else if (base->get_output_prediction_type() == VW::prediction_type_t::MULTICLASS)
   {
     name_addition = "-multi";
-    learn_ptr = predict_or_learn<true, VW::prediction_type_t::multiclass>;
-    pred_ptr = predict_or_learn<false, VW::prediction_type_t::multiclass>;
-    pred_type = VW::prediction_type_t::multiclass;
+    learn_ptr = predict_or_learn<true, VW::prediction_type_t::MULTICLASS>;
+    pred_ptr = predict_or_learn<false, VW::prediction_type_t::MULTICLASS>;
+    pred_type = VW::prediction_type_t::MULTICLASS;
   }
   else
   {

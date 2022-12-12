@@ -11,6 +11,9 @@ add_executable(vw-unit-test.out
   cats_tree_test.cc
   cats_user_provided_pdf.cc
   cb_explore_adf_test.cc
+  cb_large_actions_test.cc
+  cb_las_one_pass_svd_test.cc
+  cb_las_spanner_test.cc
   ccb_parser_test.cc
   ccb_test.cc
   chain_hashing.cc
@@ -59,12 +62,8 @@ add_executable(vw-unit-test.out
   weights_test.cc
 )
 
-if(VW_BUILD_LARGE_ACTION_SPACE)
-  target_sources(vw-unit-test.out PRIVATE cb_large_actions_test.cc cb_las_one_pass_svd_test.cc cb_las_spanner_test.cc)
-endif()
-
 # Add the include directories from vw target for testing
-target_link_libraries(vw-unit-test.out PRIVATE vw_core RapidJSON Boost::unit_test_framework)
+target_link_libraries(vw-unit-test.out PRIVATE vw_core Boost::unit_test_framework)
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
 
 # Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.
@@ -94,15 +93,23 @@ endif()
 if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
   add_test(
     NAME vw_unit_test
-    COMMAND ${VALGRIND} --error-exitcode=100 --track-origins=yes --leak-check=full $<TARGET_FILE:vw-unit-test.out>
+    COMMAND ${VALGRIND} --error-exitcode=100 --track-origins=yes --leak-check=full $<TARGET_FILE:vw-unit-test.out> "--run_test=!*w_iterations*"
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 else()
-  add_test(
-    NAME vw_unit_test
-    COMMAND $<TARGET_FILE:vw-unit-test.out>
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  )
+  if (VW_USE_ASAN OR VW_USE_ASAN)
+    add_test(
+      NAME vw_unit_test
+      COMMAND $<TARGET_FILE:vw-unit-test.out> "--run_test=!*w_iterations*"
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  else()
+    add_test(
+        NAME vw_unit_test
+        COMMAND $<TARGET_FILE:vw-unit-test.out>
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      )
+  endif()
 endif()
 
 set_tests_properties(vw_unit_test PROPERTIES LABELS "VWTestList")

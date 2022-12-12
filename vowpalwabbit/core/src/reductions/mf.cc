@@ -16,8 +16,9 @@ using namespace VW::config;
 
 namespace
 {
-struct mf
+class mf
 {
+public:
   size_t rank = 0;
 
   uint32_t increment = 0;
@@ -212,7 +213,7 @@ base_learner* VW::reductions::mf_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn,
       predict<false>, stack_builder.get_setupfn_name(mf_setup))
                 .set_params_per_weight(ws)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .build();
 
   return make_base(*l);
