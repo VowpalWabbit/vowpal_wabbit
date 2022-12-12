@@ -64,7 +64,7 @@ public:
 
 void open_sockets(sender& s, const std::string& host)
 {
-  s.socket = VW::io::wrap_socket_descriptor(VW::details::open_socket(host.c_str(), s.all->logger));
+  s.socket = VW::details::open_vw_binary_socket(host, s.all->logger);
   s.socket_reader = s.socket->get_reader();
   s.socket_output_buffer.add_file(s.socket->get_writer());
 }
@@ -140,7 +140,10 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
   std::string host;
 
   option_group_definition sender_options("[Reduction] Network sending");
-  sender_options.add(make_option("sendto", host).keep().necessary().help("Send examples to <host>"));
+  sender_options.add(make_option("sendto", host)
+                         .keep()
+                         .necessary()
+                         .help("Send examples to <host>. Host can be of form hostname or hostname:port"));
 
   if (!options.add_parse_and_check_necessary(sender_options)) { return nullptr; }
 
