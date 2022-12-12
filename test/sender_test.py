@@ -3,6 +3,7 @@ import signal
 import sys
 import argparse
 import subprocess
+import time
 
 DAEMON_PORT = 54252
 
@@ -31,6 +32,8 @@ if __name__ == "__main__":
     vw_daemon_proc = subprocess.Popen(
         daemon_opts, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
+    # Give daemon a moment to start the socket
+    time.sleep(0.1)
 
     sender_opts = [
         args.vw,
