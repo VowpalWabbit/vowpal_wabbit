@@ -263,7 +263,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .keep()
                .allow_override()
                .default_value(-1)
-               .help("Set number of priority challengers to use")
+               .help("Set number of priority challengers to use. Set to -1 to use half of total live configs.")
                .experimental())
       .add(make_option("verbose_metrics", verbose_metrics).help("Extended metrics for debugging").experimental())
       .add(make_option("interaction_type", interaction_type)
