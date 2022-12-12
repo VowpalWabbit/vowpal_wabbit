@@ -388,9 +388,11 @@ void automl<CMType>::offset_learn(multi_learner& base, multi_ex& ec, CB::cb_clas
   // Learn and get action of champ
   cm->do_learning(base, ec, current_champ);
 
+  if (ec.size() < 1) { return; }
+
   for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
   {
-    cm->estimators[live_slot].second.update(1, r);
+    cm->estimators[live_slot].second.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
   }
 }
 
