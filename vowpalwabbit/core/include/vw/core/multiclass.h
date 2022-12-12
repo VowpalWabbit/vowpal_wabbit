@@ -17,6 +17,8 @@ public:
   multiclass_label();
   multiclass_label(uint32_t label, float weight);
   void reset_to_default();
+
+  bool is_labelled() const { return label != static_cast<uint32_t>(-1); }
 };
 
 extern VW::label_parser multiclass_label_parser_global;
@@ -25,8 +27,8 @@ bool test_multiclass_label(const multiclass_label& ld);
 
 namespace details
 {
-void print_multiclass_update_with_probability(VW::workspace& all, VW::example& ec, uint32_t prediction);
-void print_multiclass_update_with_score(VW::workspace& all, VW::example& ec, uint32_t prediction);
+void print_multiclass_update_with_probability(VW::workspace& all, const VW::example& ec, uint32_t prediction);
+void print_multiclass_update_with_score(VW::workspace& all, const VW::example& ec, uint32_t prediction);
 void finish_multiclass_example(VW::workspace& all, VW::example& ec, bool update_loss);
 
 template <class T>
@@ -39,6 +41,31 @@ void finish_multiclass_example_without_loss(VW::workspace& all, T&, VW::example&
 {
   finish_multiclass_example(all, ec, false);
 }
+
+void update_stats_multiclass_label(
+    const VW::workspace& all, shared_data& sd, const VW::example& ec, VW::io::logger& logger);
+void output_example_prediction_multiclass_label(VW::workspace& all, const VW::example& ec, VW::io::logger& logger);
+void print_update_multiclass_label(VW::workspace& all, shared_data& sd, const VW::example& ec, VW::io::logger& logger);
+
+template <typename UnusedDataT>
+void update_stats_multiclass_label(const VW::workspace& all, shared_data& sd, const UnusedDataT& /* unused */,
+    const VW::example& ec, VW::io::logger& logger)
+{
+  update_stats_multiclass_label(all, sd, ec, logger);
+}
+template <typename UnusedDataT>
+void output_example_prediction_multiclass_label(
+    VW::workspace& all, const UnusedDataT& /* unused */, const VW::example& ec, VW::io::logger& logger)
+{
+  output_example_prediction_multiclass_label(all, ec, logger);
+}
+template <typename UnusedDataT>
+void print_update_multiclass_label(
+    VW::workspace& all, shared_data& sd, const UnusedDataT& /* unused */, const VW::example& ec, VW::io::logger& logger)
+{
+  print_update_multiclass_label(all, sd, ec, logger);
+}
+
 }  // namespace details
 namespace model_utils
 {
