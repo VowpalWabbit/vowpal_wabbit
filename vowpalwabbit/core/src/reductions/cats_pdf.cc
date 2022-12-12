@@ -33,14 +33,15 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cats_pdf
+#define VW_DEBUG_LOG vw_dbg::CATS_PDF
 
 namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN cats_pdf reduction and reduction methods
-struct cats_pdf
+class cats_pdf
 {
+public:
   cats_pdf(single_learner* p_base, bool always_predict = false);
 
   int learn(VW::example& ec, VW::experimental::api_status* status);
@@ -79,13 +80,12 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
-  else
-  {
-    reduction.predict(ec, &status);
-  }
+  else { reduction.predict(ec, &status); }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << endl; }
+  {
+    VW_DBG(ec) << status.get_error_msg() << endl;
+  }
 }
 // END cats_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
@@ -146,9 +146,10 @@ void reduction_output::print_update_cb_cont(VW::workspace& all, const VW::exampl
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown"
-                     : VW::to_string(ec.l.cb_cont.costs[0], VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
-        VW::to_string(ec.pred.pdf, VW::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
+        ec.test_only
+            ? "unknown"
+            : VW::to_string(ec.l.cb_cont.costs[0], VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
+        VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
         ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
@@ -186,10 +187,9 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_pdf_setup))
-                .set_learn_returns_prediction(true)
-                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .set_finish_example(::finish_example)
-                .set_input_label_type(VW::label_type_t::continuous)
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

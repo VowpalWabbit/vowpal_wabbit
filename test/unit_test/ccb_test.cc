@@ -11,12 +11,6 @@
 #include <boost/test/unit_test.hpp>
 #include <vector>
 
-namespace CCB
-{
-void inject_slot_features(VW::example* shared, VW::example* slot);
-void remove_slot_features(VW::example* shared, VW::example* slot);
-}  // namespace CCB
-
 BOOST_AUTO_TEST_CASE(ccb_explicit_included_actions_no_overlap)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
@@ -59,7 +53,7 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
   std::vector<uint32_t> previous;
   const size_t iterations = 10;
   const std::vector<std::string> event_ids = {"slot1", "slot2"};
-  const std::string SEED_TAG = "seed=";
+  static const std::string SEED_TAG = "seed=";
   for (size_t iteration = 0; iteration < iterations; ++iteration)
   {
     const std::string json =
@@ -111,18 +105,12 @@ BOOST_AUTO_TEST_CASE(ccb_invalid_example_checks)
 
 std::string ns_to_str(unsigned char ns)
 {
-  if (ns == constant_namespace)
-    return "[constant]";
-  else if (ns == ccb_slot_namespace)
-    return "[ccbslot]";
-  else if (ns == ccb_id_namespace)
-    return "[ccbid]";
-  else if (ns == wildcard_namespace)
-    return "[wild]";
-  else if (ns == default_namespace)
-    return "[default]";
-  else
-    return std::string(1, ns);
+  if (ns == VW::details::CONSTANT_NAMESPACE) { return "[constant]"; }
+  else if (ns == VW::details::CCB_SLOT_NAMESPACE) { return "[ccbslot]"; }
+  else if (ns == VW::details::CCB_ID_NAMESPACE) { return "[ccbid]"; }
+  else if (ns == VW::details::WILDCARD_NAMESPACE) { return "[wild]"; }
+  else if (ns == VW::details::DEFAULT_NAMESPACE) { return "[default]"; }
+  else { return std::string(1, ns); }
 }
 
 std::set<std::string> interaction_vec_t_to_set(const std::vector<std::vector<VW::namespace_index>>& interactions)

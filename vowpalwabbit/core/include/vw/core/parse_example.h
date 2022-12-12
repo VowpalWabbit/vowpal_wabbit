@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #include "vw/common/string_view.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
 #include <cstdint>
@@ -12,7 +13,8 @@ void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view e
 namespace VW
 {
 example& get_unused_example(VW::workspace* all);
-void read_line(VW::workspace& all, example* ex, const char* line);  // read example from the line.
+void read_line(VW::workspace& all, example* ex, VW::string_view line);  // read example from the line.
+void read_line(VW::workspace& all, example* ex, const char* line);      // read example from the line.
 void read_lines(VW::workspace* all, const char* line, size_t len,
     VW::multi_ex& examples);  // read examples from the new line separated strings.
 

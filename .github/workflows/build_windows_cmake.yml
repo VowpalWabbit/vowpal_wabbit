@@ -9,6 +9,10 @@ on:
     branches:
       - '*'
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
 jobs:
   check:
     strategy:
@@ -21,7 +25,7 @@ jobs:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-      VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
+      VCPKG_REF: 6ca56aeb457f033d344a7106cb3f9f1abf8f4e98
 
     steps:
       - uses: actions/checkout@v2
@@ -51,7 +55,7 @@ jobs:
         run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-test flatbuffers
       - name: Generate project files
         run: |
-          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64" -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DBUILD_FLATBUFFERS=On -Dvw_BUILD_NET_FRAMEWORK=On
+          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64" -DVCPKG_MANIFEST_MODE=OFF -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On -Dvw_BUILD_NET_FRAMEWORK=On
       - name: Build project
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --verbose

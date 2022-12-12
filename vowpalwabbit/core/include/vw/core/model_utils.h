@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/cache.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/v_array.h"
 
@@ -142,7 +141,7 @@ inline size_t read_model_field(io_buf& io, std::string& str)
   bytes += read_model_field(io, str_size);
   char* cs = nullptr;
   bytes += io.buf_read(cs, str_size * sizeof(char));
-  str = std::string(cs);
+  str = std::string(cs, str_size);
   return bytes;
 }
 
@@ -154,10 +153,7 @@ inline size_t write_model_field(io_buf& io, const std::string& str, const std::s
   bytes += write_model_field(io, str_size, upstream_name + ".size()", text);
   std::string message;
   if (text) { message = fmt::format("{} = {}\n", upstream_name, str); }
-  else
-  {
-    message = str;
-  }
+  else { message = str; }
   bytes += io.bin_write_fixed(message.c_str(), message.size());
   return bytes;
 }
@@ -216,7 +212,9 @@ size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::strin
   uint32_t vec_size = static_cast<uint32_t>(vec.size());
   bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
   for (uint32_t i = 0; i < vec_size; ++i)
-  { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
+  {
+    bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text);
+  }
   return bytes;
 }
 
@@ -243,7 +241,9 @@ size_t write_model_field(io_buf& io, const v_array<T>& vec, const std::string& u
   uint32_t vec_size = static_cast<uint32_t>(vec.size());
   bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
   for (uint32_t i = 0; i < vec_size; ++i)
-  { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
+  {
+    bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text);
+  }
   return bytes;
 }
 
@@ -285,7 +285,9 @@ template <typename T>
 size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std::string& upstream_name, bool text)
 {
   if (upstream_name.find("{}") != std::string::npos)
-  { THROW_OR_RETURN("Field template not allowed for priority_queue.", 0); }
+  {
+    THROW_OR_RETURN("Field template not allowed for priority_queue.", 0);
+  }
   std::priority_queue<T> pq_cp = pq;
   size_t bytes = 0;
   uint32_t queue_size = static_cast<uint32_t>(pq_cp.size());

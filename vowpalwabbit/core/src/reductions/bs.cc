@@ -5,11 +5,14 @@
 
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cerrno>
@@ -27,22 +30,25 @@ using namespace VW::reductions;
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 
-struct bs_data
+class bs_data
 {
-  uint32_t B = 0;  // number of bootstrap rounds
+public:
+  uint32_t num_bootstrap_rounds = 0;  // number of bootstrap rounds
   size_t bs_type = 0;
   float lb = 0.f;
   float ub = 0.f;
   std::vector<double> pred_vec;
   VW::workspace* all = nullptr;  // for raw prediction and loss
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
 };
 
 void bs_predict_mean(VW::workspace& all, VW::example& ec, std::vector<double>& pred_vec)
 {
   ec.pred.scalar = static_cast<float>(accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
-  { ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
+  {
+    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  }
 }
 
 void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
@@ -81,10 +87,7 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
     else
     {
       if (pred_vec_int[i] == current_label) { counter++; }
-      else
-      {
-        counter--;
-      }
+      else { counter--; }
     }
   }
 
@@ -147,12 +150,12 @@ void print_result(
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
 void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
 {
-  const label_data& ld = ec.l.simple;
+  const auto& ld = ec.l.simple;
 
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) { all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight; }
@@ -169,38 +172,37 @@ void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
   }
 
   for (auto& sink : all.final_prediction_sink)
-  { print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger); }
+  {
+    print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger);
+  }
 
-  print_update(all, ec);
+  VW::details::print_update(all, ec);
 }
 
 template <bool is_learn>
 void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *d.all;
-  bool shouldOutput = all.raw_prediction != nullptr;
+  bool should_output = all.raw_prediction != nullptr;
 
   float weight_temp = ec.weight;
 
-  std::stringstream outputStringStream;
+  std::stringstream output_string_stream;
   d.pred_vec.clear();
 
-  for (size_t i = 1; i <= d.B; i++)
+  for (size_t i = 1; i <= d.num_bootstrap_rounds; i++)
   {
-    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(d._random_state));
+    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(*d.random_state));
 
     if (is_learn) { base.learn(ec, i - 1); }
-    else
-    {
-      base.predict(ec, i - 1);
-    }
+    else { base.predict(ec, i - 1); }
 
     d.pred_vec.push_back(ec.pred.scalar);
 
-    if (shouldOutput)
+    if (should_output)
     {
-      if (i > 1) { outputStringStream << ' '; }
-      outputStringStream << i << ':' << ec.partial_prediction;
+      if (i > 1) { output_string_stream << ' '; }
+      output_string_stream << i << ':' << ec.partial_prediction;
     }
   }
 
@@ -218,7 +220,10 @@ void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
       THROW("Unknown bs_type specified: " << d.bs_type);
   }
 
-  if (shouldOutput) { all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger); }
+  if (should_output)
+  {
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+  }
 }
 
 void finish_example(VW::workspace& all, bs_data& d, VW::example& ec)
@@ -235,7 +240,10 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
   std::string type_string;
   option_group_definition new_options("[Reduction] Bootstrap");
   new_options
-      .add(make_option("bootstrap", data->B).keep().necessary().help("K-way bootstrap by online importance resampling"))
+      .add(make_option("bootstrap", data->num_bootstrap_rounds)
+               .keep()
+               .necessary()
+               .help("K-way bootstrap by online importance resampling"))
       .add(make_option("bs_type", type_string)
                .keep()
                .default_value("mean")
@@ -243,17 +251,14 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
                .help("Prediction type"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  size_t ws = data->B;
+  size_t ws = data->num_bootstrap_rounds;
   data->ub = FLT_MAX;
   data->lb = -FLT_MAX;
 
   if (options.was_supplied("bs_type"))
   {
     if (type_string == "mean") { data->bs_type = BS_TYPE_MEAN; }
-    else if (type_string == "vote")
-    {
-      data->bs_type = BS_TYPE_VOTE;
-    }
+    else if (type_string == "vote") { data->bs_type = BS_TYPE_VOTE; }
     else
     {
       all.logger.err_warn("bs_type must be in {{'mean','vote'}}; resetting to mean.");
@@ -265,17 +270,17 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
     data->bs_type = BS_TYPE_MEAN;
   }
 
-  data->pred_vec.reserve(data->B);
+  data->pred_vec.reserve(data->num_bootstrap_rounds);
   data->all = &all;
-  data->_random_state = all.get_random_state();
+  data->random_state = all.get_random_state();
 
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
                 .set_finish_example(::finish_example)
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
+                .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .build();
 
   return make_base(*l);

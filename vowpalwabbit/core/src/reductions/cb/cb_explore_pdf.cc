@@ -9,6 +9,8 @@
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
+#include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
 
 // Aliases
@@ -20,14 +22,15 @@ using VW::LEARNER::single_learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_explore_pdf
+#define VW_DEBUG_LOG vw_dbg::CB_EXPLORE_PDF
 
 namespace
 {
 ////////////////////////////////////////////////////
 // BEGIN sample_pdf reduction and reduction methods
-struct cb_explore_pdf
+class cb_explore_pdf
 {
+public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 
@@ -50,7 +53,7 @@ int cb_explore_pdf::learn(VW::example& ec, VW::experimental::api_status*)
 
 int cb_explore_pdf::predict(VW::example& ec, VW::experimental::api_status*)
 {
-  const auto& reduction_features = ec._reduction_features.template get<VW::continuous_actions::reduction_features>();
+  const auto& reduction_features = ec.ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
   if (first_only && !reduction_features.is_pdf_set() && !reduction_features.is_chosen_action_set())
   {
     // uniform random
@@ -67,9 +70,11 @@ int cb_explore_pdf::predict(VW::example& ec, VW::experimental::api_status*)
 
   _base->predict(ec);
 
-  VW::continuous_actions::probability_density_function& _pred_pdf = ec.pred.pdf;
-  for (uint32_t i = 0; i < _pred_pdf.size(); i++)
-  { _pred_pdf[i].pdf_value = _pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value); }
+  auto& pred_pdf = ec.pred.pdf;
+  for (uint32_t i = 0; i < pred_pdf.size(); i++)
+  {
+    pred_pdf[i].pdf_value = pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value);
+  }
   return VW::experimental::error_code::success;
 }
 
@@ -81,13 +86,12 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, VW::example& e
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
-  else
-  {
-    reduction.predict(ec, &status);
-  }
+  else { reduction.predict(ec, &status); }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << endl; }
+  {
+    VW_DBG(ec) << status.get_error_msg() << endl;
+  }
 }
 
 }  // namespace
@@ -138,10 +142,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cb_explore_pdf_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::continuous)
-                .set_input_prediction_type(VW::prediction_type_t::pdf)
-                .set_output_prediction_type(VW::prediction_type_t::pdf)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CONTINUOUS)
+                .set_input_prediction_type(VW::prediction_type_t::PDF)
+                .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .build(&all.logger);
   return make_base(*l);
 }

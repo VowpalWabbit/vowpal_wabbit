@@ -21,8 +21,9 @@ using namespace CB_ALGS;
 
 namespace
 {
-struct interaction_ground
+class interaction_ground
 {
+public:
   // the accumulated importance weighted reward of a policy which optimizes the given value
   double total_importance_weighted_reward = 0.;
   double total_uniform_reward = 0.;
@@ -70,11 +71,10 @@ void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   // figure out which is better by our current estimate.
   if (ig.total_uniform_cost - ig.total_importance_weighted_cost >
       ig.total_uniform_reward - ig.total_importance_weighted_reward)
-  { base.predict(ec_seq); }
-  else
   {
-    base.predict(ec_seq, 1);
+    base.predict(ec_seq);
   }
+  else { base.predict(ec_seq, 1); }
 }
 }  // namespace
 
@@ -103,10 +103,10 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   auto* l = make_reduction_learner(
       std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_input_label_type(label_type_t::cb)
-                .set_output_label_type(label_type_t::cb)
-                .set_output_prediction_type(prediction_type_t::action_scores)
-                .set_input_prediction_type(prediction_type_t::action_scores)
+                .set_input_label_type(label_type_t::CB)
+                .set_output_label_type(label_type_t::CB)
+                .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
+                .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
                 .build();
 
   return make_base(*l);

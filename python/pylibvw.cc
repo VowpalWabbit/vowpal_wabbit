@@ -8,7 +8,10 @@
 #include "vw/config/options_cli.h"
 #include "vw/core/cb.h"
 #include "vw/core/cost_sensitive.h"
+#include "vw/core/global_data.h"
 #include "vw/core/kskip_ngram_transformer.h"
+#include "vw/core/learner.h"
+#include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
 #include "vw/core/parse_example.h"
@@ -89,7 +92,7 @@ public:
       , m_option_group_dic(options.get_collection_of_options())
       , m_py_opt_class(py_class)
   {
-    default_group_name = options.m_default_tint;
+    default_group_name = options.DEFAULT_TINT;
     m_visitor_output_var = nullptr;
   }
 
@@ -99,19 +102,19 @@ public:
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, false, true));
+            opt.m_allow_override, opt.value(), true, false, true, opt.m_experimental));
     }
     else
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, false, false, false, true));
+            opt.m_allow_override, false, false, false, true, opt.m_experimental));
     }
   }
 
@@ -124,19 +127,19 @@ public:
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, opt.default_value(), true));
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.value(), true, not_supplied, false));
+            opt.m_allow_override, opt.value(), true, not_supplied, false, opt.m_experimental));
     }
     else
     {
       if (opt.default_value_supplied())
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true));
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, py::object(), false, not_supplied, false));
+            opt.m_allow_override, py::object(), false, not_supplied, false, opt.m_experimental));
     }
   }
 
@@ -154,8 +157,9 @@ public:
       }
     }
 
-    return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-        opt.m_allow_override, values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied()));
+    return new py::object(
+        m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary, opt.m_allow_override,
+            values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied(), opt.m_experimental));
   }
 
   template <typename T>
@@ -283,6 +287,16 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 
 vw_ptr my_initialize(py::list args) { return my_initialize_with_log(args, nullptr); }
 
+boost::shared_ptr<VW::workspace> merge_workspaces(vw_ptr base_workspace, py::list workspaces)
+{
+  std::vector<const VW::workspace*> const_workspaces;
+  for (size_t i = 0; i < py::len(workspaces); i++)
+  {
+    const_workspaces.push_back(py::extract<VW::workspace*>(workspaces[i]));
+  }
+  return boost::shared_ptr<VW::workspace>(VW::merge_models(base_workspace.get(), const_workspaces));
+}
+
 void my_run_parser(vw_ptr all)
 {
   VW::start_parser(*all);
@@ -297,6 +311,13 @@ struct python_dict_writer : VW::metric_sink_visitor
   void float_metric(const std::string& key, float value) override { _dest_dict[key] = value; }
   void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key] = value; }
   void bool_metric(const std::string& key, bool value) override { _dest_dict[key] = value; }
+  void sink_metric(const std::string& key, const VW::metric_sink& value)
+  {
+    py::dict nested;
+    auto nested_py = python_dict_writer(nested);
+    value.visit(nested_py);
+    _dest_dict[key] = nested;
+  }
 
 private:
   py::dict& _dest_dict;
@@ -363,9 +384,9 @@ py::list get_enabled_reductions(vw_ptr all)
   return py_enabled_reductions;
 }
 
-predictor_ptr get_predictor(search_ptr sch, ptag my_tag)
+predictor_ptr get_predictor(search_ptr _sch, ptag my_tag)
 {
-  Search::predictor* P = new Search::predictor(*sch, my_tag);
+  Search::predictor* P = new Search::predictor(*_sch, my_tag);
   return boost::shared_ptr<Search::predictor>(P);
 }
 
@@ -376,15 +397,15 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lDEFAULT:
       return all ? &all->example_parser->lbl_parser : NULL;
     case lBINARY:  // or #lSIMPLE
-      return &simple_label_parser;
+      return &VW::simple_label_parser_global;
     case lMULTICLASS:
-      return &MULTICLASS::mc_label;
+      return &VW::multiclass_label_parser_global;
     case lCOST_SENSITIVE:
-      return &COST_SENSITIVE::cs_label;
+      return &VW::cs_label_parser_global;
     case lCONTEXTUAL_BANDIT:
       return &CB::cb_label;
     case lCONDITIONAL_CONTEXTUAL_BANDIT:
-      return &CCB::ccb_label_parser;
+      return &VW::ccb_label_parser_global;
     case lSLATES:
       return &VW::slates::slates_label_parser;
     case lCONTINUOUS:
@@ -401,74 +422,47 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 size_t my_get_label_type(VW::workspace* all)
 {
   VW::label_parser* lp = &all->example_parser->lbl_parser;
-  if (lp->parse_label == simple_label_parser.parse_label) { return lSIMPLE; }
-  else if (lp->parse_label == MULTICLASS::mc_label.parse_label)
-  {
-    return lMULTICLASS;
-  }
-  else if (lp->parse_label == COST_SENSITIVE::cs_label.parse_label)
-  {
-    return lCOST_SENSITIVE;
-  }
-  else if (lp->parse_label == CB::cb_label.parse_label)
-  {
-    return lCONTEXTUAL_BANDIT;
-  }
-  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label)
-  {
-    return lCONTEXTUAL_BANDIT_EVAL;
-  }
-  else if (lp->parse_label == CCB::ccb_label_parser.parse_label)
-  {
-    return lCONDITIONAL_CONTEXTUAL_BANDIT;
-  }
-  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label)
-  {
-    return lSLATES;
-  }
-  else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label)
-  {
-    return lCONTINUOUS;
-  }
-  else if (lp->parse_label == MULTILABEL::multilabel.parse_label)
-  {
-    return lMULTILABEL;
-  }
-  else
-  {
-    THROW("unsupported label parser used");
-  }
+  if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
+  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
+  else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
+  else if (lp->parse_label == CB::cb_label.parse_label) { return lCONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label) { return lCONTEXTUAL_BANDIT_EVAL; }
+  else if (lp->parse_label == VW::ccb_label_parser_global.parse_label) { return lCONDITIONAL_CONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label) { return lSLATES; }
+  else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label) { return lCONTINUOUS; }
+  else if (lp->parse_label == MULTILABEL::multilabel.parse_label) { return lMULTILABEL; }
+  else { THROW("unsupported label parser used"); }
 }
 
 size_t my_get_prediction_type(vw_ptr all)
 {
   switch (all->l->get_output_prediction_type())
   {
-    case VW::prediction_type_t::scalar:
+    case VW::prediction_type_t::SCALAR:
       return pSCALAR;
-    case VW::prediction_type_t::scalars:
+    case VW::prediction_type_t::SCALARS:
       return pSCALARS;
-    case VW::prediction_type_t::action_scores:
+    case VW::prediction_type_t::ACTION_SCORES:
       return pACTION_SCORES;
-    case VW::prediction_type_t::action_probs:
+    case VW::prediction_type_t::ACTION_PROBS:
       return pACTION_PROBS;
-    case VW::prediction_type_t::multiclass:
+    case VW::prediction_type_t::MULTICLASS:
       return pMULTICLASS;
-    case VW::prediction_type_t::multilabels:
+    case VW::prediction_type_t::MULTILABELS:
       return pMULTILABELS;
-    case VW::prediction_type_t::prob:
+    case VW::prediction_type_t::PROB:
       return pPROB;
-    case VW::prediction_type_t::multiclassprobs:
+    case VW::prediction_type_t::MULTICLASS_PROBS:
       return pMULTICLASSPROBS;
-    case VW::prediction_type_t::decision_probs:
+    case VW::prediction_type_t::DECISION_PROBS:
       return pDECISION_SCORES;
-    case VW::prediction_type_t::action_pdf_value:
+    case VW::prediction_type_t::ACTION_PDF_VALUE:
       return pACTION_PDF_VALUE;
-    case VW::prediction_type_t::pdf:
+    case VW::prediction_type_t::PDF:
       return pPDF;
-    case VW::prediction_type_t::active_multiclass:
+    case VW::prediction_type_t::ACTIVE_MULTICLASS:
       return pACTIVE_MULTICLASS;
-    case VW::prediction_type_t::nopred:
+    case VW::prediction_type_t::NOPRED:
       return pNOPRED;
     default:
       THROW("unsupported prediction type used");
@@ -529,10 +523,7 @@ void my_finish_multi_ex(vw_ptr& all, py::list& ec)
 void my_learn(vw_ptr all, example_ptr ec)
 {
   if (ec->test_only) { as_singleline(all->l)->predict(*ec); }
-  else
-  {
-    all->learn(*ec.get());
-  }
+  else { all->learn(*ec.get()); }
 }
 
 std::string my_json_weights(vw_ptr all) { return all->dump_weights_to_json_experimental(); }
@@ -599,13 +590,16 @@ unsigned char ex_namespace(example_ptr ec, uint32_t ns) { return ec->indices[ns]
 
 uint32_t ex_num_features(example_ptr ec, unsigned char ns) { return (uint32_t)ec->feature_space[ns].size(); }
 
-uint32_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i) { return (uint32_t)ec->feature_space[ns].indices[i]; }
+feature_index ex_feature(example_ptr ec, unsigned char ns, uint32_t i)
+{
+  return (feature_index)ec->feature_space[ns].indices[i];
+}
 
 float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) { return ec->feature_space[ns].values[i]; }
 
 float ex_sum_feat_sq(example_ptr ec, unsigned char ns) { return ec->feature_space[ns].sum_feat_sq; }
 
-void ex_push_feature(example_ptr ec, unsigned char ns, uint32_t fid, float v)
+void ex_push_feature(example_ptr ec, unsigned char ns, feature_index fid, float v)
 {  // warning: assumes namespace exists!
   ec->feature_space[ns].push_back(v, fid);
   ec->num_features++;
@@ -653,7 +647,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       }
       else
       {
-        py::extract<uint32_t> get_int(ai);
+        py::extract<feature_index> get_int(ai);
         if (get_int.check())
         {
           f.weight_index = get_int();
@@ -683,33 +677,35 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
   char ns_str[2] = {(char)ns, 0};
   uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
+  const char* key_chars;
 
-  PyObject *name, *value;
-  Py_ssize_t size = 0, pos = 0;
+  PyObject *key, *value;
+  Py_ssize_t key_size = 0, pos = 0;
   float feat_value;
-  uint64_t feat_index;
+  feature_index feat_index;
 
-  while (PyDict_Next(o, &pos, &name, &value))
+  while (PyDict_Next(o, &pos, &key, &value))
   {
-    if (PyFloat_Check(value)) { feat_value = (float)PyFloat_AsDouble(value); }
-    else if (PyLong_Check(value))
-    {
-      feat_value = (float)PyLong_AsDouble(value);
-    }
+    if (PyLong_Check(value)) { feat_value = (float)PyLong_AsDouble(value); }
     else
     {
-      std::cerr << "warning: malformed feature in list" << std::endl;
-      continue;
+      feat_value = (float)PyFloat_AsDouble(value);
+      if (feat_value == -1 && PyErr_Occurred())
+      {
+        std::cerr << "warning: malformed feature in list" << std::endl;
+        continue;
+      }
     }
 
     if (feat_value == 0) { continue; }
 
-    if (PyUnicode_Check(name))
-    { feat_index = vw->example_parser->hasher(PyUnicode_AsUTF8AndSize(name, &size), size, ns_hash) & vw->parse_mask; }
-    else if (PyLong_Check(name))
+    if (PyUnicode_Check(key))
     {
-      feat_index = PyLong_AsUnsignedLong(name);
+      key_chars = (const char*)PyUnicode_1BYTE_DATA(key);
+      key_size = PyUnicode_GET_LENGTH(key);
+      feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
     }
+    else if (PyLong_Check(key)) { feat_index = (feature_index)PyLong_AsUnsignedLongLong(key); }
     else
     {
       std::cerr << "warning: malformed feature in list" << std::endl;
@@ -802,17 +798,19 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   if (all.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
 
   if (all.skip_gram_transformer != nullptr && !all.skip_gram_transformer->get_initial_ngram_definitions().empty())
-  { THROW("Cannot unsetup example when ngrams are in use"); }
+  {
+    THROW("Cannot unsetup example when ngrams are in use");
+  }
 
   if (all.add_constant)
   {
-    ae->feature_space[constant_namespace].clear();
+    ae->feature_space[VW::details::CONSTANT_NAMESPACE].clear();
     int hit_constant = -1;
     size_t N = ae->indices.size();
     for (size_t i = 0; i < N; i++)
     {
       int j = (int)(N - 1 - i);
-      if (ae->indices[j] == constant_namespace)
+      if (ae->indices[j] == VW::details::CONSTANT_NAMESPACE)
       {
         if (hit_constant >= 0) { THROW("Constant namespace was found twice. It can only exist 1 or 0 times."); }
         hit_constant = j;
@@ -844,7 +842,7 @@ float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 float ex_get_simplelabel_weight(example_ptr ec) { return ec->weight; }
 float ex_get_simplelabel_initial(example_ptr ec)
 {
-  return ec->_reduction_features.template get<simple_label_reduction_features>().initial;
+  return ec->ex_reduction_features.template get<VW::simple_label_reduction_features>().initial;
 }
 float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
@@ -897,7 +895,9 @@ py::list ex_get_pdf(example_ptr ec)
 {
   py::list values;
   for (auto const& segment : ec->pred.pdf)
-  { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
+  {
+    values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value));
+  }
   return values;
 }
 
@@ -905,7 +905,9 @@ py::tuple ex_get_active_multiclass(example_ptr ec)
 {
   py::list values;
   for (auto const& query_needed_class : ec->pred.active_multiclass.more_info_required_for_classes)
-  { values.append(query_needed_class); }
+  {
+    values.append(query_needed_class);
+  }
 
   return py::make_tuple(ec->pred.active_multiclass.predicted_class, values);
 }
@@ -1000,11 +1002,11 @@ size_t ex_get_slates_type(example_ptr ec)
 {
   switch (ec->l.slates.type)
   {
-    case VW::slates::example_type::shared:
+    case VW::slates::example_type::SHARED:
       return tSHARED;
-    case VW::slates::example_type::action:
+    case VW::slates::example_type::ACTION:
       return tACTION;
-    case VW::slates::example_type::slot:
+    case VW::slates::example_type::SLOT:
       return tSLOT;
     default:
       return tUNSET;
@@ -1030,11 +1032,11 @@ size_t ex_get_ccb_type(example_ptr ec)
 {
   switch (ec->l.conditional_contextual_bandit.type)
   {
-    case CCB::example_type::shared:
+    case VW::ccb_example_type::SHARED:
       return tSHARED;
-    case CCB::example_type::action:
+    case VW::ccb_example_type::ACTION:
       return tACTION;
-    case CCB::example_type::slot:
+    case VW::ccb_example_type::SLOT:
       return tSLOT;
     default:
       return tUNSET;
@@ -1104,63 +1106,65 @@ double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
-bool search_should_output(search_ptr sch) { return sch->output().good(); }
-void search_output(search_ptr sch, std::string s) { sch->output() << s; }
+bool search_should_output(search_ptr _sch) { return _sch->output().good(); }
+void search_output(search_ptr _sch, std::string s) { _sch->output() << s; }
 
 /*
-uint32_t search_predict_one_all(search_ptr sch, example_ptr ec, uint32_t one_ystar) {
-  return sch->predict(ec.get(), one_ystar, NULL);
+uint32_t search_predict_one_all(search_ptr _sch, example_ptr ec, uint32_t one_ystar) {
+  return _sch->predict(ec.get(), one_ystar, NULL);
 }
 
-uint32_t search_predict_one_some(search_ptr sch, example_ptr ec, uint32_t one_ystar, std::vector<uint32_t>& yallowed) {
+uint32_t search_predict_one_some(search_ptr _sch, example_ptr ec, uint32_t one_ystar, std::vector<uint32_t>& yallowed) {
   v_array<uint32_t> yallowed_va;
   yallowed_va.begin       = yallowed.data();
   yallowed_va.end         = yallowed_va.begin + yallowed.size();
   yallowed_va.end_array   = yallowed_va.end;
   yallowed_va.erase_count = 0;
-  return sch->predict(ec.get(), one_ystar, &yallowed_va);
+  return _sch->predict(ec.get(), one_ystar, &yallowed_va);
 }
 
-uint32_t search_predict_many_all(search_ptr sch, example_ptr ec, std::vector<uint32_t>& ystar) {
+uint32_t search_predict_many_all(search_ptr _sch, example_ptr ec, std::vector<uint32_t>& ystar) {
   v_array<uint32_t> ystar_va;
   ystar_va.begin       = ystar.data();
   ystar_va.end         = ystar_va.begin + ystar.size();
   ystar_va.end_array   = ystar_va.end;
   ystar_va.erase_count = 0;
-  return sch->predict(ec.get(), &ystar_va, NULL);
+  return _sch->predict(ec.get(), &ystar_va, NULL);
 }
 
-uint32_t search_predict_many_some(search_ptr sch, example_ptr ec, std::vector<uint32_t>& ystar, std::vector<uint32_t>&
+uint32_t search_predict_many_some(search_ptr _sch, example_ptr ec, std::vector<uint32_t>& ystar, std::vector<uint32_t>&
 yallowed) { v_array<uint32_t> ystar_va; ystar_va.begin       = ystar.data(); ystar_va.end         = ystar_va.begin +
 ystar.size(); ystar_va.end_array   = ystar_va.end; ystar_va.erase_count = 0; v_array<uint32_t> yallowed_va;
   yallowed_va.begin       = yallowed.data();
   yallowed_va.end         = yallowed_va.begin + yallowed.size();
   yallowed_va.end_array   = yallowed_va.end;
   yallowed_va.erase_count = 0;
-  return sch->predict(ec.get(), &ystar_va, &yallowed_va);
+  return _sch->predict(ec.get(), &ystar_va, &yallowed_va);
 }
 */
 
-void verify_search_set_properly(search_ptr sch)
+void verify_search_set_properly(search_ptr _sch)
 {
-  if (sch->task_name == nullptr) { THROW("set_structured_predict_hook: search task not initialized properly"); }
+  if (_sch->task_name == nullptr) { THROW("set_structured_predict_hook: search task not initialized properly"); }
 
-  if (std::strcmp(sch->task_name, "hook") != 0)
-  { THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'."); }
+  if (std::strcmp(_sch->task_name, "hook") != 0)
+  {
+    THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'.");
+  }
 }
 
-uint32_t search_get_num_actions(search_ptr sch)
+uint32_t search_get_num_actions(search_ptr _sch)
 {
-  verify_search_set_properly(sch);
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  verify_search_set_properly(_sch);
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   return (uint32_t)d->num_actions;
 }
 
-void search_run_fn(Search::search& sch)
+void search_run_fn(Search::search& _sch)
 {
   try
   {
-    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
     py::object run = *static_cast<py::object*>(d->run_object.get());
     run.attr("__call__")();
   }
@@ -1173,11 +1177,11 @@ void search_run_fn(Search::search& sch)
   }
 }
 
-void search_setup_fn(Search::search& sch)
+void search_setup_fn(Search::search& _sch)
 {
   try
   {
-    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
     py::object run = *static_cast<py::object*>(d->setup_object.get());
     run.attr("__call__")();
   }
@@ -1190,11 +1194,11 @@ void search_setup_fn(Search::search& sch)
   }
 }
 
-void search_takedown_fn(Search::search& sch)
+void search_takedown_fn(Search::search& _sch)
 {
   try
   {
-    HookTask::task_data* d = sch.get_task_data<HookTask::task_data>();
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
     py::object run = *static_cast<py::object*>(d->takedown_object.get());
     run.attr("__call__")();
   }
@@ -1213,21 +1217,21 @@ void py_delete_run_object(void* pyobj)
   delete o;
 }
 
-void set_force_oracle(search_ptr sch, bool useOracle)
+void set_force_oracle(search_ptr _sch, bool useOracle)
 {
-  verify_search_set_properly(sch);
-  sch->set_force_oracle(useOracle);
+  verify_search_set_properly(_sch);
+  _sch->set_force_oracle(useOracle);
 }
 
 void set_structured_predict_hook(
-    search_ptr sch, py::object run_object, py::object setup_object, py::object takedown_object)
+    search_ptr _sch, py::object run_object, py::object setup_object, py::object takedown_object)
 {
-  verify_search_set_properly(sch);
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  verify_search_set_properly(_sch);
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   d->run_object = nullptr;
   d->setup_object = nullptr;
   d->takedown_object = nullptr;
-  sch->set_force_oracle(false);
+  _sch->set_force_oracle(false);
 
   d->run_f = &search_run_fn;
   d->run_object = std::make_shared<py::object>(run_object);
@@ -1245,21 +1249,21 @@ void set_structured_predict_hook(
 
 void my_set_test_only(example_ptr ec, bool val) { ec->test_only = val; }
 
-bool po_exists(search_ptr sch, std::string arg)
+bool po_exists(search_ptr _sch, std::string arg)
 {
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   return d->arg->was_supplied(arg);
 }
 
-std::string po_get_string(search_ptr sch, std::string arg)
+std::string po_get_string(search_ptr _sch, std::string arg)
 {
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   return d->arg->get_typed_option<std::string>(arg).value();
 }
 
-int32_t po_get_int(search_ptr sch, std::string arg)
+int32_t po_get_int(search_ptr _sch, std::string arg)
 {
-  HookTask::task_data* d = sch->get_task_data<HookTask::task_data>();
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   try
   {
     return d->arg->get_typed_option<int32_t>(arg).value();
@@ -1293,18 +1297,18 @@ int32_t po_get_int(search_ptr sch, std::string arg)
   return d->arg->get_typed_option<int32_t>(arg).value();
 }
 
-PyObject* po_get(search_ptr sch, std::string arg)
+PyObject* po_get(search_ptr _sch, std::string arg)
 {
   try
   {
-    return py::incref(py::object(po_get_string(sch, arg)).ptr());
+    return py::incref(py::object(po_get_string(_sch, arg)).ptr());
   }
   catch (...)
   {
   }
   try
   {
-    return py::incref(py::object(po_get_int(sch, arg)).ptr());
+    return py::incref(py::object(po_get_int(_sch, arg)).ptr());
   }
   catch (...)
   {
@@ -1654,10 +1658,11 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("is_ldf", &Search::search::is_ldf, "check whether this search task is running in LDF mode")
 
       .def("po_exists", &po_exists,
-          "For program (cmd line) options, check to see if a given option was specified; eg sch.po_exists(\"search\") "
+          "For program (cmd line) options, check to see if a given option was specified; eg _sch.po_exists(\"search\") "
           "should be True")
       .def("po_get", &po_get,
-          "For program (cmd line) options, if an option was specified, get its value; eg sch.po_get(\"search\") should "
+          "For program (cmd line) options, if an option was specified, get its value; eg _sch.po_get(\"search\") "
+          "should "
           "return the # of actions (returns either int or string)")
       .def("po_get_str", &po_get_string, "Same as po_get, but specialized for string return values.")
       .def("po_get_int", &po_get_int, "Same as po_get, but specialized for integer return values.")
@@ -1673,4 +1678,7 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def_readonly("EXAMPLES_DONT_CHANGE", Search::EXAMPLES_DONT_CHANGE,
           "Tell search that on a single structured 'run', you don't change the examples you pass to predict")
       .def_readonly("IS_LDF", Search::IS_LDF, "Tell search that this is an LDF task");
+
+  py::def("_merge_models_impl", merge_workspaces, py::args("base_workspace", "workspaces"),
+      "Merge several Workspaces into one. Experimental.");
 }

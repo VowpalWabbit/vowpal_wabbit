@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -88,11 +87,6 @@ namespace VW.Serializer
         private readonly List<ParameterExpression> variables;
 
         /// <summary>
-        /// Local variables holding namespaces.
-        /// </summary>
-        private readonly List<ParameterExpression> namespaceVariables;
-
-        /// <summary>
         /// The parameter of the main lambda to <see cref="VowpalWabbit"/>.
         /// </summary>
         private ParameterExpression vwParameter;
@@ -118,20 +112,23 @@ namespace VW.Serializer
         private readonly List<ParameterExpression> marshallers;
 
         /// <summary>
-        /// The list of meta features such as <see cref="PreHashedFeature"/>.
-        /// </summary>
-        private readonly List<ParameterExpression> metaFeatures;
-
-        /// <summary>
         /// If true, VowpalWabbit string generation is disabled.
         /// </summary>
         private readonly bool disableStringExampleGeneration;
 
+        // These work around an issue where for netstandard2.1 the IList type does not derive from IReadOnlyList.
         internal VowpalWabbitSingleExampleSerializerCompiler(Schema schema, IReadOnlyList<Type> featurizerTypes, bool disableStringExampleGeneration)
+        : this(schema, featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes), disableStringExampleGeneration)
+        {}
+
+        internal VowpalWabbitSingleExampleSerializerCompiler(Schema schema, IList<Type> featurizerTypes, bool disableStringExampleGeneration)
+        : this(schema, featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes), disableStringExampleGeneration)
+        {}
+
+        internal VowpalWabbitSingleExampleSerializerCompiler(Schema schema, List<Type> featurizerTypes, bool disableStringExampleGeneration)
         {
             if (schema == null || schema.Features.Count == 0)
                 throw new ArgumentException("schema");
-            Contract.EndContractBlock();
 
             this.schema = schema;
             this.disableStringExampleGeneration = disableStringExampleGeneration;
@@ -139,7 +136,7 @@ namespace VW.Serializer
             this.allFeatures = schema.Features.Select(f => new FeatureExpressionInternal { Source = f }).ToArray();
 
             // collect the types used for marshalling
-            this.marshallerTypes = featurizerTypes == null ? new List<Type>() : new List<Type>(featurizerTypes);
+            this.marshallerTypes = featurizerTypes == null ? new List<Type>() : featurizerTypes;
 
             // extract types from overrides defined on particular features
             var overrideFeaturizerTypes = schema.Features
@@ -154,9 +151,7 @@ namespace VW.Serializer
             this.body = new List<Expression>();
             this.perExampleBody = new List<Expression>();
             this.variables = new List<ParameterExpression>();
-            this.namespaceVariables = new List<ParameterExpression>();
             this.marshallers = new List<ParameterExpression>();
-            this.metaFeatures = new List<ParameterExpression>();
 
             this.CreateMarshallers();
 
@@ -169,7 +164,16 @@ namespace VW.Serializer
 
             this.CreateLambdas();
 
+#if !NETSTANDARD
             this.Func = (Func<VowpalWabbit, Action<VowpalWabbitMarshalContext, TExample, ILabel>>)this.SourceExpression.CompileToFunc();
+#else
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                
+            }
+
+            this.Func = this.SourceExpression.Compile();
+#endif
         }
 
         internal bool DisableStringExampleGeneration { get { return this.disableStringExampleGeneration; } }
@@ -500,8 +504,6 @@ namespace VW.Serializer
                         Expression.Constant(ns.Key.Namespace, typeof(string)),
                         ns.Key.FeatureGroup == null ? (Expression)Expression.Constant(null, typeof(char?)) :
                          Expression.New((ConstructorInfo)ReflectionHelper.GetInfo((char v) => new char?(v)), Expression.Constant((char)ns.Key.FeatureGroup)))));
-
-                var fullNamespaceCalls = new List<Expression>();
 
                 var featureVisits = new List<Expression>(ns.Count());
                 foreach (var feature in ns.OrderBy(f => f.Source.Order))

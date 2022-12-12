@@ -15,6 +15,13 @@ namespace cs_unittest
     {
         public static StreamReader Open(string input)
         {
+            if (string.IsNullOrEmpty(input))
+            {
+                // if filename is not given, return an empty stream
+                // this is used for compatibility with test cases that have no filename
+                return new StreamReader(new MemoryStream());
+            }
+
             if (input.EndsWith(".gz"))
                 return new StreamReader(new GZipStream(new FileStream(input, FileMode.Open), CompressionMode.Decompress));
             else
@@ -40,6 +47,13 @@ namespace cs_unittest
 
         public static void ExecuteTest(int testCaseNr, string args, string input, string stderr, string predictFile)
         {
+            var isJson = args.Contains("--json") || args.Contains("--dsjson");
+            if (isJson)
+            {
+                ExecuteTestJson(testCaseNr, args, input, stderr, predictFile);
+                return;
+            }
+
             using (var vw = new VowpalWabbit(args))
             {
                 var multiline = IsMultilineData(input);
@@ -113,8 +127,9 @@ namespace cs_unittest
                                 }
                             }
                             else
+                            {
                                 vw.Learn(dataLine);
-
+                            }
                             lineNr++;
                         }
                     }
@@ -126,6 +141,73 @@ namespace cs_unittest
 
                     if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
                         VWTestHelper.AssertEqual(stderr, vw.PerformanceStatistics);
+                }
+            }
+        }
+
+        public static void ExecuteTestJson(int testCaseNr, string args, string input, string stderr, string predictFile)
+        {
+            using (var vwj = new VowpalWabbitJson(args))
+            {
+                using (var streamReader = Open(input))
+                {
+                    int lineNr = 0;
+                    string[] predictions = null;
+                    if (File.Exists(predictFile))
+                        predictions = File.ReadAllLines(predictFile);
+
+                    string dataLine;
+                    while ((dataLine = streamReader.ReadLine()) != null)
+                    {
+                        if (string.IsNullOrWhiteSpace(dataLine))
+                            continue;
+
+                        if (!string.IsNullOrWhiteSpace(predictFile) && File.Exists(predictFile))
+                        {
+                            object actualValue;
+                            if (args.Contains("-t")) // test only
+                                actualValue = vwj.Predict(dataLine, VowpalWabbitPredictionType.Dynamic);
+                            else
+                                actualValue = vwj.Learn(dataLine, VowpalWabbitPredictionType.Dynamic);
+
+                            if (predictions != null)
+                            {
+                                // validate predictions
+                                var actualFloat = actualValue as float?;
+                                if (actualFloat != null)
+                                {
+                                    var expectedPrediction = float.Parse(predictions[lineNr].Split(' ').First(), CultureInfo.InvariantCulture);
+                                    VWTestHelper.FuzzyEqual(expectedPrediction, (float)actualFloat, 1e-4, "Prediction mismatch");
+                                }
+
+                                var actualScalar = actualValue as VowpalWabbitScalar?;
+                                if (actualScalar != null)
+                                {
+                                    var expectedPredictions = predictions[lineNr]
+                                        .Split(' ')
+                                        .Select(field => float.Parse(field, CultureInfo.InvariantCulture))
+                                        .ToArray();
+
+                                    Assert.AreEqual(2, expectedPredictions.Length);
+                                    VWTestHelper.FuzzyEqual(expectedPredictions[0], actualScalar.Value.Value, 1e-4, "Prediction value mismatch");
+                                    VWTestHelper.FuzzyEqual(expectedPredictions[1], actualScalar.Value.Confidence, 1e-4, "Prediction confidence mismatch");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            vwj.Learn(dataLine);
+                        }
+                        lineNr++;
+                    }
+
+                    if (vwj.Native.Arguments.NumPasses > 1)
+                        vwj.Native.RunMultiPass();
+                    else
+                        vwj.Native.EndOfPass();
+
+                    if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
+                        VWTestHelper.AssertEqual(stderr, vwj.Native.PerformanceStatistics);
                 }
             }
         }

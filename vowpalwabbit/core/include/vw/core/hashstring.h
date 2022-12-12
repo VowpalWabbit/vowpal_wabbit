@@ -10,12 +10,9 @@
 #include <cstdint>
 #include <string>
 
-VW_STD14_CONSTEXPR inline uint64_t hashall(const char* s, size_t len, uint64_t h)
-{
-  return VW::uniform_hash(s, len, h);
-}
+inline uint64_t hashall(const char* s, size_t len, uint64_t h) { return VW::uniform_hash(s, len, h); }
 
-VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
+inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
 {
   const char* front = s;
   while (len > 0 && front[0] <= 0x20 && static_cast<int>(front[0]) >= 0)
@@ -30,10 +27,7 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_
   while (p != front + len)
   {
     if (*p >= '0' && *p <= '9') { ret = 10 * ret + *(p++) - '0'; }
-    else
-    {
-      return VW::uniform_hash(front, len, h);
-    }
+    else { return VW::uniform_hash(front, len, h); }
   }
 
   return ret + h;
@@ -41,4 +35,4 @@ VW_STD14_CONSTEXPR inline uint64_t hashstring(const char* s, size_t len, uint64_
 
 using hash_func_t = uint64_t (*)(const char*, size_t, uint64_t);
 
-hash_func_t getHasher(const std::string& s);
+hash_func_t get_hasher(const std::string& s);

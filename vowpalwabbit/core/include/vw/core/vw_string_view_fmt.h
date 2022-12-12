@@ -11,16 +11,23 @@
 #pragma once
 #include "vw/common/string_view.h"
 
+#include <fmt/core.h>
 #include <fmt/format.h>
 
 namespace fmt
 {
 // Enable VW::string_view in fmt calls (uses the fmt::string_view formatter underneath)
 template <>
-struct formatter<VW::string_view> : formatter<fmt::string_view>
+class formatter<VW::string_view> : public formatter<fmt::string_view>
 {
+public:
+#if FMT_VERSION >= 90000
+  template <typename FormatContext>
+  auto format(const VW::string_view& sv, FormatContext& ctx) const -> decltype(ctx.out())
+#else
   template <typename FormatContext>
   auto format(const VW::string_view& sv, FormatContext& ctx) -> decltype(ctx.out())
+#endif
   {
     return formatter<fmt::string_view>::format({sv.data(), sv.size()}, ctx);
   }

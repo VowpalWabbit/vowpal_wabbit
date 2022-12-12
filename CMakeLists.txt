@@ -21,7 +21,9 @@ file(READ version.txt PACKAGE_VERSION)
 string(STRIP ${PACKAGE_VERSION} PACKAGE_VERSION)
 message(STATUS "VowpalWabbit Version: ${PACKAGE_VERSION}")
 
-string(REPLACE "." ";" VW_VERSION_LIST ${PACKAGE_VERSION})
+# version.txt may contain a SemVer of the form 1.2.3-xxx+xxx
+# Extract the first 3 numbers into CMake variables
+string(REGEX REPLACE "[.+-]" ";" VW_VERSION_LIST ${PACKAGE_VERSION})
 list(GET VW_VERSION_LIST 0 VW_VERSION_MAJOR)
 list(GET VW_VERSION_LIST 1 VW_VERSION_MINOR)
 list(GET VW_VERSION_LIST 2 VW_VERSION_PATCH)
@@ -38,17 +40,38 @@ if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
   message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
   if (vw_BUILD_NET_FRAMEWORK)
-    message(STATUS ".NET Framework Version: ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION}")
+    string(REGEX MATCH "[0-9.]+" VW_NET_FRAMEWORK_VERSION ${CMAKE_DOTNET_TARGET_FRAMEWORK_VERSION})
+    string(REPLACE "." "" VW_NET_FRAMEWORK_TFM ${VW_NET_FRAMEWORK_VERSION})
+    string(PREPEND VW_NET_FRAMEWORK_TFM "net")
+    message(STATUS ".NET Framework Version: ${VW_NET_FRAMEWORK_VERSION} (${VW_NET_FRAMEWORK_TFM})")
   endif()
 endif()
 
-project(vowpal_wabbit VERSION ${PACKAGE_VERSION} LANGUAGES C CXX)
+option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
+if(BUILD_FLATBUFFERS)
+  list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
+endif()
+
+option(BUILD_TESTING "Build tests" ON)
+if(BUILD_TESTING)
+  list(APPEND VCPKG_MANIFEST_FEATURES "tests")
+endif()
+
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+if(BUILD_BENCHMARKS)
+  list(APPEND VCPKG_MANIFEST_FEATURES "benchmarks")
+endif()
+
+# CMake project() does not support semantic versioning
+project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
-set(VW_CXX_STANDARD 11)
+if(NOT VW_CXX_STANDARD)
+  set(VW_CXX_STANDARD 11)
+endif()
 if(USE_LATEST_STD)
   DetectCXXStandard(VW_CXX_STANDARD)
 endif()
@@ -62,7 +85,8 @@ set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 include(VowpalWabbitUtils)
 
 if(MSVC)
-  # Do nothing as the default compile flags for MSVC are okay.
+  # Use C++ standard exception handling instead of MSVC default
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 else()
   # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
   # is O2 and Release is O3, override that here:
@@ -93,7 +117,6 @@ option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 option(VW_INSTALL "Add install targets." OFF)
-option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
@@ -105,9 +128,39 @@ option(FMT_SYS_DEP "Override using the submodule for FMT dependency. Instead wil
 option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Instead will use find_package" OFF)
 option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
+option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Instead will use find_package" OFF)
+option(VW_EIGEN_SYS_DEP "Override using the submodule for Eigen3 dependency. Instead will use find_package" OFF)
+option(VW_STRING_VIEW_LITE_SYS_DEP "Override using the submodule for string-view-lite dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
-option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
-option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
+option(VW_BUILD_CSV "Build csv parser" OFF)
+option(VW_BUILD_LAS_WITH_SIMD "Build large action space with explicit simd (only work with linux for now)" ON)
+option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
+option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
+option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
+option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
+
+if(VW_USE_ASAN)
+  add_compile_definitions(VW_USE_ASAN)
+  if(MSVC)
+    add_compile_options(/fsanitize=address /GS- /wd5072)
+    add_link_options(/InferASanLibs /incremental:no /debug)
+    # Workaround for MSVC ASan issue here: https://developercommunity.visualstudio.com/t/VS2022---Address-sanitizer-on-x86-Debug-/10116361
+    add_compile_definitions(_DISABLE_STRING_ANNOTATION)
+  else()
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g3)
+    add_link_options(-fsanitize=address -fno-omit-frame-pointer -g3)
+  endif()
+endif()
+
+if(VW_USE_UBSAN)
+  add_compile_definitions(VW_USE_UBSAN)
+  if(MSVC)
+    message(FATAL_ERROR "UBSan not supported on MSVC")
+  else()
+    add_compile_options(-fsanitize=undefined -fno-sanitize-recover -fno-omit-frame-pointer -g3)
+    add_link_options(-fsanitize=undefined -fno-sanitize-recover -fno-omit-frame-pointer -g3)
+  endif()
+endif()
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
@@ -124,16 +177,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
       message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
     endif()
-    cmake_minimum_required(VERSION 3.11)
-    include(FetchContent)
-    FetchContent_Declare(
-      googletest
-      URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-    )
-    # For Windows: Prevent overriding the parent project's compiler/linker settings
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
+    if(VW_GTEST_SYS_DEP)
+      find_package(GTest REQUIRED)
+    else()
+      cmake_minimum_required(VERSION 3.11)
+      include(FetchContent)
+      FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+      )
+      # For Windows: Prevent overriding the parent project's compiler/linker settings
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+      set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+      FetchContent_MakeAvailable(googletest)
+    endif()
   endif()
 endif()
 
@@ -151,19 +208,6 @@ endif()
 
 if(VW_GCOV AND (NOT CMAKE_BUILD_TYPE STREQUAL "Debug"))
   message(FATAL_ERROR "VW_GCOV requires Debug build type.")
-endif()
-
-# When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
-# Use this option to force color output in these modes.
-option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
-if(FORCE_COLORED_OUTPUT)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-fdiagnostics-color=always)
-  elseif((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
-    add_compile_options(-fcolor-diagnostics)
-  else()
-    message(WARNING "Unsupported compiler for FORCE_COLORED_OUTPUT: ${CMAKE_CXX_COMPILER_ID}")
-  endif()
 endif()
 
 if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA OR VW_GOV))
@@ -247,16 +291,15 @@ if(BUILD_EXPERIMENTAL_BINDING)
   add_subdirectory(bindings)
 endif()
 
-if(vw_BUILD_NET_FRAMEWORK)
+if(vw_BUILD_NET_FRAMEWORK OR vw_BUILD_NET_CORE)
   add_subdirectory(cs)
 endif()
-
 
 # Handle installation of targets, version, config and pkgconfig
 if(VW_INSTALL)
   # only do this if the file exists. Some packages dont have this file and its only needed in a very specific use case
-  if(EXISTS nuget/vowpalwabbit.nuspec.in)
-    configure_file(nuget/vowpalwabbit.nuspec.in nuget/vowpalwabbit.nuspec @ONLY)
+  if(EXISTS nuget/native/vowpalwabbit.nuspec.in)
+    configure_file(nuget/native/vowpalwabbit.nuspec.in nuget/native/vowpalwabbit.nuspec @ONLY)
   endif()
 
   configure_file(libvw_c_wrapper.pc.in libvw_c_wrapper.pc @ONLY)

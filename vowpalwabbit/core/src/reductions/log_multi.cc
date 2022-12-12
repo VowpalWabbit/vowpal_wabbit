@@ -28,8 +28,8 @@ namespace
 class node_pred
 {
 public:
-  double Ehk;
-  float norm_Ehk;
+  double Ehk;      // NOLINT
+  float norm_Ehk;  // NOLINT
   uint32_t nk;
   uint32_t label;
   uint32_t label_count;
@@ -53,8 +53,9 @@ public:
 
 static_assert(std::is_trivial<node_pred>::value, "To be used in v_array node_pred must be trivial");
 
-struct node
+class node
 {
+public:
   // everyone has
   uint32_t parent;               // the parent node
   VW::v_array<node_pred> preds;  // per-class state
@@ -67,8 +68,8 @@ struct node
   uint32_t base_predictor;  // id of the base predictor
   uint32_t left;            // left child
   uint32_t right;           // right child
-  float norm_Eh;            // the average margin at the node
-  double Eh;                // total margin at the node
+  float norm_Eh;            // NOLINT the average margin at the node
+  double Eh;                // NOLINT total margin at the node
   uint32_t n;               // total events at the node
 
   // leaf has
@@ -76,8 +77,9 @@ struct node
   uint32_t max_count_label;  // the most common label
 };
 
-struct log_multi
+class log_multi
 {
+public:
   uint32_t k = 0;
 
   std::vector<node> nodes;
@@ -138,10 +140,7 @@ inline uint32_t find_switch_node(log_multi& b)
   while (b.nodes[node].internal)
   {
     if (b.nodes[b.nodes[node].left].min_count < b.nodes[b.nodes[node].right].min_count) { node = b.nodes[node].left; }
-    else
-    {
-      node = b.nodes[node].right;
-    }
+    else { node = b.nodes[node].right; }
   }
   return node;
 }
@@ -155,10 +154,7 @@ inline void update_min_count(log_multi& b, uint32_t node)
     node = b.nodes[node].parent;
 
     if (b.nodes[node].min_count == b.nodes[prev].min_count) { break; }
-    else
-    {
-      b.nodes[node].min_count = min_left_right(b, b.nodes[node]);
-    }
+    else { b.nodes[node].min_count = min_left_right(b, b.nodes[node]); }
   }
 }
 
@@ -199,21 +195,17 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
       uint32_t swap_parent = b.nodes[swap_child].parent;
       uint32_t swap_grandparent = b.nodes[swap_parent].parent;
       if (b.nodes[swap_child].min_count != b.nodes[0].min_count)
-      { std::cout << "glargh " << b.nodes[swap_child].min_count << " != " << b.nodes[0].min_count << std::endl; }
+      {
+        std::cout << "glargh " << b.nodes[swap_child].min_count << " != " << b.nodes[0].min_count << std::endl;
+      }
       b.nbofswaps++;
 
       uint32_t nonswap_child;
       if (swap_child == b.nodes[swap_parent].right) { nonswap_child = b.nodes[swap_parent].left; }
-      else
-      {
-        nonswap_child = b.nodes[swap_parent].right;
-      }
+      else { nonswap_child = b.nodes[swap_parent].right; }
 
       if (swap_parent == b.nodes[swap_grandparent].left) { b.nodes[swap_grandparent].left = nonswap_child; }
-      else
-      {
-        b.nodes[swap_grandparent].right = nonswap_child;
-      }
+      else { b.nodes[swap_grandparent].right = nonswap_child; }
       b.nodes[nonswap_child].parent = swap_grandparent;
       update_min_count(b, nonswap_child);
 
@@ -244,10 +236,7 @@ void train_node(
     log_multi& b, single_learner& base, VW::example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
   if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk) { ec.l.simple.label = -1.f; }
-  else
-  {
-    ec.l.simple.label = 1.f;
-  }
+  else { ec.l.simple.label = 1.f; }
 
   base.learn(ec, b.nodes[current].base_predictor);  // depth
 
@@ -267,18 +256,15 @@ void train_node(
 inline uint32_t descend(node& n, float prediction)
 {
   if (prediction < 0) { return n.left; }
-  else
-  {
-    return n.right;
-  }
+  else { return n.right; }
 }
 
 void predict(log_multi& b, single_learner& base, VW::example& ec)
 {
-  MULTICLASS::label_t mc = ec.l.multi;
+  VW::multiclass_label mc = ec.l.multi;
 
   ec.l.simple = {FLT_MAX};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   uint32_t cn = 0;
   uint32_t depth = 0;
@@ -296,12 +282,12 @@ void learn(log_multi& b, single_learner& base, VW::example& ec)
 {
   if (ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {
-    MULTICLASS::label_t mc = ec.l.multi;
+    VW::multiclass_label mc = ec.l.multi;
     uint32_t start_pred = ec.pred.multiclass;
 
     uint32_t class_index = 0;
     ec.l.simple = {FLT_MAX};
-    ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+    ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
     uint32_t cn = 0;
     uint32_t depth = 0;
     while (children(b, cn, class_index, mc.label))
@@ -458,13 +444,13 @@ base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(log_multi_setup))
                 .set_params_per_weight(ws)
-                .set_finish_example(MULTICLASS::finish_example<log_multi&>)
+                .set_finish_example(VW::details::finish_multiclass_example<log_multi&>)
                 .set_save_load(save_load_tree)
-                .set_output_prediction_type(VW::prediction_type_t::multiclass)
-                .set_input_label_type(VW::label_type_t::multiclass)
+                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+                .set_input_label_type(VW::label_type_t::MULTICLASS)
                 .build();
 
-  all.example_parser->lbl_parser = MULTICLASS::mc_label;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   return make_base(*l);
 }

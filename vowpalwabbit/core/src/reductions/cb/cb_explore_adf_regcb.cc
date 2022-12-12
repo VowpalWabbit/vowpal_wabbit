@@ -8,10 +8,12 @@
 #include "vw/core/action_score.h"
 #include "vw/core/cb.h"
 #include "vw/core/gen_cs_example.h"
+#include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/rand48.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
+#include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_versions.h"
@@ -33,25 +35,8 @@ using namespace VW::LEARNER;
 
 namespace
 {
-struct cb_explore_adf_regcb
+class cb_explore_adf_regcb
 {
-private:
-  size_t _counter;
-  bool _regcbopt;  // use optimistic variant of RegCB
-  float _c0;       // mellowness parameter for RegCB
-  bool _first_only;
-  float _min_cb_cost;
-  float _max_cb_cost;
-
-  std::vector<float> _min_costs;
-  std::vector<float> _max_costs;
-
-  VW::version_struct _model_file_version;
-
-  // for backing up cb example data when computing sensitivities
-  std::vector<ACTION_SCORE::action_scores> _ex_as;
-  std::vector<std::vector<CB::cb_class>> _ex_costs;
-
 public:
   cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost, float max_cb_cost,
       VW::version_struct model_file_version);
@@ -68,6 +53,23 @@ private:
 
   void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
+
+private:
+  size_t _counter;
+  bool _regcbopt;  // use optimistic variant of RegCB
+  float _c0;       // mellowness parameter for RegCB
+  bool _first_only;
+  float _min_cb_cost;
+  float _max_cb_cost;
+
+  std::vector<float> _min_costs;
+  std::vector<float> _max_costs;
+
+  VW::version_struct _model_file_version;
+
+  // for backing up cb example data when computing sensitivities
+  std::vector<VW::action_scores> _ex_as;
+  std::vector<std::vector<CB::cb_class>> _ex_costs;
 };
 
 cb_explore_adf_regcb::cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost,
@@ -98,10 +100,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
     w = (u + l) / 2.f;
     v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
     if (v > 0) { u = w; }
-    else
-    {
-      l = w;
-    }
+    else { l = w; }
     if (std::fabs(v) <= tol || u - l <= tol) { break; }
   }
 
@@ -170,7 +169,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, VW:
 void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examples)
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
-  v_array<ACTION_SCORE::action_score>& preds = examples[0]->pred.a_s;
+  VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   const float max_range = _max_cb_cost - _min_cb_cost;
@@ -194,10 +193,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
     for (size_t i = 0; i < preds.size(); ++i)
     {
       if (preds[i].action == a_opt || (!_first_only && _min_costs[preds[i].action] == min_cost)) { preds[i].score = 1; }
-      else
-      {
-        preds[i].score = 0;
-      }
+      else { preds[i].score = 0; }
     }
   }
   else  // elimination variant
@@ -210,10 +206,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
     for (size_t i = 0; i < preds.size(); ++i)
     {
       if (_min_costs[preds[i].action] <= min_max_cost) { preds[i].score = 1; }
-      else
-      {
-        preds[i].score = 0;
-      }
+      else { preds[i].score = 0; }
       // explore uniformly on support
       exploration::enforce_minimum_probability(
           1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
@@ -223,7 +216,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
 
 void cb_explore_adf_regcb::learn_impl(multi_learner& base, VW::multi_ex& examples)
 {
-  v_array<ACTION_SCORE::action_score> preds = std::move(examples[0]->pred.a_s);
+  VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
     CB::label& ld = examples[i]->l.cb;
@@ -316,10 +309,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
       with_metrics, regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_regcb_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(explore_type::finish_multiline_example)
                 .set_print_example(explore_type::print_multiline_example)

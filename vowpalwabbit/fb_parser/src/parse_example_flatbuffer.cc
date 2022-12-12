@@ -167,10 +167,7 @@ void parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExa
 namespace_index get_namespace_index(const Namespace* ns)
 {
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME)) { return static_cast<uint8_t>(ns->name()->c_str()[0]); }
-  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
-  {
-    return ns->hash();
-  }
+  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH)) { return ns->hash(); }
 
   THROW("Either name or hash field must be specified to get the namespace index.");
 }
@@ -202,7 +199,9 @@ void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* 
 
   if (hash_found) { fs.start_ns_extent(hash); }
   for (const auto& feature : *(ns->features()))
-  { parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr); }
+  {
+    parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr);
+  }
   if (hash_found) { fs.end_ns_extent(); }
 }
 
@@ -213,12 +212,11 @@ void parser::parse_features(VW::workspace* all, features& fs, const Feature* fea
     uint64_t word_hash = all->example_parser->hasher(feature->name()->c_str(), feature->name()->size(), _c_hash);
     fs.push_back(feature->value(), word_hash);
     if ((all->audit || all->hash_inv) && ns != nullptr)
-    { fs.space_names.push_back(audit_strings(ns->c_str(), feature->name()->c_str())); }
+    {
+      fs.space_names.push_back(audit_strings(ns->c_str(), feature->name()->c_str()));
+    }
   }
-  else
-  {
-    fs.push_back(feature->value(), feature->hash());
-  }
+  else { fs.push_back(feature->value(), feature->hash()); }
 }
 
 void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger)
@@ -228,7 +226,7 @@ void parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, V
     case Label_SimpleLabel:
     {
       const SimpleLabel* simple_lbl = static_cast<const SimpleLabel*>(eg->label());
-      parse_simple_label(sd, &(ae->l), &(ae->_reduction_features), simple_lbl);
+      parse_simple_label(sd, &(ae->l), &(ae->ex_reduction_features), simple_lbl);
       break;
     }
     case Label_CBLabel:

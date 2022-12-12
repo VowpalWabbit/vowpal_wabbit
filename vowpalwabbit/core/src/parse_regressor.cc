@@ -35,10 +35,7 @@
 #include <numeric>
 #include <utility>
 
-void initialize_weights_as_random_positive(weight* weights, uint64_t index) { weights[0] = 0.1f * merand48(index); }
-void initialize_weights_as_random(weight* weights, uint64_t index) { weights[0] = merand48(index) - 0.5f; }
-
-void initialize_weights_as_polar_normal(weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
+void initialize_weights_as_polar_normal(VW::weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
 
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
@@ -46,9 +43,11 @@ template <class T>
 void truncate(VW::workspace& all, T& weights)
 {
   static double sd = calculate_sd(all, weights);
-  std::for_each(weights.begin(), weights.end(), [](float& v) {
-    if (std::fabs(v) > sd * 2) { v = static_cast<float>(std::remainder(static_cast<double>(v), sd * 2)); }
-  });
+  std::for_each(weights.begin(), weights.end(),
+      [](float& v)
+      {
+        if (std::fabs(v) > sd * 2) { v = static_cast<float>(std::remainder(static_cast<double>(v), sd * 2)); }
+      });
 }
 
 template <class T>
@@ -81,26 +80,31 @@ void initialize_regressor(VW::workspace& all, T& weights)
     THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
   }
   if (weights.mask() == 0)
-  { THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>"); }
+  {
+    THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
+  }
   else if (all.initial_weight != 0.)
   {
     auto initial_weight = all.initial_weight;
-    auto initial_value_weight_initializer = [initial_weight](
-                                                weight* weights, uint64_t /*index*/) { weights[0] = initial_weight; };
+    auto initial_value_weight_initializer = [initial_weight](VW::weight* weights, uint64_t /*index*/)
+    { weights[0] = initial_weight; };
     weights.set_default(initial_value_weight_initializer);
   }
   else if (all.random_positive_weights)
   {
-    weights.set_default(&initialize_weights_as_random_positive);
+    auto rand_state = *all.get_random_state();
+    auto random_positive = [&rand_state](VW::weight* weights, uint64_t)
+    { weights[0] = 0.1f * rand_state.get_and_update_random(); };
+    weights.set_default(random_positive);
   }
   else if (all.random_weights)
   {
-    weights.set_default(&initialize_weights_as_random);
+    auto rand_state = *all.get_random_state();
+    auto random_neg_pos = [&rand_state](VW::weight* weights, uint64_t)
+    { weights[0] = rand_state.get_and_update_random() - 0.5f; };
+    weights.set_default(random_neg_pos);
   }
-  else if (all.normal_weights)
-  {
-    weights.set_default(&initialize_weights_as_polar_normal);
-  }
+  else if (all.normal_weights) { weights.set_default(&initialize_weights_as_polar_normal); }
   else if (all.tnormal_weights)
   {
     weights.set_default(&initialize_weights_as_polar_normal);
@@ -111,13 +115,13 @@ void initialize_regressor(VW::workspace& all, T& weights)
 void initialize_regressor(VW::workspace& all)
 {
   if (all.weights.sparse) { initialize_regressor(all, all.weights.sparse_weights); }
-  else
-  {
-    initialize_regressor(all, all.weights.dense_weights);
-  }
+  else { initialize_regressor(all, all.weights.dense_weights); }
 }
 
-constexpr size_t default_buf_size = 512;
+namespace
+{
+constexpr size_t DEFAULT_BUF_SIZE = 512;
+}
 
 // file_options will be written to when reading
 void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options,
@@ -125,33 +129,34 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 {
   if (model_file.num_files() > 0)
   {
-    std::vector<char> buff2(default_buf_size);
-
+    std::vector<char> buff2(DEFAULT_BUF_SIZE);
     size_t bytes_read_write = 0;
 
-    size_t v_length = static_cast<uint32_t>(VW::version.to_string().length()) + 1;
+    size_t v_length = static_cast<uint32_t>(VW::VERSION.to_string().length()) + 1;
     std::stringstream msg;
-    msg << "Version " << VW::version.to_string() << "\n";
-    memcpy(buff2.data(), VW::version.to_string().c_str(), std::min(v_length, buff2.size()));
+    msg << "Version " << VW::VERSION.to_string() << "\n";
+    memcpy(buff2.data(), VW::VERSION.to_string().c_str(), std::min(v_length, buff2.size()));
     if (read)
     {
       v_length = buff2.size();
-      buff2[std::min(v_length, default_buf_size) - 1] = '\0';
+      buff2[std::min(v_length, DEFAULT_BUF_SIZE) - 1] = '\0';
     }
     bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
     all.model_file_ver = VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
     VW::validate_version(all);
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-    { model_file.verify_hash(true); }
+    {
+      model_file.verify_hash(true);
+    }
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
     {
       v_length = all.id.length() + 1;
 
       msg << "Id " << all.id << "\n";
-      memcpy(buff2.data(), all.id.c_str(), std::min(v_length, default_buf_size));
-      if (read) { v_length = default_buf_size; }
+      memcpy(buff2.data(), all.id.c_str(), std::min(v_length, DEFAULT_BUF_SIZE));
+      if (read) { v_length = DEFAULT_BUF_SIZE; }
       bytes_read_write += bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
       all.id = buff2.data();
 
@@ -213,7 +218,9 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
         bytes_read_write += bin_text_read_write_fixed_validated(model_file, pair, 2, read, msg, text);
         std::vector<VW::namespace_index> temp(pair, *(&pair + 1));
         if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-        { all.interactions.emplace_back(temp.begin(), temp.end()); }
+        {
+          all.interactions.emplace_back(temp.begin(), temp.end());
+        }
       }
 
       msg << "\n";
@@ -235,7 +242,9 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 
         std::vector<VW::namespace_index> temp(triple, *(&triple + 1));
         if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-        { all.interactions.emplace_back(temp.begin(), temp.end()); }
+        {
+          all.interactions.emplace_back(temp.begin(), temp.end());
+        }
       }
 
       msg << "\n";
@@ -267,7 +276,9 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
 
           std::vector<VW::namespace_index> temp(buff2.data(), buff2.data() + size);
           if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
-          { all.interactions.emplace_back(buff2.data(), buff2.data() + inter_len); }
+          {
+            all.interactions.emplace_back(buff2.data(), buff2.data() + inter_len);
+          }
         }
 
         msg << "\n";
@@ -450,7 +461,9 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
     }
 
     if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
-    { model_file.verify_hash(false); }
+    {
+      model_file.verify_hash(false);
+    }
   }
 }
 
@@ -458,6 +471,7 @@ void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
 {
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
+  if (all.l != nullptr) { all.l->pre_save_load(all); }
   save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr) { all.l->save_load(buf, false, as_text); }
 
@@ -494,11 +508,10 @@ void finalize_regressor(VW::workspace& all, const std::string& reg_name)
   if (!all.early_terminate)
   {
     if (all.per_feature_regularizer_output.length() > 0)
-    { dump_regressor(all, all.per_feature_regularizer_output, false); }
-    else
     {
-      dump_regressor(all, reg_name, false);
+      dump_regressor(all, all.per_feature_regularizer_output, false);
     }
+    else { dump_regressor(all, reg_name, false); }
     if (all.per_feature_regularizer_text.length() > 0) { dump_regressor(all, all.per_feature_regularizer_text, true); }
     else
     {
@@ -520,7 +533,9 @@ void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all
     {
       // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
-      { all.logger.err_warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1)); }
+      {
+        all.logger.err_warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1));
+      }
     }
   }
 }
@@ -535,7 +550,9 @@ void parse_mask_regressor_args(
     if (initial_regressors.size() > 0)
     {
       if (feature_mask == initial_regressors[0])  //-i and -mask are from same file, just generate mask
-      { return; }
+      {
+        return;
+      }
     }
 
     // all other cases, including from different file, or -i does not exist, need to read in the mask file

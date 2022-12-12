@@ -607,7 +607,7 @@ def find_vw_binary(
     vw_search_paths = [test_base_ref_dir / ".." / "build" / "vowpalwabbit" / "cli"]
 
     def is_vw_binary(file: Path) -> bool:
-        return file.name == "vw"
+        return file.name == "vw" or file.name == "vw.exe"
 
     return find_or_use_user_supplied_path(
         test_base_ref_dir=test_base_ref_dir,
@@ -625,7 +625,7 @@ def find_spanning_tree_binary(
     ]
 
     def is_spanning_tree_binary(file: Path) -> bool:
-        return file.name == "spanning_tree"
+        return file.name == "spanning_tree" or file.name == "spanning_tree.exe"
 
     user_supplied_bin_path = (
         Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
@@ -647,7 +647,7 @@ def find_to_flatbuf_binary(
     ]
 
     def is_to_flatbuff_binary(file: Path) -> bool:
-        return file.name == "to_flatbuff"
+        return file.name == "to_flatbuff" or file.name == "to_flatbuff.exe"
 
     user_supplied_bin_path = (
         Path(user_supplied_bin_path) if user_supplied_bin_path is not None else None
@@ -776,6 +776,7 @@ def convert_tests_for_flatbuffers(
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
         # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
+        # 423, 424, 425, 426 - FB converter removes feature names from invert_hash (probably the same issue as above)
         if str(test.id) in (
             "300",
             "189",
@@ -803,6 +804,11 @@ def convert_tests_for_flatbuffers(
             "407",
             "411",
             "415",
+            "425",
+            "426",
+            "427",
+            "428",
+            "429",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"

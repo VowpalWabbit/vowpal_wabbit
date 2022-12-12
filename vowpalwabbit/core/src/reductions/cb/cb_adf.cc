@@ -17,13 +17,12 @@
 #include "vw/explore/explore.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_adf
+#define VW_DEBUG_LOG vw_dbg::CB_ADF
 
 #include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
 using namespace CB;
-using namespace ACTION_SCORE;
 using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
@@ -91,13 +90,15 @@ VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
   return ret;
 }
 
-void cb_adf::learn_IPS(multi_learner& base, VW::multi_ex& examples)
+const VW::version_struct* cb_adf::get_model_file_ver() const { return &_all->model_file_ver; }
+
+void cb_adf::learn_ips(multi_learner& base, VW::multi_ex& examples)
 {
-  gen_cs_example_ips(examples, _cs_labels, logger, _clip_p);
+  gen_cs_example_ips(examples, _cs_labels, _all->logger, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_sm(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_test_example(examples, _cs_labels);  // create test labels.
   cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
@@ -128,7 +129,7 @@ void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       chosen_action = i;
-      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability, logger);
+      example_weight = ld.costs[0].cost / safe_probability(ld.costs[0].probability, _all->logger);
 
       // Importance weights of examples cannot be negative.
       // So we use a trick: set |w| as weight, and use sign(w) as an offset in the regression target.
@@ -167,11 +168,10 @@ void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
     _backup_nf.push_back(static_cast<uint32_t>(examples[current_action]->num_features));
 
     if (current_action == chosen_action)
-    { examples[current_action]->weight *= example_weight * (1.0f - action_score.score); }
-    else
     {
-      examples[current_action]->weight *= example_weight * action_score.score;
+      examples[current_action]->weight *= example_weight * (1.0f - action_score.score);
     }
+    else { examples[current_action]->weight *= example_weight * action_score.score; }
 
     if (examples[current_action]->weight <= 1e-15) { examples[current_action]->weight = 0; }
   }
@@ -188,24 +188,24 @@ void cb_adf::learn_SM(multi_learner& base, VW::multi_ex& examples)
   }
 }
 
-void cb_adf::learn_DR(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_dr(multi_learner& base, VW::multi_ex& examples)
 {
-  gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
+  gen_cs_example_dr<true>(gen_cs, examples, _cs_labels, _clip_p);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void cb_adf::learn_DM(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_dm(multi_learner& base, VW::multi_ex& examples)
 {
   gen_cs_example_dm(examples, _cs_labels);
   cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 template <bool PREDICT>
-void cb_adf::learn_MTR(multi_learner& base, VW::multi_ex& examples)
+void cb_adf::learn_mtr(multi_learner& base, VW::multi_ex& examples)
 {
   if (PREDICT)  // first get the prediction to return
   {
-    gen_cs_example_ips(examples, _cs_labels, logger);
+    gen_cs_example_ips(examples, _cs_labels, _all->logger);
     cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
     std::swap(examples[0]->pred.a_s, _a_s);
   }
@@ -213,20 +213,20 @@ void cb_adf::learn_MTR(multi_learner& base, VW::multi_ex& examples)
   // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
-  gen_cs_example_mtr(_gen_cs, examples, _cs_labels);
-  uint32_t nf = static_cast<uint32_t>(examples[_gen_cs.mtr_example]->num_features);
-  float old_weight = examples[_gen_cs.mtr_example]->weight;
-  const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *=
-      1.f / clipped_p * (static_cast<float>(_gen_cs.event_sum) / static_cast<float>(_gen_cs.action_sum));
+  gen_cs_example_mtr(gen_cs, examples, _cs_labels);
+  uint32_t nf = static_cast<uint32_t>(examples[gen_cs.mtr_example]->num_features);
+  float old_weight = examples[gen_cs.mtr_example]->weight;
+  const float clipped_p = std::max(examples[gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
+  examples[gen_cs.mtr_example]->weight *=
+      1.f / clipped_p * (static_cast<float>(gen_cs.event_sum) / static_cast<float>(gen_cs.action_sum));
 
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
   // dropped)
-  cs_ldf_learn_or_predict<true>(base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
-  examples[_gen_cs.mtr_example]->num_features = nf;
-  examples[_gen_cs.mtr_example]->weight = old_weight;
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  cs_ldf_learn_or_predict<true>(base, gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  examples[gen_cs.mtr_example]->num_features = nf;
+  examples[gen_cs.mtr_example]->weight = old_weight;
+  std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
 
   if (PREDICT)
   {  // Return the saved prediction
@@ -239,41 +239,35 @@ void cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
   if (CB_ADF::test_adf_sequence(ec_seq) != nullptr)
   {
     _offset = ec_seq[0]->ft_offset;
-    _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-    switch (_gen_cs.cb_type)
+    gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+    switch (gen_cs.cb_type)
     {
-      case VW::cb_type_t::dr:
-        learn_DR(base, ec_seq);
+      case VW::cb_type_t::DR:
+        learn_dr(base, ec_seq);
         break;
-      case VW::cb_type_t::dm:
-        learn_DM(base, ec_seq);
+      case VW::cb_type_t::DM:
+        learn_dm(base, ec_seq);
         break;
-      case VW::cb_type_t::ips:
-        learn_IPS(base, ec_seq);
+      case VW::cb_type_t::IPS:
+        learn_ips(base, ec_seq);
         break;
-      case VW::cb_type_t::mtr:
-        if (_no_predict) { learn_MTR<false>(base, ec_seq); }
-        else
-        {
-          learn_MTR<true>(base, ec_seq);
-        }
+      case VW::cb_type_t::MTR:
+        if (_no_predict) { learn_mtr<false>(base, ec_seq); }
+        else { learn_mtr<true>(base, ec_seq); }
         break;
-      case VW::cb_type_t::sm:
-        learn_SM(base, ec_seq);
+      case VW::cb_type_t::SM:
+        learn_sm(base, ec_seq);
         break;
     }
   }
-  else if (learn_returns_prediction())
-  {
-    predict(base, ec_seq);
-  }
+  else if (learn_returns_prediction()) { predict(base, ec_seq); }
 }
 
 void cb_adf::predict(multi_learner& base, VW::multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  _gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-  gen_cs_test_example(ec_seq, _cs_labels);                                   // create test labels.
+  gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+  gen_cs_test_example(ec_seq, _cs_labels);                                  // create test labels.
   cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
 
@@ -289,16 +283,13 @@ bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq
   float loss = 0.;
 
   bool labeled_example = true;
-  if (_gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action); }
-  else
-  {
-    labeled_example = false;
-  }
+  if (gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(gen_cs.known_cost, gen_cs.pred_scores, action); }
+  else { labeled_example = false; }
 
   bool holdout_example = labeled_example;
   for (auto const& i : ec_seq) { holdout_example &= i->test_only; }
 
-  _sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
+  _all->sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
   return labeled_example;
 }
 }  // namespace CB_ADF
@@ -312,27 +303,26 @@ void output_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec
 
   uint32_t action = ec.pred.a_s[0].action;
   for (auto& sink : all.final_prediction_sink)
-  { all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, all.logger); }
+  {
+    all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     const auto& costs = ec.l.cb.costs;
 
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
-  else
-  {
-    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
-  }
+  else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
 void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec, const VW::multi_ex& ec_seq)
@@ -343,25 +333,25 @@ void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::exampl
 
   bool labeled_example = c.update_statistics(ec, ec_seq);
 
-  for (auto& sink : all.final_prediction_sink) { print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  {
+    VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
-    std::string outputString;
-    std::stringstream outputStringStream(outputString);
+    std::string output_string;
+    std::stringstream output_string_stream(output_string);
     for (size_t i = 0; i < costs.size(); i++)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      outputStringStream << costs[i].action << ':' << costs[i].partial_prediction;
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), outputStringStream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, c.known_cost()); }
-  else
-  {
-    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
-  }
+  else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
 void output_example_seq(VW::workspace& all, CB_ADF::cb_adf& data, const VW::multi_ex& ec_seq)
@@ -374,7 +364,9 @@ void output_example_seq(VW::workspace& all, CB_ADF::cb_adf& data, const VW::mult
       output_example(all, data, *ec_seq.front(), ec_seq);
 
       if (all.raw_prediction != nullptr)
-      { all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger); }
+      {
+        all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+      }
     }
   }
 }
@@ -398,7 +390,9 @@ void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
 {
   if (c.get_model_file_ver() != nullptr &&
       *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
-  { return; }
+  {
+    return;
+  }
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
   bin_text_read_write_fixed(
@@ -407,6 +401,28 @@ void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
   msg << "action_sum " << c.get_gen_cs().action_sum << "\n";
   bin_text_read_write_fixed(
       model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
+}
+
+void cb_adf_merge(const std::vector<float>& /* per_model_weights */, const std::vector<const CB_ADF::cb_adf*>& sources,
+    CB_ADF::cb_adf& output_data)
+{
+  for (const auto* source : sources)
+  {
+    output_data.get_gen_cs().event_sum += source->get_gen_cs().event_sum;
+    output_data.get_gen_cs().action_sum += source->get_gen_cs().action_sum;
+  }
+}
+
+void cb_adf_add(const CB_ADF::cb_adf& data1, const CB_ADF::cb_adf& data2, CB_ADF::cb_adf& data_out)
+{
+  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum + data2.get_gen_cs().event_sum;
+  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum + data2.get_gen_cs().action_sum;
+}
+
+void cb_adf_subtract(const CB_ADF::cb_adf& data1, const CB_ADF::cb_adf& data2, CB_ADF::cb_adf& data_out)
+{
+  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum - data2.get_gen_cs().event_sum;
+  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum - data2.get_gen_cs().action_sum;
 }
 
 void learn(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
@@ -454,7 +470,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   }
 
   if (options.was_supplied("indexing"))
-  { THROW("--indexing is not compatible with contextual bandits, please remove this option") }
+  {
+    THROW("--indexing is not compatible with contextual bandits, please remove this option")
+  }
 
   // number of weight vectors needed
   size_t problem_multiplier = 1;  // default for IPS
@@ -468,18 +486,20 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   {
     all.logger.err_warn(
         "cb_type must be in {{'ips','dr','mtr','dm','sm'}}; resetting to mtr. Input was: '{}'", type_string);
-    cb_type = VW::cb_type_t::mtr;
+    cb_type = VW::cb_type_t::MTR;
   }
 
-  if (cb_type == VW::cb_type_t::dr)
+  if (cb_type == VW::cb_type_t::DR)
   {
     problem_multiplier = 2;
     // only use baseline when manually enabled for loss estimation
     check_baseline_enabled = true;
   }
 
-  if (clip_p > 0.f && cb_type == VW::cb_type_t::sm)
-  { all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped."); }
+  if (clip_p > 0.f && cb_type == VW::cb_type_t::SM)
+  {
+    all.logger.err_warn("Clipping probability not yet implemented for cb_type sm; p will not be clipped.");
+  }
 
   // Push necessary flags.
   if ((!options.was_supplied("csoaa_ldf") && !options.was_supplied("wap_ldf")) || rank_all ||
@@ -492,8 +512,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld =
-      VW::make_unique<CB_ADF::cb_adf>(all.sd, cb_type, &all.model_file_ver, rank_all, clip_p, no_predict, all.logger);
+  auto ld = VW::make_unique<CB_ADF::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
 
   auto base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
@@ -501,18 +520,21 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   CB_ADF::cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
   auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cs)
-                .set_input_prediction_type(VW::prediction_type_t::action_scores)
-                .set_output_prediction_type(VW::prediction_type_t::action_scores)
+                .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CS)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_learn_returns_prediction(lrp)
                 .set_params_per_weight(problem_multiplier)
                 .set_finish_example(::finish_multiline_example)
                 .set_print_example(::update_and_output)
                 .set_save_load(::save_load)
+                .set_merge(::cb_adf_merge)
+                .set_add(::cb_adf_add)
+                .set_subtract(::cb_adf_subtract)
                 .build(&all.logger);
 
-  bare->set_scorer(all.scorer);
+  bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));
 
   return make_base(*l);
 }

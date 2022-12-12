@@ -2,9 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/ccb_label.h"
+
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
-#include "vw/core/cache.h"
+#include "vw/core/ccb_reduction_features.h"
 #include "vw/core/constant.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
@@ -30,27 +32,12 @@ using namespace VW::LEARNER;
 using namespace VW;
 using namespace VW::config;
 
-namespace CCB
+namespace
 {
-float ccb_weight(const CCB::label& ld) { return ld.weight; }
+float ccb_weight(const VW::ccb_label& ld) { return ld.weight; }
+bool test_label(const VW::ccb_label& ld) { return ld.outcome == nullptr; }
 
-void default_label(label& ld)
-{
-  // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
-  if (ld.outcome != nullptr)
-  {
-    delete ld.outcome;
-    ld.outcome = nullptr;
-  }
-
-  ld.explicit_included_actions.clear();
-  ld.type = example_type::unset;
-  ld.weight = 1.0;
-}
-
-bool test_label(const CCB::label& ld) { return ld.outcome == nullptr; }
-
-ACTION_SCORE::action_score convert_to_score(
+VW::action_score convert_to_score(
     const VW::string_view& action_id_str, const VW::string_view& probability_str, VW::io::logger& logger)
 {
   auto action_id = static_cast<uint32_t>(int_of_string(action_id_str, logger));
@@ -72,9 +59,9 @@ ACTION_SCORE::action_score convert_to_score(
 }
 
 //<action>:<cost>:<probability>,<action>:<probability>,<action>:<probability>,…
-CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcome, VW::io::logger& logger)
+VW::ccb_outcome* parse_outcome(VW::string_view outcome, VW::io::logger& logger)
 {
-  auto& ccb_outcome = *(new CCB::conditional_contextual_bandit_outcome());
+  auto& ccb_outcome = *(new VW::ccb_outcome());
 
   std::vector<VW::string_view> split_commas;
   VW::tokenize(',', outcome, split_commas);
@@ -102,35 +89,76 @@ CCB::conditional_contextual_bandit_outcome* parse_outcome(VW::string_view outcom
 }
 
 void parse_explicit_inclusions(
-    CCB::label& ld, const std::vector<VW::string_view>& split_inclusions, VW::io::logger& logger)
+    VW::ccb_label& ld, const std::vector<VW::string_view>& split_inclusions, VW::io::logger& logger)
 {
   for (const auto& inclusion : split_inclusions)
-  { ld.explicit_included_actions.push_back(int_of_string(inclusion, logger)); }
+  {
+    ld.explicit_included_actions.push_back(int_of_string(inclusion, logger));
+  }
+}
+}  // namespace
+
+namespace VW
+{
+VW::label_parser ccb_label_parser_global = {
+    // default_label
+    [](VW::polylabel& label) { default_ccb_label(label.conditional_contextual_bandit); },
+    // parse_label
+    [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_ccb_label(label.conditional_contextual_bandit, reuse_mem, words, logger); },
+    // cache_label
+    [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/, io_buf& cache,
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.conditional_contextual_bandit, upstream_name, text); },
+    // read_cached_label
+    [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.conditional_contextual_bandit); },
+    // get_weight
+    [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/)
+    { return ccb_weight(label.conditional_contextual_bandit); },
+    // test_label
+    [](const VW::polylabel& label) { return test_label(label.conditional_contextual_bandit); },
+    // label type
+    VW::label_type_t::CCB};
+
+void default_ccb_label(ccb_label& ld)
+{
+  // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
+  if (ld.outcome != nullptr)
+  {
+    delete ld.outcome;
+    ld.outcome = nullptr;
+  }
+
+  ld.explicit_included_actions.clear();
+  ld.type = ccb_example_type::UNSET;
+  ld.weight = 1.0;
 }
 
-void parse_label(
-    label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_ccb_label(ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
+    VW::io::logger& logger)
 {
   ld.weight = 1.0;
 
   if (words.size() < 2) THROW("ccb labels may not be empty");
-  if (!(words[0] == CCB_LABEL)) { THROW("ccb labels require the first word to be ccb"); }
+  if (!(words[0] == VW::details::CCB_LABEL)) { THROW("ccb labels require the first word to be ccb"); }
 
   auto type = words[1];
-  if (type == SHARED_TYPE)
+  if (type == VW::details::SHARED_TYPE)
   {
     if (words.size() > 2) THROW("shared labels may not have a cost");
-    ld.type = CCB::example_type::shared;
+    ld.type = VW::ccb_example_type::SHARED;
   }
-  else if (type == ACTION_TYPE)
+  else if (type == VW::details::ACTION_TYPE)
   {
     if (words.size() > 2) THROW("action labels may not have a cost");
-    ld.type = CCB::example_type::action;
+    ld.type = VW::ccb_example_type::ACTION;
   }
-  else if (type == SLOT_TYPE)
+  else if (type == VW::details::SLOT_TYPE)
   {
     if (words.size() > 4) THROW("ccb slot label can only have a type cost and exclude list");
-    ld.type = CCB::example_type::slot;
+    ld.type = VW::ccb_example_type::SLOT;
 
     // Skip the first two words "ccb <type>"
     for (size_t i = 2; i < words.size(); i++)
@@ -153,9 +181,7 @@ void parse_label(
     if ((ld.outcome != nullptr) && ld.outcome->probabilities.size() > 1)
     {
       float total_pred = std::accumulate(ld.outcome->probabilities.begin(), ld.outcome->probabilities.end(), 0.f,
-          [](float result_so_far, ACTION_SCORE::action_score action_pred) {
-            return result_so_far + action_pred.score;
-          });
+          [](float result_so_far, VW::action_score action_pred) { return result_so_far + action_pred.score; });
 
       // TODO do a proper comparison here.
       if (!VW::math::are_same(total_pred, 1.f))
@@ -164,43 +190,12 @@ void parse_label(
       }
     }
   }
-  else
-  {
-    THROW("unknown label type: " << type);
-  }
+  else { THROW("unknown label type: " << type); }
 }
 
-VW::label_parser ccb_label_parser = {
-    // default_label
-    [](VW::polylabel& label) { default_label(label.conditional_contextual_bandit); },
-    // parse_label
-    [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.conditional_contextual_bandit, reuse_mem, words, logger); },
-    // cache_label
-    [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/, io_buf& cache,
-        const std::string& upstream_name, bool text) {
-      return VW::model_utils::write_model_field(cache, label.conditional_contextual_bandit, upstream_name, text);
-    },
-    // read_cached_label
-    [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.conditional_contextual_bandit);
-    },
-    // get_weight
-    [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/) {
-      return ccb_weight(label.conditional_contextual_bandit);
-    },
-    // test_label
-    [](const VW::polylabel& label) { return test_label(label.conditional_contextual_bandit); },
-    // label type
-    VW::label_type_t::ccb};
-}  // namespace CCB
-
-namespace VW
-{
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, CCB::conditional_contextual_bandit_outcome& ccbo)
+size_t read_model_field(io_buf& io, VW::ccb_outcome& ccbo)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, ccbo.cost);
@@ -208,8 +203,7 @@ size_t read_model_field(io_buf& io, CCB::conditional_contextual_bandit_outcome& 
   return bytes;
 }
 
-size_t write_model_field(
-    io_buf& io, const CCB::conditional_contextual_bandit_outcome& ccbo, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::ccb_outcome& ccbo, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ccbo.cost, upstream_name + "_cost", text);
@@ -217,11 +211,10 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, CCB::label& ccb)
+size_t read_model_field(io_buf& io, VW::ccb_label& ccb)
 {
   size_t bytes = 0;
   // Since read_cached_features doesn't default the label we must do it here.
-  default_label(ccb);
   if (ccb.outcome != nullptr) { ccb.outcome->probabilities.clear(); }
   ccb.explicit_included_actions.clear();
   bytes += read_model_field(io, ccb.type);
@@ -229,7 +222,7 @@ size_t read_model_field(io_buf& io, CCB::label& ccb)
   bytes += read_model_field(io, outcome_is_present);
   if (outcome_is_present)
   {
-    ccb.outcome = new CCB::conditional_contextual_bandit_outcome();
+    ccb.outcome = new VW::ccb_outcome();
     bytes += read_model_field(io, *ccb.outcome);
   }
   bytes += read_model_field(io, ccb.explicit_included_actions);
@@ -237,7 +230,7 @@ size_t read_model_field(io_buf& io, CCB::label& ccb)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const CCB::label& ccb, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::ccb_label& ccb, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ccb.type, upstream_name + "_type", text);

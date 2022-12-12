@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="VowpalWabbitThreadedPredictionBase.cs">
 //   Copyright (c) by respective owners including Yahoo!, Microsoft, and
 //   individual contributors. All rights reserved.  Released under a BSD
@@ -8,7 +8,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 
 namespace VW
 {
@@ -88,9 +87,9 @@ namespace VW
         /// <remarks><see cref="PooledObject{TModel, TVowpalWabbit}.Value"/> can be null if no model was supplied yet.</remarks>
         public PooledObject<VowpalWabbitModel, TVowpalWabbit> GetOrCreate()
         {
-            Contract.Ensures(Contract.Result<PooledObject<VowpalWabbitModel, TVowpalWabbit>>() != null);
-
-            return this.vwPool.GetOrCreate();
+            var poolObj = this.vwPool.GetOrCreate();
+            Debug.Assert(poolObj != null);
+            return poolObj;
         }
 
         /// <summary>

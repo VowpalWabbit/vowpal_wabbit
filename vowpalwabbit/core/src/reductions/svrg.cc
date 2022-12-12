@@ -6,9 +6,11 @@
 #include "vw/core/reductions/svrg.h"
 
 #include "vw/core/crossplat_compat.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
@@ -26,8 +28,9 @@ namespace
 #define W_STABLE 1      // stable weights, updated per stage
 #define W_STABLEGRAD 2  // gradient corresponding to stable weights
 
-struct svrg
+class svrg
 {
+public:
   int stage_size = 1;         // Number of data passes per stage.
   int prev_pass = -1;         // To detect that we're in a new pass.
   int stable_grad_count = 0;  // Number of data points that
@@ -53,7 +56,7 @@ inline void vec_add(float& p, const float x, float& w)
 template <int offset>
 inline float inline_predict(VW::workspace& all, VW::example& ec)
 {
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   float acc = simple_red_features.initial;
   GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
@@ -79,8 +82,9 @@ float gradient_scalar(const svrg& s, const VW::example& ec, float pred)
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --
 
-struct update
+class update
 {
+public:
   float g_scalar_stable;
   float g_scalar_inner;
   float eta;
@@ -142,7 +146,9 @@ void learn(svrg& s, base_learner& base, VW::example& ec)
   else  // Perform updates
   {
     if (s.prev_pass != pass && !s.all->quiet)
-    { *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl; }
+    {
+      *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl;
+    }
     update_inner(s, ec);
   }
 
@@ -163,10 +169,7 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;
     if (resume) { GD::save_load_online_state(*s.all, model_file, read, text, temp, temp_normalized_sum_norm_x); }
-    else
-    {
-      GD::save_load_regressor(*s.all, model_file, read, text);
-    }
+    else { GD::save_load_regressor(*s.all, model_file, read, text); }
   }
 }
 }  // namespace
@@ -188,8 +191,11 @@ base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svrg>)
+                .set_update_stats(VW::details::update_stats_simple_label<svrg>)
+                .set_print_update(VW::details::print_update_simple_label<svrg>)
                 .set_save_load(save_load)
                 .build();
   return make_base(*l);

@@ -9,51 +9,51 @@ This implements the allreduce function using threads.
 
 #include <future>
 
-AllReduceSync::AllReduceSync(const size_t total) : m_total(total), m_count(0), m_run(true)
+VW::all_reduce_sync::all_reduce_sync(size_t total) : _total(total), _count(0), _run(true)
 {
   buffers = new void*[total];
 }
 
-AllReduceSync::~AllReduceSync() { delete[] buffers; }
+VW::all_reduce_sync::~all_reduce_sync() { delete[] buffers; }
 
-void AllReduceSync::waitForSynchronization()
+void VW::all_reduce_sync::wait_for_synchronization()
 {
-  std::unique_lock<std::mutex> l(m_mutex);
-  m_count++;
+  std::unique_lock<std::mutex> lock(_mutex);
+  _count++;
 
-  if (m_count >= m_total)
+  if (_count >= _total)
   {
-    assert(m_count == m_total);
+    assert(_count == _total);
 
-    m_cv.notify_all();
+    _cv.notify_all();
 
-    // order of m_count before or after notify_all doesn't matter
+    // order of _count before or after notify_all doesn't matter
     // since the lock is still hold at this point in time.
-    m_count = 0;
+    _count = 0;
 
     // flip for the next run
-    m_run = !m_run;
+    _run = !_run;
   }
   else
   {
-    bool current_run = m_run;
-    // this predicate cannot depend on m_count, as somebody can race ahead and m_count++
+    bool current_run = _run;
+    // this predicate cannot depend on _count, as somebody can race ahead and _count++
     // FYI just wait can spuriously wake-up
-    m_cv.wait(l, [this, current_run] { return m_run != current_run; });
+    _cv.wait(lock, [this, current_run] { return _run != current_run; });
   }
 }
 
-AllReduceThreads::AllReduceThreads(AllReduceThreads* root, const size_t ptotal, const size_t pnode, bool pquiet)
-    : AllReduce(ptotal, pnode, pquiet), m_sync(root->m_sync), m_syncOwner(false)
+VW::all_reduce_threads::all_reduce_threads(all_reduce_threads* root, size_t ptotal, size_t pnode, bool pquiet)
+    : all_reduce_base(ptotal, pnode, pquiet), _sync(root->_sync), _sync_owner(false)
 {
 }
 
-AllReduceThreads::AllReduceThreads(const size_t ptotal, const size_t pnode, bool pquiet)
-    : AllReduce(ptotal, pnode, pquiet), m_sync(new AllReduceSync(ptotal)), m_syncOwner(true)
+VW::all_reduce_threads::all_reduce_threads(size_t ptotal, size_t pnode, bool pquiet)
+    : all_reduce_base(ptotal, pnode, pquiet), _sync(new all_reduce_sync(ptotal)), _sync_owner(true)
 {
 }
 
-AllReduceThreads::~AllReduceThreads()
+VW::all_reduce_threads::~all_reduce_threads()
 {
-  if (m_syncOwner) { delete m_sync; }
+  if (_sync_owner) { delete _sync; }
 }
