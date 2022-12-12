@@ -5,28 +5,20 @@
 #include "vw/core/reductions/sender.h"
 
 #include "vw/cache_parser/parse_example_cache.h"
+#include "vw/config/options.h"
 #include "vw/core/daemon_utils.h"
+#include "vw/core/global_data.h"
+#include "vw/core/io_buf.h"
 #include "vw/core/learner.h"
+#include "vw/core/loss_functions.h"
+#include "vw/core/network.h"
+#include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/simple_label.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/errno_handling.h"
 
 #include <vector>
-#ifdef _WIN32
-#  define NOMINMAX
-#  include <WinSock2.h>
-#else
-#  include <netdb.h>
-#endif
-
-#include "vw/cache_parser/parse_example_cache.h"
-#include "vw/config/options.h"
-#include "vw/core/global_data.h"
-#include "vw/core/io_buf.h"
-#include "vw/core/loss_functions.h"
-#include "vw/core/network.h"
-#include "vw/core/parser.h"
 
 using namespace VW::config;
 

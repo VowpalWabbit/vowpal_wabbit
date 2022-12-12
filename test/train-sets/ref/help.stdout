@@ -759,7 +759,8 @@ Weight Options:
     --learn arg                             Do Contextual Bandit learning on <n> classes (type: uint)
     --exclude_eval                          Discard mwt policy features before learning (type: bool)
 [Reduction] Network sending Options:
-    --sendto arg                            Send examples to <host> (type: str, keep, necessary)
+    --sendto arg                            Send examples to <host>. Host can be of form hostname or hostname:port
+                                            (type: str, keep, necessary)
 [Reduction] Neural Network Options:
     --nn arg                                Sigmoidal feedforward network with <k> hidden units (type: uint,
                                             keep, necessary)
