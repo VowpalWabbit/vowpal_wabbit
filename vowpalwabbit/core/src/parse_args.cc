@@ -1526,7 +1526,6 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   }
 
   all->example_parser = new parser{final_example_queue_limit, strict_parse};
-  all->example_parser->shared_data_obj = all->sd;
 
   option_group_definition weight_args("Weight");
   weight_args
@@ -2072,7 +2071,6 @@ VW::workspace* seed_vw_model(
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
-  new_model->example_parser->shared_data_obj = new_model->sd;
 
   return new_model;
 }
