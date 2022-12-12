@@ -4,7 +4,6 @@
 #include "vw/core/parse_example.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
-#include "vw/core/vw_fwd.h"
 
 #include <sstream>
 
