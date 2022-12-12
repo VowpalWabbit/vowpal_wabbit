@@ -4,7 +4,7 @@ import sys
 import argparse
 import subprocess
 
-DAEMON_PORT = 54251
+DAEMON_PORT = 54252
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
