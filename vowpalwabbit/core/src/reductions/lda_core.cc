@@ -33,7 +33,7 @@ VW_WARNING_STATE_POP
 #include "vw/io/logger.h"
 
 #if defined(__ARM_NEON)
-  include <sse2neon/sse2neon.h>
+#  include <sse2neon/sse2neon.h>
 #endif
 
 #include <algorithm>
