@@ -32,6 +32,10 @@ VW_WARNING_STATE_POP
 #include "vw/core/vw_versions.h"
 #include "vw/io/logger.h"
 
+#if defined(__ARM_NEON)
+#  include <sse2neon/sse2neon.h>
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -164,7 +168,7 @@ inline float fastdigamma(float x)
 
 #if !defined(VW_NO_INLINE_SIMD)
 
-#  if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__)
+#  if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__) || defined(__ARM_NEON)
 
 namespace
 {
@@ -184,6 +188,13 @@ inline bool is_aligned16(void* ptr)
 #    endif
 #    if defined(__SSE4_1__)
 #      include <smmintrin.h>
+#    endif
+
+// Transport SSE intrinsics through sse2neon on ARM:
+#    if defined(__ARM_NEON)
+#      define __SSE2__ 1
+#      define __SSE3__ 1
+#      define __SSE4_1__ 1
 #    endif
 
 #    define HAVE_SIMD_MATHMODE
