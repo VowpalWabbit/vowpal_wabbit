@@ -42,7 +42,7 @@ std::unique_ptr<VW::io::socket> VW::details::open_vw_binary_socket(
   return open_vw_binary_socket(host, VW::cast_signed_to_unsigned<uint16_t>(port_num), logger);
 }
 
-std::unique_ptr<VW::io::socket> VW::details::open_vw_binary_socket(
+std::unique_ptr<VW::io::socket> NO_SANITIZE_UNDEFINED VW::details::open_vw_binary_socket(
     const std::string& host, uint16_t port, VW::io::logger& /* logger */)
 {
   hostent* he = gethostbyname(host.c_str());
@@ -54,6 +54,7 @@ std::unique_ptr<VW::io::socket> VW::details::open_vw_binary_socket(
   sockaddr_in far_end{};
   far_end.sin_family = AF_INET;
   far_end.sin_port = htons(port);
+  // This is UB on MacOS due to a misaligned pointer.
   far_end.sin_addr = *reinterpret_cast<in_addr*>(he->h_addr);
   std::memset(&far_end.sin_zero, '\0', 8);
   if (connect(sd, reinterpret_cast<sockaddr*>(&far_end), sizeof(far_end)) == -1)
