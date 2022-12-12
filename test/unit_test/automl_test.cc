@@ -631,9 +631,9 @@ BOOST_AUTO_TEST_CASE(exc_incl_unit_test)
 BOOST_AUTO_TEST_CASE(automl_insertion_champ_change_w_iterations)
 {
   const size_t seed = 85;
-  const size_t num_iterations = 4000;
+  const size_t num_iterations = 4136;
   const std::vector<uint64_t> swap_after = {200, 500};
-  const size_t clear_champ_switch = 3988;
+  const size_t clear_champ_switch = 4131;
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1,
