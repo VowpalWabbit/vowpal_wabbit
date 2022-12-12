@@ -191,11 +191,11 @@ inline bool is_aligned16(void* ptr)
 #    endif
 
 // Transport SSE intrinsics through sse2neon on ARM:
-#if defined(__ARM_NEON)
-#define __SSE2__ 1
-#define __SSE3__ 1
-#define __SSE4_1__ 1
-#endif
+#    if defined(__ARM_NEON)
+#      define __SSE2__ 1
+#      define __SSE3__ 1
+#      define __SSE4_1__ 1
+#    endif
 
 #    define HAVE_SIMD_MATHMODE
 
