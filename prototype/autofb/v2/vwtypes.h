@@ -37,6 +37,9 @@ namespace pseudo_vw
 
   struct magic_t {};
   using reduction_features = magic_t;
+
+  
+
   namespace VW
   {
     using example = pseudo_vw::example;
@@ -52,13 +55,17 @@ namespace pseudo_vw
 
     using label_type_t = magic_t;
 
+    namespace LEARNER
+    {
+      using base_learner = pseudo_vw::learner;
+      using single_learner = pseudo_vw::learner;
+      using multi_learner = pseudo_vw::learner;
+    }
   }
 
   using io_buf = magic_t;
 
-  using namespace VW;
-
-struct label_parser
+  struct label_parser
 {
   void (*default_label)(polylabel& label);
   void (*parse_label)(polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
@@ -71,8 +78,8 @@ struct label_parser
   VW::label_type_t label_type;
 };
 
-  struct stack_builder_t
-  {
-
-  };
+  
 }
+
+#include "vwtypes_options_i.h"
+#include "vwtypes_setup_base_i.h"

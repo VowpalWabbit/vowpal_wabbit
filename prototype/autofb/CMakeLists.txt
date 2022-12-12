@@ -12,7 +12,9 @@ SET (VW_PROTO_AUTOFB_SOURCES
   v2/type_system.cc
   v2/test.cc
   v2/kernel_svm.cc
-)
+  v2/simple_reduction.cc
+  v2/vwtypes_setup_base_i.cc
+ "v2/kernel_svm.h")
 
 add_executable(vw_proto_autofb ${VW_PROTO_AUTOFB_SOURCES})
 
