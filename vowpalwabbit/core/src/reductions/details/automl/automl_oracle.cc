@@ -261,7 +261,7 @@ void config_oracle<one_diff_impl>::gen_configs(
 
   for (auto it = _impl.begin(); it < _impl.end(champ_interactions, champ_excl); ++it)
   {
-    auto copy_champ = champ_excl;
+    set_ns_list_t copy_champ(champ_excl);
     _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, exclusion_it, exclusion_it_end, copy_champ);
     insert_config(std::move(copy_champ), ns_counter, _conf_type);
   }
@@ -316,7 +316,7 @@ void config_oracle<one_diff_inclusion_impl>::gen_configs(
 
   for (auto it = _impl.begin(); it < _impl.end(all_interactions); ++it)
   {
-    auto copy_champ = champ_incl;
+    set_ns_list_t copy_champ(champ_incl);
     _impl.gen_ns_groupings_at(_interaction_type, all_interactions, *it, copy_champ);
     insert_config(std::move(copy_champ), ns_counter, _conf_type);
   }
@@ -333,7 +333,7 @@ void config_oracle<champdupe_impl>::gen_configs(
     auto current = 0;
     for (auto it = _impl.begin(); it < _impl.end(); ++it, ++current)
     {
-      auto copy_champ = configs[0].elements;
+      set_ns_list_t copy_champ(configs[0].elements);
       if (current % 2) { insert_config(std::move(copy_champ), ns_counter, _conf_type, true); }
       else
       {
@@ -350,7 +350,7 @@ void config_oracle<oracle_rand_impl>::gen_configs(
 {
   for (auto it = _impl.begin(); it < _impl.end(); ++it)
   {
-    auto copy_champ = configs[0].elements;
+    set_ns_list_t copy_champ(configs[0].elements);
     _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, copy_champ, _conf_type);
     insert_config(std::move(copy_champ), ns_counter, _conf_type, false);
   }
