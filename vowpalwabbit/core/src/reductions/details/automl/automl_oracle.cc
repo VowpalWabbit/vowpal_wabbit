@@ -187,6 +187,9 @@ void config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
 void oracle_rand_impl::gen_ns_groupings_at(const std::string& interaction_type,
     const interaction_vec_t& champ_interactions, const size_t, set_ns_list_t& new_elements, config_type)
 {
+  // If champ has no interactions, we can't generate any new configs.
+  if (champ_interactions.empty()) { return; }
+
   uint64_t rand_ind = static_cast<uint64_t>(random_state->get_and_update_random() * champ_interactions.size());
   if (interaction_type == "quadratic")
   {
@@ -207,7 +210,7 @@ void oracle_rand_impl::gen_ns_groupings_at(const std::string& interaction_type,
 }
 void one_diff_impl::gen_ns_groupings_at(const std::string& interaction_type,
     const interaction_vec_t& champ_interactions, const size_t num, set_ns_list_t::iterator& exclusion,
-    set_ns_list_t& new_elements)
+    const set_ns_list_t::iterator& exclusion_end, set_ns_list_t& new_elements)
 {
   // Add one exclusion (for each interaction)
   if (num < champ_interactions.size())
@@ -239,8 +242,11 @@ void one_diff_impl::gen_ns_groupings_at(const std::string& interaction_type,
   else
   {
     // Remove one exclusion (for each exclusion)
-    new_elements.erase(*exclusion);
-    ++exclusion;
+    if (exclusion != exclusion_end)
+    {
+      new_elements.erase(*exclusion);
+      ++exclusion;
+    }
   }
 }
 
@@ -251,11 +257,12 @@ void config_oracle<one_diff_impl>::gen_configs(
   // we need this to stay constant bc insert might resize configs vector
   auto champ_excl = std::move(configs[0].elements);
   auto exclusion_it = champ_excl.begin();
+  auto exclusion_it_end = champ_excl.end();
 
   for (auto it = _impl.begin(); it < _impl.end(champ_interactions, champ_excl); ++it)
   {
     auto copy_champ = champ_excl;
-    _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, exclusion_it, copy_champ);
+    _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, exclusion_it, exclusion_it_end, copy_champ);
     insert_config(std::move(copy_champ), ns_counter, _conf_type);
   }
 
@@ -337,15 +344,15 @@ void config_oracle<champdupe_impl>::gen_configs(
   }
 }
 
-template <typename oracle_impl>
-void config_oracle<oracle_impl>::gen_configs(
+template <>
+void config_oracle<oracle_rand_impl>::gen_configs(
     const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   for (auto it = _impl.begin(); it < _impl.end(); ++it)
   {
     auto copy_champ = configs[0].elements;
     _impl.gen_ns_groupings_at(_interaction_type, champ_interactions, *it, copy_champ, _conf_type);
-    insert_config(std::move(copy_champ), ns_counter, _conf_type);
+    insert_config(std::move(copy_champ), ns_counter, _conf_type, false);
   }
 }
 

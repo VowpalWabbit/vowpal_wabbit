@@ -170,7 +170,8 @@ class one_diff_impl
 {
 public:
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t::iterator& exclusion, set_ns_list_t& new_elements);
+      const size_t num, set_ns_list_t::iterator& exclusion, const set_ns_list_t::iterator& exclusion_end,
+      set_ns_list_t& new_elements);
   Iterator begin() { return Iterator(); }
   Iterator end(const interaction_vec_t& champ_interactions, const set_ns_list_t& champ_exclusions)
   {
