@@ -2,20 +2,22 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/vw_allreduce.h"
-#include "vw_clr.h"
 #include "vowpalwabbit.h"
-#include "vw/core/best_constant.h"
-#include "vw/core/parser.h"
-#include "vw/core/learner.h"
-#include "vw/common/hash.h"
-#include "vw_example.h"
-#include "vw_builder.h"
+
 #include "clr_io.h"
-#include "vw/core/reductions/lda_core.h"
+#include "vw/common/hash.h"
+#include "vw/core/best_constant.h"
+#include "vw/core/learner.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/parse_example_json.h"
+#include "vw/core/parser.h"
+#include "vw/core/reductions/lda_core.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/vw_allreduce.h"
+#include "vw/core/vw_fwd.h"
+#include "vw_builder.h"
+#include "vw_clr.h"
+#include "vw_example.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -789,7 +791,8 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   if (ex == nullptr)
   { try
-    { auto ex = VW::alloc_examples(1);
+    {
+      auto ex = new VW::example;
       m_vw->example_parser->lbl_parser.default_label(ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }
