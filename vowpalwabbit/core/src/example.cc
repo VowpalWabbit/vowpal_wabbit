@@ -170,11 +170,13 @@ feature* get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
   fs.mask = all.weights.mask() >> all.weights.stride_shift();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
+  auto* features_array = new feature[fs.feature_map.size()];
+  std::memcpy(features_array, fs.feature_map.data(), fs.feature_map.size() * sizeof(feature));
   feature_map_len = fs.feature_map.size();
-  return fs.feature_map.begin();
+  return features_array;
 }
 
-void return_features(feature* f) { free_it(f); }
+void return_features(feature* f) { delete[] f; }
 }  // namespace VW
 
 class full_features_and_source
