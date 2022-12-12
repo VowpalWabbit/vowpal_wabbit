@@ -12,25 +12,25 @@ namespace reductions
 namespace automl
 {
 template <>
-config_oracle<oracle_rand_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
+config_oracle<oracle_rand_impl>::config_oracle(uint64_t default_lease, priority_func* calc_priority,
     const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
     config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , calc_priority(calc_priority)
-    , global_lease(global_lease)
+    , default_lease(default_lease)
     , _impl(oracle_rand_impl(std::move(rand_state)))
 {
   _conf_type = conf_type;
 }
 template <typename oracle_impl>
-config_oracle<oracle_impl>::config_oracle(uint64_t global_lease, priority_func* calc_priority,
+config_oracle<oracle_impl>::config_oracle(uint64_t default_lease, priority_func* calc_priority,
     const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>&,
     config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
     , calc_priority(calc_priority)
-    , global_lease(global_lease)
+    , default_lease(default_lease)
     , _impl(oracle_impl())
 {
   _conf_type = conf_type;
@@ -39,7 +39,7 @@ template <typename oracle_impl>
 void config_oracle<oracle_impl>::insert_starting_configuration()
 {
   assert(valid_config_size == 0);
-  configs.emplace_back(set_ns_list_t(), global_lease, _conf_type);
+  configs.emplace_back(set_ns_list_t(), default_lease, _conf_type);
   ++valid_config_size;
 }
 template <>
@@ -159,7 +159,7 @@ void config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
         if (i < valid_config_size) { return; }
         else
         {
-          configs[valid_config_size].reset(std::move(configs[i].elements), global_lease, conf_type);
+          configs[valid_config_size].reset(std::move(configs[i].elements), default_lease, conf_type);
           // TODO: do we have to push here to index_quue?
         }
       }
@@ -171,9 +171,9 @@ void config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
   // configs exist we'll generate a new one.
   if (valid_config_size < configs.size())
   {
-    configs[valid_config_size].reset(std::move(new_elements), global_lease, conf_type);
+    configs[valid_config_size].reset(std::move(new_elements), default_lease, conf_type);
   }
-  else { configs.emplace_back(std::move(new_elements), global_lease, conf_type); }
+  else { configs.emplace_back(std::move(new_elements), default_lease, conf_type); }
 
   float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
   index_queue.push(std::make_pair(priority, valid_config_size));
