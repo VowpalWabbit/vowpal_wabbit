@@ -407,7 +407,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   print_by_ref = print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
-  random_seed = 0;
   random_weights = false;
   normal_weights = false;
   tnormal_weights = false;

@@ -1673,9 +1673,10 @@ void parse_modules(options_i& options, VW::workspace& all, bool interactions_set
     std::vector<std::string>& dictionary_namespaces)
 {
   option_group_definition rand_options("Randomization");
-  rand_options.add(make_option("random_seed", all.random_seed).default_value(0).help("Seed random number generator"));
+  uint64_t random_seed{};
+  rand_options.add(make_option("random_seed", random_seed).default_value(0).help("Seed random number generator"));
   options.add_and_parse(rand_options);
-  all.get_random_state()->set_random_state(all.random_seed);
+  all.get_random_state()->set_random_state(random_seed);
 
   parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_namespaces);  // feature tweaks
 
