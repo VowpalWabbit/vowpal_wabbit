@@ -13,11 +13,10 @@ API vw_net_native::ERROR_CODE WorkspaceParseJson(vw_net_native::workspace_contex
   try
   {
     if (workspace->vw->audit)
-    { VW::read_line_json_s<true>(*workspace->vw, examples, json, length, get_example, example_pool_context); }
-    else
     {
-      VW::read_line_json_s<false>(*workspace->vw, examples, json, length, get_example, example_pool_context);
+      VW::read_line_json_s<true>(*workspace->vw, examples, json, length, get_example, example_pool_context);
     }
+    else { VW::read_line_json_s<false>(*workspace->vw, examples, json, length, get_example, example_pool_context); }
 
     VW::setup_examples(*workspace->vw, examples);
 

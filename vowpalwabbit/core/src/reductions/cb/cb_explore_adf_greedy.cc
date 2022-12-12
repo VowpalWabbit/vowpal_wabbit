@@ -66,10 +66,7 @@ void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
   {
     for (size_t i = 0; i < tied_actions; ++i) { preds[i].score += (1.f - actual_ep) / tied_actions; }
   }
-  else
-  {
-    preds[0].score += 1.f - actual_ep;
-  }
+  else { preds[0].score += 1.f - actual_ep; }
 }
 
 template <bool is_learn>

@@ -19,6 +19,7 @@
 
 #ifndef VW_NOEXCEPT
 #  include "vw/common/vw_exception.h"
+#  include "vw/common/vw_throw.h"
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:
@@ -186,10 +187,7 @@ public:
     if (buf_read(read_head, sizeof(T)) < sizeof(T))
     {
       if (!debug_name.empty()) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
-      else
-      {
-        THROW("Failed to read cache value with size: " << sizeof(T));
-      }
+      else { THROW("Failed to read cache value with size: " << sizeof(T)); }
     }
     memcpy(&value, read_head, sizeof(T));
     return value;
@@ -371,16 +369,14 @@ inline size_t bin_text_read_write_fixed_validated(
 }
 
 #define WRITEIT(what, str)                                                              \
-  do                                                                                    \
-  {                                                                                     \
+  do {                                                                                  \
     msg << str << " = " << what << " ";                                                 \
     bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), read, msg, text); \
   } while (0);
 
 #define WRITEITVAR(what, str, mywhat)                                                       \
   auto mywhat = (what);                                                                     \
-  do                                                                                        \
-  {                                                                                         \
+  do {                                                                                      \
     msg << str << " = " << mywhat << " ";                                                   \
     bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), read, msg, text); \
   } while (0);

@@ -123,7 +123,9 @@ void finish_setup(nn& n, VW::workspace& all)
   n.hiddenbias.indices.push_back(VW::details::CONSTANT_NAMESPACE);
   n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1, VW::details::CONSTANT);
   if (all.audit || all.hash_inv)
-  { n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "HiddenBias"); }
+  {
+    n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "HiddenBias");
+  }
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
@@ -133,7 +135,9 @@ void finish_setup(nn& n, VW::workspace& all)
   features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
-  { n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].space_names.emplace_back("", "OutputWeight"); }
+  {
+    n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].space_names.emplace_back("", "OutputWeight");
+  }
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].values[0] = 1;
   n.outputweight.l.simple.label = FLT_MAX;
   n.outputweight.weight = 1;
@@ -294,10 +298,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
           n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
 
       if (is_learn) { base.learn(ec, n.k); }
-      else
-      {
-        base.predict(ec, n.k);
-      }
+      else { base.predict(ec, n.k); }
       n.output_layer.partial_prediction = ec.partial_prediction;
       n.output_layer.loss = ec.loss;
       ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE].sum_feat_sq = 0;
@@ -313,10 +314,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       n.output_layer.weight = ec.weight;
       n.output_layer.partial_prediction = 0;
       if (is_learn) { base.learn(n.output_layer, n.k); }
-      else
-      {
-        base.predict(n.output_layer, n.k);
-      }
+      else { base.predict(n.output_layer, n.k); }
     }
 
     n.prediction = GD::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
@@ -403,29 +401,23 @@ void multipredict(nn& n, single_learner& base, VW::example& ec, size_t count, si
   for (size_t c = 0; c < count; c++)
   {
     if (c == 0) { predict_or_learn_multi<false, true>(n, base, ec); }
-    else
-    {
-      predict_or_learn_multi<false, false>(n, base, ec);
-    }
+    else { predict_or_learn_multi<false, false>(n, base, ec); }
     if (finalize_predictions)
     {
       pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
                                      // "fix" this by moving)
     }
-    else
-    {
-      pred[c].scalar = ec.partial_prediction;
-    }
+    else { pred[c].scalar = ec.partial_prediction; }
     ec.ft_offset += static_cast<uint64_t>(step);
   }
   ec.ft_offset -= static_cast<uint64_t>(step * count);
 }
 
-void finish_example(VW::workspace& all, nn&, VW::example& ec)
+// This differs from the simple label based version because nn does not output a raw prediction.
+void output_example_prediction_nn(
+    VW::workspace& all, const nn& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  std::unique_ptr<VW::io::writer> temp(nullptr);
-  auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
-  VW::details::return_simple_example(all, nullptr, ec);
+  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
 }
 }  // namespace
 
@@ -451,7 +443,9 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
   n->random_state = all.get_random_state();
 
   if (n->multitask && !all.quiet)
-  { all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing")); }
+  {
+    all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
+  }
 
   if (options.was_supplied("meanfield"))
   {
@@ -460,10 +454,14 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
   }
 
   if (n->dropout && !all.quiet)
-  { all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing")); }
+  {
+    all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
+  }
 
   if (n->inpass && !all.quiet)
-  { all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing")); }
+  {
+    all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
+  }
 
   n->finished_setup = false;
   n->squared_loss = get_loss_function(all, "squared", 0);
@@ -491,7 +489,9 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
                 .set_multipredict(multipredict_f)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_finish_example(::finish_example)
+                .set_output_example_prediction(output_example_prediction_nn)
+                .set_print_update(VW::details::print_update_simple_label<nn>)
+                .set_update_stats(VW::details::update_stats_simple_label<nn>)
                 .set_end_pass(end_pass)
                 .build();
 

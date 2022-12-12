@@ -6,6 +6,7 @@
 
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
+#include "vw/core/guard.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/reductions/gd.h"
@@ -164,10 +165,7 @@ inline bool cycle_get(const stagewise_poly& poly, uint64_t wid)
   // note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
   if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & CYCLE_BIT) > 0) { return true; }
-  else
-  {
-    return false;
-  }
+  else { return false; }
 }
 
 inline void cycle_toggle(stagewise_poly& poly, uint64_t wid)
@@ -223,10 +221,7 @@ inline uint64_t child_wid(const stagewise_poly& poly, uint64_t wi_atomic, uint64
   assert((wi_general & (stride_shift(poly, 1) - 1)) == 0);
 
   if (wi_atomic == constant_feat_masked(poly)) { return wi_general; }
-  else if (wi_general == constant_feat_masked(poly))
-  {
-    return wi_atomic;
-  }
+  else if (wi_general == constant_feat_masked(poly)) { return wi_atomic; }
   else
   {
     // This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
@@ -548,26 +543,17 @@ void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
     }
     poly.last_example_counter = ec.example_counter;
   }
-  else
-  {
-    predict(poly, base, ec);
-  }
+  else { predict(poly, base, ec); }
 }
 
 void reduce_min_max(uint8_t& v1, const uint8_t& v2)
 {
   bool parent_or_depth;
   if (v1 & INDICATOR_BIT) { parent_or_depth = true; }
-  else
-  {
-    parent_or_depth = false;
-  }
+  else { parent_or_depth = false; }
   bool p_or_d2;
   if (v2 & INDICATOR_BIT) { p_or_d2 = true; }
-  else
-  {
-    p_or_d2 = false;
-  }
+  else { p_or_d2 = false; }
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
@@ -580,10 +566,7 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
   else
   {
     if (v1 == DEFAULT_DEPTH) { v1 = v2; }
-    else if (v2 != DEFAULT_DEPTH)
-    {
-      v1 = (v1 <= v2) ? v1 : v2;
-    }
+    else if (v2 != DEFAULT_DEPTH) { v1 = (v1 <= v2) ? v1 : v2; }
   }
 }
 
@@ -611,9 +594,10 @@ void end_pass(stagewise_poly& poly)
      */
     VW::details::all_reduce<uint8_t, reduce_min_max>(all, poly.depthsbits, depthsbits_sizeof(poly));
 
-    sum_input_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
-    sum_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
-    num_examples_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(num_examples_inc)));
+    sum_input_sparsity_inc =
+        static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
+    sum_sparsity_inc = static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
+    num_examples_inc = static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(num_examples_inc)));
   }
 
   poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
@@ -633,15 +617,6 @@ void end_pass(stagewise_poly& poly)
     poly.update_support = true;
     poly.numpasses++;
   }
-}
-
-void finish_example(VW::workspace& all, stagewise_poly& poly, VW::example& ec)
-{
-  size_t temp_num_features = ec.num_features;
-  ec.num_features = poly.synth_ec.get_num_features();
-  VW::details::output_and_account_example(all, ec);
-  ec.num_features = temp_num_features;
-  VW::finish_example(all, ec);
 }
 
 void save_load(stagewise_poly& poly, io_buf& model_file, bool read, bool text)
@@ -703,14 +678,49 @@ base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_build
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
-      learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_save_load(save_load)
-                .set_finish_example(::finish_example)
-                .set_end_pass(end_pass)
-                .build();
+  auto* l =
+      VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()), learn,
+          predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
+          .set_input_label_type(VW::label_type_t::SIMPLE)
+          .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+          .set_save_load(save_load)
+          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<stagewise_poly>)
+          .set_update_stats(
+              [](const VW::workspace& /* all */, shared_data& sd, const stagewise_poly& data, const VW::example& ec,
+                  VW::io::logger& /* logger */)
+              {
+                // This impl is the same as standard simple label reporting apart from the fact the feature count from
+                // synth_ec is used.
+
+                const auto& ld = ec.l.simple;
+                sd.update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, data.synth_ec.get_num_features());
+                if (ld.label != FLT_MAX && !ec.test_only)
+                {
+                  sd.weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
+                }
+              }
+
+              )
+          .set_print_update(
+              [](VW::workspace& all, shared_data& sd, const stagewise_poly& data, const VW::example& ec,
+                  VW::io::logger& /* logger */)
+              {
+                // This impl is the same as standard simple label printing apart from the fact the feature count from
+                // synth_ec is used.
+
+                const bool should_print_driver_update =
+                    all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+
+                if (should_print_driver_update)
+                {
+                  sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label,
+                      ec.pred.scalar, data.synth_ec.get_num_features(), all.progress_add, all.progress_arg);
+                }
+              }
+
+              )
+          .set_end_pass(end_pass)
+          .build();
 
   return make_base(*l);
 }

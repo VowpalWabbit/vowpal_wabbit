@@ -80,7 +80,7 @@ private:
   void zero_bonuses(VW::multi_ex&);
   void accumulate_bonuses(VW::multi_ex&);
   void finish_bonuses();
-  void compute_ci(v_array<VW::action_score>&, float);
+  void compute_ci(VW::v_array<VW::action_score>&, float);
 
   template <bool>
   void save_labels(VW::multi_ex&);
@@ -109,7 +109,7 @@ void cb_explore_adf_rnd::finish_bonuses()
   for (auto& b : _bonuses) { b = std::sqrt(b / _numrnd); }
 }
 
-void cb_explore_adf_rnd::compute_ci(v_array<VW::action_score>& preds, float max_bonus)
+void cb_explore_adf_rnd::compute_ci(VW::v_array<VW::action_score>& preds, float max_bonus)
 {
   constexpr float eulergamma = 0.57721566490153286f;
   for (auto& p : preds) { p.score -= eulergamma * (_bonuses[p.action] - max_bonus); }
@@ -221,10 +221,7 @@ template <bool is_learn>
 void cb_explore_adf_rnd::base_learn_or_predict(multi_learner& base, VW::multi_ex& examples, uint32_t id)
 {
   if (is_learn) { base.learn(examples, id); }
-  else
-  {
-    base.predict(examples, id);
-  }
+  else { base.predict(examples, id); }
 }
 
 template <bool is_learn>

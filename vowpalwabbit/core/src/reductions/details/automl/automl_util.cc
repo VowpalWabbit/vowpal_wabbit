@@ -4,6 +4,7 @@
 
 #include "../automl_impl.h"
 #include "vw/core/interactions.h"
+#include "vw/core/multi_model_utils.h"
 #include "vw/core/vw.h"
 
 namespace VW
@@ -51,12 +52,6 @@ bool is_allowed_to_remove(const namespace_index ns)
   if (ns == VW::details::CCB_SLOT_NAMESPACE || ns == VW::details::CCB_ID_NAMESPACE) { return false; }
   return true;
 }
-
-void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp)
-{
-  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < total; ++current_slot_index)
-  { weights.clear_offset(current_slot_index, wpp); }
-}
 }  // namespace automl
 
 namespace util
@@ -77,26 +72,11 @@ void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat
 std::string ns_to_str(unsigned char ns)
 {
   if (ns == VW::details::CONSTANT_NAMESPACE) { return "[constant]"; }
-  else if (ns == VW::details::CCB_SLOT_NAMESPACE)
-  {
-    return "[ccbslot]";
-  }
-  else if (ns == VW::details::CCB_ID_NAMESPACE)
-  {
-    return "[ccbid]";
-  }
-  else if (ns == VW::details::WILDCARD_NAMESPACE)
-  {
-    return "[wild]";
-  }
-  else if (ns == VW::details::DEFAULT_NAMESPACE)
-  {
-    return "[default]";
-  }
-  else
-  {
-    return std::string(1, ns);
-  }
+  else if (ns == VW::details::CCB_SLOT_NAMESPACE) { return "[ccbslot]"; }
+  else if (ns == VW::details::CCB_ID_NAMESPACE) { return "[ccbid]"; }
+  else if (ns == VW::details::WILDCARD_NAMESPACE) { return "[wild]"; }
+  else if (ns == VW::details::DEFAULT_NAMESPACE) { return "[default]"; }
+  else { return std::string(1, ns); }
 }
 
 std::string interaction_vec_t_to_string(

@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/example.h"
 
-#include "vw/core/cache.h"
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/interactions.h"
 #include "vw/core/model_utils.h"
@@ -96,10 +96,7 @@ void copy_example_metadata(example* dst, const example* src)
 
   dst->partial_prediction = src->partial_prediction;
   if (src->passthrough == nullptr) { dst->passthrough = nullptr; }
-  else
-  {
-    dst->passthrough = new features(*src->passthrough);
-  }
+  else { dst->passthrough = new features(*src->passthrough); }
   dst->loss = src->loss;
   dst->weight = src->weight;
   dst->confidence = src->confidence;
@@ -210,10 +207,7 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
   {  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
-  else
-  {
-    ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift();
-  }
+  else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
   GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);
@@ -278,7 +272,9 @@ void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const f
   assert(del_target.size() >= fs.size());
   assert(!ec.indices.empty());
   if (ec.indices.back() == ns && ec.feature_space[static_cast<size_t>(ns)].size() == fs.size())
-  { ec.indices.pop_back(); }
+  {
+    ec.indices.pop_back();
+  }
   ec.reset_total_sum_feat_sq();
   ec.num_features -= fs.size();
   del_target.truncate_to(del_target.size() - fs.size(), fs.sum_feat_sq);
@@ -335,9 +331,9 @@ size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_pars
   bytes += read_model_field(io, fe.num_features);
   bytes += read_model_field(io, fe.total_sum_feat_sq);
   unsigned char index = 0;
-  bytes += ::VW::details::read_cached_index(io, index);
+  bytes += ::VW::parsers::cache::details::read_cached_index(io, index);
   bool sorted = true;
-  bytes += ::VW::details::read_cached_features(io, fe.fs, sorted);
+  bytes += ::VW::parsers::cache::details::read_cached_features(io, fe.fs, sorted);
   return bytes;
 }
 size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
@@ -351,8 +347,8 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
   bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
   bytes += write_model_field(io, fe.num_features, upstream_name + "_num_features", text);
   bytes += write_model_field(io, fe.total_sum_feat_sq, upstream_name + "_total_sum_feat_sq", text);
-  ::VW::details::cache_index(io, 0);
-  ::VW::details::cache_features(io, fe.fs, parse_mask);
+  ::VW::parsers::cache::details::cache_index(io, 0);
+  ::VW::parsers::cache::details::cache_features(io, fe.fs, parse_mask);
   return bytes;
 }
 }  // namespace model_utils

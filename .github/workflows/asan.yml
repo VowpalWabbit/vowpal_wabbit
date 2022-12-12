@@ -13,6 +13,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+
 jobs:
   test_with_sanitizers:
     strategy:
@@ -38,10 +41,15 @@ jobs:
         if: ${{ startsWith(matrix.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
       - uses: lukka/get-cmake@latest
-      - uses: lukka/run-vcpkg@main
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+        shell: bash
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - uses: lukka/run-cmake@v10
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
@@ -52,12 +60,8 @@ jobs:
         run: |
           cd build
           ctest --verbose --output-on-failure
-      - name: Run python test script - win
-      # we need to exclude test 424 bc compiler pads with zero to the left
-        if: ${{ matrix.os == 'windows-latest' && (success() || failure()) }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --skip_test 424 --include_flatbuffers --jobs 1
       - name: Run python test script
-        if: ${{ matrix.os != 'windows-latest' && (success() || failure()) }}
+        if: ${{ success() || failure() }}
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1
 
   test_ubsan_minimal:
@@ -77,10 +81,15 @@ jobs:
         with:
           submodules: recursive
       - uses: lukka/get-cmake@latest
-      - uses: lukka/run-vcpkg@main
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+        shell: bash
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - uses: lukka/run-cmake@v10
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"

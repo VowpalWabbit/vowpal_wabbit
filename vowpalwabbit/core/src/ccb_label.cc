@@ -6,7 +6,6 @@
 
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
-#include "vw/core/cache.h"
 #include "vw/core/ccb_reduction_features.h"
 #include "vw/core/constant.h"
 #include "vw/core/example.h"
@@ -93,7 +92,9 @@ void parse_explicit_inclusions(
     VW::ccb_label& ld, const std::vector<VW::string_view>& split_inclusions, VW::io::logger& logger)
 {
   for (const auto& inclusion : split_inclusions)
-  { ld.explicit_included_actions.push_back(int_of_string(inclusion, logger)); }
+  {
+    ld.explicit_included_actions.push_back(int_of_string(inclusion, logger));
+  }
 }
 }  // namespace
 
@@ -104,21 +105,18 @@ VW::label_parser ccb_label_parser_global = {
     [](VW::polylabel& label) { default_ccb_label(label.conditional_contextual_bandit); },
     // parse_label
     [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_ccb_label(label.conditional_contextual_bandit, reuse_mem, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_ccb_label(label.conditional_contextual_bandit, reuse_mem, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/, io_buf& cache,
-        const std::string& upstream_name, bool text) {
-      return VW::model_utils::write_model_field(cache, label.conditional_contextual_bandit, upstream_name, text);
-    },
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.conditional_contextual_bandit, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.conditional_contextual_bandit);
-    },
+    [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.conditional_contextual_bandit); },
     // get_weight
-    [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/) {
-      return ccb_weight(label.conditional_contextual_bandit);
-    },
+    [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/)
+    { return ccb_weight(label.conditional_contextual_bandit); },
     // test_label
     [](const VW::polylabel& label) { return test_label(label.conditional_contextual_bandit); },
     // label type
@@ -192,10 +190,7 @@ void parse_ccb_label(ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const
       }
     }
   }
-  else
-  {
-    THROW("unknown label type: " << type);
-  }
+  else { THROW("unknown label type: " << type); }
 }
 
 namespace model_utils

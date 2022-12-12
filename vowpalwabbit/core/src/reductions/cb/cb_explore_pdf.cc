@@ -72,7 +72,9 @@ int cb_explore_pdf::predict(VW::example& ec, VW::experimental::api_status*)
 
   auto& pred_pdf = ec.pred.pdf;
   for (uint32_t i = 0; i < pred_pdf.size(); i++)
-  { pred_pdf[i].pdf_value = pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value); }
+  {
+    pred_pdf[i].pdf_value = pred_pdf[i].pdf_value * (1 - epsilon) + epsilon / (max_value - min_value);
+  }
   return VW::experimental::error_code::success;
 }
 
@@ -84,13 +86,12 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, VW::example& e
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
-  else
-  {
-    reduction.predict(ec, &status);
-  }
+  else { reduction.predict(ec, &status); }
 
   if (status.get_error_code() != VW::experimental::error_code::success)
-  { VW_DBG(ec) << status.get_error_msg() << endl; }
+  {
+    VW_DBG(ec) << status.get_error_msg() << endl;
+  }
 }
 
 }  // namespace

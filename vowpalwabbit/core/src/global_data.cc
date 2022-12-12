@@ -55,10 +55,7 @@ size_t really_read(VW::io::reader* sock, void* in, size_t count)
   while (done < count)
   {
     if ((r = sock->read(buf, static_cast<unsigned int>(count - done))) == 0) { return 0; }
-    else if (r < 0)
-    {
-      THROWERRNO("read(" << sock << "," << count << "-" << done << ")");
-    }
+    else if (r < 0) { THROWERRNO("read(" << sock << "," << count << "-" << done << ")"); }
     else
     {
       done += r;
@@ -117,7 +114,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const VW::v_array<
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 
@@ -132,7 +129,7 @@ void print_raw_text_by_ref(
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
 void set_mm(shared_data* sd, float label)
@@ -253,10 +250,7 @@ std::string dump_weights_to_json_weight_typed(const WeightsT& weights,
             string_value_value.SetString(component.str_value, allocator);
             component_object.AddMember("string_value", string_value_value, allocator);
           }
-          else
-          {
-            component_object.AddMember("string_value", rapidjson::Value(rapidjson::Type::kNullType), allocator);
-          }
+          else { component_object.AddMember("string_value", rapidjson::Value(rapidjson::Type::kNullType), allocator); }
           terms_array.PushBack(component_object, allocator);
         }
         parameter_object.AddMember("terms", terms_array, allocator);
@@ -328,11 +322,17 @@ std::string workspace::dump_weights_to_json_experimental()
         << current->get_name());
   }
   if (dump_json_weights_include_feature_names && !hash_inv)
-  { THROW("hash_inv == true is required to dump weights to json including feature names"); }
+  {
+    THROW("hash_inv == true is required to dump weights to json including feature names");
+  }
   if (dump_json_weights_include_extra_online_state && !save_resume)
-  { THROW("save_resume == true is required to dump weights to json including feature names"); }
+  {
+    THROW("save_resume == true is required to dump weights to json including feature names");
+  }
   if (dump_json_weights_include_extra_online_state && current->get_name() != "gd")
-  { THROW("including extra online state is only allowed with GD as base learner"); }
+  {
+    THROW("including extra online state is only allowed with GD as base learner");
+  }
 
   return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
                               dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)
@@ -353,10 +353,7 @@ void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NU
       logger.err_warn("limiting to {} features for each namespace.", n);
       for (size_t j = 0; j < 256; j++) { dest[j] = n; }
     }
-    else if (limit.size() == 1)
-    {
-      logger.out_error("The namespace index must be specified before the n");
-    }
+    else if (limit.size() == 1) { logger.out_error("The namespace index must be specified before the n"); }
     else
     {
       int n = atoi(limit.c_str() + 1);

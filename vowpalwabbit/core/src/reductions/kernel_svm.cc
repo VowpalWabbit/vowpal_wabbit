@@ -6,7 +6,6 @@
 
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
-#include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
@@ -171,10 +170,7 @@ int svm_example::compute_kernels(svm_params& params)
       alloc += 1;
     }
   }
-  else
-  {
-    num_cache_evals += n;
-  }
+  else { num_cache_evals += n; }
   return alloc;
 }
 
@@ -364,11 +360,10 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
     ec_arr[i]->compute_kernels(params);
     // std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
     if (ec_arr[i]->krow.size() > 0)
-    { scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda; }
-    else
     {
-      scores[i] = 0;
+      scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda;
     }
+    else { scores[i] = 0; }
   }
 }
 
@@ -397,11 +392,10 @@ size_t suboptimality(svm_model* model, double* subopt)
     const auto& simple_red_features =
         model->support_vec[i]->ex.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     if ((tmp < simple_red_features.weight && model->delta[i] < 0) || (tmp > 0 && model->delta[i] > 0))
-    { subopt[i] = fabs(model->delta[i]); }
-    else
     {
-      subopt[i] = 0;
+      subopt[i] = fabs(model->delta[i]);
     }
+    else { subopt[i] = 0; }
 
     if (subopt[i] > max_val)
     {
@@ -475,10 +469,7 @@ bool update(svm_params& params, size_t pos)
 
   const auto& simple_red_features = fec->ex.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   if (ai > simple_red_features.weight) { ai = simple_red_features.weight; }
-  else if (ai < 0)
-  {
-    ai = 0;
-  }
+  else if (ai < 0) { ai = 0; }
 
   ai *= ld.label;
   float diff = ai - alpha_old;
@@ -498,10 +489,7 @@ bool update(svm_params& params, size_t pos)
   }
 
   if (std::fabs(ai) <= 1.0e-10) { remove(params, pos); }
-  else
-  {
-    model->alpha[pos] = ai;
-  }
+  else { model->alpha[pos] = ai; }
 
   return overshoot;
 }
@@ -562,10 +550,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
         train_pool[i] = true;
         params.pool_pos++;
       }
-      else
-      {
-        break;
-      }
+      else { break; }
 
       num_read += b->unflushed_bytes_count();
       if (num_read == prev_sum) { params.local_begin = i + 1; }
@@ -591,7 +576,9 @@ void train(svm_params& params)
     {
       std::multimap<double, size_t> scoremap;
       for (size_t i = 0; i < params.pool_pos; i++)
-      { scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i)); }
+      {
+        scoremap.insert(std::pair<const double, const size_t>(std::fabs(scores[i]), i));
+      }
 
       std::multimap<double, size_t>::iterator iter = scoremap.begin();
       iter = scoremap.begin();
@@ -642,10 +629,7 @@ void train(svm_params& params)
       {
         if (train_pool[i]) { model_pos = add(params, params.pool[i]); }
       }
-      else
-      {
-        model_pos = add(params, params.pool[i]);
-      }
+      else { model_pos = add(params, params.pool[i]); }
 
       if (model_pos >= 0)
       {
@@ -663,7 +647,9 @@ void train(svm_params& params)
             if (subopt[max_pos] > 0)
             {
               if (!overshoot && max_pos == static_cast<size_t>(model_pos) && max_pos > 0 && j == 0)
-              { *params.all->trace_message << "Shouldn't reprocess right after process." << endl; }
+              {
+                *params.all->trace_message << "Shouldn't reprocess right after process." << endl;
+              }
               if (max_pos * model->num_support <= params.maxcache) { make_hot_sv(params, max_pos); }
               update(params, max_pos);
             }
@@ -790,7 +776,9 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   params->pool_pos = 0;
 
   if (!options.was_supplied("subsample") && params->para_active)
-  { params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total)); }
+  {
+    params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total));
+  }
 
   params->lambda = all.l2_lambda;
   if (params->lambda == 0.) { params->lambda = 1.; }
@@ -811,10 +799,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
     params->kernel_params = &calloc_or_throw<int>();
     *(static_cast<int*>(params->kernel_params)) = degree;
   }
-  else
-  {
-    params->kernel_type = SVM_KER_LIN;
-  }
+  else { params->kernel_type = SVM_KER_LIN; }
 
   params->all->weights.stride_shift(0);
 
@@ -822,6 +807,9 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                 .set_save_load(save_load)
                 .set_finish(finish_kernel_svm)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svm_params>)
+                .set_update_stats(VW::details::update_stats_simple_label<svm_params>)
+                .set_print_update(VW::details::print_update_simple_label<svm_params>)
                 .build();
 
   return make_base(*l);

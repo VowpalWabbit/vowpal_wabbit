@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "reductions/cb/details/large_action/compute_dot_prod_scalar.h"
+#include "reductions/cb/details/large_action/compute_dot_prod_simd.h"
 #include "reductions/cb/details/large_action_space.h"
 #include "test_common.h"
 #include "vw/core/qr_decomposition.h"
@@ -23,18 +25,16 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
 {
   auto d = 3;
   std::vector<VW::workspace*> vws;
-
-  auto* vw_rs = VW::initialize(
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 1", nullptr,
-      false, nullptr, nullptr);
-
-  vws.push_back(vw_rs);
-
-  auto* vw_zs = VW::initialize(
-      "--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) + " --quiet --random_seed 0", nullptr,
-      false, nullptr, nullptr);
-
-  vws.push_back(vw_zs);
+  for (const int seed : {1, 0})
+  {
+    for (const bool use_simd : {false, true})
+    {
+      auto* vw_ptr = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+              " --quiet --random_seed " + std::to_string(seed) + (use_simd ? " --las_hint_explicit_simd" : ""),
+          nullptr, false, nullptr, nullptr);
+      vws.push_back(vw_ptr);
+    }
+  }
 
   for (auto* vw_ptr : vws)
   {
@@ -43,7 +43,9 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -84,18 +86,17 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 {
   auto d = 3;
   std::vector<VW::workspace*> vws;
-
-  auto* vw_rs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 3 --noconstant",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back(vw_rs);
-
-  auto* vw_zero_threads_zs = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 0 --noconstant",
-      nullptr, false, nullptr, nullptr);
-
-  vws.push_back(vw_zero_threads_zs);
+  for (const int seed : {3, 0})
+  {
+    for (const bool use_simd : {false, true})
+    {
+      auto* vw_ptr = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
+              " --quiet --noconstant --random_seed " + std::to_string(seed) +
+              (use_simd ? " --las_hint_explicit_simd" : ""),
+          nullptr, false, nullptr, nullptr);
+      vws.push_back(vw_ptr);
+    }
+  }
 
   for (auto* vw_ptr : vws)
   {
@@ -104,7 +105,9 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     std::vector<std::string> e_r;
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
-    { BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions"); }
+    {
+      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+    }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -173,5 +176,260 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     VW::finish(vw);
   }
 }
+
+#ifdef BUILD_LAS_WITH_SIMD
+BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
+{
+  float (*compute_dot_prod_simd)(uint64_t, VW::workspace*, uint64_t, VW::example*);
+  if (VW::cb_explore_adf::cpu_supports_avx512())
+  {
+    compute_dot_prod_simd = VW::cb_explore_adf::compute_dot_prod_avx512;
+  }
+  else if (VW::cb_explore_adf::cpu_supports_avx2())
+  {
+    compute_dot_prod_simd = VW::cb_explore_adf::compute_dot_prod_avx2;
+  }
+  else
+  {
+    // Skip this test because of no supported simd implementations.
+    return;
+  }
+
+  auto generate_example = [](int num_namespaces, int num_features)
+  {
+    std::string s;
+    for (int i = 0; i < num_namespaces; ++i)
+    {
+      s += " |";
+      s += static_cast<char>('A' + i);
+      for (int j = 0; j < num_features; ++j)
+        s += std::string(" ") + static_cast<char>('a' + i) + std::to_string(rand() % 1000);
+    }
+    return s;
+  };
+  constexpr uint64_t column_index = 666;
+  constexpr uint64_t seed = 233;
+
+  {
+    // No interactions, few features
+    auto* vw = VW::initialize("--cb_explore_adf --large_action_space --quiet");
+    VW::multi_ex examples;
+    examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/5)));
+    auto* ex = examples[0];
+    auto interactions =
+        INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+    ex->interactions = &interactions;
+    BOOST_REQUIRE_EQUAL(interactions.size(), 0);
+
+    float result_scalar = VW::cb_explore_adf::compute_dot_prod_scalar(column_index, vw, seed, ex);
+    float result_simd = compute_dot_prod_simd(column_index, vw, seed, ex);
+    BOOST_CHECK_CLOSE(result_simd, result_scalar, FLOAT_TOL);
+    vw->finish_example(examples);
+    VW::finish(*vw);
+  }
+  {
+    // No interactions, many features
+    auto* vw = VW::initialize("--cb_explore_adf --large_action_space --quiet");
+    VW::multi_ex examples;
+    examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/50)));
+    auto* ex = examples[0];
+    auto interactions =
+        INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+    ex->interactions = &interactions;
+    BOOST_REQUIRE_EQUAL(interactions.size(), 0);
+
+    float result_scalar = VW::cb_explore_adf::compute_dot_prod_scalar(column_index, vw, seed, ex);
+    float result_simd = compute_dot_prod_simd(column_index, vw, seed, ex);
+    BOOST_CHECK_CLOSE(result_simd, result_scalar, FLOAT_TOL);
+    vw->finish_example(examples);
+    VW::finish(*vw);
+  }
+  {
+    // Quadratics, few features
+    auto* vw = VW::initialize("--cb_explore_adf --large_action_space --quiet -q::");
+    VW::multi_ex examples;
+    examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/5)));
+    auto* ex = examples[0];
+    auto interactions =
+        INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+    ex->interactions = &interactions;
+    BOOST_REQUIRE_EQUAL(interactions.size(), 6);
+
+    float result_scalar = VW::cb_explore_adf::compute_dot_prod_scalar(column_index, vw, seed, ex);
+    float result_simd = compute_dot_prod_simd(column_index, vw, seed, ex);
+    BOOST_CHECK_CLOSE(result_simd, result_scalar, FLOAT_TOL);
+    vw->finish_example(examples);
+    VW::finish(*vw);
+  }
+  {
+    // Quadratics, many features
+    auto* vw = VW::initialize("--cb_explore_adf --large_action_space --quiet -q::");
+    VW::multi_ex examples;
+    examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/50)));
+    auto* ex = examples[0];
+    auto interactions =
+        INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+    ex->interactions = &interactions;
+    BOOST_REQUIRE_EQUAL(interactions.size(), 6);
+
+    float result_scalar = VW::cb_explore_adf::compute_dot_prod_scalar(column_index, vw, seed, ex);
+    float result_simd = compute_dot_prod_simd(column_index, vw, seed, ex);
+    BOOST_CHECK_CLOSE(result_simd, result_scalar, FLOAT_TOL);
+    vw->finish_example(examples);
+    VW::finish(*vw);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
+{
+  auto generate_example = [](int num_namespaces, int num_features)
+  {
+    std::string s;
+    for (int i = 0; i < num_namespaces; ++i)
+    {
+      s += " |";
+      s += static_cast<char>('A' + i);
+      for (int j = 0; j < num_features; ++j)
+        s += std::string(" ") + static_cast<char>('a' + i) + std::to_string(rand() % 1000);
+    }
+    return s;
+  };
+  const int num_actions = 30;
+  std::vector<std::string> examples;
+  for (int i = 0; i < num_actions; ++i)
+  {
+    examples.push_back(
+        generate_example(/*num_namespaces=*/std::max(1, rand() % 5), /*num_features=*/std::max(1, rand() % 30)));
+  }
+
+  {
+    // No interactions
+    const std::string vw_cmd = "--cb_explore_adf --large_action_space --quiet";
+
+    auto* vw_scalar = VW::initialize(vw_cmd);
+    VW::multi_ex ex_scalar;
+    for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
+    vw_scalar->predict(ex_scalar);
+    auto& scores_scalar = ex_scalar[0]->pred.a_s;
+
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
+    VW::multi_ex ex_simd;
+    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    vw_simd->predict(ex_simd);
+    auto& scores_simd = ex_simd[0]->pred.a_s;
+
+    BOOST_CHECK_EQUAL(scores_scalar.size(), scores_simd.size());
+    for (size_t i = 0; i < scores_scalar.size(); ++i)
+    {
+      BOOST_CHECK_EQUAL(scores_scalar[i].action, scores_simd[i].action);
+      BOOST_CHECK_CLOSE(scores_scalar[i].score, scores_simd[i].score, FLOAT_TOL);
+    }
+
+    vw_scalar->finish_example(ex_scalar);
+    VW::finish(*vw_scalar);
+    vw_simd->finish_example(ex_simd);
+    VW::finish(*vw_simd);
+  }
+  {
+    // Quadratic interactions
+    const std::string vw_cmd = "--cb_explore_adf --large_action_space --quiet -q ::";
+
+    auto* vw_scalar = VW::initialize(vw_cmd);
+    VW::multi_ex ex_scalar;
+    for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
+    vw_scalar->predict(ex_scalar);
+    auto& scores_scalar = ex_scalar[0]->pred.a_s;
+
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
+    VW::multi_ex ex_simd;
+    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    vw_simd->predict(ex_simd);
+    auto& scores_simd = ex_simd[0]->pred.a_s;
+
+    BOOST_CHECK_EQUAL(scores_scalar.size(), scores_simd.size());
+    for (size_t i = 0; i < scores_scalar.size(); ++i)
+    {
+      BOOST_CHECK_EQUAL(scores_scalar[i].action, scores_simd[i].action);
+      BOOST_CHECK_CLOSE(scores_scalar[i].score, scores_simd[i].score, FLOAT_TOL);
+    }
+
+    vw_scalar->finish_example(ex_scalar);
+    VW::finish(*vw_scalar);
+    vw_simd->finish_example(ex_simd);
+    VW::finish(*vw_simd);
+  }
+  {
+    // Ignore & ignore_linear
+    const std::string vw_cmd = "--cb_explore_adf --large_action_space --quiet -q :: --ignore A --ignore_linear B";
+
+    auto* vw_scalar = VW::initialize(vw_cmd);
+    VW::multi_ex ex_scalar;
+    for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
+    vw_scalar->predict(ex_scalar);
+    auto& scores_scalar = ex_scalar[0]->pred.a_s;
+
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
+    VW::multi_ex ex_simd;
+    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    vw_simd->predict(ex_simd);
+    auto& scores_simd = ex_simd[0]->pred.a_s;
+
+    BOOST_CHECK_EQUAL(scores_scalar.size(), scores_simd.size());
+    for (size_t i = 0; i < scores_scalar.size(); ++i)
+    {
+      BOOST_CHECK_EQUAL(scores_scalar[i].action, scores_simd[i].action);
+      BOOST_CHECK_CLOSE(scores_scalar[i].score, scores_simd[i].score, FLOAT_TOL);
+    }
+
+    vw_scalar->finish_example(ex_scalar);
+    VW::finish(*vw_scalar);
+    vw_simd->finish_example(ex_simd);
+    VW::finish(*vw_simd);
+  }
+  {
+    // Cubics & generic interactions are not supported yet
+    const std::string vw_cmd = "--cb_explore_adf --large_action_space --quiet --cubic :::";
+
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
+    VW::multi_ex ex_simd;
+    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+
+    auto match_message = [](const VW::vw_exception& ex)
+    {
+      std::string expected_message = "Generic interactions are not supported yet in LAS SIMD implementations";
+      BOOST_CHECK_EQUAL(ex.what(), expected_message);
+      return true;
+    };
+    BOOST_CHECK_EXCEPTION(vw_simd->predict(ex_simd), VW::vw_exception, match_message);
+
+    vw_simd->finish_example(ex_simd);
+    VW::finish(*vw_simd);
+  }
+  {
+    // Extent interactions are not supported yet
+    const std::string vw_cmd =
+        "--cb_explore_adf --large_action_space --quiet --experimental_full_name_interactions A|B";
+
+    auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
+    VW::multi_ex ex_simd;
+    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+
+    auto match_message = [](const VW::vw_exception& ex)
+    {
+      std::string expected_message = "Extent_interactions are not supported yet in LAS SIMD implementations";
+      BOOST_CHECK_EQUAL(ex.what(), expected_message);
+      return true;
+    };
+    BOOST_CHECK_EXCEPTION(vw_simd->predict(ex_simd), VW::vw_exception, match_message);
+
+    vw_simd->finish_example(ex_simd);
+    VW::finish(*vw_simd);
+  }
+}
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()

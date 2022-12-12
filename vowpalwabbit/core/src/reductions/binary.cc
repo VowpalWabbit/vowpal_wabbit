@@ -33,16 +33,10 @@ template <bool is_learn>
 void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 
   if (ec.pred.scalar > 0) { ec.pred.scalar = 1; }
-  else
-  {
-    ec.pred.scalar = -1;
-  }
+  else { ec.pred.scalar = -1; }
 
   VW_DBG(ec) << "binary: final-pred " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
              << endl;
@@ -50,15 +44,11 @@ void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, VW::
   if (ec.l.simple.label != FLT_MAX)
   {
     if (std::fabs(ec.l.simple.label) != 1.f)
-    { data.logger.out_error("The label '{}' is not -1 or 1 as loss function expects.", ec.l.simple.label); }
-    else if (ec.l.simple.label == ec.pred.scalar)
     {
-      ec.loss = 0.;
+      data.logger.out_error("The label '{}' is not -1 or 1 as loss function expects.", ec.l.simple.label);
     }
-    else
-    {
-      ec.loss = ec.weight;
-    }
+    else if (ec.l.simple.label == ec.pred.scalar) { ec.loss = 0.; }
+    else { ec.loss = ec.weight; }
   }
 }
 

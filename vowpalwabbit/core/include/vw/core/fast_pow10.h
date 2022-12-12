@@ -33,15 +33,16 @@ const constexpr uint8_t VALUES_ABOVE_ZERO = FLT_MAX_10_EXP;
 
 constexpr float constexpr_int_pow10(uint8_t exponent)
 {
-  return exponent > VALUES_ABOVE_AND_INCLUDING_ZERO
-      ? std::numeric_limits<float>::infinity()
-      : exponent == 0 ? 1 : POW10_BASE * constexpr_int_pow10(exponent - 1);
+  return exponent > VALUES_ABOVE_AND_INCLUDING_ZERO ? std::numeric_limits<float>::infinity()
+      : exponent == 0                               ? 1
+                                                    : POW10_BASE * constexpr_int_pow10(exponent - 1);
 }
 
 constexpr float constexpr_negative_int_pow10(uint8_t exponent)
 {
   return exponent > VALUES_BELOW_ZERO ? 0.f
-                                      : exponent == 0 ? 1 : constexpr_negative_int_pow10(exponent - 1) / POW10_BASE;
+      : exponent == 0                 ? 1
+                                      : constexpr_negative_int_pow10(exponent - 1) / POW10_BASE;
 }
 
 // This function is a simple workaround for the fact it is tricky to generate compile time sequences of numbers that
@@ -91,12 +92,11 @@ static constexpr std::array<float, VALUES_BELOW_ZERO> POW_10_NEGATIVE_LOOKUP_TAB
 VW_STD14_CONSTEXPR inline float fast_pow10(int8_t exponent)
 {
   // If the result would be above the range float can represent, return inf.
-  return exponent > details::VALUES_ABOVE_ZERO ? std::numeric_limits<float>::infinity()
-                                               : (exponent < -1 * details::VALUES_BELOW_ZERO)
-          ? 0.f
-          : exponent >= 0 ? details::POW_10_POSITIVE_LOOKUP_TABLE[static_cast<std::size_t>(exponent)]
-                          : details::POW_10_NEGATIVE_LOOKUP_TABLE[static_cast<std::size_t>(exponent) +
-                                static_cast<std::size_t>(details::VALUES_BELOW_ZERO)];
+  return exponent > details::VALUES_ABOVE_ZERO       ? std::numeric_limits<float>::infinity()
+      : (exponent < -1 * details::VALUES_BELOW_ZERO) ? 0.f
+      : exponent >= 0 ? details::POW_10_POSITIVE_LOOKUP_TABLE[static_cast<std::size_t>(exponent)]
+                      : details::POW_10_NEGATIVE_LOOKUP_TABLE[static_cast<std::size_t>(exponent) +
+                            static_cast<std::size_t>(details::VALUES_BELOW_ZERO)];
 }
 
 }  // namespace VW

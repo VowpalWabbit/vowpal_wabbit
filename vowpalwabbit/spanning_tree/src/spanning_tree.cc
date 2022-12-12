@@ -5,6 +5,8 @@
 #include "vw/spanning_tree/spanning_tree.h"
 
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
+#include "vw/io/errno_handling.h"
 
 #include <cerrno>
 #include <cmath>
@@ -39,10 +41,7 @@ static int socket_sort(const void* s1, const void* s2)
   client* socket1 = (client*)s1;
   client* socket2 = (client*)s2;
   if (socket1->client_ip != socket2->client_ip) { return socket1->client_ip - socket2->client_ip; }
-  else
-  {
-    return (static_cast<int>(socket1->socket) - static_cast<int>(socket2->socket));
-  }
+  else { return (static_cast<int>(socket1->socket) - static_cast<int>(socket2->socket)); }
 }
 
 int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset)
@@ -70,10 +69,7 @@ int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset
     parent[right_child] = oroot;
     kid_count[oroot] = 2;
   }
-  else
-  {
-    kid_count[oroot] = 1;
-  }
+  else { kid_count[oroot] = 1; }
 
   return oroot;
 }
@@ -107,7 +103,9 @@ spanning_tree::spanning_tree(uint16_t port, bool quiet) : _stop(false), _port(po
 
   int on = 1;
   if (setsockopt(_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) < 0)
+  {
     THROWERRNO("setsockopt SO_REUSEADDR: ");
+  }
 
   sockaddr_in address;
   address.sin_family = AF_INET;
@@ -115,13 +113,17 @@ spanning_tree::spanning_tree(uint16_t port, bool quiet) : _stop(false), _port(po
 
   address.sin_port = htons(port);
   if (::bind(_sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
+  {
     THROWERRNO("bind failed for " << inet_ntop(AF_INET, &address.sin_addr, addr_buf, INET_ADDRSTRLEN));
+  }
 
   sockaddr_in bound_addr;
   memset(&bound_addr, 0, sizeof(bound_addr));
   socklen_t len = sizeof(bound_addr);
   if (::getsockname(_sock, reinterpret_cast<sockaddr*>(&bound_addr), &len) < 0)
+  {
     THROWERRNO("getsockname: " << inet_ntop(AF_INET, &bound_addr.sin_addr, addr_buf, INET_ADDRSTRLEN));
+  }
 
   // which port did we bind too (if _port is 0 this will give us the actual port)
   _port = ntohs(bound_addr.sin_port);
@@ -161,7 +163,7 @@ void spanning_tree::run()
   std::map<size_t, partial> partial_nodesets;
   while (!_stop)
   {
-    if (listen(_sock, 1024) < 0) THROWERRNO("listen: ");
+    if (listen(_sock, 1024) < 0) { THROWERRNO("listen: "); }
 
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
@@ -178,13 +180,17 @@ void spanning_tree::run()
 
     char dotted_quad[INET_ADDRSTRLEN];
     if (nullptr == inet_ntop(AF_INET, &(client_address.sin_addr), dotted_quad, INET_ADDRSTRLEN))
+    {
       THROWERRNO("inet_ntop: ");
+    }
 
     char hostname[NI_MAXHOST];
     char serv_info[NI_MAXSERV];
     if (getnameinfo(reinterpret_cast<sockaddr*>(&client_address), sizeof(sockaddr), hostname, NI_MAXHOST, serv_info,
             NI_MAXSERV, 0))
+    {
       THROWERRNO("getnameinfo: ");
+    }
 
     if (!_quiet)
     {
@@ -194,27 +200,39 @@ void spanning_tree::run()
 
     size_t nonce = 0;
     if (recv(f, reinterpret_cast<char*>(&nonce), sizeof(nonce), 0) != sizeof(nonce))
-    { THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): nonce read failed, exiting"); }
+    {
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): nonce read failed, exiting");
+    }
     else
     {
       if (!_quiet)
-      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): nonce=" << nonce << std::endl; }
+      {
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): nonce=" << nonce << std::endl;
+      }
     }
     size_t total = 0;
     if (recv(f, reinterpret_cast<char*>(&total), sizeof(total), 0) != sizeof(total))
-    { THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): total node count read failed, exiting"); }
+    {
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): total node count read failed, exiting");
+    }
     else
     {
       if (!_quiet)
-      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): total=" << total << std::endl; }
+      {
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): total=" << total << std::endl;
+      }
     }
     size_t id = 0;
     if (recv(f, reinterpret_cast<char*>(&id), sizeof(id), 0) != sizeof(id))
-    { THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): node id read failed, exiting"); }
+    {
+      THROW(dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): node id read failed, exiting");
+    }
     else
     {
       if (!_quiet)
-      { std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): node id=" << id << std::endl; }
+      {
+        std::cerr << dotted_quad << "(" << hostname << ':' << ntohs(_port) << "): node id=" << id << std::endl;
+      }
     }
 
     int ok = true;
@@ -278,7 +296,9 @@ void spanning_tree::run()
       parent[root] = -1;
 
       for (size_t i = 0; i < total; i++)
-      { fail_send(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i])); }
+      {
+        fail_send(partial_nodeset.nodes[i].socket, &kid_count[i], sizeof(kid_count[i]));
+      }
 
       uint16_t* client_ports = static_cast<uint16_t*>(calloc(total, sizeof(uint16_t)));
 

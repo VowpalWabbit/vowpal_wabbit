@@ -12,13 +12,13 @@
 
 namespace simulator
 {
-cb_sim::cb_sim(uint64_t seed)
+cb_sim::cb_sim(uint64_t seed, bool use_default_ns)
     : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
     //, actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
     , actions({"politics", "sports", "music"})
     , user_ns("User")
-    , action_ns("Action")
+    , action_ns(use_default_ns ? "" : "Action")
 {
   random_state.set_random_state(seed);
   callback_count = 0;
@@ -39,18 +39,12 @@ float cb_sim::get_reaction(const std::map<std::string, std::string>& context, co
   if (context.at("user") == "Tom")
   {
     if (context.at("time_of_day") == "morning" && action == "politics") { reward = like_reward; }
-    else if (context.at("time_of_day") == "afternoon" && action == "music")
-    {
-      reward = like_reward;
-    }
+    else if (context.at("time_of_day") == "afternoon" && action == "music") { reward = like_reward; }
   }
   else if (context.at("user") == "Anna")
   {
     if (context.at("time_of_day") == "morning" && action == "sports") { reward = like_reward; }
-    else if (context.at("time_of_day") == "afternoon" && action == "politics")
-    {
-      reward = like_reward;
-    }
+    else if (context.at("time_of_day") == "afternoon" && action == "politics") { reward = like_reward; }
   }
 
   if (swap_reward) { return scale_reward * ((reward == like_reward) ? dislike_reward : like_reward); }
@@ -163,7 +157,9 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
     std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
     // Add useless features if specified
     for (uint64_t j = 0; j < num_useless_features; ++j)
-    { context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j))); }
+    {
+      context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j)));
+    }
     auto action_prob = get_action(vw, context);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;

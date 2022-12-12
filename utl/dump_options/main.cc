@@ -32,10 +32,7 @@ void add_default_value<float>(rapidjson::Value& obj, const float& value, rapidjs
     val.SetString("inf");
     obj.AddMember("default_value", val, allocator);
   }
-  else
-  {
-    obj.AddMember("default_value", value, allocator);
-  }
+  else { obj.AddMember("default_value", value, allocator); }
 }
 
 template <>

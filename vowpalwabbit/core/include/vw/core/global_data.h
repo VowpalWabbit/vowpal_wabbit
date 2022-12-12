@@ -73,8 +73,11 @@ class parser;
 }
 
 #ifdef VW_BUILD_CSV
+namespace csv
+{
 class csv_parser;
 class csv_parser_options;
+}  // namespace csv
 #endif
 }  // namespace parsers
 }  // namespace VW

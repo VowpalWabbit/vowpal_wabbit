@@ -23,7 +23,6 @@ add_executable(vw-unit-test.out
   distributionally_robust_test.cc
   dsjson_parser_test.cc
   epsilon_test.cc
-  error_test.cc
   example_header_test.cc
   example_test.cc
   feature_group_test.cc
@@ -61,6 +60,10 @@ add_executable(vw-unit-test.out
   vw_versions_test.cc
   weights_test.cc
 )
+
+if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
+  target_compile_definitions(vw-unit-test.out PUBLIC BUILD_LAS_WITH_SIMD)
+endif()
 
 # Add the include directories from vw target for testing
 target_link_libraries(vw-unit-test.out PRIVATE vw_core Boost::unit_test_framework)
