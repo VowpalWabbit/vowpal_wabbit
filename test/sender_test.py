@@ -1,7 +1,8 @@
+import os
+import signal
 import sys
 import argparse
 import subprocess
-import os
 
 DAEMON_PORT = 26558
 
@@ -51,8 +52,8 @@ if __name__ == "__main__":
 
     if return_code != 0:
         print("VW failed")
-        # Kill entire process group
-        subprocess.run(["pkill", "-9", "vw"], check=True)
+        # Kill daemon process
+        os.kill(vw_daemon_proc.pid, signal.SIGTERM)
 
     # Check if daemon failed.
     daemon_none_or_return_code = vw_daemon_proc.poll()
@@ -63,5 +64,5 @@ if __name__ == "__main__":
             print("Daemon STDOUT: \n" + vw_daemon_proc.stderr.read().decode("utf-8"))
         sys.exit(1)
 
-    # Kill entire process group
-    subprocess.run(["pkill", "-9", "vw"], check=True)
+    # Kill daemon process
+    os.kill(vw_daemon_proc.pid, signal.SIGTERM)
