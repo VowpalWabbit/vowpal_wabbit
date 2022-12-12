@@ -243,8 +243,6 @@ Weight Options:
                                             experimental)
     --default_lease arg                      Set initial lease for automl interactions (type: uint, default:
                                             4000, keep, experimental)
-    --cm_type arg                           Set type of config manager (type: str, default: interaction,
-                                            choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
                                             choices {favor_popular_namespaces, none}, keep, experimental)
     --priority_challengers arg              Set number of priority challengers to use (type: int, default:

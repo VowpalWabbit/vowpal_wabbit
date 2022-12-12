@@ -230,7 +230,6 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
 
   uint64_t default_lease = 4000;
   uint64_t max_live_configs = 4;
-  std::string cm_type = "interaction";
   std::string priority_type = "none";
   int32_t priority_challengers = -1;
   bool verbose_metrics = false;
@@ -252,12 +251,6 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .allow_override()
                .default_value(4000)
                .help("Set initial lease for automl interactions")
-               .experimental())
-      .add(make_option("cm_type", cm_type)
-               .keep()
-               .default_value("interaction")
-               .one_of({"interaction"})
-               .help("Set type of config manager")
                .experimental())
       .add(make_option("priority_type", priority_type)
                .keep()
