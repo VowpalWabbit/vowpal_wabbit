@@ -242,14 +242,12 @@ Weight Options:
 [Reduction] Automl Options:
     --automl arg                            Set number of live configs (type: uint, default: 4, keep, necessary,
                                             experimental)
-    --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
+    --default_lease arg                     Set initial lease for automl interactions (type: uint, default:
                                             4000, keep, experimental)
-    --cm_type arg                           Set type of config manager (type: str, default: interaction,
-                                            choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
                                             choices {favor_popular_namespaces, none}, keep, experimental)
-    --priority_challengers arg              Set number of priority challengers to use (type: int, default:
-                                            -1, keep, experimental)
+    --priority_challengers arg              Set number of priority challengers to use. Set to -1 to use half
+                                            of total live configs. (type: int, default: -1, keep, experimental)
     --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)

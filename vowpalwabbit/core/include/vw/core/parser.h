@@ -67,8 +67,6 @@ public:
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(VW::workspace*, const char*, size_t, VW::multi_ex&);
 
-  shared_data* shared_data_obj = nullptr;
-
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
   io_buf output;    // Where to output the cache.

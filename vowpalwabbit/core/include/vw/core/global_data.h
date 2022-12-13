@@ -246,7 +246,6 @@ public:
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
-  uint64_t random_seed;
   bool random_weights;
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
   bool normal_weights;

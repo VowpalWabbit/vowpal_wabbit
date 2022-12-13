@@ -493,7 +493,6 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_o
       new (sd) shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
-      all.example_parser->shared_data_obj = sd;
 
       // create children
       const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
