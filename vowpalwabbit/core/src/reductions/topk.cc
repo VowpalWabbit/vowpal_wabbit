@@ -118,7 +118,7 @@ void print_result(VW::io::writer* file_descriptor,
   }
 }
 
-void update_stats_topk(const VW::workspace& /* all */, shared_data& sd, const topk& /* data */,
+void update_stats_topk(const VW::workspace& /* all */, VW::shared_data& sd, const topk& /* data */,
     const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
 {
   for (auto* ec : ec_seq)
@@ -135,7 +135,7 @@ void output_example_prediction_topk(
   for (auto& sink : all.final_prediction_sink) { print_result(sink.get(), data.get_container_view(), ec_seq, logger); }
 }
 
-void print_update_topk(VW::workspace& all, shared_data& sd, const topk& /* data */, const VW::multi_ex& ec_seq,
+void print_update_topk(VW::workspace& all, VW::shared_data& sd, const topk& /* data */, const VW::multi_ex& ec_seq,
     VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
