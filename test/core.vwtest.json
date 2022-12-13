@@ -5567,7 +5567,7 @@
     ]
   },
   {
-    "id": 425,
+    "id": 432,
     "desc": "check plt training with sgd",
     "vw_command": "-d train-sets/multilabel -f plt_sgd.model --plt 10 --sgd --predict_only_model --loss_function logistic",
     "diff_files": {
@@ -5579,7 +5579,7 @@
     ]
   },
   {
-    "id": 426,
+    "id": 433,
     "desc": "check default plt (trained with sgd) prediction (with threshold 0.5)",
     "vw_command": "-t -d train-sets/multilabel -i plt_sgd.model -p plt_sgd.predict --loss_function logistic",
     "diff_files": {
@@ -5592,11 +5592,11 @@
       "plt_sgd.model"
     ],
     "depends_on": [
-      425
+      432
     ]
   },
   {
-    "id": 427,
+    "id": 434,
     "desc": "check plt (trained with sgd) top-1 prediction",
     "vw_command": "-t -d train-sets/multilabel -i plt_sgd.model -p plt_sgd_top1.predict --top_k 1 --loss_function logistic",
     "diff_files": {
@@ -5609,7 +5609,7 @@
       "plt_sgd.model"
     ],
     "depends_on": [
-      425
+      432
     ]
   }
 ]
