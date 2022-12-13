@@ -14,7 +14,6 @@ namespace VW
 {
 namespace details
 {
-
 // Used in parse_source
 class input_options
 {

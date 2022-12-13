@@ -43,7 +43,6 @@
 
 namespace VW
 {
-
 template <typename DataT, typename ExampleT>
 using learner_update_stats_func = void(
     const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger);

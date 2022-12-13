@@ -135,18 +135,16 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, VW::multi_ex& e
   }
 }
 
-void update_stats_bag(const VW::workspace& all, VW::shared_data& sd, 
-                      const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq,
-                      VW::io::logger& logger)
+void update_stats_bag(const VW::workspace& all, VW::shared_data& sd,
+    const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   assert(ec_seq.size() > 0);
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
   cb_explore_adf_base<cb_explore_adf_bag>::update_stats(all, sd, data, ec_seq, logger);
 }
 
-void print_update_bag(VW::workspace& all, VW::shared_data& sd, 
-                      const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq,
-                      VW::io::logger& logger)
+void print_update_bag(VW::workspace& all, VW::shared_data& sd, const cb_explore_adf_base<cb_explore_adf_bag>& data,
+    const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   assert(ec_seq.size() > 0);
   // TODO: We should not be modifying a const object...
@@ -155,7 +153,7 @@ void print_update_bag(VW::workspace& all, VW::shared_data& sd,
 }
 
 void output_example_prediction_bag(VW::workspace& all, const cb_explore_adf_base<cb_explore_adf_bag>& data,
-                      const VW::multi_ex& ec_seq, VW::io::logger& logger)
+    const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   assert(ec_seq.size() > 0);
   // TODO: We should not be modifying a const object...
@@ -163,8 +161,7 @@ void output_example_prediction_bag(VW::workspace& all, const cb_explore_adf_base
   cb_explore_adf_base<cb_explore_adf_bag>::output_example_prediction(all, data, ec_seq, logger);
 }
 
-void print_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data,
-                   const VW::multi_ex& ec_seq)
+void print_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq)
 {
   assert(ec_seq.size() > 0);
   // TODO: We should not be modifying a const object...
