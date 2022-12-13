@@ -70,14 +70,8 @@ public:
     if (log_count <= max_limit)
     {
       if (location == output_location::COMPAT) { stderr_log_sink->info(message); }
-      else if (location == output_location::STDERR)
-      {
-        stderr_log_sink->info(message);
-      }
-      else
-      {
-        stdout_log_sink->info(message);
-      }
+      else if (location == output_location::STDERR) { stderr_log_sink->info(message); }
+      else { stdout_log_sink->info(message); }
     }
   }
 
@@ -87,14 +81,8 @@ public:
     if (log_count <= max_limit)
     {
       if (location == output_location::COMPAT) { stderr_log_sink->warn(message); }
-      else if (location == output_location::STDERR)
-      {
-        stderr_log_sink->warn(message);
-      }
-      else
-      {
-        stdout_log_sink->warn(message);
-      }
+      else if (location == output_location::STDERR) { stderr_log_sink->warn(message); }
+      else { stdout_log_sink->warn(message); }
     }
   }
 
@@ -104,14 +92,8 @@ public:
     if (log_count <= max_limit)
     {
       if (location == output_location::COMPAT) { stderr_log_sink->error(message); }
-      else if (location == output_location::STDERR)
-      {
-        stderr_log_sink->error(message);
-      }
-      else
-      {
-        stdout_log_sink->error(message);
-      }
+      else if (location == output_location::STDERR) { stderr_log_sink->error(message); }
+      else { stdout_log_sink->error(message); }
     }
   }
 
@@ -120,14 +102,8 @@ public:
     log_count++;
     // we ignore max_limit with critical log
     if (location == output_location::COMPAT) { stderr_log_sink->critical(message); }
-    else if (location == output_location::STDERR)
-    {
-      stderr_log_sink->critical(message);
-    }
-    else
-    {
-      stdout_log_sink->critical(message);
-    }
+    else if (location == output_location::STDERR) { stderr_log_sink->critical(message); }
+    else { stdout_log_sink->critical(message); }
   }
 
   void out_info(const std::string& message)
@@ -136,14 +112,8 @@ public:
     if (log_count <= max_limit)
     {
       if (location == output_location::COMPAT) { stdout_log_sink->info(message); }
-      else if (location == output_location::STDERR)
-      {
-        stderr_log_sink->info(message);
-      }
-      else
-      {
-        stdout_log_sink->info(message);
-      }
+      else if (location == output_location::STDERR) { stderr_log_sink->info(message); }
+      else { stdout_log_sink->info(message); }
     }
   }
 
@@ -153,14 +123,8 @@ public:
     if (log_count <= max_limit)
     {
       if (location == output_location::COMPAT) { stdout_log_sink->warn(message); }
-      else if (location == output_location::STDERR)
-      {
-        stderr_log_sink->warn(message);
-      }
-      else
-      {
-        stdout_log_sink->warn(message);
-      }
+      else if (location == output_location::STDERR) { stderr_log_sink->warn(message); }
+      else { stdout_log_sink->warn(message); }
     }
   }
 
@@ -170,14 +134,8 @@ public:
     if (log_count <= max_limit)
     {
       if (location == output_location::COMPAT) { stdout_log_sink->error(message); }
-      else if (location == output_location::STDERR)
-      {
-        stderr_log_sink->error(message);
-      }
-      else
-      {
-        stdout_log_sink->error(message);
-      }
+      else if (location == output_location::STDERR) { stderr_log_sink->error(message); }
+      else { stdout_log_sink->error(message); }
     }
   }
 
@@ -186,14 +144,8 @@ public:
     log_count++;
     // we ignore max_limit with critical log
     if (location == output_location::COMPAT) { stdout_log_sink->critical(message); }
-    else if (location == output_location::STDERR)
-    {
-      stderr_log_sink->critical(message);
-    }
-    else
-    {
-      stdout_log_sink->critical(message);
-    }
+    else if (location == output_location::STDERR) { stderr_log_sink->critical(message); }
+    else { stdout_log_sink->critical(message); }
   }
 };
 

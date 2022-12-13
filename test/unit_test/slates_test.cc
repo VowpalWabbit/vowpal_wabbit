@@ -8,6 +8,7 @@
 #include "vw/core/ccb_label.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
 
@@ -45,6 +46,9 @@ VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, VW::multi_ex>* make_test
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
   return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
       static_cast<func>(predict_fptr), "mock_reduction", VW::prediction_type_t::DECISION_PROBS, VW::label_type_t::CCB)
+      // Set it to something so that the compat VW::finish_example shim is put in place.
+      .set_output_example_prediction(
+          [](VW::workspace& all, const test_base<LearnFunc, PredictFunc>&, const VW::multi_ex&, VW::io::logger&) {})
       .build();
 }
 
@@ -59,7 +63,8 @@ BOOST_AUTO_TEST_CASE(slates_reduction_mock_test)
   examples.push_back(VW::read_example(vw, "slates slot 0:0.8 | ignore_me"));
   examples.push_back(VW::read_example(vw, "slates slot 1:0.6 | ignore_me"));
 
-  auto mock_learn_or_pred = [](VW::multi_ex& examples) {
+  auto mock_learn_or_pred = [](VW::multi_ex& examples)
+  {
     BOOST_CHECK_EQUAL(examples.size(), 6);
     BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
     BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);

@@ -125,15 +125,14 @@ void learn(plt& p, single_learner& base, VW::example& ec)
         {
           uint32_t n_child = p.kary * n + i;
           if (n_child < p.t && p.positive_nodes.find(n_child) == p.positive_nodes.end())
-          { p.negative_nodes.insert(n_child); }
+          {
+            p.negative_nodes.insert(n_child);
+          }
         }
       }
     }
   }
-  else
-  {
-    p.negative_nodes.insert(0);
-  }
+  else { p.negative_nodes.insert(0); }
 
   float loss = 0;
   ec.l.simple = {1.f};
@@ -175,10 +174,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   for (auto label : multilabels.label_v)
   {
     if (label < p.k) { p.true_labels.insert(label); }
-    else
-    {
-      p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1);
-    }
+    else { p.all->logger.out_error("label {0} is not in {{0,{1}}} This won't work right.", label, p.k - 1); }
   }
 
   p.node_queue.clear();  // clear node queue
@@ -287,22 +283,29 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(VW::workspace& all, plt& p, VW::example& ec)
+void update_stats_plt(const VW::workspace& all, VW::shared_data&, const plt&, const VW::example& ec, VW::io::logger&)
 {
+  // TODO: This doesn't use the following?
+  // MULTILABEL::update_stats(all, ec);
+
   bool is_test = (ec.l.multilabels.label_v.size() == 0);
   all.sd->update(ec.test_only, !is_test, ec.loss, 1.f, ec.get_num_features());
+}
+
+void output_example_prediction_plt(VW::workspace& all, const plt& p, const VW::example& ec, VW::io::logger&)
+{
+  // TODO: This doesn't use the following?
+  // MULTILABEL::output_example_prediction(all, ec);
 
   if (p.probabilities)
-  {  // print probabilities for predicted labels stored in a_s vector, similar to multilabel_oaa reduction
+  {
+    // print probabilities for predicted labels stored in a_s vector, similar to multilabel_oaa reduction
     std::ostringstream outputStringStream;
     for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
     {
       if (i > 0) { outputStringStream << ' '; }
       if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(ec.pred.a_s[i].action); }
-      else
-      {
-        outputStringStream << ec.pred.a_s[i].action;
-      }
+      else { outputStringStream << ec.pred.a_s[i].action; }
       outputStringStream << ':' << ec.pred.a_s[i].score;
     }
     const auto ss_str = outputStringStream.str();
@@ -320,22 +323,11 @@ void finish_example(VW::workspace& all, plt& p, VW::example& ec)
   outputStringStream << ' ';
   const auto ss_str = outputStringStream.str();
   for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
+}
 
-  // copied from multilabel.cc - void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-  {
-    std::stringstream label_string;
-    if (is_test) { label_string << "unknown"; }
-    else
-    {
-      label_string << VW::to_string(ec.l.multilabels);
-    }
-
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
-  }
-
-  VW::finish_example(all, ec);
+void print_update_plt(VW::workspace& all, VW::shared_data&, const plt&, const VW::example& ec, VW::io::logger&)
+{
+  MULTILABEL::print_update(all, ec);
 }
 
 void finish(plt& p)
@@ -353,7 +345,6 @@ void finish(plt& p)
         *(p.all->trace_message) << "r@" << i + 1 << " = " << p.r_at[i] / p.ec_count << std::endl;
       }
     }
-
     else if (p.threshold > 0)
     {
       // TODO: is this the correct logger?
@@ -397,7 +388,9 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (all.loss->get_type() != "logistic")
-  { THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type()); }
+  {
+    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type());
+  }
 
   tree->all = &all;
 
@@ -416,10 +409,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     if (!all.training)
     {
       if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
-      else
-      {
-        *(all.trace_message) << "threshold = " << tree->threshold << std::endl;
-      }
+      else { *(all.trace_message) << "threshold = " << tree->threshold << std::endl; }
     }
   }
 
@@ -443,28 +433,25 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     name_addition = " -top_k";
     pred_ptr = predict<false>;
   }
-  else
-  {
-    pred_ptr = predict<true>;
-  }
+  else { pred_ptr = predict<true>; }
 
   if (tree->probabilities)
   {
     name_addition += " -prob";
-    pred_type = VW::prediction_type_t::action_probs;
+    pred_type = VW::prediction_type_t::ACTION_PROBS;
   }
-  else
-  {
-    pred_type = VW::prediction_type_t::multilabels;
-  }
+  else { pred_type = VW::prediction_type_t::MULTILABELS; }
 
   auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
       stack_builder.get_setupfn_name(plt_setup) + name_addition)
                 .set_params_per_weight(ws)
-                .set_output_prediction_type(pred_type)
-                .set_input_label_type(VW::label_type_t::multilabel)
                 .set_learn_returns_prediction(false)
-                .set_finish_example(::finish_example)
+                .set_output_prediction_type(pred_type)
+                .set_input_label_type(VW::label_type_t::MULTILABEL)
+                .set_learn_returns_prediction(false)
+                .set_update_stats(update_stats_plt)
+                .set_output_example_prediction(output_example_prediction_plt)
+                .set_print_update(print_update_plt)
                 .set_finish(::finish)
                 .set_save_load(::save_load_tree)
                 .build();

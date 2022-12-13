@@ -41,43 +41,43 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
   auto fs_copy4 = fs;
 
   // Cap at 5
-  unique_features(fs, 5);
+  VW::unique_features(fs, 5);
   check_collections_exact(
       std::vector<feature_index>(fs.indices.begin(), fs.indices.end()), std::vector<feature_index>{1, 2, 3, 5, 7});
   check_collections_exact(fs.namespace_extents, std::vector<VW::namespace_extent>{{2, 4, 1}});
 
   // Uncapped
-  unique_features(fs_copy1);
+  VW::unique_features(fs_copy1);
   check_collections_exact(std::vector<feature_index>(fs_copy1.indices.begin(), fs_copy1.indices.end()),
       std::vector<feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
   check_collections_exact(fs_copy1.namespace_extents, std::vector<VW::namespace_extent>{{2, 4, 1}, {5, 8, 2}});
 
   // Special case at max 1
-  unique_features(fs_copy2, 1);
+  VW::unique_features(fs_copy2, 1);
   check_collections_exact(
       std::vector<feature_index>(fs_copy2.indices.begin(), fs_copy2.indices.end()), std::vector<feature_index>{1});
   BOOST_REQUIRE(fs_copy2.namespace_extents.empty());
 
   // Special case for max 0
-  unique_features(fs_copy3, 0);
+  VW::unique_features(fs_copy3, 0);
   BOOST_REQUIRE(fs_copy3.empty());
   BOOST_REQUIRE(fs_copy3.namespace_extents.empty());
 
   // Explicit negative input that isn't -1
-  unique_features(fs_copy4, -10);
+  VW::unique_features(fs_copy4, -10);
   check_collections_exact(std::vector<feature_index>(fs_copy4.indices.begin(), fs_copy4.indices.end()),
       std::vector<feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
   check_collections_exact(fs_copy4.namespace_extents, std::vector<VW::namespace_extent>{{2, 4, 1}, {5, 8, 2}});
 
   // Special case for max 0
   features empty_features;
-  unique_features(empty_features, 0);
+  VW::unique_features(empty_features, 0);
   BOOST_REQUIRE(empty_features.empty());
   BOOST_REQUIRE(empty_features.namespace_extents.empty());
 
   features fs_size_one;
   fs_size_one.push_back(1.f, 1);
-  unique_features(fs_size_one);
+  VW::unique_features(fs_size_one);
   check_collections_exact(std::vector<feature_index>(fs_size_one.indices.begin(), fs_size_one.indices.end()),
       std::vector<feature_index>{1});
   BOOST_REQUIRE(fs_size_one.namespace_extents.empty());
@@ -131,10 +131,12 @@ BOOST_AUTO_TEST_CASE(iterate_extents_test)
 {
   auto* vw = VW::initialize("--quiet");
   auto* ex = VW::read_example(*vw, "|user_info a b c |user_geo a b c d |other a b c d e |user_info a b");
-  auto cleanup = VW::scope_exit([&]() {
-    VW::finish_example(*vw, *ex);
-    VW::finish(*vw);
-  });
+  auto cleanup = VW::scope_exit(
+      [&]()
+      {
+        VW::finish_example(*vw, *ex);
+        VW::finish(*vw);
+      });
 
   {
     auto begin = ex->feature_space['u'].hash_extents_begin(VW::hash_space(*vw, "user_info"));

@@ -48,6 +48,8 @@ using socket_t = int;
 #include "vw/allreduce/allreduce_type.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cassert>
@@ -302,10 +304,7 @@ private:
               FD_CLR(_socks.children[i], &fds);
             }
           }
-          else if (_socks.children[i] != -1 && child_read_pos[i] != n)
-          {
-            FD_SET(_socks.children[i], &fds);
-          }
+          else if (_socks.children[i] != -1 && child_read_pos[i] != n) { FD_SET(_socks.children[i], &fds); }
         }
       }
       if (_socks.parent == -1 && child_read_pos[0] == n && child_read_pos[1] == n) { parent_sent_pos = n; }

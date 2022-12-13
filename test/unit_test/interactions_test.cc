@@ -85,7 +85,9 @@ void eval_count_of_generated_ft_naive(
   for (auto ns_index : ec.indices)
   {
     for (const auto& extent : ec.feature_space[ns_index].namespace_extents)
-    { seen_extents.insert({ns_index, extent.hash}); }
+    {
+      seen_extents.insert({ns_index, extent.hash});
+    }
   }
 
   auto interactions = INTERACTIONS::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
@@ -346,31 +348,31 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   auto* vw = VW::initialize("--quiet");
 
   {
-    auto a = parse_full_name_interactions(*vw, "a|b");
+    auto a = VW::details::parse_full_name_interactions(*vw, "a|b");
     std::vector<extent_term> expected = {
         extent_term{'a', VW::hash_space(*vw, "a")}, extent_term{'b', VW::hash_space(*vw, "b")}};
     check_collections_exact(a, expected);
   }
 
   {
-    auto a = parse_full_name_interactions(*vw, "art|bat|and");
+    auto a = VW::details::parse_full_name_interactions(*vw, "art|bat|and");
     std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
         extent_term{'b', VW::hash_space(*vw, "bat")}, extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
   {
-    auto a = parse_full_name_interactions(*vw, "art|:|and");
+    auto a = VW::details::parse_full_name_interactions(*vw, "art|:|and");
     std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
         extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE},
         extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
-  BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "||"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "||||"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "||"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "||||"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
   VW::finish(*vw);
 }
 
@@ -378,13 +380,16 @@ BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
 {
   auto* vw_char_inter = VW::initialize("--quiet -q AB");
   auto* vw_extent_inter = VW::initialize("--quiet --experimental_full_name_interactions group1|group2");
-  auto cleanup = VW::scope_exit([&]() {
-    VW::finish(*vw_char_inter);
-    VW::finish(*vw_extent_inter);
-  });
+  auto cleanup = VW::scope_exit(
+      [&]()
+      {
+        VW::finish(*vw_char_inter);
+        VW::finish(*vw_extent_inter);
+      });
 
   auto parse_and_return_num_fts = [&](const char* char_inter_example,
-                                      const char* extent_inter_example) -> std::pair<size_t, size_t> {
+                                      const char* extent_inter_example) -> std::pair<size_t, size_t>
+  {
     auto* ex_char = VW::read_example(*vw_char_inter, char_inter_example);
     auto* ex_extent = VW::read_example(*vw_extent_inter, extent_inter_example);
     vw_char_inter->predict(*ex_char);
@@ -416,19 +421,22 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   auto* ex = VW::read_example(*vw,
       "|user_info a b c |user_geo a b c d |user_info a b |another a b c |extra a b |extra_filler a |extra a b "
       "|extra_filler a |extra a b");
-  auto cleanup = VW::scope_exit([&]() {
-    VW::finish_example(*vw, *ex);
-    VW::finish(*vw);
-  });
+  auto cleanup = VW::scope_exit(
+      [&]()
+      {
+        VW::finish_example(*vw, *ex);
+        VW::finish(*vw);
+      });
 
   VW::details::generate_interactions_object_cache cache;
 
   {
-    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info");
+    const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|user_info");
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
-        [&](const std::vector<VW::details::features_range_t>& combination) {
+        [&](const std::vector<VW::details::features_range_t>& combination)
+        {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 2);
         },
@@ -437,11 +445,12 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   }
 
   {
-    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info|user_info");
+    const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|user_info|user_info");
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
-        [&](const std::vector<VW::details::features_range_t>& combination) {
+        [&](const std::vector<VW::details::features_range_t>& combination)
+        {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 3);
         },
@@ -450,11 +459,12 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   }
 
   {
-    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|extra");
+    const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|extra");
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
-        [&](const std::vector<VW::details::features_range_t>& combination) {
+        [&](const std::vector<VW::details::features_range_t>& combination)
+        {
           counter++;
           BOOST_REQUIRE_EQUAL(combination.size(), 2);
         },
@@ -489,13 +499,16 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
   }
   auto* vw_char_inter = VW::initialize(char_cmd_line);
   auto* vw_extent_inter = VW::initialize(extent_cmd_line);
-  auto cleanup = VW::scope_exit([&]() {
-    VW::finish(*vw_char_inter);
-    VW::finish(*vw_extent_inter);
-  });
+  auto cleanup = VW::scope_exit(
+      [&]()
+      {
+        VW::finish(*vw_char_inter);
+        VW::finish(*vw_extent_inter);
+      });
 
   auto parse_and_return_num_fts = [&](const char* char_inter_example,
-                                      const char* extent_inter_example) -> std::pair<size_t, size_t> {
+                                      const char* extent_inter_example) -> std::pair<size_t, size_t>
+  {
     auto* ex_char = VW::read_example(*vw_char_inter, char_inter_example);
     auto* ex_extent = VW::read_example(*vw_extent_inter, extent_inter_example);
     vw_char_inter->predict(*ex_char);

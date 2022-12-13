@@ -100,10 +100,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   data->ex.extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
 
   if (data->one_learner) { sch.set_num_learners(1); }
-  else
-  {
-    sch.set_num_learners(3);
-  }
+  else { sch.set_num_learners(3); }
 
   std::vector<std::vector<VW::namespace_index>> newpairs{{'B', 'C'}, {'B', 'E'}, {'B', 'B'}, {'C', 'C'}, {'D', 'D'},
       {'E', 'E'}, {'F', 'F'}, {'G', 'G'}, {'E', 'F'}, {'B', 'H'}, {'B', 'J'}, {'E', 'L'}, {'d', 'B'}, {'d', 'C'},
@@ -117,10 +114,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   all.interactions.insert(std::end(all.interactions), std::begin(newtriples), std::end(newtriples));
 
   if (data->cost_to_go) { sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS); }
-  else
-  {
-    sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING);
-  }
+  else { sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING); }
 
   sch.set_label_parser(VW::cs_label_parser_global, [](const VW::polylabel& l) -> bool { return l.cs.costs.empty(); });
 }
@@ -140,7 +134,9 @@ void add_all_features(VW::example& ex, VW::example& src, unsigned char tgt_ns, u
     if (ns != VW::details::CONSTANT_NAMESPACE)
     {  // ignore VW::details::CONSTANT_NAMESPACE
       for (feature_index i : src.feature_space[ns].indices)
-      { tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask); }
+      {
+        tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
+      }
     }
   }
 }
@@ -272,7 +268,9 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
 
   // feature based on the top three examples in stack ec_buf[0]: s1, ec_buf[1]: s2, ec_buf[2]: s3
   for (size_t i = 0; i < 3; i++)
-  { ec_buf[i] = (stack.size() > i && *(stack.end() - (i + 1)) != 0) ? ec[*(stack.end() - (i + 1)) - 1] : nullptr; }
+  {
+    ec_buf[i] = (stack.size() > i && *(stack.end() - (i + 1)) != 0) ? ec[*(stack.end() - (i + 1)) - 1] : nullptr;
+  }
 
   // features based on examples in string buffer ec_buf[3]: b1, ec_buf[4]: b2, ec_buf[5]: b3
   for (size_t i = 3; i < 6; i++) { ec_buf[i] = (idx + (i - 3) - 1 < n) ? ec[idx + i - 3 - 1] : nullptr; }
@@ -286,7 +284,9 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
 
   // features based on leftmost children of the top element in bufer ec_buf[10]: bl1, ec_buf[11]: bl2
   for (size_t i = 10; i < 12; i++)
-  { ec_buf[i] = (idx <= n && children[i - 8][idx] != 0) ? ec[children[i - 8][idx] - 1] : nullptr; }
+  {
+    ec_buf[i] = (idx <= n && children[i - 8][idx] != 0) ? ec[children[i - 8][idx] - 1] : nullptr;
+  }
   ec_buf[12] = (stack.size() > 1 && *(stack.end() - 2) != 0 && children[2][*(stack.end() - 2)] != 0)
       ? ec[children[2][*(stack.end() - 2)] - 1]
       : nullptr;
@@ -314,9 +314,13 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
   temp[2] = empty ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[1][last]);
   temp[3] = idx > n ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[0][idx]);
   for (size_t i = 4; i < 8; i++)
-  { temp[i] = (!empty && children[i - 2][last] != 0) ? tags[children[i - 2][last]] : 15; }
+  {
+    temp[i] = (!empty && children[i - 2][last] != 0) ? tags[children[i - 2][last]] : 15;
+  }
   for (size_t i = 8; i < 10; i++)
-  { temp[i] = (idx <= n && children[i - 6][idx] != 0) ? tags[children[i - 6][idx]] : 15; }
+  {
+    temp[i] = (idx <= n && children[i - 6][idx] != 0) ? tags[children[i - 6][idx]] : 15;
+  }
 
   uint64_t additional_offset = VAL_NAMESPACE * OFFSET_CONST;
   for (size_t j = 0; j < 10; j++)
@@ -367,10 +371,7 @@ void get_valid_actions(Search::search& sch, VW::v_array<uint32_t>& valid_action,
     }
 
     if (stack_depth == 0) { temp[REDUCE] = 0; }
-    else if (idx <= n + 1 && heads[stack.back()] == MY_NULL)
-    {
-      temp[REDUCE] = 0;
-    }
+    else if (idx <= n + 1 && heads[stack.back()] == MY_NULL) { temp[REDUCE] = 0; }
 
     if (stack_depth == 0)
     {
@@ -486,7 +487,9 @@ void get_cost_to_go_losses(Search::search& sch, std::vector<std::pair<action, fl
   if (one_learner)
   {
     if (is_valid(SHIFT, valid_actions))
-    { gold_action_losses.push_back(std::make_pair(SHIFT, static_cast<float>(action_loss[SHIFT]))); }
+    {
+      gold_action_losses.push_back(std::make_pair(SHIFT, static_cast<float>(action_loss[SHIFT])));
+    }
     for (uint32_t i = 2; i <= 3; i++)
     {
       if (is_valid(i, valid_actions))
@@ -502,17 +505,23 @@ void get_cost_to_go_losses(Search::search& sch, std::vector<std::pair<action, fl
       }
     }
     if (sys == ARC_EAGER && is_valid(REDUCE, valid_actions))
-    { gold_action_losses.push_back(std::make_pair(2 + num_label * 2, static_cast<float>(action_loss[REDUCE]))); }
+    {
+      gold_action_losses.push_back(std::make_pair(2 + num_label * 2, static_cast<float>(action_loss[REDUCE])));
+    }
   }
   else
   {
     for (action i = 1; i <= 3; i++)
     {
       if (is_valid(i, valid_actions))
-      { gold_action_losses.push_back(std::make_pair(i, static_cast<float>(action_loss[i]))); }
+      {
+        gold_action_losses.push_back(std::make_pair(i, static_cast<float>(action_loss[i])));
+      }
     }
     if (sys == ARC_EAGER && is_valid(REDUCE, valid_actions))
-    { gold_action_losses.push_back(std::make_pair(REDUCE, static_cast<float>(action_loss[REDUCE]))); }
+    {
+      gold_action_losses.push_back(std::make_pair(REDUCE, static_cast<float>(action_loss[REDUCE])));
+    }
   }
 }
 
@@ -570,7 +579,9 @@ void convert_to_onelearner_actions(Search::search& sch, VW::v_array<action>& act
   if (sys == ARC_EAGER && is_valid(REDUCE, actions)) { actions_onelearner.push_back(2 + 2 * num_label); }
   if (left_label != MY_NULL && is_valid(REDUCE_RIGHT, actions)) { actions_onelearner.push_back(1 + right_label); }
   if (left_label != MY_NULL && is_valid(REDUCE_LEFT, actions))
-  { actions_onelearner.push_back(1 + left_label + num_label); }
+  {
+    actions_onelearner.push_back(1 + left_label + num_label);
+  }
   if (left_label == MY_NULL && is_valid(REDUCE_RIGHT, actions))
   {
     for (uint32_t i = 0; i < num_label; i++)
@@ -583,7 +594,9 @@ void convert_to_onelearner_actions(Search::search& sch, VW::v_array<action>& act
     for (uint32_t i = 0; i < num_label; i++)
     {
       if (sys == ARC_EAGER || i != data->root_label - 1)
-      { actions_onelearner.push_back(static_cast<uint32_t>(i + 2 + num_label)); }
+      {
+        actions_onelearner.push_back(static_cast<uint32_t>(i + 2 + num_label));
+      }
     }
   }
 }
@@ -657,10 +670,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
   while (true)
   {
     if (sys == ARC_HYBRID && stack.size() <= 1 && idx >= n) { break; }
-    else if (sys == ARC_EAGER && stack.size() == 0 && idx >= n)
-    {
-      break;
-    }
+    else if (sys == ARC_EAGER && stack.size() == 0 && idx >= n) { break; }
     bool computed_features = false;
     if (sch.predictNeedsExample())
     {
@@ -670,18 +680,12 @@ void run(Search::search& sch, VW::multi_ex& ec)
     get_valid_actions(
         sch, valid_actions, idx, n, static_cast<uint64_t>(stack.size()), stack.empty() ? 0 : stack.back());
     if (sys == ARC_HYBRID) { get_hybrid_action_cost(sch, idx, n); }
-    else if (sys == ARC_EAGER)
-    {
-      get_eager_action_cost(sch, idx, n);
-    }
+    else if (sys == ARC_EAGER) { get_eager_action_cost(sch, idx, n); }
 
     // get gold tag labels
     left_label = stack.empty() ? MY_NULL : gold_tags[stack.back()];
     if (sys == ARC_HYBRID) { right_label = stack.empty() ? MY_NULL : gold_tags[stack.back()]; }
-    else if (sys == ARC_EAGER)
-    {
-      right_label = idx <= n ? gold_tags[idx] : static_cast<uint32_t>(data->root_label);
-    }
+    else if (sys == ARC_EAGER) { right_label = idx <= n ? gold_tags[idx] : static_cast<uint32_t>(data->root_label); }
     else
       THROW("unknown transition system");
 
@@ -788,10 +792,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
     }
     count++;
     if (sys == ARC_HYBRID) { idx = static_cast<uint32_t>(transition_hybrid(sch, a_id, idx, t_id, n)); }
-    else if (sys == ARC_EAGER)
-    {
-      idx = static_cast<uint32_t>(transition_eager(sch, a_id, idx, t_id, n));
-    }
+    else if (sys == ARC_EAGER) { idx = static_cast<uint32_t>(transition_eager(sch, a_id, idx, t_id, n)); }
   }
   if (sys == ARC_HYBRID)
   {

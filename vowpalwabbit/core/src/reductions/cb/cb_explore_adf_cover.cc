@@ -62,7 +62,7 @@ private:
   VW::version_struct _model_file_version;
   VW::io::logger _logger;
 
-  v_array<VW::action_score> _action_probs;
+  VW::v_array<VW::action_score> _action_probs;
   std::vector<float> _scores;
   VW::cs_label _cs_labels;
   VW::cs_label _cs_labels_2;
@@ -105,10 +105,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     {  // use DR estimates for non-ERM policies in MTR
       GEN_CS::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels);
     }
-    else
-    {
-      GEN_CS::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger);
-    }
+    else { GEN_CS::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger); }
 
     if (base.learn_returns_prediction)
     {
@@ -128,7 +125,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     GEN_CS::gen_cs_example_ips(examples, _cs_labels, _logger);
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
-  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
+  VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   const uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   float additive_probability = 1.f / static_cast<float>(_cover_size);
@@ -146,12 +143,11 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   {
     size_t tied_actions = fill_tied(preds);
     for (size_t i = 0; i < tied_actions; ++i)
-    { _action_probs[preds[i].action].score += additive_probability / tied_actions; }
+    {
+      _action_probs[preds[i].action].score += additive_probability / tied_actions;
+    }
   }
-  else
-  {
-    _action_probs[preds[0].action].score += additive_probability;
-  }
+  else { _action_probs[preds[0].action].score += additive_probability; }
 
   float norm = min_prob * num_actions + (additive_probability - min_prob);
   for (size_t i = 1; i < _cover_size; i++)
@@ -189,11 +185,10 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
       for (size_t j = 0; j < tied_actions; ++j)
       {
         if (_action_probs[preds[j].action].score < min_prob)
-        { norm += (std::max)(0.f, add_prob - (min_prob - _action_probs[preds[j].action].score)); }
-        else
         {
-          norm += add_prob;
+          norm += (std::max)(0.f, add_prob - (min_prob - _action_probs[preds[j].action].score));
         }
+        else { norm += add_prob; }
         _action_probs[preds[j].action].score += add_prob;
       }
     }
@@ -201,11 +196,10 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     {
       uint32_t action = preds[0].action;
       if (_action_probs[action].score < min_prob)
-      { norm += (std::max)(0.f, additive_probability - (min_prob - _action_probs[action].score)); }
-      else
       {
-        norm += additive_probability;
+        norm += (std::max)(0.f, additive_probability - (min_prob - _action_probs[action].score));
       }
+      else { norm += additive_probability; }
       _action_probs[action].score += additive_probability;
     }
   }

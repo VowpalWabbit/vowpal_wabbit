@@ -21,5 +21,6 @@ weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = 0.333333
 total feature number = 21
-update count = 2
+weighted update count = 2.000000
+average accepted example weight = 1.000000
 final multiplier = 0.555556

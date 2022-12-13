@@ -7,7 +7,6 @@
 
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
-#include "vw/core/cache.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
@@ -67,11 +66,12 @@ VW::label_parser simple_label_parser_global = {
     [](VW::polylabel& label) { default_simple_label(label.simple); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& red_features, VW::label_parser_reuse_mem& /*reuse_mem*/,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_simple_label(label.simple, red_features, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_simple_label(label.simple, red_features, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& red_feats, io_buf& cache,
-        const std::string& upstream_name, bool text) {
+        const std::string& upstream_name, bool text)
+    {
       size_t bytes = 0;
       bytes += VW::model_utils::write_model_field(cache, label.simple, upstream_name, text);
       bytes += VW::model_utils::write_model_field(
@@ -79,16 +79,16 @@ VW::label_parser simple_label_parser_global = {
       return bytes;
     },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& red_feats, io_buf& cache) {
+    [](VW::polylabel& label, VW::reduction_features& red_feats, io_buf& cache)
+    {
       size_t bytes = 0;
       bytes += VW::model_utils::read_model_field(cache, label.simple);
       bytes += VW::model_utils::read_model_field(cache, red_feats.template get<VW::simple_label_reduction_features>());
       return bytes;
     },
     // get_weight
-    [](const VW::polylabel& /*label*/, const VW::reduction_features& red_features) {
-      return ::get_weight(red_features);
-    },
+    [](const VW::polylabel& /*label*/, const VW::reduction_features& red_features)
+    { return ::get_weight(red_features); },
     // test_label
     [](const VW::polylabel& label) { return test_label(label.simple); },
     // label type

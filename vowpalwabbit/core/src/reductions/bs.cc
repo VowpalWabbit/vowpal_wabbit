@@ -12,6 +12,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cerrno>
@@ -45,7 +46,9 @@ void bs_predict_mean(VW::workspace& all, VW::example& ec, std::vector<double>& p
 {
   ec.pred.scalar = static_cast<float>(accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
-  { ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
+  {
+    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  }
 }
 
 void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
@@ -84,10 +87,7 @@ void bs_predict_vote(VW::example& ec, std::vector<double>& pred_vec)
     else
     {
       if (pred_vec_int[i] == current_label) { counter++; }
-      else
-      {
-        counter--;
-      }
+      else { counter--; }
     }
   }
 
@@ -150,7 +150,7 @@ void print_result(
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
 void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
@@ -172,7 +172,9 @@ void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
   }
 
   for (auto& sink : all.final_prediction_sink)
-  { print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger); }
+  {
+    print_result(sink.get(), ec.pred.scalar, ec.tag, d.lb, d.ub, all.logger);
+  }
 
   VW::details::print_update(all, ec);
 }
@@ -190,13 +192,10 @@ void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
 
   for (size_t i = 1; i <= d.num_bootstrap_rounds; i++)
   {
-    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(d.random_state));
+    ec.weight = weight_temp * static_cast<float>(bs::weight_gen(*d.random_state));
 
     if (is_learn) { base.learn(ec, i - 1); }
-    else
-    {
-      base.predict(ec, i - 1);
-    }
+    else { base.predict(ec, i - 1); }
 
     d.pred_vec.push_back(ec.pred.scalar);
 
@@ -222,7 +221,9 @@ void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
   }
 
   if (should_output)
-  { all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger); }
+  {
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+  }
 }
 
 void finish_example(VW::workspace& all, bs_data& d, VW::example& ec)
@@ -257,10 +258,7 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("bs_type"))
   {
     if (type_string == "mean") { data->bs_type = BS_TYPE_MEAN; }
-    else if (type_string == "vote")
-    {
-      data->bs_type = BS_TYPE_VOTE;
-    }
+    else if (type_string == "vote") { data->bs_type = BS_TYPE_VOTE; }
     else
     {
       all.logger.err_warn("bs_type must be in {{'mean','vote'}}; resetting to mean.");

@@ -100,10 +100,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
     w = (u + l) / 2.f;
     v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
     if (v > 0) { u = w; }
-    else
-    {
-      l = w;
-    }
+    else { l = w; }
     if (std::fabs(v) <= tol || u - l <= tol) { break; }
   }
 
@@ -172,7 +169,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, VW:
 void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examples)
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
-  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
+  VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   const float max_range = _max_cb_cost - _min_cb_cost;
@@ -196,10 +193,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
     for (size_t i = 0; i < preds.size(); ++i)
     {
       if (preds[i].action == a_opt || (!_first_only && _min_costs[preds[i].action] == min_cost)) { preds[i].score = 1; }
-      else
-      {
-        preds[i].score = 0;
-      }
+      else { preds[i].score = 0; }
     }
   }
   else  // elimination variant
@@ -212,10 +206,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
     for (size_t i = 0; i < preds.size(); ++i)
     {
       if (_min_costs[preds[i].action] <= min_max_cost) { preds[i].score = 1; }
-      else
-      {
-        preds[i].score = 0;
-      }
+      else { preds[i].score = 0; }
       // explore uniformly on support
       exploration::enforce_minimum_probability(
           1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
@@ -225,7 +216,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
 
 void cb_explore_adf_regcb::learn_impl(multi_learner& base, VW::multi_ex& examples)
 {
-  v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
+  VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
     CB::label& ld = examples[i]->l.cb;

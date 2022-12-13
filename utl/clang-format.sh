@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Set environment variable GH_WORKFLOW_LOGGING to output logging that Azure pipelines will interpret as a warning.
 # Set environment variable WARNING_AS_ERROR to make the script exit with a non-zero code if issues are found.
@@ -13,14 +13,14 @@ REPO_DIR="$SCRIPT_DIR/../"
 cd "$REPO_DIR"
 
 # For the docker commands, re-run this script inside docker container
-# The ubuntu:focal image should have clang-format version 10, which matches what runs in Github Actions
+# The ubuntu:22.04 image should have clang-format version 10, which matches what runs in Github Actions
 if [[ "$1" == "docker" ]]; then
     DOCKER_CMD="echo 'Installing clang-format in docker container...'; apt update -qq; apt install -qq -y clang-format; cd /reinforcement_learning; ./utl/clang-format.sh ${@:2}"
     if command -v podman &> /dev/null; then
         # podman supports --env-host for forwarding all host environment variables
-        podman run -it --env-host -v "$REPO_DIR:/reinforcement_learning" ubuntu:focal /bin/bash -c "$DOCKER_CMD"
+        podman run -it --env-host -v "$REPO_DIR:/reinforcement_learning" ubuntu:22.04 /bin/bash -c "$DOCKER_CMD"
     elif command -v docker &> /dev/null; then
-        docker run -it -v "$REPO_DIR:/reinforcement_learning" ubuntu:focal /bin/bash -c "$DOCKER_CMD"
+        docker run -it -v "$REPO_DIR:/reinforcement_learning" ubuntu:22.04 /bin/bash -c "$DOCKER_CMD"
     else
         echo "You need to install Docker (or Podman) first to use this script in docker mode"
     fi
@@ -31,9 +31,9 @@ fi
 echo "Using clang-format version:"
 clang-format --version
 
-for FILE in $(find . -type f -not -path './ext_libs/*' -not -path './cs/cli/*' \( -name '*.cc' -o -name "*.h" \) ); do
+for FILE in $(find . -type f -not -path './ext_libs/*' -not -path './cs/cli/*' -not -path '*/vcpkg_installed/*' \( -name '*.cc' -o -name "*.h" \) ); do
     if [[ "$1" == "check" ]]; then
-        diff $FILE <(clang-format $FILE);
+        clang-format --dry-run --Werror $FILE
         if [ $? -ne 0 ]; then
             ISSUE_FOUND="true"
             if [[ -v GH_WORKFLOW_LOGGING ]]; then

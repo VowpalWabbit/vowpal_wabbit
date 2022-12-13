@@ -13,6 +13,7 @@ set(vw_core_headers
   include/vw/core/cb_label_parser.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
+  include/vw/core/daemon_utils.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
   include/vw/core/ccb_label.h
@@ -57,6 +58,7 @@ set(vw_core_headers
   include/vw/core/merge.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
+  include/vw/core/multi_model_utils.h
   include/vw/core/multiclass.h
   include/vw/core/multilabel.h
   include/vw/core/named_labels.h
@@ -75,7 +77,7 @@ set(vw_core_headers
   include/vw/core/prediction_type.h
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
-   include/vw/core/qr_decomposition.h
+  include/vw/core/qr_decomposition.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
@@ -176,7 +178,6 @@ set(vw_core_headers
   include/vw/core/simple_label_parser.h
   include/vw/core/simple_label.h
   include/vw/core/slates_label.h
-  include/vw/core/stable_unique.h
   include/vw/core/tag_utils.h
   include/vw/core/text_utils.h
   include/vw/core/thread_pool.h
@@ -197,7 +198,6 @@ set(vw_core_sources
   src/array_parameters_dense.cc
   src/array_parameters_sparse.cc
   src/best_constant.cc
-  src/cache.cc
   src/cb_continuous_label.cc
   src/cb_type.cc
   src/cb.cc
@@ -259,6 +259,8 @@ set(vw_core_sources
   src/reductions/cats_pdf.cc
   src/reductions/cats_tree.cc
   src/reductions/cats.cc
+  src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc
+  src/reductions/cb/details/large_action/compute_dot_prod_avx512.cc
   src/reductions/cb/details/large_action/one_pass_svd_impl.cc
   src/reductions/cb/details/large_action/one_rank_spanner_impl.cc
   src/reductions/cb/details/large_action/two_pass_svd_impl.cc
@@ -295,6 +297,7 @@ set(vw_core_sources
   src/reductions/details/automl/automl_oracle.cc
   src/reductions/details/automl/automl_util.cc
   src/reductions/ect.cc
+  src/daemon_utils.cc
   src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
   src/reductions/freegrad.cc
@@ -356,19 +359,25 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
         ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
-        $<BUILD_INTERFACE:eigen>
+        $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
 )
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
+
+if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
+  set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx2")
+  set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx512.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
+  target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)
+endif()
 
 if(VW_BUILD_CSV)
   target_link_libraries(vw_core PRIVATE vw_csv_parser)
@@ -411,7 +420,6 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
-      tests/cache_test.cc
       tests/flat_example_test.cc
       tests/main.cc
       tests/merge_test.cc

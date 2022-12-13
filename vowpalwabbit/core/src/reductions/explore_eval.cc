@@ -27,6 +27,50 @@ using namespace VW::config;
 
 namespace
 {
+class rate_target
+{
+  /**
+   * This class is used to adjust a multiplier to be used when deciding whether to update on a given example or not.
+   * The class has a target rate and uses the threshold at each step to keep an estimate of the current sampling rate,
+   * and return the multiplier that is needed in order to either over sample or under sample if the current sampling
+   * rate is under or over the target rate respectively
+   */
+  float _target_rate;
+  float _sum_p;
+  size_t _t;
+  float _latest_rate = 1.f;
+
+  float predict() const
+  {
+    if (_sum_p > 0.f) { return _target_rate * (float)_t / _sum_p; }
+    else { return 1.f; }
+  }
+
+  void learn(float p)
+  {
+    _sum_p += p;
+    _t++;
+  }
+
+public:
+  rate_target() : _target_rate(1), _sum_p(0), _t(0) {}
+
+  void set_target_rate(float rate) { _target_rate = rate; }
+
+  float get_target_rate() const { return _target_rate; }
+
+  float get_latest_rate() const { return _latest_rate; }
+
+  float get_rate_and_update(float threshold)
+  {
+    float z = predict();
+    learn(threshold);
+
+    _latest_rate = z;
+    return z;
+  }
+};
+
 class explore_eval
 {
 public:
@@ -37,26 +81,31 @@ public:
   CB::label action_label;
   CB::label empty_label;
   size_t example_counter = 0;
-  size_t block_size = 1;
-  size_t block_ex_quota = 1;
+  rate_target rt_target;
 
   size_t update_count = 0;
+  float weighted_update_count = 0;
   size_t violations = 0;
   float multiplier = 0.f;
 
   bool fixed_multiplier = false;
+  bool target_rate_on = false;
 };
 
 void finish(explore_eval& data)
 {
   if (!data.all->quiet)
   {
-    *(data.all->trace_message) << "update count = " << data.update_count << std::endl;
+    *(data.all->trace_message) << "weighted update count = " << data.weighted_update_count << std::endl;
+    *(data.all->trace_message) << "average accepted example weight = "
+                               << data.weighted_update_count / static_cast<float>(data.update_count) << std::endl;
     if (data.violations > 0) { *(data.all->trace_message) << "violation count = " << data.violations << std::endl; }
     if (!data.fixed_multiplier) { *(data.all->trace_message) << "final multiplier = " << data.multiplier << std::endl; }
-    if (data.block_size > 1)
+    if (data.target_rate_on)
     {
-      *(data.all->trace_message) << "targeted update count = " << (data.example_counter / data.block_size) << std::endl;
+      *(data.all->trace_message) << "targeted update count = "
+                                 << (data.example_counter * data.rt_target.get_target_rate()) << std::endl;
+      *(data.all->trace_message) << "final rate = " << (data.rt_target.get_latest_rate()) << std::endl;
     }
   }
 }
@@ -78,7 +127,9 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
   for (size_t i = 0; i < (*ec_seq).size(); i++)
   {
     if (!VW::LEARNER::ec_is_example_header(*(*ec_seq)[i], label_type))
-    { num_features += (*ec_seq)[i]->get_num_features(); }
+    {
+      num_features += (*ec_seq)[i]->get_num_features();
+    }
   }
 
   bool labeled_example = true;
@@ -90,10 +141,7 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
       loss += l * preds[i].score;
     }
   }
-  else
-  {
-    labeled_example = false;
-  }
+  else { labeled_example = false; }
 
   bool holdout_example = labeled_example;
   for (size_t i = 0; i < ec_seq->size(); i++) { holdout_example &= (*ec_seq)[i]->test_only; }
@@ -101,7 +149,9 @@ void output_example(VW::workspace& all, const explore_eval& c, const VW::example
   all.sd->update(holdout_example, labeled_example, loss, ec.weight, num_features);
 
   for (auto& sink : all.final_prediction_sink)
-  { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger); }
+  {
+    VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -126,7 +176,9 @@ void output_example_seq(VW::workspace& all, const explore_eval& data, const VW::
   {
     output_example(all, data, **(ec_seq.begin()), &(ec_seq));
     if (all.raw_prediction != nullptr)
-    { all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger); }
+    {
+      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+    }
   }
 }
 
@@ -165,17 +217,6 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
   {
     data.example_counter++;
 
-    if (data.example_counter % data.block_size == 0)
-    {
-      // once new block has rolled over either reset quota or roll over previous quota
-      data.block_ex_quota++;
-    }
-    else if (data.block_ex_quota == 0)
-    {
-      // if we reached the example quota for this example block just skip
-      return;
-    }
-
     VW::action_scores& a_s = ec_seq[0]->pred.a_s;
 
     float action_probability = 0;
@@ -189,15 +230,24 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       }
     }
 
-    if (!action_found) { return; }
-
     float threshold = action_probability / data.known_cost.probability;
 
-    if (!data.fixed_multiplier) { data.multiplier = std::min(data.multiplier, 1 / threshold); }
+    if (!data.fixed_multiplier && !data.target_rate_on)
+    {
+      if (action_found) { data.multiplier = std::min(data.multiplier, 1.f / threshold); }
+    }
 
     threshold *= data.multiplier;
 
+    // rate multiplier called before we potentially return if action not found since we want to update the rate
+    // prediction
+    float rate_multiplier = data.rt_target.get_rate_and_update(threshold);
+
+    if (!action_found) { return; }
+
     if (threshold > 1. + 1e-6) { data.violations++; }
+
+    if (data.target_rate_on) { threshold *= rate_multiplier; }
 
     if (data.random_state->get_and_update_random() < threshold)
     {
@@ -205,25 +255,28 @@ void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& e
       for (VW::example*& ec : ec_seq)
       {
         if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX && ec->l.cb.costs[0].probability > 0)
-        { ec_found = ec; }
-        if (threshold > 1) { ec->weight *= threshold; }
+        {
+          ec_found = ec;
+        }
+        if (threshold > 1.f) { ec->weight *= threshold; }
       }
 
       ec_found->l.cb.costs[0].probability = action_probability;
 
+      // weighted update count since weight can be *= threshold
+      data.weighted_update_count += ec_found->weight;
+      data.update_count++;
+
       multiline_learn_or_predict<true>(base, ec_seq, data.offset);
 
       // restore logged example
-      if (threshold > 1)
+      if (threshold > 1.f)
       {
         float inv_threshold = 1.f / threshold;
         for (auto& ec : ec_seq) { ec->weight *= inv_threshold; }
       }
 
       ec_found->l.cb.costs[0].probability = data.known_cost.probability;
-
-      data.update_count++;
-      data.block_ex_quota--;
     }
   }
 }
@@ -235,7 +288,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<explore_eval>();
   bool explore_eval_option = false;
-  uint32_t block_size = 0;
+  float target_rate = 1.f;
   option_group_definition new_options("[Reduction] Explore Evaluation");
   new_options
       .add(make_option("explore_eval", explore_eval_option)
@@ -244,25 +297,19 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
                .help("Evaluate explore_eval adf policies"))
       .add(make_option("multiplier", data->multiplier)
                .help("Multiplier used to make all rejection sample probabilities <= 1"))
-      .add(
-          make_option("block_size", block_size)
-              .default_value(1)
-              .help("The examples will be processed in blocks of block_size. If an example update is found in that "
-                    "block no other examples in the block will be used to update the policy. If an example is not used "
-                    "in the block then the quota rolls over and the next block can update more than one examples"));
+      .add(make_option("target_rate", target_rate)
+               .help("The target rate will be used to adjust the rejection rate in order to achieve an update count of "
+                     "#examples * target_rate"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   data->all = &all;
   data->random_state = all.get_random_state();
-  data->block_size = static_cast<size_t>(block_size);
-  data->block_ex_quota = 1;
+  data->rt_target.set_target_rate(target_rate);
+  if (options.was_supplied("target_rate")) { data->target_rate_on = true; }
 
   if (options.was_supplied("multiplier")) { data->fixed_multiplier = true; }
-  else
-  {
-    data->multiplier = 1;
-  }
+  else { data->multiplier = 1; }
 
   if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 

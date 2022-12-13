@@ -10,15 +10,14 @@
 #include <cstddef>
 #include <cstdint>
 
-void accumulate(VW::workspace& all, parameters& weights, size_t o);
-float accumulate_scalar(VW::workspace& all, float local_sum);
-void accumulate_weighted_avg(VW::workspace& all, parameters& weights);
-void accumulate_avg(VW::workspace& all, parameters& weights, size_t o);
-
 namespace VW
 {
 namespace details
 {
+void accumulate(VW::workspace& all, parameters& weights, size_t o);
+float accumulate_scalar(VW::workspace& all, float local_sum);
+void accumulate_weighted_avg(VW::workspace& all, parameters& weights);
+void accumulate_avg(VW::workspace& all, parameters& weights, size_t o);
 template <class T>
 void do_weighting(size_t normalized_idx, uint64_t length, const float* local_weights, T& weights)
 {
@@ -35,10 +34,7 @@ void do_weighting(size_t normalized_idx, uint64_t length, const float* local_wei
         weight[normalized_idx] *= ratio;  // A crude max
       }
     }
-    else
-    {
-      *weight = 0;
-    }
+    else { *weight = 0; }
   }
 }
 

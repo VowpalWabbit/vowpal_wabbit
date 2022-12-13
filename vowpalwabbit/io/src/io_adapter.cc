@@ -4,6 +4,9 @@
 
 #include "vw/io/io_adapter.h"
 
+#include "vw/common/vw_throw.h"
+#include "vw/io/errno_handling.h"
+
 #ifdef _WIN32
 #  define NOMINMAX
 #  define ssize_t int64_t
@@ -183,6 +186,8 @@ namespace VW
 {
 namespace io
 {
+
+void reader::reset() { THROW("Reset not supported for this io_adapter"); }
 std::unique_ptr<writer> open_file_writer(const std::string& file_path)
 {
   return std::unique_ptr<writer>(new file_adapter(file_path.c_str(), file_mode::WRITE));
@@ -301,10 +306,7 @@ file_adapter::file_adapter(const char* filename, file_mode mode)
   }
 #else
   if (_mode == file_mode::READ) { _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE); }
-  else
-  {
-    _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
-  }
+  else { _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666); }
 #endif
 
   if (_file_descriptor == -1 && *filename != '\0') { THROWERRNO("can't open: " << filename); }

@@ -44,7 +44,7 @@ class cb_explore_adf_squarecb
 {
 public:
   cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
-      float max_cb_cost, VW::version_struct model_file_version);
+      float max_cb_cost, VW::version_struct model_file_version, float epsilon);
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -53,7 +53,6 @@ public:
   void save_load(io_buf& io, bool read, bool text);
 
 private:
-  // size_t _counter;
   size_t _counter;
   float _gamma_scale;     // Scale factor for SquareCB reediness parameter $\gamma$.
   float _gamma_exponent;  // Exponent on $t$ for SquareCB reediness parameter $\gamma$.
@@ -63,6 +62,7 @@ private:
   float _c0;
   float _min_cb_cost;
   float _max_cb_cost;
+  float _epsilon;
 
   std::vector<float> _min_costs;
   std::vector<float> _max_costs;
@@ -77,7 +77,7 @@ private:
 };
 
 cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0,
-    float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version)
+    float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version, float epsilon)
     : _counter(0)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
@@ -85,6 +85,7 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_
     , _c0(c0)
     , _min_cb_cost(min_cb_cost)
     , _max_cb_cost(max_cb_cost)
+    , _epsilon(epsilon)
     , _model_file_version(model_file_version)
 {
 }
@@ -117,10 +118,7 @@ float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens
     w = (u + l) / 2.f;
     v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
     if (v > 0) { u = w; }
-    else
-    {
-      l = w;
-    }
+    else { l = w; }
     if (std::fabs(v) <= tol || u - l <= tol) { break; }
   }
 
@@ -191,7 +189,7 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& example
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
-  v_array<VW::action_score>& preds = examples[0]->pred.a_s;
+  VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
   uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   // The actual parameter $\gamma$ used in the SquareCB.
@@ -228,6 +226,8 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& example
       total_weight += pa;
     }
     preds[a_min].score = 1.f - total_weight;
+
+    exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
   }
   else  // elimination variant
   {
@@ -272,7 +272,7 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& example
 
 void cb_explore_adf_squarecb::learn(multi_learner& base, VW::multi_ex& examples)
 {
-  v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
+  VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
     CB::label& ld = examples[i]->l.cb;
@@ -317,6 +317,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
   float c0 = 0.;
   float min_cb_cost = 0.;
   float max_cb_cost = 0.;
+  float epsilon = 0.f;
 
   config::option_group_definition new_options("[Reduction] Contextual Bandit Exploration with ADF (SquareCB)");
   new_options
@@ -352,7 +353,14 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
                .keep()
                .default_value("mtr")
                .one_of({"mtr"})
-               .help("Contextual bandit method to use. SquareCB only supports supervised regression (mtr)"));
+               .help("Contextual bandit method to use. SquareCB only supports supervised regression (mtr)"))
+      // Note: --epsilon for squarecb is semantically different than adding a uniform distribution on all actions
+      // as done in epsilon greedy.
+      .add(make_option("epsilon", epsilon)
+               .keep()
+               .default_value(0.f)
+               .allow_override()
+               .help("The minimum probability of an action is this value divided by the number of actions."));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -374,9 +382,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
 
   bool with_metrics = options.was_supplied("extra_metrics");
 
+  if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
+
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
   auto data = VW::make_unique<explore_type>(
-      with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver);
+      with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver, epsilon);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_squarecb_setup))
                 .set_input_label_type(VW::label_type_t::CB)

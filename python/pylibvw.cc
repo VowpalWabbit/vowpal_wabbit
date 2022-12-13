@@ -291,7 +291,9 @@ boost::shared_ptr<VW::workspace> merge_workspaces(vw_ptr base_workspace, py::lis
 {
   std::vector<const VW::workspace*> const_workspaces;
   for (size_t i = 0; i < py::len(workspaces); i++)
-  { const_workspaces.push_back(py::extract<VW::workspace*>(workspaces[i])); }
+  {
+    const_workspaces.push_back(py::extract<VW::workspace*>(workspaces[i]));
+  }
   return boost::shared_ptr<VW::workspace>(VW::merge_models(base_workspace.get(), const_workspaces));
 }
 
@@ -421,42 +423,15 @@ size_t my_get_label_type(VW::workspace* all)
 {
   VW::label_parser* lp = &all->example_parser->lbl_parser;
   if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
-  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label)
-  {
-    return lMULTICLASS;
-  }
-  else if (lp->parse_label == VW::cs_label_parser_global.parse_label)
-  {
-    return lCOST_SENSITIVE;
-  }
-  else if (lp->parse_label == CB::cb_label.parse_label)
-  {
-    return lCONTEXTUAL_BANDIT;
-  }
-  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label)
-  {
-    return lCONTEXTUAL_BANDIT_EVAL;
-  }
-  else if (lp->parse_label == VW::ccb_label_parser_global.parse_label)
-  {
-    return lCONDITIONAL_CONTEXTUAL_BANDIT;
-  }
-  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label)
-  {
-    return lSLATES;
-  }
-  else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label)
-  {
-    return lCONTINUOUS;
-  }
-  else if (lp->parse_label == MULTILABEL::multilabel.parse_label)
-  {
-    return lMULTILABEL;
-  }
-  else
-  {
-    THROW("unsupported label parser used");
-  }
+  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
+  else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
+  else if (lp->parse_label == CB::cb_label.parse_label) { return lCONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label) { return lCONTEXTUAL_BANDIT_EVAL; }
+  else if (lp->parse_label == VW::ccb_label_parser_global.parse_label) { return lCONDITIONAL_CONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label) { return lSLATES; }
+  else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label) { return lCONTINUOUS; }
+  else if (lp->parse_label == MULTILABEL::multilabel.parse_label) { return lMULTILABEL; }
+  else { THROW("unsupported label parser used"); }
 }
 
 size_t my_get_prediction_type(vw_ptr all)
@@ -497,13 +472,13 @@ size_t my_get_prediction_type(vw_ptr all)
 void my_delete_example(void* voidec)
 {
   VW::example* ec = (VW::example*)voidec;
-  VW::dealloc_examples(ec, 1);
+  delete ec;
 }
 
 VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   VW::label_parser* lp = get_label_parser(&*vw, labelType);
-  VW::example* ec = VW::alloc_examples(1);
+  VW::example* ec = new VW::example;
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
@@ -548,10 +523,7 @@ void my_finish_multi_ex(vw_ptr& all, py::list& ec)
 void my_learn(vw_ptr all, example_ptr ec)
 {
   if (ec->test_only) { as_singleline(all->l)->predict(*ec); }
-  else
-  {
-    all->learn(*ec.get());
-  }
+  else { all->learn(*ec.get()); }
 }
 
 std::string my_json_weights(vw_ptr all) { return all->dump_weights_to_json_experimental(); }
@@ -733,10 +705,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
       key_size = PyUnicode_GET_LENGTH(key);
       feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
     }
-    else if (PyLong_Check(key))
-    {
-      feat_index = (feature_index)PyLong_AsUnsignedLongLong(key);
-    }
+    else if (PyLong_Check(key)) { feat_index = (feature_index)PyLong_AsUnsignedLongLong(key); }
     else
     {
       std::cerr << "warning: malformed feature in list" << std::endl;
@@ -829,7 +798,9 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   if (all.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
 
   if (all.skip_gram_transformer != nullptr && !all.skip_gram_transformer->get_initial_ngram_definitions().empty())
-  { THROW("Cannot unsetup example when ngrams are in use"); }
+  {
+    THROW("Cannot unsetup example when ngrams are in use");
+  }
 
   if (all.add_constant)
   {
@@ -924,7 +895,9 @@ py::list ex_get_pdf(example_ptr ec)
 {
   py::list values;
   for (auto const& segment : ec->pred.pdf)
-  { values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value)); }
+  {
+    values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value));
+  }
   return values;
 }
 
@@ -932,7 +905,9 @@ py::tuple ex_get_active_multiclass(example_ptr ec)
 {
   py::list values;
   for (auto const& query_needed_class : ec->pred.active_multiclass.more_info_required_for_classes)
-  { values.append(query_needed_class); }
+  {
+    values.append(query_needed_class);
+  }
 
   return py::make_tuple(ec->pred.active_multiclass.predicted_class, values);
 }
@@ -1173,7 +1148,9 @@ void verify_search_set_properly(search_ptr _sch)
   if (_sch->task_name == nullptr) { THROW("set_structured_predict_hook: search task not initialized properly"); }
 
   if (std::strcmp(_sch->task_name, "hook") != 0)
-  { THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'."); }
+  {
+    THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'.");
+  }
 }
 
 uint32_t search_get_num_actions(search_ptr _sch)

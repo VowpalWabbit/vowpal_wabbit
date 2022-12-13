@@ -13,6 +13,7 @@
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
+#include "vw/core/vw_fwd.h"
 #include "vw/explore/explore.h"
 #include "vw/io/logger.h"
 
@@ -92,19 +93,16 @@ public:
 
   ~warm_cb()
   {
-    for (size_t a = 0; a < num_actions; ++a) { VW::dealloc_examples(ecs[a], 1); }
+    for (size_t a = 0; a < num_actions; ++a) { delete ecs[a]; }
 
-    for (auto* ex : ws_vali) { VW::dealloc_examples(ex, 1); }
+    for (auto* ex : ws_vali) { delete ex; }
   }
 };
 
 float loss(warm_cb& data, uint32_t label, uint32_t final_prediction)
 {
   if (label != final_prediction) { return data.loss1; }
-  else
-  {
-    return data.loss0;
-  }
+  else { return data.loss0; }
 }
 
 float loss_cs(warm_cb& data, std::vector<VW::cs_class>& costs, uint32_t final_prediction)
@@ -168,7 +166,9 @@ void copy_example_to_adf(warm_cb& data, VW::example& ec)
     for (features& fs : eca)
     {
       for (feature_index& idx : fs.indices)
-      { idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask; }
+      {
+        idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask;
+      }
     }
 
     // avoid empty example by adding a tag (hacky)
@@ -204,10 +204,7 @@ void setup_lambdas(warm_cb& data)
   uint32_t mid = data.choices_lambda / 2;
 
   if (data.lambda_scheme == ABS_CENTRAL || data.lambda_scheme == ABS_CENTRAL_ZEROONE) { lambdas[mid] = 0.5; }
-  else
-  {
-    lambdas[mid] = minimax_lambda(data.epsilon);
-  }
+  else { lambdas[mid] = minimax_lambda(data.epsilon); }
 
   for (uint32_t i = mid; i > 0; i--) { lambdas[i - 1] = lambdas[i] / 2.0f; }
 
@@ -247,29 +244,17 @@ uint32_t corrupt_action(warm_cb& data, uint32_t action, int ec_type)
   if (randf < cor_prob)
   {
     if (cor_type == UAR) { cor_action = generate_uar_action(data); }
-    else if (cor_type == OVERWRITE)
-    {
-      cor_action = data.overwrite_label;
-    }
-    else
-    {
-      cor_action = (action % data.num_actions) + 1;
-    }
+    else if (cor_type == OVERWRITE) { cor_action = data.overwrite_label; }
+    else { cor_action = (action % data.num_actions) + 1; }
   }
-  else
-  {
-    cor_action = action;
-  }
+  else { cor_action = action; }
   return cor_action;
 }
 
 bool ind_update(warm_cb& data, int ec_type)
 {
   if (ec_type == WARM_START) { return data.upd_ws; }
-  else
-  {
-    return data.upd_inter;
-  }
+  else { return data.upd_inter; }
 }
 
 float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
@@ -281,11 +266,10 @@ float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
   float total_weight = (1 - data.lambdas[i]) * ws_train_size + data.lambdas[i] * inter_train_size;
 
   if (ec_type == WARM_START)
-  { weight_multiplier = (1 - data.lambdas[i]) * total_train_size / (total_weight + FLT_MIN); }
-  else
   {
-    weight_multiplier = data.lambdas[i] * total_train_size / (total_weight + FLT_MIN);
+    weight_multiplier = (1 - data.lambdas[i]) * total_train_size / (total_weight + FLT_MIN);
   }
+  else { weight_multiplier = data.lambdas[i] * total_train_size / (total_weight + FLT_MIN); }
 
   return weight_multiplier;
 }
@@ -313,7 +297,7 @@ template <bool use_cs>
 void add_to_vali(warm_cb& data, VW::example& ec)
 {
   // TODO: set the first parameter properly
-  VW::example* ec_copy = VW::alloc_examples(1);
+  VW::example* ec_copy = new VW::example;
   VW::copy_example_data_with_label(ec_copy, &ec);
   data.ws_vali.push_back(ec_copy);
 }
@@ -335,10 +319,7 @@ void learn_sup_adf(warm_cb& data, VW::example& ec, int ec_type)
   {
     csls[a].costs[0].class_index = a + 1;
     if (use_cs) { csls[a].costs[0].x = loss_cs(data, ec.l.cs.costs, a + 1); }
-    else
-    {
-      csls[a].costs[0].x = loss(data, ec.l.multi.label, a + 1);
-    }
+    else { csls[a].costs[0].x = loss(data, ec.l.multi.label, a + 1); }
   }
   for (size_t a = 0; a < data.num_actions; ++a)
   {
@@ -404,9 +385,11 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec, int e
   for (size_t a = 0; a < data.num_actions; ++a) { old_weights.push_back(data.ecs[a]->weight); }
 
   // Guard example state restore against throws
-  auto restore_guard = VW::scope_exit([&old_weights, &data] {
-    for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a]; }
-  });
+  auto restore_guard = VW::scope_exit(
+      [&old_weights, &data]
+      {
+        for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a]; }
+      });
 
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
@@ -429,10 +412,7 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, VW::example
   if (!cl.action) THROW("No action with non-zero probability found.");
 
   if (use_cs) { cl.cost = loss_cs(data, ec.l.cs.costs, cl.action); }
-  else
-  {
-    cl.cost = loss(data, ec.l.multi.label, cl.action);
-  }
+  else { cl.cost = loss(data, ec.l.multi.label, cl.action); }
 
   if (ec_type == INTERACTION) { accumu_costs_iv_adf(data, base, ec); }
 
@@ -469,10 +449,7 @@ void predict_and_learn_adf(warm_cb& data, multi_learner& base, VW::example& ec)
   if (data.ws_iter < data.ws_period)
   {
     if (data.ws_type == SUPERVISED_WS) { predict_or_learn_sup_adf<use_cs>(data, base, ec, WARM_START); }
-    else if (data.ws_type == BANDIT_WS)
-    {
-      predict_or_learn_bandit_adf<use_cs>(data, base, ec, WARM_START);
-    }
+    else if (data.ws_type == BANDIT_WS) { predict_or_learn_bandit_adf<use_cs>(data, base, ec, WARM_START); }
 
     ec.weight = 0;
     data.ws_iter++;
@@ -494,24 +471,18 @@ void predict_and_learn_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 
   // Restore the original labels
   if (use_cs) { ec.l.cs = data.cs_label; }
-  else
-  {
-    ec.l.multi = data.mc_label;
-  }
+  else { ec.l.multi = data.mc_label; }
 }
 
 void init_adf_data(warm_cb& data, const uint32_t num_actions)
 {
   data.num_actions = num_actions;
   if (data.sim_bandit) { data.ws_type = BANDIT_WS; }
-  else
-  {
-    data.ws_type = SUPERVISED_WS;
-  }
+  else { data.ws_type = SUPERVISED_WS; }
   data.ecs.resize(num_actions);
   for (size_t a = 0; a < num_actions; ++a)
   {
-    data.ecs[a] = VW::alloc_examples(1);
+    data.ecs[a] = new VW::example;
     auto& lab = data.ecs[a]->l.cb;
     CB::default_label(lab);
   }
@@ -593,7 +564,9 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (use_cs && (options.was_supplied("corrupt_type_warm_start") || options.was_supplied("corrupt_prob_warm_start")))
-  { THROW("label corruption on cost-sensitive examples not currently supported"); }
+  {
+    THROW("label corruption on cost-sensitive examples not currently supported");
+  }
 
   data->app_seed = VW::uniform_hash("vw", 2, 0);
   data->all = &all;

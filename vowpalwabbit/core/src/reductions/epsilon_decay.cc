@@ -11,6 +11,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/model_utils.h"
+#include "vw/core/multi_model_utils.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
 
@@ -107,7 +108,9 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
           float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
           if (model_ind == model_count - 1) { w = 1; }  // Set w = 1 for champ
           for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
-          { conf_seq_estimators[model_ind][estimator_ind].update(w, r); }
+          {
+            conf_seq_estimators[model_ind][estimator_ind].update(w, r);
+          }
           if (_epsilon_decay_audit_str != "")
           {
             if (model_ind != model_count - 1)
@@ -163,9 +166,14 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
     for (int64_t estimator_ind = 0;
          estimator_ind < std::min(static_cast<int64_t>(conf_seq_estimators[model_ind].size()), swap_dist);
          ++estimator_ind)
-    { conf_seq_estimators[model_ind][estimator_ind].reset_stats(); }
+    {
+      conf_seq_estimators[model_ind][estimator_ind].reset_stats();
+    }
   }
-  for (int64_t ind = 0; ind < swap_dist; ++ind) { _weights.clear_offset(_weight_indices[ind], _wpp); }
+  for (int64_t ind = 0; ind < swap_dist; ++ind)
+  {
+    VW::reductions::multi_model::clear_offset(_weights, _weight_indices[ind], _wpp);
+  }
 }
 
 void epsilon_decay_data::shift_model(int64_t model_ind, int64_t swap_dist, int64_t model_count)
@@ -268,10 +276,7 @@ void save_load_epsilon_decay(
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, epsilon_decay); }
-  else
-  {
-    VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text);
-  }
+  else { VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text); }
 }
 
 void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)

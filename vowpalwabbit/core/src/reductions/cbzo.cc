@@ -94,10 +94,7 @@ template <uint8_t policy>
 float inference(VW::workspace& all, VW::example& ec)
 {
   if VW_STD17_CONSTEXPR (policy == CONSTANT_POLICY) { return constant_inference(all); }
-  else if VW_STD17_CONSTEXPR (policy == LINEAR_POLICY)
-  {
-    return linear_inference(all, ec);
-  }
+  else if VW_STD17_CONSTEXPR (policy == LINEAR_POLICY) { return linear_inference(all, ec); }
   else
     THROW("Unknown policy encountered: " << policy);
 }
@@ -150,16 +147,13 @@ template <uint8_t policy, bool feature_mask_off>
 void update_weights(cbzo& data, VW::example& ec)
 {
   if VW_STD17_CONSTEXPR (policy == CONSTANT_POLICY) { constant_update<feature_mask_off>(data, ec); }
-  else if VW_STD17_CONSTEXPR (policy == LINEAR_POLICY)
-  {
-    linear_update<feature_mask_off>(data, ec);
-  }
+  else if VW_STD17_CONSTEXPR (policy == LINEAR_POLICY) { linear_update<feature_mask_off>(data, ec); }
   else
     THROW("Unknown policy encountered: " << policy)
 }
 VW_WARNING_STATE_POP
 
-void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
+void set_minmax(VW::shared_data* sd, float label, bool min_fixed, bool max_fixed)
 {
   if (!min_fixed) { sd->min_label = std::min(label, sd->min_label); }
   if (!max_fixed) { sd->max_label = std::max(label, sd->max_label); }
@@ -285,38 +279,20 @@ void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbz
     if (feature_mask_off)
     {
       if (all.audit || all.hash_inv) { return learn<CONSTANT_POLICY, true, true>; }
-      else
-      {
-        return learn<CONSTANT_POLICY, true, false>;
-      }
+      else { return learn<CONSTANT_POLICY, true, false>; }
     }
-    else if (all.audit || all.hash_inv)
-    {
-      return learn<CONSTANT_POLICY, false, true>;
-    }
-    else
-    {
-      return learn<CONSTANT_POLICY, false, false>;
-    }
+    else if (all.audit || all.hash_inv) { return learn<CONSTANT_POLICY, false, true>; }
+    else { return learn<CONSTANT_POLICY, false, false>; }
   }
   else if (policy == LINEAR_POLICY)
   {
     if (feature_mask_off)
     {
       if (all.audit || all.hash_inv) { return learn<LINEAR_POLICY, true, true>; }
-      else
-      {
-        return learn<LINEAR_POLICY, true, false>;
-      }
+      else { return learn<LINEAR_POLICY, true, false>; }
     }
-    else if (all.audit || all.hash_inv)
-    {
-      return learn<LINEAR_POLICY, false, true>;
-    }
-    else
-    {
-      return learn<LINEAR_POLICY, false, false>;
-    }
+    else if (all.audit || all.hash_inv) { return learn<LINEAR_POLICY, false, true>; }
+    else { return learn<LINEAR_POLICY, false, false>; }
   }
   else
     THROW("Unknown policy encountered: " << policy)
@@ -327,18 +303,12 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, VW
   if (policy == CONSTANT_POLICY)
   {
     if (all.audit || all.hash_inv) { return predict<CONSTANT_POLICY, true>; }
-    else
-    {
-      return predict<CONSTANT_POLICY, false>;
-    }
+    else { return predict<CONSTANT_POLICY, false>; }
   }
   else if (policy == LINEAR_POLICY)
   {
     if (all.audit || all.hash_inv) { return predict<LINEAR_POLICY, true>; }
-    else
-    {
-      return predict<LINEAR_POLICY, false>;
-    }
+    else { return predict<LINEAR_POLICY, false>; }
   }
   else
     THROW("Unknown policy encountered: " << policy)
@@ -377,10 +347,7 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 
   uint8_t policy;
   if (policy_str.compare("constant") == 0) { policy = CONSTANT_POLICY; }
-  else if (policy_str.compare("linear") == 0)
-  {
-    policy = LINEAR_POLICY;
-  }
+  else if (policy_str.compare("linear") == 0) { policy = LINEAR_POLICY; }
   else
     THROW("policy must be in {'constant', 'linear'}");
 
@@ -389,7 +356,9 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
     if (options.was_supplied("noconstant")) THROW("constant policy can't be learnt when --noconstant is used")
 
     if (!feature_mask_off)
-    { all.logger.err_warn("Feature_mask used with constant policy (where there is only one weight to learn)."); }
+    {
+      all.logger.err_warn("Feature_mask used with constant policy (where there is only one weight to learn).");
+    }
   }
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;

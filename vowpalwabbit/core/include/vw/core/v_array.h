@@ -8,6 +8,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/core/memory.h"
 
+#include <algorithm>
 #include <cassert>
 #include <ostream>
 #include <type_traits>
@@ -57,7 +58,7 @@ public:
   const_iterator cbegin() const noexcept { return _begin; }
   const_iterator cend() const noexcept { return _end; }
 
-  v_array() noexcept : _begin(nullptr), _end(nullptr), _end_array(nullptr), _erase_count(0) {}
+  v_array() noexcept : _begin(nullptr), _end(nullptr), _end_array(nullptr) {}
   ~v_array() { delete_v_array(); }
 
   v_array(v_array<T>&& other) noexcept
@@ -115,9 +116,21 @@ public:
 
   bool empty() const { return _begin == _end; }
 
-  T& operator[](size_t i) const { return _begin[i]; }
-  size_t size() const { return _end - _begin; }
-  size_t capacity() const { return _end_array - _begin; }
+  T& operator[](size_t i) const
+  {
+    assert(i < size());
+    return _begin[i];
+  }
+  size_t size() const
+  {
+    assert(_end >= _begin);
+    return static_cast<size_t>(_end - _begin);
+  }
+  size_t capacity() const
+  {
+    assert(_end_array >= _begin);
+    return static_cast<size_t>(_end_array - _begin);
+  }
 
   /**
    * \brief Change the size of the container.
@@ -147,10 +160,7 @@ public:
         // just shrink to 1 for now (alternatively, call delete_v())
         reserve_nocheck(1);
       }
-      else
-      {
-        reserve_nocheck(size());
-      }
+      else { reserve_nocheck(size()); }
     }
   }
 
@@ -196,7 +206,7 @@ public:
 
     const size_t idx = it - begin();
     destruct_item(it);
-    memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
+    std::memmove(&_begin[idx], &_begin[idx + 1], (size() - (idx + 1)) * sizeof(T));
     --_end;
     return begin() + idx;
   }
@@ -218,7 +228,7 @@ public:
     const size_t first_index = first - begin();
     const size_t num_to_erase = last - first;
     for (auto current = first; current != last; ++current) { destruct_item(current); }
-    memmove(
+    std::memmove(
         &_begin[first_index], &_begin[first_index + num_to_erase], (size() - (first_index + num_to_erase)) * sizeof(T));
     _end -= num_to_erase;
     return begin() + first_index;
@@ -267,8 +277,9 @@ public:
   {
     assert(it >= begin());
     assert(it <= end());
-    const size_t idx = it - begin();
-    const auto num_elements = std::distance(first, last);
+    const auto idx = static_cast<size_t>(it - begin());
+    assert(first <= last);
+    const auto num_elements = static_cast<size_t>(std::distance(first, last));
     make_space_at(idx, num_elements);
     std::copy(first, last, begin() + idx);
   }
@@ -311,7 +322,7 @@ private:
   static constexpr size_t ERASE_POINT = ~((1u << 10u) - 1u);
 
   template <typename S, typename std::enable_if<std::is_trivially_destructible<S>::value, bool>::type = true>
-  static void destruct_item(S*)
+  static void destruct_item(S* /* unused */)
   {
     // If S is trivially destructive nothing needs to be done.
   }
@@ -327,7 +338,7 @@ private:
     if (_begin != nullptr)
     {
       for (iterator item = _begin; item != _end; ++item) { destruct_item(item); }
-      free(_begin);
+      std::free(_begin);
     }
     _begin = nullptr;
     _end = nullptr;
@@ -342,12 +353,15 @@ private:
 
     T* temp = static_cast<T*>(std::realloc(_begin, sizeof(T) * length));
     if (temp == nullptr)
-    { THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?"); }
+    {
+      THROW_OR_RETURN("realloc of " << length << " failed in reserve_nocheck().  out of memory?");
+    }
     _begin = temp;
 
     _end = _begin + std::min(old_len, length);
     _end_array = _begin + length;
-    memset(static_cast<void*>(_end), 0, (_end_array - _end) * sizeof(T));
+    assert(_end_array >= _end);
+    std::memset(static_cast<void*>(_end), 0, static_cast<size_t>(_end_array - _end) * sizeof(T));
   }
 
   // This will move all elements after idx by width positions and reallocate the underlying buffer if needed.
@@ -356,8 +370,8 @@ private:
     if (width > 0)
     {
       if (size() + width > capacity()) { reserve_nocheck(2 * capacity() + width); }
-      memmove(&_begin[idx + width], &_begin[idx], (size() - idx) * sizeof(T));
-      memset(&_begin[idx], 0, width * sizeof(T));
+      std::memmove(&_begin[idx + width], &_begin[idx], (size() - idx) * sizeof(T));
+      std::memset(&_begin[idx], 0, width * sizeof(T));
       _end += width;
     }
   }
@@ -380,11 +394,12 @@ private:
   T* _begin;
   T* _end;
   T* _end_array;
-  size_t _erase_count;
+  size_t _erase_count{};
 };
 
 }  // namespace VW
 
-// This is deprecated. Cannot mark templates as deprecated though so a message must suffice.
+//  VW_DEPRECATED: This is deprecated. Cannot mark templates as deprecated though so a message must suffice.
+// TODO: remove this alias.
 template <typename T>
 using v_array = VW::v_array<T>;

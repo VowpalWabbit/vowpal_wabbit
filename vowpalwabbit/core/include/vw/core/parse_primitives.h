@@ -20,12 +20,6 @@
 // This function returns a vector of strings (not string_views) because we need to remove the escape characters
 std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty = false);
 
-inline const char* safe_index(const char* start, char v, const char* max)
-{
-  while (start != max && *start != v) { start++; }
-  return start;
-}
-
 // The following function is a home made strtof. The
 // differences are :
 //  - much faster (around 50% but depends on the  string to parse)

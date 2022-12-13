@@ -6,7 +6,6 @@
 
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
-#include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
@@ -54,10 +53,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
       ld.cost = float_of_string(words[2], logger);
       ld.labeled = true;
     }
-    else if (words.size() != 2)
-    {
-      THROW("Slates shared labels must be of the form: slates shared [global_cost]");
-    }
+    else if (words.size() != 2) { THROW("Slates shared labels must be of the form: slates shared [global_cost]"); }
     ld.type = example_type::SHARED;
   }
   else if (type == VW::details::ACTION_TYPE)
@@ -67,7 +63,9 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     char* char_after_int = nullptr;
     ld.slot_id = int_of_string(words[2], char_after_int, logger);
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-    { THROW("Slot id seems to be malformed"); }
+    {
+      THROW("Slot id seems to be malformed");
+    }
 
     ld.type = example_type::ACTION;
   }
@@ -110,10 +108,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     }
     ld.type = example_type::SLOT;
   }
-  else
-  {
-    THROW("Unknown slates label type: " << type);
-  }
+  else { THROW("Unknown slates label type: " << type); }
 }
 
 label_parser slates_label_parser = {
@@ -121,16 +116,15 @@ label_parser slates_label_parser = {
     [](polylabel& label) { default_label(label.slates); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.slates, reuse_mem, words, logger); },
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_label(label.slates, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text); },
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text); },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.slates);
-    },
+    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.slates); },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.slates); },
     // test_label

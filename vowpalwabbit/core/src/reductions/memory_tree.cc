@@ -52,10 +52,7 @@ void copy_example_data(VW::example* dst, VW::example* src, bool oas = false)  //
     dst->l = src->l;
     dst->l.multi.label = src->l.multi.label;
   }
-  else
-  {
-    dst->l.multilabels.label_v = src->l.multilabels.label_v;
-  }
+  else { dst->l.multilabels.label_v = src->l.multilabels.label_v; }
   VW::copy_example_data(dst, src);
 }
 
@@ -80,10 +77,7 @@ void diag_kronecker_prod_fs_test(
     uint64_t ec2pos = f2.indices[idx2];
 
     if (ec1pos < ec2pos) { idx1++; }
-    else if (ec1pos > ec2pos)
-    {
-      idx2++;
-    }
+    else if (ec1pos > ec2pos) { idx2++; }
     else
     {
       prod_f.push_back(f1.values[idx1] * f2.values[idx2] / denominator, ec1pos);
@@ -114,10 +108,7 @@ void diag_kronecker_product_test(VW::example& ec1, VW::example& ec2, VW::example
     VW::namespace_index c1 = ec1.indices[idx1];
     VW::namespace_index c2 = ec2.indices[idx2];
     if (c1 < c2) { idx1++; }
-    else if (c1 > c2)
-    {
-      idx2++;
-    }
+    else if (c1 > c2) { idx2++; }
     else
     {
       diag_kronecker_prod_fs_test(ec1.feature_space[c1], ec2.feature_space[c2], ec.feature_space[c1],
@@ -229,8 +220,8 @@ public:
 
   ~memory_tree()
   {
-    for (auto* ex : examples) { ::VW::dealloc_examples(ex, 1); }
-    if (kprod_ec) { ::VW::dealloc_examples(kprod_ec, 1); }
+    for (auto* ex : examples) { delete ex; }
+    if (kprod_ec) { delete kprod_ec; }
   }
 };
 
@@ -290,7 +281,7 @@ void init_tree(memory_tree& b)
   b.nodes[0].internal = -1;  // mark the root as leaf
   b.nodes[0].base_router = (b.routers_used++);
 
-  b.kprod_ec = ::VW::alloc_examples(1);  // allocate space for kronecker product example
+  b.kprod_ec = new VW::example;  // allocate space for kronecker product example
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
@@ -366,10 +357,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     remove_at_index(b.nodes[cn].examples_index, loc_at_leaf);
     return ec_id;
   }
-  else
-  {
-    return -1;
-  }
+  else { return -1; }
 }
 
 // train the node with id cn, using the statistics stored in the node to
@@ -515,7 +503,9 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
       std::max(static_cast<double>(b.nodes[right_child].examples_index.size()), 0.001);  // avoid to set nr to zero
 
   if (std::max(b.nodes[cn].nl, b.nodes[cn].nr) > b.max_ex_in_leaf)
-  { b.max_ex_in_leaf = static_cast<size_t>(std::max(b.nodes[cn].nl, b.nodes[cn].nr)); }
+  {
+    b.max_ex_in_leaf = static_cast<size_t>(std::max(b.nodes[cn].nl, b.nodes[cn].nr));
+  }
 }
 
 int compare_label(const void* a, const void* b) { return *(uint32_t*)a - *(uint32_t*)b; }
@@ -534,10 +524,7 @@ inline uint32_t over_lap(VW::v_array<uint32_t>& array_1, VW::v_array<uint32_t>& 
     uint32_t c1 = array_1[idx1];
     uint32_t c2 = array_2[idx2];
     if (c1 < c2) { idx1++; }
-    else if (c1 > c2)
-    {
-      idx2++;
-    }
+    else if (c1 > c2) { idx2++; }
     else
     {
       num_overlap++;
@@ -582,7 +569,9 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
   {
     ec.l.simple.label = -1.f;
     if (std::find(multilabels.label_v.begin(), multilabels.label_v.end(), leaf_labs[i]) != multilabels.label_v.end())
-    { ec.l.simple.label = 1.f; }
+    {
+      ec.l.simple.label = 1.f;
+    }
     base.learn(ec, b.max_routers + 1 + leaf_labs[i]);
   }
   ec.pred.multilabels = preds;
@@ -636,10 +625,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW
         base.predict(*b.kprod_ec, b.max_routers);
         score = b.kprod_ec->partial_prediction;
       }
-      else
-      {
-        score = normalized_linear_prod(b, &ec, b.examples[loc]);
-      }
+      else { score = normalized_linear_prod(b, &ec, b.examples[loc]); }
 
       if (score > max_score)
       {
@@ -649,10 +635,7 @@ int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW
     }
     return max_pos;
   }
-  else
-  {
-    return -1;
-  }
+  else { return -1; }
 }
 
 // for any two examples, use number of overlap labels to indicate the similarity between these two examples.
@@ -717,10 +700,7 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
   {
     closest_ec = pick_nearest(b, base, cn, ec);
     if (closest_ec != -1) { ec.pred.multiclass = b.examples[closest_ec]->l.multi.label; }
-    else
-    {
-      ec.pred.multiclass = 0;
-    }
+    else { ec.pred.multiclass = 0; }
 
     if (ec.l.multi.label != ec.pred.multiclass)
     {
@@ -867,10 +847,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
     base.predict(ec, b.nodes[cn].base_router);
     float prediction = ec.pred.scalar;
     if (insertion == false) { cn = prediction < 0 ? b.nodes[cn].left : b.nodes[cn].right; }
-    else
-    {
-      cn = insert_descent(b.nodes[cn], prediction);
-    }
+    else { cn = insert_descent(b.nodes[cn], prediction); }
   }
   path.push_back(cn);  // push back the leaf
 
@@ -889,7 +866,9 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
   {
     b.nodes[cn].examples_index.push_back(ec_array_index);
     if ((b.nodes[cn].examples_index.size() >= b.max_leaf_examples) && (b.nodes.size() + 2 < b.max_nodes))
-    { split_leaf(b, base, cn); }
+    {
+      split_leaf(b, base, cn);
+    }
   }
 }
 
@@ -942,10 +921,7 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       {  // crop the weight, otherwise sometimes cause NAN outputs.
         ec.weight = 100.f;
       }
-      else if (ec.weight < .01f)
-      {
-        ec.weight = 0.01f;
-      }
+      else if (ec.weight < .01f) { ec.weight = 0.01f; }
       ec.l.simple = {objective < 0. ? -1.f : 1.f};
       ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
       base.learn(ec, b.nodes[cn].base_router);
@@ -1006,7 +982,9 @@ void insert_example(memory_tree& b, single_learner& base, const uint32_t& ec_arr
 
     // if the number of examples exceeds the max_leaf_examples, and not reach the max_nodes - 2 yet, we split:
     if ((b.nodes[cn].examples_index.size() >= b.max_leaf_examples) && (b.nodes.size() + 2 <= b.max_nodes))
-    { split_leaf(b, base, cn); }
+    {
+      split_leaf(b, base, cn);
+    }
   }
 }
 
@@ -1027,10 +1005,7 @@ void experience_replay(memory_tree& b, single_learner& base)
         VW::v_array<uint64_t> tmp_path;
         route_to_leaf(b, base, ec_id, 0, tmp_path, true);
       }
-      else
-      {
-        insert_example(b, base, ec_id);
-      }
+      else { insert_example(b, base, ec_id); }
     }
   }
 }
@@ -1052,17 +1027,14 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
                   << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
                   << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       }
-      else
-      {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
-      }
+      else { std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl; }
     }
 
     clock_t begin = clock();
 
     if (b.current_pass < 1)
     {  // in the first pass, we need to store the memory:
-      VW::example* new_ec = VW::alloc_examples(1);
+      VW::example* new_ec = new VW::example;
       copy_example_data(new_ec, &ec, b.oas);
       b.examples.push_back(new_ec);
       if (b.online == true)
@@ -1088,11 +1060,10 @@ void learn(memory_tree& b, single_learner& base, VW::example& ec)
     if (b.iter % 5000 == 0)
     {
       if (b.oas == false)
-      { std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl; }
-      else
       {
-        std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+        std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl;
       }
+      else { std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl; }
     }
   }
 }
@@ -1110,49 +1081,49 @@ void end_pass(memory_tree& b)
 void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
 {  // deal with tag
    // deal with labels:
-  WRITEIT(ec->num_features, "num_features");
-  WRITEIT(ec->total_sum_feat_sq, "total_sum_features");
-  WRITEIT(ec->weight, "example_weight");
-  WRITEIT(ec->loss, "loss");
-  WRITEIT(ec->ft_offset, "ft_offset");
+  DEPRECATED_WRITEIT(ec->num_features, "num_features");
+  DEPRECATED_WRITEIT(ec->total_sum_feat_sq, "total_sum_features");
+  DEPRECATED_WRITEIT(ec->weight, "example_weight");
+  DEPRECATED_WRITEIT(ec->loss, "loss");
+  DEPRECATED_WRITEIT(ec->ft_offset, "ft_offset");
   if (oas == false)
   {  // multi-class
-    WRITEIT(ec->l.multi.label, "multiclass_label");
-    WRITEIT(ec->l.multi.weight, "multiclass_weight");
+    DEPRECATED_WRITEIT(ec->l.multi.label, "multiclass_label");
+    DEPRECATED_WRITEIT(ec->l.multi.weight, "multiclass_weight");
   }
   else
   {  // multi-label
-    WRITEITVAR(ec->l.multilabels.label_v.size(), "label_size", label_size);
+    DEPRECATED_WRITEITVAR(ec->l.multilabels.label_v.size(), "label_size", label_size);
     if (read)
     {
       ec->l.multilabels.label_v.clear();
       for (uint32_t i = 0; i < label_size; i++) { ec->l.multilabels.label_v.push_back(0); }
     }
-    for (uint32_t i = 0; i < label_size; i++) WRITEIT(ec->l.multilabels.label_v[i], "ec_label");
+    for (uint32_t i = 0; i < label_size; i++) DEPRECATED_WRITEIT(ec->l.multilabels.label_v[i], "ec_label");
   }
 
-  WRITEITVAR(ec->tag.size(), "tags", tag_number);
+  DEPRECATED_WRITEITVAR(ec->tag.size(), "tags", tag_number);
   if (read)
   {
     ec->tag.clear();
     for (uint32_t i = 0; i < tag_number; i++) { ec->tag.push_back('a'); }
   }
-  for (uint32_t i = 0; i < tag_number; i++) WRITEIT(ec->tag[i], "tag");
+  for (uint32_t i = 0; i < tag_number; i++) DEPRECATED_WRITEIT(ec->tag[i], "tag");
 
   // deal with tag:
-  WRITEITVAR(ec->indices.size(), "namespaces", namespace_size);
+  DEPRECATED_WRITEITVAR(ec->indices.size(), "namespaces", namespace_size);
   if (read)
   {
     ec->indices.clear();
     for (uint32_t i = 0; i < namespace_size; i++) { ec->indices.push_back('\0'); }
   }
-  for (uint32_t i = 0; i < namespace_size; i++) WRITEIT(ec->indices[i], "VW::namespace_index");
+  for (uint32_t i = 0; i < namespace_size; i++) DEPRECATED_WRITEIT(ec->indices[i], "VW::namespace_index");
 
   // deal with features
   for (VW::namespace_index nc : ec->indices)
   {
     features* fs = &ec->feature_space[nc];
-    WRITEITVAR(fs->size(), "features_", feat_size);
+    DEPRECATED_WRITEITVAR(fs->size(), "features_", feat_size);
     if (read)
     {
       fs->clear();
@@ -1160,28 +1131,28 @@ void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& te
       fs->indices.clear();
       for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs->push_back(0, 0); }
     }
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) WRITEIT(fs->values[f_i], "value");
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) WRITEIT(fs->indices[f_i], "index");
+    for (uint32_t f_i = 0; f_i < feat_size; f_i++) DEPRECATED_WRITEIT(fs->values[f_i], "value");
+    for (uint32_t f_i = 0; f_i < feat_size; f_i++) DEPRECATED_WRITEIT(fs->indices[f_i], "index");
   }
 }
 
 void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
-  WRITEIT(cn.parent, "parent");
-  WRITEIT(cn.internal, "internal");
-  WRITEIT(cn.depth, "depth");
-  WRITEIT(cn.base_router, "base_router");
-  WRITEIT(cn.left, "left");
-  WRITEIT(cn.right, "right");
-  WRITEIT(cn.nl, "nl");
-  WRITEIT(cn.nr, "nr");
-  WRITEITVAR(cn.examples_index.size(), "leaf_n_examples", leaf_n_examples);
+  DEPRECATED_WRITEIT(cn.parent, "parent");
+  DEPRECATED_WRITEIT(cn.internal, "internal");
+  DEPRECATED_WRITEIT(cn.depth, "depth");
+  DEPRECATED_WRITEIT(cn.base_router, "base_router");
+  DEPRECATED_WRITEIT(cn.left, "left");
+  DEPRECATED_WRITEIT(cn.right, "right");
+  DEPRECATED_WRITEIT(cn.nl, "nl");
+  DEPRECATED_WRITEIT(cn.nr, "nr");
+  DEPRECATED_WRITEITVAR(cn.examples_index.size(), "leaf_n_examples", leaf_n_examples);
   if (read)
   {
     cn.examples_index.clear();
     for (uint32_t k = 0; k < leaf_n_examples; k++) { cn.examples_index.push_back(0); }
   }
-  for (uint32_t k = 0; k < leaf_n_examples; k++) WRITEIT(cn.examples_index[k], "example_location");
+  for (uint32_t k = 0; k < leaf_n_examples; k++) DEPRECATED_WRITEIT(cn.examples_index[k], "example_location");
 }
 
 void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
@@ -1194,21 +1165,21 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     if (read)
     {
       uint32_t ss = 0;
-      WRITEIT(ss, "stride_shift");
+      DEPRECATED_WRITEIT(ss, "stride_shift");
       b.all->weights.stride_shift(ss);
     }
     else
     {
       uint32_t ss = b.all->weights.stride_shift();
-      WRITEIT(ss, "stride_shift");
+      DEPRECATED_WRITEIT(ss, "stride_shift");
     }
 
-    WRITEIT(b.max_nodes, "max_nodes");
-    WRITEIT(b.learn_at_leaf, "learn_at_leaf");
-    WRITEIT(b.oas, "oas");
-    // WRITEIT(b.leaf_example_multiplier, "leaf_example_multiplier")
-    WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
-    WRITEIT(b.max_num_labels, "max_number_of_labels");
+    DEPRECATED_WRITEIT(b.max_nodes, "max_nodes");
+    DEPRECATED_WRITEIT(b.learn_at_leaf, "learn_at_leaf");
+    DEPRECATED_WRITEIT(b.oas, "oas");
+    // DEPRECATED_WRITEIT(b.leaf_example_multiplier, "leaf_example_multiplier")
+    DEPRECATED_WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
+    DEPRECATED_WRITEIT(b.max_num_labels, "max_number_of_labels");
 
     if (read)
     {
@@ -1219,13 +1190,13 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     // node
     for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text, msg); }
     // deal with examples:
-    WRITEITVAR(b.examples.size(), "examples", n_examples);
+    DEPRECATED_WRITEITVAR(b.examples.size(), "examples", n_examples);
     if (read)
     {
       b.examples.clear();
       for (uint32_t i = 0; i < n_examples; i++)
       {
-        VW::example* new_ec = VW::alloc_examples(1);
+        VW::example* new_ec = new VW::example;
         b.examples.push_back(new_ec);
       }
     }

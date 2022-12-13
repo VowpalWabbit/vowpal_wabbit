@@ -32,6 +32,10 @@ VW_WARNING_STATE_POP
 #include "vw/core/vw_versions.h"
 #include "vw/io/logger.h"
 
+#if defined(__ARM_NEON)
+#  include <sse2neon/sse2neon.h>
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -164,7 +168,7 @@ inline float fastdigamma(float x)
 
 #if !defined(VW_NO_INLINE_SIMD)
 
-#  if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__)
+#  if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__) || defined(__ARM_NEON)
 
 namespace
 {
@@ -184,6 +188,13 @@ inline bool is_aligned16(void* ptr)
 #    endif
 #    if defined(__SSE4_1__)
 #      include <smmintrin.h>
+#    endif
+
+// Transport SSE intrinsics through sse2neon on ARM:
+#    if defined(__ARM_NEON)
+#      define __SSE2__ 1
+#      define __SSE3__ 1
+#      define __SSE4_1__ 1
 #    endif
 
 #    define HAVE_SIMD_MATHMODE
@@ -336,7 +347,9 @@ void vexpdigammify(VW::workspace& all, float* gamma, const float underflow_thres
   sum = v4sfl(extra_sum);
 
   for (fp = gamma; fp < fpend && !is_aligned16(fp); ++fp)
-  { *fp = std::fmax(underflow_threshold, fastexp(*fp - extra_sum)); }
+  {
+    *fp = std::fmax(underflow_threshold, fastexp(*fp - extra_sum));
+  }
 
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4)
   {
@@ -357,7 +370,9 @@ void vexpdigammify_2(VW::workspace& all, float* gamma, const float* norm, const 
   const float* fpend = gamma + all.lda;
 
   for (np = norm; fp < fpend && !is_aligned16(fp); ++fp, ++np)
-  { *fp = std::fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np)); }
+  {
+    *fp = std::fmax(underflow_threshold, fastexp(fastdigamma(*fp) - *np));
+  }
 
   for (; is_aligned16(fp) && fp + 4 < fpend; fp += 4, np += 4)
   {
@@ -689,8 +704,7 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
   float xc_w = 0;
   float score = 0;
   float doc_length = 0;
-  do
-  {
+  do {
     memcpy(v, new_gamma.begin(), sizeof(float) * l.topics);
     l.expdigammify(*l.all, v);
 
@@ -758,13 +772,16 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f),
         all.random_weights, all.lda, all.weights.stride()};
 
-    auto initial_lda_weight_initializer = [init](VW::weight* weights, uint64_t index) {
+    auto initial_lda_weight_initializer = [init](VW::weight* weights, uint64_t index)
+    {
       uint32_t lda = init.lda;
       weight initial_random = init.initial_random;
       if (init.random)
       {
         for (size_t i = 0; i != lda; ++i, ++index)
-        { weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random; }
+        {
+          weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random;
+        }
       }
       weights[lda] = init.initial;
     };
@@ -777,14 +794,15 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
     std::stringstream msg;
     size_t brw = 1;
 
-    do
-    {
+    do {
       brw = 0;
       size_t K = all.lda;  // NOLINT
       if (!read && text) { msg << i << " "; }
 
       if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
-      { brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text); }
+      {
+        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+      }
       else
       {
         // support 32bit build models
@@ -1046,7 +1064,9 @@ void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::ve
   typename T::iterator iter = weights.begin();
 
   for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
-  { top_features.push({(&(*iter))[topic], iter.index()}); }
+  {
+    top_features.push({(&(*iter))[topic], iter.index()});
+  }
 
   for (uint64_t i = top_words_count; i < length; i++, ++iter)
   {
@@ -1084,7 +1104,9 @@ void compute_coherence_metrics(lda& l, T& weights)
     std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
     typename T::iterator iter = weights.begin();
     for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
-    { top_features.push(feature((&(*iter))[topic], iter.index())); }
+    {
+      top_features.push(feature((&(*iter))[topic], iter.index()));
+    }
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
@@ -1108,7 +1130,9 @@ void compute_coherence_metrics(lda& l, T& weights)
     for (size_t i = 0; i < top_features_idx.size(); i++)
     {
       for (size_t j = i + 1; j < top_features_idx.size(); j++)
-      { word_pairs.emplace_back(top_features_idx[i], top_features_idx[j]); }
+      {
+        word_pairs.emplace_back(top_features_idx[i], top_features_idx[j]);
+      }
     }
   }
 
@@ -1161,14 +1185,8 @@ void compute_coherence_metrics(lda& l, T& weights)
           i++;
           j++;
         }
-        else if (examples_for_f2[j] < examples_for_f1[i])
-        {
-          j++;
-        }
-        else
-        {
-          i++;
-        }
+        else if (examples_for_f2[j] < examples_for_f1[i]) { j++; }
+        else { i++; }
       }
     }
   }
@@ -1212,10 +1230,7 @@ void compute_coherence_metrics(lda& l, T& weights)
 void compute_coherence_metrics(lda& l)
 {
   if (l.all->weights.sparse) { compute_coherence_metrics(l, l.all->weights.sparse_weights); }
-  else
-  {
-    compute_coherence_metrics(l, l.all->weights.dense_weights);
-  }
+  else { compute_coherence_metrics(l, l.all->weights.dense_weights); }
 }
 
 void end_pass(lda& l)
@@ -1246,10 +1261,7 @@ void end_examples(lda& l, T& weights)
 void end_examples(lda& l)
 {
   if (l.all->weights.sparse) { end_examples(l, l.all->weights.sparse_weights); }
-  else
-  {
-    end_examples(l, l.all->weights.dense_weights);
-  }
+  else { end_examples(l, l.all->weights.dense_weights); }
 }
 
 void finish_example(VW::workspace& all, lda& l, VW::example& e)
@@ -1275,10 +1287,7 @@ void VW::reductions::lda::get_top_weights(
     VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output)
 {
   if (all->weights.sparse) { ::get_top_weights(all, top_words_count, topic, output, all->weights.sparse_weights); }
-  else
-  {
-    ::get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights);
-  }
+  else { ::get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights); }
 }
 
 base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
@@ -1347,7 +1356,6 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
     bool previous_strict_parse = all.example_parser->strict_parse;
     delete all.example_parser;
     all.example_parser = new parser{minibatch2, previous_strict_parse};
-    all.example_parser->shared_data_obj = all.sd;
   }
 
   ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);

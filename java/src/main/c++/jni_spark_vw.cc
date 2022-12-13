@@ -30,10 +30,7 @@ jobject callLearner(JNIEnv* env, VW::workspace* all, VW::multi_ex& examples)
   if (all->l->is_multiline())
   {
     if VW_STD17_CONSTEXPR (isLearn) { all->learn(examples); }
-    else
-    {
-      all->predict(examples);
-    }
+    else { all->predict(examples); }
     // prediction is in the first example
     prediction = getJavaPrediction(env, all, examples[0]);
     all->finish_example(examples);
@@ -42,10 +39,7 @@ jobject callLearner(JNIEnv* env, VW::workspace* all, VW::multi_ex& examples)
   {
     assert(examples.size() == 1);
     if VW_STD17_CONSTEXPR (isLearn) { all->learn(*examples[0]); }
-    else
-    {
-      all->predict(*examples[0]);
-    }
+    else { all->predict(*examples[0]); }
     prediction = getJavaPrediction(env, all, examples[0]);
     all->finish_example(*examples[0]);
   }
@@ -412,7 +406,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
 
   try
   {
-    example* ex = VW::alloc_examples(1);
+    example* ex = new VW::example;
     ex->interactions = &all->interactions;
     ex->extent_interactions = &all->extent_interactions;
 
@@ -439,7 +433,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JN
 
   try
   {
-    VW::dealloc_examples(ex, 1);
+    delete ex;
   }
   catch (...)
   {
@@ -911,10 +905,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
           ostr << f.action << ":" << f.cost << ":" << f.probability;
       }
     }
-    else
-    {
-      ostr << "unsupported label";
-    }
+    else { ostr << "unsupported label"; }
 
     ostr << ";";
     for (auto& ns : ex->indices)
