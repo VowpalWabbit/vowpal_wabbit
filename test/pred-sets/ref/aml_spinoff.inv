@@ -8,8 +8,8 @@ lda:0
 0 skip:
 options: --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF --noconstant
 Checksum: 1093316166
-event_sum 54
-action_sum 162
+event_sum 36
+action_sum 108
 :0
 E^236*E^642:0:0.0262169
 A^1122*A^1990:4:0.0497007
