@@ -413,11 +413,11 @@ void multipredict(nn& n, single_learner& base, VW::example& ec, size_t count, si
   ec.ft_offset -= static_cast<uint64_t>(step * count);
 }
 
-void finish_example(VW::workspace& all, nn&, VW::example& ec)
+// This differs from the simple label based version because nn does not output a raw prediction.
+void output_example_prediction_nn(
+    VW::workspace& all, const nn& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  std::unique_ptr<VW::io::writer> temp(nullptr);
-  auto raw_prediction_guard = VW::swap_guard(all.raw_prediction, temp);
-  VW::details::return_simple_example(all, nullptr, ec);
+  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
 }
 }  // namespace
 
@@ -466,7 +466,7 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
   n->finished_setup = false;
   n->squared_loss = get_loss_function(all, "squared", 0);
 
-  n->xsubi = all.random_seed;
+  n->xsubi = all.get_random_state()->get_current_state();
 
   n->save_xsubi = n->xsubi;
 
@@ -489,7 +489,9 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
                 .set_multipredict(multipredict_f)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_finish_example(::finish_example)
+                .set_output_example_prediction(output_example_prediction_nn)
+                .set_print_update(VW::details::print_update_simple_label<nn>)
+                .set_update_stats(VW::details::update_stats_simple_label<nn>)
                 .set_end_pass(end_pass)
                 .build();
 
