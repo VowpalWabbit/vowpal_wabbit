@@ -282,6 +282,13 @@ void cb_explore_adf_base<ExploreType>::_output_example_prediction(
     }
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
   }
+  // maintain legacy printing behavior
+  if (all.raw_prediction != nullptr)
+  {
+    all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, logger);
+  }
+  VW::details::global_print_newline(all.final_prediction_sink, logger);
+
 }
 
 template <typename ExploreType>
