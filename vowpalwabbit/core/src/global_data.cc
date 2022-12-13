@@ -85,13 +85,13 @@ void print_raw_text_by_ref(
   if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-void set_mm(shared_data* sd, float label)
+void set_mm(VW::shared_data* sd, float label)
 {
   sd->min_label = std::min(sd->min_label, label);
   if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
 }
 
-void noop_mm(shared_data*, float) {}
+void noop_mm(VW::shared_data*, float) {}
 
 namespace VW
 {
