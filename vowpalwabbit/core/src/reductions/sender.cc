@@ -61,7 +61,7 @@ void open_sockets(sender& s, const std::string& host)
   s.socket_output_buffer.add_file(s.socket->get_writer());
 }
 
-void update_stats_sender(shared_data& sd, const sent_example_info& info, float loss)
+void update_stats_sender(VW::shared_data& sd, const sent_example_info& info, float loss)
 {
   sd.update(info.test_only, info.label.label != FLT_MAX, loss, info.weight, info.num_features);
   if (info.label.label != FLT_MAX && !info.test_only)
@@ -76,7 +76,7 @@ void output_example_prediction_sender(
   for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), prediction, 0, info.tag, logger); }
 }
 
-void print_update_sender(VW::workspace& all, shared_data& sd, const sent_example_info& info, float prediction)
+void print_update_sender(VW::workspace& all, VW::shared_data& sd, const sent_example_info& info, float prediction)
 {
   const bool should_print_driver_update = sd.weighted_examples() >= sd.dump_interval && !all.quiet;
 
@@ -149,7 +149,7 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
                 // Set at least one of update_stats, output_example_prediction or print_update so that the old finish
                 // has an implementation.
                 .set_update_stats(
-                    [](const VW::workspace&, shared_data&, const sender&, const VW::example&, VW::io::logger&) {})
+                    [](const VW::workspace&, VW::shared_data&, const sender&, const VW::example&, VW::io::logger&) {})
                 .set_end_examples(end_examples)
                 .build();
   return make_base(*l);
