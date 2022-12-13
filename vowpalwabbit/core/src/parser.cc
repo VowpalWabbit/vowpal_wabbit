@@ -395,14 +395,14 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options)
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_options& input_options)
 {
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
   all.example_parser->text_reader = VW::read_lines;
 
-  if (!all.no_daemon && (all.daemon || all.active))
+  if (!input_options.no_daemon && (all.daemon || all.active))
   {
 #ifdef _WIN32
     WSAData wsaData;
@@ -494,10 +494,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       new (sd) shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
-      all.example_parser->shared_data_obj = sd;
 
       // create children
-      size_t num_children = VW::cast_to_smaller_type<size_t>(all.num_children);
+      const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
       VW::v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
@@ -602,7 +601,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
           adapter = should_use_compressed ? VW::io::open_compressed_file_reader(filename_to_read)
                                           : VW::io::open_file_reader(filename_to_read);
         }
-        else if (!all.stdin_off)
+        else if (!input_options.stdin_off)
         {
           input_name = "stdin";
           // Should try and use stdin

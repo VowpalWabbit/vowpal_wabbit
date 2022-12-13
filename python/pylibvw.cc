@@ -472,13 +472,13 @@ size_t my_get_prediction_type(vw_ptr all)
 void my_delete_example(void* voidec)
 {
   VW::example* ec = (VW::example*)voidec;
-  VW::dealloc_examples(ec, 1);
+  delete ec;
 }
 
 VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   VW::label_parser* lp = get_label_parser(&*vw, labelType);
-  VW::example* ec = VW::alloc_examples(1);
+  VW::example* ec = new VW::example;
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
