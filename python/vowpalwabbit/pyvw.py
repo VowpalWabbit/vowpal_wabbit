@@ -1981,7 +1981,7 @@ class Example(pylibvw.example):
             prediction_type = PredictionType(prediction_type)
 
         def return_nopred_None() -> None:
-            None
+            return None
 
         switch_prediction_type = {
             PredictionType.SCALAR: self.get_simplelabel_prediction,
