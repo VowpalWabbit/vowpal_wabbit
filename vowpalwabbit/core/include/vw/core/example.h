@@ -37,7 +37,7 @@ void setup_example(VW::workspace& all, example* ae);
 class polylabel
 {
 public:
-  VW::no_label empty = static_cast<char>(0);
+  VW::no_label empty;
   VW::simple_label simple;
   VW::multiclass_label multi;
   VW::cs_label cs;
