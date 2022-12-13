@@ -67,13 +67,6 @@ VW::label_parser multilabel = {
     // label type
     VW::label_type_t::MULTILABEL};
 
-void output_example(VW::workspace& all, const VW::example& ec)
-{
-  update_stats(all, ec);
-  output_example_prediction(all, ec);
-  print_update(all, ec);
-}
-
 void update_stats(const VW::workspace& all, const VW::example& ec)
 {
   const auto& ld = ec.l.multilabels;

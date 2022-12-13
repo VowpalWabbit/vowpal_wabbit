@@ -280,10 +280,12 @@ void update_stats_plt(const VW::workspace& all, VW::shared_data&, const plt&, co
 {
   MULTILABEL::update_stats(all, ec);
 }
+
 void output_example_prediction_plt(VW::workspace& all, const plt&, const VW::example& ec, VW::io::logger&)
 {
   MULTILABEL::output_example_prediction(all, ec);
 }
+
 void print_update_plt(VW::workspace& all, VW::shared_data&, const plt&, const VW::example& ec, VW::io::logger&)
 {
   MULTILABEL::print_update(all, ec);
