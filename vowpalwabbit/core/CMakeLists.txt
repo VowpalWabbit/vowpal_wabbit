@@ -423,6 +423,7 @@ vw_add_test_executable(
       tests/flat_example_test.cc
       tests/main.cc
       tests/merge_test.cc
+      tests/model_util_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
       tests/thread_pool_test.cc
