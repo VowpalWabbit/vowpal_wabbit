@@ -368,13 +368,15 @@ inline size_t bin_text_read_write_fixed_validated(
   return nbytes;
 }
 
-#define WRITEIT(what, str)                                                              \
+// Model utils functions should be used instead.
+#define DEPRECATED_WRITEIT(what, str)                                                   \
   do {                                                                                  \
     msg << str << " = " << what << " ";                                                 \
     bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), read, msg, text); \
   } while (0);
 
-#define WRITEITVAR(what, str, mywhat)                                                       \
+// Model utils functions should be used instead.
+#define DEPRECATED_WRITEITVAR(what, str, mywhat)                                            \
   auto mywhat = (what);                                                                     \
   do {                                                                                      \
     msg << str << " = " << mywhat << " ";                                                   \
