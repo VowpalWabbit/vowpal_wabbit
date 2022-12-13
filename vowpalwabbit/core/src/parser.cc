@@ -395,7 +395,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_options& input_options)
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options)
 {
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 

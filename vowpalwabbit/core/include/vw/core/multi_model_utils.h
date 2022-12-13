@@ -9,9 +9,6 @@
 
 #include <queue>
 
-using namespace VW::config;
-using namespace VW::LEARNER;
-
 namespace VW
 {
 namespace reductions
