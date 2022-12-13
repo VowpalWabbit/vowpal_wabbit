@@ -169,7 +169,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   // mimicking old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
-  VW::example* ec = VW::alloc_examples(1);
+  VW::example ec;
 
   auto def = static_cast<size_t>(' ');
 
@@ -188,7 +188,6 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          VW::dealloc_examples(ec, 1);
           THROW("error: memory allocation failed in reading dictionary")
         }
         else { buffer = new_buffer; }
@@ -222,18 +221,17 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
     }
     d--;
     *d = '|';  // set up for parser::read_line
-    VW::read_line(all, ec, d);
+    VW::read_line(all, &ec, d);
     // now we just need to grab stuff from the default namespace of ec!
-    if (ec->feature_space[def].empty()) { continue; }
-    map->emplace(word, VW::make_unique<features>(ec->feature_space[def]));
+    if (ec.feature_space[def].empty()) { continue; }
+    map->emplace(word, VW::make_unique<features>(ec.feature_space[def]));
 
     // clear up ec
-    ec->tag.clear();
-    ec->indices.clear();
-    for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
+    ec.tag.clear();
+    ec.indices.clear();
+    for (size_t i = 0; i < 256; i++) { ec.feature_space[i].clear(); }
   } while ((rc != EOF) && (num_read > 0));
   free(buffer);
-  VW::dealloc_examples(ec, 1);
 
   if (!all.quiet)
   {
@@ -371,9 +369,9 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   }
 }
 
-input_options parse_source(VW::workspace& all, options_i& options)
+VW::details::input_options parse_source(VW::workspace& all, options_i& options)
 {
-  input_options parsed_options;
+  VW::details::input_options parsed_options;
 
   option_group_definition input_options("Input");
   input_options.add(make_option("data", all.data_filename).short_name("d").help("Example set"))
@@ -381,7 +379,9 @@ input_options parse_source(VW::workspace& all, options_i& options)
       .add(make_option("foreground", parsed_options.foreground)
                .help("In persistent daemon mode, do not run in the background"))
       .add(make_option("port", parsed_options.port).help("Port to listen on; use 0 to pick unused port"))
-      .add(make_option("num_children", all.num_children).help("Number of children for persistent daemon mode"))
+      .add(make_option("num_children", parsed_options.num_children)
+               .default_value(10)
+               .help("Number of children for persistent daemon mode"))
       .add(make_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"))
       .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
       .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
@@ -396,8 +396,8 @@ input_options parse_source(VW::workspace& all, options_i& options)
               .help(
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
-      .add(make_option("no_stdin", all.stdin_off).help("Do not default to reading from stdin"))
-      .add(make_option("no_daemon", all.no_daemon)
+      .add(make_option("no_stdin", parsed_options.stdin_off).help("Do not default to reading from stdin"))
+      .add(make_option("no_daemon", parsed_options.no_daemon)
                .help("Force a loaded daemon or active learning model to accept local input instead of starting in "
                      "daemon mode"))
       .add(make_option("chain_hash", parsed_options.chain_hash_json)
@@ -567,7 +567,7 @@ std::vector<VW::namespace_index> parse_char_interactions(VW::string_view input, 
   return result;
 }
 
-std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str)
+std::vector<extent_term> VW::details::parse_full_name_interactions(VW::workspace& all, VW::string_view str)
 {
   std::vector<extent_term> result;
   auto encoded = VW::decode_inline_hex(str, all.logger);
@@ -851,7 +851,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   {
     for (const auto& i : full_name_interactions)
     {
-      auto parsed = parse_full_name_interactions(all, i);
+      auto parsed = VW::details::parse_full_name_interactions(all, i);
       if (parsed.size() < 2) { THROW("Feature interactions must involve at least two namespaces") }
       std::sort(parsed.begin(), parsed.end());
       all.extent_interactions.push_back(parsed);
@@ -1526,7 +1526,6 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   }
 
   all->example_parser = new parser{final_example_queue_limit, strict_parse};
-  all->example_parser->shared_data_obj = all->sd;
 
   option_group_definition weight_args("Weight");
   weight_args
@@ -1627,7 +1626,7 @@ std::unordered_map<std::string, std::vector<std::string>> parse_model_command_li
   return m_map;
 }
 
-void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
+void VW::details::merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
     VW::config::options_i& options, bool& is_ccb_input_model)
 {
   auto parsed_model_command_line = parse_model_command_line_legacy(strings);
@@ -1664,7 +1663,8 @@ options_i& load_header_merge_options(
   const std::vector<std::string> container{
       std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  merge_options_from_header_strings(container, interactions_settings_duplicated, options, all.is_ccb_input_model);
+  VW::details::merge_options_from_header_strings(
+      container, interactions_settings_duplicated, options, all.is_ccb_input_model);
 
   return options;
 }
@@ -1673,9 +1673,10 @@ void parse_modules(options_i& options, VW::workspace& all, bool interactions_set
     std::vector<std::string>& dictionary_namespaces)
 {
   option_group_definition rand_options("Randomization");
-  rand_options.add(make_option("random_seed", all.random_seed).default_value(0).help("Seed random number generator"));
+  uint64_t random_seed{};
+  rand_options.add(make_option("random_seed", random_seed).default_value(0).help("Seed random number generator"));
   options.add_and_parse(rand_options);
-  all.get_random_state()->set_random_state(all.random_seed);
+  all.get_random_state()->set_random_state(random_seed);
 
   parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_namespaces);  // feature tweaks
 
@@ -2072,7 +2073,6 @@ VW::workspace* seed_vw_model(
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
   new_model->sd = vw_model->sd;                        // shared data
-  new_model->example_parser->shared_data_obj = new_model->sd;
 
   return new_model;
 }
@@ -2082,17 +2082,19 @@ void sync_stats(VW::workspace& all)
   if (all.all_reduce != nullptr)
   {
     const auto loss = static_cast<float>(all.sd->sum_loss);
-    all.sd->sum_loss = static_cast<double>(accumulate_scalar(all, loss));
+    all.sd->sum_loss = static_cast<double>(VW::details::accumulate_scalar(all, loss));
     const auto weighted_labeled_examples = static_cast<float>(all.sd->weighted_labeled_examples);
-    all.sd->weighted_labeled_examples = static_cast<double>(accumulate_scalar(all, weighted_labeled_examples));
+    all.sd->weighted_labeled_examples =
+        static_cast<double>(VW::details::accumulate_scalar(all, weighted_labeled_examples));
     const auto weighted_labels = static_cast<float>(all.sd->weighted_labels);
-    all.sd->weighted_labels = static_cast<double>(accumulate_scalar(all, weighted_labels));
+    all.sd->weighted_labels = static_cast<double>(VW::details::accumulate_scalar(all, weighted_labels));
     const auto weighted_unlabeled_examples = static_cast<float>(all.sd->weighted_unlabeled_examples);
-    all.sd->weighted_unlabeled_examples = static_cast<double>(accumulate_scalar(all, weighted_unlabeled_examples));
+    all.sd->weighted_unlabeled_examples =
+        static_cast<double>(VW::details::accumulate_scalar(all, weighted_unlabeled_examples));
     const auto example_number = static_cast<float>(all.sd->example_number);
-    all.sd->example_number = static_cast<uint64_t>(accumulate_scalar(all, example_number));
+    all.sd->example_number = static_cast<uint64_t>(VW::details::accumulate_scalar(all, example_number));
     const auto total_features = static_cast<float>(all.sd->total_features);
-    all.sd->total_features = static_cast<uint64_t>(accumulate_scalar(all, total_features));
+    all.sd->total_features = static_cast<uint64_t>(VW::details::accumulate_scalar(all, total_features));
   }
 }
 

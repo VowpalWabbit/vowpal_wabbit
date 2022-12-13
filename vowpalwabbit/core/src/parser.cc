@@ -394,14 +394,14 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options)
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options)
 {
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
   all.example_parser->text_reader = VW::read_lines;
 
-  if (!all.no_daemon && (all.daemon || all.active))
+  if (!input_options.no_daemon && (all.daemon || all.active))
   {
 #ifdef _WIN32
     WSAData wsaData;
@@ -488,15 +488,14 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       all.weights.share(all.length());
 
       // learning state to be shared across children
-      shared_data* sd = static_cast<shared_data*>(
-          mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
-      new (sd) shared_data(*all.sd);
+      VW::shared_data* sd = static_cast<VW::shared_data*>(
+          mmap(nullptr, sizeof(VW::shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+      new (sd) VW::shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
-      all.example_parser->shared_data_obj = sd;
 
       // create children
-      size_t num_children = VW::cast_to_smaller_type<size_t>(all.num_children);
+      const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
       VW::v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
@@ -601,7 +600,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
           adapter = should_use_compressed ? VW::io::open_compressed_file_reader(filename_to_read)
                                           : VW::io::open_file_reader(filename_to_read);
         }
-        else if (!all.stdin_off)
+        else if (!input_options.stdin_off)
         {
           input_name = "stdin";
           // Should try and use stdin
@@ -682,7 +681,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
     {
       features& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
-      unique_features(fs, all.limit[index]);
+      VW::unique_features(fs, all.limit[index]);
     }
   }
 }
@@ -704,7 +703,8 @@ void setup_examples(VW::workspace& all, VW::multi_ex& examples)
 
 void setup_example(VW::workspace& all, VW::example* ae)
 {
-  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, ae); }
+  assert(ae != nullptr);
+  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, *ae); }
 
   if (all.example_parser->write_cache)
   {

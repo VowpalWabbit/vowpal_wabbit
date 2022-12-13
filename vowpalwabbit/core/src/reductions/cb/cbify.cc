@@ -14,6 +14,7 @@
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/vw.h"
+#include "vw/core/vw_fwd.h"
 #include "vw/explore/explore.h"
 
 #include <cfloat>
@@ -44,7 +45,7 @@ void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increme
   ecs.resize(num_actions_);
   for (size_t a = 0; a < num_actions_; ++a)
   {
-    ecs[a] = VW::alloc_examples(1);
+    ecs[a] = new VW::example;
     auto& lab = ecs[a]->l.cb;
     CB::default_label(lab);
     ecs[a]->interactions = &interactions;
@@ -66,7 +67,7 @@ void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increme
 
 cbify_adf_data::~cbify_adf_data()
 {
-  for (auto* ex : ecs) { VW::dealloc_examples(ex, 1); }
+  for (auto* ex : ecs) { delete ex; }
 }
 
 void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
