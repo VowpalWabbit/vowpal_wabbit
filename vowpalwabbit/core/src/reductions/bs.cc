@@ -30,7 +30,7 @@ using namespace VW::reductions;
 #define BS_TYPE_MEAN 0
 #define BS_TYPE_VOTE 1
 
-class bs_data
+class bootstrap_data
 {
 public:
   uint32_t num_bootstrap_rounds = 0;  // number of bootstrap rounds
@@ -153,7 +153,7 @@ void print_result(
   if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
+void output_example(VW::workspace& all, bootstrap_data& d, const VW::example& ec)
 {
   const auto& ld = ec.l.simple;
 
@@ -180,7 +180,7 @@ void output_example(VW::workspace& all, bs_data& d, const VW::example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
+void predict_or_learn(bootstrap_data& d, single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *d.all;
   bool should_output = all.raw_prediction != nullptr;
@@ -226,55 +226,73 @@ void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
   }
 }
 
-void finish_example(VW::workspace& all, bs_data& d, VW::example& ec)
+void finish_example(VW::workspace& all, bootstrap_data& d, VW::example& ec)
 {
   output_example(all, d, ec);
   VW::finish_example(all, ec);
 }
 
-base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
+struct options_bs_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<bs_data>();
+  uint32_t num_bootstrap_rounds;
   std::string type_string;
+  bool bs_type_supplied;
+};
+
+std::unique_ptr<options_bs_v1> get_bs_options_instance(const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto bs_opts = VW::make_unique<options_bs_v1>();
   option_group_definition new_options("[Reduction] Bootstrap");
   new_options
-      .add(make_option("bootstrap", data->num_bootstrap_rounds)
+      .add(make_option("bootstrap", bs_opts->num_bootstrap_rounds)
                .keep()
                .necessary()
                .help("K-way bootstrap by online importance resampling"))
-      .add(make_option("bs_type", type_string)
+      .add(make_option("bs_type", bs_opts->type_string)
                .keep()
                .default_value("mean")
                .one_of({"mean", "vote"})
                .help("Prediction type"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  size_t ws = data->num_bootstrap_rounds;
-  data->ub = FLT_MAX;
-  data->lb = -FLT_MAX;
+  bs_opts->bs_type_supplied = options.was_supplied("bs_type");
+  return bs_opts;
+}
 
-  if (options.was_supplied("bs_type"))
+base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto bs_opts = get_bs_options_instance(all, all.logger, *stack_builder.get_options());
+  if (bs_opts == nullptr) { return nullptr; }
+
+  auto bs_data = VW::make_unique<bootstrap_data>();
+
+  bs_data->num_bootstrap_rounds = bs_opts->num_bootstrap_rounds;
+
+  size_t ws = bs_data->num_bootstrap_rounds;
+  bs_data->ub = FLT_MAX;
+  bs_data->lb = -FLT_MAX;
+
+  if (bs_opts->bs_type_supplied)
   {
-    if (type_string == "mean") { data->bs_type = BS_TYPE_MEAN; }
-    else if (type_string == "vote") { data->bs_type = BS_TYPE_VOTE; }
+    if (bs_opts->type_string == "mean") { bs_data->bs_type = BS_TYPE_MEAN; }
+    else if (bs_opts->type_string == "vote") { bs_data->bs_type = BS_TYPE_VOTE; }
     else
     {
       all.logger.err_warn("bs_type must be in {{'mean','vote'}}; resetting to mean.");
-      data->bs_type = BS_TYPE_MEAN;
+      bs_data->bs_type = BS_TYPE_MEAN;
     }
   }
   else
   {  // by default use mean
-    data->bs_type = BS_TYPE_MEAN;
+    bs_data->bs_type = BS_TYPE_MEAN;
   }
 
-  data->pred_vec.reserve(data->num_bootstrap_rounds);
-  data->all = &all;
-  data->random_state = all.get_random_state();
+  bs_data->pred_vec.reserve(bs_data->num_bootstrap_rounds);
+  bs_data->all = &all;
+  bs_data->random_state = all.get_random_state();
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+  auto* l = make_reduction_learner(std::move(bs_data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)

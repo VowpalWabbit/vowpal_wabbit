@@ -185,27 +185,32 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
   metrics.set_bool("baseline_cb_baseline_in_use", ci > exp);
 }
 
-VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
+struct options_baseline_challenger_cb_v1
 {
-  options_i& options = *stack_builder.get_options();
   float alpha;
   float tau;
   bool is_enabled = false;
+  bool emit_metrics;
+};
 
+std::unique_ptr<options_baseline_challenger_cb_v1> get_baseline_challenger_cb_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto baseline_challenger_cb_opts = VW::make_unique<options_baseline_challenger_cb_v1>();
   option_group_definition new_options("[Reduction] Baseline challenger");
   new_options
-      .add(make_option("baseline_challenger_cb", is_enabled)
+      .add(make_option("baseline_challenger_cb", baseline_challenger_cb_opts->is_enabled)
                .necessary()
                .keep()
                .help("Build a CI around the baseline action and use it instead of the model if it's "
                      "perfoming better")
                .experimental())
-      .add(make_option("cb_c_alpha", alpha)
+      .add(make_option("cb_c_alpha", baseline_challenger_cb_opts->alpha)
                .default_value(DEFAULT_ALPHA)
                .keep()
                .help("Confidence level for baseline")
                .experimental())
-      .add(make_option("cb_c_tau", tau)
+      .add(make_option("cb_c_tau", baseline_challenger_cb_opts->tau)
                .default_value(BASELINE_DEFAULT_TAU)
                .keep()
                .help("Time constant for count decay")
@@ -215,15 +220,27 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
 
   if (!options.was_supplied("cb_adf")) { THROW("cb_challenger requires cb_explore_adf or cb_adf"); }
 
-  bool emit_metrics = options.was_supplied("extra_metrics");
-  auto data = VW::make_unique<baseline_challenger_data>(emit_metrics, alpha, tau);
+  baseline_challenger_cb_opts->emit_metrics = options.was_supplied("extra_metrics");
+  return baseline_challenger_cb_opts;
+}
 
-  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
-      learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_save_load(save_load)
-                .set_persist_metrics(persist_metrics)
-                .build();
+VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto baseline_challenger_cb_opts =
+      get_baseline_challenger_cb_options_instance(all, all.logger, *stack_builder.get_options());
+  if (baseline_challenger_cb_opts == nullptr) { return nullptr; }
+
+  auto baseline_challenger_cb_data = VW::make_unique<baseline_challenger_data>(
+      baseline_challenger_cb_opts->emit_metrics, baseline_challenger_cb_opts->alpha, baseline_challenger_cb_opts->tau);
+
+  auto* l =
+      make_reduction_learner(std::move(baseline_challenger_cb_data), as_multiline(stack_builder.setup_base_learner()),
+          learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
+          .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+          .set_input_label_type(VW::label_type_t::CB)
+          .set_save_load(save_load)
+          .set_persist_metrics(persist_metrics)
+          .build();
   return make_base(*l);
 }

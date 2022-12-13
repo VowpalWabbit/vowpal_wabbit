@@ -82,17 +82,30 @@ void predict_or_learn(autolink& b, VW::LEARNER::single_learner& base, VW::exampl
   else { b.predict(base, ec); }
 }
 
-VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)
+struct options_autolink_v1
 {
-  options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   uint32_t d;
+};
+
+std::unique_ptr<options_autolink_v1> get_autolink_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto autolink_opts = VW::make_unique<options_autolink_v1>();
   option_group_definition new_options("[Reduction] Autolink");
-  new_options.add(make_option("autolink", d).keep().necessary().help("Create link function with polynomial d"));
+  new_options.add(
+      make_option("autolink", autolink_opts->d).keep().necessary().help("Create link function with polynomial d"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return autolink_opts;
+}
 
-  auto autolink_reduction = VW::make_unique<autolink>(d, all.weights.stride_shift());
+VW::LEARNER::base_learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto autolink_opts = get_autolink_options_instance(all, all.logger, *stack_builder.get_options());
+  if (autolink_opts == nullptr) { return nullptr; }
+
+  auto autolink_reduction = VW::make_unique<autolink>(autolink_opts->d, all.weights.stride_shift());
   auto* base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(autolink_reduction), base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(autolink_setup))

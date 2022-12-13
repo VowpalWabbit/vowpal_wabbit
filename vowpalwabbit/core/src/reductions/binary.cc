@@ -52,16 +52,30 @@ void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, VW::
   }
 }
 
-VW::LEARNER::base_learner* VW::reductions::binary_setup(setup_base_i& stack_builder)
+struct options_binary_v1
 {
-  options_i& options = *stack_builder.get_options();
-
   bool binary = false;
+};
+
+std::unique_ptr<options_binary_v1> get_binary_options_instance(
+    const VW::workspace&, VW::io::logger&, options_i& options)
+{
+  auto binary_opts = VW::make_unique<options_binary_v1>();
   option_group_definition new_options("[Reduction] Binary Loss");
-  new_options.add(
-      make_option("binary", binary).keep().necessary().help("Report loss as binary classification on -1,1"));
+  new_options.add(make_option("binary", binary_opts->binary)
+                      .keep()
+                      .necessary()
+                      .help("Report loss as binary classification on -1,1"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  return binary_opts;
+}
+
+VW::LEARNER::base_learner* VW::reductions::binary_setup(setup_base_i& stack_builder)
+{
+  VW::workspace& all = *stack_builder.get_all_pointer();
+  auto binary_opts = get_binary_options_instance(all, all.logger, *stack_builder.get_options());
+  if (binary_opts == nullptr) { return nullptr; }
 
   auto bin_data = VW::make_unique<binary_data>(stack_builder.get_all_pointer()->logger);
   auto ret = VW::LEARNER::make_reduction_learner(std::move(bin_data), as_singleline(stack_builder.setup_base_learner()),
