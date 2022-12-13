@@ -276,10 +276,17 @@ void predict(plt& p, single_learner& base, VW::example& ec)
   ec.l.multilabels = std::move(multilabels);
 }
 
-void finish_example(VW::workspace& all, plt& /*p*/, VW::example& ec)
+void update_stats_plt(const VW::workspace& all, shared_data&, const plt&, const VW::example& ec, VW::io::logger&)
 {
-  MULTILABEL::output_example(all, ec);
-  VW::finish_example(all, ec);
+  MULTILABEL::update_stats(all, ec);
+}
+void output_example_prediction_plt(VW::workspace& all, const plt&, const VW::example& ec, VW::io::logger&)
+{
+  MULTILABEL::output_example_prediction(all, ec);
+}
+void print_update_plt(VW::workspace& all, shared_data&, const plt&, const VW::example& ec, VW::io::logger&)
+{
+  MULTILABEL::print_update(all, ec);
 }
 
 void finish(plt& p)
@@ -401,7 +408,9 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::MULTILABELS)
                 .set_input_label_type(VW::label_type_t::MULTILABEL)
                 .set_learn_returns_prediction(true)
-                .set_finish_example(::finish_example)
+                .set_update_stats(update_stats_plt)
+                .set_output_example_prediction(output_example_prediction_plt)
+                .set_print_update(print_update_plt)
                 .set_finish(::finish)
                 .set_save_load(save_load_tree)
                 .build();
