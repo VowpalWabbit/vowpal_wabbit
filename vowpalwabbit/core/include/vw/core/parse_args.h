@@ -21,6 +21,10 @@ public:
   uint32_t port;
   std::string pid_file;
   std::string port_file;
+  uint64_t num_children;
+  // If a model was saved in daemon or active learning mode, force it to accept
+  // local input when loaded instead.
+  bool no_daemon = false;
 
   bool cache;
   std::vector<std::string> cache_files;
@@ -33,6 +37,7 @@ public:
 #ifdef VW_BUILD_CSV
   std::unique_ptr<VW::parsers::csv::csv_parser_options> csv_opts;
 #endif
+  bool stdin_off = false;
 };
 
 void parse_modules(VW::config::options_i& options, VW::workspace& all);

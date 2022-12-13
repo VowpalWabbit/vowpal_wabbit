@@ -67,8 +67,6 @@ public:
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(VW::workspace*, const char*, size_t, VW::multi_ex&);
 
-  shared_data* shared_data_obj = nullptr;
-
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
   io_buf output;    // Where to output the cache.
@@ -124,7 +122,7 @@ public:
   std::string last_event_time;
 };
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_options& input_options);
 
 // parser control
 void lock_done(parser& p);
