@@ -22,9 +22,6 @@ public:
   VW::v_array<uint32_t> label_v;
 };
 
-// TODO: Remove output_example once multilabel_oaa is not using it.
-void output_example(VW::workspace& all, const VW::example& ec);
-
 void update_stats(const VW::workspace& all, const VW::example& ec);
 void output_example_prediction(VW::workspace& all, const VW::example& ec);
 void print_update(VW::workspace& all, const VW::example& ec);
