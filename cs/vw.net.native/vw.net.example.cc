@@ -9,12 +9,12 @@
 
 API example* CreateExample(vw_net_native::workspace_context* workspace)
 {
-  example* ex = VW::alloc_examples(1);
+  example* ex = new VW::example;
   workspace->vw->example_parser->lbl_parser.default_label(ex->l);
   return ex;
 }
 
-API void DeleteExample(example* example) { VW::dealloc_examples(example, 1); }
+API void DeleteExample(example* example) { delete example; }
 
 API int IsRingExample(vw_net_native::workspace_context* workspace, example* example)
 {
