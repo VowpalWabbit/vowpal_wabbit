@@ -39,6 +39,7 @@ TEST(cache_tests, write_and_read_example)
   VW::example dest_ex;
   examples.push_back(&dest_ex);
   VW::parsers::cache::read_example_from_cache(workspace.get(), io_reader, examples);
+  EXPECT_EQ(io_reader.unflushed_bytes_count(), backing_vector->size());
 
   EXPECT_EQ(dest_ex.indices.size(), 2);
   EXPECT_EQ(dest_ex.feature_space['n'].size(), 3);

@@ -1081,49 +1081,49 @@ void end_pass(memory_tree& b)
 void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
 {  // deal with tag
    // deal with labels:
-  WRITEIT(ec->num_features, "num_features");
-  WRITEIT(ec->total_sum_feat_sq, "total_sum_features");
-  WRITEIT(ec->weight, "example_weight");
-  WRITEIT(ec->loss, "loss");
-  WRITEIT(ec->ft_offset, "ft_offset");
+  DEPRECATED_WRITEIT(ec->num_features, "num_features");
+  DEPRECATED_WRITEIT(ec->total_sum_feat_sq, "total_sum_features");
+  DEPRECATED_WRITEIT(ec->weight, "example_weight");
+  DEPRECATED_WRITEIT(ec->loss, "loss");
+  DEPRECATED_WRITEIT(ec->ft_offset, "ft_offset");
   if (oas == false)
   {  // multi-class
-    WRITEIT(ec->l.multi.label, "multiclass_label");
-    WRITEIT(ec->l.multi.weight, "multiclass_weight");
+    DEPRECATED_WRITEIT(ec->l.multi.label, "multiclass_label");
+    DEPRECATED_WRITEIT(ec->l.multi.weight, "multiclass_weight");
   }
   else
   {  // multi-label
-    WRITEITVAR(ec->l.multilabels.label_v.size(), "label_size", label_size);
+    DEPRECATED_WRITEITVAR(ec->l.multilabels.label_v.size(), "label_size", label_size);
     if (read)
     {
       ec->l.multilabels.label_v.clear();
       for (uint32_t i = 0; i < label_size; i++) { ec->l.multilabels.label_v.push_back(0); }
     }
-    for (uint32_t i = 0; i < label_size; i++) WRITEIT(ec->l.multilabels.label_v[i], "ec_label");
+    for (uint32_t i = 0; i < label_size; i++) DEPRECATED_WRITEIT(ec->l.multilabels.label_v[i], "ec_label");
   }
 
-  WRITEITVAR(ec->tag.size(), "tags", tag_number);
+  DEPRECATED_WRITEITVAR(ec->tag.size(), "tags", tag_number);
   if (read)
   {
     ec->tag.clear();
     for (uint32_t i = 0; i < tag_number; i++) { ec->tag.push_back('a'); }
   }
-  for (uint32_t i = 0; i < tag_number; i++) WRITEIT(ec->tag[i], "tag");
+  for (uint32_t i = 0; i < tag_number; i++) DEPRECATED_WRITEIT(ec->tag[i], "tag");
 
   // deal with tag:
-  WRITEITVAR(ec->indices.size(), "namespaces", namespace_size);
+  DEPRECATED_WRITEITVAR(ec->indices.size(), "namespaces", namespace_size);
   if (read)
   {
     ec->indices.clear();
     for (uint32_t i = 0; i < namespace_size; i++) { ec->indices.push_back('\0'); }
   }
-  for (uint32_t i = 0; i < namespace_size; i++) WRITEIT(ec->indices[i], "VW::namespace_index");
+  for (uint32_t i = 0; i < namespace_size; i++) DEPRECATED_WRITEIT(ec->indices[i], "VW::namespace_index");
 
   // deal with features
   for (VW::namespace_index nc : ec->indices)
   {
     features* fs = &ec->feature_space[nc];
-    WRITEITVAR(fs->size(), "features_", feat_size);
+    DEPRECATED_WRITEITVAR(fs->size(), "features_", feat_size);
     if (read)
     {
       fs->clear();
@@ -1131,28 +1131,28 @@ void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& te
       fs->indices.clear();
       for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs->push_back(0, 0); }
     }
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) WRITEIT(fs->values[f_i], "value");
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) WRITEIT(fs->indices[f_i], "index");
+    for (uint32_t f_i = 0; f_i < feat_size; f_i++) DEPRECATED_WRITEIT(fs->values[f_i], "value");
+    for (uint32_t f_i = 0; f_i < feat_size; f_i++) DEPRECATED_WRITEIT(fs->indices[f_i], "index");
   }
 }
 
 void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
-  WRITEIT(cn.parent, "parent");
-  WRITEIT(cn.internal, "internal");
-  WRITEIT(cn.depth, "depth");
-  WRITEIT(cn.base_router, "base_router");
-  WRITEIT(cn.left, "left");
-  WRITEIT(cn.right, "right");
-  WRITEIT(cn.nl, "nl");
-  WRITEIT(cn.nr, "nr");
-  WRITEITVAR(cn.examples_index.size(), "leaf_n_examples", leaf_n_examples);
+  DEPRECATED_WRITEIT(cn.parent, "parent");
+  DEPRECATED_WRITEIT(cn.internal, "internal");
+  DEPRECATED_WRITEIT(cn.depth, "depth");
+  DEPRECATED_WRITEIT(cn.base_router, "base_router");
+  DEPRECATED_WRITEIT(cn.left, "left");
+  DEPRECATED_WRITEIT(cn.right, "right");
+  DEPRECATED_WRITEIT(cn.nl, "nl");
+  DEPRECATED_WRITEIT(cn.nr, "nr");
+  DEPRECATED_WRITEITVAR(cn.examples_index.size(), "leaf_n_examples", leaf_n_examples);
   if (read)
   {
     cn.examples_index.clear();
     for (uint32_t k = 0; k < leaf_n_examples; k++) { cn.examples_index.push_back(0); }
   }
-  for (uint32_t k = 0; k < leaf_n_examples; k++) WRITEIT(cn.examples_index[k], "example_location");
+  for (uint32_t k = 0; k < leaf_n_examples; k++) DEPRECATED_WRITEIT(cn.examples_index[k], "example_location");
 }
 
 void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
@@ -1165,21 +1165,21 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     if (read)
     {
       uint32_t ss = 0;
-      WRITEIT(ss, "stride_shift");
+      DEPRECATED_WRITEIT(ss, "stride_shift");
       b.all->weights.stride_shift(ss);
     }
     else
     {
       uint32_t ss = b.all->weights.stride_shift();
-      WRITEIT(ss, "stride_shift");
+      DEPRECATED_WRITEIT(ss, "stride_shift");
     }
 
-    WRITEIT(b.max_nodes, "max_nodes");
-    WRITEIT(b.learn_at_leaf, "learn_at_leaf");
-    WRITEIT(b.oas, "oas");
-    // WRITEIT(b.leaf_example_multiplier, "leaf_example_multiplier")
-    WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
-    WRITEIT(b.max_num_labels, "max_number_of_labels");
+    DEPRECATED_WRITEIT(b.max_nodes, "max_nodes");
+    DEPRECATED_WRITEIT(b.learn_at_leaf, "learn_at_leaf");
+    DEPRECATED_WRITEIT(b.oas, "oas");
+    // DEPRECATED_WRITEIT(b.leaf_example_multiplier, "leaf_example_multiplier")
+    DEPRECATED_WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
+    DEPRECATED_WRITEIT(b.max_num_labels, "max_number_of_labels");
 
     if (read)
     {
@@ -1190,7 +1190,7 @@ void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool t
     // node
     for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text, msg); }
     // deal with examples:
-    WRITEITVAR(b.examples.size(), "examples", n_examples);
+    DEPRECATED_WRITEITVAR(b.examples.size(), "examples", n_examples);
     if (read)
     {
       b.examples.clear();
