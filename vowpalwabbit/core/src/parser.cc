@@ -94,7 +94,7 @@ bool got_sigterm;
 
 void handle_sigterm(int) { got_sigterm = true; }
 
-parser::parser(size_t example_queue_limit, bool strict_parse_)
+VW::parser::parser(size_t example_queue_limit, bool strict_parse_)
     : example_pool{example_queue_limit}
     , ready_parsed_examples{example_queue_limit}
     , example_queue_limit{example_queue_limit}
