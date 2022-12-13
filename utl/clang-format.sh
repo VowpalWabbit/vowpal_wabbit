@@ -31,7 +31,7 @@ fi
 echo "Using clang-format version:"
 clang-format --version
 
-for FILE in $(find . -type f -not -path './ext_libs/*' -not -path './cs/cli/*' \( -name '*.cc' -o -name "*.h" \) ); do
+for FILE in $(find . -type f -not -path './ext_libs/*' -not -path './cs/cli/*' -not -path '*/vcpkg_installed/*' \( -name '*.cc' -o -name "*.h" \) ); do
     if [[ "$1" == "check" ]]; then
         clang-format --dry-run --Werror $FILE
         if [ $? -ne 0 ]; then

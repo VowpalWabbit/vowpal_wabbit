@@ -466,7 +466,7 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
   n->finished_setup = false;
   n->squared_loss = get_loss_function(all, "squared", 0);
 
-  n->xsubi = all.random_seed;
+  n->xsubi = all.get_random_state()->get_current_state();
 
   n->save_xsubi = n->xsubi;
 

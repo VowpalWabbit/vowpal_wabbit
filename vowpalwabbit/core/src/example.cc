@@ -235,19 +235,9 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-example* alloc_examples(size_t count)
-{
-  example* ec = calloc_or_throw<example>(count);
-  if (ec == nullptr) { return nullptr; }
-  for (size_t i = 0; i < count; i++) { new (ec + i) example; }
-  return ec;
-}
+example* alloc_examples(size_t count) { return new VW::example[count]; }
 
-void dealloc_examples(example* example_ptr, size_t count)
-{
-  for (size_t i = 0; i < count; i++) { (example_ptr + i)->~example(); }
-  free(example_ptr);
-}
+void dealloc_examples(example* example_ptr, size_t /* count */) { delete[] example_ptr; }
 
 void finish_example(VW::workspace&, example&);
 void clean_example(VW::workspace&, example&);
