@@ -1929,7 +1929,7 @@ class Example(pylibvw.example):
         Tuple[int, float],
         List[Tuple[float, float, float]],
         Tuple[int, List[int]],
-        str,
+        None,
     ]:
 
         """Get prediction object from this example.
