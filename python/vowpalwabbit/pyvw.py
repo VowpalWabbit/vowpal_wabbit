@@ -1919,18 +1919,17 @@ class Example(pylibvw.example):
 
     def get_prediction(
         self, prediction_type: Optional[Union[int, PredictionType]] = None
-    ) -> Optional[
-        Union[
-            float,
-            List[float],
-            int,
-            List[int],
-            float,
-            List[List[Tuple[int, float]]],
-            Tuple[int, float],
-            List[Tuple[float, float, float]],
-            Tuple[int, List[int]],
-        ]
+    ) -> Union[
+        float,
+        List[float],
+        int,
+        List[int],
+        float,
+        List[List[Tuple[int, float]]],
+        Tuple[int, float],
+        List[Tuple[float, float, float]],
+        Tuple[int, List[int]],
+        None,
     ]:
 
         """Get prediction object from this example.
@@ -1980,7 +1979,7 @@ class Example(pylibvw.example):
             )
             prediction_type = PredictionType(prediction_type)
 
-        def return_nopred_None() -> None:
+        def return_nopred_none() -> None:
             return None
 
         switch_prediction_type = {
@@ -1996,7 +1995,7 @@ class Example(pylibvw.example):
             PredictionType.ACTION_PDF_VALUE: self.get_action_pdf_value,
             PredictionType.PDF: self.get_pdf,
             PredictionType.ACTIVE_MULTICLASS: self.get_active_multiclass,
-            PredictionType.NOPRED: lambda: return_nopred_None,
+            PredictionType.NOPRED: return_nopred_none,
         }
         return switch_prediction_type[prediction_type]()
 
