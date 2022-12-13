@@ -4,6 +4,7 @@
 
 #include "vw/core/parser.h"
 
+#include "vw/core/daemon_utils.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/io/errno_handling.h"
@@ -222,7 +223,7 @@ void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = fals
   if (all.example_parser->input.isbinary())
   {
     all.example_parser->reader = VW::parsers::cache::read_example_from_cache;
-    all.print_by_ref = binary_print_result_by_ref;
+    all.print_by_ref = VW::details::binary_print_result_by_ref;
   }
   else if (json || dsjson) { set_json_reader(all, dsjson); }
   else { set_string_reader(all); }
@@ -681,7 +682,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
     {
       features& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
-      unique_features(fs, all.limit[index]);
+      VW::unique_features(fs, all.limit[index]);
     }
   }
 }
@@ -703,7 +704,8 @@ void setup_examples(VW::workspace& all, VW::multi_ex& examples)
 
 void setup_example(VW::workspace& all, VW::example* ae)
 {
-  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, ae); }
+  assert(ae != nullptr);
+  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, *ae); }
 
   if (all.example_parser->write_cache)
   {
