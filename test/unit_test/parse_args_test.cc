@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_no_opts_skip, T, option_
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_no_opts_noskip, T, optio
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -75,7 +75,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_bool_opt_skip, T, option
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -101,7 +101,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_bool_opt_noskip, T, opti
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_int_opt_skip, T, option_
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -149,7 +149,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_int_opt_noskip, T, optio
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_bool_int_opt_skip, T, op
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_bool_int_opt_noskip, T, 
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -221,7 +221,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_int_bool_opt_skip, T, op
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -245,7 +245,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_int_bool_opt_noskip, T, 
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt = -1;
   bool bool_opt;
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_bool_int_interaction_boo
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt1 = -1;
   bool bool_opt1;
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_bool_int_interaction_boo
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt1 = -1;
   bool bool_opt1;
@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_bool_int_interaction_int
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt1 = -1;
   bool bool_opt1;
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_bool_int_interaction_int
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt1 = -1;
   bool bool_opt1;
@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_int_bool_interaction_boo
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt1 = -1;
   bool bool_opt1;
@@ -450,7 +450,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_int_bool_interaction_boo
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt1 = -1;
   bool bool_opt1;
@@ -486,7 +486,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_int_bool_interaction_int
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, true, *opts, is_ccb_model);
 
   int int_opt1 = -1;
   bool bool_opt1;
@@ -522,7 +522,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_from_header_strings_int_bool_interaction_int
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   int int_opt1 = -1;
   bool bool_opt1;
@@ -557,7 +557,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_options_from_ccb_header, T, option_types)
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   BOOST_CHECK_EQUAL(true, is_ccb_model);
 }
@@ -568,7 +568,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(merge_option_from_cb_header, T, option_types)
   auto opts = VW::make_unique<T>(std::vector<std::string>());
 
   bool is_ccb_model = false;
-  merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
+  VW::details::merge_options_from_header_strings(strings, false, *opts, is_ccb_model);
 
   BOOST_CHECK_EQUAL(false, is_ccb_model);
 }

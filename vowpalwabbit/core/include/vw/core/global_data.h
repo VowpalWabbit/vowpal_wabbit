@@ -42,8 +42,6 @@ using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
 
-class shared_data;
-
 namespace VW
 {
 class workspace;
@@ -110,7 +108,7 @@ public:
 class workspace
 {
 public:
-  shared_data* sd;
+  VW::shared_data* sd;
 
   parser* example_parser;
   std::thread parse_thread;
@@ -140,7 +138,7 @@ public:
    */
   std::string dump_weights_to_json_experimental();
 
-  void (*set_minmax)(shared_data* sd, float label);
+  void (*set_minmax)(VW::shared_data* sd, float label);
 
   uint64_t current_pass;
 
@@ -335,7 +333,7 @@ void print_result_by_ref(
 void binary_print_result_by_ref(
     VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 
-void noop_mm(shared_data*, float label);
+void noop_mm(VW::shared_data*, float label);
 void get_prediction(VW::io::reader* f, float& res, float& weight);
 void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
