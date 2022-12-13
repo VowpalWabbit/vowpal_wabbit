@@ -178,7 +178,6 @@ set(vw_core_headers
   include/vw/core/simple_label_parser.h
   include/vw/core/simple_label.h
   include/vw/core/slates_label.h
-  include/vw/core/stable_unique.h
   include/vw/core/tag_utils.h
   include/vw/core/text_utils.h
   include/vw/core/thread_pool.h
