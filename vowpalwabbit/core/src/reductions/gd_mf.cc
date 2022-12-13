@@ -322,7 +322,7 @@ void end_pass(gdmf& d)
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
     {
-      set_done(*all);
+      VW::details::set_done(*all);
     }
   }
 }
