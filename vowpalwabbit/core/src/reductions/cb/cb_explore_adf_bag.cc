@@ -135,7 +135,7 @@ void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, VW::multi_ex& e
   }
 }
 
-void update_stats_bag(const VW::workspace& all, shared_data& sd, 
+void update_stats_bag(const VW::workspace& all, VW::shared_data& sd, 
                       const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq,
                       VW::io::logger& logger)
 {
@@ -144,7 +144,7 @@ void update_stats_bag(const VW::workspace& all, shared_data& sd,
   cb_explore_adf_base<cb_explore_adf_bag>::update_stats(all, sd, data, ec_seq, logger);
 }
 
-void print_update_bag(VW::workspace& all, shared_data& sd, 
+void print_update_bag(VW::workspace& all, VW::shared_data& sd, 
                       const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq,
                       VW::io::logger& logger)
 {
