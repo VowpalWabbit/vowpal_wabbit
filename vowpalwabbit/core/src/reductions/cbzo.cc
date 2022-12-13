@@ -153,7 +153,7 @@ void update_weights(cbzo& data, VW::example& ec)
 }
 VW_WARNING_STATE_POP
 
-void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
+void set_minmax(VW::shared_data* sd, float label, bool min_fixed, bool max_fixed)
 {
   if (!min_fixed) { sd->min_label = std::min(label, sd->min_label); }
   if (!max_fixed) { sd->max_label = std::max(label, sd->max_label); }

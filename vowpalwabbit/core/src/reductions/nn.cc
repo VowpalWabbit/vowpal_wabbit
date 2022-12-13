@@ -157,13 +157,13 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
   bool should_output = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) { finish_setup(n, *(n.all)); }
   // Yes, copy all of shared data.
-  shared_data sd{*n.all->sd};
+  VW::shared_data sd{*n.all->sd};
   {
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
     auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
     VW::simple_label ld = ec.l.simple;
-    void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
+    void (*save_set_minmax)(VW::shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
