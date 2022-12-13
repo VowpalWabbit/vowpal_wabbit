@@ -389,7 +389,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   num_bits = 18;
   default_bits = true;
   daemon = false;
-  num_children = 10;
   save_resume = true;
   preserve_performance_counters = false;
 
@@ -447,7 +446,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   save_per_pass = false;
 
-  stdin_off = false;
   do_reset_source = false;
   holdout_set_off = true;
   holdout_after = 0;
