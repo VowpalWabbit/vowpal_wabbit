@@ -488,9 +488,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, const VW::det
       all.weights.share(all.length());
 
       // learning state to be shared across children
-      shared_data* sd = static_cast<shared_data*>(
-          mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
-      new (sd) shared_data(*all.sd);
+      VW::shared_data* sd = static_cast<VW::shared_data*>(
+          mmap(nullptr, sizeof(VW::shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+      new (sd) VW::shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
 
@@ -681,7 +681,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
     {
       features& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
-      unique_features(fs, all.limit[index]);
+      VW::unique_features(fs, all.limit[index]);
     }
   }
 }
@@ -703,7 +703,8 @@ void setup_examples(VW::workspace& all, VW::multi_ex& examples)
 
 void setup_example(VW::workspace& all, VW::example* ae)
 {
-  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, ae); }
+  assert(ae != nullptr);
+  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, *ae); }
 
   if (all.example_parser->write_cache)
   {

@@ -243,7 +243,7 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 }
 
 template <bool probabilities>
-void update_stats_oaa(const VW::workspace& /* all */, shared_data& sd, const oaa& data, const VW::example& ec,
+void update_stats_oaa(const VW::workspace& /* all */, VW::shared_data& sd, const oaa& data, const VW::example& ec,
     VW::io::logger& /* logger */)
 {
   // === Compute multiclass_log_loss
@@ -287,7 +287,7 @@ void update_stats_oaa(const VW::workspace& /* all */, shared_data& sd, const oaa
 
 template <bool probabilities>
 void print_update_oaa(
-    VW::workspace& all, shared_data& /* sd */, const oaa& data, const VW::example& ec, VW::io::logger& /* unused */)
+    VW::workspace& all, VW::shared_data& /* sd */, const oaa& data, const VW::example& ec, VW::io::logger& /* unused */)
 {
   // === Compute `prediction` and zero_one_loss
   // We have already computed `prediction` in predict_or_learn,

@@ -10,6 +10,8 @@
 #include <memory>
 #include <string>
 
+namespace VW
+{
 class shared_data
 {
 public:
@@ -75,3 +77,4 @@ public:
   void print_summary(std::ostream& output, const shared_data& sd, const VW::loss_function& loss_func,
       uint64_t current_pass, bool holdout_set_off) const;
 };
+}  // namespace VW
