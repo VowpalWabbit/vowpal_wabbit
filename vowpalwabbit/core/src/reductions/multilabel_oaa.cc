@@ -76,7 +76,14 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::examp
   }
 }
 
-void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
+void update_stats_multilabel_oaa(
+    const VW::workspace& all, VW::shared_data&, const multi_oaa&, const VW::example& ec, VW::io::logger&)
+{
+  MULTILABEL::update_stats(all, ec);
+}
+
+void output_example_prediction_multilabel_oaa(
+    VW::workspace& all, const multi_oaa& o, const VW::example& ec, VW::io::logger&)
 {
   if (o.probabilities)
   {
@@ -92,9 +99,15 @@ void finish_example(VW::workspace& all, multi_oaa& o, VW::example& ec)
     const auto ss_str = output_string_stream.str();
     for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
   }
-  MULTILABEL::output_example(all, ec);
-  VW::finish_example(all, ec);
+  MULTILABEL::output_example_prediction(all, ec);
 }
+
+void print_update_multilabel_oaa(
+    VW::workspace& all, VW::shared_data&, const multi_oaa&, const VW::example& ec, VW::io::logger&)
+{
+  MULTILABEL::print_update(all, ec);
+}
+
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i& stack_builder)
@@ -152,7 +165,9 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
           .set_learn_returns_prediction(true)
           .set_input_label_type(VW::label_type_t::MULTILABEL)
           .set_output_prediction_type(pred_type)
-          .set_finish_example(::finish_example)
+          .set_update_stats(update_stats_multilabel_oaa)
+          .set_output_example_prediction(output_example_prediction_multilabel_oaa)
+          .set_print_update(print_update_multilabel_oaa)
           .build();
 
   all.example_parser->lbl_parser = MULTILABEL::multilabel;
