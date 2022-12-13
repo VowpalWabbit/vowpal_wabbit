@@ -9,9 +9,6 @@
 
 #include <queue>
 
-using namespace VW::config;
-using namespace VW::LEARNER;
-
 namespace VW
 {
 namespace reductions
@@ -232,7 +229,7 @@ public:
       const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
       double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type);
 
-  void do_learning(multi_learner& base, multi_ex& ec, uint64_t live_slot);
+  void do_learning(VW::LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
 
   // Public Chacha functions
@@ -280,8 +277,8 @@ public:
   {
   }
   // This fn gets called before learning any example
-  void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
-  void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
+  void one_step(VW::LEARNER::multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
+  void offset_learn(VW::LEARNER::multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
 };
 }  // namespace automl
 

@@ -35,9 +35,12 @@ namespace VW
 void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 void setup_examples(VW::workspace& all, VW::multi_ex& examples);
+namespace details
+{
+class input_options;
+}
 }  // namespace VW
 
-class input_options;
 class dsjson_metrics;
 
 class parser
@@ -122,7 +125,7 @@ public:
   std::string last_event_time;
 };
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options);
 
 // parser control
 void lock_done(parser& p);
