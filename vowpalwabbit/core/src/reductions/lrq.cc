@@ -11,6 +11,7 @@
 #include "vw/core/memory.h"
 #include "vw/core/parse_args.h"  // for spoof_hex_encoded_namespaces
 #include "vw/core/rand48.h"
+#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/text_utils.h"
 
@@ -195,7 +196,7 @@ base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
-  lrq->initial_seed = lrq->seed = all.random_seed | 8675309;
+  lrq->initial_seed = lrq->seed = all.get_random_state()->get_current_state() | 8675309;
 
   if (!all.quiet)
   {

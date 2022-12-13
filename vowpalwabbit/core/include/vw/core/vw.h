@@ -135,7 +135,11 @@ example* import_example(VW::workspace& all, const std::string& label, primitive_
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
 // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
+VW_DEPRECATED(
+    "This function is no longer needed and will be removed. Use new/make_unique/make_shared or stack based as "
+    "appropriate.")
 example* alloc_examples(size_t count);
+VW_DEPRECATED("This function is no longer needed and will be removed.")
 void dealloc_examples(example* example_ptr, size_t count);
 
 void parse_example_label(VW::workspace& all, example& ec, const std::string& label);

@@ -8,6 +8,7 @@
 #include "vw/core/correctedMath.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/multiclass.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/rand_state.h"
@@ -18,6 +19,7 @@
 
 #include <cfloat>
 #include <cmath>
+#include <cstddef>
 #include <sstream>
 
 using namespace VW::config;
@@ -240,9 +242,9 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   else { ec.pred.multiclass = prediction; }
 }
 
-// TODO: partial code duplication with multiclass.cc:finish_example
 template <bool probabilities>
-void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
+void update_stats_oaa(const VW::workspace& /* all */, shared_data& sd, const oaa& data, const VW::example& ec,
+    VW::io::logger& /* logger */)
 {
   // === Compute multiclass_log_loss
   // TODO:
@@ -255,29 +257,61 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   float correct_class_prob = 0;
   if (probabilities)
   {
-    correct_class_prob = ec.pred.scalars[((o.indexing == 0) ? ec.l.multi.label : ec.l.multi.label - 1) % o.k];
+    correct_class_prob = ec.pred.scalars[((data.indexing == 0) ? ec.l.multi.label : ec.l.multi.label - 1) % data.k];
     if (correct_class_prob > 0) { multiclass_log_loss = -std::log(correct_class_prob) * ec.weight; }
-    if (ec.test_only) { all.sd->holdout_multiclass_log_loss += multiclass_log_loss; }
-    else { all.sd->multiclass_log_loss += multiclass_log_loss; }
+    if (ec.test_only) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
+    else { sd.multiclass_log_loss += multiclass_log_loss; }
   }
   // === Compute `prediction` and zero_one_loss
   // We have already computed `prediction` in predict_or_learn,
   // but we cannot store it in ec.pred union because we store ec.pred.probs there.
   uint32_t prediction_ind = 0;
-  for (uint32_t i = 1; i < o.k; i++)
+  for (uint32_t i = 1; i < data.k; i++)
   {
-    if (o.pred[i].scalar > o.pred[prediction_ind].scalar) { prediction_ind = i; }
+    if (data.pred[i].scalar > data.pred[prediction_ind].scalar) { prediction_ind = i; }
   }
-  uint32_t pred_lbl = (o.indexing == 0) ? prediction_ind : prediction_ind + 1;
+  uint32_t pred_lbl = (data.indexing == 0) ? prediction_ind : prediction_ind + 1;
 
   float zero_one_loss = 0;
   if (ec.l.multi.label != pred_lbl) { zero_one_loss = ec.weight; }
 
+  // === Report updates using zero-one loss
+  sd.update(
+      ec.test_only, ec.l.multi.label != static_cast<uint32_t>(-1), zero_one_loss, ec.weight, ec.get_num_features());
+  // Alternatively, we could report multiclass_log_loss.
+  // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.num_features);
+  // Even better would be to report both losses, but this would mean to increase
+  // the number of columns and this would not fit narrow screens.
+  // So let's report (average) multiclass_log_loss only in the final resume.
+}
+
+template <bool probabilities>
+void print_update_oaa(
+    VW::workspace& all, shared_data& /* sd */, const oaa& data, const VW::example& ec, VW::io::logger& /* unused */)
+{
+  // === Compute `prediction` and zero_one_loss
+  // We have already computed `prediction` in predict_or_learn,
+  // but we cannot store it in ec.pred union because we store ec.pred.probs there.
+  uint32_t prediction_ind = 0;
+  for (uint32_t i = 1; i < data.k; i++)
+  {
+    if (data.pred[i].scalar > data.pred[prediction_ind].scalar) { prediction_ind = i; }
+  }
+  uint32_t pred_lbl = (data.indexing == 0) ? prediction_ind : prediction_ind + 1;
+
+  // === Print progress report
+  if (probabilities) { VW::details::print_multiclass_update_with_probability(all, ec, pred_lbl); }
+  else { VW::details::print_multiclass_update_with_score(all, ec, pred_lbl); }
+}
+
+void output_example_prediction_oaa(
+    VW::workspace& all, const oaa& data, const VW::example& ec, VW::io::logger& /* unused */)
+{
   // === Print probabilities for all classes
   std::ostringstream output_string_stream;
-  for (uint32_t i = 0; i < o.k; i++)
+  for (uint32_t i = 0; i < data.k; i++)
   {
-    uint32_t corrected_label = (o.indexing == 0) ? i : i + 1;
+    uint32_t corrected_label = (data.indexing == 0) ? i : i + 1;
     if (i > 0) { output_string_stream << ' '; }
     if (all.sd->ldict) { output_string_stream << all.sd->ldict->get(corrected_label); }
     else { output_string_stream << corrected_label; }
@@ -285,22 +319,9 @@ void finish_example_scores(VW::workspace& all, oaa& o, VW::example& ec)
   }
   const auto ss_str = output_string_stream.str();
   for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
-
-  // === Report updates using zero-one loss
-  all.sd->update(
-      ec.test_only, ec.l.multi.label != static_cast<uint32_t>(-1), zero_one_loss, ec.weight, ec.get_num_features());
-  // Alternatively, we could report multiclass_log_loss.
-  // all.sd->update(ec.test_only, multiclass_log_loss, ec.weight, ec.num_features);
-  // Even better would be to report both losses, but this would mean to increase
-  // the number of columns and this would not fit narrow screens.
-  // So let's report (average) multiclass_log_loss only in the final resume.
-
-  // === Print progress report
-  if (probabilities) { VW::details::print_multiclass_update_with_probability(all, ec, pred_lbl); }
-  else { VW::details::print_multiclass_update_with_score(all, ec, pred_lbl); }
-  VW::finish_example(all, ec);
 }
 }  // namespace
+
 VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
@@ -354,12 +375,16 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
 
   oaa* data_ptr = data.get();
   uint64_t k_value = data->k;
-  auto base = as_singleline(stack_builder.setup_base_learner());
-  void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&);
-  void (*pred_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&);
+  auto* base = as_singleline(stack_builder.setup_base_learner());
+  void (*learn_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&) = nullptr;
+  void (*pred_ptr)(oaa&, VW::LEARNER::single_learner&, VW::example&) = nullptr;
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  void (*finish_ptr)(VW::workspace&, oaa&, VW::example&);
+
+  VW::learner_update_stats_func<oaa, VW::example>* update_stats_func = nullptr;
+  VW::learner_output_example_prediction_func<oaa, VW::example>* output_example_prediction_func =
+      output_example_prediction_oaa;
+  VW::learner_print_update_func<oaa, VW::example>* print_update_func = nullptr;
   if (probabilities || scores)
   {
     pred_type = VW::prediction_type_t::SCALARS;
@@ -375,7 +400,8 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
       learn_ptr = learn<!PRINT_ALL, SCORES, PROBABILITIES>;
       pred_ptr = predict<!PRINT_ALL, SCORES, PROBABILITIES>;
       name_addition = "-prob";
-      finish_ptr = finish_example_scores<true>;
+      update_stats_func = update_stats_oaa<true>;
+      print_update_func = print_update_oaa<true>;
       all.sd->report_multiclass_log_loss = true;
     }
     else
@@ -383,13 +409,16 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
       learn_ptr = learn<!PRINT_ALL, SCORES, !PROBABILITIES>;
       pred_ptr = predict<!PRINT_ALL, SCORES, !PROBABILITIES>;
       name_addition = "-scores";
-      finish_ptr = finish_example_scores<false>;
+      update_stats_func = update_stats_oaa<false>;
+      print_update_func = print_update_oaa<false>;
     }
   }
   else
   {
     pred_type = VW::prediction_type_t::MULTICLASS;
-    finish_ptr = VW::details::finish_multiclass_example<oaa>;
+    update_stats_func = VW::details::update_stats_multiclass_label<oaa>;
+    output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<oaa>;
+    print_update_func = VW::details::print_update_multiclass_label<oaa>;
     if (all.raw_prediction != nullptr)
     {
       learn_ptr = learn<PRINT_ALL, !SCORES, !PROBABILITIES>;
@@ -409,16 +438,30 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
   if (data_ptr->num_subsample > 0)
   {
     learn_ptr = learn_randomized;
-    finish_ptr = VW::details::finish_multiclass_example_without_loss<oaa>;
+    // Override the update stats func.
+    update_stats_func = [](const VW::workspace& /* all */, shared_data& sd, const oaa&, const VW::example& ec,
+                            VW::io::logger& /* logger */)
+    {
+      float loss = 0;
+      if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labelled()) { loss = ec.weight; }
+
+      // We specifically say it is not labelled when reporting loss as there is
+      // no way to output progressive validation loss for subsampling mode
+      // without increasing variance See original fix:
+      // https://github.com/VowpalWabbit/vowpal_wabbit/pull/1880
+      sd.update(ec.test_only, false, loss, ec.weight, ec.get_num_features());
+    };
   }
 
-  auto l = make_reduction_learner(
+  auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
-               .set_params_per_weight(k_value)
-               .set_input_label_type(VW::label_type_t::MULTICLASS)
-               .set_output_prediction_type(pred_type)
-               .set_finish_example(finish_ptr)
-               .build();
+                .set_params_per_weight(k_value)
+                .set_input_label_type(VW::label_type_t::MULTICLASS)
+                .set_output_prediction_type(pred_type)
+                .set_update_stats(update_stats_func)
+                .set_output_example_prediction(output_example_prediction_func)
+                .set_print_update(print_update_func)
+                .build();
 
   return make_base(*l);
 }
