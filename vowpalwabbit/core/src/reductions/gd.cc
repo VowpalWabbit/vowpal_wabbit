@@ -427,7 +427,7 @@ void print_audit_features(VW::workspace& all, VW::example& ec)
   print_features(all, ec);
 }
 
-float finalize_prediction(shared_data* sd, VW::io::logger& logger, float ret)
+float finalize_prediction(VW::shared_data* sd, VW::io::logger& logger, float ret)
 {
   if (std::isnan(ret))
   {
