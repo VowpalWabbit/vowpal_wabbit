@@ -394,7 +394,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_options& input_options)
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options)
 {
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
@@ -488,9 +488,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_o
       all.weights.share(all.length());
 
       // learning state to be shared across children
-      shared_data* sd = static_cast<shared_data*>(
-          mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
-      new (sd) shared_data(*all.sd);
+      VW::shared_data* sd = static_cast<VW::shared_data*>(
+          mmap(nullptr, sizeof(VW::shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+      new (sd) VW::shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
 

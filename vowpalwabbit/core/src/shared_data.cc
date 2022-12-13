@@ -16,10 +16,10 @@
 #include <climits>
 #include <iomanip>
 
-shared_data::shared_data() = default;
-shared_data::~shared_data() = default;
+VW::shared_data::shared_data() = default;
+VW::shared_data::~shared_data() = default;
 
-shared_data::shared_data(const shared_data& other)
+VW::shared_data::shared_data(const shared_data& other)
 {
   queries = other.queries;
   example_number = other.example_number;
@@ -53,7 +53,7 @@ shared_data::shared_data(const shared_data& other)
   second_observed_label = other.second_observed_label;
 }
 
-shared_data& shared_data::operator=(const shared_data& other)
+VW::shared_data& VW::shared_data::operator=(const shared_data& other)
 {
   if (this == &other) { return *this; }
   queries = other.queries;
@@ -89,7 +89,7 @@ shared_data& shared_data::operator=(const shared_data& other)
   return *this;
 }
 
-shared_data::shared_data(shared_data&& other) noexcept
+VW::shared_data::shared_data(shared_data&& other) noexcept
 {
   queries = other.queries;
   example_number = other.example_number;
@@ -123,7 +123,7 @@ shared_data::shared_data(shared_data&& other) noexcept
   second_observed_label = other.second_observed_label;
 }
 
-shared_data& shared_data::operator=(shared_data&& other) noexcept
+VW::shared_data& VW::shared_data::operator=(shared_data&& other) noexcept
 {
   queries = other.queries;
   example_number = other.example_number;
@@ -158,9 +158,9 @@ shared_data& shared_data::operator=(shared_data&& other) noexcept
   return *this;
 }
 
-double shared_data::weighted_examples() const { return weighted_labeled_examples + weighted_unlabeled_examples; }
+double VW::shared_data::weighted_examples() const { return weighted_labeled_examples + weighted_unlabeled_examples; }
 
-void shared_data::update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features)
+void VW::shared_data::update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features)
 {
   t += weight;
   if (test_example && labeled_example)
@@ -183,7 +183,7 @@ void shared_data::update(bool test_example, bool labeled_example, float loss, fl
   }
 }
 
-void shared_data::update_dump_interval(bool progress_add, float progress_arg)
+void VW::shared_data::update_dump_interval(bool progress_add, float progress_arg)
 {
   sum_loss_since_last_dump = 0.0;
   old_weighted_labeled_examples = weighted_labeled_examples;
@@ -230,7 +230,7 @@ static const std::array<std::string, NUM_COLS> SD_HEADER_TITLES = {"average loss
     "example\nweight", "current\nlabel", "current\npredict", "current features"};
 
 // progressive validation header
-void shared_data::print_update_header(std::ostream& trace_message)
+void VW::shared_data::print_update_header(std::ostream& trace_message)
 {
   format_row(SD_HEADER_TITLES, SD_HEADER_COLUMNS, 1, trace_message);
   trace_message << "\n";
@@ -242,7 +242,7 @@ std::string num_to_fixed_string(T num, int decimal_precision)
   return fmt::format("{:.{}f}", num, decimal_precision);
 }
 
-void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
+void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
     float prediction, size_t num_features, bool progress_add, float progress_arg)
 {
   std::ostringstream label_buf, pred_buf;
@@ -256,8 +256,8 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
       progress_add, progress_arg);
 }
 
-void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, uint32_t label,
-    uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
+void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass,
+    uint32_t label, uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
 {
   std::ostringstream label_buf, pred_buf;
 
@@ -270,7 +270,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
       progress_add, progress_arg);
 }
 
-void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass,
+void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass,
     const std::string& label, uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
 {
   std::ostringstream pred_buf;
@@ -281,7 +281,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
       output_stream, holdout_set_off, current_pass, label, pred_buf.str(), num_features, progress_add, progress_arg);
 }
 
-void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass,
+void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass,
     const std::string& label, const std::string& prediction, size_t num_features, bool progress_add, float progress_arg)
 {
   bool holding_out = false;
@@ -334,7 +334,7 @@ void shared_data::print_update(std::ostream& output_stream, bool holdout_set_off
   update_dump_interval(progress_add, progress_arg);
 }
 
-void shared_data::print_summary(std::ostream& output, const shared_data& sd, const VW::loss_function& loss_func,
+void VW::shared_data::print_summary(std::ostream& output, const shared_data& sd, const VW::loss_function& loss_func,
     uint64_t current_pass, bool holdout_set_off) const
 {
   auto saved_precision = output.precision();
