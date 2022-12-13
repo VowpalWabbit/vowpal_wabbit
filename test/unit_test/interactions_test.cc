@@ -348,31 +348,31 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
   auto* vw = VW::initialize("--quiet");
 
   {
-    auto a = parse_full_name_interactions(*vw, "a|b");
+    auto a = VW::details::parse_full_name_interactions(*vw, "a|b");
     std::vector<extent_term> expected = {
         extent_term{'a', VW::hash_space(*vw, "a")}, extent_term{'b', VW::hash_space(*vw, "b")}};
     check_collections_exact(a, expected);
   }
 
   {
-    auto a = parse_full_name_interactions(*vw, "art|bat|and");
+    auto a = VW::details::parse_full_name_interactions(*vw, "art|bat|and");
     std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
         extent_term{'b', VW::hash_space(*vw, "bat")}, extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
   {
-    auto a = parse_full_name_interactions(*vw, "art|:|and");
+    auto a = VW::details::parse_full_name_interactions(*vw, "art|:|and");
     std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
         extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE},
         extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
-  BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "||"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "||||"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "||"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "||||"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
+  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
   VW::finish(*vw);
 }
 
@@ -431,7 +431,7 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   VW::details::generate_interactions_object_cache cache;
 
   {
-    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info");
+    const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|user_info");
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
@@ -445,7 +445,7 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   }
 
   {
-    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|user_info|user_info");
+    const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|user_info|user_info");
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
   }
 
   {
-    const auto extent_terms = parse_full_name_interactions(*vw, "user_info|extra");
+    const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|extra");
     size_t counter = 0;
     INTERACTIONS::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,

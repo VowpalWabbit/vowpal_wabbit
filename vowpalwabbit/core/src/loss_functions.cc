@@ -16,7 +16,7 @@
 
 namespace
 {
-inline float squared_loss_impl_get_loss(const shared_data* sd, float prediction, float label)
+inline float squared_loss_impl_get_loss(const VW::shared_data* sd, float prediction, float label)
 {
   if (prediction <= sd->max_label && prediction >= sd->min_label)
   {
@@ -63,14 +63,14 @@ inline float squared_loss_impl_get_square_grad(float prediction, float label)
   return 4.f * (prediction - label) * (prediction - label);
 }
 
-inline float squared_loss_impl_first_derivative(const shared_data* sd, float prediction, float label)
+inline float squared_loss_impl_first_derivative(const VW::shared_data* sd, float prediction, float label)
 {
   if (prediction < sd->min_label) { prediction = sd->min_label; }
   else if (prediction > sd->max_label) { prediction = sd->max_label; }
   return 2.f * (prediction - label);
 }
 
-inline float squared_loss_impl_second_derivative(const shared_data* sd, float prediction)
+inline float squared_loss_impl_second_derivative(const VW::shared_data* sd, float prediction)
 {
   if (prediction <= sd->max_label && prediction >= sd->min_label) { return 2.; }
   else { return 0.; }
@@ -81,7 +81,7 @@ class squaredloss : public VW::loss_function
 public:
   std::string get_type() const override { return "squared"; }
 
-  float get_loss(const shared_data* sd, float prediction, float label) const override
+  float get_loss(const VW::shared_data* sd, float prediction, float label) const override
   {
     return squared_loss_impl_get_loss(sd, prediction, label);
   }
@@ -101,12 +101,12 @@ public:
     return squared_loss_impl_get_square_grad(prediction, label);
   }
 
-  float first_derivative(const shared_data* sd, float prediction, float label) const override
+  float first_derivative(const VW::shared_data* sd, float prediction, float label) const override
   {
     return squared_loss_impl_first_derivative(sd, prediction, label);
   }
 
-  float second_derivative(const shared_data* sd, float prediction, float) const override
+  float second_derivative(const VW::shared_data* sd, float prediction, float) const override
   {
     return squared_loss_impl_second_derivative(sd, prediction);
   }
@@ -117,7 +117,7 @@ class classic_squaredloss : public VW::loss_function
 public:
   std::string get_type() const override { return "classic"; }
 
-  float get_loss(const shared_data*, float prediction, float label) const override
+  float get_loss(const VW::shared_data*, float prediction, float label) const override
   {
     float example_loss = (prediction - label) * (prediction - label);
     return example_loss;
@@ -138,12 +138,12 @@ public:
     return 4.f * (prediction - label) * (prediction - label);
   }
 
-  float first_derivative(const shared_data*, float prediction, float label) const override
+  float first_derivative(const VW::shared_data*, float prediction, float label) const override
   {
     return 2.f * (prediction - label);
   }
 
-  float second_derivative(const shared_data*, float, float) const override { return 2.; }
+  float second_derivative(const VW::shared_data*, float, float) const override { return 2.; }
 };
 
 class hingeloss : public VW::loss_function
@@ -153,7 +153,7 @@ public:
 
   std::string get_type() const override { return "hinge"; }
 
-  float get_loss(const shared_data*, float prediction, float label) const override
+  float get_loss(const VW::shared_data*, float prediction, float label) const override
   {
     if (label != -1.f && label != 1.f)
     {
@@ -182,12 +182,12 @@ public:
     return d * d;
   }
 
-  float first_derivative(const shared_data*, float prediction, float label) const override
+  float first_derivative(const VW::shared_data*, float prediction, float label) const override
   {
     return (label * prediction >= 1) ? 0 : -label;
   }
 
-  float second_derivative(const shared_data*, float, float) const override { return 0.; }
+  float second_derivative(const VW::shared_data*, float, float) const override { return 0.; }
 
 private:
   mutable VW::io::logger _logger;
@@ -203,7 +203,7 @@ public:
 
   std::string get_type() const override { return "logistic"; }
 
-  float get_loss(const shared_data*, float prediction, float label) const override
+  float get_loss(const VW::shared_data*, float prediction, float label) const override
   {
     if (label < _loss_min || label > _loss_max)
     {
@@ -273,7 +273,7 @@ public:
     return static_cast<float>(w * (1. + r / t * (u - r) / (u - 2. * r)) - x);  // more magic
   }
 
-  float first_derivative(const shared_data*, float prediction, float label) const override
+  float first_derivative(const VW::shared_data*, float prediction, float label) const override
   {
     float std_label = (label - _loss_min) / (_loss_max - _loss_min);
     return std_label * first_derivative_sub(prediction, 1.f) + (1 - std_label) * first_derivative_sub(prediction, -1.f);
@@ -291,7 +291,7 @@ public:
     return d * d;
   }
 
-  float second_derivative(const shared_data*, float prediction, float label) const override
+  float second_derivative(const VW::shared_data*, float prediction, float label) const override
   {
     float std_label = (label - _loss_min) / (_loss_max - _loss_min);
     return std_label * second_derivative_sub(prediction, 1.f) +
@@ -319,7 +319,7 @@ public:
   std::string get_type() const override { return "quantile"; }
   float get_parameter() const override { return tau; }
 
-  float get_loss(const shared_data*, float prediction, float label) const override
+  float get_loss(const VW::shared_data*, float prediction, float label) const override
   {
     float e = label - prediction;
     if (e > 0) { return tau * e; }
@@ -351,7 +351,7 @@ public:
     return -(1 - tau) * update_scale;
   }
 
-  float first_derivative(const shared_data*, float prediction, float label) const override
+  float first_derivative(const VW::shared_data*, float prediction, float label) const override
   {
     float e = label - prediction;
     if (e == 0) { return 0; }
@@ -364,7 +364,7 @@ public:
     return fd * fd;
   }
 
-  float second_derivative(const shared_data*, float, float) const override { return 0.; }
+  float second_derivative(const VW::shared_data*, float, float) const override { return 0.; }
 
   float tau;
 };
@@ -379,7 +379,7 @@ public:
   std::string get_type() const override { return "expectile"; }
   float get_parameter() const override { return _q; }
 
-  float get_loss(const shared_data* sd, float prediction, float label) const override
+  float get_loss(const VW::shared_data* sd, float prediction, float label) const override
   {
     float err = label - prediction;
     return squared_loss_impl_get_loss(sd, prediction, label) * (err < 0 ? _q : (1.f - _q));
@@ -405,13 +405,13 @@ public:
     return squared_loss_impl_get_square_grad(prediction, label) * (err < 0 ? _q * _q : (1.f - _q) * (1.f - _q));
   }
 
-  float first_derivative(const shared_data* sd, float prediction, float label) const override
+  float first_derivative(const VW::shared_data* sd, float prediction, float label) const override
   {
     float err = label - prediction;
     return squared_loss_impl_first_derivative(sd, prediction, label) * (err < 0 ? _q : (1.f - _q));
   }
 
-  float second_derivative(const shared_data* sd, float prediction, float label) const override
+  float second_derivative(const VW::shared_data* sd, float prediction, float label) const override
   {
     float err = label - prediction;
     return squared_loss_impl_second_derivative(sd, prediction) * (err < 0 ? _q : (1.f - _q));
@@ -429,7 +429,7 @@ public:
 
   std::string get_type() const override { return "poisson"; }
 
-  float get_loss(const shared_data*, float prediction, float label) const override
+  float get_loss(const VW::shared_data*, float prediction, float label) const override
   {
     if (label < 0.f) { _logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
     float exp_prediction = std::exp(prediction);
@@ -460,13 +460,13 @@ public:
     return (exp_prediction - label) * (exp_prediction - label);
   }
 
-  float first_derivative(const shared_data*, float prediction, float label) const override
+  float first_derivative(const VW::shared_data*, float prediction, float label) const override
   {
     float exp_prediction = std::exp(prediction);
     return (exp_prediction - label);
   }
 
-  float second_derivative(const shared_data*, float prediction, float /* label */) const override
+  float second_derivative(const VW::shared_data*, float prediction, float /* label */) const override
   {
     float exp_prediction = std::exp(prediction);
     return exp_prediction;

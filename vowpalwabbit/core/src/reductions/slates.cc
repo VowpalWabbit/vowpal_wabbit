@@ -159,8 +159,8 @@ float get_estimate(const VW::action_scores& label_probs, float cost, const VW::d
   return cost * p_over_ps;
 }
 
-void update_stats_slates(const VW::workspace& /* all */, shared_data& sd, const VW::reductions::slates_data& /* data */,
-    const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
+void update_stats_slates(const VW::workspace& /* all */, VW::shared_data& sd,
+    const VW::reductions::slates_data& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
 {
   VW::multi_ex slots;
   size_t num_features = 0;
@@ -209,7 +209,7 @@ void output_example_prediction_slates(VW::workspace& all, const VW::reductions::
   VW::details::global_print_newline(all.final_prediction_sink, all.logger);
 }
 
-void print_update_slates(VW::workspace& all, shared_data& /* sd */, const VW::reductions::slates_data& /* data */,
+void print_update_slates(VW::workspace& all, VW::shared_data& /* sd */, const VW::reductions::slates_data& /* data */,
     const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =

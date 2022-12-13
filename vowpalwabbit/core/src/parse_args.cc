@@ -369,9 +369,9 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   }
 }
 
-input_options parse_source(VW::workspace& all, options_i& options)
+VW::details::input_options parse_source(VW::workspace& all, options_i& options)
 {
-  input_options parsed_options;
+  VW::details::input_options parsed_options;
 
   option_group_definition input_options("Input");
   input_options.add(make_option("data", all.data_filename).short_name("d").help("Example set"))
@@ -567,7 +567,7 @@ std::vector<VW::namespace_index> parse_char_interactions(VW::string_view input, 
   return result;
 }
 
-std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::string_view str)
+std::vector<extent_term> VW::details::parse_full_name_interactions(VW::workspace& all, VW::string_view str)
 {
   std::vector<extent_term> result;
   auto encoded = VW::decode_inline_hex(str, all.logger);
@@ -851,7 +851,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   {
     for (const auto& i : full_name_interactions)
     {
-      auto parsed = parse_full_name_interactions(all, i);
+      auto parsed = VW::details::parse_full_name_interactions(all, i);
       if (parsed.size() < 2) { THROW("Feature interactions must involve at least two namespaces") }
       std::sort(parsed.begin(), parsed.end());
       all.extent_interactions.push_back(parsed);
@@ -1626,7 +1626,7 @@ std::unordered_map<std::string, std::vector<std::string>> parse_model_command_li
   return m_map;
 }
 
-void merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
+void VW::details::merge_options_from_header_strings(const std::vector<std::string>& strings, bool skip_interactions,
     VW::config::options_i& options, bool& is_ccb_input_model)
 {
   auto parsed_model_command_line = parse_model_command_line_legacy(strings);
@@ -1663,7 +1663,8 @@ options_i& load_header_merge_options(
   const std::vector<std::string> container{
       std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
-  merge_options_from_header_strings(container, interactions_settings_duplicated, options, all.is_ccb_input_model);
+  VW::details::merge_options_from_header_strings(
+      container, interactions_settings_duplicated, options, all.is_ccb_input_model);
 
   return options;
 }
@@ -2081,17 +2082,19 @@ void sync_stats(VW::workspace& all)
   if (all.all_reduce != nullptr)
   {
     const auto loss = static_cast<float>(all.sd->sum_loss);
-    all.sd->sum_loss = static_cast<double>(accumulate_scalar(all, loss));
+    all.sd->sum_loss = static_cast<double>(VW::details::accumulate_scalar(all, loss));
     const auto weighted_labeled_examples = static_cast<float>(all.sd->weighted_labeled_examples);
-    all.sd->weighted_labeled_examples = static_cast<double>(accumulate_scalar(all, weighted_labeled_examples));
+    all.sd->weighted_labeled_examples =
+        static_cast<double>(VW::details::accumulate_scalar(all, weighted_labeled_examples));
     const auto weighted_labels = static_cast<float>(all.sd->weighted_labels);
-    all.sd->weighted_labels = static_cast<double>(accumulate_scalar(all, weighted_labels));
+    all.sd->weighted_labels = static_cast<double>(VW::details::accumulate_scalar(all, weighted_labels));
     const auto weighted_unlabeled_examples = static_cast<float>(all.sd->weighted_unlabeled_examples);
-    all.sd->weighted_unlabeled_examples = static_cast<double>(accumulate_scalar(all, weighted_unlabeled_examples));
+    all.sd->weighted_unlabeled_examples =
+        static_cast<double>(VW::details::accumulate_scalar(all, weighted_unlabeled_examples));
     const auto example_number = static_cast<float>(all.sd->example_number);
-    all.sd->example_number = static_cast<uint64_t>(accumulate_scalar(all, example_number));
+    all.sd->example_number = static_cast<uint64_t>(VW::details::accumulate_scalar(all, example_number));
     const auto total_features = static_cast<float>(all.sd->total_features);
-    all.sd->total_features = static_cast<uint64_t>(accumulate_scalar(all, total_features));
+    all.sd->total_features = static_cast<uint64_t>(VW::details::accumulate_scalar(all, total_features));
   }
 }
 
