@@ -20,8 +20,7 @@ namespace automl
 {
 namespace
 {
-constexpr uint64_t MAX_CONFIGS = 10;
-constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
+constexpr uint64_t MAX_CONFIGS = 129;
 }  // namespace
 
 using interaction_vec_t = std::vector<std::vector<namespace_index>>;
@@ -117,11 +116,11 @@ public:
   std::vector<ns_based_config> configs;
 
   priority_func* calc_priority;
-  const uint64_t global_lease;
+  const uint64_t default_lease;
   uint64_t valid_config_size = 0;
   oracle_impl _impl;
 
-  config_oracle(uint64_t global_lease, priority_func* calc_priority, const std::string& interaction_type,
+  config_oracle(uint64_t default_lease, priority_func* calc_priority, const std::string& interaction_type,
       const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state, config_type conf_type);
 
   void gen_configs(const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
@@ -154,6 +153,8 @@ public:
 private:
   size_t current;
 };
+
+constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 
 class oracle_rand_impl
 {
@@ -199,7 +200,7 @@ public:
   uint64_t total_champ_switches = 0;
   uint64_t total_learn_count = 0;
   const uint64_t current_champ = 0;
-  const uint64_t global_lease;
+  const uint64_t default_lease;
   const uint64_t max_live_configs;
   uint64_t priority_challengers;
   dense_parameters& weights;
@@ -226,7 +227,7 @@ public:
   // horizon and the champ has one horizon for each challenger
   estimator_vec_t<estimator_impl> estimators;
 
-  interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
+  interaction_config_manager(uint64_t default_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
       double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type);
@@ -280,7 +281,6 @@ public:
   }
   // This fn gets called before learning any example
   void one_step(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
-  // inner loop of learn driven by # MAX_CONFIGS
   void offset_learn(multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
 };
 }  // namespace automl

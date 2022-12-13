@@ -406,7 +406,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
 
   try
   {
-    example* ex = VW::alloc_examples(1);
+    example* ex = new VW::example;
     ex->interactions = &all->interactions;
     ex->extent_interactions = &all->extent_interactions;
 
@@ -433,7 +433,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JN
 
   try
   {
-    VW::dealloc_examples(ex, 1);
+    delete ex;
   }
   catch (...)
   {

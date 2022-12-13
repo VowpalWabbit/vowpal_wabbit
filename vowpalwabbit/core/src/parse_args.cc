@@ -169,7 +169,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
   // mimicking old v_hashmap behavior for load factor.
   // A smaller factor will generally use more memory but have faster access
   map->max_load_factor(0.25);
-  VW::example* ec = VW::alloc_examples(1);
+  VW::example ec;
 
   auto def = static_cast<size_t>(' ');
 
@@ -188,7 +188,6 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
         if (new_buffer == nullptr)
         {
           free(buffer);
-          VW::dealloc_examples(ec, 1);
           THROW("error: memory allocation failed in reading dictionary")
         }
         else { buffer = new_buffer; }
@@ -222,18 +221,17 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
     }
     d--;
     *d = '|';  // set up for parser::read_line
-    VW::read_line(all, ec, d);
+    VW::read_line(all, &ec, d);
     // now we just need to grab stuff from the default namespace of ec!
-    if (ec->feature_space[def].empty()) { continue; }
-    map->emplace(word, VW::make_unique<features>(ec->feature_space[def]));
+    if (ec.feature_space[def].empty()) { continue; }
+    map->emplace(word, VW::make_unique<features>(ec.feature_space[def]));
 
     // clear up ec
-    ec->tag.clear();
-    ec->indices.clear();
-    for (size_t i = 0; i < 256; i++) { ec->feature_space[i].clear(); }
+    ec.tag.clear();
+    ec.indices.clear();
+    for (size_t i = 0; i < 256; i++) { ec.feature_space[i].clear(); }
   } while ((rc != EOF) && (num_read > 0));
   free(buffer);
-  VW::dealloc_examples(ec, 1);
 
   if (!all.quiet)
   {
@@ -1672,9 +1670,10 @@ void parse_modules(options_i& options, VW::workspace& all, bool interactions_set
     std::vector<std::string>& dictionary_namespaces)
 {
   option_group_definition rand_options("Randomization");
-  rand_options.add(make_option("random_seed", all.random_seed).default_value(0).help("Seed random number generator"));
+  uint64_t random_seed{};
+  rand_options.add(make_option("random_seed", random_seed).default_value(0).help("Seed random number generator"));
   options.add_and_parse(rand_options);
-  all.get_random_state()->set_random_state(all.random_seed);
+  all.get_random_state()->set_random_state(random_seed);
 
   parse_feature_tweaks(options, all, interactions_settings_duplicated, dictionary_namespaces);  // feature tweaks
 
