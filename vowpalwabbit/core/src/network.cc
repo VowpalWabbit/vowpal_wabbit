@@ -31,9 +31,7 @@ std::unique_ptr<VW::io::socket> VW::details::open_vw_binary_socket(
 {
   auto colon_pos = host_and_optional_port.find(':');
   if (colon_pos == std::string::npos)
-  {
-    return VW::details::open_vw_binary_socket(host_and_optional_port, DEFAULT_PORT, logger);
-  }
+  { return VW::details::open_vw_binary_socket(host_and_optional_port, DEFAULT_PORT, logger); }
 
   std::string port = host_and_optional_port.substr(colon_pos + 1);
   std::string host = host_and_optional_port.substr(0, colon_pos);

@@ -133,7 +133,10 @@ void print_update(VW::workspace& all, const VW::example& ec)
   {
     std::stringstream label_string;
     if (is_test) { label_string << "unknown"; }
-    else { label_string << VW::to_string(ec.l.multilabels); }
+    else
+    {
+      label_string << VW::to_string(ec.l.multilabels);
+    }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
         VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);

@@ -65,9 +65,7 @@ void update_stats_sender(VW::shared_data& sd, const sent_example_info& info, flo
 {
   sd.update(info.test_only, info.label.label != FLT_MAX, loss, info.weight, info.num_features);
   if (info.label.label != FLT_MAX && !info.test_only)
-  {
-    sd.weighted_labels += (static_cast<double>(info.label.label)) * info.weight;
-  }
+  { sd.weighted_labels += (static_cast<double>(info.label.label)) * info.weight; }
 }
 
 void output_example_prediction_sender(
