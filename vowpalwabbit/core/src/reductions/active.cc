@@ -187,7 +187,7 @@ void output_prediction(VW::workspace& all, const active& active, const example& 
     const auto& ld = example.l.simple;
     float ai = -1;
     // Example was not labeled.  Check if label should be queried.
-    if (ld.label == FLT_MAX)  
+    if (ld.label == FLT_MAX)
     {
       ai = query_decision(active, example.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
     }
