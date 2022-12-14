@@ -777,7 +777,7 @@ Weight Options:
 [Reduction] OjaNewton Options:
     --OjaNewton                             Online Newton with Oja's Sketch (type: bool, keep, necessary)
     --sketch_size arg                       Size of sketch (type: int, default: 10)
-    --epoch_size arg                        Size of epoch (type: int, default: 1)
+    --epoch_size arg                        Size of epoch (type: uint, default: 1)
     --alpha arg                             Mutiplicative constant for indentiy (type: float, default: 1)
     --alpha_inverse arg                     One over alpha, similar to learning rate (type: float)
     --learning_rate_cnt arg                 Constant for the learning rate 1/t (type: float, default: 2)
