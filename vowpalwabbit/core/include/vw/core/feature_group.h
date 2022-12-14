@@ -26,6 +26,8 @@ using feature_value = float;
 using feature_index = uint64_t;
 using namespace_index = unsigned char;
 
+class features;
+
 class audit_strings
 {
 public:
@@ -227,7 +229,7 @@ public:
     std::swap(lhs._begin_indices, rhs._begin_indices);
     std::swap(lhs._begin_audit, rhs._begin_audit);
   }
-  friend class features;
+  friend class VW::features;
 
 private:
   feature_value_type_t* _begin_values;
