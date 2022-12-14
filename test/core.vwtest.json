@@ -5613,7 +5613,7 @@
     ]
   },
   {
-    "id": 433,
+    "id": 435,
     "desc": "second order online learning with epoch",
     "vw_command":
         "--OjaNewton -d train-sets/0001.dat -p second_order_with_epoch.predict --predict_only_model --epoch_size 8",
