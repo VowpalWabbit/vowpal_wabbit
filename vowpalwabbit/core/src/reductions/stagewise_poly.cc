@@ -64,7 +64,7 @@ public:
 
   VW::example synth_ec;
   // following is bookkeeping in synth_ec creation (dfs)
-  feature synth_rec_f{0.f, 0};
+  VW::feature synth_rec_f{0.f, 0};
   VW::example* original_ec = nullptr;
   uint32_t cur_depth = 0;
   bool training = false;
@@ -413,7 +413,7 @@ void synthetic_reset(stagewise_poly& poly, VW::example& ec)
 
 void synthetic_decycle(stagewise_poly& poly)
 {
-  features& fs = poly.synth_ec.feature_space[TREE_ATOMICS];
+  VW::features& fs = poly.synth_ec.feature_space[TREE_ATOMICS];
   for (size_t i = 0; i < fs.size(); ++i)
   {
     assert(cycle_get(poly, fs.indices[i]));
@@ -457,13 +457,13 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
     ++poly.depths[poly.cur_depth];
 #endif  // DEBUG
 
-    feature temp = {v * poly.synth_rec_f.x, wid_cur};
+    VW::feature temp = {v * poly.synth_rec_f.x, wid_cur};
     poly.synth_ec.feature_space[TREE_ATOMICS].push_back(temp.x, temp.weight_index);
     poly.synth_ec.num_features++;
 
     if (parent_get(poly, temp.weight_index))
     {
-      feature parent_f = poly.synth_rec_f;
+      VW::feature parent_f = poly.synth_rec_f;
       poly.synth_rec_f = temp;
       ++poly.cur_depth;
 #ifdef DEBUG

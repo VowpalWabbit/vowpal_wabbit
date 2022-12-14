@@ -101,7 +101,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
   parameters& weights = rd.all->weights;
   for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
   {
-    features& fs = ec.feature_space[*i];
+    auto& fs = ec.feature_space[*i];
     for (size_t j = 0; j < fs.size(); ++j)
     {
       tempstream << '\t' << fs.space_names[j].ns << '^' << fs.space_names[j].name << ':'
@@ -136,7 +136,7 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
     {
       for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); ++i)
       {
-        const features& fs = ec.feature_space[static_cast<size_t>(*i)];
+        const auto& fs = ec.feature_space[static_cast<size_t>(*i)];
         if (!fs.space_names.empty())
         {
           for (size_t j = 0; j < fs.size(); ++j)

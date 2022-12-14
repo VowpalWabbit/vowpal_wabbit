@@ -249,7 +249,10 @@ extern "C"
     return VW::get_features(*pointer, static_cast<VW::example*>(e), *plen);
   }
 
-  VW_DLL_PUBLIC void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f) { VW::return_features(static_cast<feature*>(f)); }
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f)
+  {
+    VW::return_features(static_cast<VW::feature*>(f));
+  }
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e)
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
