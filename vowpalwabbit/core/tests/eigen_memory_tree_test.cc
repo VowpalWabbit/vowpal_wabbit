@@ -80,8 +80,8 @@ TEST(emt_tests, emt_exact_match_sans_router_test)
   EXPECT_EQ(ex1->pred.multiclass, 1);
   EXPECT_EQ(ex2->pred.multiclass, 2);
 
-  VW::finish_example(*vw, *ex1);
-  VW::finish_example(*vw, *ex2);
+  vw->finish_example(*ex1);
+  vw->finish_example(*ex2);
   VW::finish(*vw, false);
 }
 
@@ -93,7 +93,7 @@ TEST(emt_tests, emt_exact_match_with_router_test)
   {
     auto* ex = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
     vw->learn(*ex);
-    VW::finish_example(*vw, *ex);
+    vw->finish_example(*ex);
   }
 
   for (int i = 0; i < 10; i++)
@@ -101,7 +101,7 @@ TEST(emt_tests, emt_exact_match_with_router_test)
     auto* ex = VW::read_example(*vw, " | " + std::to_string(i));
     vw->predict(*ex);
     EXPECT_EQ(ex->pred.multiclass, i);
-    VW::finish_example(*vw, *ex);
+    vw->finish_example(*ex);
   }
 
   VW::finish(*vw, false);
@@ -116,7 +116,7 @@ TEST(emt_tests, emt_bounding)
   {
     auto* ex = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
     vw->learn(*ex);
-    VW::finish_example(*vw, *ex);
+    vw->finish_example(*ex);
   }
 
   EXPECT_EQ(tree->bounder->list.size(), 5);
@@ -136,7 +136,7 @@ TEST(emt_tests, emt_split)
   {
     auto* ex = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
     vw->learn(*ex);
-    VW::finish_example(*vw, *ex);
+    vw->finish_example(*ex);
   }
 
   EXPECT_EQ(tree->bounder->list.size(), 4);
@@ -336,7 +336,7 @@ TEST(emt_tests, emt_save_load)
   {
     auto* ex = VW::read_example(*vw_save, std::to_string(i) + " | " + std::to_string(i));
     vw_save->learn(*ex);
-    VW::finish_example(*vw_save, *ex);
+    vw_save->finish_example(*ex);
   }
 
   auto backing_vector = std::make_shared<std::vector<char>>();
@@ -354,8 +354,11 @@ TEST(emt_tests, emt_save_load)
     auto* ex = VW::read_example(*vw_load, " | " + std::to_string(i));
     vw_load->predict(*ex);
     EXPECT_EQ(ex->pred.multiclass, i);
-    VW::finish_example(*vw_load, *ex);
+    vw_load->finish_example(*ex);
   }
+
+  VW::finish(*vw_save, false);
+  VW::finish(*vw_load, false);
 }
 
 }  // namespace eigen_memory_tree_test
