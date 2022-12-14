@@ -496,7 +496,7 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 
   auto oja_newton_ptr = VW::make_unique<OjaNewton>();
 
-  bool oja_newton = 0;
+  bool oja_newton;
   float alpha_inverse;
 
   // These two are the only two boolean options that default to true. For now going to do this hack
