@@ -151,7 +151,7 @@ void return_active_example(VW::workspace& all, active& a, VW::example& ec)
     output_and_account_example(all, a, ec); 
   }
   
-  // write predictions to file
+  // Todo: REMOVE after refactoring (write predictions to file)
   output_prediction<simulation>(all, a, ec, all.logger);
   VW::finish_example(all, ec);
 }
@@ -174,6 +174,7 @@ void save_load(active& a, io_buf& io, bool read, bool text)
   }
 }
 
+// Write predictions to file
 template <bool simulation>
 void output_prediction(VW::workspace& all, const active& active, const example& example, VW::io::logger& logger)
 {
@@ -185,7 +186,8 @@ void output_prediction(VW::workspace& all, const active& active, const example& 
   {
     const auto& ld = example.l.simple;
     float ai = -1;
-    if (ld.label == FLT_MAX)
+    // Example was not labeled.  Check if label should be queried.
+    if (ld.label == FLT_MAX)  
     {
       ai = query_decision(active, example.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
     }
