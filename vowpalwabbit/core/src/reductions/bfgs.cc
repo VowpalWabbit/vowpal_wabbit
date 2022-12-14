@@ -959,14 +959,14 @@ void end_pass(bfgs& b)
         }
         if (b.early_stop_thres == b.no_win_counter)
         {
-          set_done(*all);
+          VW::details::set_done(*all);
           *(b.all->trace_message) << "Early termination reached w.r.t. holdout set error";
         }
       }
       if (b.final_pass == b.current_pass)
       {
         finalize_regressor(*all, all->final_regressor_name);
-        set_done(*all);
+        VW::details::set_done(*all);
       }
     }
     else

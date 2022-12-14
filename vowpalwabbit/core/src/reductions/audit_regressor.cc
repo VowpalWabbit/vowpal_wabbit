@@ -201,7 +201,7 @@ void finish_example(VW::workspace& all, audit_regressor_data_obj& rd, VW::exampl
   {
     // all regressor values were audited
     if (!printed) { print_ex(all, ec.example_counter + 1, rd.values_audited, 100); }
-    set_done(all);
+    VW::details::set_done(all);
   }
 
   VW::finish_example(all, ec);
