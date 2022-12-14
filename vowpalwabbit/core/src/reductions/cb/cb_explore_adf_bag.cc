@@ -186,8 +186,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
   all.example_parser->lbl_parser = CB::cb_label;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
-  auto data = VW::make_unique<explore_type>(
-      all.extra_metrics, epsilon, VW::cast_to_smaller_type<size_t>(bag_size), greedify, first_only, all.get_random_state());
+  auto data = VW::make_unique<explore_type>(all.extra_metrics, epsilon, VW::cast_to_smaller_type<size_t>(bag_size),
+      greedify, first_only, all.get_random_state());
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_bag_setup))
                 .set_input_label_type(VW::label_type_t::CB)
