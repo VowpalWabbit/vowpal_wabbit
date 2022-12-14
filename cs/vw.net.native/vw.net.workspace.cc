@@ -103,7 +103,7 @@ API vw_net_native::ERROR_CODE WorkspaceReload(vw_net_native::workspace_context* 
   try
   {
     std::string arguments_str(arguments, arguments_size);
-    reset_source(*workspace->vw, workspace->vw->num_bits);
+    VW::details::reset_source(*workspace->vw, workspace->vw->num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
     {

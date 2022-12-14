@@ -356,7 +356,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
     // note: this code duplication seems bound for trouble
     // from parse_dispatch_loop.h:26
     // from learner.cc:41
-    reset_source(*all, all->num_bits);
+    VW::details::reset_source(*all, all->num_bits);
     all->do_reset_source = false;
     all->passes_complete++;
 
