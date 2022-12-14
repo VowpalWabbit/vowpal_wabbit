@@ -6,6 +6,7 @@
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/memory.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parser.h"
 #include "vw/io/logger.h"
@@ -29,7 +30,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
     parse_label(lp, "ca 185.121:0.657567:6.20426e-05", *plabel, red_features);
     BOOST_CHECK_CLOSE(plabel->cb_cont.costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
@@ -46,7 +47,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_pdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
 
     parse_label(lp, "ca 185.121:0.657567:6.20426e-05 pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05", *plabel,
@@ -73,7 +74,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_only_pdf_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
     parse_label(lp, "ca pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05", *plabel, red_features);
     BOOST_CHECK_EQUAL(plabel->cb_cont.costs.size(), 0);
@@ -94,7 +95,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_malformed_pdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
 
     parse_label(lp, "ca pdf 185:8109.67 8109.67:23959:6.20426e-05", *plabel, red_features);
@@ -111,7 +112,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_and_chosen_action)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
     parse_label(lp, "ca 185.121:0.657567:6.20426e-05 chosen_action 8110.121", *plabel, red_features);
 
@@ -132,7 +133,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_chosen_action_only_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
     parse_label(lp, "ca chosen_action 8110.121", *plabel, red_features);
 
@@ -149,7 +150,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_label_pdf_and_chosen_action)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
     parse_label(lp,
         "ca 185.121:0.657567:6.20426e-05 pdf 185:8109.67:2.10314e-06 8109.67:23959:6.20426e-05 chosen_action 8110.121",
@@ -181,7 +182,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
     parse_label(lp, "", *plabel, red_features);
 
@@ -196,7 +197,7 @@ BOOST_AUTO_TEST_CASE(continuous_actions_parse_no_label_w_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
     parse_label(lp, "ca", *plabel, red_features);
 
@@ -211,7 +212,7 @@ BOOST_AUTO_TEST_CASE(continus_actions_check_label_for_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     VW::reduction_features red_features;
     BOOST_REQUIRE_THROW(parse_label(lp, "185.121:0.657567:6.20426e-05", *plabel, red_features), VW::vw_exception);
   }
