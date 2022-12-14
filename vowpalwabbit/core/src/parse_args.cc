@@ -1411,6 +1411,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
 
   bool quiet = false;
   bool driver_output_off = false;
+  bool extra_metrics = false;
   std::string driver_output_stream;
   std::string log_level;
   std::string log_output_stream;
@@ -1421,6 +1422,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
                .help("Don't output diagnostics and progress updates. Supplying this implies --log_level off and "
                      "--driver_output_off. Supplying this overrides an explicit log_level argument."))
       .add(make_option("driver_output_off", driver_output_off).help("Disable output for the driver"))
+      .add(make_option("extra_metrics", extra_metrics).help("Output extra metrics"))
       .add(make_option("driver_output", driver_output_stream)
                .default_value("stderr")
                .one_of({"stdout", "stderr"})
@@ -1466,6 +1468,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
   auto all = VW::make_unique<VW::workspace>(logger);
   all->options = std::move(options);
   all->quiet = quiet;
+  all->extra_metrics = extra_metrics;
 
   if (driver_output_off)
   {

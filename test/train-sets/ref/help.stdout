@@ -141,6 +141,7 @@ Logging Options:
                                             implies --log_level off and --driver_output_off. Supplying this
                                             overrides an explicit log_level argument. (type: bool)
     --driver_output_off                     Disable output for the driver (type: bool)
+    --extra_metrics                         Output extra metrics (type: bool)
     --driver_output arg                     Specify the stream to output driver output to (type: str, default:
                                             stderr, choices {stderr, stdout})
     --log_level arg                         Log level for logging messages. Specifying this wil override

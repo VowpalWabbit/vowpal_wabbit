@@ -322,13 +322,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
     epsilon_decay = true;
   }
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   auto* scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data =
-      VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon,
+      VW::make_unique<explore_type>(all.extra_metrics, VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon,
           epsilon_decay, first_only, as_multiline(all.cost_sensitive), scorer, cb_type, all.model_file_ver, all.logger);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
