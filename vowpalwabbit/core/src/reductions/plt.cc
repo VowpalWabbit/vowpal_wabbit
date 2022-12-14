@@ -258,7 +258,7 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       else
       {
         uint32_t l = node.n - p.ti;
-        if (p.probabilities) pred.a_s.push_back({l, node.p});
+        if (p.probabilities) { pred.a_s.push_back({l, node.p}); }
         pred.multilabels.label_v.push_back(l);
         if (pred.multilabels.label_v.size() >= p.top_k) { break; }
       }
@@ -285,44 +285,26 @@ void predict(plt& p, single_learner& base, VW::example& ec)
 
 void update_stats_plt(const VW::workspace& all, VW::shared_data&, const plt&, const VW::example& ec, VW::io::logger&)
 {
-  // TODO: This doesn't use the following?
-  // MULTILABEL::update_stats(all, ec);
-
-  bool is_test = (ec.l.multilabels.label_v.size() == 0);
+  const bool is_test = ec.l.multilabels.label_v.empty();
   all.sd->update(ec.test_only, !is_test, ec.loss, 1.f, ec.get_num_features());
 }
 
 void output_example_prediction_plt(VW::workspace& all, const plt& p, const VW::example& ec, VW::io::logger&)
 {
-  // TODO: This doesn't use the following?
-  // MULTILABEL::output_example_prediction(all, ec);
-
+  std::ostringstream output_string_stream;
   if (p.probabilities)
   {
     // print probabilities for predicted labels stored in a_s vector, similar to multilabel_oaa reduction
-    std::ostringstream outputStringStream;
-    for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+    for (auto& sink : all.final_prediction_sink)
     {
-      if (i > 0) { outputStringStream << ' '; }
-      if (all.sd->ldict) { outputStringStream << all.sd->ldict->get(ec.pred.a_s[i].action); }
-      else { outputStringStream << ec.pred.a_s[i].action; }
-      outputStringStream << ':' << ec.pred.a_s[i].score;
+      VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
     }
-    const auto ss_str = outputStringStream.str();
-    for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
   }
-
-  // print just the list of labels
-  // TODO: should this be else?
-  std::ostringstream outputStringStream;
-  for (size_t i = 0; i < ec.pred.multilabels.label_v.size(); i++)
+  else
   {
-    if (i > 0) { outputStringStream << ','; }
-    outputStringStream << ec.pred.multilabels.label_v[i];
+    // print just the list of labels
+    MULTILABEL::output_example_prediction(all, ec);
   }
-  outputStringStream << ' ';
-  const auto ss_str = outputStringStream.str();
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
 }
 
 void print_update_plt(VW::workspace& all, VW::shared_data&, const plt&, const VW::example& ec, VW::io::logger&)
