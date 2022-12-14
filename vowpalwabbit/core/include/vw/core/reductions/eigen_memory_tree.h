@@ -3,12 +3,18 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/core/example.h"
+
+#include "vw/common/string_view.h"
+#include "vw/core/feature_group.h"
 #include "vw/core/rand_state.h"
+#include "vw/core/vw_fwd.h"
 
 #include <list>
 #include <unordered_map>
 #include <vector>
+
+// Uncommenting this enables a timer that prints the pass time at the end of each pass.
+// #define VW_ENABLE_EMT_DEBUG_TIMER
 
 namespace VW
 {
@@ -20,34 +26,30 @@ namespace eigen_memory_tree
 {
 using emt_feats = std::vector<std::pair<uint64_t, float>>;
 
-enum class emt_scorer_type
+enum class emt_scorer_type : uint32_t
 {
-  random = 1,
-  distance = 2,
-  self_consistent_rank = 3,
-  not_self_consistent_rank = 4
+  RANDOM = 1,
+  DISTANCE = 2,
+  SELF_CONSISTENT_RANK = 3,
+  NOT_SELF_CONSISTENT_RANK = 4
 };
 
-enum class emt_router_type
+enum class emt_router_type : uint32_t
 {
-  random = 1,
-  eigen = 2
+  RANDOM = 1,
+  EIGEN = 2
 };
+
+emt_scorer_type emt_scorer_type_from_string(VW::string_view val);
+emt_router_type emt_router_type_from_string(VW::string_view val);
 
 float emt_median(std::vector<float>&);
-
 float emt_inner(const emt_feats&, const emt_feats&);
-
 float emt_norm(const emt_feats&);
-
 void emt_abs(emt_feats&);
-
 void emt_scale(emt_feats&, float);
-
 void emt_normalize(emt_feats&);
-
 emt_feats emt_scale_add(float, const emt_feats&, float, const emt_feats&);
-
 emt_feats emt_router_eigen(std::vector<emt_feats>&, VW::rand_state&);
 
 template <typename RandomIt>
@@ -102,24 +104,42 @@ struct emt_node
 
 struct emt_tree
 {
-  VW::workspace* all;
-  std::shared_ptr<VW::rand_state> _random_state;
+  VW::workspace* all = nullptr;
+  std::shared_ptr<VW::rand_state> random_state;
 
-  uint32_t leaf_split;  // how many memories before splitting a leaf node
-  emt_scorer_type scorer_type;
-  emt_router_type router_type;
+  // how many memories before splitting a leaf node
+  uint32_t leaf_split = 100;
+  emt_scorer_type scorer_type = emt_scorer_type::SELF_CONSISTENT_RANK;
+  emt_router_type router_type = emt_router_type::EIGEN;
 
   std::unique_ptr<VW::example> ex;  // we create one of these which we re-use so we don't have to reallocate examples
+  std::unique_ptr<std::vector<std::vector<VW::namespace_index>>> empty_interactions_for_ex;
+  std::unique_ptr<std::vector<std::vector<extent_term>>> empty_extent_interactions_for_ex;
 
-  int64_t begin;  // for timing performance
+#ifdef VW_ENABLE_EMT_DEBUG_TIMER
+  int64_t begin = 0;  // for timing performance
+#endif
 
   std::unique_ptr<emt_node> root;
-  std::unique_ptr<emt_lru> bounder;
+  std::unique_ptr<emt_lru> bounder = nullptr;
 
-  emt_tree();
-  ~emt_tree();
+  emt_tree(VW::workspace* all, std::shared_ptr<VW::rand_state> random_state, uint32_t leaf_split,
+      emt_scorer_type scorer_type, emt_router_type router_type, uint64_t tree_bound);
 };
 
 }  // namespace eigen_memory_tree
 }  // namespace reductions
+
+namespace model_utils
+{
+size_t read_model_field(io_buf& io, reductions::eigen_memory_tree::emt_example& ex);
+size_t write_model_field(
+    io_buf& io, const reductions::eigen_memory_tree::emt_example& ex, const std::string& upstream_name, bool text);
+size_t read_model_field(io_buf& io, reductions::eigen_memory_tree::emt_node& node);
+size_t write_model_field(
+    io_buf& io, const reductions::eigen_memory_tree::emt_node& node, const std::string& upstream_name, bool text);
+size_t read_model_field(io_buf& io, reductions::eigen_memory_tree::emt_tree& tree);
+size_t write_model_field(
+    io_buf& io, const reductions::eigen_memory_tree::emt_tree& tree, const std::string& upstream_name, bool text);
+}  // namespace model_utils
 }  // namespace VW

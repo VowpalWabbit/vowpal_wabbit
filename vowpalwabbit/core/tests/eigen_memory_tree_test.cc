@@ -39,8 +39,8 @@ TEST(emt_tests, emt_params_test1)
   auto* tree = get_emt_tree(*vw);
 
   EXPECT_EQ(tree->leaf_split, 100);
-  EXPECT_EQ(tree->scorer_type, emt_scorer_type::self_consistent_rank);
-  EXPECT_EQ(tree->router_type, emt_router_type::eigen);
+  EXPECT_EQ(tree->scorer_type, emt_scorer_type::SELF_CONSISTENT_RANK);
+  EXPECT_EQ(tree->router_type, emt_router_type::EIGEN);
   EXPECT_EQ(tree->bounder->max_size, 0);
 
   VW::finish(*vw, false);
@@ -49,13 +49,13 @@ TEST(emt_tests, emt_params_test1)
 TEST(emt_tests, emt_params_test2)
 {
   auto args = vwtest::make_args(
-      "--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "2", "--emt_router", "1", "--emt_leaf", "50");
+      "--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "distance", "--emt_router", "random", "--emt_leaf", "50");
   auto vw = VW::initialize_experimental(std::move(args));
   auto tree = get_emt_tree(*vw);
 
   EXPECT_EQ(tree->leaf_split, 50);
-  EXPECT_EQ(tree->scorer_type, emt_scorer_type::distance);
-  EXPECT_EQ(tree->router_type, emt_router_type::random);
+  EXPECT_EQ(tree->scorer_type, emt_scorer_type::DISTANCE);
+  EXPECT_EQ(tree->router_type, emt_router_type::RANDOM);
   EXPECT_EQ(tree->bounder->max_size, 20);
 
   VW::finish(*vw, false);
