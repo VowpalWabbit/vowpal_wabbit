@@ -715,7 +715,7 @@ size_t read_model_field(io_buf& io, reductions::eigen_memory_tree::emt_tree& tre
   bytes += read_model_field(io, router_type);
   tree.router_type = static_cast<reductions::eigen_memory_tree::emt_router_type>(router_type);
 
-  uint32_t tree_bound{};
+  uint64_t tree_bound{};
   bytes += read_model_field(io, tree_bound);
   tree.bounder = VW::make_unique<reductions::eigen_memory_tree::emt_lru>(tree_bound);
 

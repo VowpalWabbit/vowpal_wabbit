@@ -328,4 +328,34 @@ TEST(emt_tests, test_emt_shuffle)
   EXPECT_EQ(v1[2], 1);
 }
 
+TEST(emt_tests, emt_save_load)
+{
+  auto vw_save = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
+
+  for (int i = 0; i < 10; i++)
+  {
+    auto* ex = VW::read_example(*vw_save, std::to_string(i) + " | " + std::to_string(i));
+    vw_save->learn(*ex);
+    VW::finish_example(*vw_save, *ex);
+  }
+
+  auto backing_vector = std::make_shared<std::vector<char>>();
+  io_buf io_writer;
+  io_writer.add_file(VW::io::create_vector_writer(backing_vector));
+  VW::save_predictor(*vw_save, io_writer);
+  io_writer.flush();
+
+  auto vw_load =
+      VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
+          VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+
+  for (int i = 0; i < 10; i++)
+  {
+    auto* ex = VW::read_example(*vw_load, " | " + std::to_string(i));
+    vw_load->predict(*ex);
+    EXPECT_EQ(ex->pred.multiclass, i);
+    VW::finish_example(*vw_load, *ex);
+  }
+}
+
 }  // namespace eigen_memory_tree_test
