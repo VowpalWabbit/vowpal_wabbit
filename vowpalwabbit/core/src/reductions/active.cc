@@ -138,6 +138,28 @@ void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)
   VW::details::print_update(all, ec);
 }
 
+// Write predictions to file
+template <bool simulation>
+void output_prediction(VW::workspace& all, const active& active, const example& example, VW::io::logger& logger)
+{
+  if (simulation) 
+  { 
+    VW::details::output_example_prediction_simple_label(all, example, logger);
+  }
+  else
+  {
+    const auto& ld = example.l.simple;
+    float ai = -1;
+    // Example was not labeled.  Check if label should be queried.
+    if (ld.label == FLT_MAX)
+    {
+      ai = query_decision(active, example.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
+    }
+    all.print_by_ref(all.raw_prediction.get(), example.partial_prediction, -1, example.tag, all.logger);
+    for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), example.pred.scalar, ai, example.tag, all.logger); }
+  }
+}
+
 template <bool simulation>
 void return_active_example(VW::workspace& all, active& a, VW::example& ec)
 {
@@ -171,28 +193,6 @@ void save_load(active& a, io_buf& io, bool read, bool text)
       VW::model_utils::write_model_field(io, a._min_seen_label, "Active: min_seen_label {}", text);
       VW::model_utils::write_model_field(io, a._max_seen_label, "Active: max_seen_label {}", text);
     }
-  }
-}
-
-// Write predictions to file
-template <bool simulation>
-void output_prediction(VW::workspace& all, const active& active, const example& example, VW::io::logger& logger)
-{
-  if (simulation) 
-  { 
-    VW::details::output_example_prediction_simple_label(all, example, logger);
-  }
-  else
-  {
-    const auto& ld = example.l.simple;
-    float ai = -1;
-    // Example was not labeled.  Check if label should be queried.
-    if (ld.label == FLT_MAX)
-    {
-      ai = query_decision(active, example.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
-    }
-    all.print_by_ref(all.raw_prediction.get(), example.partial_prediction, -1, example.tag, all.logger);
-    for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), example.pred.scalar, ai, example.tag, all.logger); }
   }
 }
 
