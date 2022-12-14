@@ -1525,7 +1525,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
     }
   }
 
-  all->example_parser = new parser{final_example_queue_limit, strict_parse};
+  all->example_parser = new VW::parser{final_example_queue_limit, strict_parse};
 
   option_group_definition weight_args("Weight");
   weight_args

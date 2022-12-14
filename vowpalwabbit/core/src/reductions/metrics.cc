@@ -24,8 +24,8 @@ using namespace VW::LEARNER;
 using namespace rapidjson;
 namespace
 {
-void insert_dsjson_metrics(
-    const dsjson_metrics* ds_metrics, VW::metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
+void insert_dsjson_metrics(const VW::details::dsjson_metrics* ds_metrics, VW::metric_sink& metrics,
+    const std::vector<std::string>& enabled_reductions)
 {
   // ds_metrics is nullptr when --dsjson is disabled
   if (ds_metrics != nullptr)
