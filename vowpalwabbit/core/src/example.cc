@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/example.h"
 
-#include "vw/core/cache.h"
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/interactions.h"
 #include "vw/core/model_utils.h"
@@ -170,11 +170,13 @@ feature* get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
   fs.mask = all.weights.mask() >> all.weights.stride_shift();
   GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
+  auto* features_array = new feature[fs.feature_map.size()];
+  std::memcpy(features_array, fs.feature_map.data(), fs.feature_map.size() * sizeof(feature));
   feature_map_len = fs.feature_map.size();
-  return fs.feature_map.begin();
+  return features_array;
 }
 
-void return_features(feature* f) { free_it(f); }
+void return_features(feature* f) { delete[] f; }
 }  // namespace VW
 
 class full_features_and_source
@@ -233,19 +235,9 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-example* alloc_examples(size_t count)
-{
-  example* ec = calloc_or_throw<example>(count);
-  if (ec == nullptr) { return nullptr; }
-  for (size_t i = 0; i < count; i++) { new (ec + i) example; }
-  return ec;
-}
+example* alloc_examples(size_t count) { return new VW::example[count]; }
 
-void dealloc_examples(example* example_ptr, size_t count)
-{
-  for (size_t i = 0; i < count; i++) { (example_ptr + i)->~example(); }
-  free(example_ptr);
-}
+void dealloc_examples(example* example_ptr, size_t /* count */) { delete[] example_ptr; }
 
 void finish_example(VW::workspace&, example&);
 void clean_example(VW::workspace&, example&);
@@ -331,9 +323,9 @@ size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_pars
   bytes += read_model_field(io, fe.num_features);
   bytes += read_model_field(io, fe.total_sum_feat_sq);
   unsigned char index = 0;
-  bytes += ::VW::details::read_cached_index(io, index);
+  bytes += ::VW::parsers::cache::details::read_cached_index(io, index);
   bool sorted = true;
-  bytes += ::VW::details::read_cached_features(io, fe.fs, sorted);
+  bytes += ::VW::parsers::cache::details::read_cached_features(io, fe.fs, sorted);
   return bytes;
 }
 size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
@@ -347,8 +339,8 @@ size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& 
   bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
   bytes += write_model_field(io, fe.num_features, upstream_name + "_num_features", text);
   bytes += write_model_field(io, fe.total_sum_feat_sq, upstream_name + "_total_sum_feat_sq", text);
-  ::VW::details::cache_index(io, 0);
-  ::VW::details::cache_features(io, fe.fs, parse_mask);
+  ::VW::parsers::cache::details::cache_index(io, 0);
+  ::VW::parsers::cache::details::cache_features(io, fe.fs, parse_mask);
   return bytes;
 }
 }  // namespace model_utils

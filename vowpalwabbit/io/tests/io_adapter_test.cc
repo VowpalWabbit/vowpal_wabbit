@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstring>
 #include <memory>
 
 TEST(io_adapter_tests, io_adapter_vector_writer)

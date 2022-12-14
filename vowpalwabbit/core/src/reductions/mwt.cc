@@ -6,12 +6,14 @@
 
 #include "vw/config/options.h"
 #include "vw/core/cb.h"
+#include "vw/core/constant.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cmath>
@@ -20,7 +22,8 @@ using namespace VW::LEARNER;
 using namespace CB_ALGS;
 using namespace VW::config;
 
-void MWT::print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_array<char>& tag, VW::io::logger& logger)
+void MWT::print_scalars(
+    VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -39,7 +42,7 @@ void MWT::print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_ar
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 
@@ -56,7 +59,7 @@ public:
 class mwt
 {
 public:
-  bool namespaces[256];            // the set of namespaces to evaluate.
+  std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
   std::vector<policy_data> evals;  // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
@@ -65,17 +68,15 @@ public:
   bool learn = false;
 
   VW::v_array<VW::namespace_index> indices;  // excluded namespaces
-  features feature_space[256];
+  std::array<features, VW::NUM_NAMESPACES> feature_space;
   VW::workspace* all = nullptr;
-
-  mwt() { std::fill(namespaces, namespaces + 256, false); }
 };
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
   if (val < 0 || std::floor(val) != val) { c.all->logger.out_error("error {} is not a valid action", val); }
 
-  uint32_t value = static_cast<uint32_t>(val);
+  auto value = static_cast<uint32_t>(val);
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
 
   if (!c.evals[new_index].seen)
@@ -168,28 +169,44 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   ec.pred.scalars = preds;
 }
 
-void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
+void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const mwt& data, const VW::example& ec,
+    VW::io::logger& /* logger */)
 {
   float loss = 0.;
-  if (c.learn)
+  if (data.learn)
   {
-    if (c.optional_observation.first)
+    if (data.optional_observation.first)
     {
-      loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
+      loss = get_cost_estimate(data.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
     }
   }
-  all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.get_num_features());
+  sd.update(ec.test_only, data.optional_observation.first, loss, 1.f, ec.get_num_features());
+}
 
+void output_example_prediction_mwt(
+    VW::workspace& all, const mwt& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
+{
   for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
+}
 
-  if (c.learn)
+void print_update_mwt(
+    VW::workspace& all, VW::shared_data& /* sd */, const mwt& data, const VW::example& ec, VW::io::logger& /* unused */)
+{
+  const bool should_print_driver_update =
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+
+  if (should_print_driver_update && data.learn)
   {
-    VW::v_array<float> temp = ec.pred.scalars;
-    ec.pred.multiclass = static_cast<uint32_t>(temp[0]);
-    CB::print_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
-    ec.pred.scalars = temp;
+    size_t num_features = ec.get_num_features();
+    size_t pred = ec.pred.multiclass;
+
+    std::string label_buf;
+    if (data.optional_observation.first) { label_buf = "unknown"; }
+    else { label_buf = " known"; }
+
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
+        static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
   }
-  VW::finish_example(all, ec);
 }
 
 void save_load(mwt& c, io_buf& model_file, bool read, bool text)
@@ -272,8 +289,8 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
   }
 
   std::string name_addition;
-  void (*learn_ptr)(mwt&, single_learner&, VW::example&);
-  void (*pred_ptr)(mwt&, single_learner&, VW::example&);
+  void (*learn_ptr)(mwt&, single_learner&, VW::example&) = nullptr;
+  void (*pred_ptr)(mwt&, single_learner&, VW::example&) = nullptr;
 
   if (c->learn)
   {
@@ -303,7 +320,9 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::SCALARS)
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_save_load(save_load)
-                .set_finish_example(::finish_example)
+                .set_output_example_prediction(::output_example_prediction_mwt)
+                .set_update_stats(::update_stats_mwt)
+                .set_print_update(::print_update_mwt)
                 .build();
 
   all.example_parser->lbl_parser = CB::cb_label;

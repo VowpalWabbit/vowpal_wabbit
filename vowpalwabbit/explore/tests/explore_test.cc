@@ -4,6 +4,7 @@
 
 #include "vw/explore/explore.h"
 
+#include "vw/core/action_score.h"
 #include "vw/core/prob_dist_cont.h"
 #include "vw/core/reductions/cb/cb_explore_pdf.h"
 
@@ -284,7 +285,28 @@ TEST(explore_tests, enforce_minimum_probability_no_zeros)
 {
   std::vector<float> pdf = {0.9f, 0.1f, 0};
   EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, false, begin(pdf), end(pdf)));
-  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .2f, .0f}));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.7f, .3f, .0f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_all_zeros_and_dont_consider)
+{
+  std::vector<float> pdf = {0.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.0f, .0f, .0f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_all_zeros_and_consider)
+{
+  std::vector<float> pdf = {0.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{1.f / 3.f, 1.f / 3.f, 1.f / 3.f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_equal_to_amt)
+{
+  std::vector<float> pdf = {0.f, 2.f / 3.f, 1.f / 3.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(1.f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{1.f / 3.f, 1.f / 3.f, 1.f / 3.f}));
 }
 
 TEST(explore_tests, enforce_minimum_probability_uniform)
@@ -307,6 +329,51 @@ TEST(explore_tests, enforce_minimum_probability_bad_range)
   float x;
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::enforce_minimum_probability(1.f, false, begin(pdf), end(pdf)));
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::enforce_minimum_probability(1.f, false, &x, &x - 3));
+}
+
+TEST(explore_tests, enforce_minimum_probability_uniform_1)
+{
+  std::vector<float> pdf = {0.9f, 0.1f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_uniform_2)
+{
+  std::vector<float> pdf = {0.8f, 0.1f, 0.1f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_uniform_unsorted)
+{
+  std::vector<float> pdf = {0.1f, 0.8f, 0.1f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.1f, .8f, .1f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_old_impl_bug_incl_zero)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_old_impl_bug_dont_incl_zero)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.3f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.85f, .15f, .0f}));
+}
+
+TEST(explore_tests, enforce_minimum_probability_zero_epsilon)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.0f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.89f, .11f, .0f}));
+
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.0f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.89f, .11f, .0f}));
 }
 
 TEST(explore_tests, sampling)
@@ -366,4 +433,71 @@ TEST(explore_tests, sampling_rank_negative_pdf)
       S_EXPLORATION_OK, exploration::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
   EXPECT_THAT(expected_pdf, Pointwise(FloatNear(1e-2f), pdf));
   EXPECT_THAT(0, chosen_index);
+}
+
+TEST(explore_tests, mix_with_uniform_test)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 1.f});
+  probs.push_back(VW::action_score{2, 0.f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  exploration::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.8f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.1f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
+}
+
+TEST(explore_tests, mix_with_uniform_floats_test)
+{
+  std::vector<float> pdf = {1.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, exploration::mix_with_uniform(0.3f, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(explore_tests, mix_with_uniform_test_2)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 0.9f});
+  probs.push_back(VW::action_score{2, 0.1f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  exploration::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.73f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.17f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
+}
+
+TEST(explore_tests, mix_with_uniform_test_3)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 0.8f});
+  probs.push_back(VW::action_score{2, 0.2f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  exploration::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.66f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.24f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
 }

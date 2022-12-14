@@ -40,53 +40,6 @@
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
-class global_prediction
-{
-public:
-  float p;
-  float weight;
-};
-
-size_t really_read(VW::io::reader* sock, void* in, size_t count)
-{
-  char* buf = static_cast<char*>(in);
-  size_t done = 0;
-  ssize_t r = 0;
-  while (done < count)
-  {
-    if ((r = sock->read(buf, static_cast<unsigned int>(count - done))) == 0) { return 0; }
-    else if (r < 0) { THROWERRNO("read(" << sock << "," << count << "-" << done << ")"); }
-    else
-    {
-      done += r;
-      buf += r;
-    }
-  }
-  return done;
-}
-
-void get_prediction(VW::io::reader* f, float& res, float& weight)
-{
-  global_prediction p;
-  really_read(f, &p, sizeof(p));
-  res = p.p;
-  weight = p.weight;
-}
-
-void send_prediction(VW::io::writer* f, global_prediction p)
-{
-  if (f->write(reinterpret_cast<const char*>(&p), sizeof(p)) < static_cast<int>(sizeof(p)))
-    THROWERRNO("send_prediction write(unknown socket fd)");
-}
-
-void binary_print_result_by_ref(VW::io::writer* f, float res, float weight, const VW::v_array<char>&, VW::io::logger&)
-{
-  if (f != nullptr)
-  {
-    global_prediction ps = {res, weight};
-    send_prediction(f, ps);
-  }
-}
 namespace VW
 {
 std::string workspace::get_setupfn_name(reduction_setup_fn setup_fn)
@@ -114,7 +67,7 @@ void print_result_by_ref(VW::io::writer* f, float res, float, const VW::v_array<
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 
@@ -129,16 +82,16 @@ void print_raw_text_by_ref(
   ss << '\n';
   ssize_t len = ss.str().size();
   ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-void set_mm(shared_data* sd, float label)
+void set_mm(VW::shared_data* sd, float label)
 {
   sd->min_label = std::min(sd->min_label, label);
   if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
 }
 
-void noop_mm(shared_data*, float) {}
+void noop_mm(VW::shared_data*, float) {}
 
 namespace VW
 {
@@ -389,7 +342,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   num_bits = 18;
   default_bits = true;
   daemon = false;
-  num_children = 10;
   save_resume = true;
   preserve_performance_counters = false;
 
@@ -407,7 +359,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   print_by_ref = print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
-  random_seed = 0;
   random_weights = false;
   normal_weights = false;
   tnormal_weights = false;
@@ -448,7 +399,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   save_per_pass = false;
 
-  stdin_off = false;
   do_reset_source = false;
   holdout_set_off = true;
   holdout_after = 0;
@@ -479,7 +429,7 @@ workspace::~workspace()
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr)
   {
-    free_parser(*this);
+    VW::details::free_parser(*this);
     delete example_parser;
     example_parser = nullptr;
   }

@@ -43,6 +43,22 @@
 
 namespace VW
 {
+
+template <typename DataT, typename ExampleT>
+using learner_update_stats_func = void(
+    const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_output_example_prediction_func = void(
+    VW::workspace& all, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_print_update_func = void(
+    VW::workspace& all, shared_data&, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_cleanup_example_func = void(DataT&, ExampleT&);
+
 /// \brief Contains the VW::LEARNER::learner object and utilities for
 /// interacting with it.
 namespace LEARNER
@@ -116,6 +132,15 @@ public:
   void* data = nullptr;
   base_learner* base = nullptr;
   fn save_load_f = nullptr;
+};
+
+class pre_save_load_data
+{
+public:
+  using fn = void (*)(VW::workspace& all, void* data);
+  void* data = nullptr;
+  base_learner* base = nullptr;
+  fn pre_save_load_f;
 };
 
 class save_metric_data
@@ -353,6 +378,16 @@ public:
     if (_save_load_fd.base) { _save_load_fd.base->save_load(io, read, text); }
   }
 
+  // called to edit the command-line from a reduction. Autorecursive
+  inline void NO_SANITIZE_UNDEFINED pre_save_load(VW::workspace& all)
+  {
+    if (_pre_save_load_fd.pre_save_load_f != nullptr)
+    {
+      _pre_save_load_fd.pre_save_load_f(all, _pre_save_load_fd.data);
+    }
+    if (_pre_save_load_fd.base) { _pre_save_load_fd.base->pre_save_load(all); }
+  }
+
   // called when metrics is enabled.  Autorecursive.
   void NO_SANITIZE_UNDEFINED persist_metrics(metric_sink& metrics)
   {
@@ -404,9 +439,7 @@ public:
 
     if (has_output_example_prediction()) { output_example_prediction(all, ec); }
 
-    const bool should_print_driver_update =
-        all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
-    if (has_print_update() && should_print_driver_update) { print_update(all, ec); }
+    if (has_print_update()) { print_update(all, ec); }
 
     if (has_cleanup_example()) { cleanup_example(ec); }
 
@@ -595,6 +628,7 @@ private:
   details::save_load_data _save_load_fd;
   details::func_data _end_pass_fd;
   details::func_data _end_examples_fd;
+  details::pre_save_load_data _pre_save_load_fd;
   details::save_metric_data _persist_metrics_fd;
   details::func_data _finisher_fd;
   std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
@@ -777,8 +811,7 @@ public:
 
   // Responsibilities of update stats:
   // - Call shared_data::update
-  FluentBuilderT& set_update_stats(
-      void (*fn_ptr)(const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.update_stats_f = (details::finish_example_data::update_stats_fn)(fn_ptr);
@@ -787,8 +820,7 @@ public:
 
   // Responsibilities of output example prediction:
   // - Output predictions
-  FluentBuilderT& set_output_example_prediction(
-      void (*fn_ptr)(VW::workspace& all, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.output_example_prediction_f =
@@ -799,8 +831,7 @@ public:
   // Responsibilities of output example prediction:
   // - Call shared_data::print_update
   // Note this is only called when required based on the user specified backoff and logging settings.
-  FluentBuilderT& set_print_update(
-      void (*fn_ptr)(VW::workspace& all, shared_data&, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.print_update_f = (details::finish_example_data::print_update_fn)(fn_ptr);
@@ -809,7 +840,7 @@ public:
 
   // This call is **optional**, correctness cannot depend on it.
   // However, it can be used to optimistically reuse memory.
-  FluentBuilderT& set_cleanup_example(void (*fn_ptr)(DataT&, ExampleT&))
+  FluentBuilderT& set_cleanup_example(learner_cleanup_example_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.cleanup_example_f = (details::finish_example_data::cleanup_example_fn)(fn_ptr);
@@ -821,6 +852,14 @@ public:
     learner_ptr->_persist_metrics_fd.save_metric_f = (details::save_metric_data::fn)fn_ptr;
     learner_ptr->_persist_metrics_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_persist_metrics_fd.base = learner_ptr->_learn_fd.base;
+    return *static_cast<FluentBuilderT*>(this);
+  }
+
+  FluentBuilderT& set_pre_save_load(void (*fn_ptr)(VW::workspace& all, DataT&))
+  {
+    learner_ptr->_pre_save_load_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_pre_save_load_fd.pre_save_load_f = (details::pre_save_load_data::fn)fn_ptr;
+    learner_ptr->_pre_save_load_fd.base = learner_ptr->_learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 

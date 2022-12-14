@@ -24,7 +24,6 @@ add_executable(vw-unit-test.out
   distributionally_robust_test.cc
   dsjson_parser_test.cc
   epsilon_test.cc
-  error_test.cc
   example_header_test.cc
   example_test.cc
   feature_group_test.cc
@@ -50,7 +49,6 @@ add_executable(vw-unit-test.out
   simulator.h
   slates_parser_test.cc
   slates_test.cc
-  stable_unique_test.cc
   status_builder_test.cc
   tag_utils_test.cc
   test_common.cc

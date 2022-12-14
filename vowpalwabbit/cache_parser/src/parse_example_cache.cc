@@ -2,16 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/cache.h"
+#include "vw/cache_parser/parse_example_cache.h"
 
+#include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/parser.h"
-#include "vw/core/shared_data.h"
-#include "vw/core/unique_sort.h"
-#include "vw/core/vw_fwd.h"
 #include "vw/io/io_adapter.h"
-#include "vw/io/logger.h"
 
 #include <cstdint>
 #include <memory>
@@ -72,7 +69,7 @@ __attribute__((packed))
 
 }  // namespace
 
-size_t VW::details::read_cached_tag(io_buf& cache, VW::v_array<char>& tag)
+size_t VW::parsers::cache::details::read_cached_tag(io_buf& cache, VW::v_array<char>& tag)
 {
   char* read_head = nullptr;
   auto tag_size = cache.read_value<size_t>("tag size");
@@ -84,13 +81,13 @@ size_t VW::details::read_cached_tag(io_buf& cache, VW::v_array<char>& tag)
   return tag_size + sizeof(tag_size);
 }
 
-size_t VW::details::read_cached_index(io_buf& input, VW::namespace_index& index)
+size_t VW::parsers::cache::details::read_cached_index(io_buf& input, VW::namespace_index& index)
 {
   index = input.read_value<VW::namespace_index>("index");
   return sizeof(index);
 }
 
-size_t VW::details::read_cached_features(io_buf& input, features& feats, bool& sorted)
+size_t VW::parsers::cache::details::read_cached_features(io_buf& input, features& feats, bool& sorted)
 {
   // The example is sorted until we see an example of an unsorted sequence.
   sorted = true;
@@ -129,27 +126,27 @@ size_t VW::details::read_cached_features(io_buf& input, features& feats, bool& s
   return total;
 }
 
-void VW::details::cache_tag(io_buf& cache, const VW::v_array<char>& tag)
+void VW::parsers::cache::details::cache_tag(io_buf& cache, const VW::v_array<char>& tag)
 {
   char* write_head = nullptr;
   size_t tag_size = tag.size();
   cache.buf_write(write_head, sizeof(size_t) + tag_size);
-  memcpy(write_head, &tag_size, sizeof(size_t));
+  std::memcpy(write_head, &tag_size, sizeof(size_t));
   write_head += sizeof(size_t);
   if (tag_size > 0)
   {
-    memcpy(write_head, tag.begin(), tag_size);
+    std::memcpy(write_head, tag.begin(), tag_size);
     write_head += tag_size;
   }
   cache.set(write_head);
 }
 
-void VW::details::cache_index(io_buf& cache, VW::namespace_index index)
+void VW::parsers::cache::details::cache_index(io_buf& cache, VW::namespace_index index)
 {
   cache.write_value<VW::namespace_index>(index);
 }
 
-void VW::details::cache_features(io_buf& cache, const features& feats, uint64_t mask)
+void VW::parsers::cache::details::cache_features(io_buf& cache, const features& feats, uint64_t mask)
 {
   size_t storage = feats.size() * INTS_SIZE;
   for (auto feat : feats.values)
@@ -176,18 +173,18 @@ void VW::details::cache_features(io_buf& cache, const features& feats, uint64_t 
     else
     {
       write_head = variable_length_int_encode(write_head, diff | GENERAL);
-      memcpy(write_head, &feat_it.value(), sizeof(feature_value));
+      std::memcpy(write_head, &feat_it.value(), sizeof(feature_value));
       write_head += sizeof(feature_value);
     }
   }
 
   cache.set(write_head);
   size_t storage_size = write_head - storage_size_loc - sizeof(size_t);
-  memcpy(storage_size_loc, &storage_size, sizeof(size_t));
+  std::memcpy(storage_size_loc, &storage_size, sizeof(size_t));
 }
 
-void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parser& lbl_parser, uint64_t parse_mask,
-    VW::details::cache_temp_buffer& temp_buffer)
+void VW::parsers::cache::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parser& lbl_parser,
+    uint64_t parse_mask, VW::parsers::cache::details::cache_temp_buffer& temp_buffer)
 {
   temp_buffer.backing_buffer->clear();
   io_buf& temp_cache = temp_buffer.temporary_cache_buffer;
@@ -208,7 +205,7 @@ void VW::write_example_to_cache(io_buf& output, example* ex_ptr, VW::label_parse
   output.bin_write_fixed(temp_buffer.backing_buffer->data(), temp_buffer.backing_buffer->size());
 }
 
-int VW::read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples)
+int VW::parsers::cache::read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples)
 {
   assert(all != nullptr);
   // uint64_t size; TODO: Use to be able to skip cached examples on a read failure.

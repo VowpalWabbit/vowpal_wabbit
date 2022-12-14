@@ -4,6 +4,7 @@
 
 #include "../automl_impl.h"
 #include "vw/core/interactions.h"
+#include "vw/core/multi_model_utils.h"
 #include "vw/core/vw.h"
 
 namespace VW
@@ -50,14 +51,6 @@ bool is_allowed_to_remove(const namespace_index ns)
 {
   if (ns == VW::details::CCB_SLOT_NAMESPACE || ns == VW::details::CCB_ID_NAMESPACE) { return false; }
   return true;
-}
-
-void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp)
-{
-  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < total; ++current_slot_index)
-  {
-    weights.clear_offset(current_slot_index, wpp);
-  }
 }
 }  // namespace automl
 

@@ -472,13 +472,13 @@ size_t my_get_prediction_type(vw_ptr all)
 void my_delete_example(void* voidec)
 {
   VW::example* ec = (VW::example*)voidec;
-  VW::dealloc_examples(ec, 1);
+  delete ec;
 }
 
 VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   VW::label_parser* lp = get_label_parser(&*vw, labelType);
-  VW::example* ec = VW::alloc_examples(1);
+  VW::example* ec = new VW::example;
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
@@ -920,8 +920,6 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   for (uint32_t l : labels.label_v) { values.append(l); }
   return values;
 }
-
-char ex_get_nopred(example_ptr ec) { return ec->pred.nopred; }
 
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
@@ -1522,7 +1520,6 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
-      .def("get_nopred", &ex_get_nopred, "Get nopred from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
           "Assuming a cost_sensitive label type, get the prediction")
       .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs,

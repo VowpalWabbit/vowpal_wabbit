@@ -4,8 +4,10 @@
 
 #include "vw/core/parser.h"
 
+#include "vw/core/daemon_utils.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/numeric_casts.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #ifndef _WIN32
@@ -54,8 +56,8 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #  include <netinet/in.h>
 #endif
 
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/common/vw_exception.h"
-#include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/interactions.h"
 #include "vw/core/parse_args.h"
@@ -92,7 +94,7 @@ bool got_sigterm;
 
 void handle_sigterm(int) { got_sigterm = true; }
 
-parser::parser(size_t example_queue_limit, bool strict_parse_)
+VW::parser::parser(size_t example_queue_limit, bool strict_parse_)
     : example_pool{example_queue_limit}
     , ready_parsed_examples{example_queue_limit}
     , example_queue_limit{example_queue_limit}
@@ -172,7 +174,7 @@ uint32_t cache_numbits(VW::io::reader& cache_reader)
   return cache_numbits;
 }
 
-void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::read_example_from_cache; }
+void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::parsers::cache::read_example_from_cache; }
 
 void set_string_reader(VW::workspace& all)
 {
@@ -212,7 +214,7 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
 
   if (dsjson && all.options->was_supplied("extra_metrics"))
   {
-    all.example_parser->metrics = VW::make_unique<dsjson_metrics>();
+    all.example_parser->metrics = VW::make_unique<VW::details::dsjson_metrics>();
   }
 }
 
@@ -220,14 +222,14 @@ void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = fals
 {
   if (all.example_parser->input.isbinary())
   {
-    all.example_parser->reader = VW::read_example_from_cache;
-    all.print_by_ref = binary_print_result_by_ref;
+    all.example_parser->reader = VW::parsers::cache::read_example_from_cache;
+    all.print_by_ref = VW::details::binary_print_result_by_ref;
   }
   else if (json || dsjson) { set_json_reader(all, dsjson); }
   else { set_string_reader(all); }
 }
 
-void reset_source(VW::workspace& all, size_t numbits)
+void VW::details::reset_source(VW::workspace& all, size_t numbits)
 {
   io_buf& input = all.example_parser->input;
 
@@ -274,7 +276,7 @@ void reset_source(VW::workspace& all, size_t numbits)
       socklen_t size = sizeof(client_address);
       int f =
           static_cast<int>(accept(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
-      if (f < 0) THROW("accept: " << VW::strerror_to_string(errno));
+      if (f < 0) THROW("accept: " << VW::io::strerror_to_string(errno));
 
       // Disable Nagle delay algorithm due to daemon mode's interactive workload
       int one = 1;
@@ -393,14 +395,15 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options)
+void VW::details::enable_sources(
+    VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options)
 {
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
   all.example_parser->text_reader = VW::read_lines;
 
-  if (!all.no_daemon && (all.daemon || all.active))
+  if (!input_options.no_daemon && (all.daemon || all.active))
   {
 #ifdef _WIN32
     WSAData wsaData;
@@ -408,13 +411,13 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
 #endif
     all.example_parser->bound_sock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
-    if (all.example_parser->bound_sock < 0) { THROW(fmt::format("socket: {}", VW::strerror_to_string(errno))); }
+    if (all.example_parser->bound_sock < 0) { THROW(fmt::format("socket: {}", VW::io::strerror_to_string(errno))); }
 
     int on = 1;
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) <
         0)
     {
-      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::strerror_to_string(errno) << endl;
+      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::io::strerror_to_string(errno) << endl;
     }
 
     // Enable TCP Keep Alive to prevent socket leaks
@@ -422,7 +425,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
     if (setsockopt(all.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE, reinterpret_cast<char*>(&enable_tka),
             sizeof(enable_tka)) < 0)
     {
-      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::strerror_to_string(errno) << endl;
+      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::io::strerror_to_string(errno) << endl;
     }
 
     sockaddr_in address;
@@ -434,10 +437,12 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
 
     // attempt to bind to socket
     if (::bind(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) < 0)
+    {
       THROWERRNO("bind");
+    }
 
     // listen on socket
-    if (listen(all.example_parser->bound_sock, 1) < 0) THROWERRNO("listen");
+    if (listen(all.example_parser->bound_sock, 1) < 0) { THROWERRNO("listen"); }
 
     // write port file
     if (all.options->was_supplied("port_file"))
@@ -445,7 +450,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       socklen_t address_size = sizeof(address);
       if (getsockname(all.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), &address_size) < 0)
       {
-        *(all.trace_message) << "getsockname: " << VW::strerror_to_string(errno) << endl;
+        *(all.trace_message) << "getsockname: " << VW::io::strerror_to_string(errno) << endl;
       }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
@@ -485,15 +490,14 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
       all.weights.share(all.length());
 
       // learning state to be shared across children
-      shared_data* sd = static_cast<shared_data*>(
-          mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
-      new (sd) shared_data(*all.sd);
+      VW::shared_data* sd = static_cast<VW::shared_data*>(
+          mmap(nullptr, sizeof(VW::shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+      new (sd) VW::shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
-      all.example_parser->shared_data_obj = sd;
 
       // create children
-      size_t num_children = VW::cast_to_smaller_type<size_t>(all.num_children);
+      const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
       VW::v_array<int> children;
       children.resize_but_with_stl_behavior(num_children);
       for (size_t i = 0; i < num_children; i++)
@@ -598,7 +602,7 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
           adapter = should_use_compressed ? VW::io::open_compressed_file_reader(filename_to_read)
                                           : VW::io::open_file_reader(filename_to_read);
         }
-        else if (!all.stdin_off)
+        else if (!input_options.stdin_off)
         {
           input_name = "stdin";
           // Should try and use stdin
@@ -651,14 +655,14 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options
   }
 }
 
-void lock_done(parser& p)
+void VW::details::lock_done(parser& p)
 {
   p.done = true;
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
   p.ready_parsed_examples.set_done();
 }
 
-void set_done(VW::workspace& all)
+void VW::details::set_done(VW::workspace& all)
 {
   all.early_terminate = true;
   lock_done(*all.example_parser);
@@ -679,7 +683,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
     {
       features& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
-      unique_features(fs, all.limit[index]);
+      VW::unique_features(fs, all.limit[index]);
     }
   }
 }
@@ -701,12 +705,13 @@ void setup_examples(VW::workspace& all, VW::multi_ex& examples)
 
 void setup_example(VW::workspace& all, VW::example* ae)
 {
-  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, ae); }
+  assert(ae != nullptr);
+  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, *ae); }
 
   if (all.example_parser->write_cache)
   {
-    VW::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser, all.parse_mask,
-        all.example_parser->cache_temp_buffer_obj);
+    VW::parsers::cache::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser,
+        all.parse_mask, all.example_parser->cache_temp_buffer_obj);
   }
 
   // Require all extents to be complete in an VW::example.
@@ -989,7 +994,7 @@ namespace VW
 void start_parser(VW::workspace& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
 
-void free_parser(VW::workspace& all)
+void VW::details::free_parser(VW::workspace& all)
 {
   // It is possible to exit early when the queue is not yet empty.
 

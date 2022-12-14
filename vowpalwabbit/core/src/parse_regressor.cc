@@ -130,7 +130,6 @@ void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool te
   if (model_file.num_files() > 0)
   {
     std::vector<char> buff2(DEFAULT_BUF_SIZE);
-
     size_t bytes_read_write = 0;
 
     size_t v_length = static_cast<uint32_t>(VW::VERSION.to_string().length()) + 1;
@@ -472,6 +471,7 @@ void dump_regressor(VW::workspace& all, io_buf& buf, bool as_text)
 {
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
+  if (all.l != nullptr) { all.l->pre_save_load(all); }
   save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr) { all.l->save_load(buf, false, as_text); }
 

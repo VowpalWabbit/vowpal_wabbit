@@ -17,6 +17,7 @@
 #  include <mutex>
 #endif
 
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/example.h"
@@ -31,27 +32,14 @@
 
 namespace VW
 {
+namespace details
+{
+class dsjson_metrics;
+}
+
 void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 void setup_examples(VW::workspace& all, VW::multi_ex& examples);
-namespace details
-{
-class cache_temp_buffer
-{
-public:
-  std::shared_ptr<std::vector<char>> backing_buffer;
-  io_buf temporary_cache_buffer;
-  cache_temp_buffer()
-  {
-    backing_buffer = std::make_shared<std::vector<char>>();
-    temporary_cache_buffer.add_file(VW::io::create_vector_writer(backing_buffer));
-  }
-};
-}  // namespace details
-}  // namespace VW
-
-class input_options;
-class dsjson_metrics;
 
 class parser
 {
@@ -80,12 +68,10 @@ public:
   /// text_reader consumes the char* input and is for text based parsing
   void (*text_reader)(VW::workspace*, const char*, size_t, VW::multi_ex&);
 
-  shared_data* shared_data_obj = nullptr;
-
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
   io_buf output;    // Where to output the cache.
-  VW::details::cache_temp_buffer cache_temp_buffer_obj;
+  VW::parsers::cache::details::cache_temp_buffer cache_temp_buffer_obj;
   std::string currentname;
   std::string finalname;
 
@@ -116,8 +102,11 @@ public:
 
   bool strict_parse;
   std::exception_ptr exc_ptr;
-  std::unique_ptr<dsjson_metrics> metrics = nullptr;
+  std::unique_ptr<details::dsjson_metrics> metrics = nullptr;
 };
+namespace details
+{
+class input_options;
 
 class dsjson_metrics
 {
@@ -137,7 +126,7 @@ public:
   std::string last_event_time;
 };
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options);
 
 // parser control
 void lock_done(parser& p);
@@ -146,3 +135,7 @@ void set_done(VW::workspace& all);
 // source control functions
 void reset_source(VW::workspace& all, size_t numbits);
 void free_parser(VW::workspace& all);
+}  // namespace details
+}  // namespace VW
+
+using parser VW_DEPRECATED("Use VW::parser instead of ::parser. ::parser will be removed in VW 10.") = VW::parser;

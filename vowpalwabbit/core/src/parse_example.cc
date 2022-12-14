@@ -69,7 +69,7 @@ private:
   float _v;
   bool _redefine_some;
   std::array<unsigned char, VW::NUM_NAMESPACES>* _redefine;
-  parser* _p;
+  VW::parser* _p;
   VW::example* _ae;
   std::array<uint64_t, VW::NUM_NAMESPACES>* _affix_features;
   std::array<bool, VW::NUM_NAMESPACES>* _spelling_features;
@@ -209,6 +209,7 @@ private:
       {
         return;  // dont add 0 valued features to list of features
       }
+
       features& fs = _ae->feature_space[_index];
       fs.push_back(_v, word_hash);
 

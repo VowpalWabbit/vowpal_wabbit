@@ -48,6 +48,8 @@ using socket_t = int;
 #include "vw/allreduce/allreduce_type.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cassert>

@@ -100,7 +100,8 @@ Input Options:
     --foreground                            In persistent daemon mode, do not run in the background (type:
                                             bool)
     --port arg                              Port to listen on; use 0 to pick unused port (type: uint)
-    --num_children arg                      Number of children for persistent daemon mode (type: uint)
+    --num_children arg                      Number of children for persistent daemon mode (type: uint, default:
+                                            10)
     --pid_file arg                          Write pid file in persistent daemon mode (type: str)
     --port_file arg                         Write port used in persistent daemon mode (type: str)
     -c, --cache                             Use a cache. The default is <data>.cache (type: bool)
@@ -241,14 +242,12 @@ Weight Options:
 [Reduction] Automl Options:
     --automl arg                            Set number of live configs (type: uint, default: 4, keep, necessary,
                                             experimental)
-    --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
+    --default_lease arg                     Set initial lease for automl interactions (type: uint, default:
                                             4000, keep, experimental)
-    --cm_type arg                           Set type of config manager (type: str, default: interaction,
-                                            choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
                                             choices {favor_popular_namespaces, none}, keep, experimental)
-    --priority_challengers arg              Set number of priority challengers to use (type: int, default:
-                                            -1, keep, experimental)
+    --priority_challengers arg              Set number of priority challengers to use. Set to -1 to use half
+                                            of total live configs. (type: int, default: -1, keep, experimental)
     --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)
@@ -257,8 +256,6 @@ Weight Options:
                                             experimental)
     --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
                                             bool, default: false, experimental)
-    --aml_predict_only_model arg            transform input automl model into predict only automl model (type:
-                                            str, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
@@ -385,6 +382,8 @@ Weight Options:
                                             1, keep)
     --cb_type arg                           Contextual bandit method to use. SquareCB only supports supervised
                                             regression (mtr) (type: str, default: mtr, choices {mtr}, keep)
+    --epsilon arg                           The minimum probability of an action is this value divided by
+                                            the number of actions. (type: float, default: 0, keep)
 [Reduction] Contextual Bandit Exploration with ADF (bagging) Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
@@ -759,7 +758,8 @@ Weight Options:
     --learn arg                             Do Contextual Bandit learning on <n> classes (type: uint)
     --exclude_eval                          Discard mwt policy features before learning (type: bool)
 [Reduction] Network sending Options:
-    --sendto arg                            Send examples to <host> (type: str, keep, necessary)
+    --sendto arg                            Send examples to <host>. Host can be of form hostname or hostname:port
+                                            (type: str, keep, necessary)
 [Reduction] Neural Network Options:
     --nn arg                                Sigmoidal feedforward network with <k> hidden units (type: uint,
                                             keep, necessary)

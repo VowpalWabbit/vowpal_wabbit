@@ -13,9 +13,9 @@ Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.333333 0.333333            1            1.0        0:1:0.5         1:0.56       18
+0.333333 0.333333            1            1.0        0:1:0.5         1:0.58       18
 0.166667 0.000000            2            2.0        1:0:0.5         1:0.67        8
-0.222222 0.333333            4            4.0        0:1:0.5         1:0.56       18
+0.222222 0.333333            4            4.0        0:1:0.5         1:0.58       18
 0.166667 0.111111            8            8.0        1:0:0.5         1:0.67        8
 
 finished run
