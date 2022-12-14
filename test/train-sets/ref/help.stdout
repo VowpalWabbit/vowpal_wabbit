@@ -557,11 +557,11 @@ Weight Options:
                                             uint, default: 0, keep)
     --emt_leaf arg                          Indicates the maximum number of memories a leaf can have (type:
                                             uint, default: 100, keep)
-    --emt_scorer arg                        Indicates the type of scorer to use (1=random;2=distance;3=self
-                                            consistent rank;4=not self consistent rank) (type: uint, default:
-                                            3, choices {1, 2, 3, 4}, keep)
-    --emt_router arg                        Indicates the type of router to use (1=random;2=eigen) (type:
-                                            uint, default: 2, choices {1, 2}, keep)
+    --emt_scorer arg                        Indicates the type of scorer to use (type: str, default: self_consistent_rank,
+                                            choices {distance, not_self_consistent_rank, random, self_consistent_rank},
+                                            keep)
+    --emt_router arg                        Indicates the type of router to use (type: str, default: eigen,
+                                            choices {eigen, random}, keep)
 [Reduction] Epsilon-Decaying Exploration Options:
     --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary,
                                             experimental)
