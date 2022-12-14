@@ -396,7 +396,7 @@ public:
     std::swap(lhs._begin_values, rhs._begin_values);
     std::swap(lhs._begin_indices, rhs._begin_indices);
   }
-  friend class features;
+  friend class ::VW::features;
 
 private:
   feature_value_type_t* _begin_values;
