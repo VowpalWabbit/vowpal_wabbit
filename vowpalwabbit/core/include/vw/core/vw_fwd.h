@@ -9,7 +9,6 @@ class io_buf;
 class parameters;
 class dense_parameters;
 class features;
-class parser;
 
 namespace VW
 {
@@ -25,6 +24,7 @@ class setup_base_i;
 class workspace;
 class metric_sink;
 class shared_data;
+class parser;
 
 using namespace_index = unsigned char;
 
