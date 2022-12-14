@@ -229,7 +229,7 @@ public:
     std::swap(lhs._begin_indices, rhs._begin_indices);
     std::swap(lhs._begin_audit, rhs._begin_audit);
   }
-  friend class VW::features;
+  friend class ::VW::features;
 
 private:
   feature_value_type_t* _begin_values;
@@ -286,7 +286,7 @@ public:
   }
 
   friend bool operator!=(const ns_extent_iterator& lhs, const ns_extent_iterator& rhs) { return !(lhs == rhs); }
-  friend class features;
+  friend class ::VW::features;
 
 private:
   features_t* _feature_group;
