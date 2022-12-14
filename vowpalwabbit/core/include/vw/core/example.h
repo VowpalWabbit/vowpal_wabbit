@@ -49,6 +49,10 @@ public:
   MULTILABEL::labels multilabels;
 };
 
+struct no_pred
+{
+};
+
 class polyprediction
 {
 public:
@@ -71,7 +75,7 @@ public:
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
   VW::active_multiclass_prediction active_multiclass;
-  char nopred = static_cast<char>(0);
+  no_pred nopred;
 };
 
 std::string to_string(const v_array<float>& scalars, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
