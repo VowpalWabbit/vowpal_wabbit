@@ -11,14 +11,6 @@
 #include <utility>
 #include <vector>
 
-class feature_slice  // a helper class for functions using the set {v,i,space_name}
-{
-public:
-  VW::feature_value x;
-  VW::feature_index weight_index;
-  VW::audit_strings space_name;
-};
-
 void VW::features::clear()
 {
   sum_feat_sq = 0.f;
