@@ -267,7 +267,9 @@ void cb_explore_adf_base<ExploreType>::_output_example_prediction(
   if (ec_seq.size() <= 0) { return; }
   auto& ec = *ec_seq[0];
   for (auto& sink : all.final_prediction_sink)
-  { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, logger); }
+  {
+    VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, logger);
+  }
 
   if (all.raw_prediction != nullptr)
   {
@@ -296,10 +298,7 @@ void cb_explore_adf_base<ExploreType>::_print_update(
   bool labeled_example = (_known_cost.probability > 0);
   auto& ec = *ec_seq[0];
   if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost); }
-  else
-  {
-    CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr);
-  }
+  else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
 template <typename ExploreType>

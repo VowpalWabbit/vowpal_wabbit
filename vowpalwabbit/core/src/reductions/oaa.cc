@@ -260,10 +260,7 @@ void update_stats_oaa(const VW::workspace& /* all */, VW::shared_data& sd, const
     correct_class_prob = ec.pred.scalars[((data.indexing == 0) ? ec.l.multi.label : ec.l.multi.label - 1) % data.k];
     if (correct_class_prob > 0) { multiclass_log_loss = -std::log(correct_class_prob) * ec.weight; }
     if (ec.test_only) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
-    else
-    {
-      sd.multiclass_log_loss += multiclass_log_loss;
-    }
+    else { sd.multiclass_log_loss += multiclass_log_loss; }
   }
   // === Compute `prediction` and zero_one_loss
   // We have already computed `prediction` in predict_or_learn,
@@ -317,10 +314,7 @@ void output_example_prediction_oaa(
     uint32_t corrected_label = (data.indexing == 0) ? i : i + 1;
     if (i > 0) { output_string_stream << ' '; }
     if (all.sd->ldict) { output_string_stream << all.sd->ldict->get(corrected_label); }
-    else
-    {
-      output_string_stream << corrected_label;
-    }
+    else { output_string_stream << corrected_label; }
     output_string_stream << ':' << ec.pred.scalars[i];
   }
   const auto ss_str = output_string_stream.str();
@@ -446,7 +440,8 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
     learn_ptr = learn_randomized;
     // Override the update stats func.
     update_stats_func = [](const VW::workspace& /* all */, shared_data& sd, const oaa&, const VW::example& ec,
-                            VW::io::logger& /* logger */) {
+                            VW::io::logger& /* logger */)
+    {
       float loss = 0;
       if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labelled()) { loss = ec.weight; }
 

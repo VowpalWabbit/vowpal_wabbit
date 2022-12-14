@@ -393,7 +393,9 @@ void automl<CMType>::offset_learn(
   if (ec.size() < 1) { return; }
 
   for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
-  { cm->estimators[live_slot].second.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r); }
+  {
+    cm->estimators[live_slot].second.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
+  }
 }
 
 template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence>>;
