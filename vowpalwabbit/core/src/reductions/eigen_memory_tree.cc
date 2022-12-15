@@ -382,7 +382,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 
     out.feature_space[X_NS].clear();
     out.feature_space[Z_NS].clear();
-  
+
     emt_feats feat_diff = emt_scale_add(1, ex1.full, -1, ex2.full);
     emt_abs(feat_diff);
     scorer_features(feat_diff, out.feature_space[X_NS]);
@@ -396,7 +396,6 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 
   if (b.scorer_type == emt_scorer_type::NOT_SELF_CONSISTENT_RANK)
   {
-
     out.indices.clear();
     out.indices.push_back(X_NS);
     out.indices.push_back(Z_NS);
