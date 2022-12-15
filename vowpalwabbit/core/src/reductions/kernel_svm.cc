@@ -295,8 +295,8 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 {
   float dotprod = 0;
 
-  features& fs_1 = const_cast<features&>(fec1->fs);
-  features& fs_2 = const_cast<features&>(fec2->fs);
+  auto& fs_1 = const_cast<VW::features&>(fec1->fs);
+  auto& fs_2 = const_cast<VW::features&>(fec2->fs);
   if (fs_2.indices.size() == 0) { return 0.f; }
 
   int numint = 0;

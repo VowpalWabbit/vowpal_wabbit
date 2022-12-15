@@ -681,7 +681,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
   {
     if (all.limit[index] < ex->feature_space[index].size())
     {
-      features& fs = ex->feature_space[index];
+      auto& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
       VW::unique_features(fs, all.limit[index]);
     }
