@@ -295,7 +295,7 @@ void update_stats_cb_explore(
 }
 
 void output_example_prediction_cb_explore(
-    VW::workspace& all, const cb_explore& data, const VW::example& ec, VW::io::logger& logger)
+    VW::workspace& all, const cb_explore&, const VW::example& ec, VW::io::logger& logger)
 {
   std::stringstream ss;
 
@@ -304,7 +304,7 @@ void output_example_prediction_cb_explore(
 }
 
 void print_update_cb_explore(
-    VW::workspace& all, VW::shared_data& sd, const cb_explore& data, const VW::example& ec, VW::io::logger& logger)
+    VW::workspace& all, VW::shared_data& sd, const cb_explore&, const VW::example& ec, VW::io::logger&)
 {
   float maxprob = 0.f;
   uint32_t maxid = 0;
