@@ -151,7 +151,7 @@ private:
   size_t current;
 };
 
-constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 32;
+constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
 
 class oracle_rand_impl
 {
