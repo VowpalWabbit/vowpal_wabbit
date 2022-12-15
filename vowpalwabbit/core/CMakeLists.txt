@@ -13,6 +13,7 @@ set(vw_core_headers
   include/vw/core/cb_label_parser.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
+  include/vw/core/daemon_utils.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
   include/vw/core/ccb_label.h
@@ -177,7 +178,6 @@ set(vw_core_headers
   include/vw/core/simple_label_parser.h
   include/vw/core/simple_label.h
   include/vw/core/slates_label.h
-  include/vw/core/stable_unique.h
   include/vw/core/tag_utils.h
   include/vw/core/text_utils.h
   include/vw/core/thread_pool.h
@@ -297,6 +297,7 @@ set(vw_core_sources
   src/reductions/details/automl/automl_oracle.cc
   src/reductions/details/automl/automl_util.cc
   src/reductions/ect.cc
+  src/daemon_utils.cc
   src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
   src/reductions/freegrad.cc
@@ -422,6 +423,7 @@ vw_add_test_executable(
       tests/flat_example_test.cc
       tests/main.cc
       tests/merge_test.cc
+      tests/model_util_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
       tests/thread_pool_test.cc

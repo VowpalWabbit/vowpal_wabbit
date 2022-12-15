@@ -32,13 +32,14 @@
 
 namespace VW
 {
+namespace details
+{
+class dsjson_metrics;
+}
+
 void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 void setup_examples(VW::workspace& all, VW::multi_ex& examples);
-}  // namespace VW
-
-class input_options;
-class dsjson_metrics;
 
 class parser
 {
@@ -101,8 +102,11 @@ public:
 
   bool strict_parse;
   std::exception_ptr exc_ptr;
-  std::unique_ptr<dsjson_metrics> metrics = nullptr;
+  std::unique_ptr<details::dsjson_metrics> metrics = nullptr;
 };
+namespace details
+{
+class input_options;
 
 class dsjson_metrics
 {
@@ -122,7 +126,7 @@ public:
   std::string last_event_time;
 };
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options);
 
 // parser control
 void lock_done(parser& p);
@@ -131,3 +135,7 @@ void set_done(VW::workspace& all);
 // source control functions
 void reset_source(VW::workspace& all, size_t numbits);
 void free_parser(VW::workspace& all);
+}  // namespace details
+}  // namespace VW
+
+using parser VW_DEPRECATED("Use VW::parser instead of ::parser. ::parser will be removed in VW 10.") = VW::parser;

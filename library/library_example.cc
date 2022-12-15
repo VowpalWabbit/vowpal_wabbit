@@ -3,10 +3,10 @@
 
 #include <cstdio>
 
-inline feature vw_feature_from_string(VW::workspace& v, const std::string& fstr, unsigned long seed, float val)
+inline VW::feature vw_feature_from_string(VW::workspace& v, const std::string& fstr, unsigned long seed, float val)
 {
   auto foo = VW::hash_feature(v, fstr, seed);
-  feature f = {val, foo};
+  VW::feature f = {val, foo};
   return f;
 }
 
@@ -26,9 +26,9 @@ int main(int argc, char* argv[])
 
   uint32_t s_hash = static_cast<uint32_t>(VW::hash_space(*model, "s"));
   uint32_t t_hash = static_cast<uint32_t>(VW::hash_space(*model, "t"));
-  s->fs = new feature[3];
+  s->fs = new VW::feature[3];
   s->len = 3;
-  t->fs = new feature[3];
+  t->fs = new VW::feature[3];
   t->len = 3;
 
   s->fs[0] = vw_feature_from_string(*model, "p^the_man", s_hash, 1.0);

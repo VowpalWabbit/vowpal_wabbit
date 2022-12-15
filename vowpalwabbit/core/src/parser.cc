@@ -4,6 +4,7 @@
 
 #include "vw/core/parser.h"
 
+#include "vw/core/daemon_utils.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/io/errno_handling.h"
@@ -93,7 +94,7 @@ bool got_sigterm;
 
 void handle_sigterm(int) { got_sigterm = true; }
 
-parser::parser(size_t example_queue_limit, bool strict_parse_)
+VW::parser::parser(size_t example_queue_limit, bool strict_parse_)
     : example_pool{example_queue_limit}
     , ready_parsed_examples{example_queue_limit}
     , example_queue_limit{example_queue_limit}
@@ -213,7 +214,7 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
 
   if (dsjson && all.options->was_supplied("extra_metrics"))
   {
-    all.example_parser->metrics = VW::make_unique<dsjson_metrics>();
+    all.example_parser->metrics = VW::make_unique<VW::details::dsjson_metrics>();
   }
 }
 
@@ -222,13 +223,13 @@ void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = fals
   if (all.example_parser->input.isbinary())
   {
     all.example_parser->reader = VW::parsers::cache::read_example_from_cache;
-    all.print_by_ref = binary_print_result_by_ref;
+    all.print_by_ref = VW::details::binary_print_result_by_ref;
   }
   else if (json || dsjson) { set_json_reader(all, dsjson); }
   else { set_string_reader(all); }
 }
 
-void reset_source(VW::workspace& all, size_t numbits)
+void VW::details::reset_source(VW::workspace& all, size_t numbits)
 {
   io_buf& input = all.example_parser->input;
 
@@ -394,7 +395,8 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_options& input_options)
+void VW::details::enable_sources(
+    VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options)
 {
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
@@ -488,9 +490,9 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_o
       all.weights.share(all.length());
 
       // learning state to be shared across children
-      shared_data* sd = static_cast<shared_data*>(
-          mmap(nullptr, sizeof(shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
-      new (sd) shared_data(*all.sd);
+      VW::shared_data* sd = static_cast<VW::shared_data*>(
+          mmap(nullptr, sizeof(VW::shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+      new (sd) VW::shared_data(*all.sd);
       delete all.sd;
       all.sd = sd;
 
@@ -653,14 +655,14 @@ void enable_sources(VW::workspace& all, bool quiet, size_t passes, const input_o
   }
 }
 
-void lock_done(parser& p)
+void VW::details::lock_done(parser& p)
 {
   p.done = true;
   // in case get_example() is waiting for a fresh example, wake so it can realize there are no more.
   p.ready_parsed_examples.set_done();
 }
 
-void set_done(VW::workspace& all)
+void VW::details::set_done(VW::workspace& all)
 {
   all.early_terminate = true;
   lock_done(*all.example_parser);
@@ -679,9 +681,9 @@ void feature_limit(VW::workspace& all, VW::example* ex)
   {
     if (all.limit[index] < ex->feature_space[index].size())
     {
-      features& fs = ex->feature_space[index];
+      auto& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
-      unique_features(fs, all.limit[index]);
+      VW::unique_features(fs, all.limit[index]);
     }
   }
 }
@@ -703,7 +705,8 @@ void setup_examples(VW::workspace& all, VW::multi_ex& examples)
 
 void setup_example(VW::workspace& all, VW::example* ae)
 {
-  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, ae); }
+  assert(ae != nullptr);
+  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, *ae); }
 
   if (all.example_parser->write_cache)
   {
@@ -991,7 +994,7 @@ namespace VW
 void start_parser(VW::workspace& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
 }  // namespace VW
 
-void free_parser(VW::workspace& all)
+void VW::details::free_parser(VW::workspace& all)
 {
   // It is possible to exit early when the queue is not yet empty.
 

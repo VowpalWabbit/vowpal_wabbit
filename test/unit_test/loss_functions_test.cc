@@ -16,7 +16,7 @@ BOOST_AUTO_TEST_CASE(squared_loss_test)
   const std::string loss_type("squared");
 
   auto loss = get_loss_function(vw, loss_type);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_label_is_greater_than_prediction_test1)
   constexpr float parameter(0.4f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_label_is_greater_than_prediction_test2)
   constexpr float parameter(0.25f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -112,7 +112,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_label_is_greater_than_prediction_test3)
   constexpr float parameter(0.2f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_label_is_greater_than_prediction_test4)
   constexpr float parameter(0.3f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -176,7 +176,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_label_is_greater_than_prediction_test5)
   constexpr float parameter(0.25f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_prediction_is_greater_than_label_test1)
   constexpr float parameter(0.4f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_prediction_is_greater_than_label_test2)
   constexpr float parameter(0.25f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -272,7 +272,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_prediction_is_greater_than_label_test3)
   constexpr float parameter(0.2f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_prediction_is_greater_than_label_test4)
   constexpr float parameter(0.2f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_prediction_is_greater_than_label_test5)
   constexpr float parameter(0.4f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_parameter_equals_zero_test)
   constexpr float parameter(0.0f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -399,7 +399,7 @@ BOOST_AUTO_TEST_CASE(expectile_loss_parameter_equals_one_test)
   constexpr float parameter(1.0f);
 
   auto loss = get_loss_function(vw, loss_type, parameter);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(compare_expectile_loss_with_squared_loss_test)
 
   auto loss_expectile = get_loss_function(vw, loss_type_expectile, parameter);
   auto loss_squared = get_loss_function(vw, loss_type_squared);
-  shared_data sd;
+  VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
   constexpr float eta = 0.1f;     // learning rate

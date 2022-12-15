@@ -96,7 +96,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.output_layer.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   uint64_t nn_index = NN_CONSTANT << all.weights.stride_shift();
 
-  features& fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+  VW::features& fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
@@ -132,7 +132,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.interactions = &all.interactions;
   n.outputweight.extent_interactions = &all.extent_interactions;
   n.outputweight.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
-  features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+  VW::features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
   {
@@ -157,13 +157,13 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
   bool should_output = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) { finish_setup(n, *(n.all)); }
   // Yes, copy all of shared data.
-  shared_data sd{*n.all->sd};
+  VW::shared_data sd{*n.all->sd};
   {
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
     auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
     VW::simple_label ld = ec.l.simple;
-    void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
+    void (*save_set_minmax)(VW::shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
@@ -254,7 +254,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     for (unsigned int i = 0; i < n.k; ++i)
     {
       float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
-      features& out_fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+      VW::features& out_fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
       out_fs.values[i] = sigmah;
       out_fs.sum_feat_sq += sigmah * sigmah;
 
@@ -293,7 +293,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
        * save_nn_output_namespace contains the COPIED value
        * save_nn_output_namespace is destroyed
        */
-      features save_nn_output_namespace = std::move(ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE]);
+      VW::features save_nn_output_namespace = std::move(ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE]);
       ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE] =
           n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
 

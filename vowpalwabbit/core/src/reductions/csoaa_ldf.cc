@@ -76,7 +76,7 @@ void subtract_feature(VW::example& ec, float feature_value_x, uint64_t weight_in
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
 void subtract_example(VW::workspace& all, VW::example* ec, VW::example* ecsub)
 {
-  features& wap_fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
+  auto& wap_fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   wap_fs.sum_feat_sq = 0;
   GD::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(VW::details::WAP_LDF_NAMESPACE);
@@ -100,7 +100,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
     return;
   }
 
-  features& fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
+  auto& fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   ec->num_features -= fs.size();
   ec->reset_total_sum_feat_sq();
   fs.clear();

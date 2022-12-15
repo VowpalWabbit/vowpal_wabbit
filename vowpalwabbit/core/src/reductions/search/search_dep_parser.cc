@@ -128,12 +128,12 @@ void inline add_feature(
 void add_all_features(VW::example& ex, VW::example& src, unsigned char tgt_ns, uint64_t mask, uint64_t multiplier,
     uint64_t offset, bool /* audit */ = false)
 {
-  features& tgt_fs = ex.feature_space[tgt_ns];
+  VW::features& tgt_fs = ex.feature_space[tgt_ns];
   for (VW::namespace_index ns : src.indices)
   {
     if (ns != VW::details::CONSTANT_NAMESPACE)
     {  // ignore VW::details::CONSTANT_NAMESPACE
-      for (feature_index i : src.feature_space[ns].indices)
+      for (VW::feature_index i : src.feature_space[ns].indices)
       {
         tgt_fs.push_back(1.0f, ((i / multiplier + offset) * multiplier) & mask);
       }
@@ -145,7 +145,7 @@ void inline reset_ex(VW::example& ex)
 {
   ex.num_features = 0;
   ex.reset_total_sum_feat_sq();
-  for (features& fs : ex) { fs.clear(); }
+  for (VW::features& fs : ex) { fs.clear(); }
 }
 
 // arc-hybrid System.
@@ -329,7 +329,7 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
     add_feature(ex, temp[j] + additional_offset, VAL_NAMESPACE, mask, multiplier);
   }
   size_t count = 0;
-  for (features& fs : data->ex)
+  for (VW::features& fs : data->ex)
   {
     fs.sum_feat_sq = static_cast<float>(fs.size());
     count += fs.size();
