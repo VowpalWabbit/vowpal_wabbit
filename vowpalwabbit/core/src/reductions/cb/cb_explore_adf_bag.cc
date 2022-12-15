@@ -42,7 +42,7 @@ public:
   void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 
-  const PredictionT& get_cached_prediction() { return _action_probs; };
+  const PredictionT& get_cached_prediction() const { return _action_probs; };
 
 private:
   float _epsilon;
@@ -141,7 +141,7 @@ void finish_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_b
   cb_explore_adf_base<cb_explore_adf_bag>::finish_multiline_example(all, data, ec_seq);
 }
 
-void print_bag_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq)
+void print_bag_example(VW::workspace& all, const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq)
 {
   assert(ec_seq.size() > 0);
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();

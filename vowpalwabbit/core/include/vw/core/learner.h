@@ -156,6 +156,7 @@ class finish_example_data
 {
 public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
+  using print_example_fn = void (*)(VW::workspace&, const void* data, const void* ex);
   using update_stats_fn = void (*)(
       const VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using output_example_prediction_fn = void (*)(
@@ -167,7 +168,7 @@ public:
   void* data = nullptr;
   base_learner* base = nullptr;
   fn finish_example_f = nullptr;
-  fn print_example_f = nullptr;
+  print_example_fn print_example_f = nullptr;
   update_stats_fn update_stats_f = nullptr;
   output_example_prediction_fn output_example_prediction_f = nullptr;
   print_update_fn print_update_f = nullptr;
@@ -466,12 +467,12 @@ public:
     else { THROW("No finish functions were registered in the stack."); }
   }
 
-  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)
+  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, const E& ec)
   {
     debug_log_message(ec, "print_example");
     if (!has_legacy_print_example()) { THROW("fatal: learner did not register print example fn: " + _name); }
 
-    _finish_example_fd.print_example_f(all, _finish_example_fd.data, (void*)&ec);
+    _finish_example_fd.print_example_f(all, _finish_example_fd.data, (const void*)&ec);
   }
 
   inline void NO_SANITIZE_UNDEFINED update_stats(VW::workspace& all, const E& ec)
@@ -802,10 +803,10 @@ public:
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, const ExampleT&))
+  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, const DataT&, const ExampleT&))
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.print_example_f = (details::finish_example_data::fn)(fn_ptr);
+    learner_ptr->_finish_example_fd.print_example_f = (details::finish_example_data::print_example_fn)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 

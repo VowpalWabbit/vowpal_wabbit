@@ -273,7 +273,7 @@ void cb_adf::predict(multi_learner& base, VW::multi_ex& ec_seq)
 
 // how to
 
-bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq)
+bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq) const
 {
   size_t num_features = 0;
 
@@ -295,7 +295,7 @@ bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq
 }  // namespace CB_ADF
 namespace
 {
-void output_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec, const VW::multi_ex& ec_seq)
+void output_example(VW::workspace& all, const CB_ADF::cb_adf& c, const VW::example& ec, const VW::multi_ex& ec_seq)
 {
   if (example_is_newline_not_header(ec)) { return; }
 
@@ -325,7 +325,7 @@ void output_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec
   else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
-void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::example& ec, const VW::multi_ex& ec_seq)
+void output_rank_example(VW::workspace& all, const CB_ADF::cb_adf& c, const VW::example& ec, const VW::multi_ex& ec_seq)
 {
   const auto& costs = ec.l.cb.costs;
 
@@ -354,7 +354,7 @@ void output_rank_example(VW::workspace& all, CB_ADF::cb_adf& c, const VW::exampl
   else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
-void output_example_seq(VW::workspace& all, CB_ADF::cb_adf& data, const VW::multi_ex& ec_seq)
+void output_example_seq(VW::workspace& all, const CB_ADF::cb_adf& data, const VW::multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
@@ -371,7 +371,7 @@ void output_example_seq(VW::workspace& all, CB_ADF::cb_adf& data, const VW::mult
   }
 }
 
-void update_and_output(VW::workspace& all, CB_ADF::cb_adf& data, const VW::multi_ex& ec_seq)
+void update_and_output(VW::workspace& all, const CB_ADF::cb_adf& data, const VW::multi_ex& ec_seq)
 {
   if (!ec_seq.empty())
   {
