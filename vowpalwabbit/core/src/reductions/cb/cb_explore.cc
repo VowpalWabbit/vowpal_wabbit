@@ -238,7 +238,8 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
   ec.l.cs = VW::cs_label{};
 }
 
-void print_update_cb_explore(VW::workspace& all, VW::shared_data& sd, bool is_test, const VW::example& ec, std::stringstream& pred_string)
+void print_update_cb_explore(
+    VW::workspace& all, VW::shared_data& sd, bool is_test, const VW::example& ec, std::stringstream& pred_string)
 {
   if ((sd.weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs)
   {
@@ -249,8 +250,8 @@ void print_update_cb_explore(VW::workspace& all, VW::shared_data& sd, bool is_te
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
+    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(),
+        ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 
@@ -286,7 +287,7 @@ void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
 }
 
 void update_stats_cb_explore(
-  const VW::workspace&, VW::shared_data& sd, const cb_explore& data, const VW::example& ec, VW::io::logger&)
+    const VW::workspace&, VW::shared_data& sd, const cb_explore& data, const VW::example& ec, VW::io::logger&)
 {
   const auto& ld = ec.l.cb;
   float loss = calc_loss(data, ec, ld);
@@ -294,19 +295,16 @@ void update_stats_cb_explore(
 }
 
 void output_example_prediction_cb_explore(
-  VW::workspace& all, const cb_explore& data, const VW::example& ec, VW::io::logger& logger)
+    VW::workspace& all, const cb_explore& data, const VW::example& ec, VW::io::logger& logger)
 {
   std::stringstream ss;
 
-  for (const auto& act_score : ec.pred.a_s)
-  {
-    ss << std::fixed << act_score.score << " ";
-  }
+  for (const auto& act_score : ec.pred.a_s) { ss << std::fixed << act_score.score << " "; }
   for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss.str(), ec.tag, logger); }
 }
 
 void print_update_cb_explore(
-  VW::workspace& all, VW::shared_data& sd, const cb_explore& data, const VW::example& ec, VW::io::logger& logger)
+    VW::workspace& all, VW::shared_data& sd, const cb_explore& data, const VW::example& ec, VW::io::logger& logger)
 {
   float maxprob = 0.f;
   uint32_t maxid = 0;
