@@ -23,10 +23,10 @@
 
 namespace vw_net_native
 {
-typedef int32_t dotnet_size_t;
-typedef unsigned char dotnet_bool_u1_t;
+using dotnet_size_t = int32_t;
+using dotnet_bool_u1_t = unsigned char;
 
-typedef int ERROR_CODE;
+using ERROR_CODE = int;
 
 inline bool FloatEqual(float a, float b)
 {

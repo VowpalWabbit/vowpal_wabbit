@@ -213,7 +213,9 @@ void to_flat::create_mc_label(VW::named_labels* ldict, VW::example* v, ExampleBu
   if (ldict)
   {
     if (ldict->get(v->l.multi.label).empty())
+    {
       ex_builder.label = VW::parsers::flatbuffer::CreateMultiClass(_builder, 0, 0U, v->l.multi.weight).Union();
+    }
     else
     {
       VW::string_view named_label = ldict->get(v->l.multi.label);
@@ -297,8 +299,8 @@ void to_flat::create_no_label(VW::example* v, ExampleBuilder& ex_builder)
   ex_builder.label = VW::parsers::flatbuffer::Createno_label(_builder, (uint8_t)'\000').Union();
 }
 
-flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespace(
-    features::audit_iterator begin, features::audit_iterator end, VW::namespace_index index, uint64_t hash, bool audit)
+flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespace(VW::features::audit_iterator begin,
+    VW::features::audit_iterator end, VW::namespace_index index, uint64_t hash, bool audit)
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Feature>> fts;
   std::stringstream ss;
@@ -419,7 +421,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
     if (multiplier != 1)
     {
-      for (features& fs : *ae)
+      for (VW::features& fs : *ae)
       {
         for (auto& j : fs.indices) { j /= multiplier; }
       }

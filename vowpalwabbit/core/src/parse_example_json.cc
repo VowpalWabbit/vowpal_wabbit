@@ -751,7 +751,7 @@ public:
   }
 
 private:
-  feature_index array_hash;
+  VW::feature_index array_hash;
 };
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream

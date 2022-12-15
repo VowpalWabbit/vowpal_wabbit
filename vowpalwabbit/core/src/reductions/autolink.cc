@@ -55,7 +55,7 @@ void autolink::prepare_example(VW::LEARNER::single_learner& base, VW::example& e
 
   // Add features of label.
   ec.indices.push_back(VW::details::AUTOLINK_NAMESPACE);
-  features& fs = ec.feature_space[VW::details::AUTOLINK_NAMESPACE];
+  auto& fs = ec.feature_space[VW::details::AUTOLINK_NAMESPACE];
   for (size_t i = 0; i < _poly_degree; i++)
   {
     if (base_pred != 0.f)
@@ -69,7 +69,7 @@ void autolink::prepare_example(VW::LEARNER::single_learner& base, VW::example& e
 
 void autolink::reset_example(VW::example& ec)
 {
-  features& fs = ec.feature_space[VW::details::AUTOLINK_NAMESPACE];
+  auto& fs = ec.feature_space[VW::details::AUTOLINK_NAMESPACE];
   ec.reset_total_sum_feat_sq();
   fs.clear();
   ec.indices.pop_back();

@@ -49,19 +49,19 @@ inline void call_func_t(DataT& dat, WeightsT& /*weights*/, const float ft_value,
   FuncT(dat, ft_value, ft_idx);
 }
 
-inline bool term_is_empty(VW::namespace_index term, const std::array<features, VW::NUM_NAMESPACES>& feature_groups)
+inline bool term_is_empty(VW::namespace_index term, const std::array<VW::features, VW::NUM_NAMESPACES>& feature_groups)
 {
   return feature_groups[term].empty();
 }
 
-inline bool has_empty_interaction_quadratic(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
+inline bool has_empty_interaction_quadratic(const std::array<VW::features, VW::NUM_NAMESPACES>& feature_groups,
     const std::vector<VW::namespace_index>& namespace_indexes)
 {
   assert(namespace_indexes.size() == 2);
   return term_is_empty(namespace_indexes[0], feature_groups) || term_is_empty(namespace_indexes[1], feature_groups);
 }
 
-inline bool has_empty_interaction_cubic(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
+inline bool has_empty_interaction_cubic(const std::array<VW::features, VW::NUM_NAMESPACES>& feature_groups,
     const std::vector<VW::namespace_index>& namespace_indexes)
 {
   assert(namespace_indexes.size() == 3);
@@ -70,17 +70,17 @@ inline bool has_empty_interaction_cubic(const std::array<features, VW::NUM_NAMES
   ;
 }
 
-inline bool has_empty_interaction(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
+inline bool has_empty_interaction(const std::array<VW::features, VW::NUM_NAMESPACES>& feature_groups,
     const std::vector<VW::namespace_index>& namespace_indexes)
 {
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
       [&](VW::namespace_index idx) { return term_is_empty(idx, feature_groups); });
 }
-inline bool has_empty_interaction(
-    const std::array<features, VW::NUM_NAMESPACES>& feature_groups, const std::vector<extent_term>& namespace_indexes)
+inline bool has_empty_interaction(const std::array<VW::features, VW::NUM_NAMESPACES>& feature_groups,
+    const std::vector<VW::extent_term>& namespace_indexes)
 {
   return std::any_of(namespace_indexes.begin(), namespace_indexes.end(),
-      [&](extent_term idx)
+      [&](VW::extent_term idx)
       {
         return std::find_if(feature_groups[idx.first].namespace_extents.begin(),
                    feature_groups[idx.first].namespace_extents.end(),
@@ -102,7 +102,7 @@ constexpr inline float interaction_value(float value1, float value2) { return va
 // #define GEN_INTER_LOOP
 
 std::tuple<VW::details::features_range_t, VW::details::features_range_t> inline generate_quadratic_char_combination(
-    const std::array<features, VW::NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
+    const std::array<VW::features, VW::NUM_NAMESPACES>& feature_groups, VW::namespace_index ns_idx1,
     VW::namespace_index ns_idx2)
 {
   return {std::make_tuple(std::make_pair(feature_groups[ns_idx1].audit_begin(), feature_groups[ns_idx1].audit_end()),
@@ -110,8 +110,8 @@ std::tuple<VW::details::features_range_t, VW::details::features_range_t> inline 
 }
 
 template <typename DispatchCombinationFuncT>
-void generate_generic_extent_combination_iterative(const std::array<features, VW::NUM_NAMESPACES>& feature_groups,
-    const std::vector<extent_term>& terms, const DispatchCombinationFuncT& dispatch_combination_func,
+void generate_generic_extent_combination_iterative(const std::array<VW::features, VW::NUM_NAMESPACES>& feature_groups,
+    const std::vector<VW::extent_term>& terms, const DispatchCombinationFuncT& dispatch_combination_func,
     std::stack<VW::details::extent_interaction_expansion_stack_item>& in_process_frames,
     VW::moved_object_pool<VW::details::extent_interaction_expansion_stack_item>& frame_pool)
 {
@@ -177,7 +177,7 @@ void generate_generic_extent_combination_iterative(const std::array<features, VW
 }
 
 std::tuple<VW::details::features_range_t, VW::details::features_range_t,
-    VW::details::features_range_t> inline generate_cubic_char_combination(const std::array<features,
+    VW::details::features_range_t> inline generate_cubic_char_combination(const std::array<VW::features,
                                                                               VW::NUM_NAMESPACES>& feature_groups,
     VW::namespace_index ns_idx1, VW::namespace_index ns_idx2, VW::namespace_index ns_idx3)
 {
@@ -187,7 +187,7 @@ std::tuple<VW::details::features_range_t, VW::details::features_range_t,
 }
 
 std::vector<VW::details::features_range_t> inline generate_generic_char_combination(
-    const std::array<features, VW::NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& terms)
+    const std::array<VW::features, VW::NUM_NAMESPACES>& feature_groups, const std::vector<VW::namespace_index>& terms)
 {
   std::vector<VW::details::features_range_t> inter;
   inter.reserve(terms.size());
@@ -200,8 +200,8 @@ std::vector<VW::details::features_range_t> inline generate_generic_char_combinat
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
     void (*audit_func)(DataT&, const VW::audit_strings*), class WeightsT>
-void inner_kernel(DataT& dat, features::const_audit_iterator& begin, features::const_audit_iterator& end,
-    const uint64_t offset, WeightsT& weights, feature_value ft_value, feature_index halfhash)
+void inner_kernel(DataT& dat, VW::features::const_audit_iterator& begin, VW::features::const_audit_iterator& end,
+    const uint64_t offset, WeightsT& weights, VW::feature_value ft_value, VW::feature_index halfhash)
 {
   if (audit)
   {
@@ -238,7 +238,7 @@ size_t process_quadratic_interaction(
   size_t i = 0;
   for (; first_begin != first_end; ++first_begin)
   {
-    feature_index halfhash = VW::details::FNV_PRIME * first_begin.index();
+    VW::feature_index halfhash = VW::details::FNV_PRIME * first_begin.index();
     if (Audit) { audit_func(first_begin.audit() != nullptr ? first_begin.audit() : &EMPTY_AUDIT_STRINGS); }
     // next index differs for permutations and simple combinations
     auto begin = second_begin;
@@ -289,8 +289,8 @@ size_t process_cubic_interaction(
       {
         audit_func(inner_second_begin.audit() != nullptr ? inner_second_begin.audit() : &EMPTY_AUDIT_STRINGS);
       }
-      feature_index halfhash = VW::details::FNV_PRIME * (halfhash1 ^ inner_second_begin.index());
-      feature_value ft_value = interaction_value(first_ft_value, inner_second_begin.value());
+      VW::feature_index halfhash = VW::details::FNV_PRIME * (halfhash1 ^ inner_second_begin.index());
+      VW::feature_value ft_value = interaction_value(first_ft_value, inner_second_begin.value());
 
       auto begin = third_begin;
       // next index differs for permutations and simple combinations
@@ -375,8 +375,8 @@ size_t process_generic_interaction(const std::vector<VW::details::features_range
       size_t start_i = 0;
       if (!permutations) { start_i = gen_data_last->current_it - gen_data_last->begin_it; }
 
-      feature_value ft_value = gen_data_last->x;
-      feature_index halfhash = gen_data_last->hash;
+      VW::feature_value ft_value = gen_data_last->x;
+      VW::feature_index halfhash = gen_data_last->hash;
 
       auto begin = cur_data->begin_it + start_i;
       num_features += (cur_data->end_it - begin);
@@ -406,15 +406,15 @@ template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, Weight
     void (*audit_func)(DataT&, const VW::audit_strings*),
     class WeightsT>  // nullptr func can't be used as template param in old compilers
 inline void generate_interactions(const std::vector<std::vector<VW::namespace_index>>& interactions,
-    const std::vector<std::vector<extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
+    const std::vector<std::vector<VW::extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
     DataT& dat, WeightsT& weights, size_t& num_features,
     VW::details::generate_interactions_object_cache&
         cache)  // default value removed to eliminate ambiguity in old complers
 {
   num_features = 0;
   // often used values
-  const auto inner_kernel_func = [&](features::const_audit_iterator begin, features::const_audit_iterator end,
-                                     feature_value value, feature_index index)
+  const auto inner_kernel_func = [&](VW::features::const_audit_iterator begin, VW::features::const_audit_iterator end,
+                                     VW::feature_value value, VW::feature_index index)
   {
     inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
   };
@@ -460,7 +460,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
   {
     if (has_empty_interaction(ec.feature_space, ns)) { continue; }
     if (std::any_of(ns.begin(), ns.end(),
-            [](const extent_term& term) { return term.first == VW::details::WILDCARD_NAMESPACE; }))
+            [](const VW::extent_term& term) { return term.first == VW::details::WILDCARD_NAMESPACE; }))
     {
       continue;
     }
