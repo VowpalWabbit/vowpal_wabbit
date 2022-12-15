@@ -676,9 +676,9 @@ size_t write_model_field(
     io_buf& io, const reductions::eigen_memory_tree::emt_example& ex, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, ex.base, upstream_name + "base", text);
-  bytes += write_model_field(io, ex.full, upstream_name + "full", text);
-  bytes += write_model_field(io, ex.label, upstream_name + "label", text);
+  bytes += write_model_field(io, ex.base, upstream_name + ".base", text);
+  bytes += write_model_field(io, ex.full, upstream_name + ".full", text);
+  bytes += write_model_field(io, ex.label, upstream_name + ".label", text);
   return bytes;
 }
 
@@ -697,11 +697,11 @@ size_t write_model_field(
     io_buf& io, const reductions::eigen_memory_tree::emt_node& node, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, node.router_decision, upstream_name + "router_decision", text);
-  bytes += write_model_field(io, node.left, upstream_name + "left", text);
-  bytes += write_model_field(io, node.right, upstream_name + "right", text);
-  bytes += write_model_field(io, node.router_weights, upstream_name + "router_weights", text);
-  bytes += write_model_field(io, node.examples, upstream_name + "examples", text);
+  bytes += write_model_field(io, node.router_decision, upstream_name + ".router_decision", text);
+  bytes += write_model_field(io, node.left, upstream_name + ".left", text);
+  bytes += write_model_field(io, node.right, upstream_name + ".right", text);
+  bytes += write_model_field(io, node.router_weights, upstream_name + ".router_weights", text);
+  bytes += write_model_field(io, node.examples, upstream_name + ".examples", text);
   return bytes;
 }
 
@@ -732,11 +732,11 @@ size_t write_model_field(
     io_buf& io, const reductions::eigen_memory_tree::emt_tree& tree, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, tree.leaf_split, upstream_name + "leaf_split", text);
-  bytes += write_model_field(io, static_cast<uint32_t>(tree.scorer_type), upstream_name + "scorer_type", text);
-  bytes += write_model_field(io, static_cast<uint32_t>(tree.router_type), upstream_name + "router_type", text);
-  bytes += write_model_field(io, tree.bounder->max_size, upstream_name + "tree_bound", text);
-  bytes += write_model_field(io, tree.root, upstream_name + "root", text);
+  bytes += write_model_field(io, tree.leaf_split, upstream_name + ".leaf_split", text);
+  bytes += write_model_field(io, static_cast<uint32_t>(tree.scorer_type), upstream_name + ".scorer_type", text);
+  bytes += write_model_field(io, static_cast<uint32_t>(tree.router_type), upstream_name + ".router_type", text);
+  bytes += write_model_field(io, tree.bounder->max_size, upstream_name + ".tree_bound", text);
+  bytes += write_model_field(io, tree.root, upstream_name + ".root", text);
   return bytes;
 }
 
