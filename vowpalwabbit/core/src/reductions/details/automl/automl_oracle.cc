@@ -345,6 +345,19 @@ void config_oracle<champdupe_impl>::gen_configs(
   }
 }
 
+class RNGWrapper
+{
+public:
+  RNGWrapper(VW::rand_state* random_state) : _random_state(random_state) {}
+  typedef size_t result_type;
+  static constexpr size_t min() { return 0; }
+  static constexpr size_t max() { return 42; }
+  size_t operator()() { return max() * _random_state->get_and_update_random(); }
+
+private:
+  VW::rand_state* _random_state;
+};
+
 template <>
 void config_oracle<qbase_cubic>::gen_configs(
     const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
@@ -362,7 +375,7 @@ void config_oracle<qbase_cubic>::gen_configs(
 
   for (size_t i = 0; i < _impl.total_space.size(); i++) { indexes.push_back(i); }
 
-  std::shuffle(indexes.begin(), indexes.end(), std::default_random_engine(_impl.random_state->get_current_state()));
+  std::shuffle(indexes.begin(), indexes.end(), RNGWrapper(_impl.random_state.get()));
 
   for (std::vector<int>::iterator it = indexes.begin(); it != indexes.end(); ++it)
   {
