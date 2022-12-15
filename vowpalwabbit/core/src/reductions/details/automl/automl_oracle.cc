@@ -351,8 +351,8 @@ public:
   RNGWrapper(VW::rand_state* random_state) : _random_state(random_state) {}
   typedef size_t result_type;
   static constexpr size_t min() { return 0; }
-  static constexpr size_t max() { return 42; }
-  size_t operator()() { return max() * _random_state->get_and_update_random(); }
+  static constexpr size_t max() { return 1; }
+  size_t operator()() { return floor(_random_state->get_and_update_random() + 0.5f); }
 
 private:
   VW::rand_state* _random_state;

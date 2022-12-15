@@ -677,13 +677,13 @@ BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
         const set_ns_list_t excl_0{};
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[0].elements.begin(), configs[0].elements.end(), excl_0.begin(), excl_0.end());
-        const set_ns_list_t excl_1{{'A', 'A', 'A'}};
+        const set_ns_list_t excl_1{{'B', 'B', 'C'}};
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[1].elements.begin(), configs[1].elements.end(), excl_1.begin(), excl_1.end());
-        const set_ns_list_t excl_2{{'A', 'B', 'C'}};
+        const set_ns_list_t excl_2{{'A', 'A', 'A'}};
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[2].elements.begin(), configs[2].elements.end(), excl_2.begin(), excl_2.end());
-        const set_ns_list_t excl_3{{'A', 'B', 'B'}};
+        const set_ns_list_t excl_3{{'A', 'A', 'B'}};
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[3].elements.begin(), configs[3].elements.end(), excl_3.begin(), excl_3.end());
         const set_ns_list_t excl_9{{'A', 'A', 'C'}};
@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
         const set_ns_list_t excl_4{{'A', 'A', 'A'}, {'A', 'A', 'C'}};
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[2].elements.begin(), configs[2].elements.end(), excl_4.begin(), excl_4.end());
-        const set_ns_list_t excl_5{{'A', 'A', 'C'}, {'A', 'C', 'C'}};
+        const set_ns_list_t excl_5{{'C', 'C', 'C'}, {'A', 'A', 'C'}};
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[3].elements.begin(), configs[3].elements.end(), excl_5.begin(), excl_5.end());
 
@@ -741,7 +741,7 @@ BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
         BOOST_CHECK_EQUAL(prio_queue.size(), 7);
 
         // excl_7 is now champ
-        const set_ns_list_t excl_7{{'A', 'A', 'C'}, {'A', 'B', 'B'}};
+        const set_ns_list_t excl_7{{'A', 'A', 'C'}, {'B', 'C', 'C'}};
         interaction_config_manager<config_oracle<qbase_cubic>, VW::confidence_sequence>::apply_new_champ(
             oracle, 3, estimators, 0, ns_counter);
 
@@ -749,7 +749,7 @@ BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
             configs[0].elements.begin(), configs[0].elements.end(), excl_7.begin(), excl_7.end());
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[1].elements.begin(), configs[1].elements.end(), excl_9.begin(), excl_9.end());
-        const set_ns_list_t excl_6{{'A', 'A', 'A'}, {'A', 'A', 'C'}, {'A', 'B', 'B'}};
+        const set_ns_list_t excl_6{{'A', 'A', 'A'}, {'A', 'A', 'C'}, {'B', 'C', 'C'}};
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[2].elements.begin(), configs[2].elements.end(), excl_6.begin(), excl_6.end());
 
