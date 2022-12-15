@@ -203,7 +203,7 @@ void end_pass(gd& g)
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
     {
-      set_done(all);
+      VW::details::set_done(all);
     }
   }
 }
@@ -366,9 +366,9 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
   parameters& weights = all.weights;
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
-  for (features& fs : ec) { count += fs.size(); }
+  for (VW::features& fs : ec) { count += fs.size(); }
   // TODO: Where should audit stuff output to?
-  for (features& fs : ec)
+  for (VW::features& fs : ec)
   {
     for (const auto& f : fs.audit_range())
     {
@@ -387,7 +387,7 @@ void print_features(VW::workspace& all, VW::example& ec)
   {
     audit_results dat(all, ec.ft_offset);
 
-    for (features& fs : ec)
+    for (VW::features& fs : ec)
     {
       if (fs.space_names.size() > 0)
       {

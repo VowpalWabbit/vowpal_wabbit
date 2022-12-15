@@ -161,8 +161,7 @@ extern "C"
   VW_DLL_PUBLIC VW_EXAMPLE VW_CALLING_CONV VW_GetExample(VW_HANDLE handle)
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
-    auto* parser_pointer = static_cast<parser*>(pointer->example_parser);
-    return static_cast<VW_EXAMPLE>(VW::get_example(parser_pointer));
+    return static_cast<VW_EXAMPLE>(VW::get_example(pointer->example_parser));
   }
 
   VW_DLL_PUBLIC float VW_CALLING_CONV VW_GetLabel(VW_EXAMPLE e) { return VW::get_label(static_cast<VW::example*>(e)); }
@@ -250,7 +249,10 @@ extern "C"
     return VW::get_features(*pointer, static_cast<VW::example*>(e), *plen);
   }
 
-  VW_DLL_PUBLIC void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f) { VW::return_features(static_cast<feature*>(f)); }
+  VW_DLL_PUBLIC void VW_CALLING_CONV VW_ReturnFeatures(VW_FEATURE f)
+  {
+    VW::return_features(static_cast<VW::feature*>(f));
+  }
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_FinishExample(VW_HANDLE handle, VW_EXAMPLE e)
   {
     auto* pointer = static_cast<VW::workspace*>(handle);

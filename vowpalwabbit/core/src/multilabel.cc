@@ -67,20 +67,7 @@ VW::label_parser multilabel = {
     // label type
     VW::label_type_t::MULTILABEL};
 
-void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
-{
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-  {
-    std::stringstream label_string;
-    if (is_test) { label_string << "unknown"; }
-    else { label_string << VW::to_string(ec.l.multilabels); }
-
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
-  }
-}
-
-void output_example(VW::workspace& all, const VW::example& ec)
+void update_stats(const VW::workspace& all, const VW::example& ec)
 {
   const auto& ld = ec.l.multilabels;
 
@@ -117,7 +104,10 @@ void output_example(VW::workspace& all, const VW::example& ec)
   }
 
   all.sd->update(ec.test_only, !test_label(ld), loss, 1.f, ec.get_num_features());
+}
 
+void output_example_prediction(VW::workspace& all, const VW::example& ec)
+{
   for (auto& sink : all.final_prediction_sink)
   {
     if (sink != nullptr)
@@ -133,9 +123,23 @@ void output_example(VW::workspace& all, const VW::example& ec)
       all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
     }
   }
-
-  print_update(all, test_label(ld), ec);
 }
+
+void print_update(VW::workspace& all, const VW::example& ec)
+{
+  const auto& ld = ec.l.multilabels;
+  const bool is_test = test_label(ld);
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  {
+    std::stringstream label_string;
+    if (is_test) { label_string << "unknown"; }
+    else { label_string << VW::to_string(ec.l.multilabels); }
+
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
+        VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
+  }
+}
+
 }  // namespace MULTILABEL
 
 namespace VW

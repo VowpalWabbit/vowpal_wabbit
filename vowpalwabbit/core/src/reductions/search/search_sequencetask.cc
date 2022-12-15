@@ -413,9 +413,9 @@ void my_update_example_indices(
     Search::search& sch, bool /* audit */, VW::example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   size_t ss = sch.get_stride_shift();
-  for (features& fs : *ec)
+  for (VW::features& fs : *ec)
   {
-    for (feature_index& idx : fs.indices) { idx = (((idx >> ss) * mult_amount) + plus_amount) << ss; }
+    for (VW::feature_index& idx : fs.indices) { idx = (((idx >> ss) * mult_amount) + plus_amount) << ss; }
   }
 }
 

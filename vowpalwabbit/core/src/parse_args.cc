@@ -224,7 +224,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
     VW::read_line(all, &ec, d);
     // now we just need to grab stuff from the default namespace of ec!
     if (ec.feature_space[def].empty()) { continue; }
-    map->emplace(word, VW::make_unique<features>(ec.feature_space[def]));
+    map->emplace(word, VW::make_unique<VW::features>(ec.feature_space[def]));
 
     // clear up ec
     ec.tag.clear();
@@ -567,7 +567,7 @@ std::vector<VW::namespace_index> parse_char_interactions(VW::string_view input, 
   return result;
 }
 
-std::vector<extent_term> VW::details::parse_full_name_interactions(VW::workspace& all, VW::string_view str)
+std::vector<VW::extent_term> VW::details::parse_full_name_interactions(VW::workspace& all, VW::string_view str)
 {
   std::vector<extent_term> result;
   auto encoded = VW::decode_inline_hex(str, all.logger);
@@ -1525,7 +1525,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
     }
   }
 
-  all->example_parser = new parser{final_example_queue_limit, strict_parse};
+  all->example_parser = new VW::parser{final_example_queue_limit, strict_parse};
 
   option_group_definition weight_args("Weight");
   weight_args

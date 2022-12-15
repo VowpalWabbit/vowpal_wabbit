@@ -39,6 +39,7 @@ TEST(cache_tests, write_and_read_example)
   VW::example dest_ex;
   examples.push_back(&dest_ex);
   VW::parsers::cache::read_example_from_cache(workspace.get(), io_reader, examples);
+  EXPECT_EQ(io_reader.unflushed_bytes_count(), backing_vector->size());
 
   EXPECT_EQ(dest_ex.indices.size(), 2);
   EXPECT_EQ(dest_ex.feature_space['n'].size(), 3);
@@ -151,7 +152,7 @@ TEST(cache_tests, write_and_read_features)
 
   uint64_t mask = (1 << 18) - 1;
 
-  features feats;
+  VW::features feats;
   feats.push_back(1.f, 23424542 & mask);
   feats.push_back(4.f, 1231987 & mask);
   feats.push_back(1.1f, 675 & mask);
@@ -163,7 +164,7 @@ TEST(cache_tests, write_and_read_features)
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
-  features read_feats;
+  VW::features read_feats;
   bool sorted = false;
   VW::parsers::cache::details::read_cached_features(io_reader, read_feats, sorted);
 

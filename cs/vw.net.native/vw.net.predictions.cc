@@ -85,7 +85,10 @@ API size_t GetPredictionTopicProbsCount(VW::workspace* vw, VW::example* ex) { re
 API vw_net_native::dotnet_size_t GetPredictionTopicProbs(
     VW::workspace* vw, VW::example* ex, float* values, vw_net_native::dotnet_size_t count)
 {
-  if (count < vw->lda) return vw_net_native::size_to_neg_dotnet_size(vw->lda);  // not enough space in the output array
+  if (count < vw->lda)
+  {
+    return vw_net_native::size_to_neg_dotnet_size(vw->lda);  // not enough space in the output array
+  }
 
   const v_array<float>& scalars = ex->pred.scalars;
 

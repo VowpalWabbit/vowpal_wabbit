@@ -11,7 +11,7 @@ VW::example_predict::iterator::iterator(features* feature_space, namespace_index
 {
 }
 
-features& VW::example_predict::iterator::operator*() { return _feature_space[*_index]; }
+VW::features& VW::example_predict::iterator::operator*() { return _feature_space[*_index]; }
 
 VW::example_predict::iterator& VW::example_predict::iterator::operator++()
 {

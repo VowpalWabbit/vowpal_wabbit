@@ -72,7 +72,7 @@ void eval_count_of_generated_ft_naive(
   ec.interactions = &all.interactions;
 }
 
-template <INTERACTIONS::generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
+template <INTERACTIONS::generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
 void eval_count_of_generated_ft_naive(
     VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
@@ -81,7 +81,7 @@ void eval_count_of_generated_ft_naive(
 
   new_features_cnt = 0;
   new_features_value = 0.;
-  std::set<extent_term> seen_extents;
+  std::set<VW::extent_term> seen_extents;
   for (auto ns_index : ec.indices)
   {
     for (const auto& extent : ec.feature_space[ns_index].namespace_extents)
@@ -140,8 +140,8 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>(
-      vw, *ex, naive_features_count, naive_features_value);
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<VW::extent_term>,
+      false>(vw, *ex, naive_features_count, naive_features_value);
 
   float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
       vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
@@ -165,8 +165,8 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_permutations_test)
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<extent_term>, false>(
-      vw, *ex, naive_features_count, naive_features_value);
+  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<VW::extent_term>,
+      false>(vw, *ex, naive_features_count, naive_features_value);
   float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
       vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
 
@@ -349,23 +349,23 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
 
   {
     auto a = VW::details::parse_full_name_interactions(*vw, "a|b");
-    std::vector<extent_term> expected = {
-        extent_term{'a', VW::hash_space(*vw, "a")}, extent_term{'b', VW::hash_space(*vw, "b")}};
+    std::vector<VW::extent_term> expected = {
+        VW::extent_term{'a', VW::hash_space(*vw, "a")}, VW::extent_term{'b', VW::hash_space(*vw, "b")}};
     check_collections_exact(a, expected);
   }
 
   {
     auto a = VW::details::parse_full_name_interactions(*vw, "art|bat|and");
-    std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
-        extent_term{'b', VW::hash_space(*vw, "bat")}, extent_term{'a', VW::hash_space(*vw, "and")}};
+    std::vector<VW::extent_term> expected = {VW::extent_term{'a', VW::hash_space(*vw, "art")},
+        VW::extent_term{'b', VW::hash_space(*vw, "bat")}, VW::extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
   {
     auto a = VW::details::parse_full_name_interactions(*vw, "art|:|and");
-    std::vector<extent_term> expected = {extent_term{'a', VW::hash_space(*vw, "art")},
-        extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE},
-        extent_term{'a', VW::hash_space(*vw, "and")}};
+    std::vector<VW::extent_term> expected = {VW::extent_term{'a', VW::hash_space(*vw, "art")},
+        VW::extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE},
+        VW::extent_term{'a', VW::hash_space(*vw, "and")}};
     check_collections_exact(a, expected);
   }
 
