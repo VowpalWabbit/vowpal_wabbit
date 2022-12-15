@@ -25,17 +25,17 @@ public:
   float x = 1.f;                  // value of feature interactions of previous namespaces in the list
                                   // than once calculated at preprocessing together with same_ns
   bool self_interaction = false;  // namespace interacting with itself
-  ::VW::features::const_audit_iterator begin_it;
-  ::VW::features::const_audit_iterator current_it;
-  ::VW::features::const_audit_iterator end_it;
+  features::const_audit_iterator begin_it;
+  features::const_audit_iterator current_it;
+  features::const_audit_iterator end_it;
 
-  feature_gen_data(::VW::features::const_audit_iterator begin, ::VW::features::const_audit_iterator end)
+  feature_gen_data(features::const_audit_iterator begin, features::const_audit_iterator end)
       : begin_it(begin), current_it(begin), end_it(end)
   {
   }
 };
 
-using features_range_t = std::pair<::VW::features::const_audit_iterator, ::VW::features::const_audit_iterator>;
+using features_range_t = std::pair<features::const_audit_iterator, features::const_audit_iterator>;
 
 class extent_interaction_expansion_stack_item
 {
