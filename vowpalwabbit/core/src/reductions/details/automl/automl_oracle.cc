@@ -35,8 +35,8 @@ void insert_if_is_allowed_to_remove(set_ns_list_t& new_elements, const std::vect
       std::vector<namespace_index> idx{ns1, ns2, ns3};
       new_elements.insert(idx);
     }
-    else { THROW("Unknown interaction type."); }
   }
+  else { THROW("Unknown interaction type."); }
 }
 
 template <>
