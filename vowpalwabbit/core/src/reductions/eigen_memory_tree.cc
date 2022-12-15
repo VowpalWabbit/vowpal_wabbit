@@ -355,7 +355,7 @@ void tree_bound(emt_tree& b, emt_example* ec)
   }
 }
 
-float scorer_initial(const VW::example& ex) { return 1 - std::exp(-std::sqrt(ex.total_sum_feat_sq)); }
+float scorer_initial(const float dist) { return 1 - std::exp(-dist); }
 
 void scorer_features(const emt_feats& f1, features& out)
 {
@@ -382,7 +382,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 
     out.feature_space[X_NS].clear();
     out.feature_space[Z_NS].clear();
-
+  
     emt_feats feat_diff = emt_scale_add(1, ex1.full, -1, ex2.full);
     emt_abs(feat_diff);
     scorer_features(feat_diff, out.feature_space[X_NS]);
@@ -390,11 +390,13 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
     out.total_sum_feat_sq = out.feature_space[X_NS].sum_feat_sq;
     out.num_features = out.feature_space[X_NS].size();
 
-    out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = scorer_initial(out);
+    auto initial = scorer_initial(std::sqrt(out.total_sum_feat_sq));
+    out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = initial;
   }
 
   if (b.scorer_type == emt_scorer_type::NOT_SELF_CONSISTENT_RANK)
   {
+
     out.indices.clear();
     out.indices.push_back(X_NS);
     out.indices.push_back(Z_NS);
@@ -417,6 +419,9 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 
     out.total_sum_feat_sq = out.feature_space[X_NS].sum_feat_sq + out.feature_space[Z_NS].sum_feat_sq;
     out.num_features = out.feature_space[X_NS].size() + out.feature_space[Z_NS].size();
+
+    auto initial = scorer_initial(emt_norm(emt_scale_add(1, ex1.full, -1, ex2.full)));
+    out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = initial;
   }
 
   // We cache metadata about model weights adjacent to them. For example if we have
