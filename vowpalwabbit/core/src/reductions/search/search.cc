@@ -1058,7 +1058,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(VW::v_array<T>& A, size_t sz)
 {
-  A.resize_but_with_stl_behavior(sz);
+  A.resize(sz);
 }
 
 template <class T>
@@ -1070,7 +1070,7 @@ void ensure_size(std::vector<T>& A, size_t sz)
 template <class T>
 void set_at(VW::v_array<T>& v, T item, size_t pos)
 {
-  if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
+  if (pos >= v.size()) { v.resize(pos + 1); }
   v[pos] = item;
 }
 
@@ -1729,7 +1729,7 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
       // copy conditioning stuff and allowed actions
       if (priv.auto_condition_features)
       {
-        priv.learn_condition_on.resize_but_with_stl_behavior(condition_on_cnt);
+        priv.learn_condition_on.resize(condition_on_cnt);
         ensure_size(priv.learn_condition_on_act, condition_on_cnt);
 
         memcpy(priv.learn_condition_on.begin(), condition_on, condition_on_cnt * sizeof(ptag));
