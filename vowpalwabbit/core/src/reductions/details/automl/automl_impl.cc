@@ -64,7 +64,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
     priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
-    config_type conf_type)
+    config_type conf_type, std::string trace_prefix)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -76,6 +76,13 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , _config_oracle(
           config_oracle_impl(default_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
 {
+  if (trace_prefix != "")
+  {
+    champ_log_file = VW::make_unique<std::ofstream>(trace_prefix + ".champ_change.csv");
+    *champ_log_file << "state, example_count, slot_id, config_type, ns_elements" << std::endl;
+    inputlabel_log_file = VW::make_unique<std::ofstream>(trace_prefix + "input_examples.csv");
+    *inputlabel_log_file << "example_count, logged_action, logged_probability, weight, reward" << std::endl;
+  }
   insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
 }
 
@@ -169,6 +176,15 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // fetch config from the queue, and apply it current live slot
       apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
           config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, priority_challengers);
+      if (champ_log_file)
+      {
+        *champ_log_file << "APPLY_CONFIG," << total_learn_count << "," << live_slot << ","
+                        << to_string(_config_oracle._conf_type) << ","
+                        << util::elements_to_string(
+                               _config_oracle.configs[estimators[live_slot].first.config_index].elements, " ")
+                        << std::endl;
+      }
+
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
       // Regenerate interactions each time an exclusion is swapped in
@@ -246,6 +262,12 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
     if (winning_challenger_slot != 1) { weights.move_offsets(winning_challenger_slot, 1, wpp, false); }
 
     apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, ns_counter);
+    if (champ_log_file)
+    {
+      *champ_log_file << "CHAMP_SWITCH," << total_learn_count << "," << total_champ_switches << ","
+                      << to_string(_config_oracle._conf_type) << ","
+                      << util::elements_to_string(_config_oracle.configs[0].elements, " ") << std::endl;
+    }
   }
 }
 
@@ -367,6 +389,12 @@ void automl<CMType>::offset_learn(
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
+  if (cm->inputlabel_log_file)
+  {
+    *cm->inputlabel_log_file << cm->total_learn_count << "," << logged.action << "," << logged.probability << "," << w
+                             << "," << r << std::endl;
+  }
+
   int64_t live_slot = 0;
   int64_t current_champ = static_cast<int64_t>(cm->current_champ);
   assert(current_champ == 0);
@@ -396,6 +424,13 @@ void automl<CMType>::offset_learn(
   for (live_slot = 1; static_cast<size_t>(live_slot) < cm->estimators.size(); ++live_slot)
   {
     cm->estimators[live_slot].second.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
+    auto& curr = cm->estimators[live_slot];
+    if (log_file)
+    {
+      *log_file << cm->total_learn_count << "," << live_slot << "," << cm->total_champ_switches << ","
+                << curr.first._estimator.lower_bound() << "," << curr.first._estimator.upper_bound() << ","
+                << curr.second.lower_bound() << "," << curr.second.upper_bound() << std::endl;
+    }
   }
 }
 

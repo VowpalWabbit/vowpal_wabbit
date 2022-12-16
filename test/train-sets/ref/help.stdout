@@ -249,6 +249,7 @@ Weight Options:
     --priority_challengers arg              Set number of priority challengers to use. Set to -1 to use half
                                             of total live configs. (type: int, default: -1, keep, experimental)
     --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
+    --csv_trace                             Extended tracing for debugging (type: bool, experimental)
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
