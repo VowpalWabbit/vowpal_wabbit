@@ -54,10 +54,10 @@ float collision_cleanup(VW::features& fs)
   float sum_sq = 0.f;
   if (!fs.empty())
   {
-    features::iterator p1 = fs.begin();
+    VW::features::iterator p1 = fs.begin();
     uint64_t last_index = p1.index();
 
-    for (features::iterator p2 = (fs.begin() + 1); p2 != fs.end(); ++p2)
+    for (VW::features::iterator p2 = (fs.begin() + 1); p2 != fs.end(); ++p2)
     {
       if (last_index == p2.index()) { p1.value() += p2.value(); }
       else
