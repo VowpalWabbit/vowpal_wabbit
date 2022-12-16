@@ -68,7 +68,7 @@ public:
   /// call is made.
   int (*reader)(VW::workspace*, io_buf&, VW::multi_ex& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(VW::workspace*, const char*, size_t, VW::multi_ex&);
+  void (*text_reader)(VW::workspace*, VW::string_view, VW::multi_ex&);
 
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.

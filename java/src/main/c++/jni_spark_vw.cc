@@ -172,7 +172,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFr
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    all->example_parser->text_reader(all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<true>(env, all, ex_coll);
   }
@@ -211,7 +211,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    all->example_parser->text_reader(all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<false>(env, all, ex_coll);
   }

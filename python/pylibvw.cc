@@ -550,7 +550,7 @@ py::list my_parse(vw_ptr& all, char* str)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  all->example_parser->text_reader(all.get(), str, strlen(str), examples);
+  all->example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
 
   py::list example_collection;
   for (auto* ex : examples)

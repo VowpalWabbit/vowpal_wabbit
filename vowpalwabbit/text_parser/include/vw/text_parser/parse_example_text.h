@@ -22,8 +22,7 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars);
 }  // namespace details
 
 void read_line(VW::workspace& all, example* ex, VW::string_view line);  // read example from the line.
-void read_lines(VW::workspace* all, const char* line, size_t len,
-    VW::multi_ex& examples);  // read examples from the new line separated strings.
+void read_lines(VW::workspace* all, VW::string_view lines_view, VW::multi_ex& examples);  // read examples from the new line separated strings.
 
 int read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 }  // namespace text

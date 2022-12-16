@@ -1945,17 +1945,17 @@ inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::mult
 
 // This is used by the python parser
 template <bool audit>
-void line_to_examples_json(VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples)
+void line_to_examples_json(VW::workspace* all, VW::string_view line_view, VW::multi_ex& examples)
 {
   // The JSON reader does insitu parsing and therefore modifies the input
   // string, so we make a copy since this function cannot modify the input
   // string.
   std::vector<char> owned_str;
-  size_t len = std::strlen(line) + 1;
+  size_t len = line_view.size() + 1;
   owned_str.resize(len);
-  std::memcpy(owned_str.data(), line, len);
+  std::memcpy(owned_str.data(), line_view.data(), len);
 
-  bool good_example = parse_line_json<audit>(all, owned_str.data(), num_chars, examples);
+  bool good_example = parse_line_json<audit>(all, owned_str.data(), line_view.size(), examples);
   if (!good_example)
   {
     VW::return_multiple_example(*all, examples);
@@ -2018,9 +2018,9 @@ template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_c
 template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 
 template void line_to_examples_json<true>(
-    VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
+    VW::workspace* all, VW::string_view, VW::multi_ex& examples);
 template void line_to_examples_json<false>(
-    VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
+    VW::workspace* all, VW::string_view, VW::multi_ex& examples);
 
 template int read_features_json<true>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 template int read_features_json<false>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);

@@ -540,11 +540,10 @@ void VW::parsers::text::read_line(VW::workspace& all, example* ex, VW::string_vi
   details::substring_to_example(&all, ex, line);
 }
 
-void VW::parsers::text::read_lines(VW::workspace* all, const char* line, size_t len, VW::multi_ex& examples)
+void VW::parsers::text::read_lines(VW::workspace* all, VW::string_view lines_view, VW::multi_ex& examples)
 {
-  VW::string_view line_view = VW::string_view(line, len);
   std::vector<VW::string_view> lines;
-  VW::tokenize('\n', line_view, lines);
+  VW::tokenize('\n', lines_view, lines);
   for (size_t i = 0; i < lines.size(); i++)
   {
     // Check if a new empty example needs to be added.
