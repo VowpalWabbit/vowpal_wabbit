@@ -78,7 +78,7 @@ void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
         unsigned int rfd_id = lrq.field_id[right];
         for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
         {
-          features& fs = ec.feature_space[left];
+          auto& fs = ec.feature_space[left];
           float lfx = fs.values[lfn];
           uint64_t lindex = fs.indices[lfn];
           for (unsigned int n = 1; n <= k; ++n)
@@ -94,7 +94,7 @@ void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
 
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
             {
-              features& rfs = ec.feature_space[right];
+              auto& rfs = ec.feature_space[right];
               //                    feature* rf = ec.atomics[right].begin + rfn;
               // NB: ec.ft_offset added by base learner
               float rfx = rfs.values[rfn];
@@ -132,7 +132,7 @@ void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
     for (char i : lrq.field_name)
     {
       VW::namespace_index right = i;
-      features& rfs = ec.feature_space[right];
+      auto& rfs = ec.feature_space[right];
       rfs.values.resize_but_with_stl_behavior(lrq.orig_size[right]);
       if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }

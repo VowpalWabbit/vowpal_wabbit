@@ -8,7 +8,9 @@
 
 namespace VW
 {
-using no_label = char;
+struct no_label
+{
+};
 
 extern VW::label_parser no_label_parser_global;
 namespace details

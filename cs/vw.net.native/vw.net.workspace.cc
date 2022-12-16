@@ -92,7 +92,7 @@ API vw_net_native::ERROR_CODE DeleteWorkspace(
   CATCH_RETURN_STATUS
 }
 
-API prediction_type_t WorkspaceGetOutputPredictionType(vw_net_native::workspace_context* workspace)
+API VW::prediction_type_t WorkspaceGetOutputPredictionType(vw_net_native::workspace_context* workspace)
 {
   return workspace->vw->l->get_output_prediction_type();
 }
@@ -166,14 +166,18 @@ API void WorkspaceGetPerformanceStatistics(
   statistics->weighted_labels = workspace->vw->sd->weighted_labels;
 
   if (workspace->vw->holdout_set_off)
+  {
     if (workspace->vw->sd->weighted_labeled_examples > 0)
+    {
       statistics->average_loss = workspace->vw->sd->sum_loss / workspace->vw->sd->weighted_labeled_examples;
-    else
-      statistics->average_loss = NAN;
+    }
+    else { statistics->average_loss = NAN; }
+  }
   else if ((workspace->vw->sd->holdout_best_loss == FLT_MAX) || (workspace->vw->sd->holdout_best_loss == FLT_MAX * 0.5))
+  {
     statistics->average_loss = NAN;
-  else
-    statistics->average_loss = workspace->vw->sd->holdout_best_loss;
+  }
+  else { statistics->average_loss = workspace->vw->sd->holdout_best_loss; }
 
   float best_constant;
   float best_constant_loss;
@@ -246,7 +250,7 @@ API vw_net_native::ERROR_CODE WorkspaceNotifyEndOfPass(
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_context* workspace, VW::example* ex,
     char* line, size_t length, VW::experimental::api_status* status)
 {
   try
@@ -260,7 +264,7 @@ API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context* workspace, VW::example* ex,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
@@ -276,7 +280,7 @@ API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context*
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* workspace, VW::example* ex,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
@@ -292,7 +296,7 @@ API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* w
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_context* workspace, multi_ex* ex_coll,
+API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_context* workspace, VW::multi_ex* ex_coll,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
@@ -308,7 +312,7 @@ API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_con
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_context* workspace, multi_ex* ex_coll,
+API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_context* workspace, VW::multi_ex* ex_coll,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try

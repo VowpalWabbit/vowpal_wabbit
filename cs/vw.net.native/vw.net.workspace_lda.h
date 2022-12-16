@@ -13,5 +13,5 @@ extern "C"
   API int64_t WorkspaceFillTopicAllocation(vw_net_native::workspace_context* workspace, float** topic_weight_buffers,
       vw_net_native::dotnet_size_t buffer_size, vw_net_native::dotnet_size_t buffer_count);
   API vw_net_native::dotnet_size_t WorkspaceFillSingleTopicTopWeights(vw_net_native::workspace_context* workspace,
-      feature* topic_weight_buffer, vw_net_native::dotnet_size_t buffer_size);
+      VW::feature* topic_weight_buffer, vw_net_native::dotnet_size_t buffer_size);
 }

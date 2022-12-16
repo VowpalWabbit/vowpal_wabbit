@@ -11,8 +11,8 @@ public:
   example_predict_builder(
       VW::example_predict* ex, VW::namespace_index namespace_idx, uint32_t feature_index_num_bits = 18);
 
-  void push_feature_string(const char* feature_idx, feature_value value);
-  void push_feature(feature_index feature_idx, feature_value value);
+  void push_feature_string(const char* feature_idx, VW::feature_value value);
+  void push_feature(VW::feature_index feature_idx, VW::feature_value value);
 
 private:
   VW::example_predict* _ex;
