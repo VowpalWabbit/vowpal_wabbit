@@ -357,7 +357,7 @@ void tree_bound(emt_tree& b, emt_example* ec)
 
 float scorer_initial(const float dist) { return 1 - std::exp(-dist); }
 
-void scorer_features(const emt_feats& f1, features& out)
+void scorer_features(const emt_feats& f1, VW::features& out)
 {
   out.clear();
   for (auto p : f1)
@@ -435,7 +435,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
   // with metadata.
   if (floats_per_feature_index != 1)
   {
-    for (features& fs : out)
+    for (VW::features& fs : out)
     {
       for (auto& j : fs.indices) { j *= floats_per_feature_index; }
     }
