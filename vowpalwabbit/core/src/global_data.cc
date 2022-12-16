@@ -426,10 +426,7 @@ workspace::~workspace()
   }
 
   // TODO: migrate all finalization into parser destructor
-  if (example_parser != nullptr)
-  {
-    VW::details::free_parser(*this);
-  }
+  if (example_parser != nullptr) { VW::details::free_parser(*this); }
 
   const bool seeded = weights.seeded() > 0;
   if (!seeded)
