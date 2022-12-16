@@ -64,7 +64,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
     priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
-    config_type conf_type, bool extra_logging)
+    config_type conf_type, std::string trace_prefix)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -76,11 +76,11 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , _config_oracle(
           config_oracle_impl(default_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
 {
-  if (extra_logging)
+  if (trace_prefix != "")
   {
-    champ_log_file = VW::make_unique<std::ofstream>("champ_change.csv");
+    champ_log_file = VW::make_unique<std::ofstream>(trace_prefix + ".champ_change.csv");
     *champ_log_file << "state, example_count, slot_id, config_type, ns_elements" << std::endl;
-    inputlabel_log_file = VW::make_unique<std::ofstream>("input_labels.csv");
+    inputlabel_log_file = VW::make_unique<std::ofstream>(trace_prefix + "input_examples.csv");
     *inputlabel_log_file << "example_count, logged_action, logged_probability, weight, reward" << std::endl;
   }
   insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
