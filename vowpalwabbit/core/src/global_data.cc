@@ -429,7 +429,7 @@ workspace::~workspace()
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr)
   {
-    free_parser(*this);
+    VW::details::free_parser(*this);
     delete example_parser;
     example_parser = nullptr;
   }

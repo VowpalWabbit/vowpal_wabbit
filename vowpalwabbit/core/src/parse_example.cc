@@ -69,7 +69,7 @@ private:
   float _v;
   bool _redefine_some;
   std::array<unsigned char, VW::NUM_NAMESPACES>* _redefine;
-  parser* _p;
+  VW::parser* _p;
   VW::example* _ae;
   std::array<uint64_t, VW::NUM_NAMESPACES>* _affix_features;
   std::array<bool, VW::NUM_NAMESPACES>* _spelling_features;
@@ -210,7 +210,7 @@ private:
         return;  // dont add 0 valued features to list of features
       }
 
-      features& fs = _ae->feature_space[_index];
+      auto& fs = _ae->feature_space[_index];
       fs.push_back(_v, word_hash);
 
       if (audit)
@@ -226,7 +226,7 @@ private:
 
       if (((*_affix_features)[_index] > 0) && (!feature_name.empty()))
       {
-        features& affix_fs = _ae->feature_space[VW::details::AFFIX_NAMESPACE];
+        auto& affix_fs = _ae->feature_space[VW::details::AFFIX_NAMESPACE];
         if (affix_fs.size() == 0) { _ae->indices.push_back(VW::details::AFFIX_NAMESPACE); }
         uint64_t affix = (*_affix_features)[_index];
 
@@ -260,7 +260,7 @@ private:
       }
       if ((*_spelling_features)[_index])
       {
-        features& spell_fs = _ae->feature_space[VW::details::SPELLING_NAMESPACE];
+        auto& spell_fs = _ae->feature_space[VW::details::SPELLING_NAMESPACE];
         if (spell_fs.empty()) { _ae->indices.push_back(VW::details::SPELLING_NAMESPACE); }
         // v_array<char> spelling;
         _spelling.clear();
@@ -303,7 +303,7 @@ private:
           if ((feats_it != map->end()) && (feats_it->second->values.size() > 0))
           {
             const auto& feats = feats_it->second;
-            features& dict_fs = _ae->feature_space[VW::details::DICTIONARY_NAMESPACE];
+            auto& dict_fs = _ae->feature_space[VW::details::DICTIONARY_NAMESPACE];
             if (dict_fs.empty()) { _ae->indices.push_back(VW::details::DICTIONARY_NAMESPACE); }
             dict_fs.start_ns_extent(VW::details::DICTIONARY_NAMESPACE);
             dict_fs.values.insert(dict_fs.values.end(), feats->values.begin(), feats->values.end());
