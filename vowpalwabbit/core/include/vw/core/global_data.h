@@ -37,7 +37,7 @@
 #  include <thread>
 #endif
 
-using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<VW::features>>;
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);

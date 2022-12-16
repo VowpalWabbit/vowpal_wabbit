@@ -38,7 +38,7 @@ public:
   namespace_copy_guard(VW::example_predict& ex, unsigned char ns);
   ~namespace_copy_guard();
 
-  void feature_push_back(feature_value v, feature_index idx);
+  void feature_push_back(VW::feature_value v, VW::feature_index idx);
 
 private:
   VW::example_predict& _ex;
@@ -473,7 +473,7 @@ private:
   std::string _version;
   std::string _command_line_arguments;
   std::vector<std::vector<VW::namespace_index>> _interactions;
-  std::vector<std::vector<extent_term>> _unused_extent_interactions;
+  std::vector<std::vector<VW::extent_term>> _unused_extent_interactions;
   VW::details::generate_interactions_object_cache _generate_interactions_object_cache;
   INTERACTIONS::interactions_generator _generate_interactions;
   bool _contains_wildcard;

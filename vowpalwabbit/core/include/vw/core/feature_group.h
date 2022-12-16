@@ -19,13 +19,15 @@
 #include <utility>
 #include <vector>
 
+namespace VW
+{
+
 using feature_value = float;
 using feature_index = uint64_t;
 using namespace_index = unsigned char;
 
-namespace VW
+class features;
 
-{
 class audit_strings
 {
 public:
@@ -53,15 +55,9 @@ inline std::string to_string(const audit_strings& ai)
   if (!ai.str_value.empty()) { ss << '^' << ai.str_value; }
   return ss.str();
 }
-}  // namespace VW
-
-using audit_strings VW_DEPRECATED("Moved into VW namespace") = VW::audit_strings;
 
 // First: character based feature group, second: hash of extent
 using extent_term = std::pair<namespace_index, uint64_t>;
-
-class features;
-class features_value_index_audit_range;
 
 // sparse feature definition for the library interface
 class feature
@@ -78,11 +74,8 @@ public:
   feature(feature&&) = default;
   feature& operator=(feature&&) = default;
 };
-
 static_assert(std::is_trivial<feature>::value, "To be used in v_array feature must be trivial");
 
-namespace VW
-{
 class namespace_extent
 {
 public:
@@ -111,8 +104,6 @@ std::vector<std::pair<bool, uint64_t>> flatten_namespace_extents(
     const std::vector<namespace_extent>& extents, size_t overall_feature_space_size);
 
 std::vector<namespace_extent> unflatten_namespace_extents(const std::vector<std::pair<bool, uint64_t>>& extents);
-}  // namespace details
-}  // namespace VW
 
 template <typename feature_value_type_t, typename feature_index_type_t, typename audit_type_t>
 class audit_features_iterator final
@@ -238,7 +229,7 @@ public:
     std::swap(lhs._begin_indices, rhs._begin_indices);
     std::swap(lhs._begin_audit, rhs._begin_audit);
   }
-  friend class features;
+  friend class ::VW::features;
 
 private:
   feature_value_type_t* _begin_values;
@@ -295,7 +286,7 @@ public:
   }
 
   friend bool operator!=(const ns_extent_iterator& lhs, const ns_extent_iterator& rhs) { return !(lhs == rhs); }
-  friend class features;
+  friend class ::VW::features;
 
 private:
   features_t* _feature_group;
@@ -405,25 +396,28 @@ public:
     std::swap(lhs._begin_values, rhs._begin_values);
     std::swap(lhs._begin_indices, rhs._begin_indices);
   }
-  friend class features;
+  friend class ::VW::features;
 
 private:
   feature_value_type_t* _begin_values;
   feature_index_type_t* _begin_indices;
 };
 
+}  // namespace details
+
 /// the core definition of a set of features.
 class features
 {
 public:
-  using iterator = features_iterator<feature_value, feature_index>;
-  using const_iterator = features_iterator<const feature_value, const feature_index>;
-  using audit_iterator = audit_features_iterator<feature_value, feature_index, VW::audit_strings>;
+  using iterator = details::features_iterator<feature_value, feature_index>;
+  using const_iterator = details::features_iterator<const feature_value, const feature_index>;
+  using audit_iterator = details::audit_features_iterator<feature_value, feature_index, VW::audit_strings>;
   using const_audit_iterator =
-      audit_features_iterator<const feature_value, const feature_index, const VW::audit_strings>;
-  using extent_iterator = ns_extent_iterator<features, audit_iterator, std::vector<VW::namespace_extent>::iterator>;
-  using const_extent_iterator =
-      ns_extent_iterator<const features, const_audit_iterator, std::vector<VW::namespace_extent>::const_iterator>;
+      details::audit_features_iterator<const feature_value, const feature_index, const VW::audit_strings>;
+  using extent_iterator =
+      details::ns_extent_iterator<features, audit_iterator, std::vector<VW::namespace_extent>::iterator>;
+  using const_extent_iterator = details::ns_extent_iterator<const features, const_audit_iterator,
+      std::vector<VW::namespace_extent>::const_iterator>;
 
   VW::v_array<feature_value> values;           // Always needed.
   VW::v_array<feature_index> indices;          // Optional for sparse data.
@@ -516,3 +510,12 @@ public:
     return all_extents_complete;
   }
 };
+}  // namespace VW
+
+using feature_value VW_DEPRECATED("Moved into VW namespace. Will be removed in VW 10.") = VW::feature_value;
+using feature_index VW_DEPRECATED("Moved into VW namespace. Will be removed in VW 10.") = VW::feature_index;
+using namespace_index VW_DEPRECATED("Moved into VW namespace. Will be removed in VW 10.") = VW::namespace_index;
+using extent_term VW_DEPRECATED("Moved into VW namespace. Will be removed in VW 10.") = VW::extent_term;
+using audit_strings VW_DEPRECATED("Moved into VW namespace. Will be removed in VW 10.") = VW::audit_strings;
+using features VW_DEPRECATED("Moved into VW namespace. Will be removed in VW 10.") = VW::features;
+using feature VW_DEPRECATED("Moved into VW namespace. Will be removed in VW 10.") = VW::feature;
