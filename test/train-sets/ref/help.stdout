@@ -551,6 +551,17 @@ Weight Options:
 [Reduction] Debug Metrics Options:
     --extra_metrics arg                     Specify filename to write metrics to. Note: There is no fixed
                                             schema (type: str, necessary)
+[Reduction] Eigen Memory Tree Options:
+    --emt                                   Make an eigen memory tree (type: bool, keep, necessary)
+    --emt_tree arg                          Indicates the maximum number of memories the tree can have (type:
+                                            uint, default: 0, keep)
+    --emt_leaf arg                          Indicates the maximum number of memories a leaf can have (type:
+                                            uint, default: 100, keep)
+    --emt_scorer arg                        Indicates the type of scorer to use (type: str, default: self_consistent_rank,
+                                            choices {distance, not_self_consistent_rank, random, self_consistent_rank},
+                                            keep)
+    --emt_router arg                        Indicates the type of router to use (type: str, default: eigen,
+                                            choices {eigen, random}, keep)
 [Reduction] Epsilon-Decaying Exploration Options:
     --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary,
                                             experimental)
