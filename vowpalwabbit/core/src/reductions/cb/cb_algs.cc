@@ -218,7 +218,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
                 .set_params_per_weight(problem_multiplier)
                 .set_learn_returns_prediction(eval)
                 .set_finish_example(finish_ex)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

@@ -146,6 +146,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i
                 .set_output_label_type(VW::label_type_t::CONTINUOUS)
                 .set_input_prediction_type(VW::prediction_type_t::PDF)
                 .set_output_prediction_type(VW::prediction_type_t::PDF)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

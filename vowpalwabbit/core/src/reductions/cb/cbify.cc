@@ -804,7 +804,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
             .set_output_prediction_type(in_pred_type)
             .set_output_prediction_type(out_pred_type)
             .set_finish_example(finish_ptr)
-            .build(&all.logger);
+            .build();
   }
   else
   {
@@ -867,7 +867,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
             .set_output_prediction_type(out_pred_type)
             .set_learn_returns_prediction(true)
             .set_finish_example(finish_ptr)
-            .build(&all.logger);
+            .build();
   }
 
   return make_base(*l);
@@ -914,7 +914,7 @@ VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stac
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_finish_example(finish_multiline_example)
-                .build(&all.logger);
+                .build();
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
 
   return make_base(*l);

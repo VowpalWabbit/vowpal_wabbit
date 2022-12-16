@@ -199,9 +199,9 @@ void increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i);
 void decrement_offset(example& ex, const size_t increment, const size_t i);
 void decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i);
 
-void learner_build_diagnostic(VW::io::logger& logger, VW::string_view this_name, VW::string_view base_name,
-    prediction_type_t in_pred_type, prediction_type_t base_out_pred_type, label_type_t out_label_type,
-    label_type_t base_in_label_type, details::merge_fn merge_fn_ptr, details::merge_with_all_fn merge_with_all_fn_ptr);
+void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name, prediction_type_t in_pred_type,
+    prediction_type_t base_out_pred_type, label_type_t out_label_type, label_type_t base_in_label_type,
+    details::merge_fn merge_fn_ptr, details::merge_with_all_fn merge_with_all_fn_ptr);
 }  // namespace details
 
 bool ec_is_example_header(example const& ec, label_type_t label_type);
@@ -988,18 +988,15 @@ public:
     return *this;
   }
 
-  learner<DataT, ExampleT>* build(VW::io::logger* logger = nullptr)
+  learner<DataT, ExampleT>* build()
   {
-    if (logger != nullptr)
-    {
-      prediction_type_t in_pred_type = this->learner_ptr->get_input_prediction_type();
-      prediction_type_t base_out_pred_type = this->learner_ptr->_learn_fd.base->get_output_prediction_type();
-      label_type_t out_label_type = this->learner_ptr->get_output_label_type();
-      label_type_t base_in_label_type = this->learner_ptr->_learn_fd.base->get_input_label_type();
-      details::learner_build_diagnostic(*logger, this->learner_ptr->get_name(),
-          this->learner_ptr->get_learn_base()->get_name(), in_pred_type, base_out_pred_type, out_label_type,
-          base_in_label_type, this->learner_ptr->_merge_fn, this->learner_ptr->_merge_with_all_fn);
-    }
+    prediction_type_t in_pred_type = this->learner_ptr->get_input_prediction_type();
+    prediction_type_t base_out_pred_type = this->learner_ptr->_learn_fd.base->get_output_prediction_type();
+    label_type_t out_label_type = this->learner_ptr->get_output_label_type();
+    label_type_t base_in_label_type = this->learner_ptr->_learn_fd.base->get_input_label_type();
+    details::learner_build_diagnostic(this->learner_ptr->get_name(), this->learner_ptr->get_learn_base()->get_name(),
+        in_pred_type, base_out_pred_type, out_label_type, base_in_label_type, this->learner_ptr->_merge_fn,
+        this->learner_ptr->_merge_with_all_fn);
 
     return this->learner_ptr;
   }

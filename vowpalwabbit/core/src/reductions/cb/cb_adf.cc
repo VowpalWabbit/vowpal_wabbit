@@ -490,7 +490,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
                 .set_output_example_prediction(::output_example_prediction_cb_adf)
                 .set_print_update(::print_update_cb_adf)
                 .set_update_stats(::update_stats_cb_adf)
-                .build(&all.logger);
+                .build();
 
   bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));
 

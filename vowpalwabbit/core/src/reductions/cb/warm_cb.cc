@@ -633,7 +633,7 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_ptr)
                 .set_finish(::finish)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

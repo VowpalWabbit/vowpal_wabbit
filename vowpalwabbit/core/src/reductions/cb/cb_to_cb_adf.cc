@@ -247,7 +247,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
                 .set_output_example_prediction(::output_example_prediction_cb_to_cb_adf)
                 .set_update_stats(::update_stats_cb_to_cb_adf)
                 .set_print_update(::print_update_cb_to_cb_adf)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

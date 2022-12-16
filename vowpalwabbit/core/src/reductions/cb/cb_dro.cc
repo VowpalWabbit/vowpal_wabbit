@@ -175,6 +175,6 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
                 .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(pred_type)
                 .set_output_prediction_type(pred_type)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

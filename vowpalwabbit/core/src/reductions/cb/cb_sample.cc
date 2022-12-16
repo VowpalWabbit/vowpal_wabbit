@@ -139,6 +139,6 @@ base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_learn_returns_prediction(true)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }
