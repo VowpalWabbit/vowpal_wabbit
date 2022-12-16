@@ -59,7 +59,7 @@ public:
   bool unweighted_marginals;
 
   std::array<bool, 256> id_features;
-  std::array<features, 256> temp;  // temporary storage when reducing.
+  std::array<VW::features, 256> temp;  // temporary storage when reducing.
   std::map<uint64_t, marginal> marginals;
 
   // bookkeeping variables for experts
@@ -98,7 +98,7 @@ void make_marginal(data& sm, VW::example& ec)
     if (sm.id_features[n])
     {
       std::swap(sm.temp[n], *i);
-      features& f = *i;
+      VW::features& f = *i;
       f.clear();
       size_t inv_hash_idx = 0;
       for (auto j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)

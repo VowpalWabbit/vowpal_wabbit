@@ -37,7 +37,7 @@ void setup_example(VW::workspace& all, example* ae);
 class polylabel
 {
 public:
-  VW::no_label empty = static_cast<char>(0);
+  VW::no_label empty;
   VW::simple_label simple;
   VW::multiclass_label multi;
   VW::cs_label cs;
@@ -47,6 +47,10 @@ public:
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
+};
+
+struct no_pred
+{
 };
 
 class polyprediction
@@ -71,7 +75,7 @@ public:
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
   VW::active_multiclass_prediction active_multiclass;
-  char nopred = static_cast<char>(0);
+  no_pred nopred;
 };
 
 std::string to_string(const v_array<float>& scalars, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);

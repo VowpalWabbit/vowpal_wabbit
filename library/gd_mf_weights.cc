@@ -101,7 +101,7 @@ int main(int argc, char* argv[])
     ec = VW::read_example(*model, line);
 
     // write out features for left namespace
-    features& left = ec->feature_space[left_ns];
+    VW::features& left = ec->feature_space[left_ns];
     for (size_t i = 0; i < left.size(); ++i)
     {
       left_linear << left.space_names[i].name << '\t' << weights[left.indices[i]];
@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
     left_quadratic << std::endl;
 
     // write out features for right namespace
-    features& right = ec->feature_space[right_ns];
+    VW::features& right = ec->feature_space[right_ns];
     for (size_t i = 0; i < right.size(); ++i)
     {
       right_linear << right.space_names[i].name << '\t' << weights[right.indices[i]];

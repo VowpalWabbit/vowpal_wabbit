@@ -366,9 +366,9 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
   parameters& weights = all.weights;
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
-  for (features& fs : ec) { count += fs.size(); }
+  for (VW::features& fs : ec) { count += fs.size(); }
   // TODO: Where should audit stuff output to?
-  for (features& fs : ec)
+  for (VW::features& fs : ec)
   {
     for (const auto& f : fs.audit_range())
     {
@@ -387,7 +387,7 @@ void print_features(VW::workspace& all, VW::example& ec)
   {
     audit_results dat(all, ec.ft_offset);
 
-    for (features& fs : ec)
+    for (VW::features& fs : ec)
     {
       if (fs.space_names.size() > 0)
       {
