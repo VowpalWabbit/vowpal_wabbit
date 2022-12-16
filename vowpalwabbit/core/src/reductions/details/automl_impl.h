@@ -151,23 +151,22 @@ private:
   size_t current;
 };
 
-constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
-
 class oracle_rand_impl
 {
 public:
+  size_t last_seen_ns_count = 0;
+  VW::reductions::automl::interaction_vec_t total_space;
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t& new_elements, config_type conf_type);
-  Iterator begin() { return Iterator(); }
-  Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
+  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& all_interactions,
+      const size_t num, set_ns_list_t& copy_champ);
 };
 class one_diff_impl
 {
 public:
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t::iterator& exclusion, set_ns_list_t& new_elements);
+      const size_t num, set_ns_list_t::iterator& exclusion, const set_ns_list_t::iterator& exclusion_end,
+      set_ns_list_t& new_elements);
   Iterator begin() { return Iterator(); }
   Iterator end(const interaction_vec_t& champ_interactions, const set_ns_list_t& champ_exclusions)
   {
