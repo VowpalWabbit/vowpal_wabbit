@@ -1974,7 +1974,7 @@ int read_features_json(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = VW::parsers::text::read_features(buf, line, num_chars);
+    size_t num_chars_initial = VW::parsers::text::details::read_features(buf, line, num_chars);
     if (num_chars_initial < 1) { return static_cast<int>(num_chars_initial); }
 
     // Ensure there is a null terminator.

@@ -19,42 +19,8 @@
 #include <cctype>
 #include <cmath>
 
-size_t VW::parsers::text::read_features(io_buf& buf, char*& line, size_t& num_chars)
+namespace
 {
-  line = nullptr;
-  size_t num_chars_initial = buf.readto(line, '\n');
-  if (num_chars_initial < 1) { return num_chars_initial; }
-  num_chars = num_chars_initial;
-  if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
-  {
-    line += 3;
-    num_chars -= 3;
-  }
-  if (num_chars > 0 && line[num_chars - 1] == '\n') { num_chars--; }
-  if (num_chars > 0 && line[num_chars - 1] == '\r') { num_chars--; }
-  return num_chars_initial;
-}
-
-int VW::parsers::text::read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
-{
-  char* line;
-  size_t num_chars;
-  // This function consumes input until it reaches a '\n' then it walks back the '\n' and '\r' if it exists.
-  size_t num_bytes_consumed = read_features(buf, line, num_chars);
-  if (num_bytes_consumed < 1)
-  {
-    // This branch will get hit once we have reached EOF of the input device.
-    return static_cast<int>(num_bytes_consumed);
-  }
-
-  VW::string_view example(line, num_chars);
-  // If this example is empty substring_to_example will mark it as a newline example.
-  substring_to_example(all, examples[0], example);
-
-  return static_cast<int>(num_bytes_consumed);
-}
-
-// TODO what to do about this is this details? probably yes
 template <bool audit>
 class tc_parser
 {
@@ -485,8 +451,8 @@ public:
     else { ae->is_newline = true; }
   }
 };
-
-void VW::parsers::text::substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example)
+}  // namespace
+void VW::parsers::text::details::substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example)
 {
   if (example.empty()) { ae->is_newline = true; }
 
@@ -533,15 +499,45 @@ void VW::parsers::text::substring_to_example(VW::workspace* all, VW::example* ae
   }
 }
 
+size_t VW::parsers::text::details::read_features(io_buf& buf, char*& line, size_t& num_chars)
+{
+  line = nullptr;
+  size_t num_chars_initial = buf.readto(line, '\n');
+  if (num_chars_initial < 1) { return num_chars_initial; }
+  num_chars = num_chars_initial;
+  if (line[0] == '\xef' && num_chars >= 3 && line[1] == '\xbb' && line[2] == '\xbf')
+  {
+    line += 3;
+    num_chars -= 3;
+  }
+  if (num_chars > 0 && line[num_chars - 1] == '\n') { num_chars--; }
+  if (num_chars > 0 && line[num_chars - 1] == '\r') { num_chars--; }
+  return num_chars_initial;
+}
+
+int VW::parsers::text::read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
+{
+  char* line;
+  size_t num_chars;
+  // This function consumes input until it reaches a '\n' then it walks back the '\n' and '\r' if it exists.
+  size_t num_bytes_consumed = details::read_features(buf, line, num_chars);
+  if (num_bytes_consumed < 1)
+  {
+    // This branch will get hit once we have reached EOF of the input device.
+    return static_cast<int>(num_bytes_consumed);
+  }
+
+  VW::string_view example(line, num_chars);
+  // If this example is empty substring_to_example will mark it as a newline example.
+  details::substring_to_example(all, examples[0], example);
+
+  return static_cast<int>(num_bytes_consumed);
+}
+
 void VW::parsers::text::read_line(VW::workspace& all, example* ex, VW::string_view line)
 {
   while (line.size() > 0 && line.back() == '\n') { line.remove_suffix(1); }
-  substring_to_example(&all, ex, line);
-}
-
-void VW::parsers::text::read_line(VW::workspace& all, example* ex, const char* line)
-{
-  return read_line(all, ex, VW::string_view(line));
+  details::substring_to_example(&all, ex, line);
 }
 
 void VW::parsers::text::read_lines(VW::workspace* all, const char* line, size_t len, VW::multi_ex& examples)
