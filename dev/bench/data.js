@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1671211293844,
+  "lastUpdate": 1671211913335,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -52194,6 +52194,150 @@ window.BENCHMARK_DATA = {
             "value": 100.16099120132112,
             "unit": "ns/iter",
             "extra": "iterations: 42980088\ncpu: 100.14811044593394 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rucker.mark@gmail.com",
+            "name": "Mark Rucker",
+            "username": "mrucker"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5bae53af27a1944e697f5cfe0afdabb35946ea3f",
+          "message": "feat: Adding EMT reduction. (#4264)\n\n* EMT changes only along with a number of refactors.\r\n\r\n* Improved median calculation to use std::nth_element rather than std::sort\r\n\r\n* Renamed class to to conform to snake_case.\r\n\r\n* Rework to remove memory problems.\r\n\r\n* A lot of cleanup and bug fixes.\r\n\r\n* Added a number of unit tests and fixed a few bugs. Also validated this version's performance using the originally published performance on 206 data sets.\r\n\r\n* Small cleanup of incorrect header definition.\r\n\r\n* Optimization pass on EMT function parameters. Mostly added const references wherever appropriate.\r\n\r\n* Attempting to fix memory problems in EMT unit tests.\r\n\r\n* clang format fixed.\r\n\r\n* Memory problems fixed. Unit tests fixed.\r\n\r\n* Made the CLI flags for EMT specific to the reduction.\r\n\r\n* Finalized help documentation.\r\n\r\n* Fixed a few broken unittests.\r\n\r\n* Fixed clang format issues.\r\n\r\n* Fixed clang format issues.\r\n\r\n* Removed a few compiler warnings.\r\n\r\n* Fixed some broken function calls.\r\n\r\n* Fixed a few problems with unique_ptrs.\r\n\r\n* Fixed a small problem with the help.stdout.\r\n\r\n* Attempting to improve a unit test.\r\n\r\n* Reducing the sensitivity of a unittest.\r\n\r\n* Added custom implementation of shuffle algorithm to have cross-platform consistency in EMT behavior.\r\n\r\n* Fixed some formatting problems.\r\n\r\n* Fixed some formatting problems.\r\n\r\n* Made template typenames more descriptive. Made rng an explicit VW::rand_state type in the emt_shuffle template function.\r\n\r\n* Fixed a few small problems.\r\n\r\n* Small fix of types.\r\n\r\n* Fixed some small problems.\r\n\r\n* Using default for emt_exmaple constructor.\r\n\r\n* Update vowpalwabbit/core/src/reductions/eigen_memory_tree.cc\r\n\r\nCo-authored-by: Jack Gerrits <jackgerrits@users.noreply.github.com>\r\n\r\n* Update vowpalwabbit/core/src/reductions/eigen_memory_tree.cc\r\n\r\nCo-authored-by: Jack Gerrits <jackgerrits@users.noreply.github.com>\r\n\r\n* Update vowpalwabbit/core/src/reductions/eigen_memory_tree.cc\r\n\r\nCo-authored-by: Jack Gerrits <jackgerrits@users.noreply.github.com>\r\n\r\n* Several small fixes.\r\n\r\n* Update vowpalwabbit/core/src/reductions/eigen_memory_tree.cc\r\n\r\nCo-authored-by: Jack Gerrits <jackgerrits@users.noreply.github.com>\r\n\r\n* Update vowpalwabbit/core/src/reductions/eigen_memory_tree.cc\r\n\r\nCo-authored-by: Jack Gerrits <jackgerrits@users.noreply.github.com>\r\n\r\n* Simplifying EMT flags.\r\n\r\n* Fixed the help unittest.\r\n\r\n* Fixed clang format issue.\r\n\r\n* Update EMT reduction\r\n\r\n- Change to model_utils based serializaton\r\n- Enum opts as strings\r\n- New style finish funcs\r\n- Anon namespace some funcs\r\n- Constructor for emt_tree\r\n\r\n* fix test and warning\r\n\r\n* Added a unittest emt save/load. Fixed a bug with emt saving and loading.\r\n\r\n* Improved calls to VW API within the EMT unittests.\r\n\r\n* Small bug fix for not_consistent_rank.\r\n\r\n* Fixed two small format issues.\r\n\r\n* failing empty example test\r\n\r\n* empty flat example fix\r\n\r\n* separate tree fields with dot\r\n\r\n* fix deprecated usage\r\n\r\n* fix deprecations\r\n\r\nCo-authored-by: Jack Gerrits <jackgerrits@users.noreply.github.com>\r\nCo-authored-by: Jack Gerrits <jackgerrits95@gmail.com>\r\nCo-authored-by: Alexey Taymanov <ataymano@microsoft.com>",
+          "timestamp": "2022-12-16T11:55:24-05:00",
+          "tree_id": "17368aff5d83adaf884eaad9e6771a696131bcb7",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/5bae53af27a1944e697f5cfe0afdabb35946ea3f"
+        },
+        "date": 1671211905848,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 5206.236061683068,
+            "unit": "ns",
+            "range": "± 11.294078031541252"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 7463.621266682942,
+            "unit": "ns",
+            "range": "± 10.998585632173716"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 779.9730491638184,
+            "unit": "ns",
+            "range": "± 2.9276581548868017"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 640.2739397684733,
+            "unit": "ns",
+            "range": "± 10.13041307349248"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 910186.4908854166,
+            "unit": "ns",
+            "range": "± 2035.8457058558347"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 450748.1270926339,
+            "unit": "ns",
+            "range": "± 783.4382378317337"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 451534.83323317306,
+            "unit": "ns",
+            "range": "± 347.29945274481486"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 843473.28125,
+            "unit": "ns",
+            "range": "± 646.2066670857934"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 450446.9775390625,
+            "unit": "ns",
+            "range": "± 533.9634137420196"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 3301472.881610577,
+            "unit": "ns",
+            "range": "± 3480.070362262299"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 1047115.9114583334,
+            "unit": "ns",
+            "range": "± 1521.6845506375096"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 871244.5703125,
+            "unit": "ns",
+            "range": "± 1678.89579117975"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 2648916.9401041665,
+            "unit": "ns",
+            "range": "± 3540.3033972020826"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 870960.87890625,
+            "unit": "ns",
+            "range": "± 1015.5967455612252"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 3272.480697631836,
+            "unit": "ns",
+            "range": "± 8.006407362326012"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 10840.141398111979,
+            "unit": "ns",
+            "range": "± 9.895491755103848"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 126133.17545572917,
+            "unit": "ns",
+            "range": "± 254.26242367587295"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 18649.751586914062,
+            "unit": "ns",
+            "range": "± 15.474671517828199"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 4836858.473557692,
+            "unit": "ns",
+            "range": "± 9509.485090477303"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 230129.08854166666,
+            "unit": "ns",
+            "range": "± 1307.0382613519887"
           }
         ]
       }
