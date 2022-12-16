@@ -174,11 +174,14 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // fetch config from the queue, and apply it current live slot
       apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
           config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, priority_challengers);
-      *champ_log_file << "APPLY_CONFIG," << total_learn_count << "," << live_slot << ","
-                     << to_string(_config_oracle._conf_type) << ","
-                     << util::elements_to_string(
-                            _config_oracle.configs[estimators[live_slot].first.config_index].elements, " ")
-                     << std::endl;
+      if (champ_log_file)
+      {
+        *champ_log_file << "APPLY_CONFIG," << total_learn_count << "," << live_slot << ","
+                        << to_string(_config_oracle._conf_type) << ","
+                        << util::elements_to_string(
+                               _config_oracle.configs[estimators[live_slot].first.config_index].elements, " ")
+                        << std::endl;
+      }
 
       // copy the weights of the champ to the new slot
       weights.move_offsets(current_champ, live_slot, wpp);
@@ -257,9 +260,12 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
     if (winning_challenger_slot != 1) { weights.move_offsets(winning_challenger_slot, 1, wpp, false); }
 
     apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, ns_counter);
-    *champ_log_file << "CHAMP_SWITCH," << total_learn_count << "," << total_champ_switches << ","
-                   << to_string(_config_oracle._conf_type) << ","
-                   << util::elements_to_string(_config_oracle.configs[0].elements, " ") << std::endl;
+    if (champ_log_file)
+    {
+      *champ_log_file << "CHAMP_SWITCH," << total_learn_count << "," << total_champ_switches << ","
+                      << to_string(_config_oracle._conf_type) << ","
+                      << util::elements_to_string(_config_oracle.configs[0].elements, " ") << std::endl;
+    }
   }
 }
 
@@ -380,8 +386,11 @@ void automl<CMType>::offset_learn(
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
   const float r = -logged.cost;
 
-  *cm->inputlabel_log_file << cm->total_learn_count << "," << logged.action << "," << logged.probability << "," << w
-                          << "," << r << std::endl;
+  if (cm->inputlabel_log_file)
+  {
+    *cm->inputlabel_log_file << cm->total_learn_count << "," << logged.action << "," << logged.probability << "," << w
+                             << "," << r << std::endl;
+  }
 
   int64_t live_slot = 0;
   int64_t current_champ = static_cast<int64_t>(cm->current_champ);
@@ -413,10 +422,13 @@ void automl<CMType>::offset_learn(
   {
     cm->estimators[live_slot].second.update(ec[0]->pred.a_s[0].action == labelled_action ? w : 0, r);
     auto& curr = cm->estimators[live_slot];
-    *log_file << cm->total_learn_count << "," << live_slot << "," << cm->total_champ_switches << ","
-             << curr.first._estimator.lower_bound() << "," << curr.first._estimator.upper_bound() << ","
-             << curr.second.lower_bound() << "," << curr.second.upper_bound() << std::endl;
-  } 
+    if (log_file)
+    {
+      *log_file << cm->total_learn_count << "," << live_slot << "," << cm->total_champ_switches << ","
+                << curr.first._estimator.lower_bound() << "," << curr.first._estimator.upper_bound() << ","
+                << curr.second.lower_bound() << "," << curr.second.upper_bound() << std::endl;
+    }
+  }
 }
 
 template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::confidence_sequence>>;
