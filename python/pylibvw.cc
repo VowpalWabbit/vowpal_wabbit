@@ -14,7 +14,7 @@
 #include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/reductions/search/search.h"
 #include "vw/core/reductions/search/search_hooktask.h"
@@ -494,7 +494,7 @@ example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
 {
   VW::example* ec = my_empty_example0(all, labelType);
-  VW::read_line(*all, ec, str);
+  VW::parsers::text::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
   return boost::shared_ptr<VW::example>(ec, my_delete_example);
 }

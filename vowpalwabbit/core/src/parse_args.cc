@@ -23,7 +23,7 @@
 #include "vw/core/memory.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
@@ -221,7 +221,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
     }
     d--;
     *d = '|';  // set up for parser::read_line
-    VW::read_line(all, &ec, d);
+    VW::parsers::text::read_line(all, &ec, d);
     // now we just need to grab stuff from the default namespace of ec!
     if (ec.feature_space[def].empty()) { continue; }
     map->emplace(word, VW::make_unique<VW::features>(ec.feature_space[def]));

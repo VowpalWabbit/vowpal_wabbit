@@ -1,6 +1,6 @@
 #include "benchmarks_common.h"
 #include "vw/cache_parser/parse_example_cache.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/parser.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
@@ -23,7 +23,7 @@ std::shared_ptr<std::vector<char>> get_cache_buffer(const std::string& es)
   auto buffer = std::make_shared<std::vector<char>>();
   vw->example_parser->output.add_file(VW::io::create_vector_writer(buffer));
   auto* ae = &VW::get_unused_example(vw);
-  VW::read_line(*vw, ae, const_cast<char*>(es.c_str()));
+  VW::parsers::text::read_line(*vw, ae, const_cast<char*>(es.c_str()));
 
   VW::parsers::cache::details::cache_temp_buffer temp_buf;
   VW::parsers::cache::write_example_to_cache(

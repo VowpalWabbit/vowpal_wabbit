@@ -11,7 +11,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/merge.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/vw_fwd.h"
@@ -413,7 +413,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
     if (isEmpty)
     {
       char empty = '\0';
-      VW::read_line(*all, ex, &empty);
+      VW::parsers::text::read_line(*all, ex, &empty);
     }
     else
       all->example_parser->lbl_parser.default_label(ex->l);

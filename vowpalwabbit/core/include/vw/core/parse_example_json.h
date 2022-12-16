@@ -8,7 +8,6 @@
 #include "parse_slates_example_json.h"
 #include "vw/common/future_compat.h"
 #include "vw/core/label_parser.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/parser.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"

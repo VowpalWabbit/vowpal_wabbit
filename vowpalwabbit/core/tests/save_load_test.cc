@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/config/options_cli.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
@@ -46,7 +46,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   for (const auto& item : input_data)
   {
     auto& ex = VW::get_unused_example(vw_all_data_single_run.get());
-    VW::read_line(*vw_all_data_single_run, &ex, item.c_str());
+    VW::parsers::text::read_line(*vw_all_data_single_run, &ex, item.c_str());
     VW::setup_example(*vw_all_data_single_run, &ex);
     vw_all_data_single_run->learn(ex);
     vw_all_data_single_run->finish_example(ex);
@@ -57,7 +57,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   for (size_t i = 0; i < 5; i++)
   {
     auto& ex = VW::get_unused_example(vw_first_half.get());
-    VW::read_line(*vw_first_half, &ex, input_data[i].c_str());
+    VW::parsers::text::read_line(*vw_first_half, &ex, input_data[i].c_str());
     VW::setup_example(*vw_first_half, &ex);
     vw_first_half->learn(ex);
     vw_first_half->finish_example(ex);
@@ -76,7 +76,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   for (size_t i = 5; i < 10; i++)
   {
     auto& ex = VW::get_unused_example(vw_second_half_from_loaded.get());
-    VW::read_line(*vw_second_half_from_loaded, &ex, input_data[i].c_str());
+    VW::parsers::text::read_line(*vw_second_half_from_loaded, &ex, input_data[i].c_str());
     VW::setup_example(*vw_second_half_from_loaded, &ex);
     vw_second_half_from_loaded->learn(ex);
     vw_second_half_from_loaded->finish_example(ex);

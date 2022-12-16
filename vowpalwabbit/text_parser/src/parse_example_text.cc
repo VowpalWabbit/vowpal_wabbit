@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include "vw/common/future_compat.h"
 #include "vw/common/hash.h"
@@ -19,7 +19,7 @@
 #include <cctype>
 #include <cmath>
 
-size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
+size_t VW::parsers::text::read_features(io_buf& buf, char*& line, size_t& num_chars)
 {
   line = nullptr;
   size_t num_chars_initial = buf.readto(line, '\n');
@@ -35,7 +35,7 @@ size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
   return num_chars_initial;
 }
 
-int read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
+int VW::parsers::text::read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
   char* line;
   size_t num_chars;
@@ -54,6 +54,7 @@ int read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples
   return static_cast<int>(num_bytes_consumed);
 }
 
+// TODO what to do about this is this details? probably yes
 template <bool audit>
 class tc_parser
 {
@@ -485,7 +486,7 @@ public:
   }
 };
 
-void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example)
+void VW::parsers::text::substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view example)
 {
   if (example.empty()) { ae->is_newline = true; }
 
@@ -532,17 +533,18 @@ void substring_to_example(VW::workspace* all, VW::example* ae, VW::string_view e
   }
 }
 
-namespace VW
-{
-void read_line(VW::workspace& all, example* ex, VW::string_view line)
+void VW::parsers::text::read_line(VW::workspace& all, example* ex, VW::string_view line)
 {
   while (line.size() > 0 && line.back() == '\n') { line.remove_suffix(1); }
   substring_to_example(&all, ex, line);
 }
 
-void read_line(VW::workspace& all, example* ex, const char* line) { return read_line(all, ex, VW::string_view(line)); }
+void VW::parsers::text::read_line(VW::workspace& all, example* ex, const char* line)
+{
+  return read_line(all, ex, VW::string_view(line));
+}
 
-void read_lines(VW::workspace* all, const char* line, size_t len, VW::multi_ex& examples)
+void VW::parsers::text::read_lines(VW::workspace* all, const char* line, size_t len, VW::multi_ex& examples)
 {
   VW::string_view line_view = VW::string_view(line, len);
   std::vector<VW::string_view> lines;
@@ -554,5 +556,3 @@ void read_lines(VW::workspace* all, const char* line, size_t len, VW::multi_ex& 
     read_line(*all, examples[i], lines[i]);
   }
 }
-
-}  // namespace VW

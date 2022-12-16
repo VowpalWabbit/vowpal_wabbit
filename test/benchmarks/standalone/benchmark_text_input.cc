@@ -1,5 +1,5 @@
 #include "../benchmarks_common.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/vw.h"
 
 #include <benchmark/benchmark.h>
@@ -26,7 +26,7 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
   examples.push_back(&VW::get_unused_example(vw));
   for (auto _ : state)
   {
-    VW::read_line(*vw, examples[0], es);
+    VW::parsers::text::read_line(*vw, examples[0], es);
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }

@@ -5,6 +5,7 @@
 #include "vw/core/parser.h"
 
 #include "vw/core/daemon_utils.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/io/errno_handling.h"
@@ -62,7 +63,7 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/interactions.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parse_dispatch_loop.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
@@ -178,7 +179,7 @@ void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::par
 
 void set_string_reader(VW::workspace& all)
 {
-  all.example_parser->reader = read_features_string;
+  all.example_parser->reader = VW::parsers::text::read_features_string;
   all.print_by_ref = print_result_by_ref;
 }
 
@@ -401,7 +402,7 @@ void VW::details::enable_sources(
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
-  all.example_parser->text_reader = VW::read_lines;
+  all.example_parser->text_reader = VW::parsers::text::read_lines;
 
   if (!input_options.no_daemon && (all.daemon || all.active))
   {
@@ -801,7 +802,7 @@ VW::example* read_example(VW::workspace& all, const char* example_line)
 {
   VW::example* ret = &get_unused_example(&all);
 
-  VW::read_line(all, ret, example_line);
+  VW::parsers::text::read_line(all, ret, example_line);
   setup_example(all, ret);
 
   return ret;

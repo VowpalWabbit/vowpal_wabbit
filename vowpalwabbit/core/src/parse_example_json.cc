@@ -5,6 +5,7 @@
 #include "vw/core/parse_example_json.h"
 
 #include "vw/common/string_view.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
@@ -1935,9 +1936,7 @@ inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::mult
   if (examples.size() > 1)
   {
     VW::example& ae = VW::get_unused_example(all);
-    static const char empty[] = "";
-    VW::string_view example(empty);
-    substring_to_example(all, &ae, example);
+    all->example_parser->lbl_parser.default_label(ae.l);
     ae.is_newline = true;
 
     examples.push_back(&ae);
@@ -1975,7 +1974,7 @@ int read_features_json(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(buf, line, num_chars);
+    size_t num_chars_initial = VW::parsers::text::read_features(buf, line, num_chars);
     if (num_chars_initial < 1) { return static_cast<int>(num_chars_initial); }
 
     // Ensure there is a null terminator.

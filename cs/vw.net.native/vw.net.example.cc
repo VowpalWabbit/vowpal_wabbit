@@ -1,7 +1,7 @@
 #include "vw.net.example.h"
 
 #include "vw/core/feature_group.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
 
@@ -183,7 +183,7 @@ API void MakeIntoNewlineExample(vw_net_native::workspace_context* workspace, VW:
 {
   const char empty = '\0';
 
-  VW::read_line(*workspace->vw, example, &empty);
+  VW::parsers::text::read_line(*workspace->vw, example, &empty);
   VW::setup_example(*workspace->vw, example);
 }
 

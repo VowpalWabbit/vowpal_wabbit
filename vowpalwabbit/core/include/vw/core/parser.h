@@ -41,6 +41,8 @@ void parse_example_label(string_view label, const VW::label_parser& lbl_parser, 
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 void setup_examples(VW::workspace& all, VW::multi_ex& examples);
 
+VW::example& get_unused_example(VW::workspace* all);
+
 class parser
 {
 public:

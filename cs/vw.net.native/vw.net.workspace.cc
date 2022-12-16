@@ -4,7 +4,7 @@
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/learner.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/shared_data.h"
 
 vw_net_native::workspace_context* create_workspace(
@@ -255,7 +255,7 @@ API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_
 {
   try
   {
-    VW::read_line(*workspace->vw, ex, VW::string_view(line, length));
+    VW::parsers::text::read_line(*workspace->vw, ex, VW::string_view(line, length));
 
     VW::setup_example(*workspace->vw, ex);
 
