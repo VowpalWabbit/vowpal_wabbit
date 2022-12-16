@@ -226,33 +226,6 @@ bool config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
   return true;
 }
 
-// This will generate configs based on the current champ. These configs will be
-// stored as a set of NS lists. The current design is to look at the interactions of
-// the current champ and remove one interaction for each new config. The number
-// of configs to generate per champ is hard-coded to 5 at the moment.
-void oracle_rand_impl::gen_ns_groupings_at(
-    const interaction_vec_t& all_interactions, const size_t num, set_ns_list_t& copy_champ)
-{
-  if (all_interactions[num].size() == 2)
-  {
-    namespace_index ns1 = all_interactions[num][0];
-    namespace_index ns2 = all_interactions[num][1];
-    std::vector<namespace_index> idx{ns1, ns2};
-    if (copy_champ.count(idx) == 0) { copy_champ.insert(idx); }
-    else { copy_champ.erase(idx); }
-  }
-  else if (all_interactions[num].size() == 3)
-  {
-    namespace_index ns1 = all_interactions[num][0];
-    namespace_index ns2 = all_interactions[num][1];
-    namespace_index ns3 = all_interactions[num][2];
-    std::vector<namespace_index> idx{ns1, ns2, ns3};
-    if (copy_champ.count(idx) == 0) { copy_champ.insert(idx); }
-    else { copy_champ.erase(idx); }
-  }
-  else { THROW("Unknown interaction type."); }
-}
-
 void one_diff_impl::gen_ns_groupings_at(const interaction_vec_t& champ_interactions, const size_t num,
     set_ns_list_t::iterator& exclusion, const set_ns_list_t::iterator& exclusion_end, set_ns_list_t& new_elements)
 {
@@ -308,6 +281,21 @@ void one_diff_inclusion_impl::gen_ns_groupings_at(
 }
 
 void qbase_cubic::gen_ns_groupings_at(
+    const interaction_vec_t& all_interactions, const size_t num, set_ns_list_t& copy_champ)
+{
+  // Element does not exist, so add it
+  if (copy_champ.find(all_interactions[num]) == copy_champ.end())
+  {
+    auto& interaction = all_interactions[num];
+    insert_if_is_allowed_to_remove(copy_champ, interaction);
+  }
+  else  // Element does exist, so remove it
+  {
+    copy_champ.erase(all_interactions[num]);
+  }
+}
+
+void oracle_rand_impl::gen_ns_groupings_at(
     const interaction_vec_t& all_interactions, const size_t num, set_ns_list_t& copy_champ)
 {
   // Element does not exist, so add it
