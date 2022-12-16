@@ -362,38 +362,8 @@ void config_oracle<champdupe_impl>::gen_configs(
   }
 }
 
-template <>
-void config_oracle<qbase_cubic>::gen_configs(
-    const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
-{
-  if (_impl.last_seen_ns_count != ns_counter.size())
-  {
-    _impl.last_seen_ns_count = ns_counter.size();
-    _impl.total_space.clear();
-    interaction_vec_t cubics = ns_based_config::gen_cubic_interactions(ns_counter, {});
-    _impl.total_space.insert(
-        _impl.total_space.end(), std::make_move_iterator(cubics.begin()), std::make_move_iterator(cubics.end()));
-  }
-
-  std::vector<int> indexes(_impl.total_space.size());
-
-  for (size_t i = 0; i < _impl.total_space.size(); i++) { indexes.push_back(i); }
-  for (size_t i = 0; i < _impl.total_space.size(); i++)
-  {
-    std::swap(indexes[_impl.random_state->get_and_update_random() * indexes.size()], indexes[i]);
-  }
-
-  for (std::vector<int>::iterator it = indexes.begin(); it != indexes.end(); ++it)
-  {
-    auto copy_champ = configs[0].elements;
-
-    _impl.gen_ns_groupings_at(_impl.total_space, *it, copy_champ);
-    insert_config(std::move(copy_champ), ns_counter, _conf_type);
-  }
-}
-
-template <>
-void config_oracle<oracle_rand_impl>::gen_configs(
+template <typename oracle_impl>
+void config_oracle<oracle_impl>::gen_configs(
     const interaction_vec_t&, const std::map<namespace_index, uint64_t>& ns_counter)
 {
   if (_impl.last_seen_ns_count != ns_counter.size())
@@ -406,7 +376,7 @@ void config_oracle<oracle_rand_impl>::gen_configs(
       _impl.total_space.insert(_impl.total_space.end(), std::make_move_iterator(quadratics.begin()),
           std::make_move_iterator(quadratics.end()));
     }
-    else if (_interaction_type == "cubic")
+    else if (_interaction_type == "cubic" || _interaction_type == "both")
     {
       interaction_vec_t cubics = ns_based_config::gen_cubic_interactions(ns_counter, {});
       _impl.total_space.insert(

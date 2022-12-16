@@ -704,6 +704,18 @@ BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
         }
         BOOST_CHECK_EQUAL(prio_queue.size(), 0);
         BOOST_CHECK_EQUAL(estimators.size(), 11);
+        const interaction_vec_t expected2 = {
+            {'B', 'C', 'C'},
+            {'A', 'A'},
+            {'A', 'B'},
+            {'A', 'C'},
+            {'B', 'B'},
+            {'B', 'C'},
+            {'C', 'C'},
+        };
+        BOOST_CHECK_EQUAL(estimators[2].first.config_index, 9);
+        BOOST_CHECK_EQUAL_COLLECTIONS(estimators[2].first.live_interactions.begin(),
+            estimators[2].first.live_interactions.end(), expected2.begin(), expected2.end());
 
         // excl_9 - config 2 is now champ
         interaction_config_manager<config_oracle<qbase_cubic>, VW::confidence_sequence>::apply_new_champ(
