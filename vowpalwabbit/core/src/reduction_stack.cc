@@ -52,6 +52,7 @@
 #include "vw/core/reductions/csoaa.h"
 #include "vw/core/reductions/csoaa_ldf.h"
 #include "vw/core/reductions/ect.h"
+#include "vw/core/reductions/eigen_memory_tree.h"
 #include "vw/core/reductions/epsilon_decay.h"
 #include "vw/core/reductions/explore_eval.h"
 #include "vw/core/reductions/expreplay.h"
@@ -174,6 +175,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::ect_setup);
   reductions.push_back(VW::reductions::log_multi_setup);
   reductions.push_back(VW::reductions::recall_tree_setup);
+  reductions.push_back(VW::reductions::eigen_memory_tree_setup);
   reductions.push_back(VW::reductions::memory_tree_setup);
   reductions.push_back(VW::reductions::classweight_setup);
   reductions.push_back(VW::reductions::multilabel_oaa_setup);
