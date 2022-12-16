@@ -7,8 +7,8 @@
 #include "vw/core/learner.h"
 #include "vw/core/rand_state.h"
 
-#include <queue>
 #include <fstream>
+#include <queue>
 
 namespace VW
 {
@@ -230,8 +230,8 @@ public:
   interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
-      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
-      config_type conf_type, bool extra_logging);
+      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
+      bool extra_logging);
 
   void do_learning(VW::LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
@@ -278,13 +278,14 @@ public:
   std::unique_ptr<std::ofstream> log_file;
 
   automl(std::unique_ptr<CMType> cm, VW::io::logger* logger, bool predict_only_model, bool extra_logging)
-      : cm(std::move(cm))
-      , logger(logger)
-      , should_save_predict_only_model(predict_only_model)
+      : cm(std::move(cm)), logger(logger), should_save_predict_only_model(predict_only_model)
   {
     if (extra_logging)
     {
       log_file = VW::make_unique<std::ofstream>("automl.log.cs.csv");
+      *log_file << "example_count, slot_id, champ_switch_count, lower_bound, upper_bound, champ_lower_bound, "
+                   "champ_upper_bound"
+                << std::endl;
     }
   }
   // This fn gets called before learning any example

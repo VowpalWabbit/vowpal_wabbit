@@ -79,7 +79,9 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
   if (extra_logging)
   {
     champ_log_file = VW::make_unique<std::ofstream>("champ_change.csv");
+    *champ_log_file << "state, example_count, slot_id, config_type, ns_elements" << std::endl;
     inputlabel_log_file = VW::make_unique<std::ofstream>("input_labels.csv");
+    *inputlabel_log_file << "example_count, logged_action, logged_probability, weight, reward" << std::endl;
   }
   insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
 }
