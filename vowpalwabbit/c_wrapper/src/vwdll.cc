@@ -161,7 +161,7 @@ extern "C"
   VW_DLL_PUBLIC VW_EXAMPLE VW_CALLING_CONV VW_GetExample(VW_HANDLE handle)
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
-    return static_cast<VW_EXAMPLE>(VW::get_example(pointer->example_parser));
+    return static_cast<VW_EXAMPLE>(VW::get_example(pointer->example_parser.get()));
   }
 
   VW_DLL_PUBLIC float VW_CALLING_CONV VW_GetLabel(VW_EXAMPLE e) { return VW::get_label(static_cast<VW::example*>(e)); }
