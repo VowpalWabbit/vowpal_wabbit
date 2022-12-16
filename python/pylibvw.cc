@@ -14,7 +14,6 @@
 #include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/reductions/search/search.h"
 #include "vw/core/reductions/search/search_hooktask.h"
@@ -22,6 +21,7 @@
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
+#include "vw/text_parser/parse_example_text.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1

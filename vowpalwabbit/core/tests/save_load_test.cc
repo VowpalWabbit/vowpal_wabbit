@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "vw/config/options_cli.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

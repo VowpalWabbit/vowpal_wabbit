@@ -1,6 +1,6 @@
 #include "../benchmarks_common.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/vw.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <benchmark/benchmark.h>
 

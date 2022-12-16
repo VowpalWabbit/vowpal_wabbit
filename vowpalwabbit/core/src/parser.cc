@@ -5,11 +5,11 @@
 #include "vw/core/parser.h"
 
 #include "vw/core/daemon_utils.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #ifndef _WIN32
 #  include <netinet/tcp.h>
@@ -63,7 +63,6 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/interactions.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parse_dispatch_loop.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
@@ -71,6 +70,7 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/unique_sort.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <cassert>
 #include <cerrno>

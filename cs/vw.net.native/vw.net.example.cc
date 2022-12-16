@@ -1,9 +1,9 @@
 #include "vw.net.example.h"
 
 #include "vw/core/feature_group.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <sstream>
 

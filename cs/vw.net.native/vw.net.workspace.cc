@@ -4,8 +4,8 @@
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/learner.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/shared_data.h"
+#include "vw/text_parser/parse_example_text.h"
 
 vw_net_native::workspace_context* create_workspace(
     std::string arguments, io_buf* model, trace_message_t trace_listener, void* trace_context)

@@ -1,9 +1,9 @@
 #include "benchmarks_common.h"
 #include "vw/cache_parser/parse_example_cache.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/parser.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <benchmark/benchmark.h>
 

@@ -23,7 +23,6 @@
 #include "vw/core/memory.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
@@ -42,6 +41,7 @@
 #include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
 #include "vw/io/owning_stream.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>

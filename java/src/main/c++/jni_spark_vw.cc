@@ -11,10 +11,10 @@
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/merge.h"
-#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <algorithm>
 #include <exception>
