@@ -873,6 +873,7 @@ def convert_to_test_data(
             if sys.platform == "darwin" and (
                 "daemon" in test["bash_command"]
                 or "spanning_tree" in test["bash_command"]
+                or "sender_test.py" in test["bash_command"]
             ):
                 skip = True
                 skip_reason = "daemon not currently supported in MacOS"
