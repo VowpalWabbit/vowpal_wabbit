@@ -34,8 +34,8 @@ private:
   double sum_x;
   double sum_low_v;
   double sum_mid_v;
-  std::map<std::pair<uint64_t, bool>, double> sum_v_histo;
   uint64_t t;
+  std::map<std::pair<uint64_t, bool>, double> sum_v_histo;
 };
 
 class countable_discrete_base
@@ -59,10 +59,10 @@ public:
   void reset_stats();
 
 private:
-  const double log_xi;
-  const double lambda_max;
   const double r;
+  const double log_xi;
   const double log_xi_m1;
+  const double lambda_max;
   const double zeta_r;
   const double scale_fac;
   const double log_scale_fac;
