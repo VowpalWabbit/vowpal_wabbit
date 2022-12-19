@@ -43,7 +43,7 @@ class CountableDiscreteBase(LowerCSBase):
             memo[j] = self.getV(self.__get_lam_sqrttp1(j))
         return memo[j]
 
-    def __logwealthmix(self, *, mu, s, thres, memo):
+    def logwealthmix(self, *, mu, s, thres, memo):
         from math import sqrt
         import numpy as np
         from scipy.special import logsumexp
@@ -92,18 +92,17 @@ class CountableDiscreteBase(LowerCSBase):
         s = self.getS()
         memo = {j: self.getV(self.__get_lam_sqrttp1(j)) for j in range(2)}
 
-        logwealthminmu = self.__logwealthmix(mu=minmu, s=s, thres=thres, memo=memo)
+        logwealthminmu = self.logwealthmix(mu=minmu, s=s, thres=thres, memo=memo)
         if logwealthminmu <= thres:
             return minmu
 
         maxmu = 1
-        logwealthmaxmu = self.__logwealthmix(mu=maxmu, s=s, thres=thres, memo=memo)
+        logwealthmaxmu = self.logwealthmix(mu=maxmu, s=s, thres=thres, memo=memo)
         if logwealthmaxmu >= thres:
             return maxmu
 
         res = so.root_scalar(
-            f=lambda mu: self.__logwealthmix(mu=mu, s=s, thres=thres, memo=memo)
-            - thres,
+            f=lambda mu: self.logwealthmix(mu=mu, s=s, thres=thres, memo=memo) - thres,
             method="brentq",
             bracket=[minmu, maxmu],
         )
