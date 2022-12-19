@@ -4,6 +4,7 @@
 
 #include "test_common.h"
 #include "vw/core/vw.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -28,7 +29,7 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
     examples.push_back(&VW::get_unused_example(vw));
     auto example = examples[0];
 
-    VW::read_line(*vw, example, text.c_str());
+    VW::parsers::text::read_line(*vw, example, text.c_str());
     setup_example(*vw, example);
 
     auto& indices = example->feature_space['f'].indices;
