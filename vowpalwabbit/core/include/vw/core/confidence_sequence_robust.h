@@ -16,6 +16,8 @@ constexpr double CS_ROBUST_DEFAULT_ALPHA = 0.05f;
 
 namespace VW
 {
+
+// Equivalent to GTilde in confidence_sequence_robust.py
 class g_tilde
 {
 public:
@@ -37,6 +39,7 @@ public:
   std::map<std::pair<uint64_t, bool>, double> sum_v_histo;
 };
 
+// Equivalent to CountableDiscreteBase in confidence_sequence_robust.py
 class countable_discrete_base
 {
 public:
@@ -68,6 +71,7 @@ public:
   g_tilde gt;
 };
 
+// Equivalent to DDRM in confidence_sequence_robust.py
 class confidence_sequence_robust
 {
 public:
