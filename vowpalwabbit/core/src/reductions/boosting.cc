@@ -13,11 +13,9 @@
 #include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
-#include "vw/core/vw.h"
 #include "vw/core/vw_math.h"
 #include "vw/io/logger.h"
 
@@ -26,7 +24,6 @@
 #include <cfloat>
 #include <climits>
 #include <cmath>
-#include <cstdio>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -38,6 +35,9 @@ using namespace VW::config;
 using namespace VW::reductions;
 
 using std::endl;
+
+namespace
+{
 
 class boosting
 {
@@ -309,12 +309,6 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   o.logger.err_info("{}", fmt::to_string(buffer));
 }
 
-void return_example(VW::workspace& all, boosting& /* a */, VW::example& ec)
-{
-  VW::details::output_and_account_example(all, ec);
-  VW::finish_example(all, ec);
-}
-
 void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
@@ -357,6 +351,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
 }
 
 void save_load_boosting_noop(boosting&, io_buf&, bool, bool) {}
+}  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stack_builder)
 {
@@ -429,7 +424,9 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_save_load(save_load_fn)
-                .set_finish_example(return_example)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<boosting>)
+                .set_update_stats(VW::details::update_stats_simple_label<boosting>)
+                .set_print_update(VW::details::print_update_simple_label<boosting>)
                 .build();
 
   return make_base(*l);
