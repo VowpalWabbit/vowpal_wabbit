@@ -62,6 +62,13 @@ std::unique_ptr<VW::io::socket> NO_SANITIZE_UNDEFINED VW::details::open_vw_binar
     THROWERRNO("connect(" << host << ':' << port << ")");
   }
 
+  int on = 1;
+  if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&on), sizeof(on)) <
+      0)
+  {
+    THROWERRNO("setsockopt SO_REUSEADDR")
+  }
+
   auto socket_resource = VW::io::wrap_socket_descriptor(sd);
   auto socket_writer = socket_resource->get_writer();
   char id = '\0';
