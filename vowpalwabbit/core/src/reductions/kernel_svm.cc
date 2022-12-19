@@ -267,10 +267,10 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
     }
   }
 
-  if (read) { model->alpha.resize_but_with_stl_behavior(model->num_support); }
+  if (read) { model->alpha.resize(model->num_support); }
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->alpha.data()),
       static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
-  if (read) { model->delta.resize_but_with_stl_behavior(model->num_support); }
+  if (read) { model->delta.resize(model->num_support); }
   bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->delta.data()),
       static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
 }
@@ -295,8 +295,8 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 {
   float dotprod = 0;
 
-  features& fs_1 = const_cast<features&>(fec1->fs);
-  features& fs_2 = const_cast<features&>(fec2->fs);
+  auto& fs_1 = const_cast<VW::features&>(fec1->fs);
+  auto& fs_2 = const_cast<VW::features&>(fec2->fs);
   if (fs_2.indices.size() == 0) { return 0.f; }
 
   int numint = 0;

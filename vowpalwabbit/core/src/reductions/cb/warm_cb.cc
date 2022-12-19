@@ -163,9 +163,9 @@ void copy_example_to_adf(warm_cb& data, VW::example& ec)
     VW::copy_example_data(&eca, &ec);
 
     // offset indices for given action
-    for (features& fs : eca)
+    for (VW::features& fs : eca)
     {
-      for (feature_index& idx : fs.indices)
+      for (VW::feature_index& idx : fs.indices)
       {
         idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask;
       }

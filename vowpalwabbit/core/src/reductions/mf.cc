@@ -34,7 +34,7 @@ public:
   VW::v_array<unsigned char> indices;
 
   // array for temp storage of features
-  features temp_features;
+  VW::features temp_features;
 
   VW::workspace* all = nullptr;  // for pairs? and finalize
 };
@@ -43,7 +43,7 @@ template <bool cache_sub_predictions>
 void predict(mf& data, single_learner& base, VW::example& ec)
 {
   float prediction = 0;
-  if (cache_sub_predictions) { data.sub_predictions.resize_but_with_stl_behavior(2 * data.rank + 1); }
+  if (cache_sub_predictions) { data.sub_predictions.resize(2 * data.rank + 1); }
 
   // predict from linear terms
   base.predict(ec);
@@ -141,7 +141,7 @@ void learn(mf& data, single_learner& base, VW::example& ec)
 
       for (size_t k = 1; k <= data.rank; k++)
       {
-        features& fs = ec.feature_space[left_ns];
+        auto& fs = ec.feature_space[left_ns];
         // multiply features in left namespace by r^k * x_r
         for (size_t j = 0; j < fs.size(); ++j) { fs.values[j] *= data.sub_predictions[2 * k]; }
 
@@ -165,7 +165,7 @@ void learn(mf& data, single_learner& base, VW::example& ec)
 
       for (size_t k = 1; k <= data.rank; k++)
       {
-        features& fs = ec.feature_space[right_ns];
+        auto& fs = ec.feature_space[right_ns];
         // multiply features in right namespace by l^k * x_l
         for (size_t j = 0; j < fs.size(); ++j) { fs.values[j] *= data.sub_predictions[2 * k - 1]; }
 

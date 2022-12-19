@@ -27,7 +27,7 @@ namespace_copy_guard::~namespace_copy_guard()
   if (_remove_ns) { _ex.feature_space[_ns].clear(); }
 }
 
-void namespace_copy_guard::feature_push_back(feature_value v, feature_index idx)
+void namespace_copy_guard::feature_push_back(VW::feature_value v, VW::feature_index idx)
 {
   _ex.feature_space[_ns].push_back(v, idx);
 }

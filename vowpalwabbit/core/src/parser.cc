@@ -482,8 +482,13 @@ void VW::details::enable_sources(
 
     if (all.daemon && !all.active)
     {
+      // See support notes here: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Daemon-example
+#ifdef __APPLE__
+      all.logger.warn("daemon mode is not supported on MacOS.");
+#endif
+
 #ifdef _WIN32
-      THROW("not supported on windows");
+      THROW("daemon mode is not supported on Windows");
 #else
       fclose(stdin);
       // weights will be shared across processes, accessible to children
@@ -499,7 +504,7 @@ void VW::details::enable_sources(
       // create children
       const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
       VW::v_array<int> children;
-      children.resize_but_with_stl_behavior(num_children);
+      children.resize(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
         // fork() returns pid if parent, 0 if child
@@ -681,7 +686,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
   {
     if (all.limit[index] < ex->feature_space[index].size())
     {
-      features& fs = ex->feature_space[index];
+      auto& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
       VW::unique_features(fs, all.limit[index]);
     }
@@ -692,9 +697,9 @@ namespace VW
 {
 VW::example& get_unused_example(VW::workspace* all)
 {
-  parser* p = all->example_parser;
-  auto* ex = p->example_pool.get_object();
-  ex->example_counter = static_cast<size_t>(p->num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
+  auto& p = *all->example_parser;
+  auto* ex = p.example_pool.get_object();
+  ex->example_counter = static_cast<size_t>(p.num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
 
