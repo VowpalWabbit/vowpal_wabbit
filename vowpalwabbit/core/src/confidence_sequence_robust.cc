@@ -368,7 +368,8 @@ size_t read_model_field(io_buf& io, VW::countable_discrete_base& cdb)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::countable_discrete_base& cdb, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::countable_discrete_base& cdb, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, cdb.t, upstream_name + "_t", text);
@@ -387,7 +388,8 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence_robust& csr)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::confidence_sequence_robust& csr, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::confidence_sequence_robust& csr, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, csr.update_count, upstream_name + "_update_count", text);
