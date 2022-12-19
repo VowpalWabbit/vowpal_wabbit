@@ -42,7 +42,8 @@ public:
   double get_lam_sqrt_tp1(double j) const;
   double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j) const;
   double log_wealth_mix(double mu, double s, double thres, std::map<uint64_t, double>& memo) const;
-  double root_brentq(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu, double toll_x = 1e-10, double toll_f = 1e-12) const;
+  double root_brentq(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu,
+      double toll_x = 1e-10, double toll_f = 1e-12) const;
   double log_sum_exp(const std::vector<double>& combined) const;
   double lb_log_wealth(double alpha) const;
   double polylog(double r, double eta) const;

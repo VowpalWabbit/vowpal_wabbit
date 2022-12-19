@@ -35,10 +35,7 @@ double g_tilde::histo_variance(double lam_sqrt_tp1) const
     double x_ds = x_raw / sqrt_tp1;
     double curr_val = 0.0;
     if (strong_term) { curr_val = std::pow(lam_sqrt_tp1 * (k - 1) * x_ds / (1 + lam_sqrt_tp1 * k * x_ds), 2); }
-    else
-    {
-      curr_val = lam_sqrt_tp1 * x_ds - std::log1p(lam_sqrt_tp1 * x_ds);
-    }
+    else { curr_val = lam_sqrt_tp1 * x_ds - std::log1p(lam_sqrt_tp1 * x_ds); }
     ret_val += c * curr_val;
   }
   return ret_val;
@@ -52,8 +49,9 @@ void g_tilde::histo_insert(double x)
   // TODO: Kahan summation
   sum_v_histo[std::make_pair(n, false)] =
       sum_v_histo.count(std::make_pair(n, false)) ? sum_v_histo[std::make_pair(n, false)] + alpha : alpha;
-  sum_v_histo[std::make_pair(n + 1, false)] =
-      sum_v_histo.count(std::make_pair(n + 1, false)) ? sum_v_histo[std::make_pair(n + 1, false)] + 1 - alpha : 1 - alpha;
+  sum_v_histo[std::make_pair(n + 1, false)] = sum_v_histo.count(std::make_pair(n + 1, false))
+      ? sum_v_histo[std::make_pair(n + 1, false)] + 1 - alpha
+      : 1 - alpha;
   sum_v_histo[std::make_pair(n, true)] = sum_v_histo.count(std::make_pair(n, true))
       ? sum_v_histo[std::make_pair(n, true)] + -0.5 * alpha * (1 - alpha)
       : -0.5 * alpha * (1 - alpha);
@@ -65,14 +63,8 @@ void g_tilde::add_obs(double x)
   double x_hat = (sum_x + 0.5) / (t + 1);
   double error = x - std::min(1.0, x_hat);
   if (error <= 0.0) { sum_low_v += std::pow(error, 2); }
-  else if (error <= 1.0)
-  {
-    sum_mid_v += std::pow(error, 2);
-  }
-  else
-  {
-    histo_insert(error);
-  }
+  else if (error <= 1.0) { sum_mid_v += std::pow(error, 2); }
+  else { histo_insert(error); }
 
   sum_x += x;
   t += 1;
@@ -133,18 +125,19 @@ double countable_discrete_base::log_sum_exp(const std::vector<double>& a) const
 {
   double max_exp = *std::max_element(a.begin(), a.end());
   double ret = 0.0;
-  for (const double& v : a) { ret += std::exp(v - max_exp);}
+  for (const double& v : a) { ret += std::exp(v - max_exp); }
 
   return std::log(ret) + max_exp;
 }
 
-double countable_discrete_base::log_wealth_mix(double mu, double s, double thres, std::map<uint64_t, double>& memo) const
+double countable_discrete_base::log_wealth_mix(
+    double mu, double s, double thres, std::map<uint64_t, double>& memo) const
 {
   double sqrt_tp1 = std::sqrt(t + 1);
   double y = s / sqrt_tp1 - (t / sqrt_tp1) * mu;
   std::vector<double> log_es;
   std::vector<double> log_ws;
-  for (const std::pair<uint64_t, double>& memo_p : memo)
+  for (const std::pair<const unsigned long, double>& memo_p : memo)
   {
     uint64_t j = memo_p.first;
     double v = memo_p.second;
@@ -176,89 +169,81 @@ double countable_discrete_base::log_wealth_mix(double mu, double s, double thres
   }
 }
 
-double countable_discrete_base::root_brentq(double s_0, double thres, std::map<uint64_t, double>& memo, double a, double b, double toll_x, double toll_f) const
+double countable_discrete_base::root_brentq(
+    double s_0, double thres, std::map<uint64_t, double>& memo, double a, double b, double toll_x, double toll_f) const
 {
-    auto f = [this, &s_0, &thres, &memo](
-                          double mu) -> double { return log_wealth_mix(mu, s_0, thres, memo) - thres; };
-    double fa = f(a);
-    double fb = f(b);
-    double fs;
+  auto f = [this, &s_0, &thres, &memo](double mu) -> double { return log_wealth_mix(mu, s_0, thres, memo) - thres; };
+  double fa = f(a);
+  double fb = f(b);
+  double fs;
 
-    if (!(fa * fb < 0))
+  if (!(fa * fb < 0))
+  {
+    // std::cerr << "Signs of f(x_min) and f(x_max) must be opposites" << std::endl;
+    // return 0;
+  }
+
+  if (std::abs(fa) < std::abs(b))
+  {
+    std::swap(a, b);
+    std::swap(fa, fb);
+  }
+
+  double c = a;
+  double fc = fa;
+  bool mflag = true;
+  double s = 0;
+  double d = 0;
+
+  unsigned int iter = 0;
+  while (std::abs(fc) > toll_f && std::abs(b - a) > toll_x)
+  {
+    ++iter;
+
+    if (fa != fc && fb != fc)  // use inverse quadratic interopolation
     {
-        //std::cerr << "Signs of f(x_min) and f(x_max) must be opposites" << std::endl;
-        //return 0;
+      s = (a * fb * fc / ((fa - fb) * (fa - fc))) + (b * fa * fc / ((fb - fa) * (fb - fc))) +
+          (c * fa * fb / ((fc - fa) * (fc - fb)));
+    }
+    else  // secant method
+    {
+      s = b - fb * (b - a) / (fb - fa);
     }
 
-    if (std::abs(fa) < std::abs(b))
+    if (((s < (3 * a + b) / 4.) || (s > b)) || (mflag && (std::abs(s - b) >= (std::abs(b - c) * 0.5))) ||
+        (!mflag && (std::abs(s - b) >= (std::abs(c - d) * 0.5))) || (mflag && (std::abs(b - c) < toll_x)) ||
+        (!mflag && (std::abs(c - d) < toll_x)))
     {
-        std::swap(a, b);
-        std::swap(fa, fb);
+      // bisection method
+      s = .5 * (a + b);
+      mflag = true;
+    }
+    else { mflag = false; }
+
+    fs = f(s);
+    d = c;
+    c = b;
+    fc = fb;
+
+    if (fa * fs < 0)
+    {
+      b = s;
+      fb = fs;
+    }
+    else
+    {
+      a = s;
+      fa = fs;
     }
 
-    double c = a;
-    double fc = fa;
-    bool mflag = true;
-    double s = 0;
-    double d = 0;
-
-    unsigned int iter = 0;
-    while (std::abs(fc) > toll_f && std::abs(b - a) > toll_x)
+    if (std::abs(fa) < std::abs(fb))
     {
-        ++iter;
-
-        if (fa != fc && fb != fc)   // use inverse quadratic interopolation
-        {
-            
-            s = (a * fb * fc / ((fa - fb) * (fa - fc)))
-                + (b * fa * fc / ((fb - fa) * (fb - fc)))
-                + (c * fa * fb / ((fc - fa) * (fc - fb)));
-        }
-        else   // secant method
-        {
-            s = b - fb * (b - a) / (fb - fa);
-        }
-
-        
-        if (((s < (3 * a + b)/4.) || (s > b)) ||
-            (mflag && (std::abs(s - b) >= (std::abs(b - c) * 0.5))) ||
-            (!mflag && (std::abs(s - b) >= (std::abs(c - d) * 0.5))) ||
-            (mflag && (std::abs(b - c) < toll_x)) ||
-            (!mflag && (std::abs(c - d) < toll_x)))
-        {
-            // bisection method
-            s = .5*(a + b);
-            mflag = true;
-        }else{
-            mflag = false;
-        }
-
-        fs = f(s);
-        d = c;
-        c = b;
-        fc = fb;
-
-        if (fa * fs < 0)
-        {
-            b = s;
-            fb = fs;
-        }
-        else
-        {
-            a = s;
-            fa = fs;
-        }
-
-        if (std::abs(fa) < std::abs(fb))
-        {
-            std::swap(a, b);
-            std::swap(fa, fb);
-        }
-
+      std::swap(a, b);
+      std::swap(fa, fb);
     }
+  }
 
-    return s;
-
+  return s;
 }
 
 double countable_discrete_base::lb_log_wealth(double alpha) const
