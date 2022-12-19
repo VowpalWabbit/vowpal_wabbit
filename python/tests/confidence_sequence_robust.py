@@ -194,7 +194,7 @@ class GTilde(object):
 class RobustMixture(CountableDiscreteBase):
     def __init__(self, *, eta=0.95, r=2, k=3 / 2, **kwargs):
         from math import log1p
-        import mpmath
+        import scipy.special as sc
 
         assert 0 < eta < 1
         assert r > 1
@@ -202,9 +202,8 @@ class RobustMixture(CountableDiscreteBase):
         self.eta = eta
         self.r = r
         self.gtilde = GTilde(k=k)
-        self.scalefac = (
-            1 / 2 * (1 + mpmath.fp.polylog(r, eta) / (eta * mpmath.fp.zeta(r)))
-        )
+        polylog_val = 1.4406337969700393  # mpmath.fp.polylog(r, eta)
+        self.scalefac = 1 / 2 * (1 + polylog_val / (eta * sc.zeta(r)))
         assert 0 < self.scalefac < 1, self.scalefac
         self.logscalefac = log1p(self.scalefac - 1)
         self.t = 0
