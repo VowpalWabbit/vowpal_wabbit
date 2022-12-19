@@ -11,15 +11,9 @@
 
 namespace VW
 {
-g_tilde::g_tilde(double k)
+g_tilde::g_tilde(double k) : k(k), log_k(std::log(k)), sum_x(0.0), sum_low_v(0.0), sum_mid_v(0.0), t(0)
 {
   assert(1 < k && k < 2);
-  this->k = k;
-  this->log_k = std::log(k);
-  this->sum_x = 0.0;
-  this->sum_low_v = 0.0;
-  this->sum_mid_v = 0.0;
-  this->t = 0;
 }
 
 double g_tilde::histo_variance(double lam_sqrt_tp1) const
@@ -80,31 +74,40 @@ double g_tilde::get_v(double lam_sqrt_tp1) const
   return 0.5 * std::pow(lam_sqrt_tp1, 2) * (v_low + v_mid) + histo_variance(lam_sqrt_tp1);
 }
 
-countable_discrete_base::countable_discrete_base(double eta, double r, double k, double lambda_max, double xi) : gt(k)
+void g_tilde::reset_stats()
+{
+  sum_x = 0.0;
+  sum_low_v = 0.0;
+  sum_mid_v = 0.0;
+  sum_v_histo.clear();
+  t = 0;
+}
+
+countable_discrete_base::countable_discrete_base(double eta, double r, double k, double lambda_max, double xi)
+    : eta(eta)
+    , r(r)
+    , xi(xi)
+    , log_xi(std::log1p(xi - 1))
+    , log_xi_m1(std::log1p(xi - 2.0))
+    , lambda_max(lambda_max)
+    , zeta_r(
+#if !defined(__APPLE__) && !defined(_WIN32)
+          std::riemann_zeta(r)
+#else
+          1.6449340668482264  // std::riemann_zeta(r) -- Assuming r=2.0 is constant
+#endif
+              )
+    , scale_fac(0.5 * (1.0 + polylog(r, eta) / (eta * zeta_r)))
+    , log_scale_fac(std::log1p(scale_fac - 1.0))
+    , t(0)
+    , gt(k)
 {
   assert(0.0 < eta && eta < 1.0);
   assert(r > 1.0);
-
-  this->eta = eta;
-  this->r = r;
-#if !defined(__APPLE__) && !defined(_WIN32)
-  double zeta_r = std::riemann_zeta(r);
-#else
-  double zeta_r = 1.6449340668482264;  // std::riemann_zeta(r) -- Assuming r=2.0 is constant
-#endif
-  this->scale_fac = 0.5 * (1.0 + polylog(r, eta) / (eta * zeta_r));
   assert(0.0 < scale_fac && scale_fac < 1.0);
-  this->log_scale_fac = std::log1p(scale_fac - 1.0);
-  this->t = 0;
-  this->log_xi_m1 = std::log1p(xi - 2.0);
-
   double lambertw_expression = -0.15859433956303937;  // sc.lambertw(-exp(-2)) in Python
   assert(0.0 < lambda_max && lambda_max <= 1.0 + lambertw_expression);
   assert(1.0 < xi);
-
-  this->lambda_max = lambda_max;
-  this->xi = xi;
-  this->log_xi = std::log1p(xi - 1);
 }
 
 double countable_discrete_base::get_ci(double alpha) const { return lb_log_wealth(alpha); }
@@ -293,20 +296,48 @@ void countable_discrete_base::add_obs(double x)
   gt.add_obs(x);
 }
 
-void off_policy_cs::add_obs(double w, double r)
+void countable_discrete_base::reset_stats()
+{
+  t = 0;
+  gt.reset_stats();
+}
+
+confidence_sequence_robust::confidence_sequence_robust(double alpha)
+    : alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
+{}
+
+void confidence_sequence_robust::update(double w, double r)
 {
   assert(w >= 0.0);
   assert(0.0 <= r && r <= 1.0);
   lower.add_obs(w * r);
   upper.add_obs(w * (1.0 - r));
+  ++update_count;
+  last_w = w;
+  last_r = r;
 }
 
-std::pair<double, double> off_policy_cs::get_ci(double alpha) const
+void confidence_sequence_robust::persist(metric_sink& metrics, const std::string& suffix)
 {
-  double lb = lower.get_ci(alpha / 2.0);
-  double ub = 1 - upper.get_ci(alpha / 2.0);
-  return std::make_pair(lb, ub);
+  metrics.set_uint("upcnt" + suffix, update_count);
+  metrics.set_float("lb" + suffix, lower_bound());
+  metrics.set_float("ub" + suffix, upper_bound());
+  metrics.set_float("last_w" + suffix, last_w);
+  metrics.set_float("last_r" + suffix, last_r);
 }
+
+void confidence_sequence_robust::reset_stats()
+{
+  lower.reset_stats();
+  upper.reset_stats();
+  update_count = 0;
+  last_w = 0.0;
+  last_r = 0.0;
+}
+
+double confidence_sequence_robust::lower_bound() const { return lower.get_ci(alpha / 2.0); }
+
+double confidence_sequence_robust::upper_bound() const { return 1 - upper.get_ci(alpha / 2.0); }
 
 namespace model_utils
 {

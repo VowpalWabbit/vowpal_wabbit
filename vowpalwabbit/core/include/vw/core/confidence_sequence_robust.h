@@ -12,6 +12,8 @@
 #include "vw/core/io_buf.h"
 #include "vw/core/metric_sink.h"
 
+constexpr double CS_ROBUST_DEFAULT_ALPHA = 0.05f;
+
 namespace VW
 {
 class g_tilde
@@ -23,10 +25,12 @@ public:
   void add_obs(double x);
   double get_s() const;
   double get_v(double lam_sqrt_tp1) const;
+  void reset_stats();
 
 private:
-  double k;
-  double log_k;
+  const double k;
+  const double log_k;
+
   double sum_x;
   double sum_low_v;
   double sum_mid_v;
@@ -52,27 +56,39 @@ public:
   double get_s() const;
   double get_v(double lam_sqrt_tp1) const;
   void add_obs(double x);
-
-  double xi;
-  uint64_t t;
-  double log_xi;
-  double lambda_max;
-  double eta;
-  double r;
-  g_tilde gt;
-  double scale_fac;
-  double log_scale_fac;
-  double log_xi_m1;
-};
-
-class off_policy_cs
-{
-public:
-  off_policy_cs() = default;
-  void add_obs(double w, double r);
-  std::pair<double, double> get_ci(double alpha) const;
+  void reset_stats();
 
 private:
+  const double xi;
+  const double log_xi;
+  const double lambda_max;
+  const double eta;
+  const double r;
+  const double log_xi_m1;
+  const double zeta_r;
+  const double scale_fac;
+  const double log_scale_fac;
+
+  uint64_t t;
+  g_tilde gt;
+};
+
+class confidence_sequence_robust
+{
+public:
+  confidence_sequence_robust(double alpha = CS_ROBUST_DEFAULT_ALPHA);
+  void update(double w, double r);
+  void persist(metric_sink& metrics, const std::string& suffix);
+  void reset_stats();
+  double lower_bound() const;
+  double upper_bound() const;
+
+private:
+  const double alpha;
+
+  uint64_t update_count;
+  double last_w;
+  double last_r;
   countable_discrete_base lower;
   countable_discrete_base upper;
 };

@@ -12,12 +12,11 @@
 
 BOOST_AUTO_TEST_CASE(confidence_sequence_robust_test)
 {
-  VW::off_policy_cs opcs;
+  VW::confidence_sequence_robust csr;
   for (int i = 0; i < 200; ++i)
   {
-    opcs.add_obs(1.1, 1);
-    opcs.add_obs(1.1, 0);
-    auto ci = opcs.get_ci(.05);
-    std::cout << ci.first << " " << ci.second << "\n";
+    csr.update(1.1, 1);
+    csr.update(1.1, 0);
   }
+  std::cout << csr.lower_bound() << " " << csr.upper_bound() << "\n";
 }
