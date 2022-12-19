@@ -1354,8 +1354,7 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   if (minibatch2 > all.example_parser->example_queue_limit)
   {
     bool previous_strict_parse = all.example_parser->strict_parse;
-    delete all.example_parser;
-    all.example_parser = new parser{minibatch2, previous_strict_parse};
+    all.example_parser = VW::make_unique<VW::parser>(minibatch2, previous_strict_parse);
   }
 
   ld->v.resize(all.lda * ld->minibatch);
