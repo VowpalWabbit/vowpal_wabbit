@@ -224,7 +224,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   bin_text_read_write_fixed_validated(
       model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), read, msg, text);
 
-  if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
+  if (read) { c.policies.resize(policies_size); }
   else
   {
     msg << "policies: ";

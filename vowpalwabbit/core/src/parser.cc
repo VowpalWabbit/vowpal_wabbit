@@ -499,7 +499,7 @@ void VW::details::enable_sources(
       // create children
       const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
       VW::v_array<int> children;
-      children.resize_but_with_stl_behavior(num_children);
+      children.resize(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
         // fork() returns pid if parent, 0 if child
@@ -692,9 +692,9 @@ namespace VW
 {
 VW::example& get_unused_example(VW::workspace* all)
 {
-  parser* p = all->example_parser;
-  auto* ex = p->example_pool.get_object();
-  ex->example_counter = static_cast<size_t>(p->num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
+  auto& p = *all->example_parser;
+  auto* ex = p.example_pool.get_object();
+  ex->example_counter = static_cast<size_t>(p.num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
 
