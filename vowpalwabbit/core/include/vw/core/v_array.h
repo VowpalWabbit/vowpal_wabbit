@@ -137,7 +137,10 @@ public:
    * \param length  Will default construct new elements if length is larger than current or remove elements if it is
    * smaller. \note To be renamed to resize() in VW 9
    */
-  void resize_but_with_stl_behavior(size_t length)
+  VW_DEPRECATED("Renamed to resize. resize_but_with_stl_behavior will be removed in VW 10.")
+  void resize_but_with_stl_behavior(size_t length) { resize(length); }
+
+  void resize(size_t length)
   {
     const auto old_size = size();
     resize_no_initialize(old_size, length);
