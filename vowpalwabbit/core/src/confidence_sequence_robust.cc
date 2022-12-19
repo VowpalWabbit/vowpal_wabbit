@@ -102,7 +102,7 @@ countable_discrete_base::countable_discrete_base(double eta, double r, double k,
   assert(0.0 < eta && eta < 1.0);
   assert(r > 1.0);
   assert(0.0 < scale_fac && scale_fac < 1.0);
-  assert(0.0 < lambda_max && lambda_max <= 1.0 + (-0.15859433956303937)); // sc.lambertw(-exp(-2)) in Python
+  assert(0.0 < lambda_max && lambda_max <= 1.0 + (-0.15859433956303937));  // sc.lambertw(-exp(-2)) in Python
   assert(1.0 < xi);
 }
 
