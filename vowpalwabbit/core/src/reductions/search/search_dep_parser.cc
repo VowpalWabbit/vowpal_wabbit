@@ -69,7 +69,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   VW::workspace& all = sch.get_vw_pointer_unsafe();
   task_data* data = new task_data();
   sch.set_task_data<task_data>(data);
-  data->action_loss.resize_but_with_stl_behavior(5);
+  data->action_loss.resize(5);
   uint64_t root_label;
 
   option_group_definition new_options("[Search] Dependency Parser");
@@ -308,7 +308,7 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
   }
 
   // Other features
-  temp.resize_but_with_stl_behavior(10);
+  temp.resize(10);
   temp[0] = empty ? 0 : (idx > n ? 1 : 2 + std::min(static_cast<uint32_t>(5), idx - static_cast<uint32_t>(last)));
   temp[1] = empty ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[0][last]);
   temp[2] = empty ? 1 : 1 + std::min(static_cast<uint32_t>(5), children[1][last]);
@@ -609,8 +609,8 @@ void setup(Search::search& sch, VW::multi_ex& ec)
   auto& gold_tags = data->gold_tags;
   auto& tags = data->tags;
   size_t n = ec.size();
-  heads.resize_but_with_stl_behavior(n + 1);
-  tags.resize_but_with_stl_behavior(n + 1);
+  heads.resize(n + 1);
+  tags.resize(n + 1);
   gold_heads.clear();
   gold_heads.push_back(0);
   gold_tags.clear();
@@ -637,7 +637,7 @@ void setup(Search::search& sch, VW::multi_ex& ec)
     heads[i + 1] = MY_NULL;
     tags[i + 1] = MY_NULL;
   }
-  for (size_t i = 0; i < 6; i++) { data->children[i].resize_but_with_stl_behavior(n + static_cast<size_t>(1)); }
+  for (size_t i = 0; i < 6; i++) { data->children[i].resize(n + static_cast<size_t>(1)); }
 }
 
 void run(Search::search& sch, VW::multi_ex& ec)

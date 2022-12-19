@@ -99,8 +99,3 @@ T* calloc_mergable_or_throw(size_t nmemb)
   return calloc_or_throw<T>(nmemb);
 #endif
 }
-
-inline void free_it(void* ptr)
-{
-  if (ptr != nullptr) { free(ptr); }
-}

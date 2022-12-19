@@ -732,7 +732,7 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
   ec->pred.scalars.clear();
-  ec->pred.scalars.resize_but_with_stl_behavior(l.topics);
+  ec->pred.scalars.resize(l.topics);
   memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
@@ -860,7 +860,7 @@ void learn_batch(lda& l)
     for (size_t d = 0; d < l.examples.size(); d++)
     {
       l.examples[d]->pred.scalars.clear();
-      l.examples[d]->pred.scalars.resize_but_with_stl_behavior(l.topics);
+      l.examples[d]->pred.scalars.resize(l.topics);
       memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
 
       l.examples[d]->pred.scalars.clear();
@@ -1354,11 +1354,10 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   if (minibatch2 > all.example_parser->example_queue_limit)
   {
     bool previous_strict_parse = all.example_parser->strict_parse;
-    delete all.example_parser;
-    all.example_parser = new parser{minibatch2, previous_strict_parse};
+    all.example_parser = VW::make_unique<VW::parser>(minibatch2, previous_strict_parse);
   }
 
-  ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);
+  ld->v.resize(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 

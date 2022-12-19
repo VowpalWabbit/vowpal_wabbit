@@ -36,8 +36,8 @@ void VW::features::truncate_to(size_t i, float sum_feat_sq_of_removed_section)
   if (i == size()) { return; }
   sum_feat_sq -= sum_feat_sq_of_removed_section;
 
-  values.resize_but_with_stl_behavior(i);
-  if (indices.end() != indices.begin()) { indices.resize_but_with_stl_behavior(i); }
+  values.resize(i);
+  if (indices.end() != indices.begin()) { indices.resize(i); }
 
   if (space_names.size() > i) { space_names.erase(space_names.begin() + i, space_names.end()); }
 
