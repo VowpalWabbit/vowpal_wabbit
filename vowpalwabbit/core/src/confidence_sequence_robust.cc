@@ -304,7 +304,8 @@ void countable_discrete_base::reset_stats()
 
 confidence_sequence_robust::confidence_sequence_robust(double alpha)
     : alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
-{}
+{
+}
 
 void confidence_sequence_robust::update(double w, double r)
 {
