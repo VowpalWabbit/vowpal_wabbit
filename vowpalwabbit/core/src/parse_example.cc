@@ -469,7 +469,7 @@ public:
     if (!_line.empty())
     {
       this->_read_idx = 0;
-      this->_p = all.example_parser;
+      this->_p = all.example_parser.get();
       this->_redefine_some = all.redefine_some;
       this->_redefine = &all.redefine;
       this->_ae = ae;
