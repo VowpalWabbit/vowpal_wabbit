@@ -482,7 +482,7 @@ void VW::details::enable_sources(
 
     if (all.daemon && !all.active)
     {
-    // See support notes here: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Daemon-example
+      // See support notes here: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Daemon-example
 #ifdef __APPLE__
       all.logger.warn("daemon mode is not supported on MacOS.");
 #endif
