@@ -6,7 +6,6 @@
 
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/parser.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"
