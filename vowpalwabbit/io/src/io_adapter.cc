@@ -262,8 +262,14 @@ details::socket_closer::socket_closer(int fd) : _socket_fd(fd) {}
 details::socket_closer::~socket_closer()
 {
 #ifdef _WIN32
+  auto status = shutdown(_socket_fd, SD_BOTH);
+  _UNUSED(status);
+  // TODO check status
   closesocket(_socket_fd);
 #else
+  auto status = shutdown(_socket_fd, SHUT_RDWR);
+  _UNUSED(status);
+  // TODO check status
   close(_socket_fd);
 #endif
 }
