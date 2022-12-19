@@ -500,7 +500,7 @@ void VW::details::enable_sources(
       // create children
       const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
       VW::v_array<int> children;
-      children.resize_but_with_stl_behavior(num_children);
+      children.resize(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
         // fork() returns pid if parent, 0 if child
