@@ -482,8 +482,13 @@ void VW::details::enable_sources(
 
     if (all.daemon && !all.active)
     {
+      // See support notes here: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Daemon-example
+#ifdef __APPLE__
+      all.logger.warn("daemon mode is not supported on MacOS.");
+#endif
+
 #ifdef _WIN32
-      THROW("not supported on windows");
+      THROW("daemon mode is not supported on Windows");
 #else
       fclose(stdin);
       // weights will be shared across processes, accessible to children
