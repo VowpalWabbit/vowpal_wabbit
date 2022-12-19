@@ -338,5 +338,64 @@ double confidence_sequence_robust::upper_bound() const { return 1 - upper.get_ci
 
 namespace model_utils
 {
+size_t read_model_field(io_buf& io, VW::g_tilde& gt)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, gt.sum_x);
+  bytes += read_model_field(io, gt.sum_low_v);
+  bytes += read_model_field(io, gt.sum_mid_v);
+  bytes += read_model_field(io, gt.t);
+  bytes += read_model_field(io, gt.sum_v_histo);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::g_tilde& gt, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, gt.sum_x, upstream_name + "_sum_x", text);
+  bytes += write_model_field(io, gt.sum_low_v, upstream_name + "_sum_low_v", text);
+  bytes += write_model_field(io, gt.sum_mid_v, upstream_name + "_sum_mid_v", text);
+  bytes += write_model_field(io, gt.t, upstream_name + "_t", text);
+  bytes += write_model_field(io, gt.sum_v_histo, upstream_name + "_sum_v_histo", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::countable_discrete_base& cdb)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, cdb.t);
+  bytes += read_model_field(io, cdb.gt);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::countable_discrete_base& cdb, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, cdb.t, upstream_name + "_t", text);
+  bytes += write_model_field(io, cdb.gt, upstream_name + "_gt", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::confidence_sequence_robust& csr)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, csr.update_count);
+  bytes += read_model_field(io, csr.last_w);
+  bytes += read_model_field(io, csr.last_r);
+  bytes += read_model_field(io, csr.lower);
+  bytes += read_model_field(io, csr.upper);
+  return bytes;
+}
+
+size_t write_model_field(io_buf& io, const VW::confidence_sequence_robust& csr, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, csr.update_count, upstream_name + "_update_count", text);
+  bytes += write_model_field(io, csr.last_w, upstream_name + "_last_w", text);
+  bytes += write_model_field(io, csr.last_r, upstream_name + "_last_r", text);
+  bytes += write_model_field(io, csr.lower, upstream_name + "_lower", text);
+  bytes += write_model_field(io, csr.upper, upstream_name + "_upper", text);
+  return bytes;
+}
 }  // namespace model_utils
 }  // namespace VW

@@ -27,7 +27,6 @@ public:
   double get_v(double lam_sqrt_tp1) const;
   void reset_stats();
 
-private:
   const double k;
   const double log_k;
 
@@ -58,7 +57,6 @@ public:
   void add_obs(double x);
   void reset_stats();
 
-private:
   const double log_xi;
   const double log_xi_m1;
   const double lambda_max;
@@ -80,7 +78,6 @@ public:
   double lower_bound() const;
   double upper_bound() const;
 
-private:
   const double alpha;
 
   uint64_t update_count;
@@ -92,9 +89,11 @@ private:
 
 namespace model_utils
 {
-/*size_t read_model_field(io_buf&, VW::incremental_f_sum&);
-size_t write_model_field(io_buf&, const VW::incremental_f_sum&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::confidence_sequence&);
-size_t write_model_field(io_buf&, const VW::confidence_sequence&, const std::string&, bool);*/
+size_t read_model_field(io_buf&, VW::g_tilde&);
+size_t write_model_field(io_buf&, const VW::g_tilde&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::countable_discrete_base&);
+size_t write_model_field(io_buf&, const VW::countable_discrete_base&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::confidence_sequence_robust&);
+size_t write_model_field(io_buf&, const VW::confidence_sequence_robust&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
