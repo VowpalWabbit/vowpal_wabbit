@@ -10,19 +10,15 @@
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
 
-BOOST_AUTO_TEST_CASE(csr_test)
+BOOST_AUTO_TEST_CASE(confidence_sequence_robust_test)
 {
-    double s = 748606.6666732753;
-    double thres = 3.6888794541139363;
-    std::map<uint64_t, double> memo;
-    memo[0] = 49818.12424363672;
-    memo[1] = 21075.040167550338;
-    double min_mu = 0;
-    double max_mu = 1;
-    VW::countable_discrete_base cbd;
-    auto lw_lambda = [](double mu) -> double { return mu*mu - mu + 5; };
-    auto root = boost::math::tools::brent_find_minima(lw_lambda, min_mu, max_mu, 24);
-    std::cout << cbd.root_brentq(s, thres, memo, min_mu, max_mu);
-    //root: 0.736615800884814;
+    VW::off_policy_cs opcs;
+    for (int i = 0; i < 200; ++i)
+    {
+        opcs.add_obs(1.1, 1);
+        opcs.add_obs(1.1, 0);
+        auto ci = opcs.get_ci(.05);
+        std::cout << ci.first << " " << ci.second << "\n";
+    }
 }
 

@@ -18,11 +18,11 @@ class g_tilde
 {
 public:
   g_tilde(double k);
-  double histo_variance(std::map<std::pair<uint64_t, bool>, double>& hist, double lam_sqrt_tp1);
-  void histo_insert(std::map<std::pair<uint64_t, bool>, double>& hist, double x);
+  double histo_variance(double lam_sqrt_tp1) const;
+  void histo_insert(double x);
   void add_obs(double x);
-  double get_s();
-  double get_v(double lam_sqrt_tp1);
+  double get_s() const;
+  double get_v(double lam_sqrt_tp1) const;
 
 private:
   double k;
@@ -38,19 +38,18 @@ class countable_discrete_base
 {
 public:
   countable_discrete_base(double eta = 0.95f, double r = 2.0, double k = 1.5, double lambda_max = 0.5, double xi = 1.6);
-  double lambertw(double x);
-  double get_ci(double alpha);
-  double get_lam_sqrt_tp1(double j);
-  double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j);
-  double log_sum_exp(std::vector<double> a);
-  double log_wealth_mix(double mu, double s, double thres, std::map<uint64_t, double>& memo);
-  double root_brentq(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu);
-  double lb_log_wealth(double alpha);
-  double polylog(double r, double eta);
-  double get_log_weight(double j);
-  double get_log_remaining_weight(double j);
-  double get_s();
-  double get_v(double lam_sqrt_tp1);
+  double get_ci(double alpha) const;
+  double get_lam_sqrt_tp1(double j) const;
+  double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j) const;
+  double log_wealth_mix(double mu, double s, double thres, std::map<uint64_t, double>& memo) const;
+  double root_brentq(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu, double toll_x = 1e-10, double toll_f = 1e-12) const;
+  double log_sum_exp(const std::vector<double>& combined) const;
+  double lb_log_wealth(double alpha) const;
+  double polylog(double r, double eta) const;
+  double get_log_weight(double j) const;
+  double get_log_remaining_weight(double j) const;
+  double get_s() const;
+  double get_v(double lam_sqrt_tp1) const;
   void add_obs(double x);
 
   double xi;
@@ -70,7 +69,7 @@ class off_policy_cs
 public:
   off_policy_cs() = default;
   void add_obs(double w, double r);
-  std::pair<double, double> get_ci(double alpha);
+  std::pair<double, double> get_ci(double alpha) const;
 
 private:
   countable_discrete_base lower;
