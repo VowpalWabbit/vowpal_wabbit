@@ -92,9 +92,8 @@ std::string interaction_vec_t_to_string(
   return ss.str();
 }
 
-std::string elements_to_string(const automl::set_ns_list_t& elements)
+std::string elements_to_string(const automl::set_ns_list_t& elements, const char* const delim)
 {
-  const char* const delim = ", ";
   std::stringstream ss;
   size_t total = elements.size();
   size_t count = 0;
