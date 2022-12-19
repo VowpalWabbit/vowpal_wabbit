@@ -59,7 +59,6 @@ public:
   void reset_stats();
 
 private:
-  const double r;
   const double log_xi;
   const double log_xi_m1;
   const double lambda_max;

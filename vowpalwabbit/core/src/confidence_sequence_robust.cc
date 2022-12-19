@@ -20,7 +20,7 @@ double g_tilde::histo_variance(double lam_sqrt_tp1) const
 {
   double sqrt_tp1 = std::sqrt(t + 1);
   double ret_val = 0.0;
-  for (const std::pair<std::pair<const uint64_t, bool>, double>& hist_p : sum_v_histo)
+  for (const std::pair<const std::pair<uint64_t, bool>, double>& hist_p : sum_v_histo)
   {
     uint64_t n = hist_p.first.first;
     bool strong_term = hist_p.first.second;
@@ -84,8 +84,7 @@ void g_tilde::reset_stats()
 }
 
 countable_discrete_base::countable_discrete_base(double eta, double r, double k, double lambda_max, double xi)
-    : r(r)
-    , log_xi(std::log1p(xi - 1))
+    : log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
     , zeta_r(
