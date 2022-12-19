@@ -600,7 +600,7 @@ class VWClassifier(VW, LinearClassifierMixin):
 
         scores = self.decision_function(X)
         if len(scores.shape) == 1:
-            indices = (scores > 0).astype(np.int)
+            indices = (scores > 0).astype(int)
         else:
             indices = scores.argmax(axis=1)
         return self.classes_[indices]
@@ -801,7 +801,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
 
     if use_weight:
         sample_weight = check_array(
-            sample_weight, accept_sparse=False, ensure_2d=False, dtype=np.int, order="C"
+            sample_weight, accept_sparse=False, ensure_2d=False, dtype=int, order="C"
         )
         if sample_weight.ndim != 1:
             raise ValueError("Sample weights must be 1D array or scalar")
@@ -812,7 +812,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
                 )
             )
     else:
-        sample_weight = np.ones(x.shape[0], dtype=np.int)
+        sample_weight = np.ones(x.shape[0], dtype=int)
 
     # convert labels of the form [0,1] to [-1,1]
     if convert_labels:
