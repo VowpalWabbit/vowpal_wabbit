@@ -4,18 +4,21 @@ individual contributors. All rights reserved.  Released under a BSD (revised)
 license as described in the file LICENSE.
 */
 
-#include "vw_clr.h"
 #include "vw_base.h"
-#include "vw_model.h"
-#include "vw_prediction.h"
-#include "vw_example.h"
 
 #include "clr_io.h"
-#include "vw/core/io_buf.h"
-#include "vw/io/io_adapter.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/io_buf.h"
 #include "vw/core/parse_args.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/vw.h"
+#include "vw/io/io_adapter.h"
+#include "vw_clr.h"
+#include "vw_example.h"
+#include "vw_model.h"
+#include "vw_prediction.h"
 
 using namespace System;
 using namespace System::Collections::Generic;
@@ -57,24 +60,24 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
       { m_model = settings->Model;
         if (!settings->Verbose && !settings->Arguments->Contains("--quiet") && !m_model->Arguments->CommandLine->Contains("--quiet"))
           string.append(" --quiet");
-        m_vw = VW::seed_vw_model(m_model->m_vw, string, trace_listener, trace_context);
+        m_vw = std::unique_ptr<VW::workspace>(VW::seed_vw_model(m_model->m_vw, string, trace_listener, trace_context));
         m_model->IncrementReference();
       }
       else
       { if (!settings->Arguments->Contains("--no_stdin"))
 		  string += " --no_stdin";
 	    if (settings->ModelStream == nullptr)
-        { if (!settings->Verbose && !settings->Arguments->Contains("--quiet"))
-            string.append(" --quiet");
-
-          m_vw = VW::initialize(string, nullptr, false, trace_listener, trace_context);
-        }
+            {
+              if (!settings->Verbose && !settings->Arguments->Contains("--quiet")) { string.append(" --quiet"); }
+              auto args = VW::split_command_line(string);
+              m_vw = VW::initialize_experimental(
+                  VW::make_unique<VW::config::options_cli>(args), nullptr, trace_listener, trace_context);
+            }
         else
         {
-          io_buf model;
-          auto* stream = new clr_stream_adapter(settings->ModelStream);
-          model.add_file(std::unique_ptr<VW::io::reader>(stream));
-          m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
+          m_vw = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(args),
+              std::unique_ptr<VW::io::reader>(new clr_stream_adapter(settings->ModelStream)), trace_listener,
+              trace_context);
           settings->ModelStream = nullptr;
         }
       }
@@ -151,11 +154,8 @@ void VowpalWabbitBase::InternalDispose()
   { if (m_vw != nullptr)
     {
       VW::details::reset_source(*m_vw, m_vw->num_bits);
-
-      // make sure don't try to free m_vw twice in case VW::finish throws.
-      VW::workspace* vw_tmp = m_vw;
+      VW::finish(*m_vw, false);
       m_vw = nullptr;
-      VW::finish(*vw_tmp);
     }
 
     // don't add code here as in the case of VW::finish throws an exception it won't be called
@@ -196,16 +196,14 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
       VW::save_predictor(*m_vw, write_buffer);
     }
 
-    // make sure don't try to free m_vw twice in case VW::finish throws.
-    VW::workspace* vw_tmp = m_vw;
+    VW::finish(*m_vw, false);
     m_vw = nullptr;
-    VW::finish(*vw_tmp);
 
     // reload from model
     // seek to beginning
-    io_buf reader_view_of_buffer;
-    reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
-    m_vw = VW::initialize(stringArgs.c_str(), &reader_view_of_buffer);
+    auto args = VW::split_command_line(string);
+    m_vw = VW::initialize_experimental(
+        VW::make_unique<VW::config::options_cli>(args), VW::io::create_buffer_view(buffer->data(), buffer->size()));
   }
   CATCHRETHROW
 }

@@ -4,10 +4,11 @@
 
 #pragma once
 
-#include "vw_clr.h"
-#include <stack>
-#include "vw_interface.h"
 #include "vw_arguments.h"
+#include "vw_clr.h"
+#include "vw_interface.h"
+#include <memory>
+#include <stack>
 
 using namespace System::Collections::Generic;
 
@@ -55,7 +56,8 @@ private:
       /// <summary>
       /// The native vowpal wabbit data structure.
       /// </summary>
-      VW::workspace* m_vw;
+      std::unique_ptr<VW::workspace>
+          m_vw;
 
   /// <summary>
   /// Thread-safe increment of reference count.
