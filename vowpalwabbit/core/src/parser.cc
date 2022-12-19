@@ -681,7 +681,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
   {
     if (all.limit[index] < ex->feature_space[index].size())
     {
-      features& fs = ex->feature_space[index];
+      auto& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
       VW::unique_features(fs, all.limit[index]);
     }
@@ -692,9 +692,9 @@ namespace VW
 {
 VW::example& get_unused_example(VW::workspace* all)
 {
-  parser* p = all->example_parser;
-  auto* ex = p->example_pool.get_object();
-  ex->example_counter = static_cast<size_t>(p->num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
+  auto& p = *all->example_parser;
+  auto* ex = p.example_pool.get_object();
+  ex->example_counter = static_cast<size_t>(p.num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
 

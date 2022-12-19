@@ -7,6 +7,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/rand_state.h"
 
+#include <fstream>
 #include <queue>
 
 namespace VW
@@ -151,23 +152,22 @@ private:
   size_t current;
 };
 
-constexpr uint64_t CONFIGS_PER_CHAMP_CHANGE = 10;
-
 class oracle_rand_impl
 {
 public:
+  size_t last_seen_ns_count = 0;
+  VW::reductions::automl::interaction_vec_t total_space;
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t& new_elements, config_type conf_type);
-  Iterator begin() { return Iterator(); }
-  Iterator end() { return Iterator(CONFIGS_PER_CHAMP_CHANGE); }
+  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& all_interactions,
+      const size_t num, set_ns_list_t& copy_champ);
 };
 class one_diff_impl
 {
 public:
   void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t::iterator& exclusion, set_ns_list_t& new_elements);
+      const size_t num, set_ns_list_t::iterator& exclusion, const set_ns_list_t::iterator& exclusion_end,
+      set_ns_list_t& new_elements);
   Iterator begin() { return Iterator(); }
   Iterator end(const interaction_vec_t& champ_interactions, const set_ns_list_t& champ_exclusions)
   {
@@ -223,11 +223,14 @@ public:
   // <challenger_estimator, champ_estimator> for the horizon of a given challenger. Thus each challenger has one
   // horizon and the champ has one horizon for each challenger
   estimator_vec_t<estimator_impl> estimators;
+  std::unique_ptr<std::ofstream> champ_log_file;
+  std::unique_ptr<std::ofstream> inputlabel_log_file;
 
-  interaction_config_manager(uint64_t default_lease, uint64_t max_live_configs,
+  interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
-      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type);
+      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
+      std::string trace_prefix);
 
   void do_learning(VW::LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
@@ -271,10 +274,18 @@ public:
   LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   bool debug_reverse_learning_order = false;
   const bool should_save_predict_only_model;
+  std::unique_ptr<std::ofstream> log_file;
 
-  automl(std::unique_ptr<CMType> cm, VW::io::logger* logger, bool predict_only_model)
+  automl(std::unique_ptr<CMType> cm, VW::io::logger* logger, bool predict_only_model, std::string trace_prefix)
       : cm(std::move(cm)), logger(logger), should_save_predict_only_model(predict_only_model)
   {
+    if (trace_prefix != "")
+    {
+      log_file = VW::make_unique<std::ofstream>(trace_prefix + ".automl.cs.csv");
+      *log_file << "example_count, slot_id, champ_switch_count, lower_bound, upper_bound, champ_lower_bound, "
+                   "champ_upper_bound"
+                << std::endl;
+    }
   }
   // This fn gets called before learning any example
   void one_step(VW::LEARNER::multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
@@ -287,7 +298,7 @@ namespace util
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
 std::string interaction_vec_t_to_string(
     const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type);
-std::string elements_to_string(const automl::set_ns_list_t& elements);
+std::string elements_to_string(const automl::set_ns_list_t& elements, const char* const delim = ", ");
 }  // namespace util
 }  // namespace reductions
 namespace model_utils

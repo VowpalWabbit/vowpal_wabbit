@@ -10,8 +10,8 @@
 
 BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
 {
-  feature_index txt_idx;
-  feature_index json_idx;
+  VW::feature_index txt_idx;
+  VW::feature_index json_idx;
 
   std::string text("1 |f a:b");
   std::string json_text = R"(
