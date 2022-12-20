@@ -8,6 +8,10 @@
 #include <cassert>
 #include <cmath>
 
+#ifdef HAS_STD17
+#  include <algorithm>
+#endif
+
 namespace VW
 {
 namespace math
