@@ -61,7 +61,7 @@ private:
 class baseline_challenger_data
 {
 public:
-  distributionally_robust::ChiSquared baseline;
+  VW::estimators::ChiSquared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;
   bool emit_metrics;

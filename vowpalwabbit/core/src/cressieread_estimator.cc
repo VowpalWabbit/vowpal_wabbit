@@ -21,7 +21,7 @@ void cressieread_estimator::persist(metric_sink& metrics, const std::string& suf
 {
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("ips" + suffix, current_ips());
-  distributionally_robust::ScoredDual sd = chisq.recompute_duals();
+  VW::details::ScoredDual sd = chisq.recompute_duals();
   metrics.set_float("bound" + suffix, static_cast<float>(sd.first));
   metrics.set_float("w" + suffix, last_w);
   metrics.set_float("r" + suffix, last_r);

@@ -90,7 +90,7 @@ public:
   }
 
 private:
-  VW::distributionally_robust::ChiSquared _chisq;
+  VW::estimators::ChiSquared _chisq;
   std::vector<float> _save_weight;
 };
 template <bool is_learn, bool is_explore>
