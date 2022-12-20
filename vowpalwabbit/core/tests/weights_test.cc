@@ -2,22 +2,26 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "test_common.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/array_parameters_dense.h"
 
-#include <boost/mpl/vector.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 constexpr auto LENGTH = 16;
 constexpr auto STRIDE_SHIFT = 2;
 
-using weight_types = boost::mpl::vector<sparse_parameters, dense_parameters>;
-
-BOOST_AUTO_TEST_CASE_TEMPLATE(test_default_function_weight_initialization_strided_index, T, weight_types)
+template <typename T>
+class weight_tests : public ::testing::Test
 {
-  T w(LENGTH, STRIDE_SHIFT);
+};
+
+using weight_types = ::testing::Types<sparse_parameters, dense_parameters>;
+TYPED_TEST_SUITE(weight_tests, weight_types);
+TYPED_TEST(weight_tests, test_default_function_weight_initialization_strided_index)
+{
+  TypeParam w(LENGTH, STRIDE_SHIFT);
   auto weight_initializer = [](VW::weight* weights, uint64_t index) { weights[0] = 1.f * index; };
   w.set_default(weight_initializer);
-  for (size_t i = 0; i < LENGTH; i++) { BOOST_CHECK_CLOSE(w.strided_index(i), 1.f * (i * w.stride()), FLOAT_TOL); }
+  for (size_t i = 0; i < LENGTH; i++) { EXPECT_FLOAT_EQ(w.strided_index(i), 1.f * (i * w.stride())); }
 }
