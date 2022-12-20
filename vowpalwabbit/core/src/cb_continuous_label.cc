@@ -6,7 +6,6 @@
 
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_print.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
@@ -19,16 +18,6 @@
 #include <iomanip>
 
 using namespace VW::LEARNER;
-
-namespace CB
-{
-template <>
-void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label&)
-{
-}
-}  // namespace CB
-
-bool VW::cb_continuous::continuous_label::is_labeled() const { return !costs.empty() && costs[0].action != FLT_MAX; }
 
 void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
     VW::reduction_features& red_features, VW::io::logger& logger)
@@ -118,7 +107,7 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
 label_parser the_label_parser = {
     // default_label
-    [](polylabel& label) { CB::default_label<continuous_label>(label.cb_cont); },
+    [](polylabel& label) { label.cb_cont.reset_to_default(); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
@@ -146,13 +135,25 @@ label_parser the_label_parser = {
     // CB::weight just returns 1.f? This seems like it could be a bug...
     [](const polylabel& /*label*/, const reduction_features& /*red_features*/) { return 1.f; },
     // test_label
-    [](const polylabel& label) { return CB::is_test_label<continuous_label, continuous_label_elm>(label.cb_cont); },
+    [](const polylabel& label) { return label.cb_cont.is_test_label(); },
     // label type
     VW::label_type_t::CONTINUOUS};
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////
 
+bool continuous_label::is_test_label() const
+{
+  if (costs.empty()) { return true; }
+  for (const auto& cost : costs)
+  {
+    const auto probability = cost.pdf_value;
+    if (FLT_MAX != cost.cost && probability > 0.) { return false; }
+  }
+  return true;
+}
+bool continuous_label::is_labeled() const { return !is_test_label(); }
+void continuous_label::reset_to_default() { costs.clear(); }
 }  // namespace cb_continuous
 
 std::string to_string(const cb_continuous::continuous_label_elm& elm, int decimal_precision)

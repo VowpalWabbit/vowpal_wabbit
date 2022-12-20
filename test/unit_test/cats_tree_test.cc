@@ -5,7 +5,6 @@
 #include "vw/core/reductions/cats_tree.h"
 
 #include "test_common.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/simple_label.h"
 #include "vw/io/logger.h"
