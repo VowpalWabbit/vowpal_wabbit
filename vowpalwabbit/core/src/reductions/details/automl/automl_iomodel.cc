@@ -70,7 +70,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::persist(met
 template class interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence_robust>;
 template class interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence_robust>;
 template class interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence_robust>;
-template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence_robust>;
+template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>,
+    VW::estimators::confidence_sequence_robust>;
 
 }  // namespace automl
 }  // namespace reductions
