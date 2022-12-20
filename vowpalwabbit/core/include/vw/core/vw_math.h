@@ -8,6 +8,9 @@
 #include <cassert>
 #include <cmath>
 
+// This is guarded behind c++17 as this header is only needed for
+// std::clamp when C++17 is available.
+// It just reduces the include cost of this header pre c++17
 #ifdef HAS_STD17
 #  include <algorithm>
 #endif
