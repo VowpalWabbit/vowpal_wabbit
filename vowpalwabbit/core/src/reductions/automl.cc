@@ -356,30 +356,30 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   {
     if (oracle_type == "one_diff")
     {
-      return make_automl_with_impl<config_oracle<one_diff_impl>, VW::confidence_sequence>(stack_builder, base_learner,
-          max_live_configs, verbose_metrics, oracle_type, default_lease, all, priority_challengers, interaction_type,
-          priority_type, automl_significance_level, ccb_on, predict_only_model, reversed_learning_order, conf_type,
-          trace_logging);
+      return make_automl_with_impl<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence>(stack_builder,
+          base_learner, max_live_configs, verbose_metrics, oracle_type, default_lease, all, priority_challengers,
+          interaction_type, priority_type, automl_significance_level, ccb_on, predict_only_model,
+          reversed_learning_order, conf_type, trace_logging);
     }
     else if (oracle_type == "rand")
     {
-      return make_automl_with_impl<config_oracle<oracle_rand_impl>, VW::confidence_sequence>(stack_builder,
+      return make_automl_with_impl<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence>(stack_builder,
           base_learner, max_live_configs, verbose_metrics, oracle_type, default_lease, all, priority_challengers,
           interaction_type, priority_type, automl_significance_level, ccb_on, predict_only_model,
           reversed_learning_order, conf_type, trace_logging);
     }
     else if (oracle_type == "champdupe")
     {
-      return make_automl_with_impl<config_oracle<champdupe_impl>, VW::confidence_sequence>(stack_builder, base_learner,
-          max_live_configs, verbose_metrics, oracle_type, default_lease, all, priority_challengers, interaction_type,
-          priority_type, automl_significance_level, ccb_on, predict_only_model, reversed_learning_order, conf_type,
-          trace_logging);
+      return make_automl_with_impl<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence>(stack_builder,
+          base_learner, max_live_configs, verbose_metrics, oracle_type, default_lease, all, priority_challengers,
+          interaction_type, priority_type, automl_significance_level, ccb_on, predict_only_model,
+          reversed_learning_order, conf_type, trace_logging);
     }
     else if (oracle_type == "one_diff_inclusion")
     {
-      return make_automl_with_impl<config_oracle<one_diff_inclusion_impl>, VW::confidence_sequence>(stack_builder,
-          base_learner, max_live_configs, verbose_metrics, oracle_type, default_lease, all, priority_challengers,
-          interaction_type, priority_type, automl_significance_level, ccb_on, predict_only_model,
+      return make_automl_with_impl<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>(
+          stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type, default_lease, all,
+          priority_challengers, interaction_type, priority_type, automl_significance_level, ccb_on, predict_only_model,
           reversed_learning_order, conf_type, trace_logging);
     }
   }
