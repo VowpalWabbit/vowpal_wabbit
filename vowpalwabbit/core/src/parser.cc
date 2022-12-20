@@ -923,7 +923,10 @@ void clean_example(VW::workspace& all, example& ec)
 void finish_example(VW::workspace& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   if (!is_ring_example(all, &ec)) { return; }
+  VW_WARNING_STATE_POP
 
   clean_example(all, ec);
 
