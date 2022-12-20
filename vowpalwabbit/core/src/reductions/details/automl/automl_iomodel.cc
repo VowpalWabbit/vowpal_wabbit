@@ -178,13 +178,16 @@ size_t read_model_field(io_buf& io, VW::reductions::automl::automl<CMType>& aml)
 
 template size_t read_model_field(io_buf&,
     VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<
-        VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>, VW::estimators::confidence_sequence>>&);
+        VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>,
+        VW::estimators::confidence_sequence>>&);
 template size_t read_model_field(io_buf&,
     VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<
-        VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>, VW::estimators::confidence_sequence>>&);
+        VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>,
+        VW::estimators::confidence_sequence>>&);
 template size_t read_model_field(io_buf&,
     VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<
-        VW::reductions::automl::config_oracle<VW::reductions::automl::champdupe_impl>, VW::estimators::confidence_sequence>>&);
+        VW::reductions::automl::config_oracle<VW::reductions::automl::champdupe_impl>,
+        VW::estimators::confidence_sequence>>&);
 template size_t read_model_field(io_buf&,
     VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<
         VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_inclusion_impl>,
@@ -202,15 +205,18 @@ size_t write_model_field(
 
 template size_t write_model_field(io_buf&,
     const VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<
-        VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>, VW::estimators::confidence_sequence>>&,
+        VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>,
+        VW::estimators::confidence_sequence>>&,
     const std::string&, bool);
 template size_t write_model_field(io_buf&,
     const VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<
-        VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>, VW::estimators::confidence_sequence>>&,
+        VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_impl>,
+        VW::estimators::confidence_sequence>>&,
     const std::string&, bool);
 template size_t write_model_field(io_buf&,
     const VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<
-        VW::reductions::automl::config_oracle<VW::reductions::automl::champdupe_impl>, VW::estimators::confidence_sequence>>&,
+        VW::reductions::automl::config_oracle<VW::reductions::automl::champdupe_impl>,
+        VW::estimators::confidence_sequence>>&,
     const std::string&, bool);
 template size_t write_model_field(io_buf&,
     const VW::reductions::automl::automl<VW::reductions::automl::interaction_config_manager<

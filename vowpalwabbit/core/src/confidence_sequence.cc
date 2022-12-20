@@ -184,7 +184,8 @@ size_t read_model_field(io_buf& io, VW::details::incremental_f_sum& ifs)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::details::incremental_f_sum& ifs, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::details::incremental_f_sum& ifs, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ifs.partials, upstream_name + "_partials", text);
@@ -220,7 +221,8 @@ size_t read_model_field(io_buf& io, VW::estimators::confidence_sequence& im)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::estimators::confidence_sequence& im, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::estimators::confidence_sequence& im, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, im.alpha, upstream_name + "_alpha", text);

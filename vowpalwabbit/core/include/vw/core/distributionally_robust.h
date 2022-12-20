@@ -63,8 +63,7 @@ public:
   }
 
   friend size_t VW::model_utils::read_model_field(io_buf&, VW::details::Duals&);
-  friend size_t VW::model_utils::write_model_field(
-      io_buf&, const VW::details::Duals&, const std::string&, bool);
+  friend size_t VW::model_utils::write_model_field(io_buf&, const VW::details::Duals&, const std::string&, bool);
 };
 using ScoredDual = std::pair<double, VW::details::Duals>;
 }  // namespace details

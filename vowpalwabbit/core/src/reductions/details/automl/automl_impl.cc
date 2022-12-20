@@ -436,7 +436,8 @@ void automl<CMType>::offset_learn(
 template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence>>;
 template class automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence>>;
 template class automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence>>;
-template class automl<interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>>;
+template class automl<
+    interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>>;
 
 }  // namespace automl
 }  // namespace reductions

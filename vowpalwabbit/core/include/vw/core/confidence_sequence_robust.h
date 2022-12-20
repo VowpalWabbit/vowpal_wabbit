@@ -6,11 +6,11 @@
 
 #include "vw/core/vw_fwd.h"
 
-#include <map>
 #include <cstdint>
-#include <vector>
+#include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace VW
 {

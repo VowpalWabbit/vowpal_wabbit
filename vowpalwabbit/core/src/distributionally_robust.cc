@@ -237,7 +237,8 @@ VW::details::ScoredDual ChiSquared::cressieread_duals(double r, double sign, dou
   else
   {
     auto it = std::min_element(candidates.begin(), candidates.end(),
-        [](const VW::details::ScoredDual& x, const VW::details::ScoredDual& y) { return std::get<0>(x) < std::get<0>(y); });
+        [](const VW::details::ScoredDual& x, const VW::details::ScoredDual& y)
+        { return std::get<0>(x) < std::get<0>(y); });
 
     return *it;
   }
@@ -276,8 +277,7 @@ size_t read_model_field(io_buf& io, VW::details::Duals& _duals)
   return bytes;
 }
 
-size_t write_model_field(
-    io_buf& io, const VW::details::Duals& _duals, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::details::Duals& _duals, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, _duals.unbounded, upstream_name + "_unbounded", text);

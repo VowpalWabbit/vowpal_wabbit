@@ -8,6 +8,7 @@
 #endif
 
 #include "vw/core/confidence_sequence_robust.h"
+
 #include "vw/core/metric_sink.h"
 #include "vw/core/model_utils.h"
 
