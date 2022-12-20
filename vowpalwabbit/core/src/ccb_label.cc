@@ -35,7 +35,6 @@ using namespace VW::config;
 namespace
 {
 float ccb_weight(const VW::ccb_label& ld) { return ld.weight; }
-bool test_label(const VW::ccb_label& ld) { return ld.outcome == nullptr; }
 
 VW::action_score convert_to_score(
     const VW::string_view& action_id_str, const VW::string_view& probability_str, VW::io::logger& logger)
@@ -102,7 +101,7 @@ namespace VW
 {
 VW::label_parser ccb_label_parser_global = {
     // default_label
-    [](VW::polylabel& label) { default_ccb_label(label.conditional_contextual_bandit); },
+    [](VW::polylabel& label) { label.conditional_contextual_bandit.reset_to_default(); },
     // parse_label
     [](VW::polylabel& label, ::VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
@@ -118,23 +117,9 @@ VW::label_parser ccb_label_parser_global = {
     [](const VW::polylabel& label, const ::VW::reduction_features& /*red_features*/)
     { return ccb_weight(label.conditional_contextual_bandit); },
     // test_label
-    [](const VW::polylabel& label) { return test_label(label.conditional_contextual_bandit); },
+    [](const VW::polylabel& label) { return label.conditional_contextual_bandit.is_test_label(); },
     // label type
     VW::label_type_t::CCB};
-
-void default_ccb_label(ccb_label& ld)
-{
-  // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
-  if (ld.outcome != nullptr)
-  {
-    delete ld.outcome;
-    ld.outcome = nullptr;
-  }
-
-  ld.explicit_included_actions.clear();
-  ld.type = ccb_example_type::UNSET;
-  ld.weight = 1.0;
-}
 
 void parse_ccb_label(ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
     VW::io::logger& logger)
@@ -241,4 +226,79 @@ size_t write_model_field(io_buf& io, const VW::ccb_label& ccb, const std::string
   return bytes;
 }
 }  // namespace model_utils
+bool ccb_label::is_test_label() const { return outcome == nullptr; }
+bool ccb_label::is_labeled() const { return !is_test_label(); }
+void ccb_label::reset_to_default()
+{
+  // This is tested against nullptr, so unfortunately as things are this must be deleted when not used.
+  if (outcome != nullptr)
+  {
+    delete outcome;
+    outcome = nullptr;
+  }
+
+  explicit_included_actions.clear();
+  type = ccb_example_type::UNSET;
+  weight = 1.0;
+}
+ccb_label::~ccb_label()
+{
+  if (outcome != nullptr)
+  {
+    delete outcome;
+    outcome = nullptr;
+  }
+}
+ccb_label& ccb_label::operator=(const ccb_label& other)
+{
+  if (this == &other) { return *this; }
+
+  if (outcome != nullptr)
+  {
+    delete outcome;
+    outcome = nullptr;
+  }
+
+  type = other.type;
+  outcome = nullptr;
+  if (other.outcome != nullptr)
+  {
+    outcome = new ccb_outcome();
+    *outcome = *other.outcome;
+  }
+  explicit_included_actions = other.explicit_included_actions;
+  weight = other.weight;
+  return *this;
+}
+ccb_label::ccb_label(const ccb_label& other)
+{
+  type = other.type;
+  outcome = nullptr;
+  if (other.outcome != nullptr)
+  {
+    outcome = new ccb_outcome();
+    *outcome = *other.outcome;
+  }
+  explicit_included_actions = other.explicit_included_actions;
+  weight = other.weight;
+}
+ccb_label& ccb_label::operator=(ccb_label&& other) noexcept
+{
+  std::swap(type, other.type);
+  std::swap(outcome, other.outcome);
+  std::swap(explicit_included_actions, other.explicit_included_actions);
+  std::swap(weight, other.weight);
+  return *this;
+}
+ccb_label::ccb_label(ccb_label&& other) noexcept
+{
+  type = ccb_example_type::UNSET;
+  outcome = nullptr;
+  weight = 0.f;
+
+  std::swap(type, other.type);
+  std::swap(outcome, other.outcome);
+  std::swap(explicit_included_actions, other.explicit_included_actions);
+  std::swap(weight, other.weight);
+}
 }  // namespace VW

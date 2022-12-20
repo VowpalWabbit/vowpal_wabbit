@@ -443,7 +443,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
                             VW::io::logger& /* logger */)
     {
       float loss = 0;
-      if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labelled()) { loss = ec.weight; }
+      if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labeled()) { loss = ec.weight; }
 
       // We specifically say it is not labelled when reporting loss as there is
       // no way to output progressive validation loss for subsampling mode
