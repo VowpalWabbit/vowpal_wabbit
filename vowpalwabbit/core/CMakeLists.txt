@@ -423,6 +423,7 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
+      tests/confidence_sequence_robust_test.cc
       tests/eigen_memory_tree_test.cc
       tests/flat_example_test.cc
       tests/main.cc

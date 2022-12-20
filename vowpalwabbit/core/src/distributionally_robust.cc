@@ -13,7 +13,7 @@
 
 namespace VW
 {
-namespace distributionally_robust
+namespace estimators
 {
 double ChiSquared::chisq_onedof_isf(double alpha)
 {
@@ -159,11 +159,11 @@ double ChiSquared::get_phi() const
   return (-uncgstar - _delta) / (2 * (_n + 1));
 }
 
-ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) const
+VW::details::ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) const
 {
-  if (_n <= 0) { return std::make_pair(r, Duals(true, 0, 0, 0, 0)); }
+  if (_n <= 0) { return std::make_pair(r, VW::details::Duals(true, 0, 0, 0, 0)); }
 
-  std::list<ScoredDual> candidates;
+  std::list<VW::details::ScoredDual> candidates;
   for (auto wfake : {_wmin, _wmax})
   {
     if (wfake == std::numeric_limits<double>::infinity())
@@ -181,7 +181,7 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
 
         if (isclose(kappa, 0))
         {
-          Duals candidate = {true, 0, 0, 0, _n};
+          VW::details::Duals candidate = {true, 0, 0, 0, _n};
           candidates.push_back(std::make_pair(sign * r, candidate));
         }
         else
@@ -189,7 +189,7 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
           double gstar = x - std::sqrt(2 * y * z);
           double gamma = -kappa * (1 + _n) / _n + sign * (r * _sumw - _sumwr) / _n;
           double beta = -sign * r;
-          Duals candidate = {false, kappa, gamma, beta, _n};
+          VW::details::Duals candidate = {false, kappa, gamma, beta, _n};
           candidates.push_back(std::make_pair(gstar, candidate));
         }
       }
@@ -217,7 +217,7 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
 
           if (isclose(kappa, 0))
           {
-            Duals candidate = {true, 0, 0, 0, _n};
+            VW::details::Duals candidate = {true, 0, 0, 0, _n};
             candidates.push_back(std::make_pair(sign * r, candidate));
           }
           else
@@ -225,7 +225,7 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
             double gstar = x - std::sqrt(2 * y * z);
             double beta = (-kappa * (1 - barw) - (barwsqr - barw * barwr)) / (barwsq - barw * barw);
             double gamma = -kappa - beta * barw - barwr;
-            Duals candidate = {false, kappa, gamma, beta, _n};
+            VW::details::Duals candidate = {false, kappa, gamma, beta, _n};
             candidates.push_back(std::make_pair(gstar, candidate));
           }
         }
@@ -233,11 +233,11 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
     }
   }
 
-  if (candidates.empty()) { return std::make_pair(_rmin, Duals(true, 0, 0, 0, _n)); }
+  if (candidates.empty()) { return std::make_pair(_rmin, VW::details::Duals(true, 0, 0, 0, _n)); }
   else
   {
     auto it = std::min_element(candidates.begin(), candidates.end(),
-        [](const ScoredDual& x, const ScoredDual& y) { return std::get<0>(x) < std::get<0>(y); });
+        [](const VW::details::ScoredDual& x, const VW::details::ScoredDual& y) { return std::get<0>(x) < std::get<0>(y); });
 
     return *it;
   }
@@ -245,7 +245,7 @@ ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) cons
 
 double ChiSquared::cressieread_bound(double r, double sign, double phi) const
 {
-  ScoredDual sd = cressieread_duals(r, sign, phi);
+  VW::details::ScoredDual sd = cressieread_duals(r, sign, phi);
   return VW::math::clamp(sign * sd.first, _rmin, _rmax);
 }
 
@@ -253,7 +253,7 @@ double ChiSquared::cressieread_lower_bound() const { return cressieread_bound(_r
 
 double ChiSquared::cressieread_upper_bound() const { return cressieread_bound(_rmax, -1, get_phi()); }
 
-ScoredDual ChiSquared::recompute_duals()
+VW::details::ScoredDual ChiSquared::recompute_duals()
 {
   double r = _rmin;
   double sign = 1;
@@ -261,12 +261,11 @@ ScoredDual ChiSquared::recompute_duals()
   _duals.first = VW::math::clamp(sign * _duals.first, _rmin, _rmax);
   return _duals;
 }
-
-}  // namespace distributionally_robust
+}  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::distributionally_robust::Duals& _duals)
+size_t read_model_field(io_buf& io, VW::details::Duals& _duals)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, _duals.unbounded);
@@ -278,7 +277,7 @@ size_t read_model_field(io_buf& io, VW::distributionally_robust::Duals& _duals)
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::distributionally_robust::Duals& _duals, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::details::Duals& _duals, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, _duals.unbounded, upstream_name + "_unbounded", text);
@@ -289,7 +288,7 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chisq)
+size_t read_model_field(io_buf& io, VW::estimators::ChiSquared& chisq)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, chisq._alpha);
@@ -311,7 +310,7 @@ size_t read_model_field(io_buf& io, VW::distributionally_robust::ChiSquared& chi
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::distributionally_robust::ChiSquared& chisq, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::estimators::ChiSquared& chisq, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, chisq._alpha, upstream_name + "_alpha", text);

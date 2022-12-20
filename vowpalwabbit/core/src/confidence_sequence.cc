@@ -11,6 +11,8 @@
 
 namespace VW
 {
+namespace estimators
+{
 confidence_sequence::confidence_sequence(double alpha, double rmin_init, double rmax_init, bool adjust)
     : alpha(alpha), rmin_init(rmin_init), rmax_init(rmax_init), adjust(adjust)
 {
@@ -171,24 +173,25 @@ double confidence_sequence::lblogwealth(double sumXt, double v, double eta, doub
   return std::max(
       0.0, (sumXt - std::sqrt(std::pow(gamma1, 2) * ll * v + std::pow(gamma2, 2) * std::pow(ll, 2)) - gamma2 * ll) / t);
 }
+}  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::incremental_f_sum& ifs)
+size_t read_model_field(io_buf& io, VW::details::incremental_f_sum& ifs)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, ifs.partials);
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::incremental_f_sum& ifs, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::details::incremental_f_sum& ifs, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ifs.partials, upstream_name + "_partials", text);
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::confidence_sequence& im)
+size_t read_model_field(io_buf& io, VW::estimators::confidence_sequence& im)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, im.alpha);
@@ -217,7 +220,7 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence& im)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::confidence_sequence& im, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::estimators::confidence_sequence& im, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, im.alpha, upstream_name + "_alpha", text);

@@ -4,18 +4,19 @@
 
 #pragma once
 
-#if !defined(__APPLE__) && !defined(_WIN32)
-#  define __STDCPP_MATH_SPEC_FUNCS__ 201003L
-#  define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
-#endif
+#include "vw/core/vw_fwd.h"
 
-#include "vw/core/io_buf.h"
-#include "vw/core/metric_sink.h"
-
-constexpr double CS_ROBUST_DEFAULT_ALPHA = 0.05f;
+#include <map>
+#include <cstdint>
+#include <vector>
+#include <string>
+#include <utility>
 
 namespace VW
 {
+namespace details
+{
+constexpr double CS_ROBUST_DEFAULT_ALPHA = 0.05f;
 
 // Equivalent to GTilde in confidence_sequence_robust.py
 class g_tilde
@@ -29,8 +30,9 @@ public:
   double get_v(double lam_sqrt_tp1) const;
   void reset_stats();
 
-  const double k;
-  const double log_k;
+  // Constant values -- do not require reset or save_load
+  double k;
+  double log_k;
 
   double sum_x;
   double sum_low_v;
@@ -60,44 +62,50 @@ public:
   void add_obs(double x);
   void reset_stats();
 
-  const double log_xi;
-  const double log_xi_m1;
-  const double lambda_max;
-  const double zeta_r;
-  const double scale_fac;
-  const double log_scale_fac;
+  // Constant values -- do not require reset or save_load
+  double log_xi;
+  double log_xi_m1;
+  double lambda_max;
+  double zeta_r;
+  double scale_fac;
+  double log_scale_fac;
 
   uint64_t t;
   g_tilde gt;
 };
+}  // namespace details
 
+namespace estimators
+{
 // Equivalent to DDRM in confidence_sequence_robust.py
 class confidence_sequence_robust
 {
 public:
-  confidence_sequence_robust(double alpha = CS_ROBUST_DEFAULT_ALPHA);
+  confidence_sequence_robust(double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA);
   void update(double w, double r);
   void persist(metric_sink& metrics, const std::string& suffix);
   void reset_stats();
   double lower_bound() const;
   double upper_bound() const;
 
+  // Constant values -- do not require reset or save_load
   const double alpha;
 
   uint64_t update_count;
   double last_w;
   double last_r;
-  countable_discrete_base lower;
-  countable_discrete_base upper;
+  VW::details::countable_discrete_base lower;
+  VW::details::countable_discrete_base upper;
 };
+}  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::g_tilde&);
-size_t write_model_field(io_buf&, const VW::g_tilde&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::countable_discrete_base&);
-size_t write_model_field(io_buf&, const VW::countable_discrete_base&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::confidence_sequence_robust&);
-size_t write_model_field(io_buf&, const VW::confidence_sequence_robust&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::details::g_tilde&);
+size_t write_model_field(io_buf&, const VW::details::g_tilde&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::details::countable_discrete_base&);
+size_t write_model_field(io_buf&, const VW::details::countable_discrete_base&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::estimators::confidence_sequence_robust&);
+size_t write_model_field(io_buf&, const VW::estimators::confidence_sequence_robust&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
