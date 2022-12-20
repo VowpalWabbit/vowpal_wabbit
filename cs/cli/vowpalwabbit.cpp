@@ -13,7 +13,7 @@
 #include "vw_builder.h"
 #include "clr_io.h"
 #include "vw/core/reductions/lda_core.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/shared_data.h"
 
@@ -424,7 +424,7 @@ VowpalWabbitExample^ VowpalWabbit::ParseLine(String^ line)
 
   try
   { try
-    { VW::read_line(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+    { VW::parsers::text::read_line(*m_vw, ex->m_example, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
 
       // finalize example
       VW::setup_example(*m_vw, ex->m_example);
