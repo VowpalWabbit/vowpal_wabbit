@@ -6,7 +6,6 @@
 
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -26,7 +25,7 @@ namespace CB_ALGS
 void generic_output_example(
     VW::workspace& all, float loss, const VW::example& ec, const CB::label& ld, const CB::cb_class* known_cost)
 {
-  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
+  all.sd->update(ec.test_only, !ld.is_test_label(), loss, 1.f, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {
@@ -45,7 +44,7 @@ void generic_output_example(
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
-  bool is_ld_test_label = CB::is_test_label(ld);
+  bool is_ld_test_label = ld.is_test_label();
   if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, known_cost); }
   else { print_update(all, is_ld_test_label, ec, nullptr, false, nullptr); }
 }
@@ -115,7 +114,7 @@ void output_example(VW::workspace& all, cb& data, const VW::example& ec, const C
   float loss = 0.;
 
   cb_to_cs& c = data.cbcs;
-  if (!CB::is_test_label(ld)) { loss = CB_ALGS::get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
+  if (!ld.is_test_label()) { loss = CB_ALGS::get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
 
   CB_ALGS::generic_output_example(all, loss, ec, ld, &c.known_cost);
 }

@@ -11,10 +11,10 @@
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/merge.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <algorithm>
 #include <exception>
@@ -172,7 +172,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFr
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    all->example_parser->text_reader(
+        all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<true>(env, all, ex_coll);
   }
@@ -211,7 +212,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    all->example_parser->text_reader(
+        all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<false>(env, all, ex_coll);
   }
@@ -356,7 +358,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
     // note: this code duplication seems bound for trouble
     // from parse_dispatch_loop.h:26
     // from learner.cc:41
-    reset_source(*all, all->num_bits);
+    VW::details::reset_source(*all, all->num_bits);
     all->do_reset_source = false;
     all->passes_complete++;
 
@@ -406,14 +408,14 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
 
   try
   {
-    example* ex = VW::alloc_examples(1);
+    example* ex = new VW::example;
     ex->interactions = &all->interactions;
     ex->extent_interactions = &all->extent_interactions;
 
     if (isEmpty)
     {
       char empty = '\0';
-      VW::read_line(*all, ex, &empty);
+      VW::parsers::text::read_line(*all, ex, &empty);
     }
     else
       all->example_parser->lbl_parser.default_label(ex->l);
@@ -433,7 +435,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_finish(JN
 
   try
   {
-    VW::dealloc_examples(ex, 1);
+    delete ex;
   }
   catch (...)
   {

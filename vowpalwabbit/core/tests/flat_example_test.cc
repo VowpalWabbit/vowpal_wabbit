@@ -38,3 +38,16 @@ TEST(flat_example_tests, with_interaction_test)
   VW::free_flatten_example(&flat);
   VW::finish_example(*vw, *ex);
 }
+
+TEST(flat_example_tests, empty_example_test)
+{
+  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
+
+  auto* ex = VW::read_example(*vw, "1 |x a:0");
+  auto& flat = *VW::flatten_sort_example(*vw, ex);
+
+  EXPECT_TRUE(flat.fs.empty());
+
+  VW::free_flatten_example(&flat);
+  VW::finish_example(*vw, *ex);
+}

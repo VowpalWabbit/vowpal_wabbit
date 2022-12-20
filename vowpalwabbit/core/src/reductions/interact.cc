@@ -22,13 +22,13 @@ public:
   // namespaces to interact
   unsigned char n1 = static_cast<unsigned char>(0);
   unsigned char n2 = static_cast<unsigned char>(0);
-  features feat_store;
+  VW::features feat_store;
   VW::workspace* all = nullptr;
   float n1_feat_sq = 0.f;
   size_t num_features = 0;
 };
 
-bool contains_valid_namespaces(features& f_src1, features& f_src2, interact& in, VW::io::logger& logger)
+bool contains_valid_namespaces(VW::features& f_src1, VW::features& f_src2, interact& in, VW::io::logger& logger)
 {
   // first feature must be 1 so we're sure that the anchor feature is present
   if (f_src1.size() == 0 || f_src2.size() == 0) { return false; }
@@ -50,10 +50,10 @@ bool contains_valid_namespaces(features& f_src1, features& f_src2, interact& in,
   return true;
 }
 
-void multiply(features& f_dest, features& f_src2, interact& in)
+void multiply(VW::features& f_dest, VW::features& f_src2, interact& in)
 {
   f_dest.clear();
-  features& f_src1 = in.feat_store;
+  VW::features& f_src1 = in.feat_store;
   VW::workspace* all = in.all;
   uint64_t weight_mask = all->weights.mask();
   uint64_t base_id1 = f_src1.indices[0] & weight_mask;
@@ -99,8 +99,8 @@ void multiply(features& f_dest, features& f_src2, interact& in)
 template <bool is_learn, bool print_all>
 void predict_or_learn(interact& in, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  features& f1 = ec.feature_space[in.n1];
-  features& f2 = ec.feature_space[in.n2];
+  VW::features& f1 = ec.feature_space[in.n1];
+  VW::features& f2 = ec.feature_space[in.n2];
 
   if (!contains_valid_namespaces(f1, f2, in, in.all->logger))
   {

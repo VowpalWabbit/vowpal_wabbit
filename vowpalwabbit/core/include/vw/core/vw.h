@@ -84,11 +84,21 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
     std::unique_ptr<VW::setup_base_i> setup_base = nullptr);
 VW_WARNING_STATE_POP
 
+VW_DEPRECATED(
+    "VW no longer supports manipulating a command line with cmd_string_replace_value. This function will be removed in "
+    "VW 10.")
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
 // The argv array from both of these functions must be freed.
+VW_DEPRECATED(
+    "This functionality is now implemented by VW::split_command_line which supports escaping, etc. This function will "
+    "be removed in VW 10.")
 char** to_argv(std::string const& s, int& argc);
+VW_DEPRECATED(
+    "This functionality is now implemented by VW::split_command_line which supports escaping, etc. This function will "
+    "be removed in VW 10.")
 char** to_argv_escaped(std::string const& s, int& argc);
+VW_DEPRECATED("This function will be removed in VW 10.")
 void free_args(int argc, char* argv[]);
 
 const char* are_features_compatible(const VW::workspace& vw1, const VW::workspace& vw2);
@@ -109,6 +119,9 @@ void sync_stats(VW::workspace& all);
 
 void start_parser(VW::workspace& all);
 void end_parser(VW::workspace& all);
+
+VW_DEPRECATED(
+    "It is no longer supported to query whether an example is a ring example. This function will be removed in VW 10")
 bool is_ring_example(const VW::workspace& all, const example* ae);
 
 class primitive_feature_space  // just a helper definition.
@@ -135,7 +148,11 @@ example* import_example(VW::workspace& all, const std::string& label, primitive_
 // thus any delay introduced when freeing examples must be at least as long as the one
 // introduced by all.l->finish_example implementations.
 // e.g. multiline examples as used by cb_adf must not be released before the finishing newline example.
+VW_DEPRECATED(
+    "This function is no longer needed and will be removed. Use new/make_unique/make_shared or stack based as "
+    "appropriate.")
 example* alloc_examples(size_t count);
+VW_DEPRECATED("This function is no longer needed and will be removed.")
 void dealloc_examples(example* example_ptr, size_t count);
 
 void parse_example_label(VW::workspace& all, example& ec, const std::string& label);

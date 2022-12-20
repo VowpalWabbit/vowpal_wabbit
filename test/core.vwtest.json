@@ -5376,7 +5376,7 @@
   {
     "id": 417,
     "desc": "set up automl model to test overrides",
-    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -f models/automl_override.model --automl 4 --global_lease 100 --priority_type favor_popular_namespaces --priority_challengers 1 --oracle_type rand --automl_significance_level .1",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -f models/automl_override.model --automl 4 --default_lease 100 --priority_type favor_popular_namespaces --priority_challengers 1 --oracle_type rand --automl_significance_level .1",
     "diff_files": {
       "stderr": "train-sets/ref/automl_test_set_override.stderr",
       "stdout": "train-sets/ref/automl_test_set_override.stdout"
@@ -5388,7 +5388,7 @@
   {
     "id": 418,
     "desc": "load automl model with overrides",
-    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -i models/automl_override.model --automl 4 --global_lease 200 --priority_type none --priority_challengers 2 --oracle_type one_diff --automl_significance_level .2",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -i models/automl_override.model --automl 4 --default_lease 200 --priority_type none --priority_challengers 2 --oracle_type one_diff --automl_significance_level .2",
     "diff_files": {
       "stderr": "train-sets/ref/automl_test_load_override.stderr",
       "stdout": "train-sets/ref/automl_test_load_override.stdout"
@@ -5550,6 +5550,34 @@
     },
     "input_files": [
       "train-sets/cb_load.dat"
+    ]
+  },
+  {
+    "id": 431,
+    "desc": "Test sender reduction",
+    "diff_files": {
+      "stderr": "test-sets/ref/sender.stderr",
+      "stdout": "test-sets/ref/sender.stdout",
+      "sender_test.predict": "pred-sets/ref/sender.predict"
+    },
+    "bash_command": "python3 ./sender_test.py --vw {VW} --input_file train-sets/0001.dat",
+    "input_files": [
+      "sender_test.py",
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 432,
+    "desc": "second order online learning with epoch",
+    "vw_command":
+        "--OjaNewton -d train-sets/0001.dat -p second_order_with_epoch.predict --predict_only_model --epoch_size 8",
+    "diff_files": {
+      "stderr": "train-sets/ref/second_order_with_epoch.stderr",
+      "second_order_with_epoch.predict": "pred-sets/ref/second_order_with_epoch.predict",
+      "stdout": "train-sets/ref/second_order_with_epoch.stdout"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
     ]
   }
 ]

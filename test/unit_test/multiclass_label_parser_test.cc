@@ -28,25 +28,25 @@ BOOST_AUTO_TEST_CASE(multiclass_label_parser)
 {
   auto lp = VW::multiclass_label_parser_global;
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, "1,2,3", *plabel), VW::vw_exception);
   }
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, "1a", *plabel), VW::vw_exception);
   }
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     BOOST_REQUIRE_THROW(parse_label(lp, "1 2 3", *plabel), VW::vw_exception);
   }
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     parse_label(lp, "2", *plabel);
     BOOST_ASSERT(plabel->multi.label == 2);
     BOOST_ASSERT(plabel->multi.weight == 1.0);
   }
   {
-    auto plabel = scoped_calloc_or_throw<VW::polylabel>();
+    auto plabel = VW::make_unique<VW::polylabel>();
     parse_label(lp, "2 2", *plabel);
     BOOST_ASSERT(plabel->multi.label == 2);
     BOOST_ASSERT(plabel->multi.weight == 2.0);

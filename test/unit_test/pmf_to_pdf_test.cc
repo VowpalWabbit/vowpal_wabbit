@@ -5,8 +5,8 @@
 #include "vw/core/reductions/pmf_to_pdf.h"
 
 #include "vw/core/action_score.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/learner.h"
+#include "vw/core/memory.h"
 
 #include <boost/test/unit_test.hpp>
 #include <iostream>
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 
   VW::example ec;
 
-  auto data = scoped_calloc_or_throw<VW::reductions::pmf_to_pdf_reduction>();
+  auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
   data->num_actions = k;
   data->bandwidth = h;
   data->min_value = min_val;
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 {
   VW::example ec;
-  auto data = scoped_calloc_or_throw<VW::reductions::pmf_to_pdf_reduction>();
+  auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
   uint32_t k = 4;   // num_actions
   float h = 300.f;  // // h (bandwidth) property of continuous range (max_val - min_val)
   float min_val = 1000;
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
 BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
 {
   VW::example ec;
-  auto data = scoped_calloc_or_throw<VW::reductions::pmf_to_pdf_reduction>();
+  auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
 
   uint32_t k = 16;  // num_actions
   float h = 10.f;   // h (bandwidth) property of continuous range (max_val - min_val)

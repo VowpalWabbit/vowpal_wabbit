@@ -32,6 +32,10 @@ VW_WARNING_STATE_POP
 #include "vw/core/vw_versions.h"
 #include "vw/io/logger.h"
 
+#if defined(__ARM_NEON)
+#  include <sse2neon/sse2neon.h>
+#endif
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -58,7 +62,7 @@ class index_feature
 {
 public:
   uint32_t document;
-  feature f;
+  VW::feature f;
   bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
@@ -164,7 +168,7 @@ inline float fastdigamma(float x)
 
 #if !defined(VW_NO_INLINE_SIMD)
 
-#  if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__)
+#  if defined(__SSE2__) || defined(__SSE3__) || defined(__SSE4_1__) || defined(__ARM_NEON)
 
 namespace
 {
@@ -184,6 +188,13 @@ inline bool is_aligned16(void* ptr)
 #    endif
 #    if defined(__SSE4_1__)
 #      include <smmintrin.h>
+#    endif
+
+// Transport SSE intrinsics through sse2neon on ARM:
+#    if defined(__ARM_NEON)
+#      define __SSE2__ 1
+#      define __SSE3__ 1
+#      define __SSE4_1__ 1
 #    endif
 
 #    define HAVE_SIMD_MATHMODE
@@ -703,9 +714,9 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
     score = 0;
     size_t word_count = 0;
     doc_length = 0;
-    for (features& fs : *ec)
+    for (VW::features& fs : *ec)
     {
-      for (features::iterator& f : fs)
+      for (VW::features::iterator& f : fs)
       {
         float* u_for_w = &(weights[f.index()]) + l.topics + 1;
         float c_w = find_cw(l, u_for_w, v);
@@ -721,7 +732,7 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
   ec->pred.scalars.clear();
-  ec->pred.scalars.resize_but_with_stl_behavior(l.topics);
+  ec->pred.scalars.resize(l.topics);
   memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
@@ -849,7 +860,7 @@ void learn_batch(lda& l)
     for (size_t d = 0; d < l.examples.size(); d++)
     {
       l.examples[d]->pred.scalars.clear();
-      l.examples[d]->pred.scalars.resize_but_with_stl_behavior(l.topics);
+      l.examples[d]->pred.scalars.resize(l.topics);
       memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
 
       l.examples[d]->pred.scalars.clear();
@@ -983,11 +994,11 @@ void learn(lda& l, base_learner&, VW::example& ec)
   uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
-  for (features& fs : ec)
+  for (VW::features& fs : ec)
   {
-    for (features::iterator& f : fs)
+    for (VW::features::iterator& f : fs)
     {
-      index_feature temp = {num_ex, feature(f.value(), f.index())};
+      index_feature temp = {num_ex, VW::feature(f.value(), f.index())};
       l.sorted_features.push_back(temp);
       l.doc_lengths[num_ex] += static_cast<int>(f.value());
     }
@@ -1003,9 +1014,9 @@ void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
     uint64_t stride_shift = l.all->weights.stride_shift();
     uint64_t weight_mask = l.all->weights.mask();
 
-    for (features& fs : ec)
+    for (VW::features& fs : ec)
     {
-      for (features::iterator& f : fs)
+      for (VW::features::iterator& f : fs)
       {
         uint64_t idx = (f.index() & weight_mask) >> stride_shift;
         l.feature_counts[idx] += static_cast<uint32_t>(f.value());
@@ -1043,13 +1054,13 @@ public:
 };
 
 template <class T>
-void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output, T& weights)
+void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<VW::feature>& output, T& weights)
 {
   uint64_t length = static_cast<uint64_t>(1) << all->num_bits;
 
   // get top features for this topic
-  auto cmp = [](feature left, feature right) { return left.x > right.x; };
-  std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
+  auto cmp = [](VW::feature left, VW::feature right) { return left.x > right.x; };
+  std::priority_queue<VW::feature, std::vector<VW::feature>, decltype(cmp)> top_features(cmp);
   typename T::iterator iter = weights.begin();
 
   for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
@@ -1089,12 +1100,12 @@ void compute_coherence_metrics(lda& l, T& weights)
   for (size_t topic = 0; topic < l.topics; topic++)
   {
     // get top features for this topic
-    auto cmp = [](feature& left, feature& right) { return left.x > right.x; };
-    std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
+    auto cmp = [](VW::feature& left, VW::feature& right) { return left.x > right.x; };
+    std::priority_queue<VW::feature, std::vector<VW::feature>, decltype(cmp)> top_features(cmp);
     typename T::iterator iter = weights.begin();
     for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
     {
-      top_features.push(feature((&(*iter))[topic], iter.index()));
+      top_features.push(VW::feature((&(*iter))[topic], iter.index()));
     }
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
@@ -1102,7 +1113,7 @@ void compute_coherence_metrics(lda& l, T& weights)
       if ((&(*v))[topic] > top_features.top().x)
       {
         top_features.pop();
-        top_features.push(feature((&(*v))[topic], v.index()));
+        top_features.push(VW::feature((&(*v))[topic], v.index()));
       }
     }
 
@@ -1343,12 +1354,10 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   if (minibatch2 > all.example_parser->example_queue_limit)
   {
     bool previous_strict_parse = all.example_parser->strict_parse;
-    delete all.example_parser;
-    all.example_parser = new parser{minibatch2, previous_strict_parse};
-    all.example_parser->shared_data_obj = all.sd;
+    all.example_parser = VW::make_unique<VW::parser>(minibatch2, previous_strict_parse);
   }
 
-  ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);
+  ld->v.resize(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 

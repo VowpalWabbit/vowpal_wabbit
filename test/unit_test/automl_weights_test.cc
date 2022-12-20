@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations_w_iterations)
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
-      "--oracle_type rand --global_lease 10",
+      "--oracle_type rand --default_lease 10",
       test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig_w_iterations)
       "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 "
-      "--oracle_type champdupe -b 8 --global_lease 10 --extra_metrics champdupe.json --verbose_metrics",
+      "--oracle_type champdupe -b 8 --default_lease 10 --extra_metrics champdupe.json --verbose_metrics",
       test_hooks, num_iterations, seed);
 
   BOOST_CHECK_GT(ctr.back(), 0.4f);
@@ -227,7 +227,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order_w_iterations)
       "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
       "--epsilon 0.2 "
       "--random_seed 5 -b 18 "
-      "--oracle_type one_diff --global_lease 10 ";
+      "--oracle_type one_diff --default_lease 10 ";
   int seed = 10;
   size_t num_iterations = 2000;
 
@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl_w_iterations)
       "--random_seed 5 ";
   std::string vw_automl_arg =
       "--automl 4 --priority_type favor_popular_namespaces "
-      "--oracle_type one_diff --global_lease 10 ";
+      "--oracle_type one_diff --default_lease 10 ";
   int seed = 10;
   // a switch happens around ~1756
   size_t num_iterations = 1700;
@@ -346,7 +346,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
       "--random_seed 5 --predict_only_model ";
   std::string vw_automl_arg =
       "--automl 4 --priority_type favor_popular_namespaces "
-      "--oracle_type one_diff --global_lease 10 ";
+      "--oracle_type one_diff --default_lease 10 ";
   int seed = 10;
   // a switch happens around ~1756
   size_t num_iterations = 1700;
@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model_cubic)
       "--random_seed 5 --predict_only_model ";
   std::string vw_automl_arg =
       "--automl 4 --priority_type favor_popular_namespaces "
-      "--oracle_type one_diff --global_lease 10 --interaction_type cubic ";
+      "--oracle_type one_diff --default_lease 10 --interaction_type cubic ";
   int seed = 10;
   // a switch happens around ~1756
   size_t num_iterations = 10;

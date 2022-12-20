@@ -2,7 +2,7 @@
 
 #include <sstream>
 
-API float SimpleLabelReadFromExample(example* ex, float& weight, float& initial)
+API float SimpleLabelReadFromExample(VW::example* ex, float& weight, float& initial)
 {
   auto* ld = &ex->l.simple;
   float label = ld->label;
@@ -14,13 +14,13 @@ API float SimpleLabelReadFromExample(example* ex, float& weight, float& initial)
   return label;
 }
 
-API void SimpleLabelUpdateExample(
-    vw_net_native::workspace_context* workspace, example* ex, float label, float* maybe_weight, float* maybe_initial)
+API void SimpleLabelUpdateExample(vw_net_native::workspace_context* workspace, VW::example* ex, float label,
+    float* maybe_weight, float* maybe_initial)
 {
   auto* ld = &ex->l.simple;
   ld->label = label;
 
-  if (maybe_weight) ex->weight = *maybe_weight;
+  if (maybe_weight) { ex->weight = *maybe_weight; }
 
   if (maybe_initial)
   {
@@ -31,20 +31,20 @@ API void SimpleLabelUpdateExample(
   VW::count_label(*workspace->vw->sd, ld->label);
 }
 
-API CB::cb_class* CbLabelReadFromExampleDangerous(example* ex)
+API CB::cb_class* CbLabelReadFromExampleDangerous(VW::example* ex)
 {
   CB::label* ld = &ex->l.cb;
 
   return (ld->costs.size() > 0) ? &ld->costs[0] : nullptr;
 }
 
-API void CbLabelUpdateExample(example* ex, const CB::cb_class* f)
+API void CbLabelUpdateExample(VW::example* ex, const CB::cb_class* f)
 {
   CB::label* ld = &ex->l.cb;
 
   // TODO: Should we be clearing the costs here?
   // ld->costs.clear();
-  if (f) ld->costs.push_back(*f);
+  if (f) { ld->costs.push_back(*f); }
 }
 
 API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::workspace_context* workspace, example* ex,
@@ -63,9 +63,9 @@ API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::wo
 
 API float SharedLabelGetCostConstant() { return FLT_MAX; }
 
-API uint32_t SharedLabelGetActionId() { return (uint32_t)uniform_hash("shared", 6, 0); }
+API uint32_t SharedLabelGetActionId() { return (uint32_t)VW::uniform_hash("shared", 6, 0); }
 
-API char* ComputeDiffDescriptionSimpleLabels(example* ex1, example* ex2)
+API char* ComputeDiffDescriptionSimpleLabels(VW::example* ex1, VW::example* ex2)
 {
   auto* ld1 = &ex1->l.simple;
   auto* ld2 = &ex2->l.simple;
@@ -84,7 +84,7 @@ API char* ComputeDiffDescriptionSimpleLabels(example* ex1, example* ex2)
   return vw_net_native::stringstream_to_cstr(sstream);
 }
 
-API char* ComputeDiffDescriptionCbLabels(example* ex1, example* ex2)
+API char* ComputeDiffDescriptionCbLabels(VW::example* ex1, VW::example* ex2)
 {
   CB::label ld1 = ex1->l.cb;
   CB::label ld2 = ex2->l.cb;

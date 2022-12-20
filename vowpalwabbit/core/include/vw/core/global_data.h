@@ -37,12 +37,10 @@
 #  include <thread>
 #endif
 
-using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<VW::features>>;
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
-
-class shared_data;
 
 namespace VW
 {
@@ -110,9 +108,9 @@ public:
 class workspace
 {
 public:
-  shared_data* sd;
+  VW::shared_data* sd;
 
-  parser* example_parser;
+  std::unique_ptr<parser> example_parser;
   std::thread parse_thread;
 
   all_reduce_type selected_all_reduce_type;
@@ -140,7 +138,7 @@ public:
    */
   std::string dump_weights_to_json_experimental();
 
-  void (*set_minmax)(shared_data* sd, float label);
+  void (*set_minmax)(VW::shared_data* sd, float label);
 
   uint64_t current_pass;
 
@@ -164,7 +162,6 @@ public:
   std::string data_filename;
 
   bool daemon;
-  uint64_t num_children;
 
   bool save_per_pass;
   float initial_weight;
@@ -247,7 +244,6 @@ public:
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
-  uint64_t random_seed;
   bool random_weights;
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
   bool normal_weights;
@@ -283,11 +279,6 @@ public:
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
   std::unique_ptr<loss_function> loss;
-
-  bool stdin_off;
-
-  bool no_daemon = false;  // If a model was saved in daemon or active learning mode, force it to accept local input
-                           // when loaded instead.
 
   // runtime accounting variables.
   float initial_t;
@@ -339,11 +330,8 @@ private:
 
 void print_result_by_ref(
     VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
-void binary_print_result_by_ref(
-    VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 
-void noop_mm(shared_data*, float label);
-void get_prediction(VW::io::reader* f, float& res, float& weight);
+void noop_mm(VW::shared_data*, float label);
 void compile_gram(
     std::vector<std::string> grams, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool quiet,

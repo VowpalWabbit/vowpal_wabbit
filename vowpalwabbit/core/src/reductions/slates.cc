@@ -41,7 +41,7 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   for (size_t i = 0; i < examples.size(); i++)
   {
     VW::ccb_label ccb_label;
-    VW::default_ccb_label(ccb_label);
+    ccb_label.reset_to_default();
     const auto& slates_label = _stashed_labels[i];
     if (slates_label.type == slates::example_type::SHARED)
     {
@@ -159,14 +159,14 @@ float get_estimate(const VW::action_scores& label_probs, float cost, const VW::d
   return cost * p_over_ps;
 }
 
-void update_stats_slates(const VW::workspace& /* all */, shared_data& sd, const VW::reductions::slates_data& /* data */,
-    const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
+void update_stats_slates(const VW::workspace& /* all */, VW::shared_data& sd,
+    const VW::reductions::slates_data& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
 {
   VW::multi_ex slots;
   size_t num_features = 0;
   float loss = 0.;
-  bool is_labelled = ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.labeled;
-  float cost = is_labelled ? ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.cost : 0.f;
+  bool is_labeled = ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.labeled;
+  float cost = is_labeled ? ec_seq[VW::details::SHARED_EX_INDEX]->l.slates.cost : 0.f;
   VW::v_array<VW::action_score> label_probs;
 
   for (auto* ec : ec_seq)
@@ -176,7 +176,7 @@ void update_stats_slates(const VW::workspace& /* all */, shared_data& sd, const 
     if (ec->l.slates.type == VW::slates::example_type::SLOT)
     {
       slots.push_back(ec);
-      if (is_labelled)
+      if (is_labeled)
       {
         const auto& this_example_label_probs = ec->l.slates.probabilities;
         if (this_example_label_probs.empty()) { THROW("Probabilities missing for labeled example"); }
@@ -188,15 +188,15 @@ void update_stats_slates(const VW::workspace& /* all */, shared_data& sd, const 
 
   // Calculate the estimate for this example based on the pseudo inverse estimator.
   const auto& predictions = ec_seq[0]->pred.decision_scores;
-  if (is_labelled) { loss = get_estimate(label_probs, cost, predictions); }
+  if (is_labeled) { loss = get_estimate(label_probs, cost, predictions); }
   label_probs.clear();
 
-  bool holdout_example = is_labelled;
+  bool holdout_example = is_labeled;
   if (holdout_example)
   {
     for (const auto& example : ec_seq) { holdout_example &= example->test_only; }
   }
-  sd.update(holdout_example, is_labelled, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
+  sd.update(holdout_example, is_labeled, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
 }
 
 void output_example_prediction_slates(VW::workspace& all, const VW::reductions::slates_data& /* data */,
@@ -209,7 +209,7 @@ void output_example_prediction_slates(VW::workspace& all, const VW::reductions::
   VW::details::global_print_newline(all.final_prediction_sink, all.logger);
 }
 
-void print_update_slates(VW::workspace& all, shared_data& /* sd */, const VW::reductions::slates_data& /* data */,
+void print_update_slates(VW::workspace& all, VW::shared_data& /* sd */, const VW::reductions::slates_data& /* data */,
     const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =

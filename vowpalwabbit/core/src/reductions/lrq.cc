@@ -11,6 +11,7 @@
 #include "vw/core/memory.h"
 #include "vw/core/parse_args.h"  // for spoof_hex_encoded_namespaces
 #include "vw/core/rand48.h"
+#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/text_utils.h"
 
@@ -102,7 +103,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
       unsigned char right = i[(which + 1) % 2];
       unsigned int k = atoi(i.c_str() + 2);
 
-      features& left_fs = ec.feature_space[left];
+      auto& left_fs = ec.feature_space[left];
       for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
       {
         float lfx = left_fs.values[lfn];
@@ -123,7 +124,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
               }
             }
 
-            features& right_fs = ec.feature_space[right];
+            auto& right_fs = ec.feature_space[right];
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
             {
               // NB: ec.ft_offset added by base learner
@@ -195,7 +196,7 @@ base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
 
   new (&lrq->lrpairs) std::set<std::string>(lrq_names.begin(), lrq_names.end());
 
-  lrq->initial_seed = lrq->seed = all.random_seed | 8675309;
+  lrq->initial_seed = lrq->seed = all.get_random_state()->get_current_state() | 8675309;
 
   if (!all.quiet)
   {

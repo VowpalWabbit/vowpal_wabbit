@@ -68,7 +68,7 @@ public:
   bool learn = false;
 
   VW::v_array<VW::namespace_index> indices;  // excluded namespaces
-  std::array<features, VW::NUM_NAMESPACES> feature_space;
+  std::array<VW::features, VW::NUM_NAMESPACES> feature_space;
   VW::workspace* all = nullptr;
 };
 
@@ -123,7 +123,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
         if (learn)
         {
           c.feature_space[ns].clear();
-          for (features::iterator& f : ec.feature_space[ns])
+          for (VW::features::iterator& f : ec.feature_space[ns])
           {
             uint64_t new_index =
                 ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
@@ -169,7 +169,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   ec.pred.scalars = preds;
 }
 
-void update_stats_mwt(const VW::workspace& /* all */, shared_data& sd, const mwt& data, const VW::example& ec,
+void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const mwt& data, const VW::example& ec,
     VW::io::logger& /* logger */)
 {
   float loss = 0.;
@@ -190,7 +190,7 @@ void output_example_prediction_mwt(
 }
 
 void print_update_mwt(
-    VW::workspace& all, shared_data& /* sd */, const mwt& data, const VW::example& ec, VW::io::logger& /* unused */)
+    VW::workspace& all, VW::shared_data& /* sd */, const mwt& data, const VW::example& ec, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
       all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
@@ -224,18 +224,18 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   bin_text_read_write_fixed_validated(
       model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), read, msg, text);
 
-  if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
+  if (read) { c.policies.resize(policies_size); }
   else
   {
     msg << "policies: ";
-    for (feature_index& policy : c.policies) { msg << policy << " "; }
+    for (VW::feature_index& policy : c.policies) { msg << policy << " "; }
   }
 
-  bin_text_read_write_fixed_validated(
-      model_file, reinterpret_cast<char*>(c.policies.begin()), policies_size * sizeof(feature_index), read, msg, text);
+  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
+      policies_size * sizeof(VW::feature_index), read, msg, text);
 
   // c.evals is already initialized nicely to the same size as the regressor.
-  for (feature_index& policy : c.policies)
+  for (VW::feature_index& policy : c.policies)
   {
     policy_data& pd = c.evals[policy];
     if (read) { msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " "; }

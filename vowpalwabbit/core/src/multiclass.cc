@@ -28,7 +28,7 @@ void VW::multiclass_label::reset_to_default()
   weight = 1.f;
 }
 
-bool VW::test_multiclass_label(const VW::multiclass_label& ld) { return ld.label == static_cast<uint32_t>(-1); }
+bool VW::test_multiclass_label(const VW::multiclass_label& ld) { return !ld.is_labeled(); }
 
 namespace
 {
@@ -100,7 +100,7 @@ VW::label_parser multiclass_label_parser_global = {
 
 namespace
 {
-void print_label_pred(VW::workspace& all, VW::example& ec, uint32_t prediction)
+void print_label_pred(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
@@ -109,7 +109,7 @@ void print_label_pred(VW::workspace& all, VW::example& ec, uint32_t prediction)
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
-void print_probability(VW::workspace& all, VW::example& ec, uint32_t prediction)
+void print_probability(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
   std::stringstream pred_ss;
   uint32_t pred_ind = (all.indexing == 0) ? prediction : prediction - 1;
@@ -123,7 +123,7 @@ void print_probability(VW::workspace& all, VW::example& ec, uint32_t prediction)
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
-void print_score(VW::workspace& all, VW::example& ec, uint32_t prediction)
+void print_score(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
   std::stringstream pred_ss;
   pred_ss << prediction;
@@ -135,14 +135,14 @@ void print_score(VW::workspace& all, VW::example& ec, uint32_t prediction)
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
-void direct_print_update(VW::workspace& all, VW::example& ec, uint32_t prediction)
+void direct_print_update(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
   all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.multi.label, prediction,
       ec.get_num_features(), all.progress_add, all.progress_arg);
 }
 
-template <void (*T)(VW::workspace&, VW::example&, uint32_t)>
-void print_update(VW::workspace& all, VW::example& ec, uint32_t prediction)
+template <void (*T)(VW::workspace&, const VW::example&, uint32_t)>
+void print_update(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
   {
@@ -152,11 +152,11 @@ void print_update(VW::workspace& all, VW::example& ec, uint32_t prediction)
 }
 }  // namespace
 
-void VW::details::print_multiclass_update_with_probability(VW::workspace& all, VW::example& ec, uint32_t pred)
+void VW::details::print_multiclass_update_with_probability(VW::workspace& all, const VW::example& ec, uint32_t pred)
 {
   ::print_update<print_probability>(all, ec, pred);
 }
-void VW::details::print_multiclass_update_with_score(VW::workspace& all, VW::example& ec, uint32_t pred)
+void VW::details::print_multiclass_update_with_score(VW::workspace& all, const VW::example& ec, uint32_t pred)
 {
   ::print_update<print_score>(all, ec, pred);
 }
@@ -164,10 +164,9 @@ void VW::details::print_multiclass_update_with_score(VW::workspace& all, VW::exa
 void VW::details::finish_multiclass_example(VW::workspace& all, VW::example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.label != static_cast<uint32_t>(-1)) { loss = ec.weight; }
+  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labeled()) { loss = ec.weight; }
 
-  all.sd->update(ec.test_only, update_loss && (ec.l.multi.label != static_cast<uint32_t>(-1)), loss, ec.weight,
-      ec.get_num_features());
+  all.sd->update(ec.test_only, update_loss && (ec.l.multi.is_labeled()), loss, ec.weight, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {
@@ -181,6 +180,34 @@ void VW::details::finish_multiclass_example(VW::workspace& all, VW::example& ec,
 
   ::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
   VW::finish_example(all, ec);
+}
+
+void VW::details::update_stats_multiclass_label(
+    const VW::workspace& /* all */, shared_data& sd, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  float loss = 0;
+  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labeled()) { loss = ec.weight; }
+
+  sd.update(ec.test_only, ec.l.multi.is_labeled(), loss, ec.weight, ec.get_num_features());
+}
+void VW::details::output_example_prediction_multiclass_label(
+    VW::workspace& all, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  for (auto& sink : all.final_prediction_sink)
+  {
+    if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
+    else
+    {
+      VW::string_view sv_pred = all.sd->ldict->get(ec.pred.multiclass);
+      all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
+    }
+  }
+}
+
+void VW::details::print_update_multiclass_label(
+    VW::workspace& all, shared_data& /* sd */, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  ::print_update<direct_print_update>(all, ec, ec.pred.multiclass);
 }
 
 size_t VW::model_utils::read_model_field(io_buf& io, VW::multiclass_label& multi)

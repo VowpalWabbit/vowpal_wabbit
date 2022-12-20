@@ -6,6 +6,7 @@
 
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
+#include "vw/core/guard.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/reductions/gd.h"
@@ -63,7 +64,7 @@ public:
 
   VW::example synth_ec;
   // following is bookkeeping in synth_ec creation (dfs)
-  feature synth_rec_f{0.f, 0};
+  VW::feature synth_rec_f{0.f, 0};
   VW::example* original_ec = nullptr;
   uint32_t cur_depth = 0;
   bool training = false;
@@ -412,7 +413,7 @@ void synthetic_reset(stagewise_poly& poly, VW::example& ec)
 
 void synthetic_decycle(stagewise_poly& poly)
 {
-  features& fs = poly.synth_ec.feature_space[TREE_ATOMICS];
+  VW::features& fs = poly.synth_ec.feature_space[TREE_ATOMICS];
   for (size_t i = 0; i < fs.size(); ++i)
   {
     assert(cycle_get(poly, fs.indices[i]));
@@ -456,13 +457,13 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
     ++poly.depths[poly.cur_depth];
 #endif  // DEBUG
 
-    feature temp = {v * poly.synth_rec_f.x, wid_cur};
+    VW::feature temp = {v * poly.synth_rec_f.x, wid_cur};
     poly.synth_ec.feature_space[TREE_ATOMICS].push_back(temp.x, temp.weight_index);
     poly.synth_ec.num_features++;
 
     if (parent_get(poly, temp.weight_index))
     {
-      feature parent_f = poly.synth_rec_f;
+      VW::feature parent_f = poly.synth_rec_f;
       poly.synth_rec_f = temp;
       ++poly.cur_depth;
 #ifdef DEBUG
@@ -618,15 +619,6 @@ void end_pass(stagewise_poly& poly)
   }
 }
 
-void finish_example(VW::workspace& all, stagewise_poly& poly, VW::example& ec)
-{
-  size_t temp_num_features = ec.num_features;
-  ec.num_features = poly.synth_ec.get_num_features();
-  VW::details::output_and_account_example(all, ec);
-  ec.num_features = temp_num_features;
-  VW::finish_example(all, ec);
-}
-
 void save_load(stagewise_poly& poly, io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() > 0)
@@ -686,14 +678,49 @@ base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_build
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
-      learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_save_load(save_load)
-                .set_finish_example(::finish_example)
-                .set_end_pass(end_pass)
-                .build();
+  auto* l =
+      VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()), learn,
+          predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
+          .set_input_label_type(VW::label_type_t::SIMPLE)
+          .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+          .set_save_load(save_load)
+          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<stagewise_poly>)
+          .set_update_stats(
+              [](const VW::workspace& /* all */, shared_data& sd, const stagewise_poly& data, const VW::example& ec,
+                  VW::io::logger& /* logger */)
+              {
+                // This impl is the same as standard simple label reporting apart from the fact the feature count from
+                // synth_ec is used.
+
+                const auto& ld = ec.l.simple;
+                sd.update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, data.synth_ec.get_num_features());
+                if (ld.label != FLT_MAX && !ec.test_only)
+                {
+                  sd.weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
+                }
+              }
+
+              )
+          .set_print_update(
+              [](VW::workspace& all, shared_data& sd, const stagewise_poly& data, const VW::example& ec,
+                  VW::io::logger& /* logger */)
+              {
+                // This impl is the same as standard simple label printing apart from the fact the feature count from
+                // synth_ec is used.
+
+                const bool should_print_driver_update =
+                    all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+
+                if (should_print_driver_update)
+                {
+                  sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label,
+                      ec.pred.scalar, data.synth_ec.get_num_features(), all.progress_add, all.progress_arg);
+                }
+              }
+
+              )
+          .set_end_pass(end_pass)
+          .build();
 
   return make_base(*l);
 }

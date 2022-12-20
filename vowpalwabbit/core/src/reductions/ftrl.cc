@@ -360,7 +360,7 @@ void end_pass(ftrl& g)
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
     {
-      set_done(all);
+      VW::details::set_done(all);
     }
   }
 }

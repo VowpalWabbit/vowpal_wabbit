@@ -9,6 +9,7 @@
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/learner.h"
+#include "vw/text_parser/parse_example_text.h"
 
 // seems to help with skipping spaces
 //#define RAPIDJSON_SIMD
@@ -751,7 +752,7 @@ public:
   }
 
 private:
-  feature_index array_hash;
+  VW::feature_index array_hash;
 };
 
 // only 0 is valid as DefaultState::Ignore injected that into the source stream
@@ -1935,9 +1936,7 @@ inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::mult
   if (examples.size() > 1)
   {
     VW::example& ae = VW::get_unused_example(all);
-    static const char empty[] = "";
-    VW::string_view example(empty);
-    substring_to_example(all, &ae, example);
+    all->example_parser->lbl_parser.default_label(ae.l);
     ae.is_newline = true;
 
     examples.push_back(&ae);
@@ -1946,17 +1945,17 @@ inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::mult
 
 // This is used by the python parser
 template <bool audit>
-void line_to_examples_json(VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples)
+void line_to_examples_json(VW::workspace* all, VW::string_view line_view, VW::multi_ex& examples)
 {
   // The JSON reader does insitu parsing and therefore modifies the input
   // string, so we make a copy since this function cannot modify the input
   // string.
   std::vector<char> owned_str;
-  size_t len = std::strlen(line) + 1;
+  size_t len = line_view.size() + 1;
   owned_str.resize(len);
-  std::memcpy(owned_str.data(), line, len);
+  std::memcpy(owned_str.data(), line_view.data(), len);
 
-  bool good_example = parse_line_json<audit>(all, owned_str.data(), num_chars, examples);
+  bool good_example = parse_line_json<audit>(all, owned_str.data(), line_view.size(), examples);
   if (!good_example)
   {
     VW::return_multiple_example(*all, examples);
@@ -1975,7 +1974,7 @@ int read_features_json(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(buf, line, num_chars);
+    size_t num_chars_initial = VW::parsers::text::details::read_features(buf, line, num_chars);
     if (num_chars_initial < 1) { return static_cast<int>(num_chars_initial); }
 
     // Ensure there is a null terminator.
@@ -2018,10 +2017,8 @@ template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW:
 template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 
-template void line_to_examples_json<true>(
-    VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
-template void line_to_examples_json<false>(
-    VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
+template void line_to_examples_json<true>(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
+template void line_to_examples_json<false>(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
 
 template int read_features_json<true>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 template int read_features_json<false>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);

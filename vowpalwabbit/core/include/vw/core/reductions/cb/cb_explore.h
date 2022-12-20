@@ -12,9 +12,3 @@ namespace reductions
 VW::LEARNER::base_learner* cb_explore_setup(VW::setup_base_i& stack_builder);
 }
 }  // namespace VW
-
-// TODO: Move these functions either into a CB-related lib in VW:: or under VW::reductions::
-namespace CB_EXPLORE
-{
-void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB::label& ld);
-}

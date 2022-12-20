@@ -10,14 +10,15 @@ set(vw_core_headers
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
   include/vw/core/cb_continuous_label.h
-  include/vw/core/cb_label_parser.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
+  include/vw/core/daemon_utils.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
   include/vw/core/confidence_sequence.h
+  include/vw/core/confidence_sequence_robust.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
@@ -125,6 +126,7 @@ set(vw_core_headers
   include/vw/core/reductions/csoaa_ldf.h
   include/vw/core/reductions/csoaa.h
   include/vw/core/reductions/ect.h
+  include/vw/core/reductions/eigen_memory_tree.h
   include/vw/core/reductions/epsilon_decay.h
   include/vw/core/reductions/explore_eval.h
   include/vw/core/reductions/expreplay.h
@@ -177,7 +179,6 @@ set(vw_core_headers
   include/vw/core/simple_label_parser.h
   include/vw/core/simple_label.h
   include/vw/core/slates_label.h
-  include/vw/core/stable_unique.h
   include/vw/core/tag_utils.h
   include/vw/core/text_utils.h
   include/vw/core/thread_pool.h
@@ -204,6 +205,7 @@ set(vw_core_sources
   src/ccb_label.cc
   src/ccb_reduction_features.cc
   src/confidence_sequence.cc
+  src/confidence_sequence_robust.cc
   src/cost_sensitive.cc
   src/cressieread_estimator.cc
   src/crossplat_compat.cc
@@ -233,7 +235,6 @@ set(vw_core_sources
   src/network.cc
   src/no_label.cc
   src/parse_args.cc
-  src/parse_example.cc
   src/parse_example_json.cc
   src/parse_primitives.cc
   src/parse_regressor.cc
@@ -297,6 +298,8 @@ set(vw_core_sources
   src/reductions/details/automl/automl_oracle.cc
   src/reductions/details/automl/automl_util.cc
   src/reductions/ect.cc
+  src/reductions/eigen_memory_tree.cc
+  src/daemon_utils.cc
   src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
   src/reductions/freegrad.cc
@@ -358,13 +361,13 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser vw_text_parser
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
         ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
-        $<BUILD_INTERFACE:eigen>
+        $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
@@ -419,9 +422,12 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
+      tests/confidence_sequence_robust_test.cc
+      tests/eigen_memory_tree_test.cc
       tests/flat_example_test.cc
       tests/main.cc
       tests/merge_test.cc
+      tests/model_util_test.cc
       tests/parse_args_test.cc
       tests/save_load_test.cc
       tests/thread_pool_test.cc

@@ -43,6 +43,22 @@
 
 namespace VW
 {
+
+template <typename DataT, typename ExampleT>
+using learner_update_stats_func = void(
+    const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_output_example_prediction_func = void(
+    VW::workspace& all, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_print_update_func = void(
+    VW::workspace& all, shared_data&, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_cleanup_example_func = void(DataT&, ExampleT&);
+
 /// \brief Contains the VW::LEARNER::learner object and utilities for
 /// interacting with it.
 namespace LEARNER
@@ -143,11 +159,11 @@ class finish_example_data
 public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
   using update_stats_fn = void (*)(
-      const VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
+      const VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using output_example_prediction_fn = void (*)(
       VW::workspace&, const void* data, const void* ex, VW::io::logger& logger);
   using print_update_fn = void (*)(
-      VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
+      VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using cleanup_example_fn = void (*)(const void* data, const void* ex);
 
   void* data = nullptr;
@@ -821,8 +837,7 @@ public:
 
   // Responsibilities of update stats:
   // - Call shared_data::update
-  FluentBuilderT& set_update_stats(
-      void (*fn_ptr)(const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.update_stats_f = (details::finish_example_data::update_stats_fn)(fn_ptr);
@@ -831,8 +846,7 @@ public:
 
   // Responsibilities of output example prediction:
   // - Output predictions
-  FluentBuilderT& set_output_example_prediction(
-      void (*fn_ptr)(VW::workspace& all, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.output_example_prediction_f =
@@ -843,8 +857,7 @@ public:
   // Responsibilities of output example prediction:
   // - Call shared_data::print_update
   // Note this is only called when required based on the user specified backoff and logging settings.
-  FluentBuilderT& set_print_update(
-      void (*fn_ptr)(VW::workspace& all, shared_data&, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.print_update_f = (details::finish_example_data::print_update_fn)(fn_ptr);
@@ -853,7 +866,7 @@ public:
 
   // This call is **optional**, correctness cannot depend on it.
   // However, it can be used to optimistically reuse memory.
-  FluentBuilderT& set_cleanup_example(void (*fn_ptr)(DataT&, ExampleT&))
+  FluentBuilderT& set_cleanup_example(learner_cleanup_example_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.cleanup_example_f = (details::finish_example_data::cleanup_example_fn)(fn_ptr);
