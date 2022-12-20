@@ -5,7 +5,6 @@
 #include "vw/core/reductions/pmf_to_pdf.h"
 
 #include "vw/core/action_score.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
 

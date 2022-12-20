@@ -5,7 +5,6 @@
 #include "vw/core/reductions/cb/cb_explore.h"
 
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/global_data.h"
@@ -291,7 +290,7 @@ void update_stats_cb_explore(
 {
   const auto& ld = ec.l.cb;
   float loss = calc_loss(data, ec, ld);
-  sd.update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
+  sd.update(ec.test_only, !ld.is_test_label(), loss, 1.f, ec.get_num_features());
 }
 
 void output_example_prediction_cb_explore(
@@ -319,7 +318,7 @@ void print_update_cb_explore(
   }
   std::stringstream ss;
   ss << maxid << ":" << std::fixed << maxprob;
-  print_update_cb_explore(all, sd, CB::is_test_label(ld), ec, ss);
+  print_update_cb_explore(all, sd, ld.is_test_label(), ec, ss);
 }
 }  // namespace
 

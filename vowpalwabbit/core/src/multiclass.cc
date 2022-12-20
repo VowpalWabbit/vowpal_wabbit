@@ -28,7 +28,7 @@ void VW::multiclass_label::reset_to_default()
   weight = 1.f;
 }
 
-bool VW::test_multiclass_label(const VW::multiclass_label& ld) { return !ld.is_labelled(); }
+bool VW::test_multiclass_label(const VW::multiclass_label& ld) { return !ld.is_labeled(); }
 
 namespace
 {
@@ -164,9 +164,9 @@ void VW::details::print_multiclass_update_with_score(VW::workspace& all, const V
 void VW::details::finish_multiclass_example(VW::workspace& all, VW::example& ec, bool update_loss)
 {
   float loss = 0;
-  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labelled()) { loss = ec.weight; }
+  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labeled()) { loss = ec.weight; }
 
-  all.sd->update(ec.test_only, update_loss && (ec.l.multi.is_labelled()), loss, ec.weight, ec.get_num_features());
+  all.sd->update(ec.test_only, update_loss && (ec.l.multi.is_labeled()), loss, ec.weight, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {
@@ -186,9 +186,9 @@ void VW::details::update_stats_multiclass_label(
     const VW::workspace& /* all */, shared_data& sd, const VW::example& ec, VW::io::logger& /* logger */)
 {
   float loss = 0;
-  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labelled()) { loss = ec.weight; }
+  if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labeled()) { loss = ec.weight; }
 
-  sd.update(ec.test_only, ec.l.multi.is_labelled(), loss, ec.weight, ec.get_num_features());
+  sd.update(ec.test_only, ec.l.multi.is_labeled(), loss, ec.weight, ec.get_num_features());
 }
 void VW::details::output_example_prediction_multiclass_label(
     VW::workspace& all, const VW::example& ec, VW::io::logger& /* logger */)
