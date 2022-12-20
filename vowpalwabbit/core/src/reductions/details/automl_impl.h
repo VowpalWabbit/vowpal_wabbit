@@ -122,7 +122,7 @@ public:
       const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state, config_type conf_type);
 
   void gen_configs(const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
-  void insert_config(set_ns_list_t&& new_elements, const std::map<namespace_index, uint64_t>& ns_counter,
+  bool insert_config(set_ns_list_t&& new_elements, const std::map<namespace_index, uint64_t>& ns_counter,
       VW::reductions::automl::config_type conf_type, bool allow_dups = false);
   bool repopulate_index_queue(const std::map<namespace_index, uint64_t>& ns_counter);
   void insert_starting_configuration();
@@ -159,15 +159,13 @@ public:
   VW::reductions::automl::interaction_vec_t total_space;
   std::shared_ptr<VW::rand_state> random_state;
   oracle_rand_impl(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
-  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& all_interactions,
-      const size_t num, set_ns_list_t& copy_champ);
+  void gen_ns_groupings_at(const interaction_vec_t& all_interactions, const size_t num, set_ns_list_t& copy_champ);
 };
 class one_diff_impl
 {
 public:
-  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t::iterator& exclusion, const set_ns_list_t::iterator& exclusion_end,
-      set_ns_list_t& new_elements);
+  void gen_ns_groupings_at(const interaction_vec_t& champ_interactions, const size_t num,
+      set_ns_list_t::iterator& exclusion, const set_ns_list_t::iterator& exclusion_end, set_ns_list_t& new_elements);
   Iterator begin() { return Iterator(); }
   Iterator end(const interaction_vec_t& champ_interactions, const set_ns_list_t& champ_exclusions)
   {
@@ -184,10 +182,19 @@ public:
 class one_diff_inclusion_impl
 {
 public:
-  void gen_ns_groupings_at(const std::string& interaction_type, const interaction_vec_t& champ_interactions,
-      const size_t num, set_ns_list_t& copy_champ);
+  void gen_ns_groupings_at(const interaction_vec_t& champ_interactions, const size_t num, set_ns_list_t& copy_champ);
   Iterator begin() { return Iterator(); }
   Iterator end(const interaction_vec_t& all_interactions) { return Iterator(all_interactions.size()); }
+};
+
+class qbase_cubic
+{
+public:
+  size_t last_seen_ns_count = 0;
+  VW::reductions::automl::interaction_vec_t total_space;
+  std::shared_ptr<VW::rand_state> random_state;
+  qbase_cubic(std::shared_ptr<VW::rand_state> random_state) : random_state(std::move(random_state)) {}
+  void gen_ns_groupings_at(const interaction_vec_t& all_interactions, const size_t num, set_ns_list_t& copy_champ);
 };
 
 template <typename config_oracle_impl, typename estimator_impl>
