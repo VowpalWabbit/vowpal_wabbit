@@ -44,20 +44,26 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_init_w_iterations)
 
 BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change_w_iterations)
 {
-  const size_t num_iterations = 8000;
-  const std::vector<uint64_t> swap_after = {5000};
-  const float scale_reward = 0.2f;
+  const size_t num_iterations = 700;
   const size_t seed = 100;
-  const size_t deterministic_champ_switch = 7920;
+  const std::vector<uint64_t> swap_after = {500};
+  const size_t deterministic_champ_switch = 662;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1,
       [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[0][0].update_count, 2183);
-        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[1][0].update_count, 2183);
-        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[1][1].update_count, 7919);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[0][0].update_count, 28);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[1][0].update_count, 28);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[2][0].update_count, 28);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][0].update_count, 28);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[1][1].update_count, 48);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[2][1].update_count, 48);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][1].update_count, 48);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[2][2].update_count, 53);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][2].update_count, 53);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][3].update_count, 661);
         return true;
       });
 
@@ -67,15 +73,21 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_champ_change_w_iterations)
         epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
         BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[0][0].update_count, 0);
         BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[1][0].update_count, 0);
-        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[1][1].update_count, 2184);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[2][0].update_count, 0);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][0].update_count, 0);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[1][1].update_count, 29);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[2][1].update_count, 29);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][1].update_count, 29);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[2][2].update_count, 49);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][2].update_count, 49);
+        BOOST_CHECK_EQUAL(epsilon_decay->conf_seq_estimators[3][3].update_count, 54);
         return true;
       });
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --epsilon_decay_significance_level .9 --model_count 2 --cb_explore_adf --quiet  -q :: "
-      "--shift_model_bounds 10",
-      test_hooks, num_iterations, seed, swap_after, scale_reward);
+      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet -q ::",
+      test_hooks, num_iterations, seed, swap_after);
 
   BOOST_CHECK_GT(ctr.back(), 0.6f);
 }
@@ -274,7 +286,9 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
 
   // Set lower_bound of model 2 to beat upper_bound of current champ and run score check
   uint64_t new_champ = 2;
-  for (auto i = 0; i < 10000; ++i) { ep_data.conf_seq_estimators[new_champ][new_champ].update(i, 5); };
+  for (auto i = 0; i < 100; ++i) { ep_data.conf_seq_estimators[new_champ][new_champ].update(i, 1); };
+  for (auto i = 0; i < 100; ++i) { ep_data.conf_seq_estimators[num_models - 1][new_champ].update(i, 0); };
+
   BOOST_CHECK_GT(ep_data.conf_seq_estimators[new_champ][new_champ].lower_bound(),
       ep_data.conf_seq_estimators[num_models - 1][new_champ].upper_bound());
   ep_data.check_estimator_bounds();
@@ -296,7 +310,7 @@ BOOST_AUTO_TEST_CASE(epsilon_decay_test_score_bounds_unit)
   BOOST_CHECK_EQUAL(ep_data.conf_seq_estimators[3][3].update_count, 2);
   BOOST_CHECK_EQUAL(ep_data.conf_seq_estimators[4][2].update_count, 3);
   BOOST_CHECK_EQUAL(ep_data.conf_seq_estimators[4][3].update_count, 4);
-  BOOST_CHECK_EQUAL(ep_data.conf_seq_estimators[4][4].update_count, 10005);
+  BOOST_CHECK_EQUAL(ep_data.conf_seq_estimators[4][4].update_count, 105);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[0], 4);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[1], 3);
   BOOST_CHECK_EQUAL(ep_data._weight_indices[2], 0);

@@ -5,7 +5,7 @@
 #include "../automl_impl.h"
 
 #include "vw/common/vw_exception.h"
-#include "vw/core/confidence_sequence.h"
+#include "vw/core/confidence_sequence_robust.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -358,10 +358,10 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   }
 }
 
-template class interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence>;
-template class interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence>;
-template class interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence>;
-template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>;
+template class interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence_robust>;
+template class interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence_robust>;
+template class interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence_robust>;
+template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence_robust>;
 
 template <typename CMType>
 void automl<CMType>::one_step(
@@ -433,11 +433,10 @@ void automl<CMType>::offset_learn(
   }
 }
 
-template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence>>;
-template class automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence>>;
-template class automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence>>;
-template class automl<
-    interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>>;
+template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence_robust>>;
+template class automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence_robust>>;
+template class automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence_robust>>;
+template class automl<interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence_robust>>;
 
 }  // namespace automl
 }  // namespace reductions

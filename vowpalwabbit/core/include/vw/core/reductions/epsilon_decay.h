@@ -3,7 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/confidence_sequence.h"
+#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/io_buf.h"
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
@@ -32,7 +33,7 @@ public:
   void check_estimator_bounds();
   void check_horizon_bounds();
 
-  std::vector<std::vector<VW::estimators::confidence_sequence>> conf_seq_estimators;
+  std::vector<std::vector<VW::estimators::confidence_sequence_robust>> conf_seq_estimators;
   std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;
   double _epsilon_decay_significance_level;  // Confidence interval
