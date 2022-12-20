@@ -55,6 +55,7 @@ static constexpr uint32_t SHARED_EX_INDEX = 0;
 static constexpr uint32_t TOP_ACTION_INDEX = 0;
 static constexpr const int DEFAULT_FLOAT_PRECISION = 6;
 static constexpr const int DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION = 2;
+static constexpr const int AS_MANY_AS_NEEDED_FLOAT_FORMATTING_DECIMAL_PRECISION = 2;
 
 }  // namespace details
 }  // namespace VW
