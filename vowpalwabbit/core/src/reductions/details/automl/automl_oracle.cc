@@ -295,6 +295,9 @@ void qbase_cubic::gen_ns_groupings_at(
   }
 }
 
+// This will generate configs based on the current champ. These configs will be
+// stored as a set of NS lists. The current design is to look at the interactions of
+// the current champ and add/remove one interaction for each new config.
 void oracle_rand_impl::gen_ns_groupings_at(
     const interaction_vec_t& all_interactions, const size_t num, set_ns_list_t& copy_champ)
 {
