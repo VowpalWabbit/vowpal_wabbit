@@ -2,7 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/parse_example.h"
 #include "vw/core/vw.h"
 #include "vw/csv_parser/parse_example_csv.h"
 #include "vw/test_common/test_common.h"
