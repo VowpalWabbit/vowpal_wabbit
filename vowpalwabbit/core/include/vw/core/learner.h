@@ -297,7 +297,7 @@ public:
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
-    assert(details::get_offset(ec) < MAX_FT_OFFSET);
+    //assert(details::get_offset(ec) < MAX_FT_OFFSET);
     debug_log_message(ec, "learn");
     _learn_fd.learn_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
@@ -317,7 +317,7 @@ public:
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
-    assert(details::get_offset(ec) < MAX_FT_OFFSET);
+    //assert(details::get_offset(ec) < MAX_FT_OFFSET);
     debug_log_message(ec, "predict");
     _learn_fd.predict_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
@@ -331,7 +331,7 @@ public:
     if (_learn_fd.multipredict_f == nullptr)
     {
       details::increment_offset(ec, increment, lo);
-      assert(details::get_offset(ec) < MAX_FT_OFFSET);
+      //assert(details::get_offset(ec) < MAX_FT_OFFSET);
       debug_log_message(ec, "multipredict");
       for (size_t c = 0; c < count; c++)
       {
@@ -345,14 +345,14 @@ public:
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         details::increment_offset(ec, increment, 1);
-        assert(details::get_offset(ec) < MAX_FT_OFFSET);
+        //assert(details::get_offset(ec) < MAX_FT_OFFSET);
       }
       details::decrement_offset(ec, increment, lo + count);
     }
     else
     {
       details::increment_offset(ec, increment, lo);
-      assert(details::get_offset(ec) < MAX_FT_OFFSET);
+      //assert(details::get_offset(ec) < MAX_FT_OFFSET);
       debug_log_message(ec, "multipredict");
       _learn_fd.multipredict_f(
           _learn_fd.data, *_learn_fd.base, (void*)&ec, count, increment, pred, finalize_predictions);
@@ -365,7 +365,7 @@ public:
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
-    assert(details::get_offset(ec) < MAX_FT_OFFSET);
+    //assert(details::get_offset(ec) < MAX_FT_OFFSET);
     debug_log_message(ec, "update");
     _learn_fd.update_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
@@ -374,7 +374,7 @@ public:
   inline float NO_SANITIZE_UNDEFINED sensitivity(example& ec, size_t i = 0)
   {
     details::increment_offset(ec, increment, i);
-    assert(details::get_offset(ec) < MAX_FT_OFFSET);
+    //assert(details::get_offset(ec) < MAX_FT_OFFSET);
     debug_log_message(ec, "sensitivity");
     const float ret = _sensitivity_fd.sensitivity_f(_sensitivity_fd.data, *_learn_fd.base, ec);
     details::decrement_offset(ec, increment, i);

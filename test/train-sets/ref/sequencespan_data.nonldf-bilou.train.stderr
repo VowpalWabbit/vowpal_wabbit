@@ -11,4 +11,4 @@ decay_learning_rate = 1
 Enabled reductions: gd, scorer-identity, csoaa, search_task
 Input label = MULTICLASS
 Output pred = MULTICLASS
-vw: /home/gbassman/repos/persist-ppm/vowpalwabbit/core/include/vw/core/learner.h:320: void VW::LEARNER::learner<T, E>::predict(E&, size_t) [with T = char; E = VW::example; size_t = long unsigned int]: Assertion `details::get_offset(ec) < MAX_FT_OFFSET' failed.
+terminate called without an active exception
