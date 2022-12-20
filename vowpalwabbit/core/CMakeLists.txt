@@ -236,7 +236,6 @@ set(vw_core_sources
   src/network.cc
   src/no_label.cc
   src/parse_args.cc
-  src/parse_example.cc
   src/parse_example_json.cc
   src/parse_primitives.cc
   src/parse_regressor.cc
@@ -363,7 +362,7 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser vw_text_parser
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
@@ -424,6 +423,7 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
+      tests/confidence_sequence_robust_test.cc
       tests/eigen_memory_tree_test.cc
       tests/flat_example_test.cc
       tests/main.cc

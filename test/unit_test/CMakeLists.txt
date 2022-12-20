@@ -18,7 +18,6 @@ add_executable(vw-unit-test.out
   ccb_test.cc
   chain_hashing.cc
   confidence_sequence_test.cc
-  confidence_sequence_robust_test.cc
   continuous_actions_parser_test.cc
   custom_reduction_test.cc
   distributionally_robust_test.cc
@@ -66,7 +65,7 @@ if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSO
 endif()
 
 # Add the include directories from vw target for testing
-target_link_libraries(vw-unit-test.out PRIVATE vw_core Boost::unit_test_framework)
+target_link_libraries(vw-unit-test.out PRIVATE vw_core vw_test_common Boost::unit_test_framework)
 target_include_directories(vw-unit-test.out PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
 
 # Automatically set BOOST_TEST_DYN_LINK if the dependency is shared.

@@ -2,14 +2,22 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#if !defined(__APPLE__) && !defined(_WIN32)
+#  define __STDCPP_MATH_SPEC_FUNCS__ 201003L
+#  define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
+#endif
+
 #include "vw/core/confidence_sequence_robust.h"
 
+#include "vw/core/metric_sink.h"
 #include "vw/core/model_utils.h"
 
 #include <cassert>
 #include <cmath>
 
 namespace VW
+{
+namespace details
 {
 g_tilde::g_tilde(double k) : k(k), log_k(std::log(k)), sum_x(0.0), sum_low_v(0.0), sum_mid_v(0.0), t(0)
 {
@@ -297,7 +305,10 @@ void countable_discrete_base::reset_stats()
   t = 0;
   gt.reset_stats();
 }
+}  // namespace details
 
+namespace estimators
+{
 confidence_sequence_robust::confidence_sequence_robust(double alpha)
     : alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
 {
@@ -335,10 +346,11 @@ void confidence_sequence_robust::reset_stats()
 double confidence_sequence_robust::lower_bound() const { return lower.get_ci(alpha / 2.0); }
 
 double confidence_sequence_robust::upper_bound() const { return 1 - upper.get_ci(alpha / 2.0); }
+}  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::g_tilde& gt)
+size_t read_model_field(io_buf& io, VW::details::g_tilde& gt)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, gt.sum_x);
@@ -349,7 +361,7 @@ size_t read_model_field(io_buf& io, VW::g_tilde& gt)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::g_tilde& gt, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::details::g_tilde& gt, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, gt.sum_x, upstream_name + "_sum_x", text);
@@ -360,7 +372,7 @@ size_t write_model_field(io_buf& io, const VW::g_tilde& gt, const std::string& u
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::countable_discrete_base& cdb)
+size_t read_model_field(io_buf& io, VW::details::countable_discrete_base& cdb)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, cdb.t);
@@ -369,7 +381,7 @@ size_t read_model_field(io_buf& io, VW::countable_discrete_base& cdb)
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::countable_discrete_base& cdb, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::details::countable_discrete_base& cdb, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, cdb.t, upstream_name + "_t", text);
@@ -377,7 +389,7 @@ size_t write_model_field(
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::confidence_sequence_robust& csr)
+size_t read_model_field(io_buf& io, VW::estimators::confidence_sequence_robust& csr)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, csr.update_count);
@@ -389,7 +401,7 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence_robust& csr)
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::confidence_sequence_robust& csr, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::estimators::confidence_sequence_robust& csr, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, csr.update_count, upstream_name + "_update_count", text);

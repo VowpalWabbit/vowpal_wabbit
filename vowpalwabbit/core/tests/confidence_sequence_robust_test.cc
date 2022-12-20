@@ -4,16 +4,13 @@
 
 #include "vw/core/confidence_sequence_robust.h"
 
-#include "test_common.h"
+#include "vw/test_common/test_common.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gtest/gtest.h>
 
-constexpr double CSR_DOUBLE_TOL = 0.000001;
-
-BOOST_AUTO_TEST_CASE(confidence_sequence_robust_test)
+TEST(confidence_sequence_robust_tests, python_equivalence)
 {
-  VW::confidence_sequence_robust csr;
+  VW::estimators::confidence_sequence_robust csr;
 
   for (size_t i = 0; i < 200; ++i)
   {
@@ -25,8 +22,8 @@ BOOST_AUTO_TEST_CASE(confidence_sequence_robust_test)
   double ub = csr.upper_bound();
 
   // Compare to confidence_sequence_robust_test.py
-  BOOST_CHECK_CLOSE(lb, 0.4574146652500113, CSR_DOUBLE_TOL);
-  BOOST_CHECK_CLOSE(ub, 0.5423597665906932, CSR_DOUBLE_TOL);
+  EXPECT_FLOAT_EQ(lb, 0.4574146652500113);
+  EXPECT_FLOAT_EQ(ub, 0.5423597665906932);
 
   // Test brentq minimizer separately
   double s = 219.99999999999926;
@@ -40,5 +37,5 @@ BOOST_AUTO_TEST_CASE(confidence_sequence_robust_test)
   double root = csr.upper.root_brentq(s, thres, memo, min_mu, max_mu);
 
   // Compare to confidence_sequence_robust_test.py
-  BOOST_CHECK_CLOSE(root, 0.4576402334093068, CSR_DOUBLE_TOL);
+  EXPECT_FLOAT_EQ(root, 0.4576402334093068);
 }
