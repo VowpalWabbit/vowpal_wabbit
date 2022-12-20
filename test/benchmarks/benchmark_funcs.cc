@@ -1,4 +1,3 @@
-#include "vw/core/parse_example.h"
 #include "vw/core/parser.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"

@@ -334,7 +334,7 @@ size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::strin
   for (const auto& pair : map)
   {
     bytes += write_model_field(io, pair.first, fmt::format("{}.key{}", upstream_name, i), text);
-    bytes += write_model_field(io, pair.second, fmt::format("{}[{}]", upstream_name, pair.first), text);
+    bytes += write_model_field(io, pair.second, fmt::format("{}[key{}]", upstream_name, i), text);
     ++i;
   }
   return bytes;
