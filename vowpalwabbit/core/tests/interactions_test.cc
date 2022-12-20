@@ -4,22 +4,25 @@
 
 #include "vw/core/interactions.h"
 
-#include "test_common.h"
 #include "vw/core/constant.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/interactions_predict.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/scope_exit.h"
+#include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <array>
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <vector>
+
+using namespace ::testing;
 
 namespace std
 {
@@ -102,9 +105,9 @@ void eval_count_of_generated_ft_naive(
   ec.extent_interactions = &all.extent_interactions;
 }
 
-inline void noop_func(float& unused_dat, const float ft_weight, const uint64_t ft_idx) {}
+inline void noop_func(float& /* unused_dat */, const float /* ft_weight */, const uint64_t /* ft_idx */) {}
 
-BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
+TEST(interactions_test, eval_count_of_generated_ft_test)
 {
   auto& vw = *VW::initialize("--quiet -q :: --noconstant", nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, "3 |f a b c |e x y z");
@@ -123,16 +126,16 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_test)
       vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
   ex->interactions = &vw.interactions;
 
-  BOOST_CHECK_CLOSE(naive_features_value, fast_features_value, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 
   // Prediction will count the interacted features, so we can compare that too.
   vw.predict(*ex);
-  BOOST_CHECK_EQUAL(naive_features_count, ex->num_features_from_interactions);
+  EXPECT_EQ(naive_features_count, ex->num_features_from_interactions);
   VW::finish_example(vw, *ex);
   VW::finish(vw);
 }
 
-BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
+TEST(interactions_test, eval_count_of_generated_ft_extents_combinations_test)
 {
   auto& vw = *VW::initialize("--quiet --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant",
       nullptr, false, nullptr, nullptr);
@@ -147,16 +150,16 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_combinations_test)
       vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
   ex->interactions = &vw.interactions;
 
-  BOOST_CHECK_CLOSE(naive_features_value, fast_features_value, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 
   // Prediction will count the interacted features, so we can compare that too.
   vw.predict(*ex);
-  BOOST_CHECK_EQUAL(naive_features_count, ex->num_features_from_interactions);
+  EXPECT_EQ(naive_features_count, ex->num_features_from_interactions);
   VW::finish_example(vw, *ex);
   VW::finish(vw);
 }
 
-BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_permutations_test)
+TEST(interactions_test, eval_count_of_generated_ft_extents_permutations_test)
 {
   auto& vw = *VW::initialize(
       "--quiet -permutations --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant", nullptr,
@@ -170,28 +173,28 @@ BOOST_AUTO_TEST_CASE(eval_count_of_generated_ft_extents_permutations_test)
   float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
       vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
 
-  BOOST_CHECK_CLOSE(naive_features_value, fast_features_value, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 
   // Prediction will count the interacted features, so we can compare that too.
   vw.predict(*ex);
-  BOOST_CHECK_EQUAL(naive_features_count, ex->num_features_from_interactions);
+  EXPECT_EQ(naive_features_count, ex->num_features_from_interactions);
   VW::finish_example(vw, *ex);
   VW::finish(vw);
 }
 
-BOOST_AUTO_TEST_CASE(interaction_generic_expand_wildcard_only)
-{
-  std::set<VW::namespace_index> namespaces = {'a', 'b'};
-  auto result = INTERACTIONS::generate_namespace_combinations_with_repetition(namespaces, 2);
+// TEST(interactions_test, interaction_generic_expand_wildcard_only)
+// {
+//   std::set<VW::namespace_index> namespaces = {'a', 'b'};
+//   auto result = INTERACTIONS::generate_namespace_combinations_with_repetition(namespaces, 2);
 
-  std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
+//   std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
 
-  std::sort(compare_set.begin(), compare_set.end());
-  std::sort(result.begin(), result.end());
-  check_vector_of_vectors_exact(result, compare_set);
-}
+//   std::sort(compare_set.begin(), compare_set.end());
+//   std::sort(result.begin(), result.end());
+//   check_vector_of_vectors_exact(result, compare_set);
+// }
 
-BOOST_AUTO_TEST_CASE(interaction_generic_with_duplicates_expand_wildcard_only)
+TEST(interactions_test, interaction_generic_with_duplicates_expand_wildcard_only)
 {
   std::set<VW::namespace_index> namespaces = {'a', 'b'};
   auto result = INTERACTIONS::generate_namespace_permutations_with_repetition(namespaces, 2);
@@ -200,10 +203,10 @@ BOOST_AUTO_TEST_CASE(interaction_generic_with_duplicates_expand_wildcard_only)
 
   std::sort(compare_set.begin(), compare_set.end());
   std::sort(result.begin(), result.end());
-  check_vector_of_vectors_exact(result, compare_set);
+  EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-BOOST_AUTO_TEST_CASE(sort_and_filter_interactions)
+TEST(interactions_test, sort_and_filter_interactions)
 {
   std::vector<std::vector<VW::namespace_index>> input = {{'b', 'a'}, {'a', 'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
 
@@ -212,7 +215,7 @@ BOOST_AUTO_TEST_CASE(sort_and_filter_interactions)
   INTERACTIONS::sort_and_filter_duplicate_interactions(input, false, removed_count, sorted_count);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
-  check_vector_of_vectors_exact(input, compare_set);
+  EXPECT_THAT(input, ContainerEq(compare_set));
 }
 
 template <typename T>
@@ -222,7 +225,7 @@ void sort_all(std::vector<std::vector<T>>& interactions)
   std::sort(interactions.begin(), interactions.end());
 }
 
-BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combinations_same)
+TEST(interactions_test, compile_interactions_quadratic_permutations_and_combinations_same)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', 'a'}};
@@ -240,11 +243,11 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations_and_combination
   sort_all(compare_set);
   sort_all(result_perms);
   sort_all(result_combs);
-  check_vector_of_vectors_exact(result_perms, compare_set);
-  check_vector_of_vectors_exact(result_combs, compare_set);
+  EXPECT_THAT(result_perms, ContainerEq(compare_set));
+  EXPECT_THAT(result_combs, ContainerEq(compare_set));
 }
 
-BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
+TEST(interactions_test, compile_interactions_quadratic_combinations)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':'}};
@@ -258,10 +261,10 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_combinations)
 
   sort_all(compare_set);
   sort_all(result);
-  check_vector_of_vectors_exact(result, compare_set);
+  EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
+TEST(interactions_test, compile_interactions_quadratic_permutations)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':'}};
@@ -275,10 +278,10 @@ BOOST_AUTO_TEST_CASE(compile_interactions_quadratic_permutations)
 
   sort_all(compare_set);
   sort_all(result);
-  check_vector_of_vectors_exact(result, compare_set);
+  EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
+TEST(interactions_test, compile_interactions_cubic_combinations)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':', ':'}};
@@ -312,10 +315,10 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_combinations)
 
   sort_all(compare_set);
   sort_all(result);
-  check_vector_of_vectors_exact(result, compare_set);
+  EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
+TEST(interactions_test, compile_interactions_cubic_permutations)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':', ':'}};
@@ -340,10 +343,10 @@ BOOST_AUTO_TEST_CASE(compile_interactions_cubic_permutations)
 
   sort_all(compare_set);
   sort_all(result);
-  check_vector_of_vectors_exact(result, compare_set);
+  EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
+TEST(interactions_test, parse_full_name_interactions_test)
 {
   auto* vw = VW::initialize("--quiet");
 
@@ -351,14 +354,14 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
     auto a = VW::details::parse_full_name_interactions(*vw, "a|b");
     std::vector<VW::extent_term> expected = {
         VW::extent_term{'a', VW::hash_space(*vw, "a")}, VW::extent_term{'b', VW::hash_space(*vw, "b")}};
-    check_collections_exact(a, expected);
+    EXPECT_THAT(a, ContainerEq(expected));
   }
 
   {
     auto a = VW::details::parse_full_name_interactions(*vw, "art|bat|and");
     std::vector<VW::extent_term> expected = {VW::extent_term{'a', VW::hash_space(*vw, "art")},
         VW::extent_term{'b', VW::hash_space(*vw, "bat")}, VW::extent_term{'a', VW::hash_space(*vw, "and")}};
-    check_collections_exact(a, expected);
+    EXPECT_THAT(a, ContainerEq(expected));
   }
 
   {
@@ -366,17 +369,17 @@ BOOST_AUTO_TEST_CASE(parse_full_name_interactions_test)
     std::vector<VW::extent_term> expected = {VW::extent_term{'a', VW::hash_space(*vw, "art")},
         VW::extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE},
         VW::extent_term{'a', VW::hash_space(*vw, "and")}};
-    check_collections_exact(a, expected);
+    EXPECT_THAT(a, ContainerEq(expected));
   }
 
-  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "||"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "||||"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
-  BOOST_REQUIRE_THROW(VW::details::parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
+  EXPECT_THROW(VW::details::parse_full_name_interactions(*vw, "||"), VW::vw_exception);
+  EXPECT_THROW(VW::details::parse_full_name_interactions(*vw, "||||"), VW::vw_exception);
+  EXPECT_THROW(VW::details::parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
+  EXPECT_THROW(VW::details::parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
+TEST(interactions_test, extent_vs_char_interactions)
 {
   auto* vw_char_inter = VW::initialize("--quiet -q AB");
   auto* vw_extent_inter = VW::initialize("--quiet --experimental_full_name_interactions group1|group2");
@@ -404,18 +407,18 @@ BOOST_AUTO_TEST_CASE(extent_vs_char_interactions)
 
   std::tie(num_char_fts, num_extent_fts) =
       parse_and_return_num_fts("|A a b c |B a b c d", "|group1 a b c |group2 a b c d");
-  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+  EXPECT_EQ(num_char_fts, num_extent_fts);
 
   std::tie(num_char_fts, num_extent_fts) =
       parse_and_return_num_fts("|A a b c |B a b c d", "|group1 c |group1 a b |group2 a b c d");
-  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+  EXPECT_EQ(num_char_fts, num_extent_fts);
 
   std::tie(num_char_fts, num_extent_fts) =
       parse_and_return_num_fts("|A a b c |B a b c d", "|group2 a d |group1 c |group1 a b |group2 b c");
-  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+  EXPECT_EQ(num_char_fts, num_extent_fts);
 }
 
-BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
+TEST(interactions_test, extent_interaction_expansion_test)
 {
   auto* vw = VW::initialize("--quiet");
   auto* ex = VW::read_example(*vw,
@@ -438,10 +441,10 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
           counter++;
-          BOOST_REQUIRE_EQUAL(combination.size(), 2);
+          EXPECT_EQ(combination.size(), 2);
         },
         cache.in_process_frames, cache.frame_pool);
-    BOOST_REQUIRE_EQUAL(counter, 3);
+    EXPECT_EQ(counter, 3);
   }
 
   {
@@ -452,10 +455,10 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
           counter++;
-          BOOST_REQUIRE_EQUAL(combination.size(), 3);
+          EXPECT_EQ(combination.size(), 3);
         },
         cache.in_process_frames, cache.frame_pool);
-    BOOST_REQUIRE_EQUAL(counter, 4);
+    EXPECT_EQ(counter, 4);
   }
 
   {
@@ -466,10 +469,10 @@ BOOST_AUTO_TEST_CASE(extent_interaction_expansion_test)
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
           counter++;
-          BOOST_REQUIRE_EQUAL(combination.size(), 2);
+          EXPECT_EQ(combination.size(), 2);
         },
         cache.in_process_frames, cache.frame_pool);
-    BOOST_REQUIRE_EQUAL(counter, 6);
+    EXPECT_EQ(counter, 6);
   }
 }
 
@@ -523,41 +526,41 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
 
   std::tie(num_char_fts, num_extent_fts) =
       parse_and_return_num_fts("|A a b c |B a b c d", "|group1 a b c |group2 a b c d");
-  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+  EXPECT_EQ(num_char_fts, num_extent_fts);
 
   std::tie(num_char_fts, num_extent_fts) =
       parse_and_return_num_fts("|A a b c |B a b c d", "|group1 c |group1 a b |group2 a b c d");
-  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+  EXPECT_EQ(num_char_fts, num_extent_fts);
 
   std::tie(num_char_fts, num_extent_fts) =
       parse_and_return_num_fts("|A a b c |B a b c d", "|group2 a d |group1 c |group1 a b |group2 b c");
-  BOOST_REQUIRE_EQUAL(num_char_fts, num_extent_fts);
+  EXPECT_EQ(num_char_fts, num_extent_fts);
 }
 
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard)
+TEST(interactions_test, extent_vs_char_interactions_wildcard)
 {
   do_interaction_feature_count_test(true, false, true, true);
 }
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard)
+TEST(interactions_test, extent_vs_char_interactions_cubic_wildcard)
 {
   do_interaction_feature_count_test(true, true, true, true);
 }
 
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_wildcard_permutations)
+TEST(interactions_test, extent_vs_char_interactions_wildcard_permutations)
 {
   do_interaction_feature_count_test(true, false, false, true);
 }
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations)
+TEST(interactions_test, extent_vs_char_interactions_cubic_wildcard_permutations)
 {
   do_interaction_feature_count_test(true, true, false, true);
 }
 
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations_constant)
+TEST(interactions_test, extent_vs_char_interactions_cubic_wildcard_permutations_constant)
 {
   do_interaction_feature_count_test(true, true, false, false);
 }
 
-BOOST_AUTO_TEST_CASE(extent_vs_char_interactions_cubic_wildcard_permutations_combinations_constant)
+TEST(interactions_test, extent_vs_char_interactions_cubic_wildcard_permutations_combinations_constant)
 {
   do_interaction_feature_count_test(true, true, true, false);
 }

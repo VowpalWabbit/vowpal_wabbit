@@ -24,14 +24,10 @@ add_executable(vw-unit-test.out
   dsjson_parser_test.cc
   epsilon_test.cc
   example_header_test.cc
-  example_test.cc
   feature_group_test.cc
-  guard_test.cc
-  interactions_test.cc
   json_parser_test.cc
   loss_functions_test.cc
   main.cc
-  math_test.cc
   minimal_custom_reduction.cc
   multiclass_label_parser_test.cc
   numeric_cast_test.cc
@@ -40,7 +36,6 @@ add_executable(vw-unit-test.out
   parse_args_test.cc
   parser_test.cc
   pmf_to_pdf_test.cc
-  power_test.cc
   prediction_test.cc
   random_test.cc
   scope_exit_test.cc
@@ -52,12 +47,7 @@ add_executable(vw-unit-test.out
   tag_utils_test.cc
   test_common.cc
   test_common.h
-  tokenize_test.cc
-  text_utils_test.cc
   tutorial_test.cc
-  v_array_test.cc
-  vw_versions_test.cc
-  weights_test.cc
 )
 
 if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
