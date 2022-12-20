@@ -2,10 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/cb.h"
+
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
@@ -85,7 +86,7 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
 
 VW::label_parser cb_label = {
     // default_label
-    [](VW::polylabel& label) { CB::default_label(label.cb); },
+    [](VW::polylabel& label) { label.cb.reset_to_default(); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
@@ -100,7 +101,7 @@ VW::label_parser cb_label = {
     // get_weight
     [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/) { return label.cb.weight; },
     // test_label
-    [](const VW::polylabel& label) { return CB::is_test_label(label.cb); },
+    [](const VW::polylabel& label) { return label.cb.is_test_label(); },
     // Label type
     VW::label_type_t::CB};
 
@@ -167,6 +168,22 @@ void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const
     }
   }
 }
+bool label::is_test_label() const
+{
+  if (costs.empty()) { return true; }
+  for (const auto& cost : costs)
+  {
+    const auto probability = cost.probability;
+    if (FLT_MAX != cost.cost && probability > 0.) { return false; }
+  }
+  return true;
+}
+bool label::is_labeled() const { return !is_test_label(); }
+void label::reset_to_default()
+{
+  costs.clear();
+  weight = 1.f;
+}
 }  // namespace CB
 
 namespace CB_EVAL
@@ -175,11 +192,11 @@ float weight(const CB_EVAL::label& ld) { return ld.event.weight; }
 
 void default_label(CB_EVAL::label& ld)
 {
-  CB::default_label(ld.event);
+  ld.event.reset_to_default();
   ld.action = 0;
 }
 
-bool test_label(const CB_EVAL::label& ld) { return CB::is_test_label(ld.event); }
+bool test_label(const CB_EVAL::label& ld) { return ld.event.is_test_label(); }
 
 void parse_label(CB_EVAL::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
     VW::io::logger& logger)

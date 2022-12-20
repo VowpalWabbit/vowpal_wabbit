@@ -6,7 +6,6 @@
 
 #include "vw/common/hash.h"
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/prob_dist_cont.h"
 #include "vw/core/reductions/cb/cb_algs.h"
@@ -47,7 +46,7 @@ void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increme
   {
     ecs[a] = new VW::example;
     auto& lab = ecs[a]->l.cb;
-    CB::default_label(lab);
+    lab.reset_to_default();
     ecs[a]->interactions = &interactions;
     ecs[a]->extent_interactions = &extent_interactions;
   }
@@ -79,7 +78,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
     auto& eca = *ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::default_label(lab);
+    lab.reset_to_default();
 
     // copy data
     VW::copy_example_data(&eca, &ec);
@@ -97,7 +96,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && eca.l.cb.is_test_label()) { eca.tag.push_back('n'); }
   }
 }
 }  // namespace reductions
@@ -517,7 +516,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
 
   uint32_t predicted_class = ec.pred.multiclass;
 
-  if (!VW::cs_label_parser_global.test_label(ec.l))
+  if (!ec.l.cs.is_test_label())
   {
     for (auto const& cost : costs)
     {
@@ -551,7 +550,7 @@ void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, c
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
-  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(ec.l), ec, ec_seq, false, predicted_class);
+  VW::details::print_cs_update(all, ec.l.cs.is_test_label(), ec, ec_seq, false, predicted_class);
 }
 
 void output_example_seq(VW::workspace& all, const VW::multi_ex& ec_seq)

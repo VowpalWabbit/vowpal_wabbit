@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/cost_sensitive.h"
+
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
@@ -16,8 +18,6 @@
 
 #include <cfloat>
 #include <cmath>
-
-void VW::default_cs_label(cs_label& ld) { ld.costs.clear(); }
 
 bool VW::is_cs_example_header(const VW::example& ec)  // example headers look like "shared"
 {
@@ -51,22 +51,10 @@ void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v,
 
 float cs_weight(const VW::cs_label&) { return 1.; }
 
-bool test_label_internal(const VW::cs_label& ld)
-{
-  if (ld.costs.empty()) { return true; }
-  for (auto cost : ld.costs)
-  {
-    if (FLT_MAX != cost.x) { return false; }
-  }
-  return true;
-}
-
-bool test_label(const VW::cs_label& ld) { return test_label_internal(ld); }
-
 void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const VW::named_labels* ldict,
     const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
-  ld.costs.clear();
+  ld.reset_to_default();
 
   // handle shared and label first
   if (words.size() == 1)
@@ -188,7 +176,7 @@ void VW::details::output_cs_example(
     VW::workspace& all, const VW::example& ec, const VW::cs_label& label, uint32_t multiclass_prediction)
 {
   float loss = 0.;
-  if (!test_label(label))
+  if (!label.is_test_label())
   {
     // need to compute exact loss
     auto pred = static_cast<size_t>(multiclass_prediction);
@@ -210,7 +198,7 @@ void VW::details::output_cs_example(
     // loss = chosen_loss;
   }
 
-  all.sd->update(ec.test_only, !test_label(label), loss, ec.weight, ec.get_num_features());
+  all.sd->update(ec.test_only, !label.is_test_label(), loss, ec.weight, ec.get_num_features());
 
   for (auto& sink : all.final_prediction_sink)
   {
@@ -237,12 +225,7 @@ void VW::details::output_cs_example(
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
-  print_cs_update(all, test_label(label), ec, nullptr, false, multiclass_prediction);
-}
-
-void VW::details::output_cs_example(VW::workspace& all, const VW::example& ec)
-{
-  output_cs_example(all, ec, ec.l.cs, ec.pred.multiclass);
+  print_cs_update(all, label.is_test_label(), ec, nullptr, false, multiclass_prediction);
 }
 
 void VW::details::finish_cs_example(VW::workspace& all, VW::example& ec)
@@ -255,7 +238,7 @@ namespace VW
 {
 VW::label_parser cs_label_parser_global = {
     // default_label
-    [](VW::polylabel& label) { default_cs_label(label.cs); },
+    [](VW::polylabel& label) { label.cs.reset_to_default(); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger)
@@ -270,7 +253,7 @@ VW::label_parser cs_label_parser_global = {
     // get_weight
     [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) { return cs_weight(label.cs); },
     // test_label
-    [](const VW::polylabel& label) { return test_label(label.cs); },
+    [](const VW::polylabel& label) { return label.cs.is_test_label(); },
     // label type
     VW::label_type_t::CS};
 
@@ -310,4 +293,14 @@ size_t write_model_field(io_buf& io, const VW::cs_label& cs, const std::string& 
   return bytes;
 }
 }  // namespace model_utils
+bool cs_label::is_test_label() const
+{
+  if (costs.empty()) { return true; }
+  for (const auto& cost : costs)
+  {
+    if (FLT_MAX != cost.x) { return false; }
+  }
+  return true;
+}
+void cs_label::reset_to_default() { costs.clear(); }
 }  // namespace VW
