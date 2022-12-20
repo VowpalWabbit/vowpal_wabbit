@@ -8,7 +8,6 @@
 #include "parse_slates_example_json.h"
 #include "vw/common/future_compat.h"
 #include "vw/core/label_parser.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/parser.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"
@@ -43,7 +42,7 @@ bool parse_line_json(VW::workspace* all, char* line, size_t num_chars, VW::multi
 
 // This is used by the python parser
 template <bool audit>
-void line_to_examples_json(VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
+void line_to_examples_json(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
 
 template <bool audit>
 int read_features_json(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
@@ -79,10 +78,8 @@ extern template bool VW::read_line_decision_service_json<false>(VW::workspace& a
 extern template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 extern template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 
-extern template void line_to_examples_json<true>(
-    VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
-extern template void line_to_examples_json<false>(
-    VW::workspace* all, const char* line, size_t num_chars, VW::multi_ex& examples);
+extern template void line_to_examples_json<true>(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
+extern template void line_to_examples_json<false>(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
 
 extern template int read_features_json<true>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 extern template int read_features_json<false>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);

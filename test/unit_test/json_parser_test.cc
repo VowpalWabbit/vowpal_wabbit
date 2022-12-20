@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(parse_json_text_does_not_change_input)
 
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(ccb_vw));
-  ccb_vw->example_parser->text_reader(ccb_vw, json_text.c_str(), strlen(json_text.c_str()), examples);
+  ccb_vw->example_parser->text_reader(ccb_vw, VW::string_view(json_text.c_str(), strlen(json_text.c_str())), examples);
 
   BOOST_CHECK_EQUAL(json_text, json_text_copy);
 
