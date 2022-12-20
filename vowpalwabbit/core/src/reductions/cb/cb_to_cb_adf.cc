@@ -5,7 +5,6 @@
 #include "vw/core/reductions/cb/cb_to_cb_adf.h"
 
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/reductions/cb/cbify.h"
 #include "vw/core/setup_base.h"
@@ -33,7 +32,7 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
 
   CB::label backup_ld;
   CB::label new_ld;
-  bool is_test_label = CB::is_test_label(ec.l.cb);
+  bool is_test_label = ec.l.cb.is_test_label();
 
   uint32_t chosen_action = 0;
   uint32_t index_with_cost = 0;

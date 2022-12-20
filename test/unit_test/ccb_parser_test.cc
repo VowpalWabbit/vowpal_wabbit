@@ -21,7 +21,7 @@ void parse_ccb_label(VW::string_view label, VW::ccb_label& l)
 {
   std::vector<VW::string_view> words;
   VW::tokenize(' ', label, words);
-  VW::default_ccb_label(l);
+  l.reset_to_default();
   VW::label_parser_reuse_mem mem;
   auto null_logger = VW::io::create_null_logger();
   VW::parse_ccb_label(l, mem, words, null_logger);
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(ccb_cache_label)
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   auto uncached_label = VW::make_unique<VW::ccb_label>();
-  VW::default_ccb_label(*uncached_label);
+  uncached_label->reset_to_default();
   VW::model_utils::read_model_field(io_reader, *uncached_label);
 
   BOOST_CHECK_EQUAL(uncached_label->explicit_included_actions.size(), 2);
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(ccb_copy_label)
   parse_ccb_label("ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", *label.get());
 
   auto copied_to = VW::make_unique<VW::ccb_label>();
-  VW::default_ccb_label(*copied_to);
+  copied_to->reset_to_default();
 
   *copied_to = *label;
   BOOST_CHECK_EQUAL(copied_to->explicit_included_actions.size(), 2);
