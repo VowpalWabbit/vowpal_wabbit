@@ -24,6 +24,7 @@ extern "C"
   API VW::example* CreateExample(vw_net_native::workspace_context* workspace);
   API void DeleteExample(example* example);
 
+  // This function is deprecated and will be removed in VW 10.
   API int IsRingExample(vw_net_native::workspace_context* workspace, VW::example* example);
   API int IsExampleNewline(VW::example* example);
   API char* ComputeDiffDescriptionExample(

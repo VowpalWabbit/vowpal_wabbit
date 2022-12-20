@@ -1984,7 +1984,11 @@ VW::workspace* initialize_escaped(
     std::string const& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   char** argv = to_argv_escaped(s, argc);
+  VW_WARNING_STATE_POP
+
   VW::workspace* ret = nullptr;
 
   try
@@ -1993,11 +1997,19 @@ VW::workspace* initialize_escaped(
   }
   catch (...)
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     free_args(argc, argv);
+    VW_WARNING_STATE_POP
+
     throw;
   }
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   free_args(argc, argv);
+  VW_WARNING_STATE_POP
+
   return ret;
 }
 
@@ -2021,7 +2033,11 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool
     trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   char** argv = to_argv(s, argc);
+  VW_WARNING_STATE_POP
+
   VW::workspace* ret = nullptr;
 
   try
@@ -2031,11 +2047,19 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool
   }
   catch (...)
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     free_args(argc, argv);
+    VW_WARNING_STATE_POP
+
     throw;
   }
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   free_args(argc, argv);
+  VW_WARNING_STATE_POP
+
   return ret;
 }
 
