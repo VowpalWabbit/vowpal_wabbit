@@ -23,7 +23,6 @@
 #include "vw/core/memory.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
@@ -42,6 +41,7 @@
 #include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
 #include "vw/io/owning_stream.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -221,7 +221,7 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
     }
     d--;
     *d = '|';  // set up for parser::read_line
-    VW::read_line(all, &ec, d);
+    VW::parsers::text::read_line(all, &ec, d);
     // now we just need to grab stuff from the default namespace of ec!
     if (ec.feature_space[def].empty()) { continue; }
     map->emplace(word, VW::make_unique<VW::features>(ec.feature_space[def]));
@@ -1984,7 +1984,11 @@ VW::workspace* initialize_escaped(
     std::string const& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   char** argv = to_argv_escaped(s, argc);
+  VW_WARNING_STATE_POP
+
   VW::workspace* ret = nullptr;
 
   try
@@ -1993,11 +1997,19 @@ VW::workspace* initialize_escaped(
   }
   catch (...)
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     free_args(argc, argv);
+    VW_WARNING_STATE_POP
+
     throw;
   }
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   free_args(argc, argv);
+  VW_WARNING_STATE_POP
+
   return ret;
 }
 
@@ -2021,7 +2033,11 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool
     trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   char** argv = to_argv(s, argc);
+  VW_WARNING_STATE_POP
+
   VW::workspace* ret = nullptr;
 
   try
@@ -2031,11 +2047,19 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool
   }
   catch (...)
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     free_args(argc, argv);
+    VW_WARNING_STATE_POP
+
     throw;
   }
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   free_args(argc, argv);
+  VW_WARNING_STATE_POP
+
   return ret;
 }
 
