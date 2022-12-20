@@ -228,6 +228,11 @@ void VW::details::output_cs_example(
   print_cs_update(all, label.is_test_label(), ec, nullptr, false, multiclass_prediction);
 }
 
+void VW::details::output_cs_example(VW::workspace& all, const VW::example& ec)
+{
+  output_cs_example(all, ec, ec.l.cs, ec.pred.multiclass);
+}
+
 void VW::details::finish_cs_example(VW::workspace& all, VW::example& ec)
 {
   output_cs_example(all, ec, ec.l.cs, ec.pred.multiclass);

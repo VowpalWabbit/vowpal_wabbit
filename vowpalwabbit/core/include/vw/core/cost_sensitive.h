@@ -47,7 +47,7 @@ extern VW::label_parser cs_label_parser_global;
 bool is_cs_example_header(const VW::example& ec);
 namespace details
 {
-// void output_cs_example(VW::workspace& all, const VW::example& ec);
+void output_cs_example(VW::workspace& all, const VW::example& ec);
 void output_cs_example(
     VW::workspace& all, const VW::example& ec, const cs_label& cs_label, uint32_t multiclass_prediction);
 void finish_cs_example(VW::workspace& all, VW::example& ec);
