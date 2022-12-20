@@ -4,6 +4,8 @@
 
 #include "vw/core/global_data.h"
 
+#include "vw/core/vw.h"
+
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "vw/common/future_compat.h"
@@ -14,6 +16,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
+#include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reduction_stack.h"
@@ -291,6 +294,16 @@ std::string workspace::dump_weights_to_json_experimental()
                               dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)
                         : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map, weights,
                               dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state);
+}
+
+void workspace::save_model(std::unique_ptr<VW::io::writer> writer)
+{
+  io_buf output_buffer;
+  output_buffer.add_file(std::move(writer));
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
+  VW::save_predictor(*this, output_buffer);
+  VW_WARNING_STATE_POP
 }
 }  // namespace VW
 

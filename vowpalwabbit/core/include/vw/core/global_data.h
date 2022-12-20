@@ -138,6 +138,8 @@ public:
    */
   std::string dump_weights_to_json_experimental();
 
+  void save_model(std::unique_ptr<VW::io::writer> writer);
+
   void (*set_minmax)(VW::shared_data* sd, float label);
 
   uint64_t current_pass;

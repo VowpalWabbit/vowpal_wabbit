@@ -2,6 +2,7 @@
 
 #include "jni_base_learner.h"
 #include "vw/core/vw.h"
+#include "vw/io/io_adapter.h"
 
 #define RETURN_TYPE "vowpalWabbit/learner/VWLearners$VWReturnType"
 #define RETURN_TYPE_INSTANCE "L" RETURN_TYPE ";"
@@ -62,7 +63,7 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_saveModel(
     std::string filenameCpp(utf_string);
     env->ReleaseStringUTFChars(filename, utf_string);
     env->DeleteLocalRef(filename);
-    VW::save_predictor(*(VW::workspace*)vwPtr, filenameCpp);
+    ((VW::workspace*)vwPtr)->save_model(VW::io::open_file_writer(filenameCpp));
   }
   catch (...)
   {

@@ -190,11 +190,7 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
     VW::details::reset_source(*m_vw, m_vw->num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
-    {
-      io_buf write_buffer;
-      write_buffer.add_file(VW::io::create_vector_writer(buffer));
-      VW::save_predictor(*m_vw, write_buffer);
-    }
+    m_vw->save_model(VW::io::create_vector_writer(buffer));
 
     // make sure don't try to free m_vw twice in case VW::finish throws.
     VW::workspace* vw_tmp = m_vw;
@@ -250,7 +246,8 @@ void VowpalWabbitBase::SaveModel(String^ filename)
   auto name = msclr::interop::marshal_as<std::string>(filename);
 
   try
-  { VW::save_predictor(*m_vw, name);
+  {
+    m_vw->save_model(VW::io::open_file_writer(name));
   }
   CATCHRETHROW
 }
@@ -261,10 +258,7 @@ void VowpalWabbitBase::SaveModel(Stream^ stream)
 
   try
   {
-    io_buf buf;
-    auto* stream_adapter = new clr_stream_adapter(stream);
-    buf.add_file(std::unique_ptr<VW::io::writer>(stream_adapter));
-    VW::save_predictor(*m_vw, buf);
+    m_vw->save_model(VW::make_unique<clr_stream_adapter>(stream));
   }
   CATCHRETHROW
 }

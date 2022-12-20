@@ -7,6 +7,7 @@
 #include "vw/core/metric_sink.h"
 #include "vw/core/rand48.h"
 #include "vw/core/vw.h"
+#include "vw/io/io_adapter.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -156,7 +157,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
     vw->finish_example(ex);
     if (i == switch_step)
     {
-      VW::save_predictor(*vw, "model_file.vw");
+      vw->save_model(VW::io::open_file_writer("model_file.vw"));
       VW::finish(*vw);
       vw = VW::initialize("--quiet --extra_metrics ut_metrics.json -i model_file.vw");
     }

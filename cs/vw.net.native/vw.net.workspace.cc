@@ -5,6 +5,7 @@
 #include "vw/core/best_constant.h"
 #include "vw/core/learner.h"
 #include "vw/core/shared_data.h"
+#include "vw/io/io_adapter.h"
 #include "vw/text_parser/parse_example_text.h"
 
 vw_net_native::workspace_context* create_workspace(
@@ -106,11 +107,7 @@ API vw_net_native::ERROR_CODE WorkspaceReload(vw_net_native::workspace_context* 
     VW::details::reset_source(*workspace->vw, workspace->vw->num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
-    {
-      io_buf write_buffer;
-      write_buffer.add_file(VW::io::create_vector_writer(buffer));
-      VW::save_predictor(*workspace->vw, write_buffer);
-    }
+    workspace->vw->save_model(VW::io::create_vector_writer(buffer));
 
     // make sure don't try to free m_vw twice in case VW::finish throws.
     VW::workspace* vw_tmp = nullptr;
@@ -135,8 +132,7 @@ API vw_net_native::ERROR_CODE WorkspaceSavePredictorToFile(vw_net_native::worksp
   try
   {
     std::string file_name_str(file_name, file_name_size);
-    VW::save_predictor(*workspace->vw, file_name_str);
-
+    workspace->vw->save_model(VW::io::open_file_writer(file_name_str));
     return VW::experimental::error_code::success;
   }
   CATCH_RETURN_STATUS
@@ -147,10 +143,7 @@ API vw_net_native::ERROR_CODE WorkspaceSavePredictorToWriter(vw_net_native::work
 {
   try
   {
-    io_buf write_buffer;
-    write_buffer.add_file(std::unique_ptr<VW::io::writer>(new vw_net_native::stream_io_writer(writer_vtable)));
-    VW::save_predictor(*workspace->vw, write_buffer);
-
+    workspace->vw->save_model(VW::make_unique<vw_net_native::stream_io_writer>(writer_vtable));
     return VW::experimental::error_code::success;
   }
   CATCH_RETURN_STATUS

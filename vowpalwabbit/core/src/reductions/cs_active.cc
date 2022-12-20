@@ -14,6 +14,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>
@@ -197,7 +198,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
     std::stringstream filename;
     filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
              << cs_a.num_any_queries;
-    VW::save_predictor(*(cs_a.all), filename.str());
+    cs_a.all->save_model(VW::io::open_file_writer(filename.str()));
     *(cs_a.all->trace_message) << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
     // Double label query budget
     cs_a.min_labels *= 2;

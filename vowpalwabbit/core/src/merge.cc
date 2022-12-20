@@ -99,9 +99,7 @@ std::unique_ptr<VW::workspace> copy_workspace(const VW::workspace* ws, VW::io::l
   command_line.emplace_back("--preserve_performance_counters");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf temp_buffer;
-  temp_buffer.add_file(VW::io::create_vector_writer(backing_vector));
-  VW::save_predictor(*const_cast<VW::workspace*>(ws), temp_buffer);
+  const_cast<VW::workspace*>(ws)->save_model(VW::io::create_vector_writer(backing_vector));
   return VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(command_line),
       VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()), nullptr, nullptr, logger);
 }
@@ -148,9 +146,7 @@ namespace VW
 {
 void model_delta::serialize(VW::io::writer& output) const
 {
-  io_buf buffer;
-  buffer.add_file(VW::make_unique<writer_ref_adapter>(output));
-  VW::save_predictor(*_ws, buffer);
+  _ws->save_model(VW::make_unique<writer_ref_adapter>(output));
 }
 
 std::unique_ptr<model_delta> model_delta::deserialize(VW::io::reader& input)

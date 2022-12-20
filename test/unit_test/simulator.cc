@@ -227,7 +227,8 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
   auto ctr = sim.run_simulation(first_vw, before_save, true, 1, swap_after);
   // save
   std::string model_file = "test_save_load.vw";
-  VW::save_predictor(*first_vw, model_file);
+  first_vw->save_model(VW::io::open_file_writer("test_save_load.vw"));
+
   VW::finish(*first_vw);
   // reload in another instance
   auto other_vw = VW::initialize(vw_arg + " --quiet -i " + model_file);

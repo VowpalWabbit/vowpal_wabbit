@@ -393,7 +393,7 @@ extern "C"
     std::string name = pointer->final_regressor_name;
     if (name.empty()) { return; }
 
-    return VW::save_predictor(*pointer, name);
+    pointer->save_model(VW::io::open_file_writer(name));
   }
 
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(
@@ -419,7 +419,6 @@ extern "C"
   {
   public:
     std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>();
-    io_buf holding_buffer;
   };
 
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(
@@ -427,8 +426,7 @@ extern "C"
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
     auto* holder = new buffer_holder;
-    holder->holding_buffer.add_file(VW::io::create_vector_writer(holder->data));
-    VW::save_predictor(*pointer, holder->holding_buffer);
+    pointer->save_model(VW::io::create_vector_writer(holder->data));
 
     *outputBufferHandle = holder;
     const auto& underlying_buffer = holder->data;

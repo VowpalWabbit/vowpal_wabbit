@@ -185,7 +185,7 @@ int main(int argc, char* argv[])
     auto merged = VW::merge_models(base_model.get(), const_workspaces, &custom_logger);
 
     logger.info("Saving model: {}", options.output_file);
-    VW::save_predictor(*merged, options.output_file);
+    merged->save_model(VW::io::open_file_writer(options.output_file));
   }
   catch (const VW::vw_exception& e)
   {

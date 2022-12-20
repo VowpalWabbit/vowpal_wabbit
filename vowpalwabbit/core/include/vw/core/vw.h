@@ -200,7 +200,13 @@ inline void releaseFeatureSpace(primitive_feature_space* features, size_t len)  
   release_feature_space(features, len);
 }
 
+VW_DEPRECATED(
+    "VW::save_predictor is deprecated, use the method VW::workspace::save_model instead. This function will be removed "
+    "in VW 10")
 void save_predictor(VW::workspace& all, const std::string& reg_name);
+VW_DEPRECATED(
+    "VW::save_predictor is deprecated, use the method VW::workspace::save_model instead. This function will be removed "
+    "in VW 10")
 void save_predictor(VW::workspace& all, io_buf& buf);
 
 // inlines

@@ -251,9 +251,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
   try
   {  // save in stl::vector
     auto model_buffer = std::make_shared<std::vector<char>>();
-    io_buf buffer;
-    buffer.add_file(VW::io::create_vector_writer(model_buffer));
-    VW::save_predictor(*all, buffer);
+    all->save_model(VW::io::create_vector_writer(model_buffer));
 
     // copy to Java
     jbyteArray ret = env->NewByteArray(model_buffer->size());

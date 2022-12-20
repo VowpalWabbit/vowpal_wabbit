@@ -21,6 +21,7 @@
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
+#include "vw/io/io_adapter.h"
 #include "vw/text_parser/parse_example_text.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
@@ -344,7 +345,7 @@ void my_finish(vw_ptr all)
   VW::finish(*all, false);  // don't delete all because python will do that for us!
 }
 
-void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
+void my_save(vw_ptr all, std::string name) { all->save_model(VW::io::open_file_writer(name)); }
 
 search_ptr get_search_ptr(vw_ptr all)
 {
