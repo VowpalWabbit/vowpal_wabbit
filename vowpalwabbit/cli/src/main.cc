@@ -8,6 +8,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
@@ -63,10 +64,7 @@ int main(int argc, char* argv[])
         const std::string new_args = sstr.str();
         std::cout << new_args << std::endl;
 
-        int l_argc;
-        char** l_argv = VW::to_argv(new_args, l_argc);
-        std::vector<std::string> args(l_argv + 1, l_argv + l_argc);
-        auto ptr = VW::make_unique<options_cli>(args);
+        auto ptr = VW::make_unique<options_cli>(VW::split_command_line(new_args));
         ptr->add_and_parse(driver_config);
         auto level = VW::io::get_log_level(log_level);
         main_logger.set_level(level);

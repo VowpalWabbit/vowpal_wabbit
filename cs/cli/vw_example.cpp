@@ -11,7 +11,7 @@
 #include "vw/core/reductions/gd.h"
 #include <algorithm>
 #include "vw/core/shared_data.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 
 namespace VW
 {
@@ -107,7 +107,7 @@ void VowpalWabbitExample::Label::set(ILabel^ label)
 
 void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)
 { char empty = '\0';
-  VW::read_line(*vw->m_vw, m_example, &empty);
+  VW::parsers::text::read_line(*vw->m_vw, m_example, &empty);
 
   VW::setup_example(*vw->m_vw, m_example);
 }

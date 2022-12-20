@@ -133,7 +133,7 @@ void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
     {
       VW::namespace_index right = i;
       auto& rfs = ec.feature_space[right];
-      rfs.values.resize_but_with_stl_behavior(lrq.orig_size[right]);
+      rfs.values.resize(lrq.orig_size[right]);
       if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }
   }

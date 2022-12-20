@@ -14,7 +14,6 @@
 #include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/reductions/search/search.h"
 #include "vw/core/reductions/search/search_hooktask.h"
@@ -22,6 +21,7 @@
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
+#include "vw/text_parser/parse_example_text.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -494,7 +494,7 @@ example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
 {
   VW::example* ec = my_empty_example0(all, labelType);
-  VW::read_line(*all, ec, str);
+  VW::parsers::text::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
   return boost::shared_ptr<VW::example>(ec, my_delete_example);
 }
@@ -550,7 +550,7 @@ py::list my_parse(vw_ptr& all, char* str)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  all->example_parser->text_reader(all.get(), str, strlen(str), examples);
+  all->example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
 
   py::list example_collection;
   for (auto* ex : examples)

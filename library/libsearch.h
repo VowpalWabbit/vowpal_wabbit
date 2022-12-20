@@ -21,7 +21,7 @@ public:
   SearchTask(VW::workspace& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
   {
     _bogus_example = new VW::example;
-    VW::read_line(vw_obj, _bogus_example, (char*)"1 | x");
+    VW::parsers::text::read_line(vw_obj, _bogus_example, (char*)"1 | x");
     VW::setup_example(vw_obj, _bogus_example);
 
     _trigger.push_back(_bogus_example);

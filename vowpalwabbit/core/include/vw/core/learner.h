@@ -157,11 +157,11 @@ class finish_example_data
 public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
   using update_stats_fn = void (*)(
-      const VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
+      const VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using output_example_prediction_fn = void (*)(
       VW::workspace&, const void* data, const void* ex, VW::io::logger& logger);
   using print_update_fn = void (*)(
-      VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
+      VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using cleanup_example_fn = void (*)(const void* data, const void* ex);
 
   void* data = nullptr;

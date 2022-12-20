@@ -110,7 +110,7 @@ class workspace
 public:
   VW::shared_data* sd;
 
-  parser* example_parser;
+  std::unique_ptr<parser> example_parser;
   std::thread parse_thread;
 
   all_reduce_type selected_all_reduce_type;

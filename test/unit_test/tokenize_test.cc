@@ -108,7 +108,11 @@ BOOST_AUTO_TEST_CASE(tokenize_basic_string_with_escape_final_character)
 BOOST_AUTO_TEST_CASE(tokenize_to_argv_with_space)
 {
   int argc = 0;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   char** argv = VW::to_argv_escaped("--example_queue_limit 1024 -f my_model\\ best.model", argc);
+  VW_WARNING_STATE_POP
+
   BOOST_CHECK_EQUAL(argc, 5);
   BOOST_CHECK_EQUAL(argv[0], "b");
   BOOST_CHECK_EQUAL(argv[1], "--example_queue_limit");
@@ -123,7 +127,11 @@ BOOST_AUTO_TEST_CASE(tokenize_to_argv_with_space)
 BOOST_AUTO_TEST_CASE(basic_tokenize_to_argv)
 {
   int argc = 0;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   char** argv = VW::to_argv_escaped("--ccb_explore_adf --json --no_stdin --quiet", argc);
+
+  VW_WARNING_STATE_POP
 
   BOOST_CHECK_EQUAL(argc, 5);
   BOOST_CHECK_EQUAL(argv[0], "b");

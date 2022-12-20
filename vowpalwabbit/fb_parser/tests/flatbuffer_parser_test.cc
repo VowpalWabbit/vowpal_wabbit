@@ -4,7 +4,6 @@
 
 #include "vw/core/constant.h"
 #include "vw/core/feature_group.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 #include "vw/test_common/test_common.h"
