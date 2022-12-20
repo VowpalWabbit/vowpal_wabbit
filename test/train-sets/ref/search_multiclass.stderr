@@ -14,4 +14,4 @@ loss       last        counter           output prefix          output prefix  p
 0.000000   0.000000          1  [1                   ] [1                   ]     0     0        4        0        4  0.000300
 0.500000   1.000000          2  [2                   ] [1                   ]     0     0        8        0        8  0.000700
 0.750000   1.000000          4  [4                   ] [2                   ]     0     0       16        0       16  0.001499
-vw: /home/gbassman/repos/persist-ppm/vowpalwabbit/core/include/vw/core/learner.h:304: void VW::LEARNER::learner<T, E>::predict(E&, size_t) [with T = char; E = VW::example; size_t = long unsigned int]: Assertion `details::get_offset(ec) < MAX_FT_OFFSET' failed.
+vw: /home/gbassman/repos/persist-ppm/vowpalwabbit/core/include/vw/core/learner.h:320: void VW::LEARNER::learner<T, E>::predict(E&, size_t) [with T = char; E = VW::example; size_t = long unsigned int]: Assertion `details::get_offset(ec) < MAX_FT_OFFSET' failed.

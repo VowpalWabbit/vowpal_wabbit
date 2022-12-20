@@ -12,4 +12,4 @@ Input label = MULTICLASS
 Output pred = MULTICLASS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-vw: /home/gbassman/repos/persist-ppm/vowpalwabbit/core/include/vw/core/learner.h:332: void VW::LEARNER::learner<T, E>::multipredict(E&, size_t, size_t, VW::polyprediction*, bool) [with T = char; E = VW::example; size_t = long unsigned int]: Assertion `details::get_offset(ec) < MAX_FT_OFFSET' failed.
+vw: /home/gbassman/repos/persist-ppm/vowpalwabbit/core/include/vw/core/learner.h:348: void VW::LEARNER::learner<T, E>::multipredict(E&, size_t, size_t, VW::polyprediction*, bool) [with T = char; E = VW::example; size_t = long unsigned int]: Assertion `details::get_offset(ec) < MAX_FT_OFFSET' failed.
