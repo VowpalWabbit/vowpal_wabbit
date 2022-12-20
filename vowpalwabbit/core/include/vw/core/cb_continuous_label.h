@@ -30,6 +30,8 @@ class continuous_label
 {
 public:
   v_array<continuous_label_elm> costs;
+
+  VW_ATTR(nodiscard) bool is_labeled() const;
 };
 
 extern VW::label_parser the_label_parser;

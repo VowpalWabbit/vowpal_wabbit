@@ -90,10 +90,6 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, VW::example& ec)
 
 ///////////////////////////////////////////////////
 // BEGIN: functions to output progress
-bool does_example_have_label(const VW::example& ec)
-{
-  return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
-}
 
 // "average loss" "since last" "example counter" "example weight"
 // "current label" "current predict" "current features"
@@ -101,7 +97,7 @@ void update_stats_cats_pdf(const VW::workspace& /* all */, VW::shared_data& sd, 
     const VW::example& ec, VW::io::logger& /* logger */)
 {
   const auto& cb_cont_costs = ec.l.cb_cont.costs;
-  sd.update(ec.test_only, does_example_have_label(ec), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost, ec.weight,
+  sd.update(ec.test_only, ec.l.cb_cont.is_labeled(), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost, ec.weight,
       ec.get_num_features());
   sd.weighted_labels += ec.weight;
 }

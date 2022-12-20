@@ -28,6 +28,8 @@ void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb
 }
 }  // namespace CB
 
+bool VW::cb_continuous::continuous_label::is_labeled() const { return !costs.empty() && costs[0].action != FLT_MAX; }
+
 void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
     VW::reduction_features& red_features, VW::io::logger& logger)
 {
