@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "test_common.h"
+#include "vw/test_common/test_common.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -28,7 +29,7 @@ BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
   auto vw = VW::initialize(
       "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet --first_only",
       nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
@@ -70,7 +71,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
       "--dsjson --chain_hash --cats_pdf 32 --min_value=185 --max_value=23959 --bandwidth 1000 --no_stdin --quiet "
       "--first_only",
       nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
@@ -116,7 +117,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_uniform_random)
           " --max_value=" + std::to_string(max_value) + " --epsilon " + std::to_string(epsilon) +
           " --bandwidth 1 --no_stdin --quiet --first_only",
       nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
@@ -164,7 +165,7 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
           " --max_value=" + std::to_string(max_value) + " --epsilon " + std::to_string(epsilon) +
           " --bandwidth 1000 --no_stdin --quiet --first_only",
       nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 

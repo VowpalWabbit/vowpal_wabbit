@@ -47,7 +47,6 @@ set(vw_core_headers
   include/vw/core/interactions_predict.h
   include/vw/core/interactions.h
   include/vw/core/io_buf.h
-  include/vw/core/json_utils.h
   include/vw/core/kskip_ngram_transformer.h
   include/vw/core/label_dictionary.h
   include/vw/core/label_parser.h
@@ -361,7 +360,7 @@ vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser vw_text_parser
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser vw_text_parser vw_json_parser
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE

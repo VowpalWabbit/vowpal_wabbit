@@ -6,7 +6,6 @@
 
 #include "vw/core/action_score.h"
 #include "vw/core/ccb_reduction_features.h"
-#include "vw/core/parse_example_json.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
@@ -50,11 +49,6 @@ void check_vector_of_vectors_exact(const std::vector<std::vector<T>>& lhs, const
     BOOST_CHECK_EQUAL_COLLECTIONS(lhs[i].begin(), lhs[i].end(), rhs[i].begin(), rhs[i].end());
   }
 }
-
-VW::multi_ex parse_json(VW::workspace& all, const std::string& line);
-
-VW::multi_ex parse_dsjson(
-    VW::workspace& all, std::string line, VW::details::decision_service_interaction* interaction = nullptr);
 
 bool is_invoked_with(const std::string& arg);
 

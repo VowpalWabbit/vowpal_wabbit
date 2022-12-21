@@ -17,8 +17,6 @@ add_executable(vw-unit-test.out
   continuous_actions_parser_test.cc
   custom_reduction_test.cc
   distributionally_robust_test.cc
-  dsjson_parser_test.cc
-  json_parser_test.cc
   main.cc
   simulator.cc
   simulator.h

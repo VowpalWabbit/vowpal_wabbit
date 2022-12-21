@@ -1,5 +1,5 @@
 #include "vw.net.workspace.h"
-#include "vw/core/parse_example_json.h"
+#include "vw/json_parser/parse_example_json.h"
 
 API vw_net_native::ERROR_CODE WorkspaceParseJson(vw_net_native::workspace_context* workspace, char* json, size_t length,
     vw_net_native::example_pool_get_example_fn get_example, void* example_pool_context,
@@ -14,9 +14,14 @@ API vw_net_native::ERROR_CODE WorkspaceParseJson(vw_net_native::workspace_contex
   {
     if (workspace->vw->audit)
     {
-      VW::read_line_json_s<true>(*workspace->vw, examples, json, length, get_example, example_pool_context);
+      VW::parsers::json::read_line_json_s<true>(
+          *workspace->vw, examples, json, length, get_example, example_pool_context);
     }
-    else { VW::read_line_json_s<false>(*workspace->vw, examples, json, length, get_example, example_pool_context); }
+    else
+    {
+      VW::parsers::json::read_line_json_s<false>(
+          *workspace->vw, examples, json, length, get_example, example_pool_context);
+    }
 
     VW::setup_examples(*workspace->vw, examples);
 
@@ -30,7 +35,7 @@ API vw_net_native::ERROR_CODE WorkspaceParseJson(vw_net_native::workspace_contex
 
 API vw_net_native::ERROR_CODE WorkspaceParseDecisionServiceJson(vw_net_native::workspace_context* workspace, char* json,
     size_t length, size_t offset, bool copy_json, vw_net_native::example_pool_get_example_fn get_example,
-    void* example_pool_context, VW::details::decision_service_interaction* interaction,
+    void* example_pool_context, VW::parsers::json::decision_service_interaction* interaction,
     VW::experimental::api_status* status)
 {
   char* actual_json = json + offset;
@@ -43,12 +48,12 @@ API vw_net_native::ERROR_CODE WorkspaceParseDecisionServiceJson(vw_net_native::w
   {
     if (workspace->vw->audit)
     {
-      VW::read_line_decision_service_json<true>(
+      VW::parsers::json::read_line_decision_service_json<true>(
           *workspace->vw, examples, actual_json, length, copy_json, get_example, example_pool_context, interaction);
     }
     else
     {
-      VW::read_line_decision_service_json<false>(
+      VW::parsers::json::read_line_decision_service_json<false>(
           *workspace->vw, examples, actual_json, length, copy_json, get_example, example_pool_context, interaction);
     }
 
