@@ -6,11 +6,7 @@ add_executable(vw-unit-test.out
   epsilon_decay_test.cc
   automl_test.cc
   automl_weights_test.cc
-  baseline_cb_test.cc
-  cats_test.cc
-  cats_tree_test.cc
   cats_user_provided_pdf.cc
-  cb_explore_adf_test.cc
   cb_large_actions_test.cc
   cb_las_one_pass_svd_test.cc
   cb_las_spanner_test.cc
@@ -31,10 +27,6 @@ add_executable(vw-unit-test.out
   numeric_cast_test.cc
   object_pool_test.cc
   offset_tree_test.cc
-  parse_args_test.cc
-  parser_test.cc
-  pmf_to_pdf_test.cc
-  prediction_test.cc
   simulator.cc
   simulator.h
   tag_utils_test.cc

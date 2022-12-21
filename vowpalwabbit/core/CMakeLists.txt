@@ -421,24 +421,32 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
+      tests/baseline_cb_test.cc
+      tests/cats_test.cc
+      tests/cats_tree_test.cc
+      tests/cb_explore_adf_test.cc
       tests/confidence_sequence_robust_test.cc
       tests/eigen_memory_tree_test.cc
       tests/example_test.cc
       tests/flat_example_test.cc
       tests/guard_test.cc
+      tests/interactions_test.cc
+      tests/main.cc
+      tests/math_test.cc
+      tests/merge_header_opts_test.cc
+      tests/merge_test.cc
+      tests/model_util_test.cc
+      tests/parse_args_test.cc
+      tests/parser_test.cc
+      tests/pmf_to_pdf_test.cc
+      tests/power_test.cc
+      tests/prediction_test.cc
       tests/random_test.cc
+      tests/save_load_test.cc
       tests/scope_exit_test.cc
       tests/slates_parser_test.cc
       tests/slates_test.cc
       tests/status_builder_test.cc
-      tests/interactions_test.cc
-      tests/main.cc
-      tests/math_test.cc
-      tests/merge_test.cc
-      tests/model_util_test.cc
-      tests/parse_args_test.cc
-      tests/power_test.cc
-      tests/save_load_test.cc
       tests/thread_pool_test.cc
       tests/tokenize_test.cc
       tests/v_array_test.cc
