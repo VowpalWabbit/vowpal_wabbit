@@ -103,7 +103,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
       unsigned char right = i[(which + 1) % 2];
       unsigned int k = atoi(i.c_str() + 2);
 
-      features& left_fs = ec.feature_space[left];
+      auto& left_fs = ec.feature_space[left];
       for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
       {
         float lfx = left_fs.values[lfn];
@@ -124,7 +124,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
               }
             }
 
-            features& right_fs = ec.feature_space[right];
+            auto& right_fs = ec.feature_space[right];
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
             {
               // NB: ec.ft_offset added by base learner

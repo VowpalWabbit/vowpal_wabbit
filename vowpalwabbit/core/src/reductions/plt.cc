@@ -396,7 +396,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   }
 
   // resize VW::v_arrays
-  tree->nodes_time.resize_but_with_stl_behavior(tree->t);
+  tree->nodes_time.resize(tree->t);
   std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
   tree->node_pred.resize(tree->kary);
   if (tree->top_k > 0)

@@ -13,7 +13,7 @@
 
 BOOST_AUTO_TEST_CASE(unique_feature_group_test)
 {
-  features fs;
+  VW::features fs;
   fs.push_back(1.f, 1);
   fs.push_back(1.f, 2);
   fs.push_back(1.f, 1);
@@ -42,20 +42,20 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
 
   // Cap at 5
   VW::unique_features(fs, 5);
-  check_collections_exact(
-      std::vector<feature_index>(fs.indices.begin(), fs.indices.end()), std::vector<feature_index>{1, 2, 3, 5, 7});
+  check_collections_exact(std::vector<VW::feature_index>(fs.indices.begin(), fs.indices.end()),
+      std::vector<VW::feature_index>{1, 2, 3, 5, 7});
   check_collections_exact(fs.namespace_extents, std::vector<VW::namespace_extent>{{2, 4, 1}});
 
   // Uncapped
   VW::unique_features(fs_copy1);
-  check_collections_exact(std::vector<feature_index>(fs_copy1.indices.begin(), fs_copy1.indices.end()),
-      std::vector<feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
+  check_collections_exact(std::vector<VW::feature_index>(fs_copy1.indices.begin(), fs_copy1.indices.end()),
+      std::vector<VW::feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
   check_collections_exact(fs_copy1.namespace_extents, std::vector<VW::namespace_extent>{{2, 4, 1}, {5, 8, 2}});
 
   // Special case at max 1
   VW::unique_features(fs_copy2, 1);
-  check_collections_exact(
-      std::vector<feature_index>(fs_copy2.indices.begin(), fs_copy2.indices.end()), std::vector<feature_index>{1});
+  check_collections_exact(std::vector<VW::feature_index>(fs_copy2.indices.begin(), fs_copy2.indices.end()),
+      std::vector<VW::feature_index>{1});
   BOOST_REQUIRE(fs_copy2.namespace_extents.empty());
 
   // Special case for max 0
@@ -65,21 +65,21 @@ BOOST_AUTO_TEST_CASE(unique_feature_group_test)
 
   // Explicit negative input that isn't -1
   VW::unique_features(fs_copy4, -10);
-  check_collections_exact(std::vector<feature_index>(fs_copy4.indices.begin(), fs_copy4.indices.end()),
-      std::vector<feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
+  check_collections_exact(std::vector<VW::feature_index>(fs_copy4.indices.begin(), fs_copy4.indices.end()),
+      std::vector<VW::feature_index>{1, 2, 3, 5, 7, 11, 12, 13, 25});
   check_collections_exact(fs_copy4.namespace_extents, std::vector<VW::namespace_extent>{{2, 4, 1}, {5, 8, 2}});
 
   // Special case for max 0
-  features empty_features;
+  VW::features empty_features;
   VW::unique_features(empty_features, 0);
   BOOST_REQUIRE(empty_features.empty());
   BOOST_REQUIRE(empty_features.namespace_extents.empty());
 
-  features fs_size_one;
+  VW::features fs_size_one;
   fs_size_one.push_back(1.f, 1);
   VW::unique_features(fs_size_one);
-  check_collections_exact(std::vector<feature_index>(fs_size_one.indices.begin(), fs_size_one.indices.end()),
-      std::vector<feature_index>{1});
+  check_collections_exact(std::vector<VW::feature_index>(fs_size_one.indices.begin(), fs_size_one.indices.end()),
+      std::vector<VW::feature_index>{1});
   BOOST_REQUIRE(fs_size_one.namespace_extents.empty());
 }
 
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(flatten_then_unflatten_namespace_extents_test)
 
 BOOST_AUTO_TEST_CASE(sort_feature_group_test)
 {
-  features fs;
+  VW::features fs;
   fs.push_back(1.f, 1);
   fs.push_back(1.f, 25);
   fs.start_ns_extent(1);
@@ -122,8 +122,8 @@ BOOST_AUTO_TEST_CASE(sort_feature_group_test)
   const auto parse_mask = (static_cast<uint64_t>(1) << 18) - 1;
   fs.sort(parse_mask);
 
-  check_collections_exact(std::vector<feature_index>(fs.indices.begin(), fs.indices.end()),
-      std::vector<feature_index>{1, 3, 5, 7, 11, 12, 13, 25});
+  check_collections_exact(std::vector<VW::feature_index>(fs.indices.begin(), fs.indices.end()),
+      std::vector<VW::feature_index>{1, 3, 5, 7, 11, 12, 13, 25});
   check_collections_exact(fs.namespace_extents, std::vector<VW::namespace_extent>{{1, 3, 1}, {4, 7, 2}});
 }
 

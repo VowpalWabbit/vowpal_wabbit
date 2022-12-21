@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "vw/cache_parser/parse_example_cache.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/test_common/test_common.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -21,7 +21,7 @@ TEST(cache_tests, write_and_read_example)
 {
   auto workspace = VW::initialize_experimental(vwtest::make_args("--quiet"));
   VW::example src_ex;
-  VW::read_line(*workspace, &src_ex, "3.5 |ns1 example value test |ss2 ex:0.5");
+  VW::parsers::text::read_line(*workspace, &src_ex, "3.5 |ns1 example value test |ss2 ex:0.5");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
   io_buf io_writer;
@@ -58,7 +58,7 @@ TEST(cache_tests, write_and_read_large_example)
 {
   auto workspace = VW::initialize_experimental(vwtest::make_args("--quiet"));
   VW::example src_ex;
-  VW::read_line(*workspace, &src_ex,
+  VW::parsers::text::read_line(*workspace, &src_ex,
       "| example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
       "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1"
       "|a example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
@@ -152,7 +152,7 @@ TEST(cache_tests, write_and_read_features)
 
   uint64_t mask = (1 << 18) - 1;
 
-  features feats;
+  VW::features feats;
   feats.push_back(1.f, 23424542 & mask);
   feats.push_back(4.f, 1231987 & mask);
   feats.push_back(1.1f, 675 & mask);
@@ -164,7 +164,7 @@ TEST(cache_tests, write_and_read_features)
   io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
-  features read_feats;
+  VW::features read_feats;
   bool sorted = false;
   VW::parsers::cache::details::read_cached_features(io_reader, read_feats, sorted);
 

@@ -9,6 +9,7 @@
 #include "vw/core/numeric_casts.h"
 #include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #ifndef _WIN32
 #  include <netinet/tcp.h>
@@ -62,7 +63,6 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/interactions.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parse_dispatch_loop.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
@@ -70,6 +70,7 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/unique_sort.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <cassert>
 #include <cerrno>
@@ -178,7 +179,7 @@ void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::par
 
 void set_string_reader(VW::workspace& all)
 {
-  all.example_parser->reader = read_features_string;
+  all.example_parser->reader = VW::parsers::text::read_features_string;
   all.print_by_ref = print_result_by_ref;
 }
 
@@ -401,7 +402,7 @@ void VW::details::enable_sources(
   parse_cache(all, input_options.cache_files, input_options.kill_cache, quiet);
 
   // default text reader
-  all.example_parser->text_reader = VW::read_lines;
+  all.example_parser->text_reader = VW::parsers::text::read_lines;
 
   if (!input_options.no_daemon && (all.daemon || all.active))
   {
@@ -482,8 +483,13 @@ void VW::details::enable_sources(
 
     if (all.daemon && !all.active)
     {
+      // See support notes here: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Daemon-example
+#ifdef __APPLE__
+      all.logger.warn("daemon mode is not supported on MacOS.");
+#endif
+
 #ifdef _WIN32
-      THROW("not supported on windows");
+      THROW("daemon mode is not supported on Windows");
 #else
       fclose(stdin);
       // weights will be shared across processes, accessible to children
@@ -499,7 +505,7 @@ void VW::details::enable_sources(
       // create children
       const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
       VW::v_array<int> children;
-      children.resize_but_with_stl_behavior(num_children);
+      children.resize(num_children);
       for (size_t i = 0; i < num_children; i++)
       {
         // fork() returns pid if parent, 0 if child
@@ -681,7 +687,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
   {
     if (all.limit[index] < ex->feature_space[index].size())
     {
-      features& fs = ex->feature_space[index];
+      auto& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
       VW::unique_features(fs, all.limit[index]);
     }
@@ -692,9 +698,9 @@ namespace VW
 {
 VW::example& get_unused_example(VW::workspace* all)
 {
-  parser* p = all->example_parser;
-  auto* ex = p->example_pool.get_object();
-  ex->example_counter = static_cast<size_t>(p->num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
+  auto& p = *all->example_parser;
+  auto* ex = p.example_pool.get_object();
+  ex->example_counter = static_cast<size_t>(p.num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
 
@@ -801,7 +807,7 @@ VW::example* read_example(VW::workspace& all, const char* example_line)
 {
   VW::example* ret = &get_unused_example(&all);
 
-  VW::read_line(all, ret, example_line);
+  VW::parsers::text::read_line(all, ret, example_line);
   setup_example(all, ret);
 
   return ret;
@@ -917,7 +923,10 @@ void clean_example(VW::workspace& all, example& ec)
 void finish_example(VW::workspace& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   if (!is_ring_example(all, &ec)) { return; }
+  VW_WARNING_STATE_POP
 
   clean_example(all, ec);
 

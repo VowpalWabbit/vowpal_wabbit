@@ -31,17 +31,17 @@ inline bool contains_wildcard(const std::vector<VW::namespace_index>& interactio
   return std::find(interaction.begin(), interaction.end(), VW::details::WILDCARD_NAMESPACE) != interaction.end();
 }
 
-inline bool contains_wildcard(const std::vector<extent_term>& interaction)
+inline bool contains_wildcard(const std::vector<VW::extent_term>& interaction)
 {
   return std::find(interaction.begin(), interaction.end(),
-             extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE}) != interaction.end();
+             VW::extent_term{VW::details::WILDCARD_NAMESPACE, VW::details::WILDCARD_NAMESPACE}) != interaction.end();
 }
 
 // function estimates how many new features will be generated for example and their sum(value^2).
 float eval_sum_ft_squared_of_generated_ft(bool permutations,
     const std::vector<std::vector<VW::namespace_index>>& interactions,
-    const std::vector<std::vector<extent_term>>& extent_interactions,
-    const std::array<features, VW::NUM_NAMESPACES>& feature_spaces);
+    const std::vector<std::vector<VW::extent_term>>& extent_interactions,
+    const std::array<VW::features, VW::NUM_NAMESPACES>& feature_spaces);
 
 template <typename T>
 std::vector<T> indices_to_values_one_based(const std::vector<size_t>& indices, const std::set<T>& values)
@@ -285,12 +285,12 @@ std::vector<std::vector<VW::namespace_index>> compile_interaction(
   return result;
 }
 
-template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
-std::vector<std::vector<extent_term>> compile_extent_interaction(
-    const std::vector<extent_term>& interaction, const std::set<extent_term>& _all_seen_extents)
+template <generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
+std::vector<std::vector<VW::extent_term>> compile_extent_interaction(
+    const std::vector<VW::extent_term>& interaction, const std::set<VW::extent_term>& _all_seen_extents)
 {
   std::vector<size_t> insertion_indices;
-  std::vector<extent_term> insertion_ns;
+  std::vector<VW::extent_term> insertion_ns;
   size_t num_wildcards = 0;
   for (size_t i = 0; i < interaction.size(); i++)
   {
@@ -334,11 +334,11 @@ std::vector<std::vector<VW::namespace_index>> compile_interactions(
   return final_interactions;
 }
 
-template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
-std::vector<std::vector<extent_term>> compile_extent_interactions(
-    const std::vector<std::vector<extent_term>>& interactions, const std::set<extent_term>& indices)
+template <generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
+std::vector<std::vector<VW::extent_term>> compile_extent_interactions(
+    const std::vector<std::vector<VW::extent_term>>& interactions, const std::set<VW::extent_term>& indices)
 {
-  std::vector<std::vector<extent_term>> final_interactions;
+  std::vector<std::vector<VW::extent_term>> final_interactions;
 
   for (const auto& inter : interactions)
   {
@@ -360,7 +360,7 @@ class interactions_generator
 {
 public:
   std::vector<std::vector<VW::namespace_index>> generated_interactions;
-  std::vector<std::vector<extent_term>> generated_extent_interactions;
+  std::vector<std::vector<VW::extent_term>> generated_extent_interactions;
   bool store_in_reduction_features = false;
 
   template <generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
@@ -390,9 +390,10 @@ public:
     }
   }
 
-  template <generate_func_t<extent_term> generate_func, bool leave_duplicate_interactions>
-  void update_extent_interactions_if_new_namespace_seen(const std::vector<std::vector<extent_term>>& interactions,
-      const VW::v_array<VW::namespace_index>& indices, const std::array<features, VW::NUM_NAMESPACES>& feature_space)
+  template <generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
+  void update_extent_interactions_if_new_namespace_seen(const std::vector<std::vector<VW::extent_term>>& interactions,
+      const VW::v_array<VW::namespace_index>& indices,
+      const std::array<VW::features, VW::NUM_NAMESPACES>& feature_space)
   {
     auto prev_count = _all_seen_extents.size();
     for (auto ns_index : indices)
@@ -427,7 +428,7 @@ public:
 
 private:
   std::set<VW::namespace_index> _all_seen_namespaces;
-  std::set<extent_term> _all_seen_extents;
+  std::set<VW::extent_term> _all_seen_extents;
 };
 
 }  // namespace INTERACTIONS

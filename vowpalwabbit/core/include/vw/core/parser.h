@@ -41,6 +41,8 @@ void parse_example_label(string_view label, const VW::label_parser& lbl_parser, 
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 void setup_examples(VW::workspace& all, VW::multi_ex& examples);
 
+VW::example& get_unused_example(VW::workspace* all);
+
 class parser
 {
 public:
@@ -66,7 +68,7 @@ public:
   /// call is made.
   int (*reader)(VW::workspace*, io_buf&, VW::multi_ex& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(VW::workspace*, const char*, size_t, VW::multi_ex&);
+  void (*text_reader)(VW::workspace*, VW::string_view, VW::multi_ex&);
 
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
