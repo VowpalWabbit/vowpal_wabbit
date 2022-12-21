@@ -339,13 +339,19 @@ void finish(plt& p)
 
 void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 {
-  std::stringstream msg;
   if (model_file.num_files() > 0)
   {
-    for (size_t i = 0; i < p.t; ++i)
+    std::stringstream msg;
+    bool resume = p.all->save_resume;
+    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+
+    if (resume)
     {
-      bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), read, msg, text);
+      for (size_t i = 0; i < p.t; ++i)
+      {
+        bin_text_read_write_fixed(
+            model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), read, msg, text);
+      }
     }
   }
 }
