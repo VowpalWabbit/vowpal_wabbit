@@ -338,8 +338,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(problem_multiplier)
-                .set_finish_example(explore_type::finish_multiline_example)
-                .set_print_example(explore_type::print_multiline_example)
+                .set_print_example(explore_type::print_example)
+                .set_output_example_prediction(explore_type::output_example_prediction)
+                .set_update_stats(explore_type::update_stats)
+                .set_print_update(explore_type::print_update)
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build(&all.logger);
