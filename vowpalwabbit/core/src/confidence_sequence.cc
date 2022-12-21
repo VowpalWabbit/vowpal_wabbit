@@ -2,15 +2,59 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#if !defined(__APPLE__) && !defined(_WIN32)
+#  define __STDCPP_MATH_SPEC_FUNCS__ 201003L
+#  define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
+#endif
+
 #include "vw/core/confidence_sequence.h"
 
+#include "vw/core/metric_sink.h"
 #include "vw/core/model_utils.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
 namespace VW
 {
+namespace details
+{
+
+incremental_f_sum incremental_f_sum::operator+=(double x)
+{
+  int i = 0;
+  for (double y : this->partials)
+  {
+    if (std::abs(x) < std::abs(y)) { std::swap(x, y); }
+    double hi = x + y;
+    double lo = y - (hi - x);
+    if (lo != 0.0)
+    {
+      this->partials[i] = lo;
+      ++i;
+    }
+    x = hi;
+  }
+  this->partials.resize(i + 1);
+  this->partials[i] = x;
+  return *this;
+}
+incremental_f_sum incremental_f_sum::operator+(incremental_f_sum const& other) const
+{
+  incremental_f_sum result;
+  result.partials = this->partials;
+  for (double y : other.partials) { result += y; }
+  return result;
+}
+details::incremental_f_sum::operator double() const
+{
+  double result = 0.0;
+  for (double x : this->partials) { result += x; }
+  return result;
+}
+}  // namespace details
+
 namespace estimators
 {
 confidence_sequence::confidence_sequence(double alpha, double rmin_init, double rmax_init, bool adjust)
@@ -80,7 +124,7 @@ void confidence_sequence::update(double w, double r, double p_drop, double n_dro
   ++t;
 }
 
-void confidence_sequence::persist(metric_sink& metrics, const std::string& suffix)
+void confidence_sequence::persist(metric_sink& metrics, const std::string& suffix) const
 {
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("lb" + suffix, lower_bound());
