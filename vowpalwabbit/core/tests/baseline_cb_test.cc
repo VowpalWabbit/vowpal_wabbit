@@ -2,15 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "test_common.h"
 #include "vw/core/learner.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/rand48.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <ios>
 #include <sstream>
 #include <vector>
@@ -42,7 +42,7 @@ int sample(int size, const float* probs, float s)
 
 }  // namespace test_helpers
 
-BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
+TEST(baseline_cb_tests, baseline_cb_baseline_performs_badly)
 {
   using namespace test_helpers;
   auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
@@ -64,22 +64,21 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_performs_badly)
   VW::metric_sink metrics;
   vw->l->persist_metrics(metrics);
 
-  BOOST_CHECK_EQUAL(metrics.get_bool("baseline_cb_baseline_in_use"), false);
+  EXPECT_EQ(metrics.get_bool("baseline_cb_baseline_in_use"), false);
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_LE(
-      metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
+  EXPECT_LE(metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
   VW::multi_ex tst;
   make_example(tst, *vw, -1, costs_p0, probs_p0);
   vw->predict(tst);
-  BOOST_CHECK_EQUAL(tst[0]->pred.a_s.size(), 4);
-  BOOST_CHECK_EQUAL(tst[0]->pred.a_s[0].action, 3);
-  BOOST_CHECK_GE(tst[0]->pred.a_s[0].score, 0.9625f);  // greedy action, 4 actions + egreedy 0.05
+  EXPECT_EQ(tst[0]->pred.a_s.size(), 4);
+  EXPECT_EQ(tst[0]->pred.a_s[0].action, 3);
+  EXPECT_GE(tst[0]->pred.a_s[0].score, 0.9625f);  // greedy action, 4 actions + egreedy 0.05
 
   vw->finish_example(tst);
 }
 
-BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
+TEST(baseline_cb_tests, baseline_cb_baseline_takes_over_policy)
 {
   using namespace test_helpers;
   auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--cb_c_tau",
@@ -115,19 +114,18 @@ BOOST_AUTO_TEST_CASE(baseline_cb_baseline_takes_over_policy)
   VW::metric_sink metrics;
   vw->l->persist_metrics(metrics);
 
-  BOOST_CHECK_EQUAL(metrics.get_bool("baseline_cb_baseline_in_use"), true);
+  EXPECT_EQ(metrics.get_bool("baseline_cb_baseline_in_use"), true);
 
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
-  BOOST_CHECK_GT(
-      metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
+  EXPECT_GT(metrics.get_float("baseline_cb_baseline_lowerbound"), metrics.get_float("baseline_cb_policy_expectation"));
 
   VW::multi_ex tst;
   make_example(tst, *vw, -1, costs_p1, probs_p1);
   vw->predict(tst);
 
-  BOOST_CHECK_EQUAL(tst[0]->pred.a_s.size(), 4);
-  BOOST_CHECK_EQUAL(tst[0]->pred.a_s[0].action, 0);
-  BOOST_CHECK_GE(tst[0]->pred.a_s[0].score, 0.9625f);  // greedy action, 4 actions + egreedy 0.05
+  EXPECT_EQ(tst[0]->pred.a_s.size(), 4);
+  EXPECT_EQ(tst[0]->pred.a_s[0].action, 0);
+  EXPECT_GE(tst[0]->pred.a_s[0].score, 0.9625f);  // greedy action, 4 actions + egreedy 0.05
 
   vw->finish_example(tst);
 }
@@ -162,14 +160,14 @@ VW::metric_sink run_simulation(int steps, int switch_step)
   return metrics;
 }
 
-BOOST_AUTO_TEST_CASE(baseline_cb_save_load_test)
+TEST(baseline_cb_tests, baseline_cb_save_load_test)
 {
   using namespace test_helpers;
 
   auto m1 = run_simulation(50, -1);
   auto m2 = run_simulation(50, 20);
 
-  BOOST_CHECK_EQUAL(m1.get_bool("baseline_cb_baseline_in_use"), m2.get_bool("baseline_cb_baseline_in_use"));
-  BOOST_CHECK_EQUAL(m1.get_float("baseline_cb_baseline_lowerbound"), m2.get_float("baseline_cb_baseline_lowerbound"));
-  BOOST_CHECK_EQUAL(m1.get_float("baseline_cb_policy_expectation"), m2.get_float("baseline_cb_policy_expectation"));
+  EXPECT_EQ(m1.get_bool("baseline_cb_baseline_in_use"), m2.get_bool("baseline_cb_baseline_in_use"));
+  EXPECT_EQ(m1.get_float("baseline_cb_baseline_lowerbound"), m2.get_float("baseline_cb_baseline_lowerbound"));
+  EXPECT_EQ(m1.get_float("baseline_cb_policy_expectation"), m2.get_float("baseline_cb_policy_expectation"));
 }

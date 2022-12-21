@@ -4,11 +4,11 @@
 
 #include "vw/core/vw.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 // Test case validating this issue: https://github.com/VowpalWabbit/vowpal_wabbit/issues/2166
-BOOST_AUTO_TEST_CASE(predict_modifying_state)
+TEST(predict_tests, predict_modifying_state)
 {
   float prediction_one;
   {
@@ -42,5 +42,5 @@ BOOST_AUTO_TEST_CASE(predict_modifying_state)
     VW::finish(vw);
   }
 
-  BOOST_CHECK_EQUAL(prediction_one, prediction_two);
+  EXPECT_FLOAT_EQ(prediction_one, prediction_two);
 }
