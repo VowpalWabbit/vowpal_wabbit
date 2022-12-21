@@ -42,7 +42,7 @@ public:
   bool eligible_to_inactivate = false;
   interaction_vec_t live_interactions;  // Live pre-allocated vectors in use
 
-  void persist(metric_sink&, const std::string&, bool, const std::string&);
+  void persist(metric_sink&, const std::string&, bool);
   static bool better(estimator_impl& challenger, estimator_impl& other)
   {
     return challenger.lower_bound() > other.upper_bound();
@@ -303,8 +303,7 @@ public:
 namespace util
 {
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat);
-std::string interaction_vec_t_to_string(
-    const VW::reductions::automl::interaction_vec_t& interactions, const std::string& interaction_type);
+std::string interaction_vec_t_to_string(const VW::reductions::automl::interaction_vec_t& interactions);
 std::string elements_to_string(const automl::set_ns_list_t& elements, const char* const delim = ", ");
 }  // namespace util
 }  // namespace reductions
