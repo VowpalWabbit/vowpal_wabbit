@@ -10,12 +10,11 @@
 #include <string>
 #include <vector>
 
-constexpr float CS_DEFAULT_ALPHA = 0.05f;
-
 namespace VW
 {
 namespace details
 {
+constexpr float CS_DEFAULT_ALPHA = 0.05f;
 class incremental_f_sum
 {
 public:
@@ -59,7 +58,7 @@ public:
   double last_r;
 
   confidence_sequence(
-      double alpha = CS_DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
+      double alpha = VW::details::CS_DEFAULT_ALPHA, double rmin_init = 0.0, double rmax_init = 1.0, bool adjust = true);
   void update(double w, double r, double p_drop = 0.0, double n_drop = -1.0);
   void persist(metric_sink&, const std::string&) const;
   void reset_stats();

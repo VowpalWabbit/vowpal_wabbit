@@ -18,8 +18,8 @@
 
 namespace VW
 {
-  namespace details
-  {
+namespace details
+{
 
 incremental_f_sum incremental_f_sum::operator+=(double x)
 {
@@ -53,7 +53,7 @@ details::incremental_f_sum::operator double() const
   for (double x : this->partials) { result += x; }
   return result;
 }
-  }
+}  // namespace details
 
 namespace estimators
 {
