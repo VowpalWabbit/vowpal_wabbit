@@ -401,8 +401,8 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   tree->node_pred.resize(tree->kary);
   if (tree->top_k > 0)
   {
-    tree->p_at.resize_but_with_stl_behavior(tree->top_k);
-    tree->r_at.resize_but_with_stl_behavior(tree->top_k);
+    tree->p_at.resize(tree->top_k);
+    tree->r_at.resize(tree->top_k);
   }
 
   size_t ws = tree->t;
