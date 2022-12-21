@@ -1770,7 +1770,7 @@ void VW::parsers::json::read_line_json_s(VW::workspace& all, VW::multi_ex& examp
       line, length, example_factory, ex_factory_context, all.logger, &all.ignore_features_dsjson, dedup_examples);
 }
 
-inline bool apply_pdrop(label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
+inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
 {
   if (pdrop == 1.)
   {
@@ -1967,7 +1967,7 @@ inline void append_empty_newline_example_for_driver(VW::workspace* all, VW::mult
     VW::example& ae = VW::get_unused_example(all);
     static const char empty[] = "";
     VW::string_view example(empty);
-    substring_to_example(all, &ae, example);
+    VW::parsers::text::details::substring_to_example(all, &ae, example);
     ae.is_newline = true;
 
     examples.push_back(&ae);
@@ -2007,7 +2007,7 @@ int VW::parsers::json::read_features_json(VW::workspace* all, io_buf& buf, VW::m
 
     char* line;
     size_t num_chars;
-    size_t num_chars_initial = read_features(buf, line, num_chars);
+    size_t num_chars_initial = VW::parsers::text::details::read_features(buf, line, num_chars);
     if (num_chars_initial < 1) { return static_cast<int>(num_chars_initial); }
 
     // Ensure there is a null terminator.
