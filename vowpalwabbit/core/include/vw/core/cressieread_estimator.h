@@ -11,7 +11,7 @@ namespace VW
 class cressieread_estimator
 {
 public:
-  VW::distributionally_robust::ChiSquared chisq;
+  VW::estimators::ChiSquared chisq;
   float ips = 0.0;
   float last_w = 0.0;
   float last_r = 0.0;

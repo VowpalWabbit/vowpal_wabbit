@@ -7,6 +7,10 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <sstream>
+#include <string>
+#include <vector>
+
 namespace VW
 {
 namespace reductions
@@ -32,7 +36,7 @@ public:
   void check_estimator_bounds();
   void check_horizon_bounds();
 
-  std::vector<std::vector<VW::confidence_sequence>> conf_seq_estimators;
+  std::vector<std::vector<VW::estimators::confidence_sequence>> conf_seq_estimators;
   std::vector<uint64_t> _weight_indices;
   uint64_t _min_scope;
   double _epsilon_decay_significance_level;  // Confidence interval
