@@ -10,7 +10,6 @@ set(vw_core_headers
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
   include/vw/core/cb_continuous_label.h
-  include/vw/core/cb_label_parser.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
   include/vw/core/daemon_utils.h
@@ -19,6 +18,7 @@ set(vw_core_headers
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
   include/vw/core/confidence_sequence.h
+  include/vw/core/confidence_sequence_robust.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
@@ -205,6 +205,7 @@ set(vw_core_sources
   src/ccb_label.cc
   src/ccb_reduction_features.cc
   src/confidence_sequence.cc
+  src/confidence_sequence_robust.cc
   src/cost_sensitive.cc
   src/cressieread_estimator.cc
   src/crossplat_compat.cc
@@ -421,12 +422,22 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
+      tests/confidence_sequence_robust_test.cc
       tests/eigen_memory_tree_test.cc
+      tests/example_test.cc
       tests/flat_example_test.cc
+      tests/guard_test.cc
+      tests/interactions_test.cc
       tests/main.cc
+      tests/math_test.cc
       tests/merge_test.cc
       tests/model_util_test.cc
       tests/parse_args_test.cc
+      tests/power_test.cc
       tests/save_load_test.cc
       tests/thread_pool_test.cc
+      tests/tokenize_test.cc
+      tests/v_array_test.cc
+      tests/vw_versions_test.cc
+      tests/weights_test.cc
 )

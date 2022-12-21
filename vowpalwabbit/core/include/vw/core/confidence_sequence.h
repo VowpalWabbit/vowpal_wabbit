@@ -14,6 +14,8 @@ constexpr float CS_DEFAULT_ALPHA = 0.05f;
 
 namespace VW
 {
+namespace details
+{
 class incremental_f_sum
 {
 public:
@@ -22,7 +24,10 @@ public:
   incremental_f_sum operator+(incremental_f_sum const& other) const;
   operator double() const;
 };
+}  // namespace details
 
+namespace estimators
+{
 class confidence_sequence
 {
 public:
@@ -37,17 +42,17 @@ public:
   double s;
   int t;
 
-  incremental_f_sum sumwsqrsq;
-  incremental_f_sum sumwsqr;
-  incremental_f_sum sumwsq;
-  incremental_f_sum sumwr;
-  incremental_f_sum sumw;
-  incremental_f_sum sumwrxhatlow;
-  incremental_f_sum sumwxhatlow;
-  incremental_f_sum sumxhatlowsq;
-  incremental_f_sum sumwrxhathigh;
-  incremental_f_sum sumwxhathigh;
-  incremental_f_sum sumxhathighsq;
+  VW::details::incremental_f_sum sumwsqrsq;
+  VW::details::incremental_f_sum sumwsqr;
+  VW::details::incremental_f_sum sumwsq;
+  VW::details::incremental_f_sum sumwr;
+  VW::details::incremental_f_sum sumw;
+  VW::details::incremental_f_sum sumwrxhatlow;
+  VW::details::incremental_f_sum sumwxhatlow;
+  VW::details::incremental_f_sum sumxhatlowsq;
+  VW::details::incremental_f_sum sumwrxhathigh;
+  VW::details::incremental_f_sum sumwxhathigh;
+  VW::details::incremental_f_sum sumxhathighsq;
 
   uint64_t update_count;
   double last_w;
@@ -65,12 +70,13 @@ private:
   double approxpolygammaone(double b) const;
   double lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha) const;
 };
+}  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::incremental_f_sum&);
-size_t write_model_field(io_buf&, const VW::incremental_f_sum&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::confidence_sequence&);
-size_t write_model_field(io_buf&, const VW::confidence_sequence&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::details::incremental_f_sum&);
+size_t write_model_field(io_buf&, const VW::details::incremental_f_sum&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::estimators::confidence_sequence&);
+size_t write_model_field(io_buf&, const VW::estimators::confidence_sequence&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
