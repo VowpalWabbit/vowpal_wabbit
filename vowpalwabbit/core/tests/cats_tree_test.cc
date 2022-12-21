@@ -4,12 +4,12 @@
 
 #include "vw/core/reductions/cats_tree.h"
 
-#include "test_common.h"
 #include "vw/core/learner.h"
 #include "vw/core/simple_label.h"
 #include "vw/io/logger.h"
 
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using namespace VW::LEARNER;
 using std::vector;
@@ -46,9 +46,9 @@ public:
 
   void set_predict_response(const vector<float>& preds) { predictions = preds; }
 
-  void test_predict(base_learner& base, VW::example& ec) { ec.pred.scalar = predictions[curr_idx++]; }
+  void test_predict(base_learner& /* base */, VW::example& ec) { ec.pred.scalar = predictions[curr_idx++]; }
 
-  void test_learn(base_learner& base, VW::example& ec)
+  void test_learn(base_learner& /* base */, VW::example& ec)
   {
     labels.emplace_back(ec.l.simple);
     weights.emplace_back(ec.weight);
@@ -96,7 +96,7 @@ learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_re
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
       "test_learner", VW::prediction_type_t::SCALAR, VW::label_type_t::CB)
-                          .set_output_example_prediction([](VW::workspace& all, const reduction_test_harness&,
+                          .set_output_example_prediction([](VW::workspace& /* all */, const reduction_test_harness&,
                                                              const VW::example&, VW::io::logger&) {})
 
                           .build();  // Create a learner using the base reduction.
@@ -111,7 +111,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   tree.init(num_leaves, bandwidth);
   VW::example ec;
   auto ret_val = tree.predict(*as_singleline(test_base), ec);
-  BOOST_CHECK_EQUAL(ret_val, expected_action);
+  EXPECT_EQ(ret_val, expected_action);
   delete test_base;
 }
 
@@ -122,7 +122,7 @@ bool operator!=(const VW::simple_label_reduction_features& lhs, const VW::simple
   return !(lhs.weight == rhs.weight && lhs.initial == rhs.initial);
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
+TEST(cats_tree_tests, otc_algo_learn_1_action_till_root)
 {
   reduction_test_harness* pharness = nullptr;
   predictions_t preds_to_return = {1.f, -1.f};
@@ -142,21 +142,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action_till_root)
   vector<VW::simple_label> expected_labels = {{-1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
+TEST(cats_tree_tests, otc_algo_learn_1_action)
 {
   reduction_test_harness* pharness = nullptr;
   predictions_t preds_to_return = {-1.f};
@@ -175,21 +171,18 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_1_action)
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {{-1}};
   vector<float> expected_weights = {3.5f / 0.5f};
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
+TEST(cats_tree_tests, otc_algo_learn_2_action_siblings)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -211,20 +204,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_siblings)
   vector<VW::simple_label> expected_labels = {{-1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
+TEST(cats_tree_tests, otc_algo_learn_2_action_notSiblings)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -246,20 +236,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings)
   vector<VW::simple_label> expected_labels = {{-1}, {1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {3, 4, 1, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
+TEST(cats_tree_tests, otc_algo_learn_2_action_notSiblings_bandwidth_1)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -285,20 +272,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_notSiblings_bandwidth_1)
   };
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {4, 1, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
+TEST(cats_tree_tests, otc_algo_learn_2_action_separate)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -320,20 +304,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate)
   vector<VW::simple_label> expected_labels = {{-1}, {1}, {-1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 2, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
+TEST(cats_tree_tests, otc_algo_learn_2_action_separate_2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -355,20 +336,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2)
   vector<VW::simple_label> expected_labels = {{1}, {-1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {6, 1, 2, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
+TEST(cats_tree_tests, otc_algo_learn_2_action_separate_bandwidth_2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -390,20 +368,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_2)
   vector<VW::simple_label> expected_labels = {};
   vector<float> expected_weights = {};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
+TEST(cats_tree_tests, otc_algo_learn_2_action_separate_2_bandwidth_2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -425,20 +400,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_2_bandwidth_2)
   vector<VW::simple_label> expected_labels = {{1}, {1}, {1}};
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {12, 5, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
+TEST(cats_tree_tests, otc_algo_learn_2_action_separate_bandwidth_1_asym)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -464,20 +436,17 @@ BOOST_AUTO_TEST_CASE(otc_algo_learn_2_action_separate_bandwidth_1_asym)
   };
   vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->labels.begin(), pharness->labels.end(), expected_labels.begin(), expected_labels.end());
-  BOOST_CHECK_EQUAL_COLLECTIONS(
-      pharness->weights.begin(), pharness->weights.end(), expected_weights.begin(), expected_weights.end());
+  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
+  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {5, 2, 0};
-  BOOST_CHECK_EQUAL_COLLECTIONS(pharness->learner_offset.begin(), pharness->learner_offset.end(),
-      expected_learners.begin(), expected_learners.end());
+  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 
   delete base;
 }
 
-BOOST_AUTO_TEST_CASE(offset_tree_cont_predict)
+TEST(cats_tree_tests, offset_tree_cont_predict)
 {
   // 0 node tree
   predict_test_helper({}, 0, 0, 0);
@@ -498,7 +467,7 @@ BOOST_AUTO_TEST_CASE(offset_tree_cont_predict)
   predict_test_helper({1, 1}, 6, 8, 2);
 }
 
-BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_5)
+TEST(cats_tree_tests, build_min_depth_tree_cont_5)
 {
   VW::reductions::cats::min_depth_binary_tree tree;
   tree.build_tree(4, 1);
@@ -511,13 +480,13 @@ BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_5)
       {5, 0, 0, 2, 2, false, false, true},
       {6, 0, 0, 2, 2, false, false, true},
   };
-  BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
+  EXPECT_THAT(tree.nodes, ::testing::ContainerEq(expected));
 }
 
-BOOST_AUTO_TEST_CASE(build_min_depth_tree_cont_1)
+TEST(cats_tree_tests, build_min_depth_tree_cont_1)
 {
   VW::reductions::cats::min_depth_binary_tree tree;
   tree.build_tree(1, 0);
   std::vector<VW::reductions::cats::tree_node> expected = {{0, 0, 0, 0, 0, false, false, true}};
-  BOOST_CHECK_EQUAL_COLLECTIONS(tree.nodes.begin(), tree.nodes.end(), expected.begin(), expected.end());
+  EXPECT_THAT(tree.nodes, ::testing::ContainerEq(expected));
 }
