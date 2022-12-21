@@ -28,11 +28,11 @@ class expreplay
 public:
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> _random_state;
-  size_t N = 0;                // how big is the buffer?
+  size_t N = 0;                   // how big is the buffer?
   std::vector<VW::example*> buf;  // the deep copies of examples (N of them)
   std::vector<bool> filled;       // which of buf[] is filleds
-  size_t replay_count = 0;     // each time er.learn() is called, how many times do we call base.learn()? default=1 (in
-                               // which case we're just permuting)
+  size_t replay_count = 0;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in
+                            // which case we're just permuting)
   VW::LEARNER::single_learner* base = nullptr;
 
   ~expreplay()

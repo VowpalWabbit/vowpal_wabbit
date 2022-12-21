@@ -8,7 +8,9 @@
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
 
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <iostream>
 
 using namespace VW::LEARNER;
@@ -20,20 +22,18 @@ namespace
 class reduction_test_harness
 {
 public:
-  reduction_test_harness() : _curr_idx(0) {}
-
   void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& base, VW::example& ec)
+  void test_predict(base_learner& /* base */, VW::example& ec)
   {
     ec.pred.a_s.clear();
-    for (uint32_t i = 0; i < _predictions.size(); i++)
+    for (const auto& prediction : _predictions)
     {
-      ec.pred.a_s.push_back(VW::action_score{_predictions[i].first, _predictions[i].second});
+      ec.pred.a_s.push_back(VW::action_score{prediction.first, prediction.second});
     }
   }
 
-  void test_learn(base_learner& base, VW::example& ec)
+  void test_learn(base_learner& /* base */, VW::example& /* ec */)
   { /*noop*/
   }
 
@@ -50,7 +50,6 @@ public:
 
 private:
   vector<pair<uint32_t, float>> _predictions;
-  int _curr_idx;
 };
 
 using test_learner_t = learner<reduction_test_harness, VW::example>;
@@ -67,7 +66,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       reduction_test_harness::predict,  // test_harness predict
       "test_learner", VW::prediction_type_t::ACTION_SCORES, VW::label_type_t::CONTINUOUS)
                           // Set it to something so that the compat VW::finish_example shim is put in place.
-                          .set_output_example_prediction([](VW::workspace& all, const reduction_test_harness&,
+                          .set_output_example_prediction([](VW::workspace& /* all */, const reduction_test_harness&,
                                                              const VW::example&, VW::io::logger&) {})
 
                           .build();  // Create a learner using the base reduction.
@@ -80,7 +79,7 @@ void check_pdf_sums_to_one(VW::continuous_actions::probability_density_function&
   float sum = 0;
   for (uint32_t i = 0; i < pdf.size(); i++) { sum += pdf[i].pdf_value * (pdf[i].right - pdf[i].left); }
 
-  BOOST_CHECK_CLOSE(1.0f, sum, .0001f);
+  EXPECT_NEAR(1.0f, sum, .0001f);
 }
 
 void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_function& pdf, float min_value,
@@ -90,14 +89,14 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
   float prev_pdf_limit = 0;
   for (uint32_t i = 0; i < pdf.size(); i++)
   {
-    BOOST_CHECK_GE(pdf[i].left, prev_pdf_limit);
-    BOOST_CHECK_GE(pdf[i].right, pdf[i].left);
+    EXPECT_GE(pdf[i].left, prev_pdf_limit);
+    EXPECT_GE(pdf[i].right, pdf[i].left);
     prev_pdf_limit = pdf[i].right;
   }
 
   // check that leftmost >= min_value and rightmost <= max_value
-  BOOST_CHECK_GE(pdf[0].left, min_value);
-  BOOST_CHECK_LE(pdf[pdf.size() - 1].right, max_value);
+  EXPECT_GE(pdf[0].left, min_value);
+  EXPECT_LE(pdf[pdf.size() - 1].right, max_value);
 
   // check that left/right pair around the predicted action has the right bandwidth
   float continuous_range = max_value - min_value;
@@ -112,16 +111,13 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
       // for 'action' predicted right limit will be 'action + bandwidth',  or 'num_actions - 1' for edge cases
       // where action + bandwidth > num_actions - 1
       // resulting in a span of max 2 * bandwidth
-      if (pdf[i].left == 0 || pdf[i].right == num_actions - 1)
-      {
-        BOOST_CHECK_LT(right_unit - left_unit, 2 * bandwidth);
-      }
-      else { BOOST_CHECK_EQUAL(right_unit - left_unit, 2 * bandwidth); }
+      if (pdf[i].left == 0 || pdf[i].right == num_actions - 1) { EXPECT_LT(right_unit - left_unit, 2 * bandwidth); }
+      else { EXPECT_EQ(right_unit - left_unit, 2 * bandwidth); }
     }
   }
 }
 
-BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
+TEST(pmf_to_pdf_tests, pmf_to_pdf_basic)
 {
   uint32_t k = 4;
   float h = 10.f;  // h (bandwidth) property of continuous range (max_val - min_val)
@@ -150,11 +146,11 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   ec.l.cb_cont.costs.clear();
   ec.l.cb_cont.costs.push_back({1010.17f, .5f, .05f});  // action, cost, prob
 
-  VW::cb_continuous::continuous_label_elm exp_val{1010.17f, 0.5f, 0.05f};
+  // VW::cb_continuous::continuous_label_elm exp_val{1010.17f, 0.5f, 0.05f};
 
-  BOOST_CHECK_EQUAL(1010.17f, ec.l.cb_cont.costs[0].action);
-  BOOST_CHECK_EQUAL(0.5f, ec.l.cb_cont.costs[0].cost);
-  BOOST_CHECK_EQUAL(0.05f, ec.l.cb_cont.costs[0].pdf_value);
+  EXPECT_EQ(1010.17f, ec.l.cb_cont.costs[0].action);
+  EXPECT_EQ(0.5f, ec.l.cb_cont.costs[0].cost);
+  EXPECT_EQ(0.05f, ec.l.cb_cont.costs[0].pdf_value);
 
   data->learn(ec);
 
@@ -162,7 +158,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_basic)
   delete test_harness;
 }
 
-BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
+TEST(pmf_to_pdf_tests, pmf_to_pdf_w_large_bandwidth)
 {
   VW::example ec;
   auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
@@ -196,7 +192,7 @@ BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_bandwidth)
   }
 }
 
-BOOST_AUTO_TEST_CASE(pmf_to_pdf_w_large_discretization)
+TEST(pmf_to_pdf_tests, pmf_to_pdf_w_large_discretization)
 {
   VW::example ec;
   auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
