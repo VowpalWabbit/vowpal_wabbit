@@ -362,6 +362,7 @@ template class interaction_config_manager<config_oracle<oracle_rand_impl>, VW::e
 template class interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence>;
 template class interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence>;
 template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>;
+template class interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence>;
 
 template <typename CMType>
 void automl<CMType>::one_step(
@@ -438,6 +439,7 @@ template class automl<interaction_config_manager<config_oracle<one_diff_impl>, V
 template class automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence>>;
 template class automl<
     interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>>;
+template class automl<interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence>>;
 
 }  // namespace automl
 }  // namespace reductions
