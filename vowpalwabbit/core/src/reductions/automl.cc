@@ -386,9 +386,9 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
     {
       interaction_type = "both";
       conf_type = config_type::Interaction;
-      return make_automl_with_impl<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>(stack_builder,
-          base_learner, max_live_configs, verbose_metrics, oracle_type, default_lease, all, priority_challengers,
-          interaction_type, priority_type, automl_significance_level, ccb_on, predict_only_model,
+      return make_automl_with_impl<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>(
+          stack_builder, base_learner, max_live_configs, verbose_metrics, oracle_type, default_lease, all,
+          priority_challengers, interaction_type, priority_type, automl_significance_level, ccb_on, predict_only_model,
           reversed_learning_order, conf_type, trace_logging);
     }
   }

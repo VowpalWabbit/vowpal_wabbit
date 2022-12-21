@@ -128,8 +128,9 @@ template VW::reductions::automl::automl<
     interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_inclusion_impl>,
         VW::estimators::confidence_sequence_robust>>*
 get_automl_data(VW::workspace& all);
-template VW::reductions::automl::automl<interaction_config_manager<
-    VW::reductions::automl::config_oracle<VW::reductions::automl::qbase_cubic>, VW::estimators::confidence_sequence_robust>>*
+template VW::reductions::automl::automl<
+    interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::qbase_cubic>,
+        VW::estimators::confidence_sequence_robust>>*
 get_automl_data(VW::workspace& all);
 
 using aml_rand = VW::reductions::automl::automl<
@@ -141,8 +142,9 @@ using aml_onediff = VW::reductions::automl::automl<
 using aml_onediff_inclusion = VW::reductions::automl::automl<
     interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_inclusion_impl>,
         VW::estimators::confidence_sequence_robust>>;
-using aml_qbase_cubic = VW::reductions::automl::automl<interaction_config_manager<
-    VW::reductions::automl::config_oracle<VW::reductions::automl::qbase_cubic>, VW::estimators::confidence_sequence_robust>>;
+using aml_qbase_cubic = VW::reductions::automl::automl<
+    interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::qbase_cubic>,
+        VW::estimators::confidence_sequence_robust>>;
 }  // namespace aml_test
 
 // Need to add save_load functionality to multiple structs in automl reduction including
@@ -640,7 +642,8 @@ BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
         auto rand_state = all.get_random_state();
 
         std::map<VW::namespace_index, uint64_t> ns_counter;
-        std::vector<std::pair<aml_estimator<VW::estimators::confidence_sequence_robust>, VW::estimators::confidence_sequence_robust>>
+        std::vector<std::pair<aml_estimator<VW::estimators::confidence_sequence_robust>,
+            VW::estimators::confidence_sequence_robust>>
             estimators;
 
         config_oracle<qbase_cubic> oracle(aml->cm->default_lease, co.calc_priority, co._interaction_type,
@@ -731,8 +734,8 @@ BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
             estimators[2].first.live_interactions.end(), expected2.begin(), expected2.end());
 
         // excl_9 - config 2 is now champ
-        interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>::apply_new_champ(
-            oracle, 2, estimators, 0, ns_counter);
+        interaction_config_manager<config_oracle<qbase_cubic>,
+            VW::estimators::confidence_sequence_robust>::apply_new_champ(oracle, 2, estimators, 0, ns_counter);
 
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[0].elements.begin(), configs[0].elements.end(), excl_9.begin(), excl_9.end());
@@ -767,8 +770,8 @@ BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
 
         // excl_7 is now champ
         const set_ns_list_t excl_7{{'A', 'B', 'C'}, {'B', 'C', 'C'}};
-        interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>::apply_new_champ(
-            oracle, 3, estimators, 0, ns_counter);
+        interaction_config_manager<config_oracle<qbase_cubic>,
+            VW::estimators::confidence_sequence_robust>::apply_new_champ(oracle, 3, estimators, 0, ns_counter);
 
         BOOST_CHECK_EQUAL_COLLECTIONS(
             configs[0].elements.begin(), configs[0].elements.end(), excl_7.begin(), excl_7.end());
