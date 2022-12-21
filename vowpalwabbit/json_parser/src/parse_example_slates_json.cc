@@ -30,18 +30,9 @@ inline float get_number(const rapidjson::Value& value)
   float number = 0.f;
   if (value.IsInt()) { number = static_cast<float>(value.GetInt()); }
   if (value.IsUint()) { number = static_cast<float>(value.GetUint()); }
-  else if (value.IsFloat())
-  {
-    number = value.GetFloat();
-  }
-  else if (value.IsDouble())
-  {
-    number = static_cast<float>(value.GetDouble());
-  }
-  else
-  {
-    THROW("Tried to get value as number, but type was " << value.GetType());
-  }
+  else if (value.IsFloat()) { number = value.GetFloat(); }
+  else if (value.IsDouble()) { number = static_cast<float>(value.GetDouble()); }
+  else { THROW("Tried to get value as number, but type was " << value.GetType()); }
 
   return number;
 }
@@ -100,10 +91,7 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
               str << '[' << (array_hash - namespaces.back().namespace_hash) << ']';
               namespaces.back().add_feature(number, array_hash, str.str().c_str());
             }
-            else
-            {
-              namespaces.back().add_feature(number, array_hash, nullptr);
-            }
+            else { namespaces.back().add_feature(number, array_hash, nullptr); }
             array_hash++;
           }
           break;
@@ -177,10 +165,7 @@ void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_p
     examples[0]->l.slates.slot_id = slot_id;
     examples[0]->l.slates.type = VW::slates::example_type::ACTION;
   }
-  else
-  {
-    examples[0]->l.slates.type = VW::slates::example_type::SHARED;
-  }
+  else { examples[0]->l.slates.type = VW::slates::example_type::SHARED; }
 
   assert(namespaces.size() == 0);
 
@@ -301,10 +286,7 @@ void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all,
       {
         for (auto& val : actions.GetArray()) { destination.push_back({val.GetUint(), 0.f}); }
       }
-      else
-      {
-        assert(false);
-      }
+      else { assert(false); }
 
       auto& probs = current_obj["_p"];
       if (probs.GetType() == rapidjson::kNumberType)
@@ -321,10 +303,7 @@ void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all,
           destination[j].score = probs_array[j].GetFloat();
         }
       }
-      else
-      {
-        assert(false);
-      }
+      else { assert(false); }
 
       if (current_obj.HasMember("_original_label_cost"))
       {

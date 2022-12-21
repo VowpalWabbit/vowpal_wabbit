@@ -182,14 +182,8 @@ public:
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
     if (!_stricmp(ctx.key, "left")) { segment.left = v; }
-    else if (!_stricmp(ctx.key, "right"))
-    {
-      segment.right = v;
-    }
-    else if (!_stricmp(ctx.key, "pdf_value"))
-    {
-      segment.pdf_value = v;
-    }
+    else if (!_stricmp(ctx.key, "right")) { segment.right = v; }
+    else if (!_stricmp(ctx.key, "pdf_value")) { segment.pdf_value = v; }
     else if (!_stricmp(ctx.key, "chosen_action"))
     {
       ctx.ex->ex_reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
@@ -356,10 +350,7 @@ public:
       found_cb = true;
     }
     // CA
-    else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous)
-    {
-      cont_label_element.pdf_value = v;
-    }
+    else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous) { cont_label_element.pdf_value = v; }
     else
     {
       ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
@@ -424,10 +415,7 @@ public:
       found_cb_continuous = false;
       cont_label_element = {0., 0., 0.};
     }
-    else if (found)
-    {
-      found = false;
-    }
+    else if (found) { found = false; }
 
     return return_state;
   }
@@ -738,10 +726,7 @@ public:
 
       ctx.CurrentNamespace().add_feature(f, array_hash, str.str().c_str());
     }
-    else
-    {
-      ctx.CurrentNamespace().add_feature(f, array_hash, nullptr);
-    }
+    else { ctx.CurrentNamespace().add_feature(f, array_hash, nullptr); }
     array_hash++;
 
     return this;
@@ -838,20 +823,14 @@ public:
           break;
         case '}':
           if (depth == 0 && sq_depth == 0) { stop = true; }
-          else
-          {
-            depth--;
-          }
+          else { depth--; }
           break;
         case '[':
           sq_depth++;
           break;
         case ']':
           if (depth == 0 && sq_depth == 0) { stop = true; }
-          else
-          {
-            sq_depth--;
-          }
+          else { sq_depth--; }
           break;
         case ',':
           if (depth == 0 && sq_depth == 0) { stop = true; }
@@ -890,14 +869,8 @@ public:
           if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
         }
-        else if (ctx.key_length == 6)
-        {
-          return &ctx.label_state;
-        }
-        else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex"))
-        {
-          return &ctx.label_index_state;
-        }
+        else if (ctx.key_length == 6) { return &ctx.label_state; }
+        else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex")) { return &ctx.label_index_state; }
         else
         {
           ctx.error() << "Unsupported key '" << ctx.key << "' len: " << length;
@@ -1476,14 +1449,8 @@ public:
           if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
         }
-        else if (length == 6)
-        {
-          return &ctx.label_state;
-        }
-        else if (length == 11 && !_stricmp(str, "_labelIndex"))
-        {
-          return &ctx.label_index_state;
-        }
+        else if (length == 6) { return &ctx.label_state; }
+        else if (length == 11 && !_stricmp(str, "_labelIndex")) { return &ctx.label_index_state; }
       }
       else if (length == 10 && !strncmp(str, "_skipLearn", 10))
       {
@@ -1891,10 +1858,7 @@ bool VW::parsers::json::details::parse_line_json(
         {
           all->example_parser->metrics->first_event_id = std::move(interaction.event_id);
         }
-        else
-        {
-          all->example_parser->metrics->last_event_id = std::move(interaction.event_id);
-        }
+        else { all->example_parser->metrics->last_event_id = std::move(interaction.event_id); }
       }
 
       if (!interaction.timestamp.empty())
@@ -1903,10 +1867,7 @@ bool VW::parsers::json::details::parse_line_json(
         {
           all->example_parser->metrics->first_event_time = std::move(interaction.timestamp);
         }
-        else
-        {
-          all->example_parser->metrics->last_event_time = std::move(interaction.timestamp);
-        }
+        else { all->example_parser->metrics->last_event_time = std::move(interaction.timestamp); }
       }
 
       // Technically the aggregation operation here is supposed to be user-defined
@@ -1931,10 +1892,7 @@ bool VW::parsers::json::details::parse_line_json(
             all->example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
                 interaction.original_label_cost_first_slot;
           }
-          else
-          {
-            all->example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++;
-          }
+          else { all->example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++; }
         }
       }
     }
