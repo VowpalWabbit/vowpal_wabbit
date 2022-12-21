@@ -1199,7 +1199,6 @@ public:
 namespace float_aggregation
 {
 inline void set(float* output, float f) { *output = f; }
-inline void add(float* output, float f) { *output += f; }
 }  // namespace float_aggregation
 
 template <bool audit, void (*func)(float*, float)>
