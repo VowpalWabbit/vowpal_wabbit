@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "test_common.h"
-#include "vw/test_common/test_common.h"
 #include "vw/core/example.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>

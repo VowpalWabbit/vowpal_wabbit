@@ -172,8 +172,8 @@ int main(int argc, char** argv)
     {
       VW::multi_ex examples;
       examples.push_back(&VW::get_unused_example(vw));
-      VW::parsers::json::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()), line.length(), false,
-          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
+      VW::parsers::json::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()),
+          line.length(), false, (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
       VW::finish_example(*vw, examples);
     }
   }

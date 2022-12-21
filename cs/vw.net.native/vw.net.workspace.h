@@ -3,10 +3,10 @@
 #include "vw.net.native.h"
 #include "vw.net.stream_adapter.h"
 #include "vw/core/example.h"
-#include "vw/json_parser/json_utils.h"
 #include "vw/core/label_type.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
+#include "vw/json_parser/json_utils.h"
 
 #include <string>
 

@@ -25,8 +25,8 @@ API size_t GetDSInteractionActionsCount(VW::parsers::json::decision_service_inte
   return interaction->actions.size();
 }
 
-API vw_net_native::dotnet_size_t GetDSInteractionActions(
-    VW::parsers::json::decision_service_interaction* interaction, unsigned int* actions, vw_net_native::dotnet_size_t count)
+API vw_net_native::dotnet_size_t GetDSInteractionActions(VW::parsers::json::decision_service_interaction* interaction,
+    unsigned int* actions, vw_net_native::dotnet_size_t count)
 {
   return vw_net_native::stdvector_copy_to_managed(interaction->actions, actions, count);
 }
@@ -37,7 +37,8 @@ API size_t GetDSInteractionProbabilitiesCount(VW::parsers::json::decision_servic
 }
 
 API vw_net_native::dotnet_size_t GetDSInteractionProbabilities(
-    VW::parsers::json::decision_service_interaction* interaction, float* probabilities, vw_net_native::dotnet_size_t count)
+    VW::parsers::json::decision_service_interaction* interaction, float* probabilities,
+    vw_net_native::dotnet_size_t count)
 {
   return vw_net_native::stdvector_copy_to_managed(interaction->probabilities, probabilities, count);
 }
@@ -47,8 +48,9 @@ API size_t GetDSInteractionBaselineActionsCount(VW::parsers::json::decision_serv
   return interaction->baseline_actions.size();
 }
 
-API vw_net_native::dotnet_size_t GetDSInteractionBaselineActions(VW::parsers::json::decision_service_interaction* interaction,
-    unsigned int* baseline_actions, vw_net_native::dotnet_size_t count)
+API vw_net_native::dotnet_size_t GetDSInteractionBaselineActions(
+    VW::parsers::json::decision_service_interaction* interaction, unsigned int* baseline_actions,
+    vw_net_native::dotnet_size_t count)
 {
   return vw_net_native::stdvector_copy_to_managed(interaction->baseline_actions, baseline_actions, count);
 }

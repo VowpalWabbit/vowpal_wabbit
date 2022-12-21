@@ -88,10 +88,8 @@ extern template bool parse_line_json<true>(VW::workspace* all, char* line, size_
 extern template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 }  // namespace details
 
-extern template void line_to_examples_json<true>(
-    VW::workspace* all, VW::string_view, VW::multi_ex& examples);
-extern template void line_to_examples_json<false>(
-    VW::workspace* all, VW::string_view, VW::multi_ex& examples);
+extern template void line_to_examples_json<true>(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
+extern template void line_to_examples_json<false>(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
 
 extern template int read_features_json<true>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 extern template int read_features_json<false>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);

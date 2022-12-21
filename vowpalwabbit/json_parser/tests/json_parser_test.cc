@@ -2,12 +2,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/test_common/test_common.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <vector>
 
 TEST(json_tests, parse_json_simple)
@@ -468,7 +469,7 @@ TEST(json_tests, parse_json_dedup_cb)
   VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
-  EXPECT_EQ(examples.size(), 3);                    // shared example + 2 multi examples
+  EXPECT_EQ(examples.size(), 3);                       // shared example + 2 multi examples
   EXPECT_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
   EXPECT_NE(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
 
@@ -532,8 +533,8 @@ TEST(json_tests, parse_json_dedup_cb_missing_dedup_id)
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
   EXPECT_THROW(
-      VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
-          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+      VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(),
+          json_deduped_text.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
@@ -603,7 +604,7 @@ TEST(json_tests, parse_json_dedup_ccb)
   VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
-  EXPECT_EQ(examples.size(), 6);                    // shared example + 2 multi examples + 3 slots
+  EXPECT_EQ(examples.size(), 6);                       // shared example + 2 multi examples + 3 slots
   EXPECT_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
   EXPECT_NE(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
 
@@ -721,8 +722,8 @@ TEST(json_tests, parse_json_dedup_ccb_dedup_id_missing)
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
   EXPECT_THROW(
-      VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
-          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+      VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(),
+          json_deduped_text.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
@@ -771,7 +772,7 @@ TEST(json_tests, parse_json_dedup_slates)
   VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
       (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
 
-  EXPECT_EQ(examples.size(), 5);                    // shared example + 2 multi examples + 2 slots
+  EXPECT_EQ(examples.size(), 5);                       // shared example + 2 multi examples + 2 slots
   EXPECT_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
   EXPECT_NE(examples[2], dedup_examples[dedup_id_2]);  // checking pointers
 
@@ -848,8 +849,8 @@ TEST(json_tests, parse_json_dedup_slates_dedup_id_missing)
   examples.push_back(&VW::get_unused_example(vw));
 
   EXPECT_THROW(
-      VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
-          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+      VW::parsers::json::read_line_json_s<true>(*vw, examples, (char*)json_deduped_text.c_str(),
+          json_deduped_text.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
