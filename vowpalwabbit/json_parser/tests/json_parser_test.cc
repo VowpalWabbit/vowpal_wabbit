@@ -401,7 +401,7 @@ TEST(json_tests, parse_json_slates_dom_parser)
   EXPECT_EQ(examples[4]->l.slates.slot_id, 1);
   EXPECT_EQ(examples[5]->l.slates.slot_id, 1);
 
-  EXPECT_THAT(examples[0]->indices, testing::ElementsAre('G'));
+  EXPECT_THAT(examples[0]->indices, ::testing::ElementsAre('G'));
   EXPECT_EQ(examples[0]->feature_space['G'].indices.size(), 4);
   EXPECT_EQ(examples[0]->feature_space['G'].namespace_extents.size(), 1);
 

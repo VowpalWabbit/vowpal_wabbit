@@ -769,18 +769,18 @@ TEST(dsjson_tests, parse_dsjson_slates)
   EXPECT_EQ(examples[5]->l.slates.slot_id, 1);
 
   const auto& label6 = examples[6]->l.slates;
-  EXPECT_THAT(label6.probabilities, testing::Pointwise(ActionScoreEqual(), std::vector<VW::action_score>{{1, 0.8f}}));
+  EXPECT_THAT(label6.probabilities, ::testing::Pointwise(ActionScoreEqual(), std::vector<VW::action_score>{{1, 0.8f}}));
 
   const auto& label7 = examples[7]->l.slates;
   EXPECT_THAT(label7.probabilities,
-      testing::Pointwise(ActionScoreEqual(), std::vector<VW::action_score>{{0, 0.6f}, {1, 0.4f}}));
+      ::testing::Pointwise(ActionScoreEqual(), std::vector<VW::action_score>{{0, 0.6f}, {1, 0.4f}}));
 
   // Check values in VW::parsers::json::decision_service_interaction
   EXPECT_EQ(ds_interaction.event_id, "test_id");
   EXPECT_FLOAT_EQ(ds_interaction.probability_of_drop, 0.1);
   EXPECT_EQ(ds_interaction.skip_learn, true);
-  EXPECT_THAT(ds_interaction.actions, testing::ElementsAre(1, 0));
-  EXPECT_THAT(ds_interaction.probabilities, testing::ElementsAre(0.8f, 0.6f));
+  EXPECT_THAT(ds_interaction.actions, ::testing::ElementsAre(1, 0));
+  EXPECT_THAT(ds_interaction.probabilities, ::testing::ElementsAre(0.8f, 0.6f));
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -825,7 +825,7 @@ TEST(dsjson_tests, parse_dsjson_slates_dom_parser)
 
   EXPECT_EQ(slates_examples.size(), 1);
   const auto& slates_ex = *slates_examples[0];
-  EXPECT_THAT(slates_ex.indices, testing::ElementsAre('a', 'd', 'c', 'b', 32));
+  EXPECT_THAT(slates_ex.indices, ::testing::ElementsAre('a', 'd', 'c', 'b', 32));
   EXPECT_EQ(slates_ex.feature_space[' '].indices.size(), 2);
   EXPECT_EQ(slates_ex.feature_space['a'].indices.size(), 1);
   EXPECT_EQ(slates_ex.feature_space['b'].indices.size(), 1);
@@ -839,19 +839,19 @@ TEST(dsjson_tests, parse_dsjson_slates_dom_parser)
   auto ccb_examples = vwtest::parse_dsjson(*ccb_vw, json_text);
   EXPECT_EQ(ccb_examples.size(), 1);
   const auto& ccb_ex = *ccb_examples[0];
-  EXPECT_THAT(slates_ex.feature_space[' '].indices, testing::ElementsAreArray(ccb_ex.feature_space[' '].indices));
-  EXPECT_THAT(slates_ex.feature_space['a'].indices, testing::ElementsAreArray(ccb_ex.feature_space['a'].indices));
-  EXPECT_THAT(slates_ex.feature_space['b'].indices, testing::ElementsAreArray(ccb_ex.feature_space['b'].indices));
-  EXPECT_THAT(slates_ex.feature_space['c'].indices, testing::ElementsAreArray(ccb_ex.feature_space['c'].indices));
-  EXPECT_THAT(slates_ex.feature_space['d'].indices, testing::ElementsAreArray(ccb_ex.feature_space['d'].indices));
-  EXPECT_THAT(slates_ex.feature_space['e'].indices, testing::ElementsAreArray(ccb_ex.feature_space['e'].indices));
+  EXPECT_THAT(slates_ex.feature_space[' '].indices, ::testing::ElementsAreArray(ccb_ex.feature_space[' '].indices));
+  EXPECT_THAT(slates_ex.feature_space['a'].indices, ::testing::ElementsAreArray(ccb_ex.feature_space['a'].indices));
+  EXPECT_THAT(slates_ex.feature_space['b'].indices, ::testing::ElementsAreArray(ccb_ex.feature_space['b'].indices));
+  EXPECT_THAT(slates_ex.feature_space['c'].indices, ::testing::ElementsAreArray(ccb_ex.feature_space['c'].indices));
+  EXPECT_THAT(slates_ex.feature_space['d'].indices, ::testing::ElementsAreArray(ccb_ex.feature_space['d'].indices));
+  EXPECT_THAT(slates_ex.feature_space['e'].indices, ::testing::ElementsAreArray(ccb_ex.feature_space['e'].indices));
 
-  EXPECT_THAT(slates_ex.feature_space[' '].values, testing::ElementsAreArray(ccb_ex.feature_space[' '].values));
-  EXPECT_THAT(slates_ex.feature_space['a'].values, testing::ElementsAreArray(ccb_ex.feature_space['a'].values));
-  EXPECT_THAT(slates_ex.feature_space['b'].values, testing::ElementsAreArray(ccb_ex.feature_space['b'].values));
-  EXPECT_THAT(slates_ex.feature_space['c'].values, testing::ElementsAreArray(ccb_ex.feature_space['c'].values));
-  EXPECT_THAT(slates_ex.feature_space['d'].values, testing::ElementsAreArray(ccb_ex.feature_space['d'].values));
-  EXPECT_THAT(slates_ex.feature_space['e'].values, testing::ElementsAreArray(ccb_ex.feature_space['e'].values));
+  EXPECT_THAT(slates_ex.feature_space[' '].values, ::testing::ElementsAreArray(ccb_ex.feature_space[' '].values));
+  EXPECT_THAT(slates_ex.feature_space['a'].values, ::testing::ElementsAreArray(ccb_ex.feature_space['a'].values));
+  EXPECT_THAT(slates_ex.feature_space['b'].values, ::testing::ElementsAreArray(ccb_ex.feature_space['b'].values));
+  EXPECT_THAT(slates_ex.feature_space['c'].values, ::testing::ElementsAreArray(ccb_ex.feature_space['c'].values));
+  EXPECT_THAT(slates_ex.feature_space['d'].values, ::testing::ElementsAreArray(ccb_ex.feature_space['d'].values));
+  EXPECT_THAT(slates_ex.feature_space['e'].values, ::testing::ElementsAreArray(ccb_ex.feature_space['e'].values));
 
   VW::finish_example(*slates_vw, slates_examples);
   VW::finish(*slates_vw);
