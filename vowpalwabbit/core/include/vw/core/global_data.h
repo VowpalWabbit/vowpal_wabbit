@@ -84,9 +84,9 @@ class trace_message_wrapper
 {
 public:
   void* inner_context;
-  trace_message_t trace_message;
+  VW::trace_message_t trace_message;
 
-  trace_message_wrapper(void* context, trace_message_t trace_message)
+  trace_message_wrapper(void* context, VW::trace_message_t trace_message)
       : inner_context(context), trace_message(trace_message)
   {
   }

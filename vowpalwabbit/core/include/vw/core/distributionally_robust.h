@@ -7,15 +7,14 @@
 #include <limits>
 #include <string>
 
-constexpr float BASELINE_DEFAULT_TAU = 0.999f;
-constexpr float CRESSEREAD_DEFAULT_TAU = 1.0f;
-constexpr float DEFAULT_ALPHA = 0.05f;
-
 class io_buf;
 namespace VW
 {
 namespace details
 {
+constexpr float BASELINE_DEFAULT_TAU = 0.999f;
+constexpr float CRESSEREAD_DEFAULT_TAU = 1.0f;
+constexpr float DEFAULT_ALPHA = 0.05f;
 class Duals;
 }  // namespace details
 
