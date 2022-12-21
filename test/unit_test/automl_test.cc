@@ -128,6 +128,9 @@ template VW::reductions::automl::automl<
     interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_inclusion_impl>,
         VW::estimators::confidence_sequence_robust>>*
 get_automl_data(VW::workspace& all);
+template VW::reductions::automl::automl<interaction_config_manager<
+    VW::reductions::automl::config_oracle<VW::reductions::automl::qbase_cubic>, VW::estimators::confidence_sequence_robust>>*
+get_automl_data(VW::workspace& all);
 
 using aml_rand = VW::reductions::automl::automl<
     interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::oracle_rand_impl>,
@@ -138,6 +141,8 @@ using aml_onediff = VW::reductions::automl::automl<
 using aml_onediff_inclusion = VW::reductions::automl::automl<
     interaction_config_manager<VW::reductions::automl::config_oracle<VW::reductions::automl::one_diff_inclusion_impl>,
         VW::estimators::confidence_sequence_robust>>;
+using aml_qbase_cubic = VW::reductions::automl::automl<interaction_config_manager<
+    VW::reductions::automl::config_oracle<VW::reductions::automl::qbase_cubic>, VW::estimators::confidence_sequence_robust>>;
 }  // namespace aml_test
 
 // Need to add save_load functionality to multiple structs in automl reduction including
@@ -616,6 +621,174 @@ BOOST_AUTO_TEST_CASE(one_diff_impl_unittest_w_iterations)
       test_hooks, num_iterations, seed);
 }
 
+BOOST_AUTO_TEST_CASE(qbase_unittest_w_iterations)
+{
+  using namespace VW::reductions::automl;
+
+  const size_t num_iterations = 2;
+  callback_map test_hooks;
+  // const std::vector<uint64_t> swap_after = {500};
+  const size_t seed = 88;
+
+  test_hooks.emplace(1,
+      [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&)
+      {
+        const size_t CHAMP = 0;
+        auto* aml = aml_test::get_automl_data<qbase_cubic>(all);
+
+        config_oracle<qbase_cubic>& co = aml->cm->_config_oracle;
+        auto rand_state = all.get_random_state();
+
+        std::map<VW::namespace_index, uint64_t> ns_counter;
+        std::vector<std::pair<aml_estimator<VW::estimators::confidence_sequence_robust>, VW::estimators::confidence_sequence_robust>>
+            estimators;
+
+        config_oracle<qbase_cubic> oracle(aml->cm->default_lease, co.calc_priority, co._interaction_type,
+            co._oracle_type, rand_state, config_type::Interaction);
+
+        auto& configs = oracle.configs;
+        auto& prio_queue = oracle.index_queue;
+
+        ns_counter['A'] = 1;
+        ns_counter['B'] = 1;
+        ns_counter['C'] = 1;
+
+        BOOST_CHECK_EQUAL(configs.size(), 0);
+        BOOST_CHECK_EQUAL(estimators.size(), 0);
+        BOOST_CHECK_EQUAL(prio_queue.size(), 0);
+        interaction_config_manager<config_oracle<qbase_cubic>,
+            VW::estimators::confidence_sequence_robust>::insert_starting_configuration(estimators, oracle,
+            aml->cm->automl_significance_level);
+        BOOST_CHECK_EQUAL(configs.size(), 1);
+        BOOST_CHECK_EQUAL(estimators.size(), 1);
+        BOOST_CHECK_EQUAL(prio_queue.size(), 0);
+        auto& champ_interactions = estimators[CHAMP].first.live_interactions;
+
+        BOOST_CHECK_EQUAL(champ_interactions.size(), 0);
+        auto& exclusions = oracle.configs[estimators[0].first.config_index];
+        auto& interactions = estimators[0].first.live_interactions;
+        ns_based_config::apply_config_to_interactions(
+            false, ns_counter, oracle._interaction_type, exclusions, interactions);
+        BOOST_CHECK_EQUAL(champ_interactions.size(), 6);
+
+        const interaction_vec_t expected = {
+            {'A', 'A'},
+            {'A', 'B'},
+            {'A', 'C'},
+            {'B', 'B'},
+            {'B', 'C'},
+            {'C', 'C'},
+        };
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            champ_interactions.begin(), champ_interactions.end(), expected.begin(), expected.end());
+
+        BOOST_CHECK_EQUAL(configs.size(), 1);
+        oracle.gen_configs(estimators[CHAMP].first.live_interactions, ns_counter);
+        BOOST_CHECK_EQUAL(configs.size(), 11);
+        BOOST_CHECK_EQUAL(prio_queue.size(), 10);
+
+        const set_ns_list_t excl_0{};
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[0].elements.begin(), configs[0].elements.end(), excl_0.begin(), excl_0.end());
+        const set_ns_list_t excl_1{{'A', 'A', 'A'}};
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[1].elements.begin(), configs[1].elements.end(), excl_1.begin(), excl_1.end());
+        const set_ns_list_t excl_2{{'A', 'B', 'C'}};
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[2].elements.begin(), configs[2].elements.end(), excl_2.begin(), excl_2.end());
+        const set_ns_list_t excl_3{{'A', 'A', 'C'}};
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[3].elements.begin(), configs[3].elements.end(), excl_3.begin(), excl_3.end());
+        const set_ns_list_t excl_9{{'B', 'C', 'C'}};
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[9].elements.begin(), configs[9].elements.end(), excl_9.begin(), excl_9.end());
+
+        BOOST_CHECK_EQUAL(estimators.size(), 1);
+        // add dummy evaluators to simulate that all configs are in play
+        for (size_t i = 1; i < configs.size(); ++i)
+        {
+          interaction_config_manager<config_oracle<qbase_cubic>,
+              VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
+              config_oracle<qbase_cubic>::choose(oracle.index_queue), aml->cm->automl_significance_level, 1);
+          auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
+          auto& temp_interactions = estimators[i].first.live_interactions;
+          ns_based_config::apply_config_to_interactions(
+              false, ns_counter, oracle._interaction_type, temp_exclusions, temp_interactions);
+        }
+        BOOST_CHECK_EQUAL(prio_queue.size(), 0);
+        BOOST_CHECK_EQUAL(estimators.size(), 11);
+        const interaction_vec_t expected2 = {
+            {'B', 'C', 'C'},
+            {'A', 'A'},
+            {'A', 'B'},
+            {'A', 'C'},
+            {'B', 'B'},
+            {'B', 'C'},
+            {'C', 'C'},
+        };
+        BOOST_CHECK_EQUAL(estimators[2].first.config_index, 9);
+        BOOST_CHECK_EQUAL_COLLECTIONS(estimators[2].first.live_interactions.begin(),
+            estimators[2].first.live_interactions.end(), expected2.begin(), expected2.end());
+
+        // excl_9 - config 2 is now champ
+        interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>::apply_new_champ(
+            oracle, 2, estimators, 0, ns_counter);
+
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[0].elements.begin(), configs[0].elements.end(), excl_9.begin(), excl_9.end());
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[1].elements.begin(), configs[1].elements.end(), excl_0.begin(), excl_0.end());
+
+        BOOST_CHECK_EQUAL(oracle.valid_config_size, 11);
+        BOOST_CHECK_EQUAL(configs.size(), 11);
+
+        const set_ns_list_t excl_4{{'A', 'A', 'A'}, {'B', 'C', 'C'}};
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[2].elements.begin(), configs[2].elements.end(), excl_4.begin(), excl_4.end());
+        const set_ns_list_t excl_5{{'B', 'B', 'C'}, {'B', 'C', 'C'}};
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[3].elements.begin(), configs[3].elements.end(), excl_5.begin(), excl_5.end());
+
+        // the previous two exclusion configs are now inside the priority queue
+        BOOST_CHECK_EQUAL(prio_queue.size(), 9);
+
+        // add dummy evaluators to simulate that all configs are in play
+        for (size_t i = 2; i < 4; ++i)
+        {
+          interaction_config_manager<config_oracle<qbase_cubic>,
+              VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
+              config_oracle<qbase_cubic>::choose(oracle.index_queue), aml->cm->automl_significance_level, 1);
+          auto& temp_config = oracle.configs[estimators[i].first.config_index];
+          auto& temp_interactions = estimators[i].first.live_interactions;
+          ns_based_config::apply_config_to_interactions(
+              false, ns_counter, oracle._interaction_type, temp_config, temp_interactions);
+        }
+        BOOST_CHECK_EQUAL(prio_queue.size(), 7);
+
+        // excl_7 is now champ
+        const set_ns_list_t excl_7{{'A', 'B', 'C'}, {'B', 'C', 'C'}};
+        interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>::apply_new_champ(
+            oracle, 3, estimators, 0, ns_counter);
+
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[0].elements.begin(), configs[0].elements.end(), excl_7.begin(), excl_7.end());
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[1].elements.begin(), configs[1].elements.end(), excl_9.begin(), excl_9.end());
+        const set_ns_list_t excl_6{{'A', 'B', 'C'}, {'B', 'C', 'C'}, {'C', 'C', 'C'}};
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            configs[2].elements.begin(), configs[2].elements.end(), excl_6.begin(), excl_6.end());
+
+        BOOST_CHECK_EQUAL(prio_queue.size(), 9);
+
+        return true;
+      });
+
+  auto ctr = simulator::_test_helper_hook(
+      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
+      "--random_seed 5 "
+      "--default_lease 500 --oracle_type qbase_cubic --noconstant ",
+      test_hooks, num_iterations, seed);
+}
 BOOST_AUTO_TEST_CASE(exc_incl_unit_test)
 {
   using namespace VW::reductions::automl;
@@ -636,6 +809,24 @@ BOOST_AUTO_TEST_CASE(exc_incl_unit_test)
 
   const set_ns_list_t expected2{{'A', 'C'}, {'B', 'B'}, {'B', 'C'}, {'C', 'C'}};
   BOOST_CHECK_EQUAL(interactions.size(), 4);
+  BOOST_CHECK_EQUAL_COLLECTIONS(interactions.begin(), interactions.end(), expected2.begin(), expected2.end());
+}
+
+BOOST_AUTO_TEST_CASE(quadcubic_unit_test)
+{
+  using namespace VW::reductions::automl;
+
+  std::map<VW::namespace_index, uint64_t> ns_counter{{'A', 5}, {'B', 4}, {'C', 3}};
+
+  interaction_vec_t interactions;
+
+  ns_based_config test_config_exclusion(
+      set_ns_list_t{{'A', 'A', 'A'}, {'B', 'B', 'B'}, {'C', 'C', 'C'}}, 4000, config_type::Interaction);
+  ns_based_config::apply_config_to_interactions(false, ns_counter, "both", test_config_exclusion, interactions);
+
+  const interaction_vec_t expected2{{'A', 'A', 'A'}, {'B', 'B', 'B'}, {'C', 'C', 'C'}, {'A', 'A'}, {'A', 'B'},
+      {'A', 'C'}, {'B', 'B'}, {'B', 'C'}, {'C', 'C'}};
+
   BOOST_CHECK_EQUAL_COLLECTIONS(interactions.begin(), interactions.end(), expected2.begin(), expected2.end());
 }
 
