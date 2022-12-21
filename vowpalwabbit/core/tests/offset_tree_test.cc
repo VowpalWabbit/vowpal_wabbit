@@ -35,7 +35,7 @@ public:
 
   void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& base, VW::example& ec)
+  void test_predict(base_learner& /* base */, VW::example& ec)
   {
     ec.pred.a_s.clear();
     const auto curr_pred = _predictions[_curr_idx++];
@@ -43,7 +43,7 @@ public:
     ec.pred.a_s.push_back(VW::action_score{1, curr_pred.second});
   }
 
-  void test_learn(base_learner& base, VW::example& ec)
+  void test_learn(base_learner& /* base */, VW::example& /* ec */)
   {
     // do nothing
   }
@@ -78,7 +78,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
       "test_learner", VW::prediction_type_t::ACTION_SCORES, VW::label_type_t::CB)
-                          .set_output_example_prediction([](VW::workspace& all, const reduction_test_harness&,
+                          .set_output_example_prediction([](VW::workspace& /* all */, const reduction_test_harness&,
                                                              const VW::example&, VW::io::logger&) {})
 
                           .build();  // Create a learner using the base reduction.
