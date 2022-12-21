@@ -1,10 +1,10 @@
 #pragma once
 
-#include "json_utils.h"
 #include "vw/common/future_compat.h"
 #include "vw/core/example.h"
 #include "vw/core/hashstring.h"
 #include "vw/core/label_parser.h"
+#include "vw/json_parser/decision_service_utils.h"
 
 #include <unordered_map>
 

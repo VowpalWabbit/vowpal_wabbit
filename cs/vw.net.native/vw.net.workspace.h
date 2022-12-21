@@ -6,7 +6,7 @@
 #include "vw/core/label_type.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
-#include "vw/json_parser/json_utils.h"
+#include "vw/json_parser/decision_service_utils.h"
 
 #include <string>
 

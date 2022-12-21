@@ -10,7 +10,7 @@
 #include "vw/core/parser.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"
-#include "vw/json_parser/json_utils.h"
+#include "vw/json_parser/decision_service_utils.h"
 #include "vw/json_parser/parse_example_slates_json.h"
 
 #include <set>

@@ -4,6 +4,7 @@
 
 #include "vw/json_parser/parse_example_json.h"
 
+#include "json_utils.h"
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
@@ -181,14 +182,8 @@ public:
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
     if (!_stricmp(ctx.key, "left")) { segment.left = v; }
-    else if (!_stricmp(ctx.key, "right"))
-    {
-      segment.right = v;
-    }
-    else if (!_stricmp(ctx.key, "pdf_value"))
-    {
-      segment.pdf_value = v;
-    }
+    else if (!_stricmp(ctx.key, "right")) { segment.right = v; }
+    else if (!_stricmp(ctx.key, "pdf_value")) { segment.pdf_value = v; }
     else if (!_stricmp(ctx.key, "chosen_action"))
     {
       ctx.ex->ex_reduction_features.template get<VW::continuous_actions::reduction_features>().chosen_action = v;
@@ -355,10 +350,7 @@ public:
       found_cb = true;
     }
     // CA
-    else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous)
-    {
-      cont_label_element.pdf_value = v;
-    }
+    else if (!_stricmp(ctx.key, "Pdf_value") && found_cb_continuous) { cont_label_element.pdf_value = v; }
     else
     {
       ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
@@ -423,10 +415,7 @@ public:
       found_cb_continuous = false;
       cont_label_element = {0., 0., 0.};
     }
-    else if (found)
-    {
-      found = false;
-    }
+    else if (found) { found = false; }
 
     return return_state;
   }
@@ -624,7 +613,9 @@ public:
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::CCB)
-    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION; }
+    {
+      ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION;
+    }
     else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::ACTION;
@@ -673,7 +664,9 @@ public:
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::CCB)
-    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT; }
+    {
+      ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
+    }
     else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::SLOT;
@@ -733,10 +726,7 @@ public:
 
       ctx.CurrentNamespace().add_feature(f, array_hash, str.str().c_str());
     }
-    else
-    {
-      ctx.CurrentNamespace().add_feature(f, array_hash, nullptr);
-    }
+    else { ctx.CurrentNamespace().add_feature(f, array_hash, nullptr); }
     array_hash++;
 
     return this;
@@ -833,20 +823,14 @@ public:
           break;
         case '}':
           if (depth == 0 && sq_depth == 0) { stop = true; }
-          else
-          {
-            depth--;
-          }
+          else { depth--; }
           break;
         case '[':
           sq_depth++;
           break;
         case ']':
           if (depth == 0 && sq_depth == 0) { stop = true; }
-          else
-          {
-            sq_depth--;
-          }
+          else { sq_depth--; }
           break;
         case ',':
           if (depth == 0 && sq_depth == 0) { stop = true; }
@@ -885,14 +869,8 @@ public:
           if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
         }
-        else if (ctx.key_length == 6)
-        {
-          return &ctx.label_state;
-        }
-        else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex"))
-        {
-          return &ctx.label_index_state;
-        }
+        else if (ctx.key_length == 6) { return &ctx.label_state; }
+        else if (ctx.key_length == 11 && !_stricmp(ctx.key, "_labelIndex")) { return &ctx.label_index_state; }
         else
         {
           ctx.error() << "Unsupported key '" << ctx.key << "' len: " << length;
@@ -936,7 +914,9 @@ public:
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
         if (ctx._label_parser.label_type != VW::label_type_t::SLATES)
-        { THROW("Can only use _slot_id with slates examples"); }
+        {
+          THROW("Can only use _slot_id with slates examples");
+        }
         ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
@@ -1328,7 +1308,9 @@ public:
               ex->l.conditional_contextual_bandit.type != VW::ccb_example_type::SLOT) ||
           (ctx._label_parser.label_type == VW::label_type_t::SLATES &&
               ex->l.slates.type != VW::slates::example_type::SLOT))
-      { slot_object_index++; }
+      {
+        slot_object_index++;
+      }
     }
     old_root = ctx.root_state;
     ctx.root_state = this;
@@ -1468,14 +1450,8 @@ public:
           if (length >= 9 && !strncmp(&ctx.key[7], "ca", 2)) { ctx.label_object_state.found_cb_continuous = true; }
           return &ctx.label_single_property_state;
         }
-        else if (length == 6)
-        {
-          return &ctx.label_state;
-        }
-        else if (length == 11 && !_stricmp(str, "_labelIndex"))
-        {
-          return &ctx.label_index_state;
-        }
+        else if (length == 6) { return &ctx.label_state; }
+        else if (length == 11 && !_stricmp(str, "_labelIndex")) { return &ctx.label_index_state; }
       }
       else if (length == 10 && !strncmp(str, "_skipLearn", 10))
       {
@@ -1880,21 +1856,19 @@ bool VW::parsers::json::details::parse_line_json(
       if (!interaction.event_id.empty())
       {
         if (all->example_parser->metrics->first_event_id.empty())
-        { all->example_parser->metrics->first_event_id = std::move(interaction.event_id); }
-        else
         {
-          all->example_parser->metrics->last_event_id = std::move(interaction.event_id);
+          all->example_parser->metrics->first_event_id = std::move(interaction.event_id);
         }
+        else { all->example_parser->metrics->last_event_id = std::move(interaction.event_id); }
       }
 
       if (!interaction.timestamp.empty())
       {
         if (all->example_parser->metrics->first_event_time.empty())
-        { all->example_parser->metrics->first_event_time = std::move(interaction.timestamp); }
-        else
         {
-          all->example_parser->metrics->last_event_time = std::move(interaction.timestamp);
+          all->example_parser->metrics->first_event_time = std::move(interaction.timestamp);
         }
+        else { all->example_parser->metrics->last_event_time = std::move(interaction.timestamp); }
       }
 
       // Technically the aggregation operation here is supposed to be user-defined
@@ -1907,7 +1881,9 @@ bool VW::parsers::json::details::parse_line_json(
       {
         // APS requires this metric for CB (baseline action is 1)
         if (interaction.actions[0] == 1)
-        { all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.original_label_cost; }
+        {
+          all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.original_label_cost;
+        }
 
         if (!interaction.baseline_actions.empty())
         {
@@ -1917,10 +1893,7 @@ bool VW::parsers::json::details::parse_line_json(
             all->example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
                 interaction.original_label_cost_first_slot;
           }
-          else
-          {
-            all->example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++;
-          }
+          else { all->example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++; }
         }
       }
     }
@@ -2001,8 +1974,7 @@ int VW::parsers::json::read_features_json(VW::workspace* all, io_buf& buf, VW::m
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;
-  do
-  {
+  do {
     reread = false;
 
     char* line;

@@ -1,7 +1,8 @@
 set(vw_json_parser_sources
-    include/vw/json_parser/json_utils.h
+    include/vw/json_parser/decision_service_utils.h
     include/vw/json_parser/parse_example_json.h
     include/vw/json_parser/parse_example_slates_json.h
+    src/json_utils.h
     src/parse_example_json.cc
     src/parse_example_slates_json.cc
 )
