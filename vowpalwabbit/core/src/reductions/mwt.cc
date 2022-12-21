@@ -60,7 +60,7 @@ class mwt
 {
 public:
   std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
-  std::vector<policy_data> evals;  // accrued losses of features.
+  std::vector<policy_data> evals;                     // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
   double total = 0.;
