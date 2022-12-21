@@ -37,13 +37,8 @@ add_executable(vw-unit-test.out
   parser_test.cc
   pmf_to_pdf_test.cc
   prediction_test.cc
-  random_test.cc
-  scope_exit_test.cc
   simulator.cc
   simulator.h
-  slates_parser_test.cc
-  slates_test.cc
-  status_builder_test.cc
   tag_utils_test.cc
   test_common.cc
   test_common.h
