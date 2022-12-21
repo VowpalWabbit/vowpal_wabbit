@@ -144,7 +144,7 @@ double countable_discrete_base::log_wealth_mix(
   double y = s / sqrt_tp1 - (t / sqrt_tp1) * mu;
   std::vector<double> log_es;
   std::vector<double> log_ws;
-  for (const std::pair<const unsigned long, double>& memo_p : memo)
+  for (const auto& memo_p : memo)
   {
     uint64_t j = memo_p.first;
     double v = memo_p.second;
