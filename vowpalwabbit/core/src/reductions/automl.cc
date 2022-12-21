@@ -249,7 +249,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
   bool verbose_metrics = false;
   std::string interaction_type = "quadratic";
   std::string oracle_type = "one_diff";
-  float automl_significance_level = CS_DEFAULT_ALPHA;
+  float automl_significance_level = VW::details::CS_DEFAULT_ALPHA;
   bool reversed_learning_order = false;
   bool fixed_significance_level = false;
   bool trace_logging = false;
@@ -301,7 +301,7 @@ VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_
                .experimental())
       .add(make_option("automl_significance_level", automl_significance_level)
                .keep()
-               .default_value(CS_DEFAULT_ALPHA)
+               .default_value(VW::details::CS_DEFAULT_ALPHA)
                .allow_override()
                .help("Set significance level for champion change")
                .experimental())
