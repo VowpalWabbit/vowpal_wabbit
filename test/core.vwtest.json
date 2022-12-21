@@ -5625,5 +5625,39 @@
     "input_files": [
       "train-sets/0001.dat"
     ]
+  },
+  {
+    "id": 436,
+    "desc": "check default plt prediction (with threshold 0.5)",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_probabilities.predict --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_predict_probabilities.stderr",
+      "plt_probabilities.predict": "pred-sets/ref/plt_probabilities.predict",
+      "stdout": "train-sets/ref/plt_predict_probabilities.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt.model"
+    ],
+    "depends_on": [
+      217
+    ]
+  },
+  {
+    "id": 437,
+    "desc": "check plt top-1 prediction with --probabilities",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1_probabilities.predict --top_k 1 --loss_function logistic --probabilities",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_top1_predict_probabilities.stderr",
+      "plt_top1_probabilities.predict": "pred-sets/ref/plt_top1_probabilities.predict",
+      "stdout": "train-sets/ref/plt_top1_predict_probabilities.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt.model"
+    ],
+    "depends_on": [
+      217
+    ]
   }
 ]
