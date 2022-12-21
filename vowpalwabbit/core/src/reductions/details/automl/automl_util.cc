@@ -85,7 +85,7 @@ std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_
   for (const std::vector<VW::namespace_index>& v : interactions)
   {
     if (v.size() == 2) { ss << "-q "; }
-    else if (v.size() == 3) { ss << "-cubic "; }
+    else if (v.size() == 3) { ss << "--cubic "; }
     else { THROW("Only supports up to cubic interactions"); }
     for (VW::namespace_index c : v) { ss << ns_to_str(c); }
     ss << " ";
