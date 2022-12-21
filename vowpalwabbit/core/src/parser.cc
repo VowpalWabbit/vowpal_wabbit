@@ -63,13 +63,13 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include "vw/core/interactions.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parse_dispatch_loop.h"
-#include "vw/core/parse_example_json.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/unique_sort.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
+#include "vw/json_parser/parse_example_json.h"
 #include "vw/text_parser/parse_example_text.h"
 
 #include <cassert>
@@ -185,8 +185,8 @@ void set_string_reader(VW::workspace& all)
 
 bool is_currently_json_reader(const VW::workspace& all)
 {
-  return all.example_parser->reader == &read_features_json<true> ||
-      all.example_parser->reader == &read_features_json<false>;
+  return all.example_parser->reader == &VW::parsers::json::read_features_json<true> ||
+      all.example_parser->reader == &VW::parsers::json::read_features_json<false>;
 }
 
 bool is_currently_dsjson_reader(const VW::workspace& all)
@@ -200,14 +200,14 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
   // --invert_hash requires the audit parser version to save the extra information.
   if (all.audit || all.hash_inv)
   {
-    all.example_parser->reader = &read_features_json<true>;
-    all.example_parser->text_reader = &line_to_examples_json<true>;
+    all.example_parser->reader = &VW::parsers::json::read_features_json<true>;
+    all.example_parser->text_reader = &VW::parsers::json::line_to_examples_json<true>;
     all.example_parser->audit = true;
   }
   else
   {
-    all.example_parser->reader = &read_features_json<false>;
-    all.example_parser->text_reader = &line_to_examples_json<false>;
+    all.example_parser->reader = &VW::parsers::json::read_features_json<false>;
+    all.example_parser->text_reader = &VW::parsers::json::line_to_examples_json<false>;
     all.example_parser->audit = false;
   }
 

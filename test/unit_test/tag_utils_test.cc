@@ -9,6 +9,7 @@
 #include "vw/core/example.h"
 #include "vw/core/memory.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
@@ -28,7 +29,7 @@ BOOST_AUTO_TEST_CASE(tag_with_seed__seed_extraction)
     }
   })";
 
-  auto examples = parse_json(*vw, json);
+  auto examples = vwtest::parse_json(*vw, json);
   auto example = examples[0];
 
   VW::string_view expected{"test_seed"};
@@ -53,7 +54,7 @@ BOOST_AUTO_TEST_CASE(tag_without_seed__seed_extraction)
     }
   })";
 
-  auto examples = parse_json(*vw, json);
+  auto examples = vwtest::parse_json(*vw, json);
   auto example = examples[0];
 
   VW::string_view seed;
@@ -76,7 +77,7 @@ BOOST_AUTO_TEST_CASE(no_tag__seed_extraction)
     }
   })";
 
-  auto examples = parse_json(*vw, json);
+  auto examples = vwtest::parse_json(*vw, json);
   auto example = examples[0];
 
   VW::string_view seed;

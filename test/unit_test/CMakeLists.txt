@@ -17,11 +17,9 @@ add_executable(vw-unit-test.out
   continuous_actions_parser_test.cc
   custom_reduction_test.cc
   distributionally_robust_test.cc
-  dsjson_parser_test.cc
   epsilon_test.cc
   example_header_test.cc
   feature_group_test.cc
-  json_parser_test.cc
   loss_functions_test.cc
   main.cc
   minimal_custom_reduction.cc
