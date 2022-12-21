@@ -2,7 +2,7 @@
 
 #include "vw.net.native.h"
 #include "vw/core/vw.h"
-#include "vw/json_parser/json_utils.h"
+#include "vw/json_parser/decision_service_utils.h"
 
 extern "C"
 {
