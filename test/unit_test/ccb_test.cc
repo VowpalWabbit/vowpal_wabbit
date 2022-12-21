@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "test_common.h"
+#include "vw/test_common/test_common.h"
 #include "vw/core/example.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
@@ -58,7 +59,7 @@ BOOST_AUTO_TEST_CASE(ccb_exploration_reproducibility_test)
   {
     const std::string json =
         R"({"GUser":{"shared_feature":"feature"},"_multi":[{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}}],"_slots":[{"_id":"slot1"},{"_id":"slot2"}]})";
-    auto examples = parse_json(*vw, json);
+    auto examples = vwtest::parse_json(*vw, json);
     for (int i = 0; i < event_ids.size(); i++)
     {
       const size_t slot_example_indx = examples.size() - event_ids.size() + i;

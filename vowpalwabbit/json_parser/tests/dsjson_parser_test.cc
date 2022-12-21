@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "test_common.h"
+#include "vw/test_common/test_common.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 
 #include <boost/test/test_tools.hpp>
@@ -19,7 +19,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   VW::details::decision_service_interaction interaction;
 
-  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p)
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   VW::details::decision_service_interaction interaction;
 
-  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   VW::details::decision_service_interaction interaction;
 
-  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_float)
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   VW::details::decision_service_interaction interaction;
 
-  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_uint)
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   VW::details::decision_service_interaction interaction;
 
-  auto examples = parse_dsjson(*vw, json_text, &interaction);
+  auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
@@ -185,7 +185,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
 }
 )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 4);
 
@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
   auto vw = VW::initialize(
       "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
       false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
   auto vw = VW::initialize(
       "--dsjson --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
       false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
   BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 0);
@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
   auto vw = VW::initialize(
       "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
       false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
   const auto& reduction_features =
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
   auto vw = VW::initialize(
       "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
       false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 1);
 
@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
   auto vw = VW::initialize(
       "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
       false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   const auto& reduction_features =
       examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
@@ -491,7 +491,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
 
   auto vw =
       VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 5);
   BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
@@ -586,7 +586,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_as_ccb)
 )";
   auto vw =
       VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 5);
   BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
@@ -651,7 +651,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_with_nan)
 )";
 
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto examples = parse_dsjson(*vw, json_text);
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   BOOST_CHECK_EQUAL(examples.size(), 4);
 
@@ -744,7 +744,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
 
   auto vw = VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   VW::details::decision_service_interaction ds_interaction;
-  auto examples = parse_dsjson(*vw, json_text, &ds_interaction);
+  auto examples = vwtest::parse_dsjson(*vw, json_text, &ds_interaction);
 
   BOOST_CHECK_EQUAL(examples.size(), 8);
   BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
@@ -818,7 +818,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
   // Assert parsed values against what they should be
   auto slates_vw =
       VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto slates_examples = parse_dsjson(*slates_vw, json_text);
+  auto slates_examples = vwtest::parse_dsjson(*slates_vw, json_text);
 
   BOOST_CHECK_EQUAL(slates_examples.size(), 1);
   const auto& slates_ex = *slates_examples[0];
@@ -833,7 +833,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
   // Compare the DOM parser to parsing the same features with the CCB SAX parser
   auto ccb_vw =
       VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  auto ccb_examples = parse_dsjson(*ccb_vw, json_text);
+  auto ccb_examples = vwtest::parse_dsjson(*ccb_vw, json_text);
   BOOST_CHECK_EQUAL(ccb_examples.size(), 1);
   const auto& ccb_ex = *ccb_examples[0];
   check_collections_exact(slates_ex.feature_space[' '].indices, ccb_ex.feature_space[' '].indices);

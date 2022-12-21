@@ -4,6 +4,7 @@
 
 #include "test_common.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 #include "vw/text_parser/parse_example_text.h"
 
 #include <boost/test/test_tools.hpp>
@@ -37,7 +38,7 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
     VW::finish_example(*vw, examples);
   }
   {
-    auto examples = parse_json(*vw, json_text);
+    auto examples = vwtest::parse_json(*vw, json_text);
     auto example = examples[0];
 
     auto& indices = example->feature_space['f'].indices;
