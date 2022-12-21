@@ -565,23 +565,6 @@ BOOST_AUTO_TEST_CASE(check_final_truncated_SVD_validity)
   auto d = 3;
 
   std::vector<std::tuple<VW::workspace*, bool, VW::cb_explore_adf::implementation_type>> vws;
-  auto* vw_wo_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
-
-  vws.emplace_back(vw_wo_interactions, false, VW::cb_explore_adf::implementation_type::two_pass_svd);
-
-  auto* vw_w_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 -q :: --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
-
-  vws.emplace_back(vw_w_interactions, false, VW::cb_explore_adf::implementation_type::two_pass_svd);
-
-  auto* vw_wo_interactions_sq = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
-
-  vws.emplace_back(vw_wo_interactions_sq, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
   auto* vw_w_interactions_sq = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
           std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
