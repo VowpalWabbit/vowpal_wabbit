@@ -245,7 +245,7 @@ void VW::parsers::json::details::parse_slates_example_json(const VW::workspace& 
 template <bool audit>
 void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t /*length*/, VW::example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    VW::parsers::json::decision_service_interaction* data, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   Document document;
   document.ParseInsitu(line);
@@ -342,10 +342,10 @@ template void VW::parsers::json::details::parse_slates_example_json<false>(const
 
 template void VW::parsers::json::details::parse_slates_example_dsjson<true>(VW::workspace& all, VW::multi_ex& examples,
     char* line, size_t length, VW::example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    VW::parsers::json::decision_service_interaction* data, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::details::parse_slates_example_dsjson<false>(VW::workspace& all, VW::multi_ex& examples,
     char* line, size_t length, VW::example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    VW::parsers::json::decision_service_interaction* data, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 #ifdef VW_WINDOWS_GETOBJECT_MACRO_WAS_UNDEF
 #  pragma pop_macro("GetObject")

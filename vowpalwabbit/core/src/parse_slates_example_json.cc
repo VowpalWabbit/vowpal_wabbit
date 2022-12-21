@@ -20,8 +20,8 @@ template void parse_slates_example_json<false>(const VW::workspace& all, VW::mul
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void parse_slates_example_dsjson<true>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::decision_service_interaction* data,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::parsers::json::decision_service_interaction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void parse_slates_example_dsjson<false>(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    VW::example_factory_t example_factory, void* ex_factory_context, VW::details::decision_service_interaction* data,
+    VW::example_factory_t example_factory, void* ex_factory_context, VW::parsers::json::decision_service_interaction* data,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);

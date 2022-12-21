@@ -2,14 +2,16 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/test_common/test_common.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
+#include "vw/test_common/matchers.h"
+#include "vw/test_common/test_common.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <vector>
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
+TEST(dsjson_tests, parse_dsjson_underscore_p)
 {
   const std::string json_text = R"(
 {
@@ -17,7 +19,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  VW::details::decision_service_interaction interaction;
+  VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
@@ -25,15 +27,15 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_underscore_p)
 
   static constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
   const size_t num_probabilities = interaction.probabilities.size();
-  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  EXPECT_EQ(num_probabilities, 2);
   for (size_t i = 0; i < num_probabilities; ++i)
   {
     // Check that probabilities are as expected.
-    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+    EXPECT_EQ(interaction.probabilities[i], EXPECTED_PDF[i]);
   }
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_p)
+TEST(dsjson_tests, parse_dsjson_p)
 {
   const std::string json_text = R"(
 {
@@ -41,7 +43,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  VW::details::decision_service_interaction interaction;
+  VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
@@ -49,15 +51,15 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p)
 
   static constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
   const size_t num_probabilities = interaction.probabilities.size();
-  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  EXPECT_EQ(num_probabilities, 2);
   for (size_t i = 0; i < num_probabilities; ++i)
   {
     // Check that probabilities are as expected.
-    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+    EXPECT_EQ(interaction.probabilities[i], EXPECTED_PDF[i]);
   }
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
+TEST(dsjson_tests, parse_dsjson_p_duplicates)
 {
   const std::string json_text = R"(
 {
@@ -69,7 +71,7 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  VW::details::decision_service_interaction interaction;
+  VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
@@ -78,15 +80,15 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_p_duplicates)
   // Use the latest "p" or "_p" field provided. The "_p" is ignored when it's inside "c".
   static constexpr float EXPECTED_PDF[2] = {0.5f, 0.5f};
   const size_t num_probabilities = interaction.probabilities.size();
-  BOOST_CHECK_EQUAL(num_probabilities, 2);
+  EXPECT_EQ(num_probabilities, 2);
   for (size_t i = 0; i < num_probabilities; ++i)
   {
     // Check that probabilities are as expected.
-    BOOST_CHECK_EQUAL(interaction.probabilities[i], EXPECTED_PDF[i]);
+    EXPECT_EQ(interaction.probabilities[i], EXPECTED_PDF[i]);
   }
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_float)
+TEST(dsjson_tests, parse_dsjson_pdrop_float)
 {
   const std::string json_text = R"(
 {
@@ -94,16 +96,16 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_float)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  VW::details::decision_service_interaction interaction;
+  VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
-  BOOST_CHECK_CLOSE(0.1f, interaction.probability_of_drop, FLOAT_TOL);
+  EXPECT_NEAR(0.1f, interaction.probability_of_drop, vwtest::FLOAT_TOL);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_uint)
+TEST(dsjson_tests, parse_dsjson_pdrop_uint)
 {
   const std::string json_text = R"(
 {
@@ -111,17 +113,17 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_pdrop_uint)
 }
   )";
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  VW::details::decision_service_interaction interaction;
+  VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
-  BOOST_CHECK_CLOSE(0.0f, interaction.probability_of_drop, FLOAT_TOL);
+  EXPECT_NEAR(0.0f, interaction.probability_of_drop, vwtest::FLOAT_TOL);
 }
 
 // TODO: Make unit test dig out and verify features.
-BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
+TEST(dsjson_tests, parse_dsjson_cb)
 {
   std::string json_text = R"(
 {
@@ -187,26 +189,26 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb)
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 4);
+  EXPECT_EQ(examples.size(), 4);
 
   // Shared example
-  BOOST_CHECK_EQUAL(examples[0]->l.cb.costs.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].probability, -1.f, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].cost, FLT_MAX, FLOAT_TOL);
+  EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
+  EXPECT_NEAR(examples[0]->l.cb.costs[0].probability, -1.f, vwtest::FLOAT_TOL);
+  EXPECT_NEAR(examples[0]->l.cb.costs[0].cost, FLT_MAX, vwtest::FLOAT_TOL);
 
   // Action examples
-  BOOST_CHECK_EQUAL(examples[1]->l.cb.costs.size(), 0);
-  BOOST_CHECK_EQUAL(examples[2]->l.cb.costs.size(), 1);
-  BOOST_CHECK_EQUAL(examples[3]->l.cb.costs.size(), 0);
+  EXPECT_EQ(examples[1]->l.cb.costs.size(), 0);
+  EXPECT_EQ(examples[2]->l.cb.costs.size(), 1);
+  EXPECT_EQ(examples[3]->l.cb.costs.size(), 0);
 
-  BOOST_CHECK_CLOSE(examples[2]->l.cb.costs[0].probability, 0.8166667, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[2]->l.cb.costs[0].cost, -1.0, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(examples[2]->l.cb.costs[0].action, 2);
+  EXPECT_NEAR(examples[2]->l.cb.costs[0].probability, 0.8166667, vwtest::FLOAT_TOL);
+  EXPECT_NEAR(examples[2]->l.cb.costs[0].cost, -1.0, vwtest::FLOAT_TOL);
+  EXPECT_EQ(examples[2]->l.cb.costs[0].action, 2);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
+TEST(dsjson_tests, parse_dsjson_cats)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -239,22 +241,22 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats)
       false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
+  EXPECT_EQ(examples.size(), 1);
 
-  BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].cost, 0.657567, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb_cont.costs[0].action, 185.121, FLOAT_TOL);
+  EXPECT_EQ(examples[0]->l.cb_cont.costs.size(), 1);
+  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05, vwtest::FLOAT_TOL);
+  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].cost, 0.657567, vwtest::FLOAT_TOL);
+  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].action, 185.121, vwtest::FLOAT_TOL);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
-  BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
+  EXPECT_EQ(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
+TEST(dsjson_tests, parse_dsjson_cats_no_label)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -281,18 +283,18 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_no_label)
       false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
-  BOOST_CHECK_EQUAL(examples[0]->l.cb_cont.costs.size(), 0);
+  EXPECT_EQ(examples.size(), 1);
+  EXPECT_EQ(examples[0]->l.cb_cont.costs.size(), 0);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
-  BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
+  EXPECT_EQ(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
+TEST(dsjson_tests, parse_dsjson_cats_w_valid_pdf)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -321,31 +323,31 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_valid_pdf)
       false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
+  EXPECT_EQ(examples.size(), 1);
   const auto& reduction_features =
       examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), true);
-  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
+  EXPECT_EQ(reduction_features.is_pdf_set(), true);
+  EXPECT_EQ(reduction_features.is_chosen_action_set(), false);
 
-  BOOST_CHECK_EQUAL(reduction_features.pdf.size(), 2);
-  BOOST_CHECK_CLOSE(reduction_features.pdf[0].left, 185., FLOAT_TOL);
-  BOOST_CHECK_CLOSE(reduction_features.pdf[0].right, 8109.67, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(reduction_features.pdf[0].pdf_value, 2.10314e-06, FLOAT_TOL);
+  EXPECT_EQ(reduction_features.pdf.size(), 2);
+  EXPECT_NEAR(reduction_features.pdf[0].left, 185., vwtest::FLOAT_TOL);
+  EXPECT_NEAR(reduction_features.pdf[0].right, 8109.67, vwtest::FLOAT_TOL);
+  EXPECT_NEAR(reduction_features.pdf[0].pdf_value, 2.10314e-06, vwtest::FLOAT_TOL);
 
-  BOOST_CHECK_CLOSE(reduction_features.pdf[1].left, 8109.67, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(reduction_features.pdf[1].right, 23959., FLOAT_TOL);
-  BOOST_CHECK_CLOSE(reduction_features.pdf[1].pdf_value, 6.20426e-05, FLOAT_TOL);
+  EXPECT_NEAR(reduction_features.pdf[1].left, 8109.67, vwtest::FLOAT_TOL);
+  EXPECT_NEAR(reduction_features.pdf[1].right, 23959., vwtest::FLOAT_TOL);
+  EXPECT_NEAR(reduction_features.pdf[1].pdf_value, 6.20426e-05, vwtest::FLOAT_TOL);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
-  BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
+  EXPECT_EQ(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
+TEST(dsjson_tests, parse_dsjson_cats_w_invalid_pdf)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -375,23 +377,23 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_w_invalid_pdf)
       false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
+  EXPECT_EQ(examples.size(), 1);
 
   const auto& reduction_features =
       examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
-  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
+  EXPECT_EQ(reduction_features.is_pdf_set(), false);
+  EXPECT_EQ(reduction_features.is_chosen_action_set(), false);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
-  BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
+  EXPECT_EQ(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
+TEST(dsjson_tests, parse_dsjson_cats_chosen_action)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -424,21 +426,21 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cats_chosen_action)
   const auto& reduction_features =
       examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
-  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
-  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), true);
-  BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185., FLOAT_TOL);
+  EXPECT_EQ(examples.size(), 1);
+  EXPECT_EQ(reduction_features.is_pdf_set(), false);
+  EXPECT_EQ(reduction_features.is_chosen_action_set(), true);
+  EXPECT_NEAR(reduction_features.chosen_action, 185., vwtest::FLOAT_TOL);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
-  BOOST_CHECK_EQUAL(features.size(), space_names.size());
-  for (size_t i = 0; i < space_names.size(); i++) { BOOST_CHECK_EQUAL(space_names[i].name, features[i]); }
+  EXPECT_EQ(features.size(), space_names.size());
+  for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
 // TODO: Make unit test dig out and verify features.
-BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
+TEST(dsjson_tests, parse_dsjson_ccb)
 {
   std::string json_text = R"(
 {
@@ -493,35 +495,35 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_ccb)
       VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 5);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
+  EXPECT_EQ(examples.size(), 5);
+  EXPECT_EQ(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+  EXPECT_EQ(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  EXPECT_EQ(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  EXPECT_EQ(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
+  EXPECT_EQ(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
 
   auto label1 = examples[3]->l.conditional_contextual_bandit;
-  BOOST_CHECK_EQUAL(label1.explicit_included_actions.size(), 2);
-  BOOST_CHECK_EQUAL(label1.explicit_included_actions[0], 1);
-  BOOST_CHECK_EQUAL(label1.explicit_included_actions[1], 2);
-  BOOST_CHECK_CLOSE(label1.outcome->cost, 2.f, .0001f);
-  BOOST_CHECK_EQUAL(label1.outcome->probabilities.size(), 1);
-  BOOST_CHECK_EQUAL(label1.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(label1.outcome->probabilities[0].score, .25f, .0001f);
+  EXPECT_EQ(label1.explicit_included_actions.size(), 2);
+  EXPECT_EQ(label1.explicit_included_actions[0], 1);
+  EXPECT_EQ(label1.explicit_included_actions[1], 2);
+  EXPECT_NEAR(label1.outcome->cost, 2.f, .0001f);
+  EXPECT_EQ(label1.outcome->probabilities.size(), 1);
+  EXPECT_EQ(label1.outcome->probabilities[0].action, 1);
+  EXPECT_NEAR(label1.outcome->probabilities[0].score, .25f, .0001f);
 
   auto label2 = examples[4]->l.conditional_contextual_bandit;
-  BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);
-  BOOST_CHECK_CLOSE(label2.outcome->cost, 4.f, .0001f);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities.size(), 2);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 2);
-  BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, .75f, .0001f);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities[1].action, 1);
-  BOOST_CHECK_CLOSE(label2.outcome->probabilities[1].score, .25f, .0001f);
+  EXPECT_EQ(label2.explicit_included_actions.size(), 0);
+  EXPECT_NEAR(label2.outcome->cost, 4.f, .0001f);
+  EXPECT_EQ(label2.outcome->probabilities.size(), 2);
+  EXPECT_EQ(label2.outcome->probabilities[0].action, 2);
+  EXPECT_NEAR(label2.outcome->probabilities[0].score, .75f, .0001f);
+  EXPECT_EQ(label2.outcome->probabilities[1].action, 1);
+  EXPECT_NEAR(label2.outcome->probabilities[1].score, .25f, .0001f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_cb_as_ccb)
+TEST(dsjson_tests, parse_dsjson_cb_as_ccb)
 {
   std::string json_text = R"(
 {
@@ -588,24 +590,24 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_as_ccb)
       VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 5);
-  BOOST_CHECK_EQUAL(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
-  BOOST_CHECK_EQUAL(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
+  EXPECT_EQ(examples.size(), 5);
+  EXPECT_EQ(examples[0]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SHARED);
+  EXPECT_EQ(examples[1]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  EXPECT_EQ(examples[2]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  EXPECT_EQ(examples[3]->l.conditional_contextual_bandit.type, VW::ccb_example_type::ACTION);
+  EXPECT_EQ(examples[4]->l.conditional_contextual_bandit.type, VW::ccb_example_type::SLOT);
 
   auto label2 = examples[4]->l.conditional_contextual_bandit;
-  BOOST_CHECK_EQUAL(label2.explicit_included_actions.size(), 0);
-  BOOST_CHECK_CLOSE(label2.outcome->cost, -1.f, .0001f);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities.size(), 1);
-  BOOST_CHECK_EQUAL(label2.outcome->probabilities[0].action, 1);
-  BOOST_CHECK_CLOSE(label2.outcome->probabilities[0].score, 0.8166667f, .0001f);
+  EXPECT_EQ(label2.explicit_included_actions.size(), 0);
+  EXPECT_NEAR(label2.outcome->cost, -1.f, .0001f);
+  EXPECT_EQ(label2.outcome->probabilities.size(), 1);
+  EXPECT_EQ(label2.outcome->probabilities[0].action, 1);
+  EXPECT_NEAR(label2.outcome->probabilities[0].score, 0.8166667f, .0001f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_cb_with_nan)
+TEST(dsjson_tests, parse_dsjson_cb_with_nan)
 {
   std::string json_text = R"(
 {
@@ -653,26 +655,26 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_cb_with_nan)
   auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 4);
+  EXPECT_EQ(examples.size(), 4);
 
   // Shared example
-  BOOST_CHECK_EQUAL(examples[0]->l.cb.costs.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].probability, -1.f, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->l.cb.costs[0].cost, FLT_MAX, FLOAT_TOL);
+  EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
+  EXPECT_NEAR(examples[0]->l.cb.costs[0].probability, -1.f, vwtest::FLOAT_TOL);
+  EXPECT_NEAR(examples[0]->l.cb.costs[0].cost, FLT_MAX, vwtest::FLOAT_TOL);
 
   // Action examples
-  BOOST_CHECK_EQUAL(examples[1]->l.cb.costs.size(), 0);
-  BOOST_CHECK_EQUAL(examples[2]->l.cb.costs.size(), 1);
-  BOOST_CHECK_EQUAL(examples[3]->l.cb.costs.size(), 0);
+  EXPECT_EQ(examples[1]->l.cb.costs.size(), 0);
+  EXPECT_EQ(examples[2]->l.cb.costs.size(), 1);
+  EXPECT_EQ(examples[3]->l.cb.costs.size(), 0);
 
-  BOOST_CHECK_EQUAL(std::isnan(examples[2]->l.cb.costs[0].probability), true);
-  BOOST_CHECK_EQUAL(std::isnan(examples[2]->l.cb.costs[0].cost), true);
-  BOOST_CHECK_EQUAL(examples[2]->l.cb.costs[0].action, 2);
+  EXPECT_EQ(std::isnan(examples[2]->l.cb.costs[0].probability), true);
+  EXPECT_EQ(std::isnan(examples[2]->l.cb.costs[0].cost), true);
+  EXPECT_EQ(examples[2]->l.cb.costs[0].action, 2);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
+TEST(dsjson_tests, parse_dsjson_slates)
 {
   std::string json_text = R"(
 {
@@ -743,47 +745,48 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates)
 })";
 
   auto vw = VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
-  VW::details::decision_service_interaction ds_interaction;
+  VW::parsers::json::decision_service_interaction ds_interaction;
   auto examples = vwtest::parse_dsjson(*vw, json_text, &ds_interaction);
 
-  BOOST_CHECK_EQUAL(examples.size(), 8);
-  BOOST_CHECK_EQUAL(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
-  BOOST_CHECK_EQUAL(examples[1]->l.slates.type, VW::slates::example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[2]->l.slates.type, VW::slates::example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[3]->l.slates.type, VW::slates::example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[4]->l.slates.type, VW::slates::example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[5]->l.slates.type, VW::slates::example_type::ACTION);
-  BOOST_CHECK_EQUAL(examples[6]->l.slates.type, VW::slates::example_type::SLOT);
-  BOOST_CHECK_EQUAL(examples[7]->l.slates.type, VW::slates::example_type::SLOT);
+  EXPECT_EQ(examples.size(), 8);
+  EXPECT_EQ(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
+  EXPECT_EQ(examples[1]->l.slates.type, VW::slates::example_type::ACTION);
+  EXPECT_EQ(examples[2]->l.slates.type, VW::slates::example_type::ACTION);
+  EXPECT_EQ(examples[3]->l.slates.type, VW::slates::example_type::ACTION);
+  EXPECT_EQ(examples[4]->l.slates.type, VW::slates::example_type::ACTION);
+  EXPECT_EQ(examples[5]->l.slates.type, VW::slates::example_type::ACTION);
+  EXPECT_EQ(examples[6]->l.slates.type, VW::slates::example_type::SLOT);
+  EXPECT_EQ(examples[7]->l.slates.type, VW::slates::example_type::SLOT);
 
   const auto& label0 = examples[0]->l.slates;
-  BOOST_CHECK_CLOSE(label0.cost, 1.f, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(label0.labeled, true);
+  EXPECT_NEAR(label0.cost, 1.f, vwtest::FLOAT_TOL);
+  EXPECT_EQ(label0.labeled, true);
 
-  BOOST_CHECK_EQUAL(examples[1]->l.slates.slot_id, 0);
-  BOOST_CHECK_EQUAL(examples[2]->l.slates.slot_id, 0);
-  BOOST_CHECK_EQUAL(examples[3]->l.slates.slot_id, 0);
-  BOOST_CHECK_EQUAL(examples[4]->l.slates.slot_id, 1);
-  BOOST_CHECK_EQUAL(examples[5]->l.slates.slot_id, 1);
+  EXPECT_EQ(examples[1]->l.slates.slot_id, 0);
+  EXPECT_EQ(examples[2]->l.slates.slot_id, 0);
+  EXPECT_EQ(examples[3]->l.slates.slot_id, 0);
+  EXPECT_EQ(examples[4]->l.slates.slot_id, 1);
+  EXPECT_EQ(examples[5]->l.slates.slot_id, 1);
 
   const auto& label6 = examples[6]->l.slates;
-  check_collections_with_float_tolerance(label6.probabilities, std::vector<VW::action_score>{{1, 0.8f}}, FLOAT_TOL);
-  const auto& label7 = examples[7]->l.slates;
-  check_collections_with_float_tolerance(
-      label7.probabilities, std::vector<VW::action_score>{{0, 0.6f}, {1, 0.4f}}, FLOAT_TOL);
+  EXPECT_THAT(label6.probabilities, testing::Pointwise(ActionScoreEqual(), std::vector<VW::action_score>{{1, 0.8f}}));
 
-  // Check values in VW::details::decision_service_interaction
-  BOOST_CHECK_EQUAL(ds_interaction.event_id, "test_id");
-  BOOST_CHECK_CLOSE(ds_interaction.probability_of_drop, 0.1, FLOAT_TOL);
-  BOOST_CHECK_EQUAL(ds_interaction.skip_learn, true);
-  check_collections_exact(ds_interaction.actions, std::vector<unsigned int>{1, 0});
-  check_collections_with_float_tolerance(ds_interaction.probabilities, std::vector<float>{0.8f, 0.6f}, FLOAT_TOL);
+  const auto& label7 = examples[7]->l.slates;
+  EXPECT_THAT(label7.probabilities,
+      testing::Pointwise(ActionScoreEqual(), std::vector<VW::action_score>{{0, 0.6f}, {1, 0.4f}}));
+
+  // Check values in VW::parsers::json::decision_service_interaction
+  EXPECT_EQ(ds_interaction.event_id, "test_id");
+  EXPECT_NEAR(ds_interaction.probability_of_drop, 0.1, vwtest::FLOAT_TOL);
+  EXPECT_EQ(ds_interaction.skip_learn, true);
+  EXPECT_THAT(ds_interaction.actions, testing::ElementsAre(1, 0));
+  EXPECT_THAT(ds_interaction.probabilities, testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), {0.8f, 0.6f}));
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
+TEST(dsjson_tests, parse_dsjson_slates_dom_parser)
 {
   std::string json_text = R"(
 {
@@ -820,41 +823,41 @@ BOOST_AUTO_TEST_CASE(parse_dsjson_slates_dom_parser)
       VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto slates_examples = vwtest::parse_dsjson(*slates_vw, json_text);
 
-  BOOST_CHECK_EQUAL(slates_examples.size(), 1);
+  EXPECT_EQ(slates_examples.size(), 1);
   const auto& slates_ex = *slates_examples[0];
-  check_collections_exact(slates_ex.indices, std::vector<VW::namespace_index>{'a', 'd', 'c', 'b', 32});
-  BOOST_CHECK_EQUAL(slates_ex.feature_space[' '].indices.size(), 2);
-  BOOST_CHECK_EQUAL(slates_ex.feature_space['a'].indices.size(), 1);
-  BOOST_CHECK_EQUAL(slates_ex.feature_space['b'].indices.size(), 1);
-  BOOST_CHECK_EQUAL(slates_ex.feature_space['c'].indices.size(), 1);
-  BOOST_CHECK_EQUAL(slates_ex.feature_space['d'].indices.size(), 3);
-  BOOST_CHECK_EQUAL(slates_ex.feature_space['3'].indices.size(), 0);
+  EXPECT_THAT(slates_ex.indices, testing::ElementsAre('a', 'd', 'c', 'b', 32));
+  EXPECT_EQ(slates_ex.feature_space[' '].indices.size(), 2);
+  EXPECT_EQ(slates_ex.feature_space['a'].indices.size(), 1);
+  EXPECT_EQ(slates_ex.feature_space['b'].indices.size(), 1);
+  EXPECT_EQ(slates_ex.feature_space['c'].indices.size(), 1);
+  EXPECT_EQ(slates_ex.feature_space['d'].indices.size(), 3);
+  EXPECT_EQ(slates_ex.feature_space['3'].indices.size(), 0);
 
   // Compare the DOM parser to parsing the same features with the CCB SAX parser
   auto ccb_vw =
       VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto ccb_examples = vwtest::parse_dsjson(*ccb_vw, json_text);
-  BOOST_CHECK_EQUAL(ccb_examples.size(), 1);
+  EXPECT_EQ(ccb_examples.size(), 1);
   const auto& ccb_ex = *ccb_examples[0];
-  check_collections_exact(slates_ex.feature_space[' '].indices, ccb_ex.feature_space[' '].indices);
-  check_collections_exact(slates_ex.feature_space['a'].indices, ccb_ex.feature_space['a'].indices);
-  check_collections_exact(slates_ex.feature_space['b'].indices, ccb_ex.feature_space['b'].indices);
-  check_collections_exact(slates_ex.feature_space['c'].indices, ccb_ex.feature_space['c'].indices);
-  check_collections_exact(slates_ex.feature_space['d'].indices, ccb_ex.feature_space['d'].indices);
-  check_collections_exact(slates_ex.feature_space['e'].indices, ccb_ex.feature_space['e'].indices);
+  EXPECT_THAT(slates_ex.feature_space[' '].indices, testing::ElementsAreArray(ccb_ex.feature_space[' '].indices));
+  EXPECT_THAT(slates_ex.feature_space['a'].indices, testing::ElementsAreArray(ccb_ex.feature_space['a'].indices));
+  EXPECT_THAT(slates_ex.feature_space['b'].indices, testing::ElementsAreArray(ccb_ex.feature_space['b'].indices));
+  EXPECT_THAT(slates_ex.feature_space['c'].indices, testing::ElementsAreArray(ccb_ex.feature_space['c'].indices));
+  EXPECT_THAT(slates_ex.feature_space['d'].indices, testing::ElementsAreArray(ccb_ex.feature_space['d'].indices));
+  EXPECT_THAT(slates_ex.feature_space['e'].indices, testing::ElementsAreArray(ccb_ex.feature_space['e'].indices));
 
-  check_collections_with_float_tolerance(
-      slates_ex.feature_space[' '].values, ccb_ex.feature_space[' '].values, FLOAT_TOL);
-  check_collections_with_float_tolerance(
-      slates_ex.feature_space['a'].values, ccb_ex.feature_space['a'].values, FLOAT_TOL);
-  check_collections_with_float_tolerance(
-      slates_ex.feature_space['b'].values, ccb_ex.feature_space['b'].values, FLOAT_TOL);
-  check_collections_with_float_tolerance(
-      slates_ex.feature_space['c'].values, ccb_ex.feature_space['c'].values, FLOAT_TOL);
-  check_collections_with_float_tolerance(
-      slates_ex.feature_space['d'].values, ccb_ex.feature_space['d'].values, FLOAT_TOL);
-  check_collections_with_float_tolerance(
-      slates_ex.feature_space['e'].values, ccb_ex.feature_space['e'].values, FLOAT_TOL);
+  EXPECT_THAT(slates_ex.feature_space[' '].values,
+      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space[' '].values));
+  EXPECT_THAT(slates_ex.feature_space['a'].values,
+      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['a'].values));
+  EXPECT_THAT(slates_ex.feature_space['b'].values,
+      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['b'].values));
+  EXPECT_THAT(slates_ex.feature_space['c'].values,
+      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['c'].values));
+  EXPECT_THAT(slates_ex.feature_space['d'].values,
+      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['d'].values));
+  EXPECT_THAT(slates_ex.feature_space['e'].values,
+      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['e'].values));
 
   VW::finish_example(*slates_vw, slates_examples);
   VW::finish(*slates_vw);

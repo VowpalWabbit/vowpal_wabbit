@@ -11,7 +11,9 @@
 
 namespace VW
 {
-namespace details
+namespace parsers
+{
+namespace json
 {
 // Decision Service JSON header information - required to construct final label
 class decision_service_interaction
@@ -28,12 +30,6 @@ public:
   bool skip_learn{false};
 };
 
-}  // namespace details
-
-namespace parsers
-{
-namespace json
-{
 namespace details
 {
 template <bool audit>

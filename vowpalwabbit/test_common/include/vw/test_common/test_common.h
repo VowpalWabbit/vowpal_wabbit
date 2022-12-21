@@ -13,6 +13,8 @@
 
 namespace vwtest
 {
+constexpr float FLOAT_TOL = 0.0001f;
+
 template <typename... ArgsT>
 std::unique_ptr<VW::config::options_i> make_args(ArgsT const&... args)
 {
@@ -22,5 +24,5 @@ std::unique_ptr<VW::config::options_i> make_args(ArgsT const&... args)
 VW::multi_ex parse_json(VW::workspace& all, const std::string& line);
 
 VW::multi_ex parse_dsjson(
-    VW::workspace& all, std::string line, VW::details::decision_service_interaction* interaction = nullptr);
+    VW::workspace& all, std::string line, VW::parsers::json::decision_service_interaction* interaction = nullptr);
 }  // namespace vwtest

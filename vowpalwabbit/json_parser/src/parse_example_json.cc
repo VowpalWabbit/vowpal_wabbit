@@ -1292,7 +1292,7 @@ template <bool audit>
 class SlotOutcomeList : public BaseState<audit>
 {
 public:
-  VW::details::decision_service_interaction* interactions;
+  VW::parsers::json::decision_service_interaction* interactions;
 
   SlotOutcomeList() : BaseState<audit>("SlotOutcomeList") {}
 
@@ -1379,7 +1379,7 @@ class DecisionServiceState : public BaseState<audit>
 public:
   DecisionServiceState() : BaseState<audit>("DecisionService") {}
 
-  VW::details::decision_service_interaction* data;
+  VW::parsers::json::decision_service_interaction* data;
 
   BaseState<audit>* StartObject(Context<audit>& /* ctx */) override
   {
@@ -1529,7 +1529,7 @@ public:
   // TODO: This shouldn't really exist in the Context. Once the JSON parser
   // gets refactored to separate the VWJson/DSJson concepts, this should
   // be moved into the DSJson version of the context
-  VW::details::decision_service_interaction* decision_service_data = nullptr;
+  VW::parsers::json::decision_service_interaction* decision_service_data = nullptr;
 
   // states
   DefaultState<audit> default_state;
@@ -1591,7 +1591,7 @@ public:
     return *error_ptr;
   }
 
-  void SetStartStateToDecisionService(VW::details::decision_service_interaction* data)
+  void SetStartStateToDecisionService(VW::parsers::json::decision_service_interaction* data)
   {
     decision_service_state.data = data;
     current_state = root_state = &decision_service_state;
@@ -1773,7 +1773,7 @@ inline bool apply_pdrop(label_type_t label_type, float pdrop, VW::multi_ex& exam
 template <bool audit>
 bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data)
+    VW::parsers::json::decision_service_interaction* data)
 {
   if (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
   {
@@ -1838,7 +1838,7 @@ bool VW::parsers::json::details::parse_line_json(
     // Skip lines that do not start with "{"
     if (line[0] != '{') { return false; }
 
-    VW::details::decision_service_interaction interaction;
+    VW::parsers::json::decision_service_interaction interaction;
     bool result = VW::parsers::json::template read_line_decision_service_json<audit>(*all, examples, line, num_chars,
         false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
 
@@ -2015,10 +2015,10 @@ template void VW::parsers::json::read_line_json_s<false>(VW::workspace& all, VW:
 
 template bool VW::parsers::json::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples,
     char* line, size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 template bool VW::parsers::json::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples,
     char* line, size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 
 template bool VW::parsers::json::details::parse_line_json<true>(
     VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);

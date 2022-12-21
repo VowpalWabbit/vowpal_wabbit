@@ -1,5 +1,6 @@
 set(vw_test_common_sources
     include/vw/test_common/test_common.h
+    include/vw/test_common/matchers.h
     src/test_common.cc
 )
 

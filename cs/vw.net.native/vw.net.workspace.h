@@ -3,7 +3,7 @@
 #include "vw.net.native.h"
 #include "vw.net.stream_adapter.h"
 #include "vw/core/example.h"
-#include "vw/core/json_utils.h"
+#include "vw/json_parser/json_utils.h"
 #include "vw/core/label_type.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
@@ -78,7 +78,7 @@ extern "C"
       VW::experimental::api_status* status);
   API vw_net_native::ERROR_CODE WorkspaceParseDecisionServiceJson(vw_net_native::workspace_context* workspace,
       char* json, size_t length, size_t offset, bool copy_json, vw_net_native::example_pool_get_example_fn get_example,
-      void* example_pool_context, VW::details::decision_service_interaction* interaction,
+      void* example_pool_context, VW::parsers::json::decision_service_interaction* interaction,
       VW::experimental::api_status* status);
 
   API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_context* workspace, VW::example* ex,

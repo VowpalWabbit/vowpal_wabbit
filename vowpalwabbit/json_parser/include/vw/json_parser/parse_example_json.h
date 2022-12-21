@@ -45,7 +45,7 @@ void read_line_json_s(VW::workspace& all, VW::multi_ex& examples, char* line, si
 template <bool audit>
 bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
     bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 
 // This is used by the python parser
 template <bool audit>
@@ -77,10 +77,10 @@ extern template void read_line_json_s<false>(VW::workspace& all, VW::multi_ex& e
 
 extern template bool read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 extern template bool read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 
 namespace details
 {

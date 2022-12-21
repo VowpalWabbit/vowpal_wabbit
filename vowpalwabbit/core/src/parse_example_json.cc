@@ -25,10 +25,10 @@ template void VW::read_line_json_s<false>(VW::workspace& all, VW::multi_ex& exam
 
 template bool VW::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 
 template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);

@@ -30,7 +30,7 @@ API vw_net_native::ERROR_CODE WorkspaceParseJson(vw_net_native::workspace_contex
 
 API vw_net_native::ERROR_CODE WorkspaceParseDecisionServiceJson(vw_net_native::workspace_context* workspace, char* json,
     size_t length, size_t offset, bool copy_json, vw_net_native::example_pool_get_example_fn get_example,
-    void* example_pool_context, VW::details::decision_service_interaction* interaction,
+    void* example_pool_context, VW::parsers::json::decision_service_interaction* interaction,
     VW::experimental::api_status* status)
 {
   char* actual_json = json + offset;

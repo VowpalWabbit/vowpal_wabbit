@@ -36,7 +36,7 @@ template <bool audit>
 VW_DEPRECATED("read_line_decision_service_json moved to VW::parsers::json::read_line_decision_service_json")
 bool read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
     bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data)
+    VW::parsers::json::decision_service_interaction* data)
 {
   return VW::parsers::json::read_line_decision_service_json<audit>(
       all, examples, line, length, copy_line, example_factory, ex_factory_context, data);
@@ -88,10 +88,10 @@ extern template void VW::read_line_json_s<false>(VW::workspace& all, VW::multi_e
 
 extern template bool VW::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 extern template bool VW::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
-    VW::details::decision_service_interaction* data);
+    VW::parsers::json::decision_service_interaction* data);
 
 extern template bool parse_line_json<true>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);
 extern template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples);

@@ -21,12 +21,12 @@ VW::multi_ex vwtest::parse_json(VW::workspace& all, const std::string& line)
 }
 
 VW::multi_ex vwtest::parse_dsjson(
-    VW::workspace& all, std::string line, VW::details::decision_service_interaction* interaction)
+    VW::workspace& all, std::string line, VW::parsers::json::decision_service_interaction* interaction)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(&all));
 
-  VW::details::decision_service_interaction local_interaction;
+  VW::parsers::json::decision_service_interaction local_interaction;
   if (interaction == nullptr) { interaction = &local_interaction; }
 
   VW::parsers::json::read_line_decision_service_json<true>(all, examples, (char*)line.c_str(), line.size(), false,

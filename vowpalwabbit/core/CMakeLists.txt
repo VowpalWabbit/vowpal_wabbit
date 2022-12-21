@@ -47,7 +47,6 @@ set(vw_core_headers
   include/vw/core/interactions_predict.h
   include/vw/core/interactions.h
   include/vw/core/io_buf.h
-  include/vw/core/json_utils.h
   include/vw/core/kskip_ngram_transformer.h
   include/vw/core/label_dictionary.h
   include/vw/core/label_parser.h
