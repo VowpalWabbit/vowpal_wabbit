@@ -28,7 +28,7 @@ TEST(json_tests, parse_json_simple)
   auto examples = vwtest::parse_json(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 1);
-  EXPECT_NEAR(examples[0]->l.simple.label, 1.f, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 1.f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
@@ -53,8 +53,8 @@ TEST(json_tests, parse_json_simple_with_weight)
   auto examples = vwtest::parse_json(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 1);
-  EXPECT_NEAR(examples[0]->l.simple.label, -1.f, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[0]->weight, 0.85, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[0]->l.simple.label, -1.f);
+  EXPECT_FLOAT_EQ(examples[0]->weight, 0.85);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
@@ -94,16 +94,16 @@ TEST(json_tests, parse_json_cb)
   EXPECT_EQ(examples.size(), 4);
 
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
-  EXPECT_NEAR(examples[0]->l.cb.costs[0].probability, -1.f, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[0]->l.cb.costs[0].cost, FLT_MAX, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].probability, -1.f);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].cost, FLT_MAX);
 
   // Action examples
   EXPECT_EQ(examples[1]->l.cb.costs.size(), 1);
   EXPECT_EQ(examples[2]->l.cb.costs.size(), 0);
   EXPECT_EQ(examples[3]->l.cb.costs.size(), 0);
 
-  EXPECT_NEAR(examples[1]->l.cb.costs[0].probability, 0.5, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[1]->l.cb.costs[0].cost, 1.0, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[1]->l.cb.costs[0].probability, 0.5);
+  EXPECT_FLOAT_EQ(examples[1]->l.cb.costs[0].cost, 1.0);
   EXPECT_EQ(examples[1]->l.cb.costs[0].action, 1);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -139,9 +139,9 @@ TEST(json_tests, parse_json_cats)
   EXPECT_EQ(examples.size(), 1);
 
   EXPECT_EQ(examples[0]->l.cb_cont.costs.size(), 1);
-  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].cost, 0.657567, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].action, 185.121, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_cont.costs[0].cost, 0.657567);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_cont.costs[0].action, 185.121);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   EXPECT_EQ(features.size(), space_names.size());
@@ -253,10 +253,10 @@ TEST(json_tests, parse_json_ccb)
   EXPECT_EQ(label1.explicit_included_actions.size(), 2);
   EXPECT_EQ(label1.explicit_included_actions[0], 1);
   EXPECT_EQ(label1.explicit_included_actions[1], 2);
-  EXPECT_NEAR(label1.outcome->cost, 2.f, .0001f);
+  EXPECT_FLOAT_EQ(label1.outcome->cost, 2.f);
   EXPECT_EQ(label1.outcome->probabilities.size(), 1);
   EXPECT_EQ(label1.outcome->probabilities[0].action, 1);
-  EXPECT_NEAR(label1.outcome->probabilities[0].score, .25f, .0001f);
+  EXPECT_FLOAT_EQ(label1.outcome->probabilities[0].score, .25f);
 
   auto label2 = examples[6]->l.conditional_contextual_bandit;
   EXPECT_EQ(label2.explicit_included_actions.size(), 0);
@@ -264,12 +264,12 @@ TEST(json_tests, parse_json_ccb)
 
   auto label3 = examples[7]->l.conditional_contextual_bandit;
   EXPECT_EQ(label3.explicit_included_actions.size(), 0);
-  EXPECT_NEAR(label3.outcome->cost, 4.f, .0001f);
+  EXPECT_FLOAT_EQ(label3.outcome->cost, 4.f);
   EXPECT_EQ(label3.outcome->probabilities.size(), 2);
   EXPECT_EQ(label3.outcome->probabilities[0].action, 2);
-  EXPECT_NEAR(label3.outcome->probabilities[0].score, .75f, .0001f);
+  EXPECT_FLOAT_EQ(label3.outcome->probabilities[0].score, .75f);
   EXPECT_EQ(label3.outcome->probabilities[1].action, 1);
-  EXPECT_NEAR(label3.outcome->probabilities[1].score, .25f, .0001f);
+  EXPECT_FLOAT_EQ(label3.outcome->probabilities[1].score, .25f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
@@ -317,10 +317,10 @@ TEST(json_tests, parse_json_cb_as_ccb)
 
   auto& label1 = examples[4]->l.conditional_contextual_bandit;
   EXPECT_EQ(label1.explicit_included_actions.size(), 0);
-  EXPECT_NEAR(label1.outcome->cost, 1.f, .0001f);
+  EXPECT_FLOAT_EQ(label1.outcome->cost, 1.f);
   EXPECT_EQ(label1.outcome->probabilities.size(), 1);
   EXPECT_EQ(label1.outcome->probabilities[0].action, 0);
-  EXPECT_NEAR(label1.outcome->probabilities[0].score, .5f, .0001f);
+  EXPECT_FLOAT_EQ(label1.outcome->probabilities[0].score, .5f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
@@ -639,10 +639,10 @@ TEST(json_tests, parse_json_dedup_ccb)
   EXPECT_EQ(label1.explicit_included_actions.size(), 2);
   EXPECT_EQ(label1.explicit_included_actions[0], 1);
   EXPECT_EQ(label1.explicit_included_actions[1], 2);
-  EXPECT_NEAR(label1.outcome->cost, 2.f, .0001f);
+  EXPECT_FLOAT_EQ(label1.outcome->cost, 2.f);
   EXPECT_EQ(label1.outcome->probabilities.size(), 1);
   EXPECT_EQ(label1.outcome->probabilities[0].action, 1);
-  EXPECT_NEAR(label1.outcome->probabilities[0].score, .25f, .0001f);
+  EXPECT_FLOAT_EQ(label1.outcome->probabilities[0].score, .25f);
 
   auto label2 = examples[4]->l.conditional_contextual_bandit;
   EXPECT_EQ(label2.explicit_included_actions.size(), 0);
@@ -650,12 +650,12 @@ TEST(json_tests, parse_json_dedup_ccb)
 
   auto label3 = examples[5]->l.conditional_contextual_bandit;
   EXPECT_EQ(label3.explicit_included_actions.size(), 0);
-  EXPECT_NEAR(label3.outcome->cost, 4.f, .0001f);
+  EXPECT_FLOAT_EQ(label3.outcome->cost, 4.f);
   EXPECT_EQ(label3.outcome->probabilities.size(), 2);
   EXPECT_EQ(label3.outcome->probabilities[0].action, 2);
-  EXPECT_NEAR(label3.outcome->probabilities[0].score, .75f, .0001f);
+  EXPECT_FLOAT_EQ(label3.outcome->probabilities[0].score, .75f);
   EXPECT_EQ(label3.outcome->probabilities[1].action, 1);
-  EXPECT_NEAR(label3.outcome->probabilities[1].score, .25f, .0001f);
+  EXPECT_FLOAT_EQ(label3.outcome->probabilities[1].score, .25f);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
   for (auto& dedup : dedup_examples) { VW::finish_example(*vw, *dedup.second); }

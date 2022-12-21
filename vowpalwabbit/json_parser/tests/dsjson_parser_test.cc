@@ -102,7 +102,7 @@ TEST(dsjson_tests, parse_dsjson_pdrop_float)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
-  EXPECT_NEAR(0.1f, interaction.probability_of_drop, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(0.1f, interaction.probability_of_drop);
 }
 
 TEST(dsjson_tests, parse_dsjson_pdrop_uint)
@@ -119,7 +119,7 @@ TEST(dsjson_tests, parse_dsjson_pdrop_uint)
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 
-  EXPECT_NEAR(0.0f, interaction.probability_of_drop, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(0.0f, interaction.probability_of_drop);
 }
 
 // TODO: Make unit test dig out and verify features.
@@ -193,16 +193,16 @@ TEST(dsjson_tests, parse_dsjson_cb)
 
   // Shared example
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
-  EXPECT_NEAR(examples[0]->l.cb.costs[0].probability, -1.f, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[0]->l.cb.costs[0].cost, FLT_MAX, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].probability, -1.f);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].cost, FLT_MAX);
 
   // Action examples
   EXPECT_EQ(examples[1]->l.cb.costs.size(), 0);
   EXPECT_EQ(examples[2]->l.cb.costs.size(), 1);
   EXPECT_EQ(examples[3]->l.cb.costs.size(), 0);
 
-  EXPECT_NEAR(examples[2]->l.cb.costs[0].probability, 0.8166667, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[2]->l.cb.costs[0].cost, -1.0, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[2]->l.cb.costs[0].probability, 0.8166667);
+  EXPECT_FLOAT_EQ(examples[2]->l.cb.costs[0].cost, -1.0);
   EXPECT_EQ(examples[2]->l.cb.costs[0].action, 2);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -244,9 +244,9 @@ TEST(dsjson_tests, parse_dsjson_cats)
   EXPECT_EQ(examples.size(), 1);
 
   EXPECT_EQ(examples[0]->l.cb_cont.costs.size(), 1);
-  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].cost, 0.657567, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[0]->l.cb_cont.costs[0].action, 185.121, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_cont.costs[0].pdf_value, 6.20426e-05);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_cont.costs[0].cost, 0.657567);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_cont.costs[0].action, 185.121);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   EXPECT_EQ(features.size(), space_names.size());
@@ -331,13 +331,13 @@ TEST(dsjson_tests, parse_dsjson_cats_w_valid_pdf)
   EXPECT_EQ(reduction_features.is_chosen_action_set(), false);
 
   EXPECT_EQ(reduction_features.pdf.size(), 2);
-  EXPECT_NEAR(reduction_features.pdf[0].left, 185., vwtest::FLOAT_TOL);
-  EXPECT_NEAR(reduction_features.pdf[0].right, 8109.67, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(reduction_features.pdf[0].pdf_value, 2.10314e-06, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(reduction_features.pdf[0].left, 185.);
+  EXPECT_FLOAT_EQ(reduction_features.pdf[0].right, 8109.67);
+  EXPECT_FLOAT_EQ(reduction_features.pdf[0].pdf_value, 2.10314e-06);
 
-  EXPECT_NEAR(reduction_features.pdf[1].left, 8109.67, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(reduction_features.pdf[1].right, 23959., vwtest::FLOAT_TOL);
-  EXPECT_NEAR(reduction_features.pdf[1].pdf_value, 6.20426e-05, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(reduction_features.pdf[1].left, 8109.67);
+  EXPECT_FLOAT_EQ(reduction_features.pdf[1].right, 23959.);
+  EXPECT_FLOAT_EQ(reduction_features.pdf[1].pdf_value, 6.20426e-05);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   EXPECT_EQ(features.size(), space_names.size());
@@ -429,7 +429,7 @@ TEST(dsjson_tests, parse_dsjson_cats_chosen_action)
   EXPECT_EQ(examples.size(), 1);
   EXPECT_EQ(reduction_features.is_pdf_set(), false);
   EXPECT_EQ(reduction_features.is_chosen_action_set(), true);
-  EXPECT_NEAR(reduction_features.chosen_action, 185., vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(reduction_features.chosen_action, 185.);
 
   auto& space_names = examples[0]->feature_space[' '].space_names;
   EXPECT_EQ(features.size(), space_names.size());
@@ -506,19 +506,19 @@ TEST(dsjson_tests, parse_dsjson_ccb)
   EXPECT_EQ(label1.explicit_included_actions.size(), 2);
   EXPECT_EQ(label1.explicit_included_actions[0], 1);
   EXPECT_EQ(label1.explicit_included_actions[1], 2);
-  EXPECT_NEAR(label1.outcome->cost, 2.f, .0001f);
+  EXPECT_FLOAT_EQ(label1.outcome->cost, 2.f);
   EXPECT_EQ(label1.outcome->probabilities.size(), 1);
   EXPECT_EQ(label1.outcome->probabilities[0].action, 1);
-  EXPECT_NEAR(label1.outcome->probabilities[0].score, .25f, .0001f);
+  EXPECT_FLOAT_EQ(label1.outcome->probabilities[0].score, .25f);
 
   auto label2 = examples[4]->l.conditional_contextual_bandit;
   EXPECT_EQ(label2.explicit_included_actions.size(), 0);
-  EXPECT_NEAR(label2.outcome->cost, 4.f, .0001f);
+  EXPECT_FLOAT_EQ(label2.outcome->cost, 4.f);
   EXPECT_EQ(label2.outcome->probabilities.size(), 2);
   EXPECT_EQ(label2.outcome->probabilities[0].action, 2);
-  EXPECT_NEAR(label2.outcome->probabilities[0].score, .75f, .0001f);
+  EXPECT_FLOAT_EQ(label2.outcome->probabilities[0].score, .75f);
   EXPECT_EQ(label2.outcome->probabilities[1].action, 1);
-  EXPECT_NEAR(label2.outcome->probabilities[1].score, .25f, .0001f);
+  EXPECT_FLOAT_EQ(label2.outcome->probabilities[1].score, .25f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
@@ -599,10 +599,10 @@ TEST(dsjson_tests, parse_dsjson_cb_as_ccb)
 
   auto label2 = examples[4]->l.conditional_contextual_bandit;
   EXPECT_EQ(label2.explicit_included_actions.size(), 0);
-  EXPECT_NEAR(label2.outcome->cost, -1.f, .0001f);
+  EXPECT_FLOAT_EQ(label2.outcome->cost, -1.f);
   EXPECT_EQ(label2.outcome->probabilities.size(), 1);
   EXPECT_EQ(label2.outcome->probabilities[0].action, 1);
-  EXPECT_NEAR(label2.outcome->probabilities[0].score, 0.8166667f, .0001f);
+  EXPECT_FLOAT_EQ(label2.outcome->probabilities[0].score, 0.8166667f);
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
@@ -659,8 +659,8 @@ TEST(dsjson_tests, parse_dsjson_cb_with_nan)
 
   // Shared example
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
-  EXPECT_NEAR(examples[0]->l.cb.costs[0].probability, -1.f, vwtest::FLOAT_TOL);
-  EXPECT_NEAR(examples[0]->l.cb.costs[0].cost, FLT_MAX, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].probability, -1.f);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].cost, FLT_MAX);
 
   // Action examples
   EXPECT_EQ(examples[1]->l.cb.costs.size(), 0);
@@ -759,7 +759,7 @@ TEST(dsjson_tests, parse_dsjson_slates)
   EXPECT_EQ(examples[7]->l.slates.type, VW::slates::example_type::SLOT);
 
   const auto& label0 = examples[0]->l.slates;
-  EXPECT_NEAR(label0.cost, 1.f, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(label0.cost, 1.f);
   EXPECT_EQ(label0.labeled, true);
 
   EXPECT_EQ(examples[1]->l.slates.slot_id, 0);
@@ -777,10 +777,10 @@ TEST(dsjson_tests, parse_dsjson_slates)
 
   // Check values in VW::parsers::json::decision_service_interaction
   EXPECT_EQ(ds_interaction.event_id, "test_id");
-  EXPECT_NEAR(ds_interaction.probability_of_drop, 0.1, vwtest::FLOAT_TOL);
+  EXPECT_FLOAT_EQ(ds_interaction.probability_of_drop, 0.1);
   EXPECT_EQ(ds_interaction.skip_learn, true);
   EXPECT_THAT(ds_interaction.actions, testing::ElementsAre(1, 0));
-  EXPECT_THAT(ds_interaction.probabilities, testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), {0.8f, 0.6f}));
+  EXPECT_THAT(ds_interaction.probabilities, testing::ElementsAre(0.8f, 0.6f));
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
@@ -846,18 +846,12 @@ TEST(dsjson_tests, parse_dsjson_slates_dom_parser)
   EXPECT_THAT(slates_ex.feature_space['d'].indices, testing::ElementsAreArray(ccb_ex.feature_space['d'].indices));
   EXPECT_THAT(slates_ex.feature_space['e'].indices, testing::ElementsAreArray(ccb_ex.feature_space['e'].indices));
 
-  EXPECT_THAT(slates_ex.feature_space[' '].values,
-      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space[' '].values));
-  EXPECT_THAT(slates_ex.feature_space['a'].values,
-      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['a'].values));
-  EXPECT_THAT(slates_ex.feature_space['b'].values,
-      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['b'].values));
-  EXPECT_THAT(slates_ex.feature_space['c'].values,
-      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['c'].values));
-  EXPECT_THAT(slates_ex.feature_space['d'].values,
-      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['d'].values));
-  EXPECT_THAT(slates_ex.feature_space['e'].values,
-      testing::Pointwise(testing::FloatNear(vwtest::FLOAT_TOL), ccb_ex.feature_space['e'].values));
+  EXPECT_THAT(slates_ex.feature_space[' '].values, testing::ElementsAreArray(ccb_ex.feature_space[' '].values));
+  EXPECT_THAT(slates_ex.feature_space['a'].values, testing::ElementsAreArray(ccb_ex.feature_space['a'].values));
+  EXPECT_THAT(slates_ex.feature_space['b'].values, testing::ElementsAreArray(ccb_ex.feature_space['b'].values));
+  EXPECT_THAT(slates_ex.feature_space['c'].values, testing::ElementsAreArray(ccb_ex.feature_space['c'].values));
+  EXPECT_THAT(slates_ex.feature_space['d'].values, testing::ElementsAreArray(ccb_ex.feature_space['d'].values));
+  EXPECT_THAT(slates_ex.feature_space['e'].values, testing::ElementsAreArray(ccb_ex.feature_space['e'].values));
 
   VW::finish_example(*slates_vw, slates_examples);
   VW::finish(*slates_vw);

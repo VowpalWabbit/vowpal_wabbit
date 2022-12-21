@@ -13,8 +13,6 @@
 
 namespace vwtest
 {
-constexpr float FLOAT_TOL = 0.0001f;
-
 template <typename... ArgsT>
 std::unique_ptr<VW::config::options_i> make_args(ArgsT const&... args)
 {
