@@ -5659,5 +5659,19 @@
     "depends_on": [
       217
     ]
+  },
+  {
+    "id": 438,
+    "desc": "test AutoML with quad/cubic interaction",
+    "vw_command": "-f automl_qc.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_qc.json --readable_model automl_readable_qc.txt --oracle_type qbase_cubic",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_qc.stderr",
+      "metrics_qc.json": "test-sets/ref/metrics_qc.json",
+      "automl_readable_qc.txt": "train-sets/ref/automl_readable_qc.txt",
+      "stdout": "train-sets/ref/cbe_adf_dsjson_metrics_qc.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
   }
 ]
