@@ -10,10 +10,11 @@ vw_add_library(
     NAME "json_parser"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_json_parser_sources}
-    PUBLIC_DEPS vw_common vw_config vw_core
+    PUBLIC_DEPS vw_common vw_core
     PRIVATE_DEPS $<BUILD_INTERFACE:RapidJSON>
     DESCRIPTION "Parser implementation that reads json and dsjson examples."
     EXCEPTION_DESCRIPTION "Yes"
+    ENABLE_INSTALL
 )
 
 vw_add_test_executable(
