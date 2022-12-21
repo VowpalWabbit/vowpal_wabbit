@@ -4,8 +4,9 @@
 
 #include "vw/core/object_pool.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <string>
 #include <vector>
 
@@ -21,25 +22,25 @@ public:
   obj* operator()(obj* o) { return o; }
 };
 
-BOOST_AUTO_TEST_CASE(object_pool_test)
+TEST(object_pool_test, object_pool_test)
 {
   {
     VW::object_pool<obj> pool_with_size{50};
-    BOOST_CHECK_EQUAL(pool_with_size.size(), 50);
+    EXPECT_EQ(pool_with_size.size(), 50);
   }
 
   {
     VW::object_pool<obj, obj_initializer> pool_with_small_chunks{0, obj_initializer{}, 2};
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 0);
+    EXPECT_EQ(pool_with_small_chunks.size(), 0);
 
     auto o1 = pool_with_small_chunks.get_object();
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 2);
+    EXPECT_EQ(pool_with_small_chunks.size(), 2);
 
     auto o2 = pool_with_small_chunks.get_object();
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 2);
+    EXPECT_EQ(pool_with_small_chunks.size(), 2);
 
     auto o3 = pool_with_small_chunks.get_object();
-    BOOST_CHECK_EQUAL(pool_with_small_chunks.size(), 4);
+    EXPECT_EQ(pool_with_small_chunks.size(), 4);
 
     pool_with_small_chunks.return_object(o1);
     pool_with_small_chunks.return_object(o2);
@@ -47,24 +48,24 @@ BOOST_AUTO_TEST_CASE(object_pool_test)
   }
 
   VW::object_pool<obj, obj_initializer> pool{0, obj_initializer{}, 1};
-  BOOST_CHECK_EQUAL(pool.size(), 0);
-  BOOST_CHECK_EQUAL(pool.empty(), true);
+  EXPECT_EQ(pool.size(), 0);
+  EXPECT_EQ(pool.empty(), true);
 
   auto o1 = pool.get_object();
-  BOOST_CHECK_EQUAL(pool.size(), 1);
-  BOOST_CHECK_EQUAL(pool.empty(), true);
+  EXPECT_EQ(pool.size(), 1);
+  EXPECT_EQ(pool.empty(), true);
 
   auto o2 = pool.get_object();
-  BOOST_CHECK_EQUAL(pool.size(), 2);
-  BOOST_CHECK_EQUAL(pool.empty(), true);
+  EXPECT_EQ(pool.size(), 2);
+  EXPECT_EQ(pool.empty(), true);
 
   pool.return_object(o1);
-  BOOST_CHECK_EQUAL(pool.size(), 2);
-  BOOST_CHECK_EQUAL(pool.empty(), false);
+  EXPECT_EQ(pool.size(), 2);
+  EXPECT_EQ(pool.empty(), false);
 
   obj other_obj;
-  BOOST_CHECK_EQUAL(pool.is_from_pool(o2), true);
-  BOOST_CHECK_EQUAL(pool.is_from_pool(&other_obj), false);
+  EXPECT_EQ(pool.is_from_pool(o2), true);
+  EXPECT_EQ(pool.is_from_pool(&other_obj), false);
 
   pool.return_object(o2);
 }

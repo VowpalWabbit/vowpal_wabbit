@@ -10,8 +10,8 @@
 #include "vw/core/parser.h"
 #include "vw/core/shared_data.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l)
 {
@@ -24,31 +24,31 @@ void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l)
   lp.parse_label(l, red_fts, mem, nullptr, words, null_logger);
 }
 
-BOOST_AUTO_TEST_CASE(multiclass_label_parser)
+TEST(multiclass_label_parser, multiclass_label_parser)
 {
   auto lp = VW::multiclass_label_parser_global;
   {
     auto plabel = VW::make_unique<VW::polylabel>();
-    BOOST_REQUIRE_THROW(parse_label(lp, "1,2,3", *plabel), VW::vw_exception);
+    EXPECT_THROW(parse_label(lp, "1,2,3", *plabel), VW::vw_exception);
   }
   {
     auto plabel = VW::make_unique<VW::polylabel>();
-    BOOST_REQUIRE_THROW(parse_label(lp, "1a", *plabel), VW::vw_exception);
+    EXPECT_THROW(parse_label(lp, "1a", *plabel), VW::vw_exception);
   }
   {
     auto plabel = VW::make_unique<VW::polylabel>();
-    BOOST_REQUIRE_THROW(parse_label(lp, "1 2 3", *plabel), VW::vw_exception);
+    EXPECT_THROW(parse_label(lp, "1 2 3", *plabel), VW::vw_exception);
   }
   {
     auto plabel = VW::make_unique<VW::polylabel>();
     parse_label(lp, "2", *plabel);
-    BOOST_ASSERT(plabel->multi.label == 2);
-    BOOST_ASSERT(plabel->multi.weight == 1.0);
+    EXPECT_TRUE(plabel->multi.label == 2);
+    EXPECT_TRUE(plabel->multi.weight == 1.0);
   }
   {
     auto plabel = VW::make_unique<VW::polylabel>();
     parse_label(lp, "2 2", *plabel);
-    BOOST_ASSERT(plabel->multi.label == 2);
-    BOOST_ASSERT(plabel->multi.weight == 2.0);
+    EXPECT_TRUE(plabel->multi.label == 2);
+    EXPECT_TRUE(plabel->multi.weight == 2.0);
   }
 }
