@@ -427,6 +427,11 @@ vw_add_test_executable(
       tests/example_test.cc
       tests/flat_example_test.cc
       tests/guard_test.cc
+      tests/random_test.cc
+      tests/scope_exit_test.cc
+      tests/slates_parser_test.cc
+      tests/slates_test.cc
+      tests/status_builder_test.cc
       tests/interactions_test.cc
       tests/main.cc
       tests/math_test.cc
