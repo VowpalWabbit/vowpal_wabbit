@@ -625,7 +625,9 @@ public:
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::CCB)
-    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION; }
+    {
+      ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::ACTION;
+    }
     else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::ACTION;
@@ -674,7 +676,9 @@ public:
     ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::CCB)
-    { ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT; }
+    {
+      ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
+    }
     else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
     {
       ctx.ex->l.slates.type = VW::slates::example_type::SLOT;
@@ -937,7 +941,9 @@ public:
       else if (length == 8 && !strncmp(str, "_slot_id", 8))
       {
         if (ctx._label_parser.label_type != VW::label_type_t::SLATES)
-        { THROW("Can only use _slot_id with slates examples"); }
+        {
+          THROW("Can only use _slot_id with slates examples");
+        }
         ctx.uint_state.output_uint = &ctx.ex->l.slates.slot_id;
         ctx.array_float_state.return_state = this;
         return &ctx.array_float_state;
@@ -1329,7 +1335,9 @@ public:
               ex->l.conditional_contextual_bandit.type != VW::ccb_example_type::SLOT) ||
           (ctx._label_parser.label_type == VW::label_type_t::SLATES &&
               ex->l.slates.type != VW::slates::example_type::SLOT))
-      { slot_object_index++; }
+      {
+        slot_object_index++;
+      }
     }
     old_root = ctx.root_state;
     ctx.root_state = this;
@@ -1881,7 +1889,9 @@ bool VW::parsers::json::details::parse_line_json(
       if (!interaction.event_id.empty())
       {
         if (all->example_parser->metrics->first_event_id.empty())
-        { all->example_parser->metrics->first_event_id = std::move(interaction.event_id); }
+        {
+          all->example_parser->metrics->first_event_id = std::move(interaction.event_id);
+        }
         else
         {
           all->example_parser->metrics->last_event_id = std::move(interaction.event_id);
@@ -1891,7 +1901,9 @@ bool VW::parsers::json::details::parse_line_json(
       if (!interaction.timestamp.empty())
       {
         if (all->example_parser->metrics->first_event_time.empty())
-        { all->example_parser->metrics->first_event_time = std::move(interaction.timestamp); }
+        {
+          all->example_parser->metrics->first_event_time = std::move(interaction.timestamp);
+        }
         else
         {
           all->example_parser->metrics->last_event_time = std::move(interaction.timestamp);
@@ -1908,7 +1920,9 @@ bool VW::parsers::json::details::parse_line_json(
       {
         // APS requires this metric for CB (baseline action is 1)
         if (interaction.actions[0] == 1)
-        { all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.original_label_cost; }
+        {
+          all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.original_label_cost;
+        }
 
         if (!interaction.baseline_actions.empty())
         {
@@ -2002,8 +2016,7 @@ int VW::parsers::json::read_features_json(VW::workspace* all, io_buf& buf, VW::m
 {
   // Keep reading lines until a valid set of examples is produced.
   bool reread;
-  do
-  {
+  do {
     reread = false;
 
     char* line;

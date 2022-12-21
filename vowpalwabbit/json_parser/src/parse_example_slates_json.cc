@@ -317,7 +317,9 @@ void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all,
         assert(probs.Size() == destination.size());
         const auto& probs_array = probs.GetArray();
         for (rapidjson::SizeType j = 0; j < probs_array.Size(); j++)
-        { destination[j].score = probs_array[j].GetFloat(); }
+        {
+          destination[j].score = probs_array[j].GetFloat();
+        }
       }
       else
       {
