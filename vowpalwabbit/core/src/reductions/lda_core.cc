@@ -1334,8 +1334,8 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   ld->example_t = all.initial_t;
   if (ld->compute_coherence_metrics)
   {
-    ld->feature_counts.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
-    ld->feature_to_example_map.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
+    ld->feature_counts.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.num_bits));
+    ld->feature_to_example_map.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.num_bits));
   }
 
   float temp = ceilf(logf(static_cast<float>(all.lda * 2 + 1)) / logf(2.f));
@@ -1366,7 +1366,7 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
       VW::prediction_type_t::SCALARS, VW::label_type_t::NOLABEL)
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .set_finish_example(::finish_example)

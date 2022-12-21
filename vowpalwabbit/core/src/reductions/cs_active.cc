@@ -148,7 +148,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
     score = ec.partial_prediction;
     prediction = i;
   }
-  ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
+  VW_ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
 }
 
 inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float delta, float eta,
