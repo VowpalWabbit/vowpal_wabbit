@@ -7,6 +7,29 @@ if(USE_LATEST_STD)
   DetectCXXStandard(VW_CXX_STANDARD)
 endif()
 
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  include(CTest)
+  if(BUILD_TESTING)
+    if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
+      message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
+    endif()
+    if(VW_GTEST_SYS_DEP)
+      find_package(GTest REQUIRED)
+    else()
+      cmake_minimum_required(VERSION 3.11)
+      include(FetchContent)
+      FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+      )
+      # For Windows: Prevent overriding the parent project's compiler/linker settings
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+      set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+      FetchContent_MakeAvailable(googletest)
+    endif()
+  endif()
+endif()
+
 # Given a lib name writes to OUTPUT what the correspinding target name will be
 function(vw_get_lib_target OUTPUT LIB_NAME)
   set(${OUTPUT} vw_${LIB_NAME} PARENT_SCOPE)
