@@ -198,7 +198,10 @@ void epsilon_decay_data::check_estimator_bounds()
     bool better = conf_seq_estimators[i][i].lower_bound() > conf_seq_estimators[final_model_idx][i].upper_bound();
     if (better && conf_seq_estimators[i][i].update_count >= _min_champ_examples)
     {
-      if (_epsilon_decay_audit_str != "") { _audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP\n"; }
+      if (_epsilon_decay_audit_str != "")
+      {
+        _audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP, lb: " << conf_seq_estimators[i][i].lower_bound() << " ub: " << conf_seq_estimators[final_model_idx][i].upper_bound() << "\n";
+      }
       shift_model(i, final_model_idx - i, model_count);
       break;
     }
