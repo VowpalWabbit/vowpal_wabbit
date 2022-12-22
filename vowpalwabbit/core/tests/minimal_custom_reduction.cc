@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
@@ -38,11 +38,11 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
 // minimal setup function for reduction
 VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
 {
-  BOOST_CHECK(added_to_learner == false);
-  BOOST_CHECK(called_learn_predict == false);
+  EXPECT_TRUE(added_to_learner == false);
+  EXPECT_TRUE(called_learn_predict == false);
 
   auto base = stack_builder.setup_base_learner();
-  BOOST_CHECK(base->is_multiline() == false);
+  EXPECT_TRUE(base->is_multiline() == false);
 
   auto ret = VW::LEARNER::make_no_data_reduction_learner(as_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(test_reduction_setup))
@@ -76,7 +76,7 @@ class custom_simple_builder : public VW::default_reduction_stack_setup
 public:
   custom_simple_builder()
   {
-    BOOST_CHECK_GT(_reduction_stack.size(), 77);
+    EXPECT_GT(_reduction_stack.size(), 77);
     _reduction_stack.emplace_back("test_reduction_name", minimal_reduction::test_reduction_setup);
   }
 };
@@ -93,7 +93,7 @@ public:
 //
 // these test reductions are useful for CI and advanced testing but are not
 // important enough to pollute setup_base(..) default stack
-BOOST_AUTO_TEST_CASE(minimal_reduction_test)
+TEST(minimal_reduction_test, minimal_reduction_test)
 {
   minimal_reduction::reset_test_state();
 
@@ -103,19 +103,19 @@ BOOST_AUTO_TEST_CASE(minimal_reduction_test)
   {
     auto learner_builder = VW::make_unique<custom_simple_builder>();
 
-    BOOST_CHECK(minimal_reduction::added_to_learner == false);
-    BOOST_CHECK(minimal_reduction::called_learn_predict == false);
+    EXPECT_TRUE(minimal_reduction::added_to_learner == false);
+    EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
     auto& vw = *VW::initialize_with_builder(sgd_args, nullptr, false, nullptr, nullptr, std::move(learner_builder));
-    BOOST_CHECK(minimal_reduction::added_to_learner);
-    BOOST_CHECK(minimal_reduction::called_learn_predict == false);
+    EXPECT_TRUE(minimal_reduction::added_to_learner);
+    EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
 
     auto& pre_learn_predict_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
     auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
     auto& predict_example = *VW::read_example(vw, "| 1:1.0");
 
-    BOOST_CHECK(minimal_reduction::called_learn_predict == false);
+    EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
     vw.predict(pre_learn_predict_example);
-    BOOST_CHECK(minimal_reduction::called_learn_predict);
+    EXPECT_TRUE(minimal_reduction::called_learn_predict);
 
     vw.finish_example(pre_learn_predict_example);
     vw.learn(learn_example);
@@ -125,8 +125,8 @@ BOOST_AUTO_TEST_CASE(minimal_reduction_test)
     vw.finish_example(predict_example);
     VW::finish(vw);
 
-    BOOST_CHECK(minimal_reduction::added_to_learner);
-    BOOST_CHECK(minimal_reduction::called_learn_predict);
+    EXPECT_TRUE(minimal_reduction::added_to_learner);
+    EXPECT_TRUE(minimal_reduction::called_learn_predict);
   }
 
   // reset for next part of test
@@ -134,8 +134,8 @@ BOOST_AUTO_TEST_CASE(minimal_reduction_test)
 
   float prediction_two;
   {
-    BOOST_CHECK(minimal_reduction::added_to_learner == false);
-    BOOST_CHECK(minimal_reduction::called_learn_predict == false);
+    EXPECT_TRUE(minimal_reduction::added_to_learner == false);
+    EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
     auto& vw = *VW::initialize(sgd_args);
 
     auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
@@ -149,9 +149,9 @@ BOOST_AUTO_TEST_CASE(minimal_reduction_test)
     VW::finish(vw);
 
     // both should be false since it uses the default stack builder
-    BOOST_CHECK(minimal_reduction::added_to_learner == false);
-    BOOST_CHECK(minimal_reduction::called_learn_predict == false);
+    EXPECT_TRUE(minimal_reduction::added_to_learner == false);
+    EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
   }
 
-  BOOST_CHECK_EQUAL(prediction_one, prediction_two);
+  EXPECT_EQ(prediction_one, prediction_two);
 }

@@ -2,25 +2,25 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "test_common.h"
 #include "vw/core/epsilon_reduction_features.h"
 #include "vw/core/reduction_features.h"
+#include "vw/core/vw.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-BOOST_AUTO_TEST_CASE(set_epsilon_test)
+TEST(epsilon_tests, set_epsilon_test)
 {
   auto vw = VW::initialize("--quiet --cb_explore_adf");
   VW::multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("")));
   auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-  BOOST_CHECK_EQUAL(ep_fts.epsilon, -1.f);
+  EXPECT_FLOAT_EQ(ep_fts.epsilon, -1.f);
   ep_fts.epsilon = 0.5f;
   auto& ep_fts2 = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
-  BOOST_CHECK_EQUAL(ep_fts2.epsilon, 0.5f);
+  EXPECT_FLOAT_EQ(ep_fts2.epsilon, 0.5f);
   ep_fts2.reset_to_default();
-  BOOST_CHECK_EQUAL(ep_fts2.epsilon, -1.f);
+  EXPECT_FLOAT_EQ(ep_fts2.epsilon, -1.f);
   vw->finish_example(examples);
   VW::finish(*vw);
 }
