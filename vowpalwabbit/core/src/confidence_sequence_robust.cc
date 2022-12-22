@@ -95,13 +95,7 @@ countable_discrete_base::countable_discrete_base(double eta, double r, double k,
     : log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
-    , zeta_r(
-#if !defined(__APPLE__) && !defined(_WIN32)
-          std::riemann_zeta(r)
-#else
-          1.6449340668482264  // std::riemann_zeta(r) -- Assuming r=2.0 is constant
-#endif
-              )
+    , zeta_r(1.6449340668482264)  // std::riemann_zeta(r) -- Assuming r=2.0 is constant
     , scale_fac(0.5 * (1.0 + polylog(r, eta) / (eta * zeta_r)))
     , log_scale_fac(std::log1p(scale_fac - 1.0))
     , t(0)
