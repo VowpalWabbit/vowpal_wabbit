@@ -4,12 +4,16 @@
 #include "vw/core/reductions/plt.h"
 
 #include "vw/config/options.h"
+#include "vw/core/confidence_sequence.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/version.h"
 #include "vw/core/vw.h"
+#include "vw/core/vw_versions.h"
 #include "vw/io/logger.h"
 
 #include <algorithm>
@@ -66,6 +70,9 @@ public:
   uint32_t fp = 0;          // false positives
   uint32_t fn = 0;          // false negatives
   uint32_t ec_count = 0;    // number of examples
+
+  VW::version_struct model_file_version;
+  bool force_load_legacy_model = false;
 
   plt()
   {
@@ -339,21 +346,50 @@ void finish(plt& p)
 
 void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
 {
-  if (model_file.num_files() > 0)
+  if (model_file.num_files() == 0) { return; }
+
+  if (read && p.model_file_version < VW::version_definitions::VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX &&
+      p.force_load_legacy_model)
   {
-    std::stringstream msg;
-    bool resume = p.all->save_resume;
-    msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    bool resume = false;
+    model_file.bin_read_fixed(reinterpret_cast<char*>(&resume), sizeof(resume));
 
     if (resume)
     {
+      assert(p.nodes_time.size() == p.t);
+      // The options which determine the value t are kept in the model so this read should be safe. However, if k or
+      // kary ever change this read is unsafe.
       for (size_t i = 0; i < p.t; ++i)
       {
-        bin_text_read_write_fixed(
-            model_file, reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]), read, msg, text);
+        model_file.bin_read_fixed(reinterpret_cast<char*>(&p.nodes_time[i]), sizeof(p.nodes_time[0]));
       }
     }
+    return;
+  }
+
+  if (read && p.model_file_version < VW::version_definitions::VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX)
+  {
+    THROW(
+        "PLT models before 9.7 had a bug which caused incorrect loading under certain conditions, so by default they "
+        "cannot be loaded. To force loading this model use --plt_force_load_legacy_model, then save a model to use the "
+        "fixed format. For more details on the issue see this comment: "
+        "https://github.com/VowpalWabbit/vowpal_wabbit/pull/4138#discussion_r1054863296")
+  }
+
+  // 9.7+ uses a different format.
+
+  // Read
+  if (read)
+  {
+    p.nodes_time.clear();
+    VW::model_utils::read_model_field(model_file, p.nodes_time);
+    assert(p.nodes_time.size() == p.t);
+  }
+  // Write
+  else
+  {
+    assert(p.nodes_time.size() == p.t);
+    VW::model_utils::write_model_field(model_file, p.nodes_time, "nodes_time", text);
   }
 }
 }  // namespace
@@ -372,7 +408,10 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
       .add(make_option("top_k", tree->top_k)
                .default_value(0)
                .help("Predict top-<k> labels instead of labels above threshold"))
-      .add(make_option("probabilities", tree->probabilities).help("Predict probabilities for the predicted labels"));
+      .add(make_option("probabilities", tree->probabilities).help("Predict probabilities for the predicted labels"))
+      .add(make_option("plt_force_load_legacy_model", tree->force_load_legacy_model)
+               .help("Force the loading of a pre 9.7 model. This option is a migration measure and will be removed in "
+                     "the next VW version."));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -411,6 +450,8 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     tree->p_at.resize(tree->top_k);
     tree->r_at.resize(tree->top_k);
   }
+
+  tree->model_file_version = all.model_file_ver;
 
   size_t ws = tree->t;
   std::string name_addition = "";
