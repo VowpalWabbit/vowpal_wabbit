@@ -73,9 +73,9 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , logger(logger)
     , wpp(wpp)
     , _ccb_on(ccb_on)
-    , reward_as_cost(reward_as_cost)
     , _config_oracle(
           config_oracle_impl(default_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
+    , reward_as_cost(reward_as_cost)
 {
   if (trace_prefix != "")
   {
