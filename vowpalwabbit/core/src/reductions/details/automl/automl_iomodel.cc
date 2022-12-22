@@ -13,15 +13,13 @@ namespace reductions
 namespace automl
 {
 template <typename estimator_impl>
-void aml_estimator<estimator_impl>::persist(
-    metric_sink& metrics, const std::string& suffix, bool verbose, const std::string& interaction_type)
+void aml_estimator<estimator_impl>::persist(metric_sink& metrics, const std::string& suffix, bool verbose)
 {
   _estimator.persist(metrics, suffix);
   metrics.set_uint("conf_idx" + suffix, config_index);
   if (verbose)
   {
-    metrics.set_string("interactions" + suffix,
-        VW::reductions::util::interaction_vec_t_to_string(live_interactions, interaction_type));
+    metrics.set_string("interactions" + suffix, VW::reductions::util::interaction_vec_t_to_string(live_interactions));
   }
 }
 
@@ -38,7 +36,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::persist(met
     VW::metric_sink nested_metrics;
 
     VW::metric_sink self_metrics;
-    estimators[live_slot].first.persist(self_metrics, "", verbose, _config_oracle._interaction_type);
+    estimators[live_slot].first.persist(self_metrics, "", verbose);
     nested_metrics.set_metric_sink("self", std::move(self_metrics));
 
     if (live_slot != 0)  // champ config technically does not have a champ to compare to

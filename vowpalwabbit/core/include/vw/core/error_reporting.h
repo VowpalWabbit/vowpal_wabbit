@@ -4,6 +4,14 @@
 
 #pragma once
 
+#include "vw/common/future_compat.h"
+
 #include <string>
 
+namespace VW
+{
 using trace_message_t = void (*)(void*, const std::string&);
+}
+
+using trace_message_t VW_DEPRECATED(
+    "Moved in VW namespace. Global symbol will be removed in VW 10.") = VW::trace_message_t;

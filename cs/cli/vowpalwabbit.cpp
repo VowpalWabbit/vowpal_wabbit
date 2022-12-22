@@ -14,7 +14,7 @@
 #include "clr_io.h"
 #include "vw/core/reductions/lda_core.h"
 #include "vw/text_parser/parse_example_text.h"
-#include "vw/core/parse_example_json.h"
+#include "vw/json_parser/parse_example_json.h"
 #include "vw/core/shared_data.h"
 
 using namespace System;
@@ -317,12 +317,12 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			pin_ptr<unsigned char> data = &json[0];
 			data += offset;
 
-			VW::details::decision_service_interaction interaction;
+			VW::parsers::json::decision_service_interaction interaction;
 
 			if (m_vw->audit)
-				VW::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
+				VW::parsers::json::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
 			else
-				VW::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
+				VW::parsers::json::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
 
 			// finalize example
 			VW::setup_examples(*m_vw, examples);
@@ -384,9 +384,9 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
 
 			  if (m_vw->audit)
-				VW::read_line_json_s<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
+				VW::parsers::json::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
 			  else
-				VW::read_line_json_s<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
+				VW::parsers::json::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
 
 			  // finalize example
 			  VW::setup_examples(*m_vw, examples);
