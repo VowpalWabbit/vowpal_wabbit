@@ -57,6 +57,9 @@ bool ec_is_example_header(VW::example const& ec);  // example headers look like 
 
 std::pair<bool, cb_class> get_observed_cost_cb(const label& ld);
 
+void parse_label(CB::label& ld, VW::reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
+    const std::vector<VW::string_view>& words, VW::io::logger& logger);
+
 void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool action_scores, const CB::cb_class* known_cost);
 }  // namespace CB

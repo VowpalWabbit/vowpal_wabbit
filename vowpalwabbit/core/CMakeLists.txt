@@ -426,6 +426,7 @@ vw_add_test_executable(
       tests/cats_test.cc
       tests/cats_tree_test.cc
       tests/cb_explore_adf_test.cc
+      tests/cb_graph_feedback_label_text_parse_test.cc
       tests/confidence_sequence_robust_test.cc
       tests/eigen_memory_tree_test.cc
       tests/epsilon_test.cc

@@ -102,8 +102,12 @@ void parse_label(CB::label& ld, VW::reduction_features& red_features, VW::label_
       if (reuse_mem.tokens.size() == 1) { f.probability = -1.f; }
       else { logger.err_warn("shared feature vectors should not have costs"); }
     }
-    if (reuse_mem.tokens[0] == VW::details::GRAPH_FEEDBACK_TYPE && ld.costs.back().probability == -1.f)
+    if (reuse_mem.tokens[0] == VW::details::GRAPH_FEEDBACK_TYPE)
     {
+      if (ld.costs.size() < 1 || ld.costs.back().probability != -1.f)
+      {
+        THROW("malformed example, graph should only be present after shared")
+      }
       // graph provided in shared example label
       // example: shared graph 0,1,5 2,4,5 0,2,5 |
       parse_graph_feedback_matrix(words, i + 1, reuse_mem, red_features, logger);
