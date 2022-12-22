@@ -286,7 +286,7 @@ function(vw_add_test_executable)
 
     vw_get_test_target(FULL_TEST_NAME ${VW_TEST_FOR_LIB})
 
-    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${FULL_TEST_NAME}_main.cc ${GTEST_MAIN_FILE_CONTENTS})
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${FULL_TEST_NAME}_main.cc "${GTEST_MAIN_FILE_CONTENTS}")
 
     add_executable(${FULL_TEST_NAME} ${CMAKE_CURRENT_BINARY_DIR}/${FULL_TEST_NAME}_main.cc ${VW_TEST_SOURCES})
     target_link_libraries(${FULL_TEST_NAME} PUBLIC
