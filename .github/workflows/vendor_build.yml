@@ -66,8 +66,6 @@ jobs:
     env:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-      VCPKG_REF: 6ca56aeb457f033d344a7106cb3f9f1abf8f4e98
     steps:
       - uses: actions/checkout@v2
         with:
@@ -77,8 +75,6 @@ jobs:
       - name: Configure
         run: >
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64"
-          -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_MANIFEST_MODE=OFF
           -DUSE_LATEST_STD=On
           -DBUILD_FLATBUFFERS=Off
           -DVW_BUILD_CSV=On
