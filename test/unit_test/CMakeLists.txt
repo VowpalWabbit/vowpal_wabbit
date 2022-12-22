@@ -17,16 +17,7 @@ add_executable(vw-unit-test.out
   continuous_actions_parser_test.cc
   custom_reduction_test.cc
   distributionally_robust_test.cc
-  epsilon_test.cc
-  example_header_test.cc
-  feature_group_test.cc
-  loss_functions_test.cc
   main.cc
-  minimal_custom_reduction.cc
-  multiclass_label_parser_test.cc
-  numeric_cast_test.cc
-  object_pool_test.cc
-  offset_tree_test.cc
   simulator.cc
   simulator.h
   tag_utils_test.cc

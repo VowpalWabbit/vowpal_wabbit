@@ -10,24 +10,24 @@
 namespace VW
 {
 template <bool audit>
-VW_DEPRECATED("read_line_json_s moved to VW::parsers::json::read_line_json_s")
+VW_DEPRECATED("read_line_json_s moved to VW::parsers::json::read_line_json")
 void read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
     VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory, void* ex_factory_context,
     VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
-  VW::parsers::json::read_line_json_s<audit>(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict,
+  VW::parsers::json::read_line_json<audit>(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict,
       examples, line, length, example_factory, ex_factory_context, logger, ignore_features, dedup_examples);
 }
 
 template <bool audit>
-VW_DEPRECATED("read_line_json_s moved to VW::parsers::json::read_line_json_s")
+VW_DEPRECATED("read_line_json_s moved to VW::parsers::json::read_line_json")
 void read_line_json_s(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
-  VW::parsers::json::read_line_json_s<audit>(
+  VW::parsers::json::read_line_json<audit>(
       all, examples, line, length, example_factory, ex_factory_context, dedup_examples);
 }
 

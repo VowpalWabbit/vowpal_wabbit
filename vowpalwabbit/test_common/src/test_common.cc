@@ -10,7 +10,7 @@ VW::multi_ex vwtest::parse_json(VW::workspace& all, const std::string& line)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(&all));
-  VW::parsers::json::read_line_json_s<true>(
+  VW::parsers::json::read_line_json<true>(
       all, examples, (char*)line.c_str(), line.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)&all);
 
   setup_examples(all, examples);
