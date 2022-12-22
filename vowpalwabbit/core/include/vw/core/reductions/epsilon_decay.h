@@ -28,7 +28,7 @@ public:
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
       double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
       bool constant_epsilon, uint32_t& wpp, uint64_t _min_champ_examples, float initial_epsilon,
-      uint64_t shift_model_bounds);
+      uint64_t shift_model_bounds, bool reward_as_cost);
   void update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
@@ -51,6 +51,7 @@ public:
   uint64_t _min_champ_examples;
   float _initial_epsilon;
   uint64_t _shift_model_bounds;
+  bool _reward_as_cost;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
   std::vector<double> per_live_model_state_double;

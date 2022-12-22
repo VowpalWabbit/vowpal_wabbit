@@ -213,6 +213,7 @@ public:
   uint32_t& wpp;
   const bool _ccb_on;
   config_oracle_impl _config_oracle;
+  bool reward_as_cost;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
   std::vector<double> per_live_model_state_double;
@@ -237,7 +238,7 @@ public:
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
       double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
-      std::string trace_prefix);
+      std::string trace_prefix, bool reward_as_cost);
 
   void do_learning(VW::LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
