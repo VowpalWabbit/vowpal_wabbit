@@ -1695,7 +1695,7 @@ public:
 }  // namespace
 
 template <bool audit>
-void VW::parsers::json::read_line_json_s(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
     VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory, void* ex_factory_context,
     VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
@@ -1736,11 +1736,11 @@ void VW::parsers::json::read_line_json_s(const VW::label_parser& lbl_parser, has
 }
 
 template <bool audit>
-void VW::parsers::json::read_line_json_s(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
+void VW::parsers::json::read_line_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
     example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
-  return read_line_json_s<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
+  return read_line_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
       line, length, example_factory, ex_factory_context, all.logger, &all.ignore_features_dsjson, dedup_examples);
 }
@@ -1919,7 +1919,7 @@ bool VW::parsers::json::details::parse_line_json(
   }
   else
   {
-    VW::parsers::json::template read_line_json_s<audit>(
+    VW::parsers::json::template read_line_json<audit>(
         *all, examples, line, num_chars, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
   }
 
@@ -1993,23 +1993,23 @@ int VW::parsers::json::read_features_json(VW::workspace* all, io_buf& buf, VW::m
 }
 
 // Explicitly instantiate templates only in this source file
-template void VW::parsers::json::read_line_json_s<true>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
+template void VW::parsers::json::read_line_json<true>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
     void* ex_factory_context, VW::io::logger& logger,
     std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
-template void VW::parsers::json::read_line_json_s<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
+template void VW::parsers::json::read_line_json<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
     void* ex_factory_context, VW::io::logger& logger,
     std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
-template void VW::parsers::json::read_line_json_s<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
+template void VW::parsers::json::read_line_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
-template void VW::parsers::json::read_line_json_s<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
+template void VW::parsers::json::read_line_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
