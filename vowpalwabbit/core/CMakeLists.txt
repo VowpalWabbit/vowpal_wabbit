@@ -427,15 +427,24 @@ vw_add_test_executable(
       tests/cb_explore_adf_test.cc
       tests/confidence_sequence_robust_test.cc
       tests/eigen_memory_tree_test.cc
+      tests/epsilon_test.cc
+      tests/example_header_test.cc
       tests/example_test.cc
+      tests/feature_group_test.cc
       tests/flat_example_test.cc
       tests/guard_test.cc
       tests/interactions_test.cc
+      tests/loss_functions_test.cc
       tests/main.cc
       tests/math_test.cc
       tests/merge_header_opts_test.cc
       tests/merge_test.cc
+      tests/minimal_custom_reduction.cc
       tests/model_util_test.cc
+      tests/multiclass_label_parser_test.cc
+      tests/numeric_cast_test.cc
+      tests/object_pool_test.cc
+      tests/offset_tree_test.cc
       tests/parse_args_test.cc
       tests/parser_test.cc
       tests/pmf_to_pdf_test.cc
