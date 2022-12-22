@@ -389,7 +389,7 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .set_end_pass(end_pass)
