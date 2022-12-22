@@ -83,7 +83,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
     }
     auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     // Process each model, then update the upper/lower bounds for each model
-    for (int64_t model_ind = 0; model_ind < model_count; ++model_ind)
+    for (int64_t model_ind = model_count - 1; model_ind >= 0; --model_ind)
     {
       if (!_constant_epsilon)
       {
@@ -198,11 +198,7 @@ void epsilon_decay_data::check_estimator_bounds()
     bool better = conf_seq_estimators[i][i].lower_bound() > conf_seq_estimators[final_model_idx][i].upper_bound();
     if (better && conf_seq_estimators[i][i].update_count >= _min_champ_examples)
     {
-      if (_epsilon_decay_audit_str != "")
-      {
-        _audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP, lb: " << conf_seq_estimators[i][i].lower_bound()
-                   << " ub: " << conf_seq_estimators[final_model_idx][i].upper_bound() << "\n";
-      }
+      if (_epsilon_decay_audit_str != "") { _audit_msg << "CHALLENGER[" << (i + 1) << "] promoted to CHAMP\n"; }
       shift_model(i, final_model_idx - i, model_count);
       break;
     }
