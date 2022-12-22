@@ -2800,10 +2800,10 @@
   {
     "id": 217,
     "desc": "check plt training",
-    "vw_command": "-d train-sets/multilabel -f plt.model --plt 10 --sgd --predict_only_model --loss_function logistic",
+    "vw_command": "-d train-sets/multilabel -f plt.model --plt 10 -l 10 --loss_function logistic",
     "diff_files": {
-      "stderr": "train-sets/ref/plt_multilabel.stderr",
-      "stdout": "train-sets/ref/plt_multilabel.stdout"
+      "stderr": "train-sets/ref/plt.stderr",
+      "stdout": "train-sets/ref/plt.stdout"
     },
     "input_files": [
       "train-sets/multilabel"
@@ -2811,12 +2811,12 @@
   },
   {
     "id": 218,
-    "desc": "check default plt prediction",
-    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict --loss_function logistic",
+    "desc": "check default plt prediction (with threshold 0.5)",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt.predict --loss_function logistic",
     "diff_files": {
-      "stderr": "train-sets/ref/plt_multilabel_predict.stderr",
-      "plt_multilabel.predict": "pred-sets/ref/plt_multilabel.predict",
-      "stdout": "train-sets/ref/plt_multilabel_predict.stdout"
+      "stderr": "train-sets/ref/plt_predict.stderr",
+      "plt.predict": "pred-sets/ref/plt.predict",
+      "stdout": "train-sets/ref/plt_predict.stdout"
     },
     "input_files": [
       "train-sets/multilabel",
@@ -2829,11 +2829,11 @@
   {
     "id": 219,
     "desc": "check plt top-1 prediction",
-    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1 --loss_function logistic",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1.predict --top_k 1 --loss_function logistic",
     "diff_files": {
-      "stderr": "train-sets/ref/plt_top1_multilabel_predict.stderr",
-      "plt_top1_multilabel.predict": "pred-sets/ref/plt_top1_multilabel.predict",
-      "stdout": "train-sets/ref/plt_top1_multilabel_predict.stdout"
+      "stderr": "train-sets/ref/plt_top1_predict.stderr",
+      "plt_top1.predict": "pred-sets/ref/plt_top1.predict",
+      "stdout": "train-sets/ref/plt_top1_predict.stdout"
     },
     "input_files": [
       "train-sets/multilabel",
@@ -5568,6 +5568,52 @@
   },
   {
     "id": 432,
+    "desc": "check plt training with sgd",
+    "vw_command": "-d train-sets/multilabel -f plt_sgd.model --plt 10 --sgd --predict_only_model --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_sgd.stderr",
+      "stdout": "train-sets/ref/plt_sgd.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 433,
+    "desc": "check default plt (trained with sgd) prediction (with threshold 0.5)",
+    "vw_command": "-t -d train-sets/multilabel -i plt_sgd.model -p plt_sgd.predict --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_sgd_predict.stderr",
+      "plt_sgd.predict": "pred-sets/ref/plt_sgd.predict",
+      "stdout": "train-sets/ref/plt_sgd_predict.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt_sgd.model"
+    ],
+    "depends_on": [
+      432
+    ]
+  },
+  {
+    "id": 434,
+    "desc": "check plt (trained with sgd) top-1 prediction",
+    "vw_command": "-t -d train-sets/multilabel -i plt_sgd.model -p plt_sgd_top1.predict --top_k 1 --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_sgd_top1_predict.stderr",
+      "plt_sgd_top1.predict": "pred-sets/ref/plt_sgd_top1.predict",
+      "stdout": "train-sets/ref/plt_sgd_top1_predict.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt_sgd.model"
+    ],
+    "depends_on": [
+      432
+    ]
+  },
+  {
+    "id": 435,
     "desc": "second order online learning with epoch",
     "vw_command":
         "--OjaNewton -d train-sets/0001.dat -p second_order_with_epoch.predict --predict_only_model --epoch_size 8",
@@ -5581,7 +5627,41 @@
     ]
   },
   {
-    "id": 433,
+    "id": 436,
+    "desc": "check default plt prediction with --probabilities option",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_probabilities.predict --loss_function logistic --probabilities",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_predict_probabilities.stderr",
+      "plt_probabilities.predict": "pred-sets/ref/plt_probabilities.predict",
+      "stdout": "train-sets/ref/plt_predict_probabilities.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt.model"
+    ],
+    "depends_on": [
+      217
+    ]
+  },
+  {
+    "id": 437,
+    "desc": "check plt top-1 prediction with --probabilities option",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1_probabilities.predict --top_k 1 --loss_function logistic --probabilities",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_top1_predict_probabilities.stderr",
+      "plt_top1_probabilities.predict": "pred-sets/ref/plt_top1_probabilities.predict",
+      "stdout": "train-sets/ref/plt_top1_predict_probabilities.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt.model"
+    ],
+    "depends_on": [
+      217
+    ]
+  },
+  {
+    "id": 438,
     "desc": "test AutoML with quad/cubic interaction",
     "vw_command": "-f automl_qc.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_qc.json --readable_model automl_readable_qc.txt --oracle_type qbase_cubic",
     "diff_files": {
