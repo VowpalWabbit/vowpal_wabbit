@@ -262,7 +262,7 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
 }
 }  // namespace VW
 
-std::unique_ptr<VW::workspace> operator+(const VW::workspace& base, const VW::model_delta& md)
+std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW::model_delta& md)
 {
   const VW::workspace* delta = md.unsafe_get_workspace_ptr();
   validate_compatibility(std::vector<const VW::workspace*>{&base, delta}, nullptr);
@@ -309,7 +309,7 @@ std::unique_ptr<VW::workspace> operator+(const VW::workspace& base, const VW::mo
   return destination_workspace;
 }
 
-VW::model_delta operator-(const VW::workspace& ws1, const VW::workspace& ws2)
+VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2)
 {
   validate_compatibility(std::vector<const VW::workspace*>{&ws1, &ws2}, nullptr);
   auto dest_command_line = VW::split_command_line(get_keep_command_line(ws1));
