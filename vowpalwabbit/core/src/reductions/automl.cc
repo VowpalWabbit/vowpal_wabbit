@@ -199,7 +199,8 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
 
   auto cm = VW::make_unique<config_manager_type>(default_lease, max_live_configs, all.get_random_state(),
       static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type, all.weights.dense_weights,
-      calc_priority, automl_significance_level, &all.logger, all.wpp, ccb_on, conf_type, trace_file_name_prefix, reward_as_cost);
+      calc_priority, automl_significance_level, &all.logger, all.wpp, ccb_on, conf_type, trace_file_name_prefix,
+      reward_as_cost);
   auto data = VW::make_unique<automl<config_manager_type>>(
       std::move(cm), &all.logger, predict_only_model, trace_file_name_prefix);
   data->debug_reverse_learning_order = reversed_learning_order;
