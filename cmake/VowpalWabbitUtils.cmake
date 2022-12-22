@@ -27,6 +27,7 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
       set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
       FetchContent_MakeAvailable(googletest)
     endif()
+    include(GoogleTest)
   endif()
 endif()
 
