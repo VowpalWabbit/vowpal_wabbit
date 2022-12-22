@@ -9,7 +9,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 container:
-  image: vowpalwabbit/ubuntu1804-build:latest
+  image: vowpalwabbit/ubuntu2004-build:latest
   endpoint: DockerHub
 
 strategy:

@@ -9,14 +9,14 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
   upload:
     container:
-      image: vowpalwabbit/ubuntu1804-build:latest
+      image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
