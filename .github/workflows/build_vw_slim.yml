@@ -27,4 +27,5 @@ jobs:
         run: ./.scripts/linux/build-slim.sh
       - name: Test VW Slim
         shell: bash
-        run: ctest --test-dir build --output-on-failure --no-tests=error -R VowpalWabbitSlim
+        working-directory: build
+        run: ctest --output-on-failure --no-tests=error -R VowpalWabbitSlim

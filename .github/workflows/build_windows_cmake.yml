@@ -60,4 +60,5 @@ jobs:
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --verbose
       - name: Run tests
-        run: ctest --test-dir ${{ env.CMAKE_BUILD_DIR }} --output-on-failure --no-tests=error --label-regex=VWTestList --build-config ${{ matrix.build_config }}
+        working-directory: ${{ env.CMAKE_BUILD_DIR }}
+        run: ctest --output-on-failure --no-tests=error --label-regex=VWTestList --build-config ${{ matrix.build_config }}
