@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -52,7 +52,7 @@ jobs:
       - name: Bootstrap vcpkg
         run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Install vcpkg dependencies
-        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-test flatbuffers
+        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib flatbuffers
       - name: Generate project files
         run: |
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64" -DVCPKG_MANIFEST_MODE=OFF -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On -Dvw_BUILD_NET_FRAMEWORK=On
@@ -60,6 +60,4 @@ jobs:
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --verbose
       - name: Run tests
-        run: |
-          cd ${{ env.CMAKE_BUILD_DIR }}
-          ctest --verbose --output-on-failure -C ${{ matrix.build_config }} --label-regex VWTestList
+        run: ctest --test-dir ${{ env.CMAKE_BUILD_DIR }} --output-on-failure --no-tests=error --label-regex=VWTestList --build-config ${{ matrix.build_config }}
