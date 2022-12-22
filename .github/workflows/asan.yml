@@ -58,7 +58,7 @@ jobs:
         run: cmake --build build
       - name: Run unit tests
         working-directory: build
-        run: ctest --output-on-failure --no-tests=error --exclude-regex=w_iterations --label-regex=VWTestList --no-tests=error
+        run: ctest --output-on-failure --no-tests=error --exclude-regex w_iterations --label-regex VWTestList
       - name: Run python test script
         if: ${{ success() || failure() }}
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1
@@ -97,7 +97,7 @@ jobs:
         run: cmake --build build -t vw_cli_bin spanning_tree vw_core_test
       - name: Run unit tests
         working-directory: build
-        run: ctest --output-on-failure --no-tests=error --exclude-regex=w_iterations --label-regex=VWTestList
+        run: ctest --output-on-failure --no-tests=error --exclude-regex w_iterations --label-regex VWTestList
       - name: Run python test script
         if: ${{ success() || failure() }}
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers

@@ -28,4 +28,4 @@ jobs:
       - name: Test VW Slim
         shell: bash
         working-directory: build
-        run: ctest --output-on-failure --no-tests=error -R VowpalWabbitSlim
+        run: ctest --output-on-failure --no-tests=error --tests-regex VowpalWabbitSlim
