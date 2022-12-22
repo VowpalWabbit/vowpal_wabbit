@@ -47,7 +47,19 @@ void parse_graph_feedback_matrix(const std::vector<VW::string_view>& words, size
   {
     VW::tokenize(',', words[i], reuse_mem.tokens);
 
-    if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 3) { continue; }
+    if (reuse_mem.tokens.empty() ||
+        (reuse_mem.tokens.size() == 1 && reuse_mem.tokens[0].size() > 0 &&
+            (reuse_mem.tokens[0][0] == ' ' || reuse_mem.tokens[0][0] == '|')))
+    {
+      // this check is necessary in order to check if an incomplete tripet was given or if we have reached the end of
+      // the label
+      return;
+    }
+    if (reuse_mem.tokens.size() != 3)
+    {
+      THROW("malformed example, graph expects triplets but was given an input with: " << reuse_mem.tokens.size()
+                                                                                      << " elements");
+    }
 
     auto row = int_of_string(reuse_mem.tokens[0], logger);
     auto col = int_of_string(reuse_mem.tokens[1], logger);

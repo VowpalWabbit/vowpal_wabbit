@@ -55,19 +55,30 @@ TEST(cb_gf_label_tests, cb_graph_parse_label_no_fts)
 {
   CB::label label;
   VW::reduction_features red_features;
-  parse_cb_label("shared graph 0,1,2 5,5,5 |", label, red_features);
+  parse_cb_label("shared graph 0,1,2 1,2,3 5,5,5 |", label, red_features);
   // it is still a shared example
   EXPECT_FLOAT_EQ(label.costs[0].probability, -1.f);
   auto& graph_reduction_features = red_features.template get<VW::cb_graph_feedback::reduction_features>();
-  EXPECT_EQ(graph_reduction_features.triplets.size(), 2);
+  EXPECT_EQ(graph_reduction_features.triplets.size(), 3);
 
   EXPECT_EQ(graph_reduction_features.triplets[0].row, 0);
   EXPECT_EQ(graph_reduction_features.triplets[0].col, 1);
   EXPECT_EQ(graph_reduction_features.triplets[0].val, 2);
 
-  EXPECT_EQ(graph_reduction_features.triplets[1].row, 5);
-  EXPECT_EQ(graph_reduction_features.triplets[1].col, 5);
-  EXPECT_EQ(graph_reduction_features.triplets[1].val, 5);
+  EXPECT_EQ(graph_reduction_features.triplets[1].row, 1);
+  EXPECT_EQ(graph_reduction_features.triplets[1].col, 2);
+  EXPECT_EQ(graph_reduction_features.triplets[1].val, 3);
+
+  EXPECT_EQ(graph_reduction_features.triplets[2].row, 5);
+  EXPECT_EQ(graph_reduction_features.triplets[2].col, 5);
+  EXPECT_EQ(graph_reduction_features.triplets[2].val, 5);
+}
+
+TEST(cb_gf_label_tests, throws_w_malformed_triplet)
+{
+  CB::label label;
+  VW::reduction_features red_features;
+  EXPECT_THROW(parse_cb_label("shared graph 0,1,2 0,1,2 5 | s_1 s_2", label, red_features), VW::vw_exception);
 }
 
 TEST(cb_gf_label_tests, throws_w_standalone_graph_example)
@@ -76,6 +87,7 @@ TEST(cb_gf_label_tests, throws_w_standalone_graph_example)
   VW::reduction_features red_features;
   EXPECT_THROW(parse_cb_label("graph 0,1,2 0,1,2 5,5,5 | s_1 s_2", label, red_features), VW::vw_exception);
 }
+
 TEST(cb_gf_label_tests, throws_w_graph_in_label)
 {
   CB::label label;
