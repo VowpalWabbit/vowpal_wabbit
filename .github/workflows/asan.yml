@@ -94,7 +94,7 @@ jobs:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
       - name: Build
-        run: cmake --build build vw_cli_bin spanning_tree vw_core_test
+        run: cmake --build build -t vw_cli_bin spanning_tree vw_core_test
       - name: Run unit tests
         working-directory: build
         run: ctest --output-on-failure --no-tests=error --exclude-regex=w_iterations --label-regex=VWTestList
