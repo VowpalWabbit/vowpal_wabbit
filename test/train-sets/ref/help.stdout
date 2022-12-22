@@ -816,6 +816,9 @@ Weight Options:
                                             than <thr> threshold (type: float, default: 0.5)
     --top_k arg                             Predict top-<k> labels instead of labels above threshold (type:
                                             uint, default: 0)
+    --probabilities                         Predict probabilities for the predicted labels (type: bool)
+    --plt_force_load_legacy_model           Force the loading of a pre 9.7 model. This option is a migration
+                                            measure and will be removed in the next VW version. (type: bool)
 [Reduction] Recall Tree Options:
     --recall_tree arg                       Use online tree for multiclass (type: uint, keep, necessary)
     --max_candidates arg                    Maximum number of labels per leaf in the tree (type: uint, keep)
