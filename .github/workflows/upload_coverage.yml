@@ -16,7 +16,7 @@ concurrency:
 jobs:
   upload:
     container:
-      image: vowpalwabbit/ubuntu2004-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1

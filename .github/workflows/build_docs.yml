@@ -43,7 +43,7 @@ jobs:
           path: doc/html/
   dump-options-build:
     container:
-      image: vowpalwabbit/2004-build:latest
+      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
