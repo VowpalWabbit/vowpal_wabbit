@@ -50,6 +50,7 @@ constexpr const char* SLOT_TYPE = "slot";
 constexpr const char* CA_LABEL = "ca";
 constexpr const char* PDF = "pdf";
 constexpr const char* CHOSEN_ACTION = "chosen_action";
+constexpr const char* GRAPH_FEEDBACK_TYPE = "graph";
 
 static constexpr uint32_t SHARED_EX_INDEX = 0;
 static constexpr uint32_t TOP_ACTION_INDEX = 0;

@@ -10,6 +10,7 @@ set(vw_core_headers
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
   include/vw/core/cb_continuous_label.h
+  include/vw/core/cb_graph_feedback_reduction_features.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
   include/vw/core/daemon_utils.h
