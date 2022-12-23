@@ -435,7 +435,6 @@ vw_add_test_executable(
       tests/guard_test.cc
       tests/interactions_test.cc
       tests/loss_functions_test.cc
-      tests/main.cc
       tests/math_test.cc
       tests/merge_header_opts_test.cc
       tests/merge_test.cc

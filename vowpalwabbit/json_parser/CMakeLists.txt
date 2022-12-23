@@ -20,6 +20,6 @@ vw_add_library(
 
 vw_add_test_executable(
   FOR_LIB "json_parser"
-  SOURCES "tests/main.cc" "tests/json_parser_test.cc" "tests/dsjson_parser_test.cc"
+  SOURCES "tests/json_parser_test.cc" "tests/dsjson_parser_test.cc"
   EXTRA_DEPS vw_core vw_test_common
 )
