@@ -88,7 +88,7 @@ jobs:
       - name: Test run_tests.py
         run: python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ env.CMAKE_BUILD_DIR }}/vowpalwabbit/cli/${{ matrix.build_type }}/vw.exe
       - name: Test unit tests
-        working-directory: build
+        working-directory: ${{ github.workspace }}/vw/build
         run: ctest --output-on-failure --no-tests=error --label-regex VWTestList --build-config ${{ matrix.build_type }}
   build_vendor_macos:
     runs-on: ${{matrix.os}}
@@ -118,8 +118,7 @@ jobs:
       - name: Build
         run: cmake --build build
       - name: Unit tests
-        run: |
-          cd build
-          ctest --output-on-failure --no-tests=error --label-regex VWTestList
+        working-directory: build
+        run: ctest --output-on-failure --no-tests=error --label-regex VWTestList
       - name: Test
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001
