@@ -75,7 +75,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   for (float& val : pmf) { val *= scale; }
   float draw = random_state.get_and_update_random();
   float sum_prob = 0.f;
-  for (int index = 0; index < pmf.size(); ++index)
+  for (size_t index = 0; index < pmf.size(); ++index)
   {
     sum_prob += pmf[index];
     if (sum_prob > draw) { return std::make_pair(index, pmf[index]); }

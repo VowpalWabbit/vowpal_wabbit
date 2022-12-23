@@ -100,10 +100,7 @@ get_automl_data(VW::workspace& all)
 {
   std::vector<std::string> e_r;
   all.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "automl") == e_r.end())
-  {
-    EXPECT_THROW("automl not found in enabled reductions", char*);
-  }
+  if (std::find(e_r.begin(), e_r.end(), "automl") == e_r.end()) { THROW("automl not found in enabled reductions"); }
 
   VW::LEARNER::multi_learner* automl_learner = as_multiline(all.l->get_learner_by_name_prefix("automl"));
 
@@ -246,7 +243,6 @@ TEST(automl_tests, assert_0th_event_metrics_w_iterations)
 TEST(automl_tests, assert_live_configs_and_lease_w_iterations)
 {
   const size_t fifteen = 15;
-  const size_t thirty_three = 33;
   const size_t num_iterations = 100;
   callback_map test_hooks;
 
@@ -482,7 +478,7 @@ TEST(automl_tests, one_diff_impl_unittest_w_iterations)
   const size_t seed = 88;
 
   test_hooks.emplace(1,
-      [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&)
+      [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         const size_t CHAMP = 0;
         auto* aml = aml_test::get_automl_data<one_diff_impl>(all);
@@ -621,7 +617,7 @@ TEST(automl_tests, qbase_unittest_w_iterations)
   const size_t seed = 88;
 
   test_hooks.emplace(1,
-      [&](cb_sim& sim, VW::workspace& all, VW::multi_ex&)
+      [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         const size_t CHAMP = 0;
         auto* aml = aml_test::get_automl_data<qbase_cubic>(all);

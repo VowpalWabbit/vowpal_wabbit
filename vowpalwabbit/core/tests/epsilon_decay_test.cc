@@ -23,7 +23,7 @@ epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
   all.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "epsilon_decay") == e_r.end())
   {
-    EXPECT_THROW("Epsilon decay not found in enabled reductions", char*);
+    THROW("Epsilon decay not found in enabled reductions");
   }
 
   VW::LEARNER::multi_learner* epsilon_decay_learner = as_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
@@ -38,7 +38,6 @@ TEST(epsilon_decay_tests, init_w_iterations)
   auto ctr = simulator::_test_helper(
       "--epsilon_decay --model_count 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed "
       "5");
-  float with_save = ctr.back();
 }
 
 TEST(epsilon_decay_tests, champ_change_w_iterations)
@@ -240,7 +239,6 @@ TEST(epsilon_decay_tests, test_score_bounds_unit)
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
-  uint64_t over_horizon = 2;
   for (uint64_t model_ind = 0; model_ind < num_models; ++model_ind)
   {
     for (uint64_t score_ind = 0; score_ind <= model_ind; ++score_ind)

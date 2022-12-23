@@ -61,7 +61,7 @@ using namespace vw_hash_helpers;
 // n) asserts weights before/after every operation
 // NOTE: interactions are currently 0 for offset 0 since
 // config 0 is hard-coded to be empty interactions for now.
-bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
+bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
 {
   const size_t offset_to_clear = 1;
   auto& weights = all.weights.dense_weights;
@@ -169,7 +169,7 @@ TEST(automl_weights_tests, operations_w_iterations)
   EXPECT_GT(ctr.back(), 0.4f);
 }
 
-bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
+bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
 {
   auto& weights = all.weights.dense_weights;
   uint32_t stride_size = 1 << weights.stride_shift();
@@ -181,7 +181,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
     if (current_offset == 0)
     {
       float* first_weight = &weights.first()[(prestride_index + 0) << weights.stride_shift()];
-      auto till = 1;  // instead of all.wpp, champdupe only uses 3 configs
+      uint32_t till = 1;  // instead of all.wpp, champdupe only uses 3 configs
       for (uint32_t i = 1; i <= till; ++i)
       {
         float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];
@@ -289,7 +289,6 @@ TEST(automl_weights_tests, equal_no_automl_w_iterations)
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
-  auto iter_1 = weights_qcolcol.begin();
   auto q_col_col_offset = 0;  // q:: is runner-up and not champ (offset 0) if num_iterations > ~1750
   auto iter_2 = weights_automl.begin() + q_col_col_offset;
 
@@ -316,7 +315,7 @@ TEST(automl_weights_tests, equal_no_automl_w_iterations)
     size_t prestride_index = iter_2.index() >> 2;
     size_t current_offset = prestride_index & (AUTOML_MODELS - 1);
     EXPECT_EQ(current_offset, q_col_col_offset);
-    EXPECT_EQ(iter_2.index_without_stride() & AUTOML_MODELS - 1, current_offset);
+    EXPECT_EQ(iter_2.index_without_stride() & (AUTOML_MODELS - 1), current_offset);
 
     if (*iter_2 != 0.0f) { automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]); }
 
@@ -363,8 +362,6 @@ TEST(automl_weights_tests, equal_spin_off_model)
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
-  auto iter_1 = weights_qcolcol.begin();
-  auto iter_2 = weights_automl.begin();
 
   std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
   std::vector<std::tuple<float, float, float, float>> automl_weights_vector;
@@ -439,8 +436,6 @@ TEST(automl_weights_tests, equal_spin_off_model_cubic)
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
-  auto iter_1 = weights_qcolcol.begin();
-  auto iter_2 = weights_automl.begin();
 
   std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
   std::vector<std::tuple<float, float, float, float>> automl_weights_vector;
