@@ -4,9 +4,9 @@
 
 #include "vw/core/reductions/automl.h"
 
-#include "vw/core/automl_impl.h"
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
+#include "vw/core/automl_impl.h"
 #include "vw/core/confidence_sequence_robust.h"
 #include "vw/core/multi_model_utils.h"
 

@@ -2,14 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <gtest/gtest.h>
-
 #include "vw/core/reductions/automl.h"
+
 #include "vw/core/automl_impl.h"
-#include "vw/core/simulator.h"
 #include "vw/core/confidence_sequence_robust.h"
 #include "vw/core/metric_sink.h"
+#include "vw/core/simulator.h"
 #include "vw/core/vw_fwd.h"
+
+#include <gtest/gtest.h>
 
 #include <functional>
 #include <map>
@@ -329,18 +330,20 @@ TEST(automl_tests, namespace_switch_w_iterations)
       });
 
   // TODO: Find champ change
-  test_hooks.emplace(num_iterations, [&](cb_sim&, VW::workspace& all, VW::multi_ex&) {
-    aml_test::aml_onediff* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
+  test_hooks.emplace(num_iterations,
+      [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      {
+        aml_test::aml_onediff* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
 
-    auto champ_exclusions =
-        aml->cm->_config_oracle.configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].elements;
-    EXPECT_EQ(champ_exclusions.size(), 1);
-    std::vector<VW::namespace_index> ans{'U', 'U'};
-    EXPECT_NE(champ_exclusions.find(ans), champ_exclusions.end());
-    auto champ_interactions = aml->cm->estimators[aml->cm->current_champ].first.live_interactions;
-    EXPECT_EQ(champ_interactions.size(), 5);
-    return true;
-  });
+        auto champ_exclusions =
+            aml->cm->_config_oracle.configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].elements;
+        EXPECT_EQ(champ_exclusions.size(), 1);
+        std::vector<VW::namespace_index> ans{'U', 'U'};
+        EXPECT_NE(champ_exclusions.find(ans), champ_exclusions.end());
+        auto champ_interactions = aml->cm->estimators[aml->cm->current_champ].first.live_interactions;
+        EXPECT_EQ(champ_interactions.size(), 5);
+        return true;
+      });
 
   auto ctr = simulator::_test_helper_hook(
       "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "

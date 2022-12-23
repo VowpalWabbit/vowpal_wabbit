@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/confidence_sequence_robust.h"
+
 #include <gtest/gtest.h>
 
 TEST(confidence_sequence_robust_tests, python_equivalence)

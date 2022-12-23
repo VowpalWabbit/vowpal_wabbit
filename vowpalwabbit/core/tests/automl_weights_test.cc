@@ -2,14 +2,15 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <gtest/gtest.h>
-#include "vw/core/simulator.h"
 #include "vw/config/options.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_PRIME
 #include "vw/core/learner.h"
 #include "vw/core/multi_model_utils.h"
+#include "vw/core/simulator.h"
 #include "vw/core/vw_math.h"
+
+#include <gtest/gtest.h>
 
 #include <functional>
 #include <map>
