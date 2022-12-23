@@ -2,12 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "simulator.h"
-
+#include "vw/core/simulator.h"
 #include "vw/core/vw.h"
-
 #include <fmt/format.h>
-
 #include <numeric>
 
 namespace simulator
@@ -120,7 +117,7 @@ void cb_sim::call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_
   {
     callback_count++;
     bool callback_result = iter->second(*this, vw, ex);
-    BOOST_CHECK_EQUAL(callback_result, true);
+    assert(callback_result);
   }
 }
 
@@ -191,10 +188,10 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
 
   // avoid silently failing: ensure that all callbacks
   // got called and then cleanup
-  BOOST_CHECK_EQUAL(callbacks.size(), callback_count);
+  assert(callbacks.size() == callback_count);
   callbacks.clear();
   callback_count = 0;
-  BOOST_CHECK_EQUAL(callbacks.size(), callback_count);
+  assert(callbacks.size() == callback_count);
 
   return ctr;
 }
@@ -218,7 +215,7 @@ std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations
 std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed,
     const std::vector<uint64_t>& swap_after, const size_t split)
 {
-  BOOST_CHECK_GT(num_iterations, split);
+  assert(num_iterations > split);
   size_t before_save = num_iterations - split;
 
   auto first_vw = VW::initialize(vw_arg);
@@ -240,7 +237,6 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
 std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed,
     const std::vector<uint64_t>& swap_after, float scale_reward)
 {
-  BOOST_CHECK(true);
   auto* vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
   auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, false, 0, swap_after, scale_reward);

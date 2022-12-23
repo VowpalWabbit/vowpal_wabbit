@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "simulator.h"
-#include "test_common.h"
+#include <gtest/gtest.h>
+#include "vw/core/simulator.h"
 #include "vw/config/options.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_PRIME
@@ -11,15 +11,10 @@
 #include "vw/core/multi_model_utils.h"
 #include "vw/core/vw_math.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
 #include <functional>
 #include <map>
 
 using namespace VW::config;
-
-#define ARE_SAME(X, Y, Z) \
-  BOOST_CHECK_MESSAGE(VW::math::are_same(X, Y, Z), "check ARE_SAME: expected: " << X << " not equal to " << Y);
 
 using simulator::callback_map;
 using simulator::cb_sim;
@@ -86,75 +81,75 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
 
   for (auto index : feature_indexes)
   {
-    BOOST_CHECK_NE(ZERO, weights.strided_index(index));
+    EXPECT_NE(ZERO, weights.strided_index(index));
     float w1 = weights.strided_index(index + offset_to_clear);
     float w2 = weights.strided_index(index + offset_to_clear + 1);
-    BOOST_CHECK_NE(ZERO, w1);
-    BOOST_CHECK_NE(ZERO, w2);
+    EXPECT_NE(ZERO, w1);
+    EXPECT_NE(ZERO, w2);
   }
 
-  ARE_SAME(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
-  ARE_SAME(EXPECTED_W1, weights.strided_index(interaction_index + offset_to_clear), AUTO_ML_FLOAT_TOL);
-  ARE_SAME(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
+  EXPECT_NEAR(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
+  EXPECT_NEAR(EXPECTED_W1, weights.strided_index(interaction_index + offset_to_clear), AUTO_ML_FLOAT_TOL);
+  EXPECT_NEAR(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // all weights of offset 1 will be set to zero
   VW::reductions::multi_model::clear_offset(weights, offset_to_clear, all.wpp);
 
   for (auto index : feature_indexes)
   {
-    BOOST_CHECK_NE(ZERO, weights.strided_index(index));
+    EXPECT_NE(ZERO, weights.strided_index(index));
     float w1 = weights.strided_index(index + offset_to_clear);
     float w2 = weights.strided_index(index + offset_to_clear + 1);
-    BOOST_CHECK_EQUAL(ZERO, w1);
-    BOOST_CHECK_NE(ZERO, w2);
-    BOOST_CHECK_NE(w1, w2);
+    EXPECT_EQ(ZERO, w1);
+    EXPECT_NE(ZERO, w2);
+    EXPECT_NE(w1, w2);
   }
 
-  ARE_SAME(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
-  BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index + offset_to_clear));
-  ARE_SAME(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
+  EXPECT_NEAR(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
+  EXPECT_EQ(ZERO, weights.strided_index(interaction_index + offset_to_clear));
+  EXPECT_NEAR(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // copy from offset 2 to offset 1
   weights.move_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
 
   for (auto index : feature_indexes)
   {
-    BOOST_CHECK_NE(ZERO, weights.strided_index(index));
+    EXPECT_NE(ZERO, weights.strided_index(index));
     float w1 = weights.strided_index(index + offset_to_clear);
     float w2 = weights.strided_index(index + offset_to_clear + 1);
-    BOOST_CHECK_NE(ZERO, w1);
-    BOOST_CHECK_NE(ZERO, w2);
-    BOOST_CHECK_EQUAL(w1, w2);
+    EXPECT_NE(ZERO, w1);
+    EXPECT_NE(ZERO, w2);
+    EXPECT_EQ(w1, w2);
   }
 
-  ARE_SAME(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
+  EXPECT_NEAR(EXPECTED_W0, weights.strided_index(interaction_index), AUTO_ML_FLOAT_TOL);
   float actual_w1 = weights.strided_index(interaction_index + offset_to_clear);
   float actual_w2 = weights.strided_index(interaction_index + offset_to_clear + 1);
-  ARE_SAME(EXPECTED_W2, actual_w1, AUTO_ML_FLOAT_TOL);
-  ARE_SAME(EXPECTED_W2, actual_w2, AUTO_ML_FLOAT_TOL);
-  BOOST_CHECK_EQUAL(actual_w1, actual_w2);
+  EXPECT_NEAR(EXPECTED_W2, actual_w1, AUTO_ML_FLOAT_TOL);
+  EXPECT_NEAR(EXPECTED_W2, actual_w2, AUTO_ML_FLOAT_TOL);
+  EXPECT_EQ(actual_w1, actual_w2);
 
   // Ensure weights are non-zero for another live interaction
   const size_t interaction_index_other = interaction_to_index(all.weights,
       get_hash_for_feature(all, "Action", "article=sports"), get_hash_for_feature(all, "User", "user=Anna"));
 
-  BOOST_CHECK_NE(ZERO, weights.strided_index(interaction_index_other));
-  BOOST_CHECK_NE(ZERO, weights.strided_index(interaction_index_other + 1));
-  BOOST_CHECK_NE(ZERO, weights.strided_index(interaction_index_other + 2));
+  EXPECT_NE(ZERO, weights.strided_index(interaction_index_other));
+  EXPECT_NE(ZERO, weights.strided_index(interaction_index_other + 1));
+  EXPECT_NE(ZERO, weights.strided_index(interaction_index_other + 2));
 
   // Ensure weights are 0 for non-live interactions
   const size_t interaction_index_empty = interaction_to_index(all.weights,
       get_hash_for_feature(all, "User", "user=Anna"), get_hash_for_feature(all, "Action", "article=sports"));
 
-  BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty));
-  BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty + 1));
-  BOOST_CHECK_EQUAL(ZERO, weights.strided_index(interaction_index_empty + 2));
+  EXPECT_EQ(ZERO, weights.strided_index(interaction_index_empty));
+  EXPECT_EQ(ZERO, weights.strided_index(interaction_index_empty + 1));
+  EXPECT_EQ(ZERO, weights.strided_index(interaction_index_empty + 2));
 
   // VW::automl::helper::print_weights_nonzero(all, 0, all->weights.dense_weights);
   return true;
 }
 
-BOOST_AUTO_TEST_CASE(automl_weight_operations_w_iterations)
+TEST(automl_weights_tests, operations_w_iterations)
 {
   const size_t seed = 10;
   const size_t num_iterations = 1331;
@@ -170,7 +165,7 @@ BOOST_AUTO_TEST_CASE(automl_weight_operations_w_iterations)
       "--oracle_type rand --default_lease 10",
       test_hooks, num_iterations, seed);
 
-  BOOST_CHECK_GT(ctr.back(), 0.4f);
+  EXPECT_GT(ctr.back(), 0.4f);
 }
 
 bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
@@ -191,7 +186,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
         float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];
         for (uint32_t j = 0; j < stride_size; ++j)
         {
-          ARE_SAME((&(*first_weight))[j], (&(*other))[j], AUTO_ML_FLOAT_TOL);
+          EXPECT_NEAR((&(*first_weight))[j], (&(*other))[j], AUTO_ML_FLOAT_TOL);
         }
       }
     }
@@ -200,7 +195,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex& ec)
   return true;
 }
 
-BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig_w_iterations)
+TEST(automl_weights_tests, noop_samechampconfig_w_iterations)
 {
   const size_t seed = 10;
   const size_t num_iterations = 1742;
@@ -216,10 +211,10 @@ BOOST_AUTO_TEST_CASE(automl_noop_samechampconfig_w_iterations)
       "--oracle_type champdupe -b 8 --default_lease 10 --extra_metrics champdupe.json --verbose_metrics",
       test_hooks, num_iterations, seed);
 
-  BOOST_CHECK_GT(ctr.back(), 0.4f);
+  EXPECT_GT(ctr.back(), 0.4f);
 }
 
-BOOST_AUTO_TEST_CASE(automl_learn_order_w_iterations)
+TEST(automl_weights_tests, learn_order_w_iterations)
 {
   callback_map test_hooks;
 
@@ -247,7 +242,7 @@ BOOST_AUTO_TEST_CASE(automl_learn_order_w_iterations)
 
   while (iter_1 != weights_1.end() && iter_2 != weights_2.end())
   {
-    BOOST_CHECK_EQUAL(*iter_1, *iter_2);
+    EXPECT_EQ(*iter_1, *iter_2);
 
     if (*iter_1 != *iter_2)
     {
@@ -259,15 +254,15 @@ BOOST_AUTO_TEST_CASE(automl_learn_order_w_iterations)
     ++iter_2;
   }
 
-  BOOST_CHECK(!at_least_one_diff);
+  EXPECT_FALSE(at_least_one_diff);
 
   VW::finish(*vw_increasing);
   VW::finish(*vw_decreasing);
 
-  BOOST_CHECK_EQUAL(ctr1, ctr2);
+  EXPECT_EQ(ctr1, ctr2);
 }
 
-BOOST_AUTO_TEST_CASE(automl_equal_no_automl_w_iterations)
+TEST(automl_weights_tests, equal_no_automl_w_iterations)
 {
   callback_map test_hooks;
 
@@ -319,8 +314,8 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl_w_iterations)
   {
     size_t prestride_index = iter_2.index() >> 2;
     size_t current_offset = prestride_index & (AUTOML_MODELS - 1);
-    BOOST_CHECK_EQUAL(current_offset, q_col_col_offset);
-    BOOST_CHECK_EQUAL(iter_2.index_without_stride() & AUTOML_MODELS - 1, current_offset);
+    EXPECT_EQ(current_offset, q_col_col_offset);
+    EXPECT_EQ(iter_2.index_without_stride() & AUTOML_MODELS - 1, current_offset);
 
     if (*iter_2 != 0.0f) { automl_champ_weights_vector.emplace_back(*iter_2[0], *iter_2[1], *iter_2[2], *iter_2[3]); }
 
@@ -331,13 +326,13 @@ BOOST_AUTO_TEST_CASE(automl_equal_no_automl_w_iterations)
   VW::finish(*vw_automl);
 
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
-  BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 31);
-  BOOST_CHECK_EQUAL(automl_champ_weights_vector.size(), 31);
-  BOOST_CHECK(qcolcol_weights_vector == automl_champ_weights_vector);
-  BOOST_CHECK(ctr1 == ctr2);
+  EXPECT_EQ(qcolcol_weights_vector.size(), 31);
+  EXPECT_EQ(automl_champ_weights_vector.size(), 31);
+  EXPECT_EQ(qcolcol_weights_vector, automl_champ_weights_vector);
+  EXPECT_EQ(ctr1, ctr2);
 }
 
-BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
+TEST(automl_weights_tests, equal_spin_off_model)
 {
   callback_map test_hooks;
 
@@ -363,7 +358,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
       vw_automl->options->get_typed_option<std::vector<std::string>>("interactions").value();
   std::vector<std::string> qcolcol_inters =
       vw_qcolcol->options->get_typed_option<std::vector<std::string>>("interactions").value();
-  BOOST_CHECK(automl_inters == qcolcol_inters);
+  EXPECT_EQ(automl_inters, qcolcol_inters);
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
@@ -406,13 +401,13 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model)
   VW::finish(*vw_qcolcol);
   VW::finish(*vw_automl);
 
-  BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 31);
-  BOOST_CHECK_EQUAL(automl_weights_vector.size(), 31);
-  BOOST_CHECK(qcolcol_weights_vector == automl_weights_vector);
-  BOOST_CHECK(ctr1 == ctr2);
+  EXPECT_EQ(qcolcol_weights_vector.size(), 31);
+  EXPECT_EQ(automl_weights_vector.size(), 31);
+  EXPECT_EQ(qcolcol_weights_vector, automl_weights_vector);
+  EXPECT_EQ(ctr1, ctr2);
 }
 
-BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model_cubic)
+TEST(automl_weights_tests, equal_spin_off_model_cubic)
 {
   callback_map test_hooks;
 
@@ -439,7 +434,7 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model_cubic)
       vw_automl->options->get_typed_option<std::vector<std::string>>("interactions").value();
   std::vector<std::string> qcolcol_inters =
       vw_qcolcol->options->get_typed_option<std::vector<std::string>>("interactions").value();
-  BOOST_CHECK(automl_inters == qcolcol_inters);
+  EXPECT_EQ(automl_inters, qcolcol_inters);
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
@@ -482,8 +477,8 @@ BOOST_AUTO_TEST_CASE(automl_equal_spin_off_model_cubic)
   VW::finish(*vw_qcolcol);
   VW::finish(*vw_automl);
 
-  BOOST_CHECK_EQUAL(qcolcol_weights_vector.size(), 38);
-  BOOST_CHECK_EQUAL(automl_weights_vector.size(), 38);
-  BOOST_CHECK(qcolcol_weights_vector == automl_weights_vector);
-  BOOST_CHECK(ctr1 == ctr2);
+  EXPECT_EQ(qcolcol_weights_vector.size(), 38);
+  EXPECT_EQ(automl_weights_vector.size(), 38);
+  EXPECT_EQ(qcolcol_weights_vector, automl_weights_vector);
+  EXPECT_EQ(ctr1, ctr2);
 }

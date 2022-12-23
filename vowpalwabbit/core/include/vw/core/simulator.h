@@ -4,11 +4,9 @@
 
 #pragma once
 
-#include "test_common.h"
 #include "vw/core/rand_state.h"
+#include "vw/core/multi_ex.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
 #include <functional>
 #include <map>
 #include <string>
