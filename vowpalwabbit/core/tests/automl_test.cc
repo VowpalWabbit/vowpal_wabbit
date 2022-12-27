@@ -7,7 +7,7 @@
 #include "vw/core/automl_impl.h"
 #include "vw/core/confidence_sequence_robust.h"
 #include "vw/core/metric_sink.h"
-#include "vw/core/simulator.h"
+#include "simulator.h"
 #include "vw/core/vw_fwd.h"
 
 #include <gtest/gtest.h>
@@ -248,7 +248,7 @@ TEST(automl_tests, assert_live_configs_and_lease_w_iterations)
 
   // Note this is after learning 14 examples (first iteration is Collecting)
   test_hooks.emplace(fifteen,
-      [&fifteen](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      [](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         aml_test::aml_rand* aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
         aml_test::check_interactions_match_exclusions(aml);
@@ -374,7 +374,7 @@ TEST(automl_tests, clear_configs_w_iterations)
       });
 
   test_hooks.emplace(clear_champ_switch,
-      [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      [](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         aml_test::aml_rand* aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
         aml_test::check_interactions_match_exclusions(aml);
@@ -435,7 +435,7 @@ TEST(automl_tests, clear_configs_one_diff_w_iterations)
       });
 
   test_hooks.emplace(clear_champ_switch + 1,
-      [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      [](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         aml_test::aml_onediff* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
         EXPECT_EQ(aml->cm->estimators.size(), 3);
@@ -813,7 +813,7 @@ TEST(automl_tests, insertion_champ_change_w_iterations)
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1,
-      [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      [](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         auto* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_inclusion_impl>(all);
         aml_test::check_config_states(aml);
@@ -855,7 +855,7 @@ TEST(automl_tests, insertion_champ_change_w_iterations)
       });
 
   test_hooks.emplace(clear_champ_switch + 1,
-      [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      [](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         auto* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_inclusion_impl>(all);
         aml_test::check_config_states(aml);

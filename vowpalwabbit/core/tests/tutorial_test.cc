@@ -2,8 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/simulator.h"
-
+#include "simulator.h"
 #include <gtest/gtest.h>
 
 TEST(tutorial_tets, cpp_simulator_without_interaction)

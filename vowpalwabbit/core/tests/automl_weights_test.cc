@@ -7,7 +7,7 @@
 #include "vw/core/constant.h"  // FNV_PRIME
 #include "vw/core/learner.h"
 #include "vw/core/multi_model_utils.h"
-#include "vw/core/simulator.h"
+#include "simulator.h"
 #include "vw/core/vw_math.h"
 
 #include <gtest/gtest.h>

@@ -3,7 +3,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/setup_base.h"
-#include "vw/core/simulator.h"
+#include "simulator.h"
 
 #include <gtest/gtest.h>
 

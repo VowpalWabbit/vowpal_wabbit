@@ -178,7 +178,6 @@ set(vw_core_headers
   include/vw/core/shared_data.h
   include/vw/core/simple_label_parser.h
   include/vw/core/simple_label.h
-  include/vw/core/simulator.h
   include/vw/core/slates_label.h
   include/vw/core/tag_utils.h
   include/vw/core/text_utils.h
@@ -350,7 +349,6 @@ set(vw_core_sources
   src/shared_data.cc
   src/simple_label_parser.cc
   src/simple_label.cc
-  src/simulator.cc
   src/slates_label.cc
   src/tag_utils.cc
   src/text_utils.cc
@@ -458,6 +456,8 @@ vw_add_test_executable(
       tests/random_test.cc
       tests/save_load_test.cc
       tests/scope_exit_test.cc
+      tests/simulator.cc
+      tests/simulator.h
       tests/slates_parser_test.cc
       tests/slates_test.cc
       tests/status_builder_test.cc
