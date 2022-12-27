@@ -359,7 +359,7 @@ void output_example_prediction_cs_active(
     std::stringstream output_string_stream;
     for (unsigned int i = 0; i < label.costs.size(); i++)
     {
-      VW::cs_class cl = label.costs[i];
+      const auto& cl = label.costs[i];
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.class_index << ':' << cl.partial_prediction;
     }
