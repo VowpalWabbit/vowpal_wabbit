@@ -358,7 +358,7 @@ TEST(automl_tests, clear_configs_w_iterations)
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1,
-      [](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         aml_test::aml_rand* aml = aml_test::get_automl_data<VW::reductions::automl::oracle_rand_impl>(all);
         aml_test::check_interactions_match_exclusions<VW::reductions::automl::oracle_rand_impl>(aml);
