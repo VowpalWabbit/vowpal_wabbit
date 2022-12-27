@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1672176940464,
+  "lastUpdate": 1672178092986,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -66522,6 +66522,150 @@ window.BENCHMARK_DATA = {
             "value": 81.61101121836666,
             "unit": "ns/iter",
             "extra": "iterations: 51485220\ncpu: 81.59291928829235 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "griffinbassman@gmail.com",
+            "name": "Griffin Bassman",
+            "username": "bassmang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9339ad5b02032e48460501a3c0198abed30e9c07",
+          "message": "refactor: [automl/epsilon_decay] integrate robust confidence sequences (#4377)\n\n* refactor: [automl/epsilon_decay] integrate robust confidence sequences\r\n\r\n* clang\r\n\r\n* clang\r\n\r\n* new flag\r\n\r\n* clang\r\n\r\n* reorder\r\n\r\n* more printing\r\n\r\n* clang\r\n\r\n* audit fix\r\n\r\n* more audit\r\n\r\n* clang\r\n\r\n* tests\r\n\r\n* move to gtest\r\n\r\n* clang\r\n\r\n* clean\r\n\r\n* comments\r\n\r\n* clang\r\n\r\n* change seed\r\n\r\n* capture\r\n\r\n* assert\r\n\r\n* capture\r\n\r\n* capture\r\n\r\nCo-authored-by: Jack Gerrits <jackgerrits@users.noreply.github.com>",
+          "timestamp": "2022-12-27T16:18:30-05:00",
+          "tree_id": "9690822318f0d049db803c7eed17582b3fc09bb2",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/9339ad5b02032e48460501a3c0198abed30e9c07"
+        },
+        "date": 1672178086072,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 7500.387845720564,
+            "unit": "ns",
+            "range": "± 104.22195343533012"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 11449.671427408854,
+            "unit": "ns",
+            "range": "± 185.08610548101203"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 908.1013543265207,
+            "unit": "ns",
+            "range": "± 7.193475588635949"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 729.3307050069174,
+            "unit": "ns",
+            "range": "± 6.174370664944403"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 1095645.131138393,
+            "unit": "ns",
+            "range": "± 16019.582599535812"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 680247.8059895834,
+            "unit": "ns",
+            "range": "± 10173.926349287893"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 675179.8763020834,
+            "unit": "ns",
+            "range": "± 8172.244743434356"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 1093434.1276041667,
+            "unit": "ns",
+            "range": "± 15218.715609625668"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 682064.9639423077,
+            "unit": "ns",
+            "range": "± 7985.792793177842"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 4076252.3958333335,
+            "unit": "ns",
+            "range": "± 48624.46990125698"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 1297869.6664663462,
+            "unit": "ns",
+            "range": "± 12218.593094252516"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 1100550.5078125,
+            "unit": "ns",
+            "range": "± 18605.155586989"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 3357033.5286458335,
+            "unit": "ns",
+            "range": "± 29600.32088156119"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 1131475.0911458333,
+            "unit": "ns",
+            "range": "± 11068.559730820512"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 3914.930674235026,
+            "unit": "ns",
+            "range": "± 58.193895085005614"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 14969.52373798077,
+            "unit": "ns",
+            "range": "± 98.69146942111567"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 130781.88313802083,
+            "unit": "ns",
+            "range": "± 1526.465212092515"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 23737.613351004464,
+            "unit": "ns",
+            "range": "± 254.42464129280683"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 5250677.399553572,
+            "unit": "ns",
+            "range": "± 92655.80132866235"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 280148.6393229167,
+            "unit": "ns",
+            "range": "± 3313.179031645485"
           }
         ]
       }
