@@ -296,49 +296,6 @@ bool cb_adf::update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq
 }  // namespace CB_ADF
 namespace
 {
-void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
-{
-  if (c.get_model_file_ver() != nullptr &&
-      *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
-  {
-    return;
-  }
-
-  std::stringstream msg;
-  msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
-  bin_text_read_write_fixed(
-      model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), read, msg, text);
-
-  msg << "action_sum " << c.get_gen_cs().action_sum << "\n";
-  bin_text_read_write_fixed(
-      model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
-}
-
-void cb_adf_merge(const std::vector<float>& /* per_model_weights */, const std::vector<const CB_ADF::cb_adf*>& sources,
-    CB_ADF::cb_adf& output_data)
-{
-  for (const auto* source : sources)
-  {
-    output_data.get_gen_cs().event_sum += source->get_gen_cs().event_sum;
-    output_data.get_gen_cs().action_sum += source->get_gen_cs().action_sum;
-  }
-}
-
-void cb_adf_add(const CB_ADF::cb_adf& data1, const CB_ADF::cb_adf& data2, CB_ADF::cb_adf& data_out)
-{
-  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum + data2.get_gen_cs().event_sum;
-  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum + data2.get_gen_cs().action_sum;
-}
-
-void cb_adf_subtract(const CB_ADF::cb_adf& data1, const CB_ADF::cb_adf& data2, CB_ADF::cb_adf& data_out)
-{
-  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum - data2.get_gen_cs().event_sum;
-  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum - data2.get_gen_cs().action_sum;
-}
-
-void learn(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
-
-void predict(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
 void update_stats_cb_adf(const VW::workspace& /* all */, VW::shared_data& sd, const CB_ADF::cb_adf& data,
     const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
@@ -382,6 +339,50 @@ void update_and_output(VW::workspace& all, CB_ADF::cb_adf& data, const VW::multi
   output_example_prediction_cb_adf(all, data, ec_seq, all.logger);
   print_update_cb_adf(all, *all.sd, data, ec_seq, all.logger);
 }
+
+void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
+{
+  if (c.get_model_file_ver() != nullptr &&
+      *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
+  {
+    return;
+  }
+
+  std::stringstream msg;
+  msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
+  bin_text_read_write_fixed(
+      model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), read, msg, text);
+
+  msg << "action_sum " << c.get_gen_cs().action_sum << "\n";
+  bin_text_read_write_fixed(
+      model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
+}
+
+void cb_adf_merge(const std::vector<float>& /* per_model_weights */, const std::vector<const CB_ADF::cb_adf*>& sources,
+    CB_ADF::cb_adf& output_data)
+{
+  for (const auto* source : sources)
+  {
+    output_data.get_gen_cs().event_sum += source->get_gen_cs().event_sum;
+    output_data.get_gen_cs().action_sum += source->get_gen_cs().action_sum;
+  }
+}
+
+void cb_adf_add(const CB_ADF::cb_adf& data1, const CB_ADF::cb_adf& data2, CB_ADF::cb_adf& data_out)
+{
+  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum + data2.get_gen_cs().event_sum;
+  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum + data2.get_gen_cs().action_sum;
+}
+
+void cb_adf_subtract(const CB_ADF::cb_adf& data1, const CB_ADF::cb_adf& data2, CB_ADF::cb_adf& data_out)
+{
+  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum - data2.get_gen_cs().event_sum;
+  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum - data2.get_gen_cs().action_sum;
+}
+
+void learn(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
+
+void predict(CB_ADF::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
 }  // namespace
 VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
