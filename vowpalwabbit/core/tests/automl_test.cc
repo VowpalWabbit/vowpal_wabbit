@@ -813,7 +813,7 @@ TEST(automl_tests, insertion_champ_change_w_iterations)
   callback_map test_hooks;
 
   test_hooks.emplace(clear_champ_switch - 1,
-      [](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      [&clear_champ_switch](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         auto* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_inclusion_impl>(all);
         aml_test::check_config_states(aml);
