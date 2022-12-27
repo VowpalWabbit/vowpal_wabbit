@@ -1,9 +1,9 @@
 #include "vw/core/reductions/epsilon_decay.h"
 
+#include "simulator.h"
 #include "vw/core/learner.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/setup_base.h"
-#include "simulator.h"
 
 #include <gtest/gtest.h>
 

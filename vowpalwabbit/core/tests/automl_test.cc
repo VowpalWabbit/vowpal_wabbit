@@ -4,10 +4,10 @@
 
 #include "vw/core/reductions/automl.h"
 
+#include "simulator.h"
 #include "vw/core/automl_impl.h"
 #include "vw/core/confidence_sequence_robust.h"
 #include "vw/core/metric_sink.h"
-#include "simulator.h"
 #include "vw/core/vw_fwd.h"
 
 #include <gtest/gtest.h>
