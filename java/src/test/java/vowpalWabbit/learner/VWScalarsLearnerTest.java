@@ -132,9 +132,9 @@ public class VWScalarsLearnerTest extends VWTestHelper {
         vw.close();
 
         float[][] expected = new float[][]{
-                new float[]{0.333333f, 0.f, 0.f},
-                new float[]{0.38244691f, 0.f, 0.f},
-                new float[]{0.4915067f, 0.f, 0.f},
+                new float[]{0.333333f, 0.33333334f, 0.33333334f},
+                new float[]{0.38244691f, 0.61757493f},
+                new float[]{0.4915067f, 0.50853986f},
         };
         assertEquals(expected.length, pred.length);
         for (int i=0; i<expected.length; ++i)
