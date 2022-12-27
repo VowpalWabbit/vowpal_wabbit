@@ -306,6 +306,7 @@ function(vw_add_test_executable)
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
 
-    gtest_discover_tests(${FULL_TEST_NAME} PROPERTIES "LABELS;VWTestList")
+    gtest_add_tests(TARGET ${FULL_TEST_NAME} TEST_LIST ${FULL_TEST_NAME}_testlist)
+    set_tests_properties(${${FULL_TEST_NAME}_testlist}  PROPERTIES LABELS VWTestList)
   endif()
 endfunction()
