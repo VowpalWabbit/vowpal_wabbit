@@ -272,6 +272,16 @@ function(vw_add_executable)
   endif()
 endfunction()
 
+
+set(GTEST_MAIN_FILE_CONTENTS "#include <gtest/gtest.h>\n\
+\n\
+int main(int argc, char** argv)\n\
+{\n\
+  ::testing::InitGoogleTest(&argc, argv);\n\
+  return RUN_ALL_TESTS();\n\
+}\n"
+)
+
 function(vw_add_test_executable)
   cmake_parse_arguments(VW_TEST
   ""
@@ -294,7 +304,10 @@ function(vw_add_test_executable)
   if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
     vw_get_test_target(FULL_TEST_NAME ${VW_TEST_FOR_LIB})
-    add_executable(${FULL_TEST_NAME} ${VW_TEST_SOURCES})
+
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${FULL_TEST_NAME}_main.cc "${GTEST_MAIN_FILE_CONTENTS}")
+
+    add_executable(${FULL_TEST_NAME} ${CMAKE_CURRENT_BINARY_DIR}/${FULL_TEST_NAME}_main.cc ${VW_TEST_SOURCES})
     target_link_libraries(${FULL_TEST_NAME} PUBLIC
       ${FULL_FOR_LIB_NAME}
       ${VW_TEST_EXTRA_DEPS}
