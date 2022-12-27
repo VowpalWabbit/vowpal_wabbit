@@ -7,6 +7,7 @@
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/action_score.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/model_utils.h"
@@ -123,6 +124,48 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
   }
 }
 }  // namespace
+
+void VW::details::print_cs_update_multiclass(VW::workspace& all, bool is_test, size_t num_features, uint32_t prediction)
+{
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  {
+    std::string label_buf;
+    if (is_test) { label_buf = "unknown"; }
+    else { label_buf = "known"; }
+
+    if (all.sd->ldict)
+    {
+      std::ostringstream pred_buf;
+      pred_buf << all.sd->ldict->get(prediction);
+
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+          num_features, all.progress_add, all.progress_arg);
+    }
+    else
+    {
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction,
+          num_features, all.progress_add, all.progress_arg);
+    }
+  }
+}
+
+void VW::details::print_cs_update_action_scores(
+    VW::workspace& all, bool is_test, size_t num_features, const VW::action_scores& action_scores)
+{
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  {
+    std::string label_buf;
+    if (is_test) { label_buf = "unknown"; }
+    else { label_buf = "known"; }
+
+    std::ostringstream pred_buf;
+    if (all.sd->ldict) { pred_buf << all.sd->ldict->get(action_scores[0].action); }
+    else { pred_buf << action_scores[0].action; }
+    pred_buf << ".....";
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+        num_features, all.progress_add, all.progress_arg);
+  }
+}
 
 void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool action_scores, uint32_t prediction)

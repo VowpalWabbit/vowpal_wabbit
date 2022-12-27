@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/core/action_score.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
@@ -58,6 +59,10 @@ void finish_cs_example(VW::workspace& all, T&, VW::example& ec)
 }
 void print_cs_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool multilabel, uint32_t prediction);
+
+void print_cs_update_multiclass(VW::workspace& all, bool is_test, size_t num_features, uint32_t prediction);
+void print_cs_update_action_scores(
+    VW::workspace& all, bool is_test, size_t num_features, const VW::action_scores& action_scores);
 }  // namespace details
 }  // namespace VW
 
