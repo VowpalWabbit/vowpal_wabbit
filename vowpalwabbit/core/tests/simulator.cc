@@ -119,8 +119,7 @@ void cb_sim::call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_
   if (iter != callbacks.end())
   {
     callback_count++;
-    bool callback_result = iter->second(*this, vw, ex);
-    assert(callback_result);
+    if (!iter->second(*this, vw, ex)) { THROW("Simulator callback returned false"); }
   }
 }
 
