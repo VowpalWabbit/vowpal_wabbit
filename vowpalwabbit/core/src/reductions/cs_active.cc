@@ -93,10 +93,7 @@ float binary_search(float fhat, float delta, float sens, float tol)
     w = (u + l) / 2.f;
     v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
     if (v > 0) { u = w; }
-    else
-    {
-      l = w;
-    }
+    else { l = w; }
     if (std::fabs(v) <= tol || u - l <= tol) { break; }
   }
 
@@ -120,10 +117,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
         ec.l.simple.label = cost;
         all.sd->queries += 1;
       }
-      else
-      {
-        ec.l.simple.label = FLT_MAX;
-      }
+      else { ec.l.simple.label = FLT_MAX; }
     }
     else
     {
@@ -138,10 +132,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
           cs_a.all->logger.err_warn("Cost {0} outside of cost range[{1}, {2}]", cost, cs_a.cost_min, cs_a.cost_max);
         }
       }
-      else
-      {
-        ec.l.simple.label = FLT_MAX;
-      }
+      else { ec.l.simple.label = FLT_MAX; }
     }
 
     if (ec.l.simple.label != FLT_MAX) { base.learn(ec, i - 1); }
