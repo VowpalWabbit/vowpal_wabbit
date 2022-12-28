@@ -504,8 +504,8 @@ std::string number_to_natural(size_t big)
   return ss.str();
 }
 
-void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const search& data, const VW::multi_ex& ec_seq,
-    VW::io::logger& /* unused */)
+void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const search& data,
+    const VW::multi_ex& /* ec_seq */, VW::io::logger& /* unused */)
 {
   // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
