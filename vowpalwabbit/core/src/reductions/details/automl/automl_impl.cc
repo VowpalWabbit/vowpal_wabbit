@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "../automl_impl.h"
+#include "vw/core/automl_impl.h"
 
 #include "vw/common/vw_exception.h"
-#include "vw/core/confidence_sequence.h"
+#include "vw/core/confidence_sequence_robust.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -64,7 +64,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
     priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
-    config_type conf_type, std::string trace_prefix)
+    config_type conf_type, std::string trace_prefix, bool reward_as_cost)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -75,6 +75,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , _ccb_on(ccb_on)
     , _config_oracle(
           config_oracle_impl(default_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
+    , reward_as_cost(reward_as_cost)
 {
   if (trace_prefix != "")
   {
@@ -358,11 +359,12 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   }
 }
 
-template class interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence>;
-template class interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence>;
-template class interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence>;
-template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>;
-template class interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence>;
+template class interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence_robust>;
+template class interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence_robust>;
+template class interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence_robust>;
+template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>,
+    VW::estimators::confidence_sequence_robust>;
+template class interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>;
 
 template <typename CMType>
 void automl<CMType>::one_step(
@@ -387,7 +389,7 @@ void automl<CMType>::offset_learn(
   }
 
   const float w = logged.probability > 0 ? 1 / logged.probability : 0;
-  const float r = -logged.cost;
+  const float r = cm->reward_as_cost ? logged.cost : -logged.cost;
 
   if (cm->inputlabel_log_file)
   {
@@ -434,12 +436,16 @@ void automl<CMType>::offset_learn(
   }
 }
 
-template class automl<interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence>>;
-template class automl<interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence>>;
-template class automl<interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence>>;
 template class automl<
-    interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence>>;
-template class automl<interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence>>;
+    interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence_robust>>;
+template class automl<
+    interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence_robust>>;
+template class automl<
+    interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence_robust>>;
+template class automl<
+    interaction_config_manager<config_oracle<one_diff_inclusion_impl>, VW::estimators::confidence_sequence_robust>>;
+template class automl<
+    interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>>;
 
 }  // namespace automl
 }  // namespace reductions

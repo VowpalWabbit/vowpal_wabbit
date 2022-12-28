@@ -30,7 +30,7 @@ public:
 
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
   void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
-  bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq);
+  bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq, VW::shared_data& sd) const;
 
   cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, VW::workspace* all)
       : _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p), _all(all)
@@ -55,6 +55,7 @@ public:
   }
 
   CB::cb_class* known_cost() { return &gen_cs.known_cost; }
+  const CB::cb_class* known_cost() const { return &gen_cs.known_cost; }
 
 private:
   void learn_ips(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
