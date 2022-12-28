@@ -1,7 +1,3 @@
-if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
-  find_program(VALGRIND "valgrind" REQUIRED)
-endif()
-
 add_executable(vw-unit-test.out
   main.cc
 )
