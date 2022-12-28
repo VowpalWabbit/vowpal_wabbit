@@ -64,7 +64,11 @@ RetType cast_unsigned_to_signed(InputType input)
   static_assert(std::numeric_limits<RetType>::is_integer, "RetType must be an integer type");
   static_assert(std::numeric_limits<InputType>::is_integer, "InputType must be an integer type");
 
-  if (input > std::numeric_limits<RetType>::max())
+  const auto result = static_cast<RetType>(input);
+
+  // If casting the result back to the input type is different (outside range, non-negative) or the result is negative
+  // then the input was too large.
+  if (static_cast<InputType>(result) != input || (result < RetType{}))
   {
     std::stringstream ss;
     ss << "In cast_unsigned_to_signed '" << input
@@ -72,7 +76,7 @@ RetType cast_unsigned_to_signed(InputType input)
     THROW_OR_RETURN(ss.str(), RetType{});
   }
 
-  return static_cast<RetType>(input);
+  return result;
 }
 
 }  // namespace VW

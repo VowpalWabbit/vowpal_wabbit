@@ -5,6 +5,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/core/numeric_casts.h"
 
+#include <_types/_uint8_t.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -25,4 +26,12 @@ TEST(numeric_cast_tests, numeric_cast_tests)
   EXPECT_EQ(VW::cast_signed_to_unsigned<uint32_t>(static_cast<int32_t>(10)), 10);
   // Larger unsigned to smaller signed
   EXPECT_EQ(VW::cast_signed_to_unsigned<uint8_t>(static_cast<int32_t>(10)), 10);
+}
+
+TEST(numeric_cast_tests, cast_unsigned_to_signed_tests)
+{
+  EXPECT_THROW(VW::cast_unsigned_to_signed<int8_t>(static_cast<uint32_t>(1000)), VW::vw_exception);
+  EXPECT_EQ(VW::cast_unsigned_to_signed<int8_t>(static_cast<uint32_t>(60)), 60);
+  EXPECT_EQ(VW::cast_unsigned_to_signed<int8_t>(static_cast<uint8_t>(60)), 60);
+  EXPECT_THROW(VW::cast_unsigned_to_signed<int8_t>(static_cast<uint8_t>(200)), VW::vw_exception);
 }
