@@ -3,21 +3,7 @@ if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
 endif()
 
 add_executable(vw-unit-test.out
-  cats_user_provided_pdf.cc
-  cb_large_actions_test.cc
-  cb_las_one_pass_svd_test.cc
-  cb_las_spanner_test.cc
-  ccb_parser_test.cc
-  ccb_test.cc
-  chain_hashing.cc
-  confidence_sequence_test.cc
-  continuous_actions_parser_test.cc
-  custom_reduction_test.cc
-  distributionally_robust_test.cc
   main.cc
-  tag_utils_test.cc
-  test_common.cc
-  test_common.h
 )
 
 if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))

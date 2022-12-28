@@ -467,4 +467,19 @@ vw_add_test_executable(
       tests/v_array_test.cc
       tests/vw_versions_test.cc
       tests/weights_test.cc
+      tests/cats_user_provided_pdf.cc
+      tests/cb_large_actions_test.cc
+     tests/cb_las_one_pass_svd_test.cc
+     tests/cb_las_spanner_test.cc
+     tests/ccb_parser_test.cc
+     tests/ccb_test.cc
+     tests/chain_hashing.cc
+     tests/confidence_sequence_test.cc
+     tests/continuous_actions_parser_test.cc
+     tests/custom_reduction_test.cc
+     tests/tag_utils_test.cc
+     tests/distributionally_robust_test.cc
 )
+
+# Tests are allowed to access private headers.
+target_include_directories(vw_core_test PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
