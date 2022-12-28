@@ -5,7 +5,6 @@
 #include "vw/common/vw_exception.h"
 #include "vw/core/numeric_casts.h"
 
-#include <_types/_uint8_t.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
