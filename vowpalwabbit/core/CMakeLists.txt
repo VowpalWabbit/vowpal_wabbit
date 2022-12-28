@@ -427,8 +427,19 @@ vw_add_test_executable(
       tests/baseline_cb_test.cc
       tests/cats_test.cc
       tests/cats_tree_test.cc
+      tests/cats_user_provided_pdf.cc
       tests/cb_explore_adf_test.cc
+      tests/cb_large_actions_test.cc
+      tests/cb_las_one_pass_svd_test.cc
+      tests/cb_las_spanner_test.cc
+      tests/ccb_parser_test.cc
+      tests/ccb_test.cc
+      tests/chain_hashing.cc
       tests/confidence_sequence_robust_test.cc
+      tests/confidence_sequence_test.cc
+      tests/continuous_actions_parser_test.cc
+      tests/custom_reduction_test.cc
+      tests/distributionally_robust_test.cc
       tests/eigen_memory_tree_test.cc
       tests/epsilon_decay_test.cc
       tests/epsilon_test.cc
@@ -461,25 +472,16 @@ vw_add_test_executable(
       tests/slates_parser_test.cc
       tests/slates_test.cc
       tests/status_builder_test.cc
+      tests/tag_utils_test.cc
       tests/thread_pool_test.cc
       tests/tokenize_test.cc
       tests/tutorial_test.cc
       tests/v_array_test.cc
       tests/vw_versions_test.cc
       tests/weights_test.cc
-      tests/cats_user_provided_pdf.cc
-      tests/cb_large_actions_test.cc
-     tests/cb_las_one_pass_svd_test.cc
-     tests/cb_las_spanner_test.cc
-     tests/ccb_parser_test.cc
-     tests/ccb_test.cc
-     tests/chain_hashing.cc
-     tests/confidence_sequence_test.cc
-     tests/continuous_actions_parser_test.cc
-     tests/custom_reduction_test.cc
-     tests/tag_utils_test.cc
-     tests/distributionally_robust_test.cc
 )
 
-# Tests are allowed to access private headers.
-target_include_directories(vw_core_test PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+  # Tests are allowed to access private headers.
+  target_include_directories(vw_core_test PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
+endif()
