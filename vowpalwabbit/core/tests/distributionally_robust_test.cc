@@ -66,7 +66,7 @@ TEST(distributionally_robust_tests, distributionally_robust_recompute_duals)
     EXPECT_DOUBLE_EQ(d.n, 0);
   }
 
-  for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
+  for (size_t i = 0; i < std::extent<decltype(data)>::value; ++i)
   {
     onlinechisq->update(data[i].first, data[i].second);
     auto sd = onlinechisq->recompute_duals();
@@ -98,7 +98,7 @@ TEST(distributionally_robust_tests, distributionally_robust_qlb)
 
   auto onlinechisq = VW::make_unique<VW::estimators::ChiSquared>(0.05, 0.999);
 
-  for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
+  for (size_t i = 0; i < std::extent<decltype(data)>::value; ++i)
   {
     onlinechisq->update(data[i].first, data[i].second);
     auto v = onlinechisq->qlb(data[i].first, data[i].second, 1);

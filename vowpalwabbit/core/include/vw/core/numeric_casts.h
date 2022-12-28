@@ -56,4 +56,23 @@ RetType cast_signed_to_unsigned(InputType input)
   return cast_to_smaller_type<RetType>(unsigned_input);
 }
 
+template <typename RetType, typename InputType>
+RetType cast_unsigned_to_signed(InputType input)
+{
+  static_assert(!std::numeric_limits<InputType>::is_signed, "InputType must be unsigned");
+  static_assert(std::numeric_limits<RetType>::is_signed, "RetType must be signed");
+  static_assert(std::numeric_limits<RetType>::is_integer, "RetType must be an integer type");
+  static_assert(std::numeric_limits<InputType>::is_integer, "InputType must be an integer type");
+
+  if (input > std::numeric_limits<RetType>::max())
+  {
+    std::stringstream ss;
+    ss << "In cast_unsigned_to_signed '" << input
+       << "' cannot be cast to a signed type as it is outside of the bounds of the signed type.";
+    THROW_OR_RETURN(ss.str(), RetType{});
+  }
+
+  return static_cast<RetType>(input);
+}
+
 }  // namespace VW

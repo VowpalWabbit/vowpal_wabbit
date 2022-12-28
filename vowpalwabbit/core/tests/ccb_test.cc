@@ -61,7 +61,7 @@ TEST(ccb_tests, ccb_exploration_reproducibility_test)
     const std::string json =
         R"({"GUser":{"shared_feature":"feature"},"_multi":[{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}},{"TAction":{"feature1":3.0,"feature2":"name1"}}],"_slots":[{"_id":"slot1"},{"_id":"slot2"}]})";
     auto examples = vwtest::parse_json(*vw, json);
-    for (int i = 0; i < event_ids.size(); i++)
+    for (size_t i = 0; i < event_ids.size(); i++)
     {
       const size_t slot_example_indx = examples.size() - event_ids.size() + i;
       examples[slot_example_indx]->tag.insert(examples[slot_example_indx]->tag.end(), SEED_TAG.begin(), SEED_TAG.end());
@@ -74,7 +74,8 @@ TEST(ccb_tests, ccb_exploration_reproducibility_test)
     vw->predict(examples);
     auto& decision_scores = examples[0]->pred.decision_scores;
     std::vector<uint32_t> current;
-    for (size_t i = 0; i < decision_scores.size(); ++i) { current.push_back(decision_scores[i][0].action); }
+    current.reserve(decision_scores.size());
+    for (auto& decision_score : decision_scores) { current.push_back(decision_score[0].action); }
     if (!previous.empty())
     {
       EXPECT_EQ(current.size(), previous.size());

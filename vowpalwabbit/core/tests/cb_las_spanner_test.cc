@@ -155,7 +155,7 @@ TEST(las_tests, check_spanner_results_squarecb)
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
 
     {
@@ -260,7 +260,7 @@ TEST(las_tests, check_spanner_results_epsilon_greedy)
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
 
     {
@@ -285,7 +285,7 @@ TEST(las_tests, check_spanner_results_epsilon_greedy)
       // check either 1 or 2 but not both since they are a duplicate
 
       size_t encounters = 0;
-      for (auto& a_s : preds)
+      for (const auto& a_s : preds)
       {
         if (a_s.action == 1 && a_s.score != 0.f)
         {
@@ -315,18 +315,17 @@ TEST(las_tests, check_uniform_probabilities_before_learning)
           " --quiet --noconstant --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_epsilon, false});
+  vws.emplace_back(vw_epsilon, false);
 
   auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
           std::to_string(d) + " --quiet --noconstant --two_pass_svd",
       nullptr, false, nullptr, nullptr);
 
-  vws.push_back({vw_squarecb, true});
+  vws.emplace_back(vw_squarecb, true);
 
   for (auto& vw_pair : vws)
   {
     auto& vw = *std::get<0>(vw_pair);
-    auto apply_diag_M = std::get<1>(vw_pair);
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
@@ -403,7 +402,7 @@ TEST(las_tests, check_probabilities_when_d_is_larger)
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
 
     {
@@ -434,14 +433,14 @@ static std::vector<std::string> gen_cb_examples(
   srand(0);
   std::vector<std::string> examples;
 
-  int action_ind = rand() % actions_per_example;
-  for (int ac = 0; ac < actions_per_example; ++ac)
+  size_t action_ind = rand() % actions_per_example;
+  for (size_t ac = 0; ac < actions_per_example; ++ac)
   {
     std::ostringstream action_ss;
     if (ac == action_ind && add_cost) { action_ss << action_ind << ":1.0:0.5 "; }
 
     action_ss << "| ";
-    for (int action_feat = 0; action_feat < coordinates; ++action_feat)
+    for (size_t action_feat = 0; action_feat < coordinates; ++action_feat)
     {
       action_ss << "x" << action_feat << ":" << ((static_cast<double>(std::rand()) / RAND_MAX) * scale) << " ";
     }
@@ -458,7 +457,7 @@ TEST(las_tests, check_spanner_chooses_actions_that_clearly_maximise_volume)
   // 10d - d (the rest) actions with smaller values
   // expect the d actions to be chosen by the spanner
 
-  auto d = 5;
+  uint32_t d = 5;
   auto K = 10 * d;
 
   auto exs = gen_cb_examples(K - d, 10, 1.f);
@@ -500,7 +499,7 @@ TEST(las_tests, check_spanner_chooses_actions_that_clearly_maximise_volume)
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
     action_space->explore._populate_all_testing_components();
 
@@ -513,7 +512,6 @@ TEST(las_tests, check_spanner_chooses_actions_that_clearly_maximise_volume)
 
       vw.predict(examples);
 
-      const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
 
       size_t count_non_zero_scores = 0;
@@ -562,7 +560,6 @@ TEST(las_tests, check_spanner_chooses_actions_that_clearly_maximise_volume)
 
       vw.predict(examples);
 
-      const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
 
       size_t count_non_zero_scores = 0;
@@ -654,7 +651,7 @@ TEST(las_tests, check_spanner_rejects_same_actions)
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
     action_space->explore._populate_all_testing_components();
 
@@ -674,11 +671,10 @@ TEST(las_tests, check_spanner_rejects_same_actions)
 
       vw.predict(examples);
 
-      const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
 
       size_t encounters = 0;
-      for (auto& a_s : preds)
+      for (const auto& a_s : preds)
       {
         if (a_s.action == 1 && a_s.score != 0.f) { encounters++; }
         if (a_s.action == 2 && a_s.score != 0.f) { encounters++; }
@@ -722,7 +718,7 @@ TEST(las_tests, check_spanner_with_actions_that_are_linear_combinations_of_other
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
     action_space->explore._populate_all_testing_components();
 
@@ -775,12 +771,11 @@ TEST(las_tests, check_spanner_with_actions_that_are_linear_combinations_of_other
 
       vw.predict(examples);
 
-      const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
 
       size_t encounters = 0;
       bool action_4_in_spanner = false;
-      for (auto& a_s : preds)
+      for (const auto& a_s : preds)
       {
         if (a_s.action == 1 && a_s.score != 0.f) { encounters++; }
         if (a_s.action == 2 && a_s.score != 0.f) { encounters++; }
@@ -839,7 +834,7 @@ TEST(las_tests, check_singular_value_sum_diff_for_diff_ranks_is_small)
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
     action_space->explore._populate_all_testing_components();
 

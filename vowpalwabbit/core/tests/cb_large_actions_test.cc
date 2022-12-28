@@ -4,6 +4,7 @@
 
 #include "reductions/cb/details/large_action_space.h"
 #include "vw/core/constant.h"
+#include "vw/core/numeric_casts.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
@@ -24,7 +25,7 @@ using internal_action_space_op =
 
 TEST(las_tests, creation_of_the_og_A_matrix)
 {
-  auto d = 2;
+  uint32_t d = 2;
   auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
           " --quiet --random_seed 5 --two_pass_svd",
       nullptr, false, nullptr, nullptr);
@@ -85,7 +86,7 @@ TEST(las_tests, creation_of_the_og_A_matrix)
 
 TEST(las_tests, check_interactions_on_Y)
 {
-  auto d = 2;
+  uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
   auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
           " --quiet --random_seed 5 --two_pass_svd",
@@ -151,7 +152,7 @@ TEST(las_tests, check_interactions_on_Y)
 
 TEST(las_tests, check_interactions_on_B)
 {
-  auto d = 2;
+  uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
   auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
           " --quiet --random_seed 5 --two_pass_svd",
@@ -208,7 +209,7 @@ TEST(las_tests, check_interactions_on_B)
 
 TEST(las_tests, check_At_times_Omega_is_Y)
 {
-  auto d = 2;
+  uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
   auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
           " --quiet --random_seed 5 --two_pass_svd",
@@ -266,7 +267,6 @@ TEST(las_tests, check_At_times_Omega_is_Y)
 
       // Generate Omega
       std::vector<Eigen::Triplet<float>> omega_triplets;
-      uint64_t max_ft_index = 0;
 
       float seed = (vw.get_random_state()->get_random() + 1) * 10.f;
 
@@ -277,6 +277,7 @@ TEST(las_tests, check_At_times_Omega_is_Y)
         EXPECT_EQ(!CB::ec_is_example_header(*ex), true);
         for (auto ns : ex->indices)
         {
+          _UNUSED(ns);
           for (uint64_t col = 0; col < d; col++)
           {
             uint64_t combined_index = action_index + col + seed;
@@ -298,7 +299,8 @@ TEST(las_tests, check_At_times_Omega_is_Y)
 
       if (apply_diag_M)
       {
-        for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+        for (Eigen::Index i = 0;
+             i < VW::cast_unsigned_to_signed<Eigen::Index>(action_space->explore.shrink_factors.size()); i++)
         {
           diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
         }
@@ -320,7 +322,7 @@ TEST(las_tests, check_At_times_Omega_is_Y)
 
 TEST(las_tests, check_A_times_Y_is_B)
 {
-  auto d = 2;
+  uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
   auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
           " --quiet --random_seed 5 --two_pass_svd",
@@ -374,7 +376,8 @@ TEST(las_tests, check_A_times_Y_is_B)
 
       if (apply_diag_M)
       {
-        for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+        for (Eigen::Index i = 0;
+             i < VW::cast_unsigned_to_signed<Eigen::Index>(action_space->explore.shrink_factors.size()); i++)
         {
           diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
         }
@@ -392,7 +395,7 @@ TEST(las_tests, check_A_times_Y_is_B)
 
 TEST(las_tests, check_B_times_P_is_Z)
 {
-  auto d = 2;
+  uint32_t d = 2;
 
   std::vector<std::pair<VW::workspace*, bool>> vws;
   auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
@@ -534,7 +537,8 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
 
     if (apply_diag_M)
     {
-      for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+      for (Eigen::Index i = 0;
+           i < VW::cast_unsigned_to_signed<Eigen::Index>(action_space->explore.shrink_factors.size()); i++)
       {
         diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
       }
@@ -552,7 +556,7 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
     Eigen::JacobiSVD<Eigen::MatrixXf> svd(A_dense, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Eigen::VectorXf S = svd.singularValues();
 
-    for (size_t i = 0; i < action_space->explore.S.rows(); i++)
+    for (int i = 0; i < action_space->explore.S.rows(); i++)
     {
       EXPECT_NEAR(S(i) - action_space->explore.S(i), 0.f, vwtest::EXPLICIT_FLOAT_TOL);
     }
@@ -563,7 +567,7 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
 
 TEST(las_tests, check_final_truncated_SVD_validity)
 {
-  auto d = 3;
+  uint32_t d = 3;
 
   std::vector<std::tuple<VW::workspace*, bool, VW::cb_explore_adf::implementation_type>> vws;
 
@@ -611,7 +615,7 @@ TEST(las_tests, check_final_truncated_SVD_validity)
 
 TEST(las_tests, check_shrink_factor)
 {
-  auto d = 2;
+  uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
   auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
           " --quiet --random_seed 5 --two_pass_svd",
@@ -667,7 +671,8 @@ TEST(las_tests, check_shrink_factor)
     Eigen::SparseMatrix<float> identity_diag_M(num_actions, num_actions);
     identity_diag_M.setIdentity();
 
-    for (Eigen::Index i = 0; i < action_space->explore.shrink_factors.size(); i++)
+    for (Eigen::Index i = 0; i < VW::cast_unsigned_to_signed<Eigen::Index>(action_space->explore.shrink_factors.size());
+         i++)
     {
       diag_M.coeffRef(i, i) = action_space->explore.shrink_factors[i];
     }
