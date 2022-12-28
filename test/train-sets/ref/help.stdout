@@ -261,6 +261,8 @@ Weight Options:
                                             0.05, keep, experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
                                             (bonferroni correction) (type: bool, keep, experimental)
+    --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
+                                            experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
                                             separately in regression (type: bool, keep, necessary)
@@ -584,6 +586,8 @@ Weight Options:
     --shift_model_bounds arg                Shift maximum update_count for model i from champ_update_count^(i
                                             / num_models) to champ_update_count^((i + shift) / (num_models
                                             + shift)) (type: uint, default: 0, keep, experimental)
+    --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
+                                            experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)

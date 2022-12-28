@@ -6,6 +6,7 @@ set(vw_core_headers
   include/vw/core/array_parameters_dense.h
   include/vw/core/array_parameters_sparse.h
   include/vw/core/array_parameters.h
+  include/vw/core/automl_impl.h
   include/vw/core/best_constant.h
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
@@ -421,12 +422,15 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
+      tests/automl_test.cc
+      tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
       tests/cats_test.cc
       tests/cats_tree_test.cc
       tests/cb_explore_adf_test.cc
       tests/confidence_sequence_robust_test.cc
       tests/eigen_memory_tree_test.cc
+      tests/epsilon_decay_test.cc
       tests/epsilon_test.cc
       tests/example_header_test.cc
       tests/example_test.cc
@@ -452,11 +456,14 @@ vw_add_test_executable(
       tests/random_test.cc
       tests/save_load_test.cc
       tests/scope_exit_test.cc
+      tests/simulator.cc
+      tests/simulator.h
       tests/slates_parser_test.cc
       tests/slates_test.cc
       tests/status_builder_test.cc
       tests/thread_pool_test.cc
       tests/tokenize_test.cc
+      tests/tutorial_test.cc
       tests/v_array_test.cc
       tests/vw_versions_test.cc
       tests/weights_test.cc
