@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
@@ -14,6 +14,7 @@
 #include "vw/core/reduction_stack.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/test_common/test_common.h"
 
 // this file would live in toy_reduction.cc
 // toy_reduction.h would define test_reduction_setup(..) fn
@@ -31,13 +32,13 @@ bool called_learn_predict = false;
 template <bool is_learn>
 void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  BOOST_CHECK(added_to_learner);
+  EXPECT_TRUE(added_to_learner);
   called_learn_predict = true;
 
   if (is_learn)
   {
     // this test gets used with that specific label
-    BOOST_CHECK_CLOSE(ec.l.simple.label, 0.195748, 1E-3);
+    EXPECT_NEAR(ec.l.simple.label, 0.195748f, vwtest::EXPLICIT_FLOAT_TOL);
     base.learn(ec);
   }
   else { base.predict(ec); }
@@ -47,8 +48,8 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
 template <bool test_stack>
 VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
 {
-  BOOST_CHECK(added_to_learner == false);
-  BOOST_CHECK(called_learn_predict == false);
+  EXPECT_TRUE(added_to_learner == false);
+  EXPECT_TRUE(called_learn_predict == false);
 
   VW::config::options_i& options = *stack_builder.get_options();
 
@@ -57,7 +58,7 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("ksvm")) { return nullptr; }
 
   auto base = stack_builder.setup_base_learner();
-  BOOST_CHECK(base->is_multiline() == false);
+  EXPECT_TRUE(base->is_multiline() == false);
 
   auto ret = VW::LEARNER::make_no_data_reduction_learner(as_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(test_reduction_setup<test_stack>))
@@ -73,14 +74,14 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
 
     // this is the learner stack of instantiated reductions,
     // included itself "test_reduction_name"
-    BOOST_CHECK_EQUAL(enabled_reductions.size(), 4);
-    BOOST_CHECK_EQUAL(enabled_reductions[0], "gd");
-    BOOST_CHECK_EQUAL(enabled_reductions[1], "scorer-identity");
+    EXPECT_EQ(enabled_reductions.size(), 4);
+    EXPECT_EQ(enabled_reductions[0], "gd");
+    EXPECT_EQ(enabled_reductions[1], "scorer-identity");
     // this matches string from custom_builder constructor auto-magically [sic]
-    BOOST_CHECK_EQUAL(enabled_reductions[2], "count_label");
-    BOOST_CHECK_EQUAL(enabled_reductions[3], "test_reduction_name");
+    EXPECT_EQ(enabled_reductions[2], "count_label");
+    EXPECT_EQ(enabled_reductions[3], "test_reduction_name");
   }
-  else { BOOST_CHECK(false); }
+  else { EXPECT_TRUE(false); }
 
   return make_base(*ret);
 }
@@ -108,17 +109,17 @@ public:
   custom_builder()
   {
     // this is the reduction stack of function pointers
-    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[0]), "gd");
-    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[1]), "ksvm");
-    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[2]), "ftrl");
+    EXPECT_EQ(std::get<0>(_reduction_stack[0]), "gd");
+    EXPECT_EQ(std::get<0>(_reduction_stack[1]), "ksvm");
+    EXPECT_EQ(std::get<0>(_reduction_stack[2]), "ftrl");
 
-    BOOST_CHECK_GT(_reduction_stack.size(), 77);
+    EXPECT_GT(_reduction_stack.size(), 77);
     // erase "ksvm" just as a proof of concept
     // see custom_reduction_builder_check_throw below
     _reduction_stack.erase(_reduction_stack.begin() + 1);
 
-    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[0]), "gd");
-    BOOST_CHECK_EQUAL(std::get<0>(_reduction_stack[1]), "ftrl");
+    EXPECT_EQ(std::get<0>(_reduction_stack[0]), "gd");
+    EXPECT_EQ(std::get<0>(_reduction_stack[1]), "ftrl");
 
     _reduction_stack.emplace_back("test_reduction_name", toy_reduction::test_reduction_setup<true>);
   }
@@ -136,7 +137,7 @@ public:
 //
 // these test reductions are useful for CI and advanced testing but are not
 // important enough to pollute setup_base(..) default stack
-BOOST_AUTO_TEST_CASE(custom_reduction_test)
+TEST(custom_reduction_tests, custom_reduction_test)
 {
   toy_reduction::reset_test_state();
 
@@ -146,19 +147,19 @@ BOOST_AUTO_TEST_CASE(custom_reduction_test)
   {
     auto learner_builder = VW::make_unique<custom_builder>();
 
-    BOOST_CHECK(toy_reduction::added_to_learner == false);
-    BOOST_CHECK(toy_reduction::called_learn_predict == false);
+    EXPECT_TRUE(toy_reduction::added_to_learner == false);
+    EXPECT_TRUE(toy_reduction::called_learn_predict == false);
     auto& vw = *VW::initialize_with_builder(sgd_args, nullptr, false, nullptr, nullptr, std::move(learner_builder));
-    BOOST_CHECK(toy_reduction::added_to_learner);
-    BOOST_CHECK(toy_reduction::called_learn_predict == false);
+    EXPECT_TRUE(toy_reduction::added_to_learner);
+    EXPECT_TRUE(toy_reduction::called_learn_predict == false);
 
     auto& pre_learn_predict_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
     auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
     auto& predict_example = *VW::read_example(vw, "| 1:1.0");
 
-    BOOST_CHECK(toy_reduction::called_learn_predict == false);
+    EXPECT_TRUE(toy_reduction::called_learn_predict == false);
     vw.predict(pre_learn_predict_example);
-    BOOST_CHECK(toy_reduction::called_learn_predict);
+    EXPECT_TRUE(toy_reduction::called_learn_predict);
 
     vw.finish_example(pre_learn_predict_example);
     vw.learn(learn_example);
@@ -168,8 +169,8 @@ BOOST_AUTO_TEST_CASE(custom_reduction_test)
     vw.finish_example(predict_example);
     VW::finish(vw);
 
-    BOOST_CHECK(toy_reduction::added_to_learner);
-    BOOST_CHECK(toy_reduction::called_learn_predict);
+    EXPECT_TRUE(toy_reduction::added_to_learner);
+    EXPECT_TRUE(toy_reduction::called_learn_predict);
   }
 
   // reset for next part of test
@@ -177,8 +178,8 @@ BOOST_AUTO_TEST_CASE(custom_reduction_test)
 
   float prediction_two;
   {
-    BOOST_CHECK(toy_reduction::added_to_learner == false);
-    BOOST_CHECK(toy_reduction::called_learn_predict == false);
+    EXPECT_TRUE(toy_reduction::added_to_learner == false);
+    EXPECT_TRUE(toy_reduction::called_learn_predict == false);
     auto& vw = *VW::initialize(sgd_args);
 
     auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
@@ -192,14 +193,14 @@ BOOST_AUTO_TEST_CASE(custom_reduction_test)
     VW::finish(vw);
 
     // both should be false since it uses the default stack builder
-    BOOST_CHECK(toy_reduction::added_to_learner == false);
-    BOOST_CHECK(toy_reduction::called_learn_predict == false);
+    EXPECT_TRUE(toy_reduction::added_to_learner == false);
+    EXPECT_TRUE(toy_reduction::called_learn_predict == false);
   }
 
-  BOOST_CHECK_EQUAL(prediction_one, prediction_two);
+  EXPECT_EQ(prediction_one, prediction_two);
 }
 
-BOOST_AUTO_TEST_CASE(custom_reduction_builder_check_throw)
+TEST(custom_reduction_tests, custom_reduction_builder_check_throw)
 {
   toy_reduction::reset_test_state();
 
@@ -212,19 +213,18 @@ BOOST_AUTO_TEST_CASE(custom_reduction_builder_check_throw)
   {
     auto learner_builder = VW::make_unique<custom_builder>();
 
-    BOOST_CHECK_THROW(
-        VW::initialize_with_builder(ksvm_args, nullptr, false, nullptr, nullptr, std::move(learner_builder)),
+    EXPECT_THROW(VW::initialize_with_builder(ksvm_args, nullptr, false, nullptr, nullptr, std::move(learner_builder)),
         VW::vw_exception);
 
     // check that toy_reduction didn't get added to learner
-    BOOST_CHECK(toy_reduction::added_to_learner == false);
-    BOOST_CHECK(toy_reduction::called_learn_predict == false);
+    EXPECT_TRUE(toy_reduction::added_to_learner == false);
+    EXPECT_TRUE(toy_reduction::called_learn_predict == false);
   }
 
   // this test should not throw with:
   // --ksvm'
   // since its using the default builder that has --ksvm
   {
-    BOOST_CHECK_NO_THROW(VW::finish(*VW::initialize(ksvm_args)));
+    EXPECT_NO_THROW(VW::finish(*VW::initialize(ksvm_args)));
   }
 }

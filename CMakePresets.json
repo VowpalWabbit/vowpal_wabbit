@@ -162,14 +162,16 @@
     {
       "name": "vcpkg-debug",
       "configurePreset": "vcpkg-debug",
-      "output": { "outputOnFailure": true, "verbosity": "verbose" },
-      "execution": { "noTestsAction": "error", "stopOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": true },
+      "filter": { "include": { "label": "VWTestList" } }
     },
     {
       "name": "vcpkg-release",
       "configurePreset": "vcpkg-release",
-      "output": { "outputOnFailure": true, "verbosity": "verbose" },
-      "execution": { "noTestsAction": "error", "stopOnFailure": true }
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": true },
+      "filter": { "include": { "label": "VWTestList" } }
     }
   ]
 }
