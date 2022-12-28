@@ -1,7 +1,4 @@
 add_executable(vw-unit-test.out
-  epsilon_decay_test.cc
-  automl_test.cc
-  automl_weights_test.cc
   cats_user_provided_pdf.cc
   cb_large_actions_test.cc
   cb_las_one_pass_svd_test.cc
@@ -14,12 +11,9 @@ add_executable(vw-unit-test.out
   custom_reduction_test.cc
   distributionally_robust_test.cc
   main.cc
-  simulator.cc
-  simulator.h
   tag_utils_test.cc
   test_common.cc
   test_common.h
-  tutorial_test.cc
 )
 
 if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
