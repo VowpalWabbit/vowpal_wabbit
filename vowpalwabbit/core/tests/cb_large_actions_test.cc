@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "reductions/cb/details/large_action_space.h"
+#include "vw/common/future_compat.h"
 #include "vw/core/constant.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/qr_decomposition.h"
@@ -292,6 +293,8 @@ TEST(las_tests, check_At_times_Omega_is_Y)
           [](const float& a, const float& b)
           {
             assert(a == b);
+            // Make release build warnings happy.
+            _UNUSED(a);
             return b;
           });
 
