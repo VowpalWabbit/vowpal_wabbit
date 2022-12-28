@@ -47,9 +47,6 @@ test_build:
 	@echo "vw running test-suite..."
 	cd build; make -j$(nproc) all; make test
 
-unit_test_build:
-	cd build/test/unit_test; make -j$(nproc) vw-unit-test.out test
-
 bigtests_build:
 	cd build; make -j$(nproc) bigtests BIG_TEST_ARGS="$(MAKEFLAGS)"
 
