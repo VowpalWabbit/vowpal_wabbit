@@ -87,45 +87,27 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
   else { ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1; }
 }
 
-void update_stats_cb_to_cb_adf(const VW::workspace& all, VW::shared_data& sd,
-    const cb_to_cb_adf& c, const VW::example& ec, VW::io::logger& logger)
+void update_stats_cb_to_cb_adf(
+    const VW::workspace& all, VW::shared_data& sd, const cb_to_cb_adf& c, const VW::example& ec, VW::io::logger& logger)
 {
-  if (c.explore_mode)
-  {
-    c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s;
-  }
-  else
-  {
-    c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass;
-  }
+  if (c.explore_mode) { c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s; }
+  else { c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass; }
   c.adf_learner->update_stats(all, sd, c.adf_data.ecs, logger);
 }
 
-void print_update_cb_to_cb_adf(VW::workspace& all, VW::shared_data& sd, const cb_to_cb_adf& c,
-    const VW::example& ec, VW::io::logger& logger)
+void print_update_cb_to_cb_adf(
+    VW::workspace& all, VW::shared_data& sd, const cb_to_cb_adf& c, const VW::example& ec, VW::io::logger& logger)
 {
-  if (c.explore_mode)
-  {
-    c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s;
-  }
-  else
-  {
-    c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass;
-  }
+  if (c.explore_mode) { c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s; }
+  else { c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass; }
   c.adf_learner->print_update(all, sd, c.adf_data.ecs, logger);
 }
 
-void output_example_prediction_cb_to_cb_adf(VW::workspace& all, const cb_to_cb_adf& c,
-    const VW::example& ec, VW::io::logger& logger)
+void output_example_prediction_cb_to_cb_adf(
+    VW::workspace& all, const cb_to_cb_adf& c, const VW::example& ec, VW::io::logger& logger)
 {
-  if (c.explore_mode)
-  {
-    c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s;
-  }
-  else
-  {
-    c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass;
-  }
+  if (c.explore_mode) { c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s; }
+  else { c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass; }
   c.adf_learner->output_example_prediction(all, c.adf_data.ecs, logger);
 }
 }  // namespace
