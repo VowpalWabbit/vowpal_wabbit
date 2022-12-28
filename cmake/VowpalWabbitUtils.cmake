@@ -275,11 +275,12 @@ function(vw_add_test_executable)
   if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
     vw_get_test_target(FULL_TEST_NAME ${VW_TEST_FOR_LIB})
+
     add_executable(${FULL_TEST_NAME} ${VW_TEST_SOURCES})
     target_link_libraries(${FULL_TEST_NAME} PUBLIC
       ${FULL_FOR_LIB_NAME}
       ${VW_TEST_EXTRA_DEPS}
-      GTest::gmock GTest::gtest
+      GTest::gmock GTest::gtest_main
     )
     target_compile_definitions(${FULL_TEST_NAME} PRIVATE ${VW_TEST_COMPILE_DEFS})
     target_compile_options(${FULL_TEST_NAME} PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})

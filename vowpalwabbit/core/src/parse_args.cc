@@ -23,7 +23,6 @@
 #include "vw/core/memory.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
@@ -42,6 +41,7 @@
 #include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
 #include "vw/io/owning_stream.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -221,10 +221,10 @@ void parse_dictionary_argument(VW::workspace& all, const std::string& str)
     }
     d--;
     *d = '|';  // set up for parser::read_line
-    VW::read_line(all, &ec, d);
+    VW::parsers::text::read_line(all, &ec, d);
     // now we just need to grab stuff from the default namespace of ec!
     if (ec.feature_space[def].empty()) { continue; }
-    map->emplace(word, VW::make_unique<features>(ec.feature_space[def]));
+    map->emplace(word, VW::make_unique<VW::features>(ec.feature_space[def]));
 
     // clear up ec
     ec.tag.clear();
@@ -567,7 +567,7 @@ std::vector<VW::namespace_index> parse_char_interactions(VW::string_view input, 
   return result;
 }
 
-std::vector<extent_term> VW::details::parse_full_name_interactions(VW::workspace& all, VW::string_view str)
+std::vector<VW::extent_term> VW::details::parse_full_name_interactions(VW::workspace& all, VW::string_view str)
 {
   std::vector<extent_term> result;
   auto encoded = VW::decode_inline_hex(str, all.logger);
@@ -1402,7 +1402,7 @@ ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t 
 }
 
 std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_deleter_type> options,
-    trace_message_t trace_listener, void* trace_context, VW::io::logger* custom_logger)
+    VW::trace_message_t trace_listener, void* trace_context, VW::io::logger* custom_logger)
 {
   auto logger = custom_logger != nullptr
       ? *custom_logger
@@ -1528,7 +1528,7 @@ std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<options_i, options_del
     }
   }
 
-  all->example_parser = new VW::parser{final_example_queue_limit, strict_parse};
+  all->example_parser = VW::make_unique<VW::parser>(final_example_queue_limit, strict_parse);
 
   option_group_definition weight_args("Weight");
   weight_args
@@ -1830,7 +1830,7 @@ void print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enab
 }
 
 VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_model_load,
-    trace_message_t trace_listener, void* trace_context)
+    VW::trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
 
@@ -1838,7 +1838,7 @@ VW::workspace* initialize(config::options_i& options, io_buf* model, bool skip_m
 }
 
 std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<options_i, options_deleter_type> options,
-    io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context,
+    io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context,
     VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
   // Set up logger as early as possible
@@ -1968,7 +1968,7 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
 }
 
 VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model,
-    bool skip_model_load, trace_message_t trace_listener, void* trace_context,
+    bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context,
 
     std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
 {
@@ -1978,16 +1978,20 @@ VW::workspace* initialize_with_builder(std::unique_ptr<options_i, options_delete
 }
 
 VW::workspace* initialize(std::unique_ptr<options_i, options_deleter_type> options, io_buf* model, bool skip_model_load,
-    trace_message_t trace_listener, void* trace_context)
+    VW::trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
 VW::workspace* initialize_escaped(
-    std::string const& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+    std::string const& s, io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context)
 {
   int argc = 0;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   char** argv = to_argv_escaped(s, argc);
+  VW_WARNING_STATE_POP
+
   VW::workspace* ret = nullptr;
 
   try
@@ -1996,16 +2000,24 @@ VW::workspace* initialize_escaped(
   }
   catch (...)
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     free_args(argc, argv);
+    VW_WARNING_STATE_POP
+
     throw;
   }
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   free_args(argc, argv);
+  VW_WARNING_STATE_POP
+
   return ret;
 }
 
 VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load,
-    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+    VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   std::unique_ptr<options_i, options_deleter_type> options(
       new config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
@@ -2014,17 +2026,21 @@ VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bo
       std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder));
 }
 
-VW::workspace* initialize(
-    int argc, char* argv[], io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+VW::workspace* initialize(int argc, char* argv[], io_buf* model, bool skip_model_load,
+    VW::trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(argc, argv, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
 VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
-    trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+    VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
 {
   int argc = 0;
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   char** argv = to_argv(s, argc);
+  VW_WARNING_STATE_POP
+
   VW::workspace* ret = nullptr;
 
   try
@@ -2034,16 +2050,24 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model, bool
   }
   catch (...)
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     free_args(argc, argv);
+    VW_WARNING_STATE_POP
+
     throw;
   }
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   free_args(argc, argv);
+  VW_WARNING_STATE_POP
+
   return ret;
 }
 
 VW::workspace* initialize(
-    const std::string& s, io_buf* model, bool skip_model_load, trace_message_t trace_listener, void* trace_context)
+    const std::string& s, io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context)
 {
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
 }
@@ -2051,7 +2075,7 @@ VW::workspace* initialize(
 // Create a new VW instance while sharing the model with another instance
 // The extra arguments will be appended to those of the other VW instance
 VW::workspace* seed_vw_model(
-    VW::workspace* vw_model, const std::string& extra_args, trace_message_t trace_listener, void* trace_context)
+    VW::workspace* vw_model, const std::string& extra_args, VW::trace_message_t trace_listener, void* trace_context)
 {
   cli_options_serializer serializer;
   for (auto const& option : vw_model->options->get_all_options())
@@ -2071,7 +2095,7 @@ VW::workspace* seed_vw_model(
 
   VW::workspace* new_model =
       VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
-  free_it(new_model->sd);
+  delete new_model->sd;
 
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor

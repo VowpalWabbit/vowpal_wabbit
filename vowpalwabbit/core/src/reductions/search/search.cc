@@ -123,11 +123,11 @@ class action_repr
 {
 public:
   action a = 0;
-  features* repr = nullptr;
+  VW::features* repr = nullptr;
   action_repr() = default;
-  action_repr(action _a, features* _repr) : a(_a)
+  action_repr(action _a, VW::features* _repr) : a(_a)
   {
-    if (_repr != nullptr) { repr = new features(*_repr); }
+    if (_repr != nullptr) { repr = new VW::features(*_repr); }
   }
   action_repr(action _a) : a(_a), repr(nullptr) {}
 };
@@ -217,7 +217,7 @@ public:
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
   action learn_oracle_action = 0;            // store an oracle action for debugging purposes
-  features last_action_repr;
+  VW::features last_action_repr;
 
   VW::polylabel allowed_actions_cache;
 
@@ -585,7 +585,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   size_t ss = priv.all->weights.stride_shift();
 
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
-  features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
+  auto& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
   cdbg << "adding: " << fs.indices.back() << ':' << fs.values.back() << endl;
   if (priv.all->audit)
@@ -607,7 +607,7 @@ void del_features_in_top_namespace(search_private& /* priv */, VW::example& ec, 
     //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " <<
     //(size_t)ec.indices.last()); }
   }
-  features& fs = ec.feature_space[ns];
+  auto& fs = ec.feature_space[ns];
   ec.indices.pop_back();
   ec.num_features -= fs.size();
   ec.reset_total_sum_feat_sq();
@@ -654,7 +654,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
       }
     }
 
-    features& fs = me.feature_space[VW::details::NEIGHBOR_NAMESPACE];
+    auto& fs = me.feature_space[VW::details::NEIGHBOR_NAMESPACE];
     size_t sz = fs.size();
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
     {
@@ -829,7 +829,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
     for (size_t i = 0; i < I; i++)
     {
       if (condition_on_actions[i].repr == nullptr) { continue; }
-      features& fs = *(condition_on_actions[i].repr);
+      VW::features& fs = *(condition_on_actions[i].repr);
       char name = condition_on_names[i];
       for (size_t k = 0; k < fs.size(); k++)
       {
@@ -854,7 +854,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
     cdbg << "END adding passthrough features" << endl;
   }
 
-  features& con_fs = ec.feature_space[VW::details::CONDITIONING_NAMESPACE];
+  auto& con_fs = ec.feature_space[VW::details::CONDITIONING_NAMESPACE];
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
   {
     ec.indices.push_back(VW::details::CONDITIONING_NAMESPACE);
@@ -1058,7 +1058,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(VW::v_array<T>& A, size_t sz)
 {
-  A.resize_but_with_stl_behavior(sz);
+  A.resize(sz);
 }
 
 template <class T>
@@ -1070,7 +1070,7 @@ void ensure_size(std::vector<T>& A, size_t sz)
 template <class T>
 void set_at(VW::v_array<T>& v, T item, size_t pos)
 {
-  if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
+  if (pos >= v.size()) { v.resize(pos + 1); }
   v[pos] = item;
 }
 
@@ -1302,7 +1302,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != static_cast<action>(-1));
 
-  VW::default_cs_label(priv.ldf_test_label);
+  priv.ldf_test_label.reset_to_default();
   VW::cs_class wc = {0., 1, 0., 0.};
   priv.ldf_test_label.costs.push_back(wc);
 
@@ -1729,7 +1729,7 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
       // copy conditioning stuff and allowed actions
       if (priv.auto_condition_features)
       {
-        priv.learn_condition_on.resize_but_with_stl_behavior(condition_on_cnt);
+        priv.learn_condition_on.resize(condition_on_cnt);
         ensure_size(priv.learn_condition_on_act, condition_on_cnt);
 
         memcpy(priv.learn_condition_on.begin(), condition_on, condition_on_cnt * sizeof(ptag));
@@ -2504,7 +2504,7 @@ void search_initialize(VW::workspace* all, search& sch)
   priv.active_uncertainty.clear();
   priv.active_known.clear();
 
-  VW::default_cs_label(priv.empty_cs_label);
+  priv.empty_cs_label.reset_to_default();
 
   priv.raw_output_string_stream = VW::make_unique<std::stringstream>();
 }
@@ -2693,7 +2693,7 @@ action search::predict(VW::example& ec, ptag mytag, const action* oracle_actions
       assert((mytag >= priv->ptag_to_action.size()) || (priv->ptag_to_action[mytag].repr == nullptr));
       set_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
     }
-    else { set_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag); }
+    else { set_at(priv->ptag_to_action, action_repr(a, (VW::features*)nullptr), mytag); }
     cdbg << "set_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)

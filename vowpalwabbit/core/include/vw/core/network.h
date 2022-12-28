@@ -17,5 +17,5 @@ std::unique_ptr<VW::io::socket> open_vw_binary_socket(
     const std::string& host_and_optional_port, VW::io::logger& logger);
 // Opens socket and writes \0 as a handshake to VW accepting binary data over the port.
 std::unique_ptr<VW::io::socket> open_vw_binary_socket(const std::string& host, uint16_t port, VW::io::logger& logger);
-}
+}  // namespace details
 }  // namespace VW

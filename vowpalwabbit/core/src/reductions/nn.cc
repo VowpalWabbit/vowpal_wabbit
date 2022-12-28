@@ -96,7 +96,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.output_layer.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   uint64_t nn_index = NN_CONSTANT << all.weights.stride_shift();
 
-  features& fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+  VW::features& fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
@@ -132,7 +132,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.interactions = &all.interactions;
   n.outputweight.extent_interactions = &all.extent_interactions;
   n.outputweight.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
-  features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+  VW::features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
   {
@@ -210,8 +210,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       {
         for (unsigned int i = 0; i < n.k; ++i)
         {
-          ADD_PASSTHROUGH_FEATURE(ec, i * 2, hiddenbias_pred[i].scalar);
-          ADD_PASSTHROUGH_FEATURE(ec, i * 2 + 1, hidden_units[i].scalar);
+          VW_ADD_PASSTHROUGH_FEATURE(ec, i * 2, hiddenbias_pred[i].scalar);
+          VW_ADD_PASSTHROUGH_FEATURE(ec, i * 2 + 1, hidden_units[i].scalar);
         }
       }
     }
@@ -254,7 +254,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     for (unsigned int i = 0; i < n.k; ++i)
     {
       float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
-      features& out_fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+      VW::features& out_fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
       out_fs.values[i] = sigmah;
       out_fs.sum_feat_sq += sigmah * sigmah;
 
@@ -293,7 +293,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
        * save_nn_output_namespace contains the COPIED value
        * save_nn_output_namespace is destroyed
        */
-      features save_nn_output_namespace = std::move(ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE]);
+      VW::features save_nn_output_namespace = std::move(ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE]);
       ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE] =
           n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
 

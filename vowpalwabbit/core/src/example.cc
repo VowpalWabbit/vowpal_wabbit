@@ -18,7 +18,7 @@
 float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
 {
   float sum_features_squared = 0.f;
-  for (const features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
+  for (const VW::features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
 
   float calculated_sum_features_squared = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
       permutations, *ec.interactions, *ec.extent_interactions, ec.feature_space);
@@ -45,34 +45,37 @@ float VW::example::get_total_sum_feat_sq()
   return total_sum_feat_sq;
 }
 
-float collision_cleanup(features& fs)
+float collision_cleanup(VW::features& fs)
 {
   // This loops over the sequence of feature values and their indexes
   // when an index is repeated this combines them by adding their values.
   // This assumes that fs is sorted (which is the case in `flatten_sort_example`).
 
-  features::iterator p1 = fs.begin();
-  uint64_t last_index = p1.index();
   float sum_sq = 0.f;
-
-  for (features::iterator p2 = (fs.begin() + 1); p2 != fs.end(); ++p2)
+  if (!fs.empty())
   {
-    if (last_index == p2.index()) { p1.value() += p2.value(); }
-    else
+    VW::features::iterator p1 = fs.begin();
+    uint64_t last_index = p1.index();
+
+    for (VW::features::iterator p2 = (fs.begin() + 1); p2 != fs.end(); ++p2)
     {
-      sum_sq += p1.value() * p1.value();
-      ++p1;
-      p1.value() = p2.value();
-      p1.index() = p2.index();
-      last_index = p2.index();
+      if (last_index == p2.index()) { p1.value() += p2.value(); }
+      else
+      {
+        sum_sq += p1.value() * p1.value();
+        ++p1;
+        p1.value() = p2.value();
+        p1.index() = p2.index();
+        last_index = p2.index();
+      }
     }
+
+    sum_sq += p1.value() * p1.value();
+    ++p1;
+
+    fs.truncate_to(p1, 0);
+    fs.sum_feat_sq = sum_sq;
   }
-
-  sum_sq += p1.value() * p1.value();
-  ++p1;
-
-  fs.truncate_to(p1, 0);
-  fs.sum_feat_sq = sum_sq;
 
   return sum_sq;
 }
@@ -151,14 +154,14 @@ void move_feature_namespace(example* dst, example* src, namespace_index c)
 class features_and_source
 {
 public:
-  VW::v_array<feature> feature_map;  // map to store sparse feature vectors
+  VW::v_array<VW::feature> feature_map;  // map to store sparse feature vectors
   uint32_t stride_shift;
   uint64_t mask;
 };
 
 void vec_store(features_and_source& p, float fx, uint64_t fi)
 {
-  p.feature_map.push_back(feature(fx, (fi >> p.stride_shift) & p.mask));
+  p.feature_map.push_back(VW::feature(fx, (fi >> p.stride_shift) & p.mask));
 }
 
 namespace VW
@@ -182,7 +185,7 @@ void return_features(feature* f) { delete[] f; }
 class full_features_and_source
 {
 public:
-  features fs;
+  VW::features fs;
   uint32_t stride_shift;
   uint64_t mask;
 };

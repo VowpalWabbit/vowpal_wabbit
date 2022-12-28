@@ -4,14 +4,16 @@
 
 #include "test_common.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <boost/test/test_tools.hpp>
 #include <boost/test/unit_test.hpp>
 
 BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
 {
-  feature_index txt_idx;
-  feature_index json_idx;
+  VW::feature_index txt_idx;
+  VW::feature_index json_idx;
 
   std::string text("1 |f a:b");
   std::string json_text = R"(
@@ -28,7 +30,7 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
     examples.push_back(&VW::get_unused_example(vw));
     auto example = examples[0];
 
-    VW::read_line(*vw, example, text.c_str());
+    VW::parsers::text::read_line(*vw, example, text.c_str());
     setup_example(*vw, example);
 
     auto& indices = example->feature_space['f'].indices;
@@ -36,7 +38,7 @@ BOOST_AUTO_TEST_CASE(chain_hashing_between_formats)
     VW::finish_example(*vw, examples);
   }
   {
-    auto examples = parse_json(*vw, json_text);
+    auto examples = vwtest::parse_json(*vw, json_text);
     auto example = examples[0];
 
     auto& indices = example->feature_space['f'].indices;

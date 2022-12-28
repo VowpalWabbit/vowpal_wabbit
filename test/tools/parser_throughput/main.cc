@@ -4,9 +4,10 @@
 #include "vw/config/options_cli.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/learner.h"
-#include "vw/core/parse_example_json.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
+#include "vw/json_parser/parse_example_json.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #ifdef VW_BUILD_CSV
 #  include "vw/csv_parser/parse_example_csv.h"
@@ -143,7 +144,7 @@ int main(int argc, char** argv)
 
         auto* ae = &VW::get_unused_example(vw);
         VW::string_view example(line.c_str(), line.size());
-        substring_to_example(vw, ae, example);
+        VW::parsers::text::details::substring_to_example(vw, ae, example);
         exs.push_back(ae);
       }
 
@@ -159,20 +160,20 @@ int main(int argc, char** argv)
       {
         VW::example& ae = VW::get_unused_example(vw);
         VW::string_view example(line.c_str(), line.size());
-        substring_to_example(vw, &ae, example);
+        VW::parsers::text::details::substring_to_example(vw, &ae, example);
         VW::finish_example(*vw, ae);
       }
     }
   }
   else if (type == parser_type::DSJSON)
   {
-    VW::details::decision_service_interaction interaction;
+    VW::parsers::json::decision_service_interaction interaction;
     for (const auto& line : file_contents_as_lines)
     {
       VW::multi_ex examples;
       examples.push_back(&VW::get_unused_example(vw));
-      VW::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()), line.length(), false,
-          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
+      VW::parsers::json::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()),
+          line.length(), false, (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
       VW::finish_example(*vw, examples);
     }
   }

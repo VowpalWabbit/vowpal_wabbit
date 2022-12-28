@@ -37,7 +37,7 @@ void setup_example(VW::workspace& all, example* ae);
 class polylabel
 {
 public:
-  VW::no_label empty = static_cast<char>(0);
+  VW::no_label empty;
   VW::simple_label simple;
   VW::multiclass_label multi;
   VW::cs_label cs;
@@ -167,13 +167,17 @@ inline bool example_is_newline(const example& ec) { return ec.is_newline; }
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
+namespace details
+{
 inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 {
   if (ec.passthrough) { ec.passthrough->push_back(x, (VW::details::FNV_PRIME * magic) ^ i); }
 }
+}  // namespace details
 
-#define ADD_PASSTHROUGH_FEATURE(ec, i, x) \
-  VW::add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
+#define VW_ADD_PASSTHROUGH_FEATURE(ec, i, x)  \
+  VW::details::add_passthrough_feature_magic( \
+      ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
 
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
@@ -220,9 +224,3 @@ inline bool example_is_newline(const VW::example& ec) { return VW::example_is_ne
 
 VW_DEPRECATED("valid_ns moved into VW namespace")
 inline bool valid_ns(char c) { return VW::valid_ns(c); }
-
-VW_DEPRECATED("add_passthrough_feature_magic moved into VW namespace")
-inline void add_passthrough_feature_magic(VW::example& ec, uint64_t magic, uint64_t i, float x)
-{
-  return VW::add_passthrough_feature_magic(ec, magic, i, x);
-}

@@ -76,7 +76,7 @@ void subtract_feature(VW::example& ec, float feature_value_x, uint64_t weight_in
 // Iterate over all features of ecsub including quadratic and cubic features and subtract them from ec.
 void subtract_example(VW::workspace& all, VW::example* ec, VW::example* ecsub)
 {
-  features& wap_fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
+  auto& wap_fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   wap_fs.sum_feat_sq = 0;
   GD::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(VW::details::WAP_LDF_NAMESPACE);
@@ -100,7 +100,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
     return;
   }
 
-  features& fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
+  auto& fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   ec->num_features -= fs.size();
   ec->reset_total_sum_feat_sq();
   fs.clear();
@@ -136,13 +136,13 @@ bool test_ldf_sequence(ldf& /*data*/, const VW::multi_ex& ec_seq, VW::io::logger
 {
   bool is_test;
   if (ec_seq.empty()) { is_test = true; }
-  else { is_test = VW::cs_label_parser_global.test_label(ec_seq[0]->l); }
+  else { is_test = ec_seq[0]->l.cs.is_test_label(); }
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
     assert(ec->l.cs.costs.size() == 1);
 
-    if (VW::cs_label_parser_global.test_label(ec->l) != is_test)
+    if (ec->l.cs.is_test_label() != is_test)
     {
       is_test = true;
       logger.err_warn("ldf example has mix of train/test data; assuming test");
@@ -461,7 +461,7 @@ void output_example(
   }
   else { predicted_class = ec.pred.multiclass; }
 
-  if (!VW::cs_label_parser_global.test_label(ec.l))
+  if (!ec.l.cs.is_test_label())
   {
     for (auto const& cost : costs)
     {
@@ -496,7 +496,7 @@ void output_example(
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
-  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(ec.l), ec, ec_seq, false, predicted_class);
+  VW::details::print_cs_update(all, ec.l.cs.is_test_label(), ec, ec_seq, false, predicted_class);
 }
 
 void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_loss, VW::multi_ex* ec_seq)
@@ -511,7 +511,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
   float loss = 0.;
   VW::v_array<VW::action_score>& preds = head_ec.pred.a_s;
 
-  if (!VW::cs_label_parser_global.test_label(head_ec.l))
+  if (!head_ec.l.cs.is_test_label())
   {
     for (VW::example* ex : *ec_seq)
     {
@@ -545,7 +545,7 @@ void output_rank_example(VW::workspace& all, VW::example& head_ec, bool& hit_los
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), head_ec.tag, all.logger);
   }
 
-  VW::details::print_cs_update(all, VW::cs_label_parser_global.test_label(head_ec.l), head_ec, ec_seq, true, 0);
+  VW::details::print_cs_update(all, head_ec.l.cs.is_test_label(), head_ec, ec_seq, true, 0);
 }
 
 void output_example_seq(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)

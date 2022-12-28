@@ -282,7 +282,7 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
       {
         e.tournaments_won[e.tournaments_won.size() / 2] = e.tournaments_won[e.tournaments_won.size() - 1];
       }
-      e.tournaments_won.resize_but_with_stl_behavior((1 + e.tournaments_won.size()) / 2);
+      e.tournaments_won.resize((1 + e.tournaments_won.size()) / 2);
     }
   }
 }
