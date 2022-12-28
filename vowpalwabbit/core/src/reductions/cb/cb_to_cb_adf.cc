@@ -98,7 +98,7 @@ void update_stats_cb_to_cb_adf(const VW::workspace& all, VW::shared_data& sd,
   {
     c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass;
   }
-  c.adf_learner->update_stats(all, sd, &c, c.adf_data.ecs, logger);
+  c.adf_learner->update_stats(all, sd, c.adf_data.ecs, logger);
 }
 
 void print_update_cb_to_cb_adf(VW::workspace& all, VW::shared_data& sd, const cb_to_cb_adf& c,
@@ -112,7 +112,7 @@ void print_update_cb_to_cb_adf(VW::workspace& all, VW::shared_data& sd, const cb
   {
     c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass;
   }
-  c.adf_learner->print_update(all, sd, &c, c.adf_data.ecs, logger);
+  c.adf_learner->print_update(all, sd, c.adf_data.ecs, logger);
 }
 
 void output_example_prediction_cb_to_cb_adf(VW::workspace& all, const cb_to_cb_adf& c,
@@ -126,7 +126,7 @@ void output_example_prediction_cb_to_cb_adf(VW::workspace& all, const cb_to_cb_a
   {
     c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass;
   }
-  c.adf_learner->output_example_prediction(all, &c, c.adf_data.ecs, logger);
+  c.adf_learner->output_example_prediction(all, c.adf_data.ecs, logger);
 }
 }  // namespace
 
