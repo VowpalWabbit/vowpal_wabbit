@@ -65,10 +65,7 @@ public:
   discounted_expectation policy_expectation;
   float baseline_epsilon;
 
-  baseline_challenger_data(double alpha, double tau)
-      : baseline(alpha, tau), policy_expectation(tau)
-  {
-  }
+  baseline_challenger_data(double alpha, double tau) : baseline(alpha, tau), policy_expectation(tau) {}
 
   static int get_chosen_action(const VW::action_scores& action_scores) { return action_scores[0].action; }
 
