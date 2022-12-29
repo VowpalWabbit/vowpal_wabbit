@@ -62,7 +62,7 @@ TEST(baseline_cb_tests, baseline_cb_baseline_performs_badly)
   }
 
   VW::metric_sink metrics;
-  vw->l->persist_metrics(metrics);
+  //vw->l->persist_metrics(metrics);
 
   EXPECT_EQ(metrics.get_bool("baseline_cb_baseline_in_use"), false);
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
@@ -112,7 +112,7 @@ TEST(baseline_cb_tests, baseline_cb_baseline_takes_over_policy)
 
   // after 400 steps of switched reward dynamics, the baseline CI should have caught up.
   VW::metric_sink metrics;
-  vw->l->persist_metrics(metrics);
+  //vw->l->persist_metrics(metrics);
 
   EXPECT_EQ(metrics.get_bool("baseline_cb_baseline_in_use"), true);
 
@@ -156,7 +156,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
     }
   }
   VW::metric_sink metrics;
-  vw->l->persist_metrics(metrics);
+  //vw->l->persist_metrics(metrics);
   return metrics;
 }
 
