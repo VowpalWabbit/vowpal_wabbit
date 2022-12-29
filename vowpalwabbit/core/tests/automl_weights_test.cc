@@ -332,7 +332,7 @@ TEST(automl_weights_tests, equal_no_automl_w_iterations)
   EXPECT_EQ(ctr1, ctr2);
 }
 
-TEST(automl_weights_tests, equal_spin_off_model)
+TEST(automl_weights_tests, equal_spin_off_model_w_iterations)
 {
   callback_map test_hooks;
 
