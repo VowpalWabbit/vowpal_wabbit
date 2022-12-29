@@ -81,7 +81,6 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-
 void update_stats_cb_algs(
     const VW::workspace&, VW::shared_data& sd, const cb& data, const VW::example& ec, VW::io::logger&)
 {
@@ -126,7 +125,6 @@ void print_update_cb_algs(
   bool is_ld_test_label = ld.is_test_label();
   if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, &c.known_cost); }
   else { print_update(all, is_ld_test_label, ec, nullptr, false, nullptr); }
-
 }
 }  // namespace
 
