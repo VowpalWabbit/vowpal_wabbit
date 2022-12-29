@@ -283,7 +283,7 @@ void learn_freegrad(freegrad& a, base_learner& /* base */, VW::example& ec)
   freegrad_update_after_prediction(a, ec);
 }
 
-void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
+void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = fg.all;
   if (read) { initialize_regressor(*all); }
@@ -293,7 +293,8 @@ void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
     bool resume = all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
     {

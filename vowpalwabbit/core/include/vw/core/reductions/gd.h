@@ -56,8 +56,8 @@ public:
 float finalize_prediction(VW::shared_data* sd, VW::io::logger& logger, float ret);
 void print_features(VW::workspace& all, VW::example& ec);
 void print_audit_features(VW::workspace&, VW::example& ec);
-void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text);
-void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text, double& total_weight,
+void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, bool text);
+void save_load_online_state(VW::workspace& all, VW::io_buf& model_file, bool read, bool text, double& total_weight,
     double& normalized_sum_norm_x, GD::gd* g = nullptr, uint32_t ftrl_size = 0);
 
 template <class T>

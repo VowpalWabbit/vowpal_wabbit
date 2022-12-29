@@ -60,7 +60,7 @@ void line_to_examples_json(VW::workspace* all, VW::string_view sv, VW::multi_ex&
 
 template <bool audit>
 VW_DEPRECATED("read_features_json moved to VW::parsers::json::read_features_json")
-int read_features_json(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
+int read_features_json(VW::workspace* all, VW::io_buf& buf, VW::multi_ex& examples)
 {
   return VW::parsers::json::read_features_json<audit>(all, buf, examples);
 }
@@ -99,5 +99,5 @@ extern template bool parse_line_json<false>(VW::workspace* all, char* line, size
 extern template void line_to_examples_json<true>(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
 extern template void line_to_examples_json<false>(VW::workspace* all, VW::string_view, VW::multi_ex& examples);
 
-extern template int read_features_json<true>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
-extern template int read_features_json<false>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
+extern template int read_features_json<true>(VW::workspace* all, VW::io_buf& buf, VW::multi_ex& examples);
+extern template int read_features_json<false>(VW::workspace* all, VW::io_buf& buf, VW::multi_ex& examples);

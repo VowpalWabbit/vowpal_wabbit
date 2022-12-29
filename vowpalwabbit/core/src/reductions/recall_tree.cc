@@ -440,7 +440,7 @@ void learn(recall_tree& b, single_learner& base, VW::example& ec)
   }
 }
 
-void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
+void save_load_tree(recall_tree& b, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() > 0)
   {
