@@ -36,5 +36,5 @@ template bool parse_line_json<false>(VW::workspace* all, char* line, size_t num_
 template void line_to_examples_json<true>(VW::workspace* all, VW::string_view sv, VW::multi_ex& examples);
 template void line_to_examples_json<false>(VW::workspace* all, VW::string_view sv, VW::multi_ex& examples);
 
-template int read_features_json<true>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
-template int read_features_json<false>(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
+template int read_features_json<true>(VW::workspace* all, VW::io_buf& buf, VW::multi_ex& examples);
+template int read_features_json<false>(VW::workspace* all, VW::io_buf& buf, VW::multi_ex& examples);

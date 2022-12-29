@@ -251,12 +251,12 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   else { ec.loss = ec.weight; }
 }
 
-void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
+void save_load_sampling(boosting& o, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream os;
   os << "boosts " << o.N << endl;
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), read, os, text);
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), read, os, text);
 
   if (read)
   {
@@ -276,7 +276,8 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     {
       std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
-      bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
+      VW::details::bin_text_write_fixed(
+          model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
     }
   }
 
@@ -292,7 +293,7 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
     {
       std::stringstream os2;
       os2 << "v " << o.v[i] << endl;
-      bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.v[i])), sizeof(o.v[i]), os2, text);
+      VW::details::bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.v[i])), sizeof(o.v[i]), os2, text);
     }
   }
 
@@ -309,12 +310,12 @@ void save_load_sampling(boosting& o, io_buf& model_file, bool read, bool text)
   o.logger.err_info("{}", fmt::to_string(buffer));
 }
 
-void save_load(boosting& o, io_buf& model_file, bool read, bool text)
+void save_load(boosting& o, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream os;
   os << "boosts " << o.N << endl;
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), read, os, text);
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&(o.N)), sizeof(o.N), read, os, text);
 
   if (read) { o.alpha.resize(o.N); }
 
@@ -330,7 +331,8 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
     {
       std::stringstream os2;
       os2 << "alpha " << o.alpha[i] << endl;
-      bin_text_write_fixed(model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
+      VW::details::bin_text_write_fixed(
+          model_file, reinterpret_cast<char*>(&(o.alpha[i])), sizeof(o.alpha[i]), os2, text);
     }
   }
 
@@ -350,7 +352,7 @@ void save_load(boosting& o, io_buf& model_file, bool read, bool text)
   }
 }
 
-void save_load_boosting_noop(boosting&, io_buf&, bool, bool) {}
+void save_load_boosting_noop(boosting&, VW::io_buf&, bool, bool) {}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stack_builder)

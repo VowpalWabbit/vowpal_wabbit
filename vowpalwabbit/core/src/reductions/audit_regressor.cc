@@ -42,7 +42,7 @@ public:
   size_t cur_class = 0;
   size_t total_class_cnt = 0;
   std::vector<std::string> ns_pre;
-  io_buf out_file;
+  VW::io_buf out_file;
   size_t loaded_regressor_values = 0;
   size_t values_audited = 0;
 };

@@ -114,7 +114,7 @@ TEST(slates_label_tests, slates_parse_label)
 TEST(slates_label_tests, slates_cache_shared_label)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::slates::label label;
@@ -122,7 +122,7 @@ TEST(slates_label_tests, slates_cache_shared_label)
   VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;
@@ -137,7 +137,7 @@ TEST(slates_label_tests, slates_cache_shared_label)
 TEST(slates_label_tests, slates_cache_action_label)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::slates::label label;
@@ -145,7 +145,7 @@ TEST(slates_label_tests, slates_cache_action_label)
   VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;
@@ -160,7 +160,7 @@ TEST(slates_label_tests, slates_cache_action_label)
 TEST(slates_label_tests, slates_cache_slot_label)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::slates::label label;
@@ -168,7 +168,7 @@ TEST(slates_label_tests, slates_cache_slot_label)
   VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;

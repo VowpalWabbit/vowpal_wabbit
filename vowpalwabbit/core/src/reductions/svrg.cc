@@ -155,7 +155,7 @@ void learn(svrg& s, base_learner& base, VW::example& ec)
   s.prev_pass = pass;
 }
 
-void save_load(svrg& s, io_buf& model_file, bool read, bool text)
+void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 {
   if (read) { initialize_regressor(*s.all); }
 
@@ -164,7 +164,8 @@ void save_load(svrg& s, io_buf& model_file, bool read, bool text)
     bool resume = s.all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;

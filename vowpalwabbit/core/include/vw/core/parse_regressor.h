@@ -7,13 +7,13 @@
 
 #include <string>
 
-void read_regressor_file(VW::workspace& all, const std::vector<std::string>& files, io_buf& io_temp);
+void read_regressor_file(VW::workspace& all, const std::vector<std::string>& files, VW::io_buf& io_temp);
 
 void finalize_regressor(VW::workspace& all, const std::string& reg_name);
 void initialize_regressor(VW::workspace& all);
 
 void save_predictor(VW::workspace& all, const std::string& reg_name, size_t current_pass);
-void save_load_header(VW::workspace& all, io_buf& model_file, bool read, bool text, std::string& file_options,
+void save_load_header(VW::workspace& all, VW::io_buf& model_file, bool read, bool text, std::string& file_options,
     VW::config::options_i& options);
 
 void parse_mask_regressor_args(

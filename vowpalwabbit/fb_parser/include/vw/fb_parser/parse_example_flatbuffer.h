@@ -9,15 +9,6 @@
 #include "vw/core/vw_fwd.h"
 #include "vw/fb_parser/generated/example_generated.h"
 
-class io_buf;
-namespace VW
-{
-class workspace;
-class example;
-class polylabel;
-class reduction_features;
-}  // namespace VW
-
 namespace VW
 {
 namespace parsers

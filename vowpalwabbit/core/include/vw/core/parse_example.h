@@ -41,13 +41,13 @@ inline void read_lines(VW::workspace* all, VW::string_view lines, VW::multi_ex& 
 }  // namespace VW
 
 VW_DEPRECATED("read_features_string moved to VW::parsers::text::read_features_string")
-inline int read_features_string(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
+inline int read_features_string(VW::workspace* all, VW::io_buf& buf, VW::multi_ex& examples)
 {
   return VW::parsers::text::read_features_string(all, buf, examples);
 }
 
 VW_DEPRECATED("read_features moved to VW::parsers::text::details::read_features")
-inline size_t read_features(io_buf& buf, char*& line, size_t& num_chars)
+inline size_t read_features(VW::io_buf& buf, char*& line, size_t& num_chars)
 {
   return VW::parsers::text::details::read_features(buf, line, num_chars);
 }
