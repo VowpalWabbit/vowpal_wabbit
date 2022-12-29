@@ -39,8 +39,8 @@ float ccb_weight(const VW::ccb_label& ld) { return ld.weight; }
 VW::action_score convert_to_score(
     const VW::string_view& action_id_str, const VW::string_view& probability_str, VW::io::logger& logger)
 {
-  auto action_id = static_cast<uint32_t>(int_of_string(action_id_str, logger));
-  auto probability = float_of_string(probability_str, logger);
+  auto action_id = static_cast<uint32_t>(VW::details::int_of_string(action_id_str, logger));
+  auto probability = VW::details::float_of_string(probability_str, logger);
   if (std::isnan(probability)) THROW("error NaN probability: " << probability_str);
 
   if (probability > 1.0)
@@ -72,7 +72,7 @@ VW::ccb_outcome* parse_outcome(VW::string_view outcome, VW::io::logger& logger)
 
   ccb_outcome.probabilities.push_back(convert_to_score(split_colons[0], split_colons[2], logger));
 
-  ccb_outcome.cost = float_of_string(split_colons[1], logger);
+  ccb_outcome.cost = VW::details::float_of_string(split_colons[1], logger);
   if (std::isnan(ccb_outcome.cost)) THROW("error NaN cost: " << split_colons[1]);
 
   split_colons.clear();
@@ -92,7 +92,7 @@ void parse_explicit_inclusions(
 {
   for (const auto& inclusion : split_inclusions)
   {
-    ld.explicit_included_actions.push_back(int_of_string(inclusion, logger));
+    ld.explicit_included_actions.push_back(VW::details::int_of_string(inclusion, logger));
   }
 }
 }  // namespace

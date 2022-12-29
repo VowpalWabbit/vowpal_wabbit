@@ -54,12 +54,12 @@ void parse_label(CB::label& ld, VW::label_parser_reuse_mem& reuse_mem, const std
     f.action = static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
     f.cost = FLT_MAX;
 
-    if (reuse_mem.tokens.size() > 1) { f.cost = float_of_string(reuse_mem.tokens[1], logger); }
+    if (reuse_mem.tokens.size() > 1) { f.cost = VW::details::float_of_string(reuse_mem.tokens[1], logger); }
 
     if (std::isnan(f.cost)) THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
     f.probability = .0;
-    if (reuse_mem.tokens.size() > 2) { f.probability = float_of_string(reuse_mem.tokens[2], logger); }
+    if (reuse_mem.tokens.size() > 2) { f.probability = VW::details::float_of_string(reuse_mem.tokens[2], logger); }
 
     if (std::isnan(f.probability))
       THROW("error NaN probability (" << reuse_mem.tokens[2] << " for action: " << reuse_mem.tokens[0]);
