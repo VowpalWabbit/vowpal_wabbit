@@ -5,6 +5,7 @@
 #pragma once
 
 #include "metric_sink.h"
+#include "vw/core/learner_fwd.h"
 
 #include <cstdint>
 #include <functional>
@@ -26,7 +27,7 @@ public:
   bool are_metrics_enabled() const;
   std::string get_filename() const;
   void register_metrics_callback(const metrics_callback_fn& callback);
-  VW::metric_sink collect_metrics();
+  VW::metric_sink collect_metrics(LEARNER::base_learner* l = nullptr) const;
 
 private:
   bool _are_metrics_enabled;

@@ -215,8 +215,7 @@ TEST(automl_tests, assert_0th_event_metrics_w_iterations)
   test_hooks.emplace(zero,
       [&metric_name, &zero](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
-        all.l->persist_metrics(all.global_metrics);
-        auto metrics = all.global_metrics.collect_metrics();
+        auto metrics = all.global_metrics.collect_metrics(all.l);
 
         EXPECT_EQ(metrics.get_uint(metric_name), zero);
         return true;
@@ -226,8 +225,7 @@ TEST(automl_tests, assert_0th_event_metrics_w_iterations)
   test_hooks.emplace(num_iterations,
       [&metric_name, &num_iterations](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
-        all.l->persist_metrics(all.global_metrics);
-        auto metrics = all.global_metrics.collect_metrics();
+        auto metrics = all.global_metrics.collect_metrics(all.l);
 
         EXPECT_EQ(metrics.get_uint(metric_name), num_iterations);
         return true;

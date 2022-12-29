@@ -4,6 +4,7 @@
 
 #include "vw/core/metrics_manager.h"
 
+#include "vw/core/learner.h"
 namespace VW
 {
 metrics_manager::metrics_manager(bool enabled, std::string filename)
@@ -20,15 +21,11 @@ void metrics_manager::register_metrics_callback(const metrics_callback_fn& callb
   _metrics_callbacks.push_back(callback);
 }
 
-metric_sink metrics_manager::collect_metrics()
+metric_sink metrics_manager::collect_metrics(LEARNER::base_learner* l) const
 {
   VW::metric_sink sink;
-  while (!_metrics_callbacks.empty())
-  {
-    const metrics_callback_fn& callback = _metrics_callbacks.back();
-    callback(sink);
-    _metrics_callbacks.pop_back();
-  }
+  if (l) { l->persist_metrics(sink); }
+  for (const auto& callback : _metrics_callbacks) { callback(sink); }
   return sink;
 }
 }  // namespace VW

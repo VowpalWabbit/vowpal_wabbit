@@ -97,10 +97,8 @@ private:
   Writer<FileWriteStream>& _writer;
 };
 
-void list_to_json_file(VW::metrics_manager& manager, VW::io::logger& logger)
+void list_to_json_file(const std::string& filename, const VW::metric_sink& metrics, VW::io::logger& logger)
 {
-  VW::metric_sink metrics = manager.collect_metrics();
-  std::string filename = manager.get_filename();
   FILE* fp;
   if (VW::file_open(&fp, filename.c_str(), "wt") == 0)
   {
@@ -114,6 +112,7 @@ void list_to_json_file(VW::metrics_manager& manager, VW::io::logger& logger)
   }
   else { logger.err_warn("skipping metrics. could not open file for metrics: {}", filename); }
 }
+
 void persist(metrics_data& data, VW::metric_sink& metrics)
 {
   metrics.set_uint("total_predict_calls", data.predict_count);
@@ -141,9 +140,6 @@ void VW::reductions::output_metrics(VW::workspace& all)
   metrics_manager& manager = all.global_metrics;
   if (manager.are_metrics_enabled())
   {
-    all.l->persist_metrics(manager);
-    for (auto& metric_hook : all.metric_output_hooks) { manager.register_metrics_callback(metric_hook); }
-
     auto additional_metrics = [&all](metric_sink& sink) -> void
     {
       sink.set_uint("total_log_calls", all.logger.get_log_count());
@@ -154,7 +150,7 @@ void VW::reductions::output_metrics(VW::workspace& all)
     };
     manager.register_metrics_callback(additional_metrics);
 
-    list_to_json_file(manager, all.logger);
+    list_to_json_file(manager.get_filename(), manager.collect_metrics(all.l), all.logger);
   }
 }
 
@@ -174,8 +170,7 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
-  VW::metrics_manager manager(true, out_file);
-  all.global_metrics = std::move(manager);
+  all.global_metrics = VW::metrics_manager(true, out_file);
 
   auto* base_learner = stack_builder.setup_base_learner();
 
