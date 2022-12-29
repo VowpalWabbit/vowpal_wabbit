@@ -230,7 +230,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_output_label_type(VW::label_type_t::CB)
                 .set_finish_example(::finish_example<config_manager_type>)
                 .set_save_load(save_load_aml<config_manager_type>)
-                .set_persist_metrics(persist_ptr)
+                //.set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
                 .set_learn_returns_prediction(true)
                 .set_pre_save_load(::pre_save_load<config_manager_type>)

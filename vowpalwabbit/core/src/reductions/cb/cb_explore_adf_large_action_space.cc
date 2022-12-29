@@ -316,7 +316,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
-                .set_persist_metrics(explore_type::persist_metrics)
+                //.set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .build(&all.logger);
