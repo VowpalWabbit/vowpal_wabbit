@@ -27,7 +27,7 @@ void check_weights_equal(T& first, T& second)
   EXPECT_EQ(second_begin, second_end);
 }
 
-TEST(vwdll_test, vw_dll_parsed_and_constructed_example_parity)
+TEST(vwdll_tests, vw_dll_parsed_and_constructed_example_parity)
 {
   // parse example
   VW_HANDLE handle1 = VW_InitializeA("-q st --noconstant --quiet");
@@ -81,7 +81,7 @@ TEST(vwdll_test, vw_dll_parsed_and_constructed_example_parity)
 // This test seems to have issues on the older MSVC compiler CI, but no issues in the newer.
 #if (defined(_MSC_VER) && (_MSC_VER >= 1920)) || !defined(_MSC_VER)
 
-TEST(vwdll_test, vw_dll_get_audit_output)
+TEST(vwdll_tests, vw_dll_get_audit_output)
 {
   // parse example
   VW_HANDLE handle = VW_InitializeA("--noconstant --quiet --audit");
@@ -107,7 +107,7 @@ TEST(vwdll_test, vw_dll_get_audit_output)
 #endif
 
 #ifndef __APPLE__
-TEST(vwdll_test, vw_dll_parse_escaped)
+TEST(vwdll_tests, vw_dll_parse_escaped)
 {
   // The space is escaped and so the data argument becomes "test --nonexistent_option"
   VW_HANDLE handle1 = VW_InitializeEscapedA("--id test\\ --nonexistent_option --quiet");

@@ -229,7 +229,7 @@ TEST(epsilon_decay_tests, save_load_w_iterations)
   EXPECT_FLOAT_EQ(without_save, with_save);
 }
 
-TEST(epsilon_decay_tests, test_score_bounds_unit)
+TEST(epsilon_decay_tests, score_bounds_unit)
 {
   // Initialize epsilon_decay_data class with 5 models
   uint64_t num_models = 5;

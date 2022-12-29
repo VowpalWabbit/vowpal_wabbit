@@ -38,7 +38,7 @@ void compare_expected_and_result_vectors(
   }
 }
 
-TEST(test_suite_thread_pool, test_thread_pool_with_zero_threads)
+TEST(thread_pool_tests, thread_pool_with_zero_threads)
 {
   size_t outer_vector_size = 10;
   size_t inner_vectors_size = 10;
@@ -63,7 +63,7 @@ TEST(test_suite_thread_pool, test_thread_pool_with_zero_threads)
   compare_expected_and_result_vectors(get_expected_vector(inner_vectors_size, outer_vector_size), vector_of_vectors);
 }
 
-TEST(test_suite_thread_pool, test_thread_pool_with_more_threads_than_tasks)
+TEST(thread_pool_tests, thread_pool_with_more_threads_than_tasks)
 {
   size_t outer_vector_size = 10;
   size_t inner_vectors_size = 10;
@@ -88,7 +88,7 @@ TEST(test_suite_thread_pool, test_thread_pool_with_more_threads_than_tasks)
   compare_expected_and_result_vectors(get_expected_vector(inner_vectors_size, outer_vector_size), vector_of_vectors);
 }
 
-TEST(test_suite_thread_pool, test_thread_pool_with_less_threads_than_tasks)
+TEST(thread_pool_tests, thread_pool_with_less_threads_than_tasks)
 {
   size_t outer_vector_size = 10;
   size_t inner_vectors_size = 10;

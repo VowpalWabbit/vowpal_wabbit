@@ -13,7 +13,7 @@
 
 using namespace ::testing;
 
-TEST(model_util_test, unique_ptr_nullptr)
+TEST(model_util_tests, unique_ptr_nullptr)
 {
   auto backing_buffer = std::make_shared<std::vector<char>>();
   VW::io_buf write_buffer;
@@ -31,7 +31,7 @@ TEST(model_util_test, unique_ptr_nullptr)
   EXPECT_EQ(my_read_ptr, nullptr);
 }
 
-TEST(model_util_test, unique_ptr_overwrites_value_withnullptr)
+TEST(model_util_tests, unique_ptr_overwrites_value_withnullptr)
 {
   auto backing_buffer = std::make_shared<std::vector<char>>();
   VW::io_buf write_buffer;
@@ -49,7 +49,7 @@ TEST(model_util_test, unique_ptr_overwrites_value_withnullptr)
   EXPECT_EQ(my_read_ptr, nullptr);
 }
 
-TEST(model_util_test, unique_ptr_simple_value)
+TEST(model_util_tests, unique_ptr_simple_value)
 {
   auto backing_buffer = std::make_shared<std::vector<char>>();
   VW::io_buf write_buffer;
@@ -68,7 +68,7 @@ TEST(model_util_test, unique_ptr_simple_value)
   EXPECT_EQ(*my_read_ptr, 'c');
 }
 
-TEST(model_util_test, unique_ptr_string)
+TEST(model_util_tests, unique_ptr_string)
 {
   auto backing_buffer = std::make_shared<std::vector<char>>();
   VW::io_buf write_buffer;
@@ -87,7 +87,7 @@ TEST(model_util_test, unique_ptr_string)
   EXPECT_EQ(*my_read_ptr, "my string");
 }
 
-TEST(model_util_test, vector_unique_ptr_string)
+TEST(model_util_tests, vector_unique_ptr_string)
 {
   auto backing_buffer = std::make_shared<std::vector<char>>();
   VW::io_buf write_buffer;

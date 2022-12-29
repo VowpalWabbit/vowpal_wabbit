@@ -152,7 +152,7 @@ TEST(emt_tests, emt_split)
   VW::finish(*vw, false);
 }
 
-TEST(emt_tests, test_emt_inner)
+TEST(emt_tests, emt_inner)
 {
   emt_feats v1;
   emt_feats v2;
@@ -174,7 +174,7 @@ TEST(emt_tests, test_emt_inner)
   EXPECT_EQ(emt_inner(v1, v2), 16);
 }
 
-TEST(emt_tests, test_emt_scale_add)
+TEST(emt_tests, emt_scale_add)
 {
   emt_feats v1;
   emt_feats v2;
@@ -213,7 +213,7 @@ TEST(emt_tests, test_emt_scale_add)
   EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
 }
 
-TEST(emt_tests, test_emt_abs)
+TEST(emt_tests, emt_abs)
 {
   emt_feats v1;
   emt_feats v2;
@@ -234,7 +234,7 @@ TEST(emt_tests, test_emt_abs)
   EXPECT_EQ(v1, v2);
 }
 
-TEST(emt_tests, test_emt_normalize)
+TEST(emt_tests, emt_normalize)
 {
   emt_feats v1;
   emt_feats v2;
@@ -252,7 +252,7 @@ TEST(emt_tests, test_emt_normalize)
   EXPECT_EQ(v1, v2);
 }
 
-TEST(emt_tests, test_emt_median)
+TEST(emt_tests, emt_median)
 {
   std::vector<float> v1;
 
@@ -271,7 +271,7 @@ TEST(emt_tests, test_emt_median)
   EXPECT_EQ(emt_median(v1), 5);
 }
 
-TEST(emt_tests, test_emt_router_eigen)
+TEST(emt_tests, emt_router_eigen)
 {
   VW::rand_state rng(1);
 
@@ -315,7 +315,7 @@ TEST(emt_tests, test_emt_router_eigen)
   EXPECT_GE(var, 19.29);
 }
 
-TEST(emt_tests, test_emt_shuffle)
+TEST(emt_tests, emt_shuffle)
 {
   VW::rand_state rng(2);
 

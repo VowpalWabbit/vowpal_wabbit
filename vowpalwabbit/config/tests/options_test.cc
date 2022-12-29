@@ -27,7 +27,7 @@ std::shared_ptr<T> to_opt_ptr(option_builder<T>& builder)
   return to_opt_ptr(std::move(builder));
 }
 
-TEST(options_test, make_option_and_customize)
+TEST(options_tests, make_option_and_customize)
 {
   int loc = 0;
   auto opt = to_opt_ptr(make_option("opt", loc).default_value(4).help("Help text").keep().short_name("t"));
@@ -43,7 +43,7 @@ TEST(options_test, make_option_and_customize)
   EXPECT_EQ(loc, 5);
 }
 
-TEST(options_test, typed_argument_equality)
+TEST(options_tests, typed_argument_equality)
 {
   int int_loc;
   int int_loc_other;
@@ -64,7 +64,7 @@ TEST(options_test, typed_argument_equality)
   EXPECT_TRUE(*b1 != *b3);
 }
 
-TEST(options_test, create_argument_group)
+TEST(options_tests, create_argument_group)
 {
   std::string loc;
   std::vector<std::string> loc2;
@@ -90,7 +90,7 @@ TEST(options_test, create_argument_group)
   EXPECT_EQ(ag.m_options[3]->m_type_hash, typeid(decltype(loc2)).hash_code());
 }
 
-TEST(options_test, name_extraction_from_option_group)
+TEST(options_tests, name_extraction_from_option_group)
 {
   std::string loc;
   std::vector<std::string> loc2;
@@ -114,7 +114,7 @@ TEST(options_test, name_extraction_from_option_group)
   EXPECT_THROW(name_extractor.add_and_parse(ag), VW::vw_exception);
 }
 
-TEST(options_test, name_extraction_multi_necessary)
+TEST(options_tests, name_extraction_multi_necessary)
 {
   std::string loc;
   std::vector<std::string> loc2;
@@ -138,7 +138,7 @@ TEST(options_test, name_extraction_multi_necessary)
   EXPECT_THROW(name_extractor.add_and_parse(ag), VW::vw_exception);
 }
 
-TEST(options_test, name_extraction_should_throw)
+TEST(options_tests, name_extraction_should_throw)
 {
   std::string loc;
   std::vector<std::string> loc2;
@@ -160,7 +160,7 @@ TEST(options_test, name_extraction_should_throw)
   EXPECT_THROW(name_extractor.replace("opt2", "blah"), VW::vw_exception);
 }
 
-TEST(options_test, name_extraction_recycle)
+TEST(options_tests, name_extraction_recycle)
 {
   std::string loc;
   std::vector<std::string> loc2;
