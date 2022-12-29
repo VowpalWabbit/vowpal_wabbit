@@ -37,6 +37,19 @@
 
 void initialize_weights_as_polar_normal(VW::weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
 
+template <class T>
+double calculate_sd(VW::workspace& /* all */, T& weights)
+{
+  static int my_size = 0;
+  std::for_each(weights.begin(), weights.end(), [](float /* v */) { my_size += 1; });
+  double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
+  double mean = sum / my_size;
+  std::vector<double> diff(my_size);
+  std::transform(weights.begin(), weights.end(), diff.begin(), [mean](double x) { return x - mean; });
+  double sq_sum = inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  return std::sqrt(sq_sum / my_size);
+}
+
 // re-scaling to re-picking values outside the truncating boundary.
 // note:- boundary is twice the standard deviation.
 template <class T>
@@ -50,18 +63,6 @@ void truncate(VW::workspace& all, T& weights)
       });
 }
 
-template <class T>
-double calculate_sd(VW::workspace& /* all */, T& weights)
-{
-  static int my_size = 0;
-  std::for_each(weights.begin(), weights.end(), [](float /* v */) { my_size += 1; });
-  double sum = std::accumulate(weights.begin(), weights.end(), 0.0);
-  double mean = sum / my_size;
-  std::vector<double> diff(my_size);
-  std::transform(weights.begin(), weights.end(), diff.begin(), [mean](double x) { return x - mean; });
-  double sq_sum = inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-  return std::sqrt(sq_sum / my_size);
-}
 template <class T>
 void initialize_regressor(VW::workspace& all, T& weights)
 {

@@ -73,7 +73,7 @@ public:
   bool normalize = false;
   bool random_init = false;
 
-  void initialize_Z(parameters& weights)  // NOLINT
+  void initialize_Z(VW::parameters& weights)  // NOLINT
   {
     uint32_t length = 1 << all->num_bits;
     if (normalize)  // initialize normalization part
@@ -94,7 +94,8 @@ public:
       for (uint32_t i = 0; i < length; i++)
       {
         VW::weight& w = weights.strided_index(i);
-        float r1, r2;
+        float r1;
+        float r2;
         for (int j = 1; j <= m; j++)
         {
           // box-muller tranform: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform

@@ -6,11 +6,11 @@
 
 // forward declarations
 class io_buf;
-class parameters;
-class dense_parameters;
 
 namespace VW
 {
+class parameters;
+class dense_parameters;
 class loss_function;
 class named_labels;
 class reduction_features;

@@ -40,7 +40,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
   // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
-  parameters& weights = all.weights;
+  auto& weights = all.weights;
   uint64_t mask = weights.mask();
   for (VW::features& fs : ec)
   {
