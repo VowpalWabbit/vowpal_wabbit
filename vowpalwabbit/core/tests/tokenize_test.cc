@@ -17,14 +17,14 @@ using namespace ::testing;
 TEST(tokenize_tests, tokenize_basic_string_escaped)
 {
   std::string str = "this is   a string  ";
-  auto const container = escaped_tokenize(' ', str);
+  auto const container = VW::details::escaped_tokenize(' ', str);
   EXPECT_THAT(container, ElementsAre(StrEq("this"), StrEq("is"), StrEq("a"), StrEq("string")));
 }
 
 TEST(tokenize_tests, tokenize_basic_string_allow_empty_escaped)
 {
   std::string str = "this is   a string  ";
-  auto const container = escaped_tokenize(' ', str, true);
+  auto const container = VW::details::escaped_tokenize(' ', str, true);
 
   EXPECT_THAT(container,
       ElementsAre(StrEq("this"), StrEq("is"), StrEq(""), StrEq(""), StrEq("a"), StrEq("string"), StrEq(""), StrEq("")));
@@ -33,7 +33,7 @@ TEST(tokenize_tests, tokenize_basic_string_allow_empty_escaped)
 TEST(tokenize_tests, tokenize_basic_string_allow_empty_no_end_space_escaped)
 {
   std::string str = "this is   a string";
-  auto const container = escaped_tokenize(' ', str, true);
+  auto const container = VW::details::escaped_tokenize(' ', str, true);
 
   EXPECT_THAT(container, ElementsAre(StrEq("this"), StrEq("is"), StrEq(""), StrEq(""), StrEq("a"), StrEq("string")));
 }
@@ -41,7 +41,7 @@ TEST(tokenize_tests, tokenize_basic_string_allow_empty_no_end_space_escaped)
 TEST(tokenize_tests, tokenize_basic_string_with_slash_escaped)
 {
   std::string str = "this is\\ a string";
-  auto const container = escaped_tokenize(' ', str, true);
+  auto const container = VW::details::escaped_tokenize(' ', str, true);
 
   EXPECT_THAT(container, ElementsAre(StrEq("this"), StrEq("is a"), StrEq("string")));
 }
@@ -49,7 +49,7 @@ TEST(tokenize_tests, tokenize_basic_string_with_slash_escaped)
 TEST(tokenize_tests, tokenize_basic_string_with_doubleslash_escaped)
 {
   std::string str = "this is\\\\ a string";
-  auto const container = escaped_tokenize(' ', str, true);
+  auto const container = VW::details::escaped_tokenize(' ', str, true);
 
   EXPECT_THAT(container, ElementsAre(StrEq("this"), StrEq("is\\"), StrEq("a"), StrEq("string")));
 }
@@ -57,14 +57,14 @@ TEST(tokenize_tests, tokenize_basic_string_with_doubleslash_escaped)
 TEST(tokenize_tests, tokenize_basic_string_with_normal_char_slash_escaped)
 {
   std::string str = "this \\is a string";
-  auto const container = escaped_tokenize(' ', str, true);
+  auto const container = VW::details::escaped_tokenize(' ', str, true);
   EXPECT_THAT(container, ElementsAre(StrEq("this"), StrEq("is"), StrEq("a"), StrEq("string")));
 }
 
 TEST(tokenize_tests, tokenize_basic_string_with_escape_final_character)
 {
   std::string str = "this is a string\\";
-  auto const container = escaped_tokenize(' ', str, true);
+  auto const container = VW::details::escaped_tokenize(' ', str, true);
 
   EXPECT_THAT(container, ElementsAre(StrEq("this"), StrEq("is"), StrEq("a"), StrEq("string")));
 }
