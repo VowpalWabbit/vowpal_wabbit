@@ -99,7 +99,7 @@ std::unique_ptr<VW::workspace> copy_workspace(const VW::workspace* ws, VW::io::l
   command_line.emplace_back("--preserve_performance_counters");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf temp_buffer;
+  VW::io_buf temp_buffer;
   temp_buffer.add_file(VW::io::create_vector_writer(backing_vector));
   VW::save_predictor(*const_cast<VW::workspace*>(ws), temp_buffer);
   return VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(command_line),

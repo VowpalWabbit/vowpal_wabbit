@@ -1371,7 +1371,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
   }
 }
 
-void load_input_model(VW::workspace& all, io_buf& io_temp)
+void load_input_model(VW::workspace& all, VW::io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
@@ -1651,7 +1651,7 @@ void VW::details::merge_options_from_header_strings(const std::vector<std::strin
 }
 
 options_i& load_header_merge_options(
-    options_i& options, VW::workspace& all, io_buf& model, bool& interactions_settings_duplicated)
+    options_i& options, VW::workspace& all, VW::io_buf& model, bool& interactions_settings_duplicated)
 {
   std::string file_options;
   save_load_header(all, model, true, false, file_options, options);
@@ -1709,7 +1709,7 @@ void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> l
   assert(learner_builder == nullptr);
 }
 
-void parse_sources(options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load)
+void parse_sources(options_i& options, VW::workspace& all, VW::io_buf& model, bool skip_model_load)
 {
   if (!skip_model_load) { load_input_model(all, model); }
   else { model.close_file(); }
