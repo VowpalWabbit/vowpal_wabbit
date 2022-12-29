@@ -183,7 +183,6 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
 
   float alpha;
   float tau;
