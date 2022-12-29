@@ -167,7 +167,7 @@ void learn_or_predict(baseline_challenger_data& data, multi_learner& base, VW::m
   data.learn_or_predict<is_learn>(base, examples);
 }
 
-void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
+void save_load(baseline_challenger_data& data, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, data); }
