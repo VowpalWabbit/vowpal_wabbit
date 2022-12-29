@@ -11,7 +11,7 @@
 
 #include <vector>
 
-TEST(json_tests, parse_json_simple)
+TEST(json, parse_json_simple)
 {
   auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
@@ -33,7 +33,7 @@ TEST(json_tests, parse_json_simple)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_simple_with_weight)
+TEST(json, parse_json_simple_with_weight)
 {
   auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 
@@ -60,7 +60,7 @@ TEST(json_tests, parse_json_simple_with_weight)
 }
 
 // TODO: Make unit test dig out and verify features.
-TEST(json_tests, parse_json_cb)
+TEST(json, parse_json_cb)
 {
   std::string json_text = R"(
     {
@@ -109,7 +109,7 @@ TEST(json_tests, parse_json_cb)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_cats)
+TEST(json, parse_json_cats)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -151,7 +151,7 @@ TEST(json_tests, parse_json_cats)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_cats_no_label)
+TEST(json, parse_json_cats_no_label)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -183,7 +183,7 @@ TEST(json_tests, parse_json_cats_no_label)
 }
 
 // TODO: Make unit test dig out and verify features.
-TEST(json_tests, parse_json_ccb)
+TEST(json, parse_json_ccb)
 {
   std::string json_text = R"(
     {
@@ -274,7 +274,7 @@ TEST(json_tests, parse_json_ccb)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_cb_as_ccb)
+TEST(json, parse_json_cb_as_ccb)
 {
   std::string json_text = R"(
     {
@@ -325,7 +325,7 @@ TEST(json_tests, parse_json_cb_as_ccb)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_slates_dom_parser)
+TEST(json, parse_json_slates_dom_parser)
 {
   std::string json_text = R"(
 {
@@ -410,7 +410,7 @@ TEST(json_tests, parse_json_slates_dom_parser)
 }
 
 // The json parser does insitu parsing, this test ensures that the string does not change. It internally must do a copy.
-TEST(json_tests, parse_json_text_does_not_change_input)
+TEST(json, parse_json_text_does_not_change_input)
 {
   std::string json_text =
       R"({"Version":"1","c":{"TShared":{"a=1":1,"b=0":1,"c=1":1},"_multi":[{"TAction":{"value=0.000000":1}},{"TAction":{"value=1.000000":1}},{"TAction":{"value=2.000000":1}},{"TAction":{"value=3.000000":1}},{"TAction":{"value=0.000000":1}},{"TAction":{"value=1.000000":1}},{"TAction":{"value=2.000000":1}},{"TAction":{"value=0.000000":1}},{"TAction":{"value=1.000000":1}}],"_slots":[{"Slate":{"c":1},"_inc":[0,1,2,3]},{"Slate":{"c":1},"_inc":[4,5,6]},{"Slate":{"c":1},"_inc":[7,8]}]},"_outcomes":[{"_id":"ac32c0fc-f895-429d-9063-01c996432f791249622271","_label_cost":0,"_a":[0,1,2,3],"_p":[0.25,0.25,0.25,0.25],"_o":[0]},{"_id":"b64a5e7d-6e76-4d66-98fe-dc214e675ff81249622271","_label_cost":0,"_a":[4,5,6],"_p":[0.333333,0.333333,0.333333],"_o":[0]},{"_id":"a3a29e41-d903-4fbe-b624-11632733cf6f1249622271","_label_cost":0,"_a":[7,8],"_p":[0.5,0.5],"_o":[0]}],"VWState":{"m":"N/A"}})";
@@ -430,7 +430,7 @@ TEST(json_tests, parse_json_text_does_not_change_input)
   VW::finish(*ccb_vw);
 }
 
-TEST(json_tests, parse_json_dedup_cb)
+TEST(json, parse_json_dedup_cb)
 {
   const std::string json_deduped_text = R"(
 {
@@ -496,7 +496,7 @@ TEST(json_tests, parse_json_dedup_cb)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_dedup_cb_missing_dedup_id)
+TEST(json, parse_json_dedup_cb_missing_dedup_id)
 {
   const std::string json_deduped_text = R"(
 {
@@ -542,7 +542,7 @@ TEST(json_tests, parse_json_dedup_cb_missing_dedup_id)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_dedup_ccb)
+TEST(json, parse_json_dedup_ccb)
 {
   const std::string json_deduped_text = R"(
 {
@@ -662,7 +662,7 @@ TEST(json_tests, parse_json_dedup_ccb)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_dedup_ccb_dedup_id_missing)
+TEST(json, parse_json_dedup_ccb_dedup_id_missing)
 {
   const std::string json_deduped_text = R"(
 {
@@ -731,7 +731,7 @@ TEST(json_tests, parse_json_dedup_ccb_dedup_id_missing)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_dedup_slates)
+TEST(json, parse_json_dedup_slates)
 {
   const std::string json_deduped_text = R"(
 {
@@ -809,7 +809,7 @@ TEST(json_tests, parse_json_dedup_slates)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_dedup_slates_dedup_id_missing)
+TEST(json, parse_json_dedup_slates_dedup_id_missing)
 {
   const std::string json_deduped_text = R"(
 {
@@ -858,7 +858,7 @@ TEST(json_tests, parse_json_dedup_slates_dedup_id_missing)
   VW::finish(*vw);
 }
 
-TEST(json_tests, parse_json_simple_verify_extents)
+TEST(json, parse_json_simple_verify_extents)
 {
   auto* vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
 

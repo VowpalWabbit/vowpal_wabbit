@@ -11,7 +11,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(loss_functions_tests, squared_loss_test)
+TEST(loss_functions, squared_loss_test)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("squared");
@@ -42,7 +42,7 @@ TEST(loss_functions_tests, squared_loss_test)
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test1)
+TEST(loss_functions, expectile_loss_label_is_greater_than_prediction_test1)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -74,7 +74,7 @@ TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test1
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test2)
+TEST(loss_functions, expectile_loss_label_is_greater_than_prediction_test2)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -106,7 +106,7 @@ TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test2
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test3)
+TEST(loss_functions, expectile_loss_label_is_greater_than_prediction_test3)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -138,7 +138,7 @@ TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test3
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test4)
+TEST(loss_functions, expectile_loss_label_is_greater_than_prediction_test4)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -170,7 +170,7 @@ TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test4
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test5)
+TEST(loss_functions, expectile_loss_label_is_greater_than_prediction_test5)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -202,7 +202,7 @@ TEST(loss_functions_tests, expectile_loss_label_is_greater_than_prediction_test5
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test1)
+TEST(loss_functions, expectile_loss_prediction_is_greater_than_label_test1)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -234,7 +234,7 @@ TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test1
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test2)
+TEST(loss_functions, expectile_loss_prediction_is_greater_than_label_test2)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -266,7 +266,7 @@ TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test2
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test3)
+TEST(loss_functions, expectile_loss_prediction_is_greater_than_label_test3)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -298,7 +298,7 @@ TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test3
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test4)
+TEST(loss_functions, expectile_loss_prediction_is_greater_than_label_test4)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -330,7 +330,7 @@ TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test4
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test5)
+TEST(loss_functions, expectile_loss_prediction_is_greater_than_label_test5)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -361,7 +361,7 @@ TEST(loss_functions_tests, expectile_loss_prediction_is_greater_than_label_test5
 
   VW::finish(vw);
 }
-TEST(loss_functions_tests, expectile_loss_parameter_equals_zero_test)
+TEST(loss_functions, expectile_loss_parameter_equals_zero_test)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -393,7 +393,7 @@ TEST(loss_functions_tests, expectile_loss_parameter_equals_zero_test)
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, expectile_loss_parameter_equals_one_test)
+TEST(loss_functions, expectile_loss_parameter_equals_one_test)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type("expectile");
@@ -425,7 +425,7 @@ TEST(loss_functions_tests, expectile_loss_parameter_equals_one_test)
   VW::finish(vw);
 }
 
-TEST(loss_functions_tests, compare_expectile_loss_with_squared_loss_test)
+TEST(loss_functions, compare_expectile_loss_with_squared_loss_test)
 {
   auto& vw = *VW::initialize("--quiet");
   const std::string loss_type_expectile("expectile");

@@ -17,7 +17,7 @@ using namespace ::testing;
 
 #include <string>
 
-TEST(cache_tests, write_and_read_example)
+TEST(cache, write_and_read_example)
 {
   auto workspace = VW::initialize_experimental(vwtest::make_args("--quiet"));
   VW::example src_ex;
@@ -54,7 +54,7 @@ TEST(cache_tests, write_and_read_example)
   EXPECT_FLOAT_EQ(src_ex.l.simple.label, dest_ex.l.simple.label);
 }
 
-TEST(cache_tests, write_and_read_large_example)
+TEST(cache, write_and_read_large_example)
 {
   auto workspace = VW::initialize_experimental(vwtest::make_args("--quiet"));
   VW::example src_ex;
@@ -100,7 +100,7 @@ TEST(cache_tests, write_and_read_large_example)
   }
 }
 
-TEST(cache_tests, write_and_read_tag)
+TEST(cache, write_and_read_tag)
 {
   VW::v_array<char> tag;
   tag.push_back('m');
@@ -125,7 +125,7 @@ TEST(cache_tests, write_and_read_tag)
   EXPECT_THAT(tag, Pointwise(Eq(), read_tag));
 }
 
-TEST(cache_tests, write_and_read_index)
+TEST(cache, write_and_read_index)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
   VW::io_buf io_writer;
@@ -144,7 +144,7 @@ TEST(cache_tests, write_and_read_index)
   EXPECT_EQ(index, read_index);
 }
 
-TEST(cache_tests, write_and_read_features)
+TEST(cache, write_and_read_features)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
   VW::io_buf io_writer;

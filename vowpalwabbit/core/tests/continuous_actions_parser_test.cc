@@ -26,7 +26,7 @@ void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l, 
   lp.parse_label(l, red_fts, mem, nullptr, words, null_logger);
 }
 
-TEST(cats_tests, continuous_actions_parse_label)
+TEST(cats, continuous_actions_parse_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -43,7 +43,7 @@ TEST(cats_tests, continuous_actions_parse_label)
   }
 }
 
-TEST(cats_tests, continuous_actions_parse_label_and_pdf)
+TEST(cats, continuous_actions_parse_label_and_pdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -70,7 +70,7 @@ TEST(cats_tests, continuous_actions_parse_label_and_pdf)
   }
 }
 
-TEST(cats_tests, continuous_actions_parse_only_pdf_no_label)
+TEST(cats, continuous_actions_parse_only_pdf_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -91,7 +91,7 @@ TEST(cats_tests, continuous_actions_parse_only_pdf_no_label)
   }
 }
 
-TEST(cats_tests, continuous_actions_parse_malformed_pdf)
+TEST(cats, continuous_actions_parse_malformed_pdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -108,7 +108,7 @@ TEST(cats_tests, continuous_actions_parse_malformed_pdf)
   }
 }
 
-TEST(cats_tests, continuous_actions_parse_label_and_chosen_action)
+TEST(cats, continuous_actions_parse_label_and_chosen_action)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -129,7 +129,7 @@ TEST(cats_tests, continuous_actions_parse_label_and_chosen_action)
   }
 }
 
-TEST(cats_tests, continuous_actions_chosen_action_only_no_label)
+TEST(cats, continuous_actions_chosen_action_only_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -146,7 +146,7 @@ TEST(cats_tests, continuous_actions_chosen_action_only_no_label)
   }
 }
 
-TEST(cats_tests, continuous_actions_parse_label_pdf_and_chosen_action)
+TEST(cats, continuous_actions_parse_label_pdf_and_chosen_action)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -178,7 +178,7 @@ TEST(cats_tests, continuous_actions_parse_label_pdf_and_chosen_action)
   }
 }
 
-TEST(cats_tests, continuous_actions_parse_no_label)
+TEST(cats, continuous_actions_parse_no_label)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -193,7 +193,7 @@ TEST(cats_tests, continuous_actions_parse_no_label)
   }
 }
 
-TEST(cats_tests, continuous_actions_parse_no_label_w_prefix)
+TEST(cats, continuous_actions_parse_no_label_w_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -208,7 +208,7 @@ TEST(cats_tests, continuous_actions_parse_no_label_w_prefix)
   }
 }
 
-TEST(cats_tests, continus_actions_check_label_for_prefix)
+TEST(cats, continus_actions_check_label_for_prefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {

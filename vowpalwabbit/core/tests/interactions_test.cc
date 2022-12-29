@@ -107,7 +107,7 @@ void eval_count_of_generated_ft_naive(
 
 inline void noop_func(float& /* unused_dat */, const float /* ft_weight */, const uint64_t /* ft_idx */) {}
 
-TEST(interactions_tests, eval_count_of_generated_ft_test)
+TEST(interactions, eval_count_of_generated_ft_test)
 {
   auto& vw = *VW::initialize("--quiet -q :: --noconstant", nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(vw, "3 |f a b c |e x y z");
@@ -135,7 +135,7 @@ TEST(interactions_tests, eval_count_of_generated_ft_test)
   VW::finish(vw);
 }
 
-TEST(interactions_tests, eval_count_of_generated_ft_extents_combinations_test)
+TEST(interactions, eval_count_of_generated_ft_extents_combinations_test)
 {
   auto& vw = *VW::initialize("--quiet --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant",
       nullptr, false, nullptr, nullptr);
@@ -159,7 +159,7 @@ TEST(interactions_tests, eval_count_of_generated_ft_extents_combinations_test)
   VW::finish(vw);
 }
 
-TEST(interactions_tests, eval_count_of_generated_ft_extents_permutations_test)
+TEST(interactions, eval_count_of_generated_ft_extents_permutations_test)
 {
   auto& vw = *VW::initialize(
       "--quiet -permutations --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant", nullptr,
@@ -194,7 +194,7 @@ TEST(interactions_tests, eval_count_of_generated_ft_extents_permutations_test)
 //   check_vector_of_vectors_exact(result, compare_set);
 // }
 
-TEST(interactions_tests, interaction_generic_with_duplicates_expand_wildcard_only)
+TEST(interactions, interaction_generic_with_duplicates_expand_wildcard_only)
 {
   std::set<VW::namespace_index> namespaces = {'a', 'b'};
   auto result = INTERACTIONS::generate_namespace_permutations_with_repetition(namespaces, 2);
@@ -206,7 +206,7 @@ TEST(interactions_tests, interaction_generic_with_duplicates_expand_wildcard_onl
   EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-TEST(interactions_tests, sort_and_filter_interactions)
+TEST(interactions, sort_and_filter_interactions)
 {
   std::vector<std::vector<VW::namespace_index>> input = {{'b', 'a'}, {'a', 'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
 
@@ -225,7 +225,7 @@ void sort_all(std::vector<std::vector<T>>& interactions)
   std::sort(interactions.begin(), interactions.end());
 }
 
-TEST(interactions_tests, compile_interactions_quadratic_permutations_and_combinations_same)
+TEST(interactions, compile_interactions_quadratic_permutations_and_combinations_same)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', 'a'}};
@@ -247,7 +247,7 @@ TEST(interactions_tests, compile_interactions_quadratic_permutations_and_combina
   EXPECT_THAT(result_combs, ContainerEq(compare_set));
 }
 
-TEST(interactions_tests, compile_interactions_quadratic_combinations)
+TEST(interactions, compile_interactions_quadratic_combinations)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':'}};
@@ -264,7 +264,7 @@ TEST(interactions_tests, compile_interactions_quadratic_combinations)
   EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-TEST(interactions_tests, compile_interactions_quadratic_permutations)
+TEST(interactions, compile_interactions_quadratic_permutations)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':'}};
@@ -281,7 +281,7 @@ TEST(interactions_tests, compile_interactions_quadratic_permutations)
   EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-TEST(interactions_tests, compile_interactions_cubic_combinations)
+TEST(interactions, compile_interactions_cubic_combinations)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':', ':'}};
@@ -318,7 +318,7 @@ TEST(interactions_tests, compile_interactions_cubic_combinations)
   EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-TEST(interactions_tests, compile_interactions_cubic_permutations)
+TEST(interactions, compile_interactions_cubic_permutations)
 {
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':', ':'}};
@@ -346,7 +346,7 @@ TEST(interactions_tests, compile_interactions_cubic_permutations)
   EXPECT_THAT(result, ContainerEq(compare_set));
 }
 
-TEST(interactions_tests, parse_full_name_interactions_test)
+TEST(interactions, parse_full_name_interactions_test)
 {
   auto* vw = VW::initialize("--quiet");
 
@@ -379,7 +379,7 @@ TEST(interactions_tests, parse_full_name_interactions_test)
   VW::finish(*vw);
 }
 
-TEST(interactions_tests, extent_vs_char_interactions)
+TEST(interactions, extent_vs_char_interactions)
 {
   auto* vw_char_inter = VW::initialize("--quiet -q AB");
   auto* vw_extent_inter = VW::initialize("--quiet --experimental_full_name_interactions group1|group2");
@@ -418,7 +418,7 @@ TEST(interactions_tests, extent_vs_char_interactions)
   EXPECT_EQ(num_char_fts, num_extent_fts);
 }
 
-TEST(interactions_tests, extent_interaction_expansion_test)
+TEST(interactions, extent_interaction_expansion_test)
 {
   auto* vw = VW::initialize("--quiet");
   auto* ex = VW::read_example(*vw,
@@ -537,30 +537,30 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
   EXPECT_EQ(num_char_fts, num_extent_fts);
 }
 
-TEST(interactions_tests, extent_vs_char_interactions_wildcard)
+TEST(interactions, extent_vs_char_interactions_wildcard)
 {
   do_interaction_feature_count_test(true, false, true, true);
 }
-TEST(interactions_tests, extent_vs_char_interactions_cubic_wildcard)
+TEST(interactions, extent_vs_char_interactions_cubic_wildcard)
 {
   do_interaction_feature_count_test(true, true, true, true);
 }
 
-TEST(interactions_tests, extent_vs_char_interactions_wildcard_permutations)
+TEST(interactions, extent_vs_char_interactions_wildcard_permutations)
 {
   do_interaction_feature_count_test(true, false, false, true);
 }
-TEST(interactions_tests, extent_vs_char_interactions_cubic_wildcard_permutations)
+TEST(interactions, extent_vs_char_interactions_cubic_wildcard_permutations)
 {
   do_interaction_feature_count_test(true, true, false, true);
 }
 
-TEST(interactions_tests, extent_vs_char_interactions_cubic_wildcard_permutations_constant)
+TEST(interactions, extent_vs_char_interactions_cubic_wildcard_permutations_constant)
 {
   do_interaction_feature_count_test(true, true, false, false);
 }
 
-TEST(interactions_tests, extent_vs_char_interactions_cubic_wildcard_permutations_combinations_constant)
+TEST(interactions, extent_vs_char_interactions_cubic_wildcard_permutations_combinations_constant)
 {
   do_interaction_feature_count_test(true, true, true, false);
 }

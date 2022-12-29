@@ -17,7 +17,7 @@ int testfn()
   RETURN_ERROR_LS(&s, not_implemented) << "Error msg: " << 5;
 }
 
-TEST(status_builder_tests, status_builder_usage)
+TEST(status_builder, status_builder_usage)
 {
   const auto scode = testfn();
   EXPECT_EQ(scode, err::not_implemented);

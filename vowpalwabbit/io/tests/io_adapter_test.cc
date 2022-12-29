@@ -11,7 +11,7 @@
 #include <cstring>
 #include <memory>
 
-TEST(io_adapter_tests, io_adapter_vector_writer)
+TEST(io_adapter, io_adapter_vector_writer)
 {
   auto buffer = std::make_shared<std::vector<char>>();
   EXPECT_EQ(buffer.use_count(), 1);
@@ -29,7 +29,7 @@ TEST(io_adapter_tests, io_adapter_vector_writer)
   EXPECT_TRUE(*buffer == (std::vector<char>{'t', 'e', 's', 't', 'm', 'o', 'r', 'e'}));
 }
 
-TEST(io_adapter_tests, io_adapter_buffer_view)
+TEST(io_adapter, io_adapter_buffer_view)
 {
   constexpr std::array<const char, 13> buffer = {"test another"};
   auto buffer_reader = VW::io::create_buffer_view(buffer.data(), buffer.size());

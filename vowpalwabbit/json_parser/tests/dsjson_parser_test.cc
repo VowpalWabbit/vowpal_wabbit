@@ -11,7 +11,7 @@
 
 #include <vector>
 
-TEST(dsjson_tests, parse_dsjson_underscore_p)
+TEST(dsjson, parse_dsjson_underscore_p)
 {
   const std::string json_text = R"(
 {
@@ -35,7 +35,7 @@ TEST(dsjson_tests, parse_dsjson_underscore_p)
   }
 }
 
-TEST(dsjson_tests, parse_dsjson_p)
+TEST(dsjson, parse_dsjson_p)
 {
   const std::string json_text = R"(
 {
@@ -59,7 +59,7 @@ TEST(dsjson_tests, parse_dsjson_p)
   }
 }
 
-TEST(dsjson_tests, parse_dsjson_p_duplicates)
+TEST(dsjson, parse_dsjson_p_duplicates)
 {
   const std::string json_text = R"(
 {
@@ -88,7 +88,7 @@ TEST(dsjson_tests, parse_dsjson_p_duplicates)
   }
 }
 
-TEST(dsjson_tests, parse_dsjson_pdrop_float)
+TEST(dsjson, parse_dsjson_pdrop_float)
 {
   const std::string json_text = R"(
 {
@@ -105,7 +105,7 @@ TEST(dsjson_tests, parse_dsjson_pdrop_float)
   EXPECT_FLOAT_EQ(0.1f, interaction.probability_of_drop);
 }
 
-TEST(dsjson_tests, parse_dsjson_pdrop_uint)
+TEST(dsjson, parse_dsjson_pdrop_uint)
 {
   const std::string json_text = R"(
 {
@@ -123,7 +123,7 @@ TEST(dsjson_tests, parse_dsjson_pdrop_uint)
 }
 
 // TODO: Make unit test dig out and verify features.
-TEST(dsjson_tests, parse_dsjson_cb)
+TEST(dsjson, parse_dsjson_cb)
 {
   std::string json_text = R"(
 {
@@ -208,7 +208,7 @@ TEST(dsjson_tests, parse_dsjson_cb)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_cats)
+TEST(dsjson, parse_dsjson_cats)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -256,7 +256,7 @@ TEST(dsjson_tests, parse_dsjson_cats)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_cats_no_label)
+TEST(dsjson, parse_dsjson_cats_no_label)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -294,7 +294,7 @@ TEST(dsjson_tests, parse_dsjson_cats_no_label)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_cats_w_valid_pdf)
+TEST(dsjson, parse_dsjson_cats_w_valid_pdf)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -347,7 +347,7 @@ TEST(dsjson_tests, parse_dsjson_cats_w_valid_pdf)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_cats_w_invalid_pdf)
+TEST(dsjson, parse_dsjson_cats_w_invalid_pdf)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -393,7 +393,7 @@ TEST(dsjson_tests, parse_dsjson_cats_w_invalid_pdf)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_cats_chosen_action)
+TEST(dsjson, parse_dsjson_cats_chosen_action)
 {
   std::vector<std::string> features = {"18-25", "4", "C", "0", "1", "2", "15", "M"};
   std::string json_text = R"(
@@ -440,7 +440,7 @@ TEST(dsjson_tests, parse_dsjson_cats_chosen_action)
 }
 
 // TODO: Make unit test dig out and verify features.
-TEST(dsjson_tests, parse_dsjson_ccb)
+TEST(dsjson, parse_dsjson_ccb)
 {
   std::string json_text = R"(
 {
@@ -523,7 +523,7 @@ TEST(dsjson_tests, parse_dsjson_ccb)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_cb_as_ccb)
+TEST(dsjson, parse_dsjson_cb_as_ccb)
 {
   std::string json_text = R"(
 {
@@ -607,7 +607,7 @@ TEST(dsjson_tests, parse_dsjson_cb_as_ccb)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_cb_with_nan)
+TEST(dsjson, parse_dsjson_cb_with_nan)
 {
   std::string json_text = R"(
 {
@@ -674,7 +674,7 @@ TEST(dsjson_tests, parse_dsjson_cb_with_nan)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_slates)
+TEST(dsjson, parse_dsjson_slates)
 {
   std::string json_text = R"(
 {
@@ -786,7 +786,7 @@ TEST(dsjson_tests, parse_dsjson_slates)
   VW::finish(*vw);
 }
 
-TEST(dsjson_tests, parse_dsjson_slates_dom_parser)
+TEST(dsjson, parse_dsjson_slates_dom_parser)
 {
   std::string json_text = R"(
 {

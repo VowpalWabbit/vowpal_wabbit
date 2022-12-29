@@ -9,7 +9,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(distributionally_robust_tests, distributionally_robust_inverse_chisq)
+TEST(distributionally_robust, distributionally_robust_inverse_chisq)
 {
   // Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.501, 0.05 }]
 
@@ -25,7 +25,7 @@ TEST(distributionally_robust_tests, distributionally_robust_inverse_chisq)
   }
 }
 
-TEST(distributionally_robust_tests, distributionally_robust_recompute_duals)
+TEST(distributionally_robust, distributionally_robust_recompute_duals)
 {
   // To see how this data is generated checkout python/tests/test_distributionall_robust.py
 
@@ -82,7 +82,7 @@ TEST(distributionally_robust_tests, distributionally_robust_recompute_duals)
   }
 }
 
-TEST(distributionally_robust_tests, distributionally_robust_qlb)
+TEST(distributionally_robust, distributionally_robust_qlb)
 {
   // To see how this data is generated checkout python/tests/test_distributionall_robust.py
 
