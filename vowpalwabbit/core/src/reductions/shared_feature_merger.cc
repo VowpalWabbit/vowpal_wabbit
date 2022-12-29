@@ -27,7 +27,7 @@ public:
 class sfm_data
 {
 public:
-  std::shared_ptr<sfm_metrics> metrics;
+  std::unique_ptr<sfm_metrics> metrics;
   VW::label_type_t label_type = VW::label_type_t::CB;
   bool store_shared_ex_in_reduction_features = false;
 };
@@ -126,8 +126,8 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
   // Both label and prediction types inherit that of base.
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(shared_feature_merger_setup))
-                      .set_persist_metrics(persist)
                       .set_learn_returns_prediction(base->learn_returns_prediction)
+                      .set_persist_metrics(persist)
                       .build();
 
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
