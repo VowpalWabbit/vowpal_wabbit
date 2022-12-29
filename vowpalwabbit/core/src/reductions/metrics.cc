@@ -141,8 +141,6 @@ void VW::reductions::output_metrics(VW::workspace& all)
   metrics_manager& manager = all.global_metrics;
   if (manager.are_metrics_enabled())
   {
-    std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-
     all.l->persist_metrics(manager);
     for (auto& metric_hook : all.metric_output_hooks) { manager.register_metrics_callback(metric_hook); }
 

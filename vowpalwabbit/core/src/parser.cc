@@ -213,7 +213,7 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
 
   all.example_parser->decision_service_json = dsjson;
 
-  if (dsjson && all.options->was_supplied("extra_metrics"))
+  if (dsjson && all.global_metrics.are_metrics_enabled())
   {
     all.example_parser->metrics = VW::make_unique<VW::details::dsjson_metrics>();
   }

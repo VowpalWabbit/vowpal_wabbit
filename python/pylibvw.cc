@@ -326,9 +326,8 @@ private:
 py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
-  lau
 
-      if (all->options->was_supplied("extra_metrics"))
+  if (all->global_metrics.are_metrics_enabled())
   {
     all->l->persist_metrics(all->global_metrics);
     auto metrics = all->global_metrics.collect_metrics();

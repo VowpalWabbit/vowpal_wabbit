@@ -188,6 +188,8 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+
   float alpha;
   float tau;
   bool is_enabled = false;
@@ -215,8 +217,7 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
 
   if (!options.was_supplied("cb_adf")) { THROW("cb_challenger requires cb_explore_adf or cb_adf"); }
 
-  bool emit_metrics = options.was_supplied("extra_metrics");
-  auto data = VW::make_unique<baseline_challenger_data>(emit_metrics, alpha, tau);
+  auto data = VW::make_unique<baseline_challenger_data>(all.global_metrics.are_metrics_enabled(), alpha, tau);
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
