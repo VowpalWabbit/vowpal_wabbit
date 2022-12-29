@@ -55,7 +55,6 @@ void insert_dsjson_metrics(const VW::details::dsjson_metrics* ds_metrics, VW::me
 class metrics_data
 {
 public:
-  std::string out_file;
   size_t learn_count = 0;
   size_t predict_count = 0;
 };
@@ -98,8 +97,10 @@ private:
   Writer<FileWriteStream>& _writer;
 };
 
-void list_to_json_file(const std::string& filename, const VW::metric_sink& metrics, VW::io::logger& logger)
+void list_to_json_file(VW::metrics_manager& manager, VW::io::logger& logger)
 {
+  VW::metric_sink metrics = manager.collect_metrics();
+  std::string filename = manager.get_filename();
   FILE* fp;
   if (VW::file_open(&fp, filename.c_str(), "wt") == 0)
   {
@@ -137,38 +138,46 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
 
 void VW::reductions::output_metrics(VW::workspace& all)
 {
-  if (all.options->was_supplied("extra_metrics"))
+  metrics_manager& manager = all.global_metrics;
+  if (manager.are_metrics_enabled())
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
 
-    all.l->persist_metrics(all.global_metrics);
-    VW::metric_sink list_metrics = all.global_metrics.collect_metrics();
+    all.l->persist_metrics(manager);
+    for (auto& metric_hook : all.metric_output_hooks) { manager.register_metrics_callback(metric_hook); }
 
-    for (auto& metric_hook : all.metric_output_hooks) { metric_hook(list_metrics); }
+    auto additional_metrics = [&all](metric_sink& sink) -> void
+    {
+      sink.set_uint("total_log_calls", all.logger.get_log_count());
 
-    list_metrics.set_uint("total_log_calls", all.logger.get_log_count());
+      std::vector<std::string> enabled_reductions;
+      if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
+      insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_reductions);
+    };
+    manager.register_metrics_callback(additional_metrics);
 
-    std::vector<std::string> enabled_reductions;
-    if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
-    insert_dsjson_metrics(all.example_parser->metrics.get(), list_metrics, enabled_reductions);
-
-    list_to_json_file(filename, list_metrics, all.logger);
+    list_to_json_file(manager, all.logger);
   }
 }
 
 VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
+  VW::config::options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+
   auto data = VW::make_unique<metrics_data>();
 
+  std::string out_file;
   option_group_definition new_options("[Reduction] Debug Metrics");
-  new_options.add(make_option("extra_metrics", data->out_file)
+  new_options.add(make_option("extra_metrics", out_file)
                       .necessary()
                       .help("Specify filename to write metrics to. Note: There is no fixed schema"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (data->out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
+  if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
+  VW::metrics_manager manager(true, out_file);
+  all.global_metrics = std::move(manager);
 
   auto* base_learner = stack_builder.setup_base_learner();
 

@@ -11,7 +11,7 @@
 #include "vw/core/error_reporting.h"
 #include "vw/core/input_parser.h"
 #include "vw/core/interaction_generation_state.h"
-#include "vw/core/metric_manager.h"
+#include "vw/core/metrics_manager.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
@@ -156,7 +156,7 @@ public:
   // Used to implement the external binary parser.
   std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
 
-  VW::metric_manager global_metrics;
+  VW::metrics_manager global_metrics;
 
   // Experimental field.
   // Generic parser interface to make it possible to use any external parser.

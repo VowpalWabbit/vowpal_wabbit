@@ -16,19 +16,21 @@
 
 namespace VW
 {
-class metric_manager
+class metrics_manager
 {
 public:
-  metric_manager(bool enabled = false);
+  metrics_manager(bool enabled = false, std::string filename = "");
 
   using metrics_callback_fn = std::function<void(VW::metric_sink&)>;
 
   bool are_metrics_enabled() const;
-  void register_metric_callback(const metrics_callback_fn& callback);
+  std::string get_filename() const;
+  void register_metrics_callback(const metrics_callback_fn& callback);
   VW::metric_sink collect_metrics();
 
 private:
   bool _are_metrics_enabled;
-  std::vector<metrics_callback_fn> _metric_callbacks;
+  std::vector<metrics_callback_fn> _metrics_callbacks;
+  std::string _metrics_filename;
 };
 }  // namespace VW
