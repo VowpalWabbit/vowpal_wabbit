@@ -537,10 +537,7 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
   EXPECT_EQ(num_char_fts, num_extent_fts);
 }
 
-TEST(interactions, extent_vs_char_interactions_wildcard)
-{
-  do_interaction_feature_count_test(true, false, true, true);
-}
+TEST(interactions, extent_vs_char_interactions_wildcard) { do_interaction_feature_count_test(true, false, true, true); }
 TEST(interactions, extent_vs_char_interactions_cubic_wildcard)
 {
   do_interaction_feature_count_test(true, true, true, true);
