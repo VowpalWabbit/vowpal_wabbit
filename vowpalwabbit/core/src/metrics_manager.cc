@@ -18,14 +18,17 @@ std::string metrics_manager::get_filename() const { return _metrics_filename; }
 
 void metrics_manager::register_metrics_callback(const metrics_callback_fn& callback)
 {
-  _metrics_callbacks.push_back(callback);
+  if (_are_metrics_enabled) { _metrics_callbacks.push_back(callback); }
 }
 
 metric_sink metrics_manager::collect_metrics(LEARNER::base_learner* l) const
 {
   VW::metric_sink sink;
-  if (l) { l->persist_metrics(sink); }
-  for (const auto& callback : _metrics_callbacks) { callback(sink); }
+  if (_are_metrics_enabled)
+  {
+    if (l) { l->persist_metrics(sink); }
+    for (const auto& callback : _metrics_callbacks) { callback(sink); }
+  }
   return sink;
 }
 }  // namespace VW
