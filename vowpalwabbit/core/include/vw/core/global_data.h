@@ -152,10 +152,6 @@ public:
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 
-  // This field is experimental and subject to change.
-  // Used to implement the external binary parser.
-  std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
-
   VW::metrics_manager global_metrics;
 
   // Experimental field.
