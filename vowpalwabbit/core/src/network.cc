@@ -37,7 +37,7 @@ std::unique_ptr<VW::io::socket> VW::details::open_vw_binary_socket(
 
   std::string port = host_and_optional_port.substr(colon_pos + 1);
   std::string host = host_and_optional_port.substr(0, colon_pos);
-  auto port_num = int_of_string(port, logger);
+  auto port_num = VW::details::int_of_string(port, logger);
 
   return open_vw_binary_socket(host, VW::cast_signed_to_unsigned<uint16_t>(port_num), logger);
 }
