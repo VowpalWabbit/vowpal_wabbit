@@ -24,7 +24,7 @@ TEST(cache_tests, write_and_read_example)
   VW::parsers::text::read_line(*workspace, &src_ex, "3.5 |ns1 example value test |ss2 ex:0.5");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::parsers::cache::details::cache_temp_buffer temp_buffer;
@@ -32,7 +32,7 @@ TEST(cache_tests, write_and_read_example)
       io_writer, &src_ex, workspace->example_parser->lbl_parser, workspace->parse_mask, temp_buffer);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::multi_ex examples;
@@ -75,7 +75,7 @@ TEST(cache_tests, write_and_read_large_example)
       "e1 f1:0.3 g1 h1 i1 j1 k1 l1 m1 n1 o1 p1 q1 r1 s1 t1 u1 v1 w1 x1 y1:5.5 z1");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::parsers::cache::details::cache_temp_buffer temp_buffer;
@@ -83,7 +83,7 @@ TEST(cache_tests, write_and_read_large_example)
       io_writer, &src_ex, workspace->example_parser->lbl_parser, workspace->parse_mask, temp_buffer);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::multi_ex examples;
@@ -111,13 +111,13 @@ TEST(cache_tests, write_and_read_tag)
   tag.push_back('g');
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::parsers::cache::details::cache_tag(io_writer, tag);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::v_array<char> read_tag;
@@ -128,14 +128,14 @@ TEST(cache_tests, write_and_read_tag)
 TEST(cache_tests, write_and_read_index)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::namespace_index index = 79;
   VW::parsers::cache::details::cache_index(io_writer, index);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::namespace_index read_index = 0;
@@ -147,7 +147,7 @@ TEST(cache_tests, write_and_read_index)
 TEST(cache_tests, write_and_read_features)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   uint64_t mask = (1 << 18) - 1;
@@ -161,7 +161,7 @@ TEST(cache_tests, write_and_read_features)
   VW::parsers::cache::details::cache_features(io_writer, feats, mask);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::features read_feats;

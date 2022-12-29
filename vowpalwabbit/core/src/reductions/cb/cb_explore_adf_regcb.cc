@@ -45,7 +45,7 @@ public:
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(multi_learner& base, VW::multi_ex& examples) { predict_impl(base, examples); }
   void learn(multi_learner& base, VW::multi_ex& examples) { learn_impl(base, examples); }
-  void save_load(io_buf& io, bool read, bool text);
+  void save_load(VW::io_buf& io, bool read, bool text);
 
 private:
   void predict_impl(multi_learner& base, VW::multi_ex& examples);
@@ -231,14 +231,15 @@ void cb_explore_adf_regcb::learn_impl(multi_learner& base, VW::multi_ex& example
   examples[0]->pred.a_s = std::move(preds);
 }
 
-void cb_explore_adf_regcb::save_load(io_buf& io, bool read, bool text)
+void cb_explore_adf_regcb::save_load(VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_REG_CB_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+    VW::details::bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
 }  // namespace

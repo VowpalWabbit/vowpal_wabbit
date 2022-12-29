@@ -112,7 +112,7 @@ TEST(ccb_tests, ccb_parse_label)
 TEST(ccb_tests, ccb_cache_label)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   auto label = VW::make_unique<VW::ccb_label>();
@@ -120,7 +120,7 @@ TEST(ccb_tests, ccb_cache_label)
   VW::model_utils::write_model_field(io_writer, *label, "", false);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   auto uncached_label = VW::make_unique<VW::ccb_label>();

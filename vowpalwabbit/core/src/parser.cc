@@ -312,7 +312,7 @@ void VW::details::reset_source(VW::workspace& all, size_t numbits)
 
 void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
 {
-  io_buf& output = all.example_parser->output;
+  VW::io_buf& output = all.example_parser->output;
   if (output.num_files() != 0)
   {
     all.logger.err_warn("There was an attempt tried to make two write caches. Only the first one will be made.");
