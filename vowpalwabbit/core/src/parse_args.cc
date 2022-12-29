@@ -1764,7 +1764,7 @@ void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replac
 
 char** to_argv_escaped(std::string const& s, int& argc)
 {
-  std::vector<std::string> tokens = escaped_tokenize(' ', s);
+  std::vector<std::string> tokens = VW::details::escaped_tokenize(' ', s);
   char** argv = calloc_or_throw<char*>(tokens.size() + 1);
   argv[0] = calloc_or_throw<char>(2);
   argv[0][0] = 'b';

@@ -36,7 +36,7 @@ void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
 
       for (const auto& parse_name : reuse_mem.tokens)
       {
-        uint32_t n = int_of_string(parse_name, logger);
+        uint32_t n = VW::details::int_of_string(parse_name, logger);
         ld.label_v.push_back(n);
       }
       break;
