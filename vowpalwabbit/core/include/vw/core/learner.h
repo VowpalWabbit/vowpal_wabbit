@@ -390,7 +390,8 @@ public:
   // called when metrics is enabled.  Autorecursive.
   void NO_SANITIZE_UNDEFINED persist_metrics(VW::metrics_manager& manager)
   {
-    auto metric_f = [this](metric_sink& sink) -> void { _persist_metrics_fd.save_metric_f(_persist_metrics_fd.data, sink); };
+    auto metric_f = [this](metric_sink& sink) -> void
+    { _persist_metrics_fd.save_metric_f(_persist_metrics_fd.data, sink); };
     manager.register_metrics_callback(metric_f);
     if (_persist_metrics_fd.base) { _persist_metrics_fd.base->persist_metrics(manager); }
   }

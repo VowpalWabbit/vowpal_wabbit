@@ -7,12 +7,12 @@
 #include "metric_sink.h"
 
 #include <cstdint>
+#include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
-#include <functional>
-#include <memory>
 
 namespace VW
 {
