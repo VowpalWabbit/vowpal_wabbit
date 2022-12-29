@@ -140,9 +140,9 @@ void VW::reductions::output_metrics(VW::workspace& all)
   if (all.options->was_supplied("extra_metrics"))
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    VW::metric_sink list_metrics = all.global_metrics.collect_metrics();
 
-    //all.l->persist_metrics(list_metrics);
+    all.l->persist_metrics(all.global_metrics);
+    VW::metric_sink list_metrics = all.global_metrics.collect_metrics();
 
     for (auto& metric_hook : all.metric_output_hooks) { metric_hook(list_metrics); }
 
@@ -179,7 +179,7 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
         stack_builder.get_setupfn_name(metrics_setup))
                   .set_output_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(base_learner->learn_returns_prediction)
-                  //.set_persist_metrics(persist)
+                  .set_persist_metrics(persist)
                   .build();
     return make_base(*l);
   }
@@ -190,7 +190,7 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
         stack_builder.get_setupfn_name(metrics_setup))
                   .set_output_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(base_learner->learn_returns_prediction)
-                  //.set_persist_metrics(persist)
+                  .set_persist_metrics(persist)
                   .build();
     return make_base(*l);
   }

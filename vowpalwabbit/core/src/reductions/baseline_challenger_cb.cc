@@ -223,7 +223,7 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_save_load(save_load)
-                //.set_persist_metrics(persist_metrics)
+                .set_persist_metrics(persist_metrics)
                 .build();
   return make_base(*l);
 }

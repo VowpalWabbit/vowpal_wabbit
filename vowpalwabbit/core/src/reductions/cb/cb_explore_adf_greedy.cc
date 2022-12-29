@@ -151,7 +151,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
-                //.set_persist_metrics(explore_type::persist_metrics)
+                .set_persist_metrics(explore_type::persist_metrics)
                 .build(&all.logger);
   return make_base(*l);
 }
