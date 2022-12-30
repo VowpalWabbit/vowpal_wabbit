@@ -135,21 +135,20 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
 }
 }  // namespace
 
+void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sink)
+{
+  sink.set_uint("total_log_calls", all.logger.get_log_count());
+
+  std::vector<std::string> enabled_reductions;
+  if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
+  insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_reductions);
+}
+
 void VW::reductions::output_metrics(VW::workspace& all)
 {
   metrics_manager& manager = all.global_metrics;
   if (manager.are_metrics_enabled())
   {
-    auto additional_metrics = [&all](metric_sink& sink) -> void
-    {
-      sink.set_uint("total_log_calls", all.logger.get_log_count());
-
-      std::vector<std::string> enabled_reductions;
-      if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
-      insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_reductions);
-    };
-    manager.register_metrics_callback(additional_metrics);
-
     list_to_json_file(manager.get_filename(), manager.collect_metrics(all.l), all.logger);
   }
 }

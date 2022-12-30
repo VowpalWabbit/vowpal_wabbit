@@ -2143,6 +2143,7 @@ void finish(VW::workspace& all, bool delete_all)
     auto writer = VW::io::open_file_writer(all.json_weights_file_name);
     writer->write(content.c_str(), content.length());
   }
+  all.global_metrics.register_metrics_callback([&all](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(all, sink); });
   VW::reductions::output_metrics(all);
   all.logger.log_summary();
 }
