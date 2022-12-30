@@ -5,11 +5,10 @@
 #pragma once
 
 // forward declarations
-class parameters;
-class dense_parameters;
-
 namespace VW
 {
+class parameters;
+class dense_parameters;
 class io_buf;
 class loss_function;
 class named_labels;

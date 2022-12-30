@@ -62,8 +62,8 @@ void merge_weights_simple(size_t length, const std::vector<std::reference_wrappe
 }
 
 void merge_weights_with_save_resume(size_t length,
-    const std::vector<std::reference_wrapper<const dense_parameters>>& source,
-    const std::vector<float>& /*per_model_weighting*/, VW::workspace& output_workspace, dense_parameters& weights)
+    const std::vector<std::reference_wrapper<const VW::dense_parameters>>& source,
+    const std::vector<float>& /*per_model_weighting*/, VW::workspace& output_workspace, VW::dense_parameters& weights)
 {
   // Adaptive totals
   std::vector<float> adaptive_totals(length, 0.f);
@@ -216,7 +216,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
   // Weight aggregation is based on same method as allreduce.
   if (output_workspace.weights.sparse)
   {
-    std::vector<std::reference_wrapper<const sparse_parameters>> source;
+    std::vector<std::reference_wrapper<const VW::sparse_parameters>> source;
     source.reserve(all_workspaces.size());
     for (const auto* workspace : all_workspaces) { source.emplace_back(workspace->weights.sparse_weights); }
     if (output_workspace.weights.adaptive) { THROW("Sparse parameters not supported for merging with save_resume"); }
@@ -224,7 +224,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
   }
   else
   {
-    std::vector<std::reference_wrapper<const dense_parameters>> source;
+    std::vector<std::reference_wrapper<const VW::dense_parameters>> source;
     source.reserve(all_workspaces.size());
     for (const auto* workspace : all_workspaces) { source.emplace_back(workspace->weights.dense_weights); }
     if (output_workspace.weights.adaptive)
@@ -321,7 +321,7 @@ inline void audit_interaction(audit_results& dat, const VW::audit_strings* f)
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
 {
-  parameters& weights = dat.all.weights;
+  auto& weights = dat.all.weights;
   uint64_t index = ft_idx & weights.mask();
   size_t stride_shift = weights.stride_shift();
 
@@ -363,7 +363,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 
 void print_lda_features(VW::workspace& all, VW::example& ec)
 {
-  parameters& weights = all.weights;
+  VW::parameters& weights = all.weights;
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
   for (VW::features& fs : ec) { count += fs.size(); }
@@ -511,31 +511,31 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
   size_t num_features_from_interactions = 0;
   if (g.all->weights.sparse)
   {
-    multipredict_info<sparse_parameters> mp = {
+    multipredict_info<VW::sparse_parameters> mp = {
         count, step, pred, g.all->weights.sparse_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
     {
-      foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(
+      foreach_feature<multipredict_info<VW::sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
     else
     {
-      foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_multipredict>(
+      foreach_feature<multipredict_info<VW::sparse_parameters>, uint64_t, vec_add_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
   }
   else
   {
-    multipredict_info<dense_parameters> mp = {
+    multipredict_info<VW::dense_parameters> mp = {
         count, step, pred, g.all->weights.dense_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
     {
-      foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_trunc_multipredict>(
+      foreach_feature<multipredict_info<VW::dense_parameters>, uint64_t, vec_add_trunc_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
     else
     {
-      foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict>(
+      foreach_feature<multipredict_info<VW::dense_parameters>, uint64_t, vec_add_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
   }
