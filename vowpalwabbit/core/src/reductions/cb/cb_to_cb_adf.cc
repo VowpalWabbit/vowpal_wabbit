@@ -19,7 +19,7 @@ namespace
 class cb_to_cb_adf
 {
 public:
-  parameters* weights = nullptr;
+  VW::parameters* weights = nullptr;
   VW::reductions::cbify_adf_data adf_data;
   bool explore_mode = false;
   multi_learner* adf_learner = nullptr;

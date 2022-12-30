@@ -19,7 +19,7 @@
 #  define MAP_ANONYMOUS MAP_ANON
 #endif
 
-dense_parameters::dense_parameters(size_t length, uint32_t stride_shift)
+VW::dense_parameters::dense_parameters(size_t length, uint32_t stride_shift)
     : _begin(calloc_mergable_or_throw<VW::weight>(length << stride_shift))
     , _weight_mask((length << stride_shift) - 1)
     , _stride_shift(stride_shift)
@@ -27,10 +27,10 @@ dense_parameters::dense_parameters(size_t length, uint32_t stride_shift)
 {
 }
 
-dense_parameters::dense_parameters() : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false) {}
-bool dense_parameters::not_null() { return (_weight_mask > 0 && _begin != nullptr); }
+VW::dense_parameters::dense_parameters() : _begin(nullptr), _weight_mask(0), _stride_shift(0), _seeded(false) {}
+bool VW::dense_parameters::not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
-void dense_parameters::shallow_copy(const dense_parameters& input)
+void VW::dense_parameters::shallow_copy(const dense_parameters& input)
 {
   if (!_seeded) { free(_begin); }
   _begin = input._begin;
@@ -39,7 +39,7 @@ void dense_parameters::shallow_copy(const dense_parameters& input)
   _seeded = true;
 }
 
-void dense_parameters::set_zero(size_t offset)
+void VW::dense_parameters::set_zero(size_t offset)
 {
   if (not_null())
   {
@@ -47,7 +47,7 @@ void dense_parameters::set_zero(size_t offset)
   }
 }
 
-void dense_parameters::move_offsets(const size_t from, const size_t to, const size_t params_per_problem, bool swap)
+void VW::dense_parameters::move_offsets(const size_t from, const size_t to, const size_t params_per_problem, bool swap)
 {
   assert(from < params_per_problem);
   assert(to < params_per_problem);
@@ -73,7 +73,7 @@ void dense_parameters::move_offsets(const size_t from, const size_t to, const si
 
 #ifndef _WIN32
 #  ifndef DISABLE_SHARED_WEIGHTS
-void dense_parameters::share(size_t length)
+void VW::dense_parameters::share(size_t length)
 {
   float* shared_weights = static_cast<float*>(mmap(
       nullptr, (length << _stride_shift) * sizeof(float), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
@@ -86,7 +86,7 @@ void dense_parameters::share(size_t length)
 #  endif
 #endif
 
-dense_parameters::~dense_parameters()
+VW::dense_parameters::~dense_parameters()
 {
   if (_begin != nullptr && !_seeded)  // don't free weight vector if it is shared with another instance
   {
