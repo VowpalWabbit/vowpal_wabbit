@@ -745,7 +745,7 @@ size_t write_model_field(
 
 namespace
 {
-void emt_save_load_tree(VW::reductions::eigen_memory_tree::emt_tree& tree, io_buf& io, bool read, bool text)
+void emt_save_load_tree(VW::reductions::eigen_memory_tree::emt_tree& tree, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, tree); }

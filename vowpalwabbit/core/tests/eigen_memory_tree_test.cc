@@ -340,7 +340,7 @@ TEST(emt_tests, emt_save_load)
   }
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
   VW::save_predictor(*vw_save, io_writer);
   io_writer.flush();

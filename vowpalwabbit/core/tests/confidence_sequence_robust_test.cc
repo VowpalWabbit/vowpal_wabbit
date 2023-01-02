@@ -4,8 +4,6 @@
 
 #include "vw/core/confidence_sequence_robust.h"
 
-#include "vw/test_common/test_common.h"
-
 #include <gtest/gtest.h>
 
 TEST(confidence_sequence_robust_tests, python_equivalence)

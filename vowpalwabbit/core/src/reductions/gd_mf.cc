@@ -40,7 +40,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
   // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
-  parameters& weights = all.weights;
+  auto& weights = all.weights;
   uint64_t mask = weights.mask();
   for (VW::features& fs : ec)
   {
@@ -254,7 +254,7 @@ void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
   }
 }
 
-void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *d.all;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
@@ -284,7 +284,8 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       size_t K = d.rank * 2 + 1;  // NOLINT
       std::stringstream msg;
       msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+      brw +=
+          VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
         VW::weight* w_i = &(all.weights.strided_index(i));
@@ -292,13 +293,14 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         {
           VW::weight* v = w_i + k;
           msg << v << " ";
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
+          brw += VW::details::bin_text_read_write_fixed(
+              model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         msg << "\n";
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
+        brw += VW::details::bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
 
       if (!read) { ++i; }

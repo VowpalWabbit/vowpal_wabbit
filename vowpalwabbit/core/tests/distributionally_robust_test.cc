@@ -4,13 +4,12 @@
 
 #include "vw/core/distributionally_robust.h"
 
-#include "test_common.h"
 #include "vw/core/memory.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq)
+TEST(distributionally_robust_tests, distributionally_robust_inverse_chisq)
 {
   // Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.501, 0.05 }]
 
@@ -22,11 +21,11 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_inverse_chisq)
   {
     double v = VW::estimators::ChiSquared::chisq_onedof_isf(pt.first);
 
-    BOOST_CHECK_CLOSE(v, pt.second, 0.001);
+    EXPECT_NEAR(v, pt.second, 0.001);
   }
 }
 
-BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
+TEST(distributionally_robust_tests, distributionally_robust_recompute_duals)
 {
   // To see how this data is generated checkout python/tests/test_distributionall_robust.py
 
@@ -59,31 +58,31 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_recompute_duals)
     auto sd = onlinechisq->recompute_duals();
     auto d = sd.second;
 
-    BOOST_CHECK_EQUAL(0, sd.first);
-    BOOST_CHECK_EQUAL(d.unbounded, true);
-    BOOST_CHECK_EQUAL(d.kappa, 0);
-    BOOST_CHECK_EQUAL(d.gamma, 0);
-    BOOST_CHECK_EQUAL(d.beta, 0);
-    BOOST_CHECK_EQUAL(d.n, 0);
+    EXPECT_EQ(0, sd.first);
+    EXPECT_EQ(d.unbounded, true);
+    EXPECT_EQ(d.kappa, 0);
+    EXPECT_DOUBLE_EQ(d.gamma, 0);
+    EXPECT_DOUBLE_EQ(d.beta, 0);
+    EXPECT_DOUBLE_EQ(d.n, 0);
   }
 
-  for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
+  for (size_t i = 0; i < std::extent<decltype(data)>::value; ++i)
   {
     onlinechisq->update(data[i].first, data[i].second);
     auto sd = onlinechisq->recompute_duals();
     auto d = sd.second;
 
-    BOOST_CHECK_CLOSE(l_bound[i], sd.first, 0.001);
-    BOOST_CHECK_CLOSE(u_bound[i], onlinechisq->cressieread_upper_bound(), 0.001);
-    BOOST_CHECK_EQUAL(duals[i].unbounded, d.unbounded);
-    BOOST_CHECK_CLOSE(duals[i].kappa, d.kappa, 0.001);
-    BOOST_CHECK_CLOSE(duals[i].gamma, d.gamma, 0.001);
-    BOOST_CHECK_CLOSE(duals[i].beta, d.beta, 0.001);
-    BOOST_CHECK_EQUAL(duals[i].n, d.n);
+    EXPECT_NEAR(l_bound[i], sd.first, 0.001);
+    EXPECT_NEAR(u_bound[i], onlinechisq->cressieread_upper_bound(), 0.001);
+    EXPECT_EQ(duals[i].unbounded, d.unbounded);
+    EXPECT_NEAR(duals[i].kappa, d.kappa, 0.001);
+    EXPECT_NEAR(duals[i].gamma, d.gamma, 0.001);
+    EXPECT_NEAR(duals[i].beta, d.beta, 0.001);
+    EXPECT_EQ(duals[i].n, d.n);
   }
 }
 
-BOOST_AUTO_TEST_CASE(distributionally_robust_qlb)
+TEST(distributionally_robust_tests, distributionally_robust_qlb)
 {
   // To see how this data is generated checkout python/tests/test_distributionall_robust.py
 
@@ -99,11 +98,11 @@ BOOST_AUTO_TEST_CASE(distributionally_robust_qlb)
 
   auto onlinechisq = VW::make_unique<VW::estimators::ChiSquared>(0.05, 0.999);
 
-  for (int i = 0; i < std::extent<decltype(data)>::value; ++i)
+  for (size_t i = 0; i < std::extent<decltype(data)>::value; ++i)
   {
     onlinechisq->update(data[i].first, data[i].second);
     auto v = onlinechisq->qlb(data[i].first, data[i].second, 1);
 
-    BOOST_CHECK_CLOSE(qlbs[i], v, 0.01);
+    EXPECT_NEAR(qlbs[i], v, 0.01);
   }
 }

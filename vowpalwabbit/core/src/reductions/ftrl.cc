@@ -112,16 +112,16 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   size_t num_features_from_interactions = 0;
   if (b.all->weights.sparse)
   {
-    GD::multipredict_info<sparse_parameters> mp = {
+    GD::multipredict_info<VW::sparse_parameters> mp = {
         count, step, pred, all.weights.sparse_weights, static_cast<float>(all.sd->gravity)};
-    GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(
+    GD::foreach_feature<GD::multipredict_info<VW::sparse_parameters>, uint64_t, GD::vec_add_multipredict>(
         all, ec, mp, num_features_from_interactions);
   }
   else
   {
-    GD::multipredict_info<dense_parameters> mp = {
+    GD::multipredict_info<VW::dense_parameters> mp = {
         count, step, pred, all.weights.dense_weights, static_cast<float>(all.sd->gravity)};
-    GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(
+    GD::foreach_feature<GD::multipredict_info<VW::dense_parameters>, uint64_t, GD::vec_add_multipredict>(
         all, ec, mp, num_features_from_interactions);
   }
   ec.num_features_from_interactions = num_features_from_interactions;
@@ -327,7 +327,7 @@ void NO_SANITIZE_UNDEFINED learn_coin_betting(ftrl& a, base_learner& base, VW::e
   coin_betting_update_after_prediction(a, ec);
 }
 
-void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
+void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
   if (read) { initialize_regressor(*all); }
@@ -337,7 +337,8 @@ void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
     bool resume = all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
     {

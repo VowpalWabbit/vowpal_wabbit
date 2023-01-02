@@ -2629,12 +2629,12 @@ void parse_neighbor_features(
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_string(cmd[0], logger);
+      posn = VW::details::int_of_string(cmd[0], logger);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_string(cmd[0], logger);
+      posn = VW::details::int_of_string(cmd[0], logger);
       ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else { logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview); }

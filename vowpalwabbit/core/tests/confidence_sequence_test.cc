@@ -4,14 +4,12 @@
 
 #include "vw/core/confidence_sequence.h"
 
-#include "test_common.h"
-
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 constexpr float CS_FLOAT_TOL = 0.1f;
 
-BOOST_AUTO_TEST_CASE(incremental_fsum_test)
+TEST(confidence_seq_tests, incremental_fsum_test)
 {
   VW::details::incremental_f_sum fsum;
   fsum += 1.0;
@@ -24,10 +22,10 @@ BOOST_AUTO_TEST_CASE(incremental_fsum_test)
   fsum += 8.0;
   fsum += 9.0;
   fsum += 10.0;
-  BOOST_CHECK_EQUAL(fsum, 55.0);
+  EXPECT_FLOAT_EQ(fsum, 55.0);
 }
 
-BOOST_AUTO_TEST_CASE(confidence_sequence_test)
+TEST(confidence_seq_tests, confidence_sequence_test)
 {
   VW::estimators::confidence_sequence cs;
   std::vector<double> rs;
@@ -45,6 +43,6 @@ BOOST_AUTO_TEST_CASE(confidence_sequence_test)
   float ub = cs.upper_bound();
 
   // Compare to test_confidence_sequence.py
-  BOOST_CHECK_CLOSE(lb, 0.4215480f, CS_FLOAT_TOL);
-  BOOST_CHECK_CLOSE(ub, 0.7907692f, CS_FLOAT_TOL);
+  EXPECT_NEAR(lb, 0.4215480f, CS_FLOAT_TOL);
+  EXPECT_NEAR(ub, 0.7907692f, CS_FLOAT_TOL);
 }

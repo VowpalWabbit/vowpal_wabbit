@@ -75,7 +75,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   for (float& val : pmf) { val *= scale; }
   float draw = random_state.get_and_update_random();
   float sum_prob = 0.f;
-  for (int index = 0; index < pmf.size(); ++index)
+  for (size_t index = 0; index < pmf.size(); ++index)
   {
     sum_prob += pmf[index];
     if (sum_prob > draw) { return std::make_pair(index, pmf[index]); }
@@ -119,8 +119,7 @@ void cb_sim::call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_
   if (iter != callbacks.end())
   {
     callback_count++;
-    bool callback_result = iter->second(*this, vw, ex);
-    BOOST_CHECK_EQUAL(callback_result, true);
+    if (!iter->second(*this, vw, ex)) { THROW("Simulator callback returned false"); }
   }
 }
 
@@ -191,10 +190,10 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
 
   // avoid silently failing: ensure that all callbacks
   // got called and then cleanup
-  BOOST_CHECK_EQUAL(callbacks.size(), callback_count);
+  assert(callbacks.size() == callback_count);
   callbacks.clear();
   callback_count = 0;
-  BOOST_CHECK_EQUAL(callbacks.size(), callback_count);
+  assert(callbacks.size() == callback_count);
 
   return ctr;
 }
@@ -218,19 +217,27 @@ std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations
 std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed,
     const std::vector<uint64_t>& swap_after, const size_t split)
 {
-  BOOST_CHECK_GT(num_iterations, split);
+  assert(num_iterations > split);
   size_t before_save = num_iterations - split;
 
   auto first_vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
   // first chunk
   auto ctr = sim.run_simulation(first_vw, before_save, true, 1, swap_after);
-  // save
-  std::string model_file = "test_save_load.vw";
-  VW::save_predictor(*first_vw, model_file);
+
+  auto backing_vector = std::make_shared<std::vector<char>>();
+  {
+    VW::io_buf io_writer;
+    io_writer.add_file(VW::io::create_vector_writer(backing_vector));
+    VW::save_predictor(*first_vw, io_writer);
+    io_writer.flush();
+  }
+
   VW::finish(*first_vw);
   // reload in another instance
-  auto other_vw = VW::initialize(vw_arg + " --quiet -i " + model_file);
+  VW::io_buf io_reader;
+  io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+  auto* other_vw = VW::initialize(vw_arg + " --quiet", &io_reader);
   // continue
   ctr = sim.run_simulation(other_vw, split, true, before_save + 1, swap_after);
   VW::finish(*other_vw);
@@ -240,7 +247,6 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
 std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed,
     const std::vector<uint64_t>& swap_after, float scale_reward)
 {
-  BOOST_CHECK(true);
   auto* vw = VW::initialize(vw_arg);
   simulator::cb_sim sim(seed);
   auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, false, 0, swap_after, scale_reward);

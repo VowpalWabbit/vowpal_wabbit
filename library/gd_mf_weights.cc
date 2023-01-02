@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 
   unsigned char left_ns = first_pair[0];
   unsigned char right_ns = first_pair[1];
-  dense_parameters& weights = model->weights.dense_weights;
+  auto& weights = model->weights.dense_weights;
 
   FILE* file;
   VW::file_open(&file, infile.c_str(), "r");
