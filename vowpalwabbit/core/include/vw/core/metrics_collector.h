@@ -25,7 +25,6 @@ public:
   using metrics_callback_fn = std::function<void(VW::metric_sink&)>;
 
   bool are_metrics_enabled() const;
-  std::string get_filename() const;
   void register_metrics_callback(const metrics_callback_fn& callback);
   VW::metric_sink collect_metrics(LEARNER::base_learner* l = nullptr) const;
 

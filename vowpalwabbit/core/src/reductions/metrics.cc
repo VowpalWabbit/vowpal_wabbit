@@ -149,7 +149,8 @@ void VW::reductions::output_metrics(VW::workspace& all)
   metrics_collector& manager = all.global_metrics;
   if (manager.are_metrics_enabled())
   {
-    list_to_json_file(manager.get_filename(), manager.collect_metrics(all.l), all.logger);
+    std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
+    list_to_json_file(filename, manager.collect_metrics(all.l), all.logger);
   }
 }
 

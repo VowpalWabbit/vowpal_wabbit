@@ -14,8 +14,6 @@ metrics_collector::metrics_collector(bool enabled, std::string filename)
 
 bool metrics_collector::are_metrics_enabled() const { return _are_metrics_enabled; }
 
-std::string metrics_collector::get_filename() const { return _metrics_filename; }
-
 void metrics_collector::register_metrics_callback(const metrics_callback_fn& callback)
 {
   if (_are_metrics_enabled) { _metrics_callbacks.push_back(callback); }
