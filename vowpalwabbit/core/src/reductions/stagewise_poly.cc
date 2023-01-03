@@ -18,9 +18,9 @@
 #include <cfloat>
 #include <cmath>
 
-//#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
-// TODO: This file makes extensive use of #ifdef DEBUG for printing
-//       leave this alone for now
+// #define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
+//  TODO: This file makes extensive use of #ifdef DEBUG for printing
+//        leave this alone for now
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -629,11 +629,11 @@ void save_load(stagewise_poly& poly, VW::io_buf& model_file, bool read, bool tex
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.
-  //#ifdef DEBUG
+  // #ifdef DEBUG
   //      std::cout << "Sanity check after save_load... " << flush;
   //      sanity_check_state(poly);
   //      std::cout << "done" << std::endl;
-  //#endif //DEBUG
+  // #endif //DEBUG
 }
 }  // namespace
 
@@ -682,6 +682,8 @@ base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_build
       VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()), learn,
           predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
           .set_input_label_type(VW::label_type_t::SIMPLE)
+          .set_output_label_type(VW::label_type_t::SIMPLE)
+          .set_input_prediction_type(VW::prediction_type_t::SCALAR)
           .set_output_prediction_type(VW::prediction_type_t::SCALAR)
           .set_save_load(save_load)
           .set_output_example_prediction(VW::details::output_example_prediction_simple_label<stagewise_poly>)
