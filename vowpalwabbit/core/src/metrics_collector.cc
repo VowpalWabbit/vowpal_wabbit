@@ -7,7 +7,7 @@
 #include "vw/core/learner.h"
 namespace VW
 {
-metrics_collector::metrics_collector(bool enabled, std::string filename) : _are_metrics_enabled(enabled) {}
+metrics_collector::metrics_collector(bool enabled) : _are_metrics_enabled(enabled) {}
 
 bool metrics_collector::are_metrics_enabled() const { return _are_metrics_enabled; }
 

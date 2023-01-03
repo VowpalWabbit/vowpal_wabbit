@@ -170,7 +170,7 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
-  all.global_metrics = VW::metrics_collector(true, out_file);
+  all.global_metrics = VW::metrics_collector(true);
 
   auto* base_learner = stack_builder.setup_base_learner();
 
