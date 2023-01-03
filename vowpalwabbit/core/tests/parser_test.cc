@@ -10,7 +10,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(parser_tests, decode_inline_hex_test)
+TEST(Parser, DecodeInlineHexTest)
 {
   auto nl = VW::io::create_null_logger();
   EXPECT_EQ(VW::decode_inline_hex("test", nl), "test");
@@ -20,7 +20,7 @@ TEST(parser_tests, decode_inline_hex_test)
   EXPECT_EQ(VW::decode_inline_hex("\\x01 unrelated \\x56", nl), "\x01 unrelated \x56");
 }
 
-TEST(parser_tests, parse_text_with_extents)
+TEST(Parser, ParseTextWithExtents)
 {
   auto* vw = VW::initialize("--no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto* ex = VW::read_example(*vw, "|features a b |new_features a b |features2 c d |empty |features c d");
@@ -41,7 +41,7 @@ TEST(parser_tests, parse_text_with_extents)
   VW::finish(*vw);
 }
 
-TEST(parser_tests, trim_whitespace_test)
+TEST(Parser, TrimWhitespaceTest)
 {
   EXPECT_TRUE("" == VW::trim_whitespace(VW::string_view("")));
   EXPECT_TRUE("abc" == VW::trim_whitespace(VW::string_view("abc")));
