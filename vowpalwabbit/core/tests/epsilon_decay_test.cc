@@ -36,10 +36,10 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
 {
   EXPECT_THROW(
       {
+        VW::workspace* vw = nullptr;
         try
         {
-          auto* vw = VW::initialize("--epsilon_decay --cb_adf");
-          VW::finish(*vw);
+          vw = VW::initialize("--epsilon_decay --cb_adf");
         }
         catch (const VW::vw_exception& e)
         {
@@ -49,6 +49,7 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
               e.what());
           throw;
         }
+        VW::finish(*vw);
       },
       VW::vw_exception);
 }
