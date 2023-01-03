@@ -17,10 +17,10 @@
 
 namespace VW
 {
-class metrics_manager
+class metrics_collector
 {
 public:
-  metrics_manager(bool enabled = false, std::string filename = "");
+  metrics_collector(bool enabled = false, std::string filename = "");
 
   using metrics_callback_fn = std::function<void(VW::metric_sink&)>;
 

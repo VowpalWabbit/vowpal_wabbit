@@ -146,7 +146,7 @@ void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sin
 
 void VW::reductions::output_metrics(VW::workspace& all)
 {
-  metrics_manager& manager = all.global_metrics;
+  metrics_collector& manager = all.global_metrics;
   if (manager.are_metrics_enabled())
   {
     list_to_json_file(manager.get_filename(), manager.collect_metrics(all.l), all.logger);
@@ -169,7 +169,7 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
-  all.global_metrics = VW::metrics_manager(true, out_file);
+  all.global_metrics = VW::metrics_collector(true, out_file);
 
   auto* base_learner = stack_builder.setup_base_learner();
 
