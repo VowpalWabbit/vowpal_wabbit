@@ -1,6 +1,9 @@
 // Copyright (c) by respective owners including Yahoo!, Microsoft, and
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
+
+#include "vw/core/parse_regressor.h"
+
 #include "vw/config/options.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/io_buf.h"
@@ -113,10 +116,10 @@ void initialize_regressor(VW::workspace& all, T& weights)
   }
 }
 
-void initialize_regressor(VW::workspace& all)
+void VW::details::initialize_regressor(VW::workspace& all)
 {
-  if (all.weights.sparse) { initialize_regressor(all, all.weights.sparse_weights); }
-  else { initialize_regressor(all, all.weights.dense_weights); }
+  if (all.weights.sparse) { ::initialize_regressor(all, all.weights.sparse_weights); }
+  else { ::initialize_regressor(all, all.weights.dense_weights); }
 }
 
 namespace
@@ -125,8 +128,8 @@ constexpr size_t DEFAULT_BUF_SIZE = 512;
 }
 
 // file_options will be written to when reading
-void save_load_header(VW::workspace& all, VW::io_buf& model_file, bool read, bool text, std::string& file_options,
-    VW::config::options_i& options)
+void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, bool read, bool text,
+    std::string& file_options, VW::config::options_i& options)
 {
   if (model_file.num_files() > 0)
   {
@@ -470,19 +473,19 @@ void save_load_header(VW::workspace& all, VW::io_buf& model_file, bool read, boo
   }
 }
 
-void dump_regressor(VW::workspace& all, VW::io_buf& buf, bool as_text)
+void VW::details::dump_regressor(VW::workspace& all, VW::io_buf& buf, bool as_text)
 {
   if (buf.num_output_files() == 0) { THROW("Cannot dump regressor with an io buffer that has no output files."); }
   std::string unused;
   if (all.l != nullptr) { all.l->pre_save_load(all); }
-  save_load_header(all, buf, false, as_text, unused, *all.options);
+  VW::details::save_load_header(all, buf, false, as_text, unused, *all.options);
   if (all.l != nullptr) { all.l->save_load(buf, false, as_text); }
 
   buf.flush();  // close_file() should do this for me ...
   buf.close_file();
 }
 
-void dump_regressor(VW::workspace& all, const std::string& reg_name, bool as_text)
+void VW::details::dump_regressor(VW::workspace& all, const std::string& reg_name, bool as_text)
 {
   if (reg_name == std::string("")) { return; }
   std::string start_name = reg_name + std::string(".writing");
@@ -498,7 +501,7 @@ void dump_regressor(VW::workspace& all, const std::string& reg_name, bool as_tex
         << start_name.c_str() << " to " << reg_name.c_str());
 }
 
-void save_predictor(VW::workspace& all, const std::string& reg_name, size_t current_pass)
+void VW::details::save_predictor(VW::workspace& all, const std::string& reg_name, size_t current_pass)
 {
   std::stringstream filename;
   filename << reg_name;
@@ -506,7 +509,7 @@ void save_predictor(VW::workspace& all, const std::string& reg_name, size_t curr
   dump_regressor(all, filename.str(), false);
 }
 
-void finalize_regressor(VW::workspace& all, const std::string& reg_name)
+void VW::details::finalize_regressor(VW::workspace& all, const std::string& reg_name)
 {
   if (!all.early_terminate)
   {
@@ -526,7 +529,8 @@ void finalize_regressor(VW::workspace& all, const std::string& reg_name)
   }
 }
 
-void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all_intial, VW::io_buf& io_temp)
+void VW::details::read_regressor_file(
+    VW::workspace& all, const std::vector<std::string>& all_intial, VW::io_buf& io_temp)
 {
   if (all_intial.size() > 0)
   {
@@ -543,7 +547,7 @@ void read_regressor_file(VW::workspace& all, const std::vector<std::string>& all
   }
 }
 
-void parse_mask_regressor_args(
+void VW::details::parse_mask_regressor_args(
     VW::workspace& all, const std::string& feature_mask, std::vector<std::string> initial_regressors)
 {
   // TODO does this extra check need to be used? I think it is duplicated but there may be some logic I am missing.
@@ -587,10 +591,3 @@ void parse_mask_regressor_args(
     }
   }
 }
-
-namespace VW
-{
-void save_predictor(VW::workspace& all, const std::string& reg_name) { dump_regressor(all, reg_name, false); }
-
-void save_predictor(VW::workspace& all, io_buf& buf) { dump_regressor(all, buf, false); }
-}  // namespace VW

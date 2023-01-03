@@ -22,7 +22,7 @@ public:
   obj* operator()(obj* o) { return o; }
 };
 
-TEST(object_pool_test, object_pool_test)
+TEST(ObjectPool, ObjectPoolTest)
 {
   {
     VW::object_pool<obj> pool_with_size{50};

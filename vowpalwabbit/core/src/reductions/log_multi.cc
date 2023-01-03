@@ -267,12 +267,10 @@ void predict(log_multi& b, single_learner& base, VW::example& ec)
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   uint32_t cn = 0;
-  uint32_t depth = 0;
   while (b.nodes[cn].internal)
   {
     base.predict(ec, b.nodes[cn].base_predictor);  // depth
     cn = descend(b.nodes[cn], ec.pred.scalar);
-    depth++;
   }
   ec.pred.multiclass = b.nodes[cn].max_count_label;
   ec.l.multi = mc;

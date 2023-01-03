@@ -9,7 +9,7 @@
 
 bool are_same(float a, float b) { return std::abs(a - b) < std::numeric_limits<float>::epsilon(); }
 
-TEST(pow10_tests, equality_with_std_pow)
+TEST(Pow10, EqualityWithStdPow)
 {
   // In reality most of these tests would all evaluate to the same. The reason is that the epsilon is usually
   // around 1.2e-7

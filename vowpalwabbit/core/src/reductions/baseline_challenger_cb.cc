@@ -64,12 +64,8 @@ public:
   VW::estimators::ChiSquared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;
-  bool emit_metrics;
 
-  baseline_challenger_data(bool emit_metrics, double alpha, double tau)
-      : baseline(alpha, tau), policy_expectation(tau), emit_metrics(emit_metrics)
-  {
-  }
+  baseline_challenger_data(double alpha, double tau) : baseline(alpha, tau), policy_expectation(tau) {}
 
   static int get_chosen_action(const VW::action_scores& action_scores) { return action_scores[0].action; }
 
@@ -176,7 +172,6 @@ void save_load(baseline_challenger_data& data, VW::io_buf& io, bool read, bool t
 
 void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 {
-  if (!data.emit_metrics) { return; }
   auto ci = static_cast<float>(data.baseline.lower_bound_and_update());
   auto exp = static_cast<float>(data.policy_expectation.current());
 
@@ -188,6 +183,7 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
+
   float alpha;
   float tau;
   bool is_enabled = false;
@@ -215,8 +211,7 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
 
   if (!options.was_supplied("cb_adf")) { THROW("cb_challenger requires cb_explore_adf or cb_adf"); }
 
-  bool emit_metrics = options.was_supplied("extra_metrics");
-  auto data = VW::make_unique<baseline_challenger_data>(emit_metrics, alpha, tau);
+  auto data = VW::make_unique<baseline_challenger_data>(alpha, tau);
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
