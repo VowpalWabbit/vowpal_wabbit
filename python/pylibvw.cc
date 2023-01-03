@@ -327,10 +327,9 @@ py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
 
-  if (all->options->was_supplied("extra_metrics"))
+  if (all->global_metrics.are_metrics_enabled())
   {
-    VW::metric_sink metrics;
-    all->l->persist_metrics(metrics);
+    auto metrics = all->global_metrics.collect_metrics(all->l);
 
     python_dict_writer writer(dictionary);
     metrics.visit(writer);
