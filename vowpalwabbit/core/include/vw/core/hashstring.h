@@ -10,9 +10,13 @@
 #include <cstdint>
 #include <string>
 
-inline uint64_t hashall(const char* s, size_t len, uint64_t h) { return VW::uniform_hash(s, len, h); }
+namespace VW
+{
+namespace details
+{
+inline uint32_t hashall(const char* s, size_t len, uint32_t h) { return VW::uniform_hash(s, len, h); }
 
-inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
+inline uint32_t hashstring(const char* s, size_t len, uint32_t h)
 {
   const char* front = s;
   while (len > 0 && front[0] <= 0x20 && static_cast<int>(front[0]) >= 0)
@@ -32,7 +36,14 @@ inline uint64_t hashstring(const char* s, size_t len, uint64_t h)
 
   return ret + h;
 }
+  }
 
-using hash_func_t = uint64_t (*)(const char*, size_t, uint64_t);
+  using hash_func_t = uint32_t (*)(const char*, size_t, uint32_t);
 
-hash_func_t get_hasher(const std::string& s);
+  hash_func_t get_hasher(const std::string& s);
+
+  }  // namespace VW
+  using hash_func_t VW_DEPRECATED("Moved into VW namespace") = uint32_t (*)(const char*, size_t, uint32_t);
+
+  VW_DEPRECATED("Moved into VW namespace")
+  VW::hash_func_t get_hasher(const std::string& s);

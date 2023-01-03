@@ -617,7 +617,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.example_parser->hasher = get_hasher(hash_function);
+  all.example_parser->hasher = VW::get_hasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {

@@ -1495,7 +1495,7 @@ class Context
 {
 public:
   VW::label_parser _label_parser;
-  hash_func_t _hash_func;
+  VW::hash_func_t _hash_func;
   uint64_t _hash_seed;
   uint64_t _parse_mask;
   bool _chain_hash;
@@ -1565,7 +1565,7 @@ public:
     root_state = &default_state;
   }
 
-  void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+  void init(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger)
   {
     assert(reuse_mem != nullptr);
@@ -1633,7 +1633,7 @@ class VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, V
 public:
   Context<audit> ctx;
 
-  void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+  void init(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
       VW::multi_ex* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, void* example_factory_context,

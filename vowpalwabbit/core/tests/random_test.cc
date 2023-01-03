@@ -12,7 +12,8 @@
 TEST(rand_tests, reproduce_max_boundary_issue)
 {
   uint64_t seed = 58587211;
-  const uint64_t new_random_seed = VW::uniform_hash(&seed, sizeof(seed), seed);
+  const uint64_t new_random_seed =
+      VW::uniform_hash(reinterpret_cast<const char*>(&seed), sizeof(seed), static_cast<uint32_t>(seed));
   EXPECT_EQ(new_random_seed, 2244123448);
 
   float random_draw = merand48_noadvance(new_random_seed);
