@@ -28,10 +28,10 @@ static constexpr std::array<VW::column_definition, NUM_COLS> AUDIT_REGRESSOR_COL
 static const std::array<std::string, NUM_COLS> AUDIT_REGRESSOR_HEADER = {
     "example\ncounter", "values\naudited", "total\nprogress"};
 
-class audit_regressor_data_obj
+class audit_regressor
 {
 public:
-  audit_regressor_data_obj(VW::workspace* all, std::unique_ptr<VW::io::writer>&& output) : all(all)
+  audit_regressor(VW::workspace* all, std::unique_ptr<VW::io::writer>&& output) : all(all)
   {
     out_file.add_file(std::move(output));
   }
@@ -46,7 +46,7 @@ public:
   size_t values_audited = 0;
 };
 
-inline void audit_regressor_interaction(audit_regressor_data_obj& dat, const VW::audit_strings* f)
+inline void audit_regressor_interaction(audit_regressor& dat, const VW::audit_strings* f)
 {
   // same as audit_interaction in gd.cc
   if (f == nullptr)
@@ -70,7 +70,7 @@ inline void audit_regressor_interaction(audit_regressor_data_obj& dat, const VW:
   }
 }
 
-inline void audit_regressor_feature(audit_regressor_data_obj& dat, const float, const uint64_t ft_idx)
+inline void audit_regressor_feature(audit_regressor& dat, const float, const uint64_t ft_idx)
 {
   parameters& weights = dat.all->weights;
   if (weights[ft_idx] != 0) { ++dat.values_audited; }
@@ -93,7 +93,7 @@ inline void audit_regressor_feature(audit_regressor_data_obj& dat, const float, 
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data_obj& rd, VW::LEARNER::single_learner& /* base */, VW::example& ec)
+void audit_regressor_lda(audit_regressor& rd, VW::LEARNER::single_learner& /* base */, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -120,9 +120,9 @@ void audit_regressor_lda(audit_regressor_data_obj& rd, VW::LEARNER::single_learn
 }
 
 // This is a learner which does nothing with examples.
-// void learn(audit_regressor_data_obj&, VW::LEARNER::base_learner&, example&) {}
+// void learn(audit_regressor&, VW::LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data_obj& rd, VW::LEARNER::single_learner& base, VW::example& ec)
+void audit_regressor(audit_regressor& rd, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -158,14 +158,14 @@ void audit_regressor(audit_regressor_data_obj& rd, VW::LEARNER::single_learner& 
       size_t num_interacted_features = 0;
       if (rd.all->weights.sparse)
       {
-        INTERACTIONS::generate_interactions<audit_regressor_data_obj, const uint64_t, audit_regressor_feature, true,
+        INTERACTIONS::generate_interactions<audit_regressor, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.sparse_weights, num_interacted_features,
             rd.all->generate_interactions_object_cache_state);
       }
       else
       {
-        INTERACTIONS::generate_interactions<audit_regressor_data_obj, const uint64_t, audit_regressor_feature, true,
+        INTERACTIONS::generate_interactions<audit_regressor, const uint64_t, audit_regressor_feature, true,
             audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features,
             rd.all->generate_interactions_object_cache_state);
@@ -186,7 +186,7 @@ inline void print_ex(VW::workspace& all, size_t ex_processed, size_t vals_found,
   *(all.trace_message) << "\n";
 }
 
-void finish_example(VW::workspace& all, audit_regressor_data_obj& rd, VW::example& ec)
+void finish_example(VW::workspace& all, audit_regressor& rd, VW::example& ec)
 {
   bool printed = false;
   if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.quiet)
@@ -207,7 +207,7 @@ void finish_example(VW::workspace& all, audit_regressor_data_obj& rd, VW::exampl
   VW::finish_example(all, ec);
 }
 
-void finish(audit_regressor_data_obj& rd)
+void finish(audit_regressor& rd)
 {
   rd.out_file.flush();
 
@@ -230,7 +230,7 @@ size_t count_non_zero(T& w)
   return count;
 }
 
-void init_driver(audit_regressor_data_obj& dat)
+void init_driver(audit_regressor& dat)
 {
   // checks a few settings that might be applied after audit_regressor_setup() is called
   if ((dat.all->options->was_supplied("cache_file") || dat.all->options->was_supplied("cache")) &&
@@ -303,7 +303,7 @@ VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_
   all.audit = true;
 
   auto audit_regressor_data =
-      VW::make_unique<audit_regressor_data_obj>(&all, VW::io::open_file_writer(audit_regressor_opts->out_file));
+      VW::make_unique<audit_regressor>(&all, VW::io::open_file_writer(audit_regressor_opts->out_file));
   auto ret = VW::LEARNER::make_reduction_learner(std::move(audit_regressor_data),
       as_singleline(stack_builder.setup_base_learner()), audit_regressor, audit_regressor,
       stack_builder.get_setupfn_name(audit_regressor_setup))
