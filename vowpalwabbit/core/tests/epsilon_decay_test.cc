@@ -38,7 +38,8 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
       {
         try
         {
-          VW::initialize("--epsilon_decay --cb_adf");
+          auto* vw = VW::initialize("--epsilon_decay --cb_adf");
+          VW::finish(*vw);
         }
         catch (const VW::vw_exception& e)
         {
