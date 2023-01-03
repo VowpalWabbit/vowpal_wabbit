@@ -185,6 +185,8 @@ using example_factory_t = example& (*)(void*);
 
 namespace details
 {
+void clean_example(VW::workspace& all, example& ec);
+
 void append_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
 void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
 

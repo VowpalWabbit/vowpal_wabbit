@@ -57,7 +57,7 @@ VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_a
 VW::workspace* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Experimental (VW::setup_base_i):
-VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
+VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr);
 

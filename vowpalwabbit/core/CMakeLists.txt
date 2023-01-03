@@ -357,6 +357,7 @@ set(vw_core_sources
   src/unique_sort.cc
   src/version.cc
   src/vw_validate.cc
+  src/vw.cc
 )
 
 vw_add_library(
