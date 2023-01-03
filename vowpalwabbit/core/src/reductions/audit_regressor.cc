@@ -160,14 +160,14 @@ void audit_regressor_learn_pred(audit_regressor& rd, VW::LEARNER::single_learner
       if (rd.all->weights.sparse)
       {
         INTERACTIONS::generate_interactions<audit_regressor, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
+            audit_regressor_interaction, VW::sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.sparse_weights, num_interacted_features,
             rd.all->generate_interactions_object_cache_state);
       }
       else
       {
         INTERACTIONS::generate_interactions<audit_regressor, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
+            audit_regressor_interaction, VW::dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features,
             rd.all->generate_interactions_object_cache_state);
       }

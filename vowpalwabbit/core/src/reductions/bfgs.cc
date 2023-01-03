@@ -1139,7 +1139,11 @@ std::unique_ptr<options_bfgs_v1> get_bfgs_options_instance(
       .add(make_option("mem", bfgs_opts->local_m).default_value(15).help("Memory in bfgs"))
       .add(make_option("termination", bfgs_opts->local_rel_threshold)
                .default_value(0.001f)
-               .help("Termination threshold"));
+               .help("Termination threshold"))
+      .add(make_option("early_terminate", bfgs_opts->early_terminate)
+               .default_value(0)
+               .help("Specify the number of passes tolerated when holdout loss doesn't decrease before early "
+                     "termination"));
 
   auto conjugate_gradient_enabled = options.add_parse_and_check_necessary(conjugate_gradient_options);
   bfgs_opts->bfgs_enabled = options.add_parse_and_check_necessary(bfgs_options);
@@ -1147,10 +1151,6 @@ std::unique_ptr<options_bfgs_v1> get_bfgs_options_instance(
   if (conjugate_gradient_enabled && bfgs_opts->bfgs_enabled)
   {
     THROW("'conjugate_gradient' and 'bfgs' cannot be used together.");
-  }
-  if (!all.holdout_set_off)
-  {
-    bfgs_opts->early_terminate = options.get_typed_option<uint64_t>("early_terminate").value();
   }
   return bfgs_opts;
 }
