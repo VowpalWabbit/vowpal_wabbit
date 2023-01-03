@@ -118,8 +118,8 @@ void initialize_regressor(VW::workspace& all, T& weights)
 
 void VW::details::initialize_regressor(VW::workspace& all)
 {
-  if (all.weights.sparse) { initialize_regressor(all, all.weights.sparse_weights); }
-  else { initialize_regressor(all, all.weights.dense_weights); }
+  if (all.weights.sparse) { ::initialize_regressor(all, all.weights.sparse_weights); }
+  else { ::initialize_regressor(all, all.weights.dense_weights); }
 }
 
 namespace
@@ -529,7 +529,8 @@ void VW::details::finalize_regressor(VW::workspace& all, const std::string& reg_
   }
 }
 
-void VW::details::read_regressor_file(VW::workspace& all, const std::vector<std::string>& all_intial, VW::io_buf& io_temp)
+void VW::details::read_regressor_file(
+    VW::workspace& all, const std::vector<std::string>& all_intial, VW::io_buf& io_temp)
 {
   if (all_intial.size() > 0)
   {

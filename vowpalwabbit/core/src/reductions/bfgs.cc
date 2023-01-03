@@ -999,7 +999,6 @@ void learn(bfgs& b, base_learner& base, VW::example& ec)
 
 void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
-  int c = 0;
   uint32_t length = 2 * (1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
@@ -1011,7 +1010,6 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, 
     VW::weight* v;
     if (read)
     {
-      c++;
       brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i));
       if (brw > 0)
       {
@@ -1025,7 +1023,6 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, 
       v = &(b.regularizers[i]);
       if (*v != 0.)
       {
-        c++;
         std::stringstream msg;
         msg << i;
         brw = VW::details::bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text);

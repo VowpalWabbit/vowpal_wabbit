@@ -28,15 +28,15 @@ namespace
 {
 
 std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<VW::config::options_i, options_deleter_type> options,
-    io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context,
-    VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
+    VW::io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context,
+    VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> setup_base = nullptr)
 {
   // Set up logger as early as possible
   auto all = VW::details::parse_args(std::move(options), trace_listener, trace_context, custom_logger);
 
   // if user doesn't pass in a model, read from options
-  io_buf local_model;
-  if (!model)
+  VW::io_buf local_model;
+  if (model == nullptr)
   {
     std::vector<std::string> all_initial_regressor_files(all->initial_regressors);
     if (all->options->was_supplied("input_feature_regularizer"))
@@ -51,11 +51,11 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<VW::config::o
   try
   {
     // Loads header of model files and loads the command line options into the options object.
-    bool interactions_settings_duplicated;
+    bool interactions_settings_duplicated{};
     VW::details::load_header_merge_options(*all->options, *all, *model, interactions_settings_duplicated);
 
     VW::details::parse_modules(*all->options, *all, interactions_settings_duplicated, dictionary_namespaces);
-    VW::details::instantiate_learner(*all, std::move(learner_builder));
+    VW::details::instantiate_learner(*all, std::move(setup_base));
     VW::details::parse_sources(*all->options, *all, *model, skip_model_load);
   }
   catch (VW::save_load_model_exception& e)
@@ -129,7 +129,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<VW::config::o
 
   if (!all->options->get_typed_option<bool>("dry_run").value())
   {
-    if (!all->quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
+    if (!all->quiet && !all->bfgs && (all->searchstr == nullptr) && !all->options->was_supplied("audit_regressor"))
     {
       all->sd->print_update_header(*all->trace_message);
     }
@@ -139,23 +139,23 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<VW::config::o
   return all;
 }
 VW::workspace* initialize_with_builder(std::unique_ptr<VW::config::options_i, options_deleter_type> options,
-    io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context,
+    VW::io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context,
 
-    std::unique_ptr<VW::setup_base_i> learner_builder = nullptr)
+    std::unique_ptr<VW::setup_base_i> setup_base = nullptr)
 {
   return initialize_internal(
-      std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr, std::move(learner_builder))
+      std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr, std::move(setup_base))
       .release();
 }
 
-VW::workspace* initialize_with_builder(int argc, char* argv[], io_buf* model, bool skip_model_load,
-    VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+VW::workspace* initialize_with_builder(int argc, char* argv[], VW::io_buf* model, bool skip_model_load,
+    VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> setup_base)
 {
   std::unique_ptr<VW::config::options_i, options_deleter_type> options(
       new VW::config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
       [](VW::config::options_i* ptr) { delete ptr; });
   return initialize_with_builder(
-      std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(learner_builder));
+      std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(setup_base));
 }
 }  // namespace
 
@@ -250,7 +250,7 @@ VW::workspace* VW::initialize_escaped(
 
 std::unique_ptr<VW::workspace> VW::initialize_experimental(std::unique_ptr<config::options_i> options,
     std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
-    void* driver_output_func_context, VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> learner_builder)
+    void* driver_output_func_context, VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> setup_base)
 {
   auto* released_options = options.release();
   std::unique_ptr<config::options_i, options_deleter_type> options_custom_deleter(
@@ -264,11 +264,11 @@ std::unique_ptr<VW::workspace> VW::initialize_experimental(std::unique_ptr<confi
     model->add_file(std::move(model_override_reader));
   }
   return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
-      driver_output_func, driver_output_func_context, custom_logger, std::move(learner_builder));
+      driver_output_func, driver_output_func_context, custom_logger, std::move(setup_base));
 }
 
 VW::workspace* VW::initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
-    VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> learner_builder)
+    VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> setup_base)
 {
   int argc = 0;
   VW_WARNING_STATE_PUSH
@@ -281,7 +281,7 @@ VW::workspace* VW::initialize_with_builder(const std::string& s, io_buf* model, 
   try
   {
     ret = ::initialize_with_builder(
-        argc, argv, model, skip_model_load, trace_listener, trace_context, std::move(learner_builder));
+        argc, argv, model, skip_model_load, trace_listener, trace_context, std::move(setup_base));
   }
   catch (...)
   {
@@ -592,10 +592,9 @@ bool is_test_only(uint32_t counter, uint32_t period, uint32_t after, bool holdou
   {  // hold out by period
     return (counter % period == target_modulus);
   }
-  else
-  {  // hold out by position
-    return (counter > after);
-  }
+
+  // hold out by position
+  return (counter > after);
 }
 
 void feature_limit(VW::workspace& all, VW::example* ex)
@@ -616,7 +615,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
 void VW::setup_example(VW::workspace& all, VW::example* ae)
 {
   assert(ae != nullptr);
-  if (all.example_parser->sort_features && ae->sorted == false) { unique_sort_features(all.parse_mask, *ae); }
+  if (all.example_parser->sort_features && !ae->sorted) { unique_sort_features(all.parse_mask, *ae); }
 
   if (all.example_parser->write_cache)
   {
@@ -741,7 +740,7 @@ float VW::get_action_score(example* ec, size_t i)
   VW::action_scores scores = ec->pred.a_s;
 
   if (i < scores.size()) { return scores[i].score; }
-  else { return 0.0; }
+  return 0.0;
 }
 
 size_t VW::get_action_score_length(example* ec) { return ec->pred.a_s.size(); }
@@ -761,8 +760,8 @@ class features_and_source
 {
 public:
   VW::v_array<VW::feature> feature_map;  // map to store sparse feature vectors
-  uint32_t stride_shift;
-  uint64_t mask;
+  uint32_t stride_shift{};
+  uint64_t mask{};
 };
 
 void vec_store(features_and_source& p, float fx, uint64_t fi)
@@ -771,7 +770,7 @@ void vec_store(features_and_source& p, float fx, uint64_t fi)
 }
 }  // namespace
 
-VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
+VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_number)
 {
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
@@ -780,19 +779,19 @@ VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_m
 
   auto* features_array = new feature[fs.feature_map.size()];
   std::memcpy(features_array, fs.feature_map.data(), fs.feature_map.size() * sizeof(feature));
-  feature_map_len = fs.feature_map.size();
+  feature_number = fs.feature_map.size();
   return features_array;
 }
 
 void VW::return_features(feature* f) { delete[] f; }
 
-void VW::add_constant_feature(VW::workspace& vw, VW::example* ec)
+void VW::add_constant_feature(VW::workspace& all, VW::example* ec)
 {
   ec->indices.push_back(VW::details::CONSTANT_NAMESPACE);
   ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(
       1, VW::details::CONSTANT, VW::details::CONSTANT_NAMESPACE);
   ec->num_features++;
-  if (vw.audit || vw.hash_inv)
+  if (all.audit || all.hash_inv)
   {
     ec->feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "Constant");
   }
@@ -903,7 +902,7 @@ void VW::copy_example_data_with_label(example* dst, const example* src)
 VW::primitive_feature_space* VW::export_example(VW::workspace& all, VW::example* ec, size_t& len)
 {
   len = ec->indices.size();
-  primitive_feature_space* fs_ptr = new primitive_feature_space[len];
+  auto* fs_ptr = new primitive_feature_space[len];
 
   size_t fs_count = 0;
 
