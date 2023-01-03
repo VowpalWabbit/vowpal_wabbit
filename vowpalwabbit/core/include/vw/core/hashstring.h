@@ -14,7 +14,10 @@ namespace VW
 {
 namespace details
 {
-VW_STD14_CONSTEXPR inline uint32_t hashall(const char* s, size_t len, uint32_t h) { return VW::uniform_hash(s, len, h); }
+VW_STD14_CONSTEXPR inline uint32_t hashall(const char* s, size_t len, uint32_t h)
+{
+  return VW::uniform_hash(s, len, h);
+}
 
 VW_STD14_CONSTEXPR inline uint32_t hashstring(const char* s, size_t len, uint32_t h)
 {
