@@ -16,6 +16,7 @@ enum class label_type_t : uint32_t
   SIMPLE,
   CB,       // contextual-bandit
   CB_EVAL,  // contextual-bandit evaluation
+  CB_WITH_OBSERVATIONS,   // contextual-bandit with interaction grounded learning
   CS,       // cost-sensitive
   MULTILABEL,
   MULTICLASS,

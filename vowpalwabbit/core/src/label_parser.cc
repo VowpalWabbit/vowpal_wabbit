@@ -28,6 +28,9 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
     case VW::label_type_t::CB_EVAL:
       return VW::cb_eval_label_parser_global;
 
+    case VW::label_type_t::CB_WITH_OBSERVATIONS:
+      return VW::cb_with_observations_global;
+
     case VW::label_type_t::CS:
       return VW::cs_label_parser_global;
 

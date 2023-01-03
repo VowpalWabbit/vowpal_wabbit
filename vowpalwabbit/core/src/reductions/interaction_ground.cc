@@ -52,20 +52,59 @@ private:
   std::shared_ptr<learner> _ik_base;
 };
 
+std::vector<std::vector<VW::namespace_index>> get_ik_interactions(std::vector<std::vector<VW::namespace_index>> interactions, VW::example* observation_ex) {
+  std::vector<std::vector<VW::namespace_index>> new_interactions;
+  for (auto& interaction : interactions) {
+    for (auto& obs_ns : observation_ex->indices) {
+      if (obs_ns == VW::details::DEFAULT_NAMESPACE) {
+        obs_ns = VW::details::IGL_FEEDBACK_NAMESPACE;
+      }
+
+      new_interactions.push_back(interaction);
+      new_interactions.back().push_back(obs_ns);
+    }
+  }
+
+  return new_interactions;
+}
+
+void add_obs_features_to_ik_ex(VW::example* ik_ex, VW::example* obs_ex) {
+  for (auto& obs_ns : obs_ex->indices) {
+    ik_ex->indices.push_back(obs_ns);
+
+    for (size_t i = 0; i < obs_ex->feature_space[obs_ns].indices.size(); i++) {
+      auto feature_hash = obs_ex->feature_space[obs_ns].indices[i];
+      auto feature_val = obs_ex->feature_space[obs_ns].values[i];
+
+      if (obs_ns == VW::details::DEFAULT_NAMESPACE) {
+        obs_ns = VW::details::IGL_FEEDBACK_NAMESPACE;
+      }
+
+      ik_ex->feature_space[obs_ns].indices.push_back(feature_hash);
+      ik_ex->feature_space[obs_ns].values.push_back(feature_val);
+
+      // ik_ex->num_features++;
+    }
+  }
+}
+
 class interaction_ground
 {
 public:
   std::shared_ptr<learner> ik_learner = nullptr;
   VW::example ik_ex;
 
-  std::vector<std::vector<namespace_index>> ik_interactions;
-  std::vector<std::vector<extent_term>>* extent_interactions;
+  std::vector<std::vector<VW::namespace_index>> interactions;
+  std::vector<std::vector<VW::extent_term>>* extent_interactions;
 
   std::unique_ptr<VW::workspace> ik_all;
   ftrl* ik_ftrl; // automatically save resume
   std::unique_ptr<ftrl> pi_ftrl; // TODO: add save resume
-  ~interaction_ground() {
-  }
+  // ~interaction_ground() {
+    // auto scorer_stack = ik_learner->get_learner_by_name_prefix("scorer");
+    // scorer_stack->_finisher_fd.base = nullptr;
+    // delete ik_learner;
+  // }
 
   // TODO: rule of 5
 };
@@ -80,29 +119,28 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
   float ik_pred = 0.f;
   int chosen_action_idx = 0;
 
-  const auto it = std::find_if(ec_seq.begin(), ec_seq.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
-  if (it != ec_seq.end())
-  {
+  const auto it = std::find_if(ec_seq.begin(), ec_seq.end(), [](VW::example* item) {
+    return !item->l.cb_with_observations.event.costs.empty();
+  });
+
+  if (it != ec_seq.end()) {
     chosen_action_idx = std::distance(ec_seq.begin(), it);
   }
 
-  auto feedback_ex = ec_seq.back(); // TODO: refactor. Now assume last example is feedback example
+  auto observation_ex = ec_seq.back();
   ec_seq.pop_back();
 
-  auto ns_iter = feedback_ex->indices.begin();
-  uint64_t feature_hash = *feedback_ex->feature_space.at(*ns_iter).indices.data();
+  std::vector<std::vector<VW::namespace_index>> ik_interactions = get_ik_interactions(igl.interactions, observation_ex);
 
-  for (auto& ex_action : ec_seq) {
+  for (auto& action_ex : ec_seq) {
     VW::empty_example(*igl.ik_all, igl.ik_ex);
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
-    VW::details::append_example_namespaces_from_example(igl.ik_ex, *ex_action);
-    igl.ik_ex.indices.push_back(VW::details::IGL_FEEDBACK_NAMESPACE);
-    igl.ik_ex.feature_space[VW::details::IGL_FEEDBACK_NAMESPACE].push_back(1, feature_hash); // TODO: is the feature value always 1?
-    igl.ik_ex.num_features++;
+    VW::details::append_example_namespaces_from_example(igl.ik_ex, *action_ex);
 
+    add_obs_features_to_ik_ex(&igl.ik_ex, observation_ex);
     // 1. set up ik ex
     float ik_label = -1.f;
-    if (!ex_action->l.cb.costs.empty()) {
+    if (!action_ex->l.cb_with_observations.event.costs.empty()) {
       ik_label = 1.f;
     }
     igl.ik_ex.l.simple.label = ik_label;
@@ -111,16 +149,19 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     float importance = 0.6f;
     igl.ik_ex.weight = importance;
 
-    igl.ik_ex.interactions = &igl.ik_interactions;
+    igl.ik_ex.interactions = &ik_interactions;
     igl.ik_ex.extent_interactions = igl.extent_interactions; // TODO(low pri): not reuse igl.extent_interactions, need to add in feedback
 
     // 2. ik learn
     igl.ik_learner->learn(igl.ik_ex, 0);
 
-    if (!ex_action->l.cb.costs.empty()) {
+    if (!action_ex->l.cb_with_observations.event.costs.empty()) {
       ik_pred = igl.ik_ex.pred.scalar;
     }
     // TODO: shared data print needs to be fixed
+
+    action_ex->l.cb = action_ex->l.cb_with_observations.event;
+    // TODO: maybe reset the cb_with_observation label
   }
 
   std::swap(igl.ik_ftrl->all->loss, igl.ik_all->loss);
@@ -138,16 +179,30 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
   ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
 
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
+
+  // reset the first_observed label for cb_adf reduction
+  (*igl.ik_ftrl).all->sd->first_observed_label = FLT_MAX;
   base.learn(ec_seq, 1);
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
-  ec_seq.push_back(feedback_ex);
+  ec_seq.push_back(observation_ex);
 }
 
 void predict(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
 {
+  VW::example* observation_ex = nullptr;
+
+  if (ec_seq.size() > 0) {
+    observation_ex = ec_seq.back();
+    ec_seq.pop_back();
+  }
+
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
   base.predict(ec_seq, 1);
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
+
+  if (observation_ex != nullptr) {
+    ec_seq.push_back(observation_ex);
+  }
 }
 } // namespace
 
@@ -160,7 +215,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   options_i& pi_options = *stack_builder.get_options();
   VW::workspace *all = stack_builder.get_all_pointer();
   bool igl_option = false;
-
   option_group_definition new_options("[Reduction] Interaction Grounded Learning");
   new_options.add(make_option("experimental_igl", igl_option)
                   .keep()
@@ -174,8 +228,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   size_t feature_width = 2;  // One for reward and one for loss
   auto ld = VW::make_unique<interaction_ground>();
 
-  // Ensure cb_explore_adf so we are reducing to something useful.
-  // Question: Can we support both cb_adf and cb_explore_adf?
   if (!pi_options.was_supplied("cb_explore_adf")) {
     pi_options.insert("cb_explore_adf", "");
   }
@@ -195,6 +247,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   assert(ik_options->was_supplied("loss_function") == true);
 
   ld->ik_all = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(VW::split_command_line(ik_args)));
+  all->example_parser->lbl_parser = VW::get_label_parser(label_type_t::CB_WITH_OBSERVATIONS);
 
   std::unique_ptr<ik_stack_builder> ik_builder = VW::make_unique<ik_stack_builder>(ftrl_coin);
   ik_builder->delayed_state_attach(*ld->ik_all, *ik_options);
@@ -204,18 +257,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   ld->pi_ftrl = VW::make_unique<ftrl>();
   *ld->pi_ftrl.get() = *ld->ik_ftrl;
 
-  for (auto& interaction : all->interactions) {
-    interaction.push_back(VW::details::IGL_FEEDBACK_NAMESPACE);
-    ld->ik_interactions.push_back(interaction);
-    interaction.pop_back();
-  }
-
+  ld->interactions = all->interactions;
   ld->extent_interactions = &all->extent_interactions;
 
   auto l = make_reduction_learner(
-      std::move(ld), pi_learner, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
-               .set_feature_width(feature_width)
-               .set_input_label_type(label_type_t::CB)
+      std::move(ld), pi_learner, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
+               ..set_feature_width(feature_width)
+               .set_input_label_type(label_type_t::CB_WITH_OBSERVATIONS)
                .set_output_label_type(label_type_t::CB)
                .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
                .set_input_prediction_type(prediction_type_t::ACTION_SCORES)

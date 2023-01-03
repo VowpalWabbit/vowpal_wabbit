@@ -79,6 +79,20 @@ extern VW::label_parser cb_eval_label_parser_global;  // for evaluation of an ar
 
 namespace VW
 {
+class cb_with_observations_label
+{
+public:
+  cb_label event;
+  bool is_observation;
+};
+
+bool ec_is_example_header_cb_with_observations(VW::example const& ec);
+
+extern VW::label_parser cb_with_observations_global;
+}  // namespace VW
+
+namespace VW
+{
 namespace model_utils
 {
 size_t read_model_field(io_buf&, VW::cb_class&);

@@ -124,14 +124,21 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::predict(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples)
 {
-  example* label_example = VW::test_cb_adf_sequence(examples);
-  data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
+  VW::label_type_t label_type = base.get_input_label_type();
+  example* label_example = VW::test_cb_adf_sequence(examples, label_type);
+  data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples, label_type);
 
   if (label_example != nullptr)
   {
     // predict path, replace the label example with an empty one
-    data._action_label = std::move(label_example->l.cb);
-    label_example->l.cb = std::move(data._empty_label);
+    if (label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
+      data._action_label = std::move(label_example->l.cb_with_observations.event);
+      label_example->l.cb_with_observations.event = std::move(data._empty_label);
+    }
+    else {
+      data._action_label = std::move(label_example->l.cb);
+      label_example->l.cb = std::move(data._empty_label);
+    }
   }
 
   data.explore.predict(base, examples);
@@ -139,7 +146,11 @@ inline void cb_explore_adf_base<ExploreType>::predict(
   if (label_example != nullptr)
   {
     // predict path, restore label
-    label_example->l.cb = std::move(data._action_label);
+    if (label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
+      label_example->l.cb_with_observations.event = std::move(data._action_label);
+    } else {
+      label_example->l.cb = std::move(data._action_label);
+    }
     data._empty_label.costs.clear();
     data._empty_label.weight = 1.f;
   }
@@ -149,10 +160,11 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::learn(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples)
 {
-  example* label_example = VW::test_cb_adf_sequence(examples);
+  VW::label_type_t label_type = base.get_input_label_type();
+  example* label_example = VW::test_cb_adf_sequence(examples, label_type);
   if (label_example != nullptr)
   {
-    data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
+    data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples, label_type);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
     if (data._metrics)
@@ -216,7 +228,7 @@ void cb_explore_adf_base<ExploreType>::_update_stats(
 
   for (const auto& example : ec_seq)
   {
-    if (VW::ec_is_example_header_cb(*example))
+    if (VW::ec_is_example_header_cb(*example) || VW::ec_is_example_header_cb_with_observations(*example))
     {
       num_features += (ec_seq.size() - 1) *
           (example->get_num_features() - example->feature_space[VW::details::CONSTANT_NAMESPACE].size());

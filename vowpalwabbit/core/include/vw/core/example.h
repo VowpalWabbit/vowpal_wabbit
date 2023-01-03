@@ -48,6 +48,7 @@ public:
   VW::slates::label slates;
   VW::cb_eval_label cb_eval;
   VW::multilabel_label multilabels;
+  VW::cb_with_observations_label cb_with_observations;
 };
 
 struct no_pred
