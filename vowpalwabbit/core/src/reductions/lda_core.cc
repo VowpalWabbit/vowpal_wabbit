@@ -768,7 +768,7 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f),
         all.random_weights, all.lda, all.weights.stride()};
 

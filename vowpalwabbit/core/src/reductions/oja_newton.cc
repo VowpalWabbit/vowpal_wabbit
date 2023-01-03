@@ -470,7 +470,7 @@ void save_load(OjaNewton& oja_newton_ptr, io_buf& model_file, bool read, bool te
   VW::workspace& all = *oja_newton_ptr.all;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     oja_newton_ptr.initialize_Z(all.weights);
   }
 

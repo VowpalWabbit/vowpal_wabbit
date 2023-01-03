@@ -873,7 +873,7 @@ int process_pass(VW::workspace& all, bfgs& b)
   b.net_time = static_cast<double>(
       std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-  if (all.save_per_pass) { save_predictor(all, all.final_regressor_name, b.current_pass); }
+  if (all.save_per_pass) { VW::details::save_predictor(all, all.final_regressor_name, b.current_pass); }
   return status;
 }
 
@@ -955,7 +955,7 @@ void end_pass(bfgs& b)
       {
         if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
         {
-          finalize_regressor(*all, all->final_regressor_name);
+          VW::details::finalize_regressor(*all, all->final_regressor_name);
         }
         if (b.early_stop_thres == b.no_win_counter)
         {
@@ -965,7 +965,7 @@ void end_pass(bfgs& b)
       }
       if (b.final_pass == b.current_pass)
       {
-        finalize_regressor(*all, all->final_regressor_name);
+        VW::details::finalize_regressor(*all, all->final_regressor_name);
         VW::details::set_done(*all);
       }
     }
@@ -1048,7 +1048,7 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
   if (read)
   {
-    initialize_regressor(*all);
+    VW::details::initialize_regressor(*all);
     if (all->per_feature_regularizer_input != "")
     {
       b.regularizers = calloc_or_throw<VW::weight>(2 * length);
