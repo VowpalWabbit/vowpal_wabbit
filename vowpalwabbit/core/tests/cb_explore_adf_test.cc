@@ -7,7 +7,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(cb_explore_adf_tests, cb_explore_adf_should_throw_empty_multi_example)
+TEST(CbExploreAdf, ShouldThrowEmptyMultiExample)
 {
   auto vw = VW::initialize("--cb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
   VW::multi_ex example_collection;

@@ -14,7 +14,7 @@
 
 using namespace ::testing;
 
-TEST(feature_group_tests, unique_feature_group_test)
+TEST(FeatureGroup, UniqueFeatureGroupTest)
 {
   VW::features fs;
   fs.push_back(1.f, 1);
@@ -81,7 +81,7 @@ TEST(feature_group_tests, unique_feature_group_test)
   EXPECT_TRUE(fs_size_one.namespace_extents.empty());
 }
 
-TEST(feature_group_tests, flatten_then_unflatten_namespace_extents_test)
+TEST(FeatureGroup, FlattenThenUnflattenNamespaceExtentsTest)
 {
   std::vector<VW::namespace_extent> extents{{0, 1, 1}, {1, 2, 2}};
 
@@ -101,7 +101,7 @@ TEST(feature_group_tests, flatten_then_unflatten_namespace_extents_test)
   EXPECT_TRUE(unflattened_list == extents);
 }
 
-TEST(feature_group_tests, sort_feature_group_test)
+TEST(FeatureGroup, SortFeatureGroupTest)
 {
   VW::features fs;
   fs.push_back(1.f, 1);
@@ -124,7 +124,7 @@ TEST(feature_group_tests, sort_feature_group_test)
   EXPECT_THAT(fs.namespace_extents, ContainerEq(std::vector<VW::namespace_extent>{{1, 3, 1}, {4, 7, 2}}));
 }
 
-TEST(feature_group_tests, iterate_extents_test)
+TEST(FeatureGroup, IterateExtentsTest)
 {
   auto* vw = VW::initialize("--quiet");
   auto* ex = VW::read_example(*vw, "|user_info a b c |user_geo a b c d |other a b c d e |user_info a b");

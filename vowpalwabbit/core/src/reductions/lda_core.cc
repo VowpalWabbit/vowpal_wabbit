@@ -712,7 +712,6 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
     memset(new_gamma.begin(), 0, sizeof(float) * l.topics);
 
     score = 0;
-    size_t word_count = 0;
     doc_length = 0;
     for (VW::features& fs : *ec)
     {
@@ -724,7 +723,6 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
         score += -f.value() * std::log(c_w);
         size_t max_k = l.topics;
         for (size_t k = 0; k < max_k; k++, ++u_for_w) { new_gamma[k] += xc_w * *u_for_w; }
-        word_count++;
         doc_length += f.value();
       }
     }
@@ -768,7 +766,7 @@ void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f),
         all.random_weights, all.lda, all.weights.stride()};
 

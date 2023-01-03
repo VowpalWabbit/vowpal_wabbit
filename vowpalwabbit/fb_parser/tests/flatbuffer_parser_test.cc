@@ -59,7 +59,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
 }
 
-TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
+TEST(FlatbufferParser, FlatbufferStandaloneExample)
 {
   auto all = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
@@ -101,7 +101,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
   VW::finish_example(*all, *examples[0]);
 }
 
-TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
+TEST(FlatbufferParser, FlatbufferCollection)
 {
   auto all = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 

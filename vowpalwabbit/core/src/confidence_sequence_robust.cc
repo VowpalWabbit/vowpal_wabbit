@@ -191,11 +191,8 @@ double countable_discrete_base::root_brentq(
   double s = 0;
   double d = 0;
 
-  unsigned int iter = 0;
   while (std::abs(fc) > toll_f && std::abs(b - a) > toll_x)
   {
-    ++iter;
-
     if (fa != fc && fb != fc)  // use inverse quadratic interopolation
     {
       s = (a * fb * fc / ((fa - fb) * (fa - fc))) + (b * fa * fc / ((fb - fa) * (fb - fc))) +

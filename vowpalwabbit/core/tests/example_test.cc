@@ -7,7 +7,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(example_test, example_move_ctor_moves_pred)
+TEST(Example, MoveCtorMovesPred)
 {
   VW::example ex;
   ex.pred.scalars.push_back(8);
@@ -19,7 +19,7 @@ TEST(example_test, example_move_ctor_moves_pred)
   EXPECT_EQ(ex2.pred.scalars.size(), 1);
 }
 
-TEST(example_test, example_move_assign_op_moves_pred)
+TEST(Example, MoveAssignOpMovesPred)
 {
   VW::example ex;
   ex.pred.a_s.push_back({0, 0});

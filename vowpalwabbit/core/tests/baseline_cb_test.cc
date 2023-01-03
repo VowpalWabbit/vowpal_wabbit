@@ -42,7 +42,7 @@ int sample(int size, const float* probs, float s)
 
 }  // namespace test_helpers
 
-TEST(baseline_cb_tests, baseline_cb_baseline_performs_badly)
+TEST(BaselineCB, BaselinePerformsBadly)
 {
   using namespace test_helpers;
   auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
@@ -61,8 +61,7 @@ TEST(baseline_cb_tests, baseline_cb_baseline_performs_badly)
     vw->finish_example(ex);
   }
 
-  VW::metric_sink metrics;
-  vw->l->persist_metrics(metrics);
+  auto metrics = vw->global_metrics.collect_metrics(vw->l);
 
   EXPECT_EQ(metrics.get_bool("baseline_cb_baseline_in_use"), false);
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
@@ -78,7 +77,7 @@ TEST(baseline_cb_tests, baseline_cb_baseline_performs_badly)
   vw->finish_example(tst);
 }
 
-TEST(baseline_cb_tests, baseline_cb_baseline_takes_over_policy)
+TEST(BaselineCB, BaselineTakesOverPolicy)
 {
   using namespace test_helpers;
   auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--cb_c_tau",
@@ -111,8 +110,7 @@ TEST(baseline_cb_tests, baseline_cb_baseline_takes_over_policy)
   }
 
   // after 400 steps of switched reward dynamics, the baseline CI should have caught up.
-  VW::metric_sink metrics;
-  vw->l->persist_metrics(metrics);
+  auto metrics = vw->global_metrics.collect_metrics(vw->l);
 
   EXPECT_EQ(metrics.get_bool("baseline_cb_baseline_in_use"), true);
 
@@ -155,12 +153,11 @@ VW::metric_sink run_simulation(int steps, int switch_step)
           vwtest::make_args("--quiet", "--extra_metrics", "ut_metrics.json", "-i", "model_file.vw"));
     }
   }
-  VW::metric_sink metrics;
-  vw->l->persist_metrics(metrics);
+  auto metrics = vw->global_metrics.collect_metrics(vw->l);
   return metrics;
 }
 
-TEST(baseline_cb_tests, baseline_cb_save_load_test)
+TEST(BaselineCB, SaveLoadTest)
 {
   using namespace test_helpers;
 

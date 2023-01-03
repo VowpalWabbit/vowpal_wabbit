@@ -32,7 +32,7 @@ epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
 }
 }  // namespace epsilon_decay_test
 
-TEST(epsilon_decay_tests, init_w_iterations)
+TEST(EpsilonDecay, InitWIterations)
 {
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper(
@@ -40,7 +40,7 @@ TEST(epsilon_decay_tests, init_w_iterations)
       "5");
 }
 
-TEST(epsilon_decay_tests, champ_change_w_iterations)
+TEST(EpsilonDecay, ChampChangeWIterations)
 {
   const size_t num_iterations = 630;
   const size_t seed = 99;
@@ -89,7 +89,7 @@ TEST(epsilon_decay_tests, champ_change_w_iterations)
   EXPECT_GT(ctr.back(), 0.6f);
 }
 
-TEST(epsilon_decay_tests, update_count_w_iterations)
+TEST(EpsilonDecay, UpdateCountWIterations)
 {
   const size_t num_iterations = 105;
   const size_t seed = 100;
@@ -207,7 +207,7 @@ TEST(epsilon_decay_tests, update_count_w_iterations)
   EXPECT_GT(ctr.back(), 0.5f);
 }
 
-TEST(epsilon_decay_tests, save_load_w_iterations)
+TEST(EpsilonDecay, SaveLoadWIterations)
 {
   callback_map empty_hooks;
   auto ctr = simulator::_test_helper_hook(
@@ -229,7 +229,7 @@ TEST(epsilon_decay_tests, save_load_w_iterations)
   EXPECT_FLOAT_EQ(without_save, with_save);
 }
 
-TEST(epsilon_decay_tests, test_score_bounds_unit)
+TEST(EpsilonDecay, ScoreBoundsUnit)
 {
   // Initialize epsilon_decay_data class with 5 models
   uint64_t num_models = 5;
@@ -314,7 +314,7 @@ TEST(epsilon_decay_tests, test_score_bounds_unit)
   EXPECT_EQ(ep_data._weight_indices[4], 2);
 }
 
-TEST(epsilon_decay_tests, horizon_bounds_unit)
+TEST(EpsilonDecay, HorizonBoundsUnit)
 {
   // Initialize epsilon_decay_data class with 5 models
   uint64_t num_models = 5;

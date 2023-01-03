@@ -330,7 +330,7 @@ void NO_SANITIZE_UNDEFINED learn_coin_betting(ftrl& a, base_learner& base, VW::e
 void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
-  if (read) { initialize_regressor(*all); }
+  if (read) { VW::details::initialize_regressor(*all); }
 
   if (model_file.num_files() != 0)
   {
@@ -357,7 +357,7 @@ void end_pass(ftrl& g)
   {
     if (VW::details::summarize_holdout_set(all, g.no_win_counter))
     {
-      finalize_regressor(all, all.final_regressor_name);
+      VW::details::finalize_regressor(all, all.final_regressor_name);
     }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))

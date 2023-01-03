@@ -260,7 +260,7 @@ void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
@@ -313,13 +313,13 @@ void end_pass(gdmf& d)
   VW::workspace* all = d.all;
 
   all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass) { save_predictor(*all, all->final_regressor_name, all->current_pass); }
+  if (all->save_per_pass) { VW::details::save_predictor(*all, all->final_regressor_name, all->current_pass); }
 
   if (!all->holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
     {
-      finalize_regressor(*all, all->final_regressor_name);
+      VW::details::finalize_regressor(*all, all->final_regressor_name);
     }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
