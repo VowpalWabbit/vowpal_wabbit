@@ -7,6 +7,8 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/array_parameters_sparse.h"
 
+namespace VW
+{
 class parameters
 {
 public:
@@ -93,3 +95,6 @@ public:
     else { return dense_weights.not_null(); }
   }
 };
+}  // namespace VW
+
+using parameters VW_DEPRECATED("parameters moved into VW namespace") = VW::parameters;

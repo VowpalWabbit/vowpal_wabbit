@@ -107,7 +107,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
     int size = env->GetArrayLength(model);
     auto* model0 = reinterpret_cast<const char*>(modelGuard.data());
 
-    io_buf buffer;
+    VW::io_buf buffer;
     buffer.add_file(VW::io::create_buffer_view(model0, size));
 
     return reinterpret_cast<jlong>(VW::initialize(g_args.c_str(), &buffer));
@@ -251,7 +251,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
   try
   {  // save in stl::vector
     auto model_buffer = std::make_shared<std::vector<char>>();
-    io_buf buffer;
+    VW::io_buf buffer;
     buffer.add_file(VW::io::create_vector_writer(model_buffer));
     VW::save_predictor(*all, buffer);
 

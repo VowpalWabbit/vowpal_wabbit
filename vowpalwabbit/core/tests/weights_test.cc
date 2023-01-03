@@ -16,7 +16,7 @@ class weight_tests : public ::testing::Test
 {
 };
 
-using weight_types = ::testing::Types<sparse_parameters, dense_parameters>;
+using weight_types = ::testing::Types<VW::sparse_parameters, VW::dense_parameters>;
 TYPED_TEST_SUITE(weight_tests, weight_types, );
 TYPED_TEST(weight_tests, test_default_function_weight_initialization_strided_index)
 {

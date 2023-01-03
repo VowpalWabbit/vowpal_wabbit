@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/io_buf.h"
 
-size_t io_buf::buf_read(char*& pointer, size_t n)
+size_t VW::io_buf::buf_read(char*& pointer, size_t n)
 {
   // return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (_head + n <= _buffer.end)
@@ -38,7 +38,7 @@ size_t io_buf::buf_read(char*& pointer, size_t n)
   }
 }
 
-bool io_buf::isbinary()
+bool VW::io_buf::isbinary()
 {
   if (_buffer.end == _head)
   {
@@ -51,7 +51,7 @@ bool io_buf::isbinary()
   return ret;
 }
 
-size_t io_buf::readto(char*& pointer, char terminal)
+size_t VW::io_buf::readto(char*& pointer, char terminal)
 {
   // Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
   pointer = _head;
@@ -89,7 +89,7 @@ size_t io_buf::readto(char*& pointer, char terminal)
   }
 }
 
-void io_buf::buf_write(char*& pointer, size_t n)
+void VW::io_buf::buf_write(char*& pointer, size_t n)
 {
   // return a pointer to the next n bytes to write into.
   if (_head + n <= _buffer.end_array)
@@ -109,14 +109,14 @@ void io_buf::buf_write(char*& pointer, size_t n)
   }
 }
 
-size_t io_buf::copy_to(void* dst, size_t max_size)
+size_t VW::io_buf::copy_to(void* dst, size_t max_size)
 {
   size_t to_copy = std::min(unflushed_bytes_count(), max_size);
   memcpy(dst, _buffer.begin, to_copy);
   return to_copy;
 }
 
-void io_buf::replace_buffer(char* buff, size_t capacity)
+void VW::io_buf::replace_buffer(char* buff, size_t capacity)
 {
   if (_buffer.begin != nullptr) { std::free(_buffer.begin); }
 
@@ -126,7 +126,7 @@ void io_buf::replace_buffer(char* buff, size_t capacity)
   _head = buff;
 }
 
-void io_buf::flush()
+void VW::io_buf::flush()
 {
   // This operation only makes sense in write mode.
   assert(_input_files.empty());
@@ -140,7 +140,7 @@ void io_buf::flush()
   }
 }
 
-void io_buf::reset()
+void VW::io_buf::reset()
 {
   // This operation is only intended for read buffers.
   assert(_output_files.empty());
@@ -151,7 +151,7 @@ void io_buf::reset()
   _current = 0;
 }
 
-bool io_buf::is_resettable() const
+bool VW::io_buf::is_resettable() const
 {
   // This operation is only intended for read buffers.
   assert(_output_files.empty());

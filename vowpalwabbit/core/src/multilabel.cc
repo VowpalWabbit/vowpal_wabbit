@@ -53,11 +53,11 @@ VW::label_parser multilabel = {
         const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words, VW::io::logger& logger)
     { parse_label(label.multilabels, reuse_mem, words, logger); },
     // cache_label
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, VW::io_buf& cache,
         const std::string& upstream_name, bool text)
     { return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache)
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::io_buf& cache)
     { return VW::model_utils::read_model_field(cache, label.multilabels); },
     // get_weight
     [](const VW::polylabel& label, const VW::reduction_features& /* red_features */)

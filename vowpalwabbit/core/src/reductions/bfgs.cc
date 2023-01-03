@@ -997,7 +997,7 @@ void learn(bfgs& b, base_learner& base, VW::example& ec)
   }
 }
 
-void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool read, bool text)
+void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
   int c = 0;
   uint32_t length = 2 * (1 << all.num_bits);
@@ -1028,10 +1028,10 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool
         c++;
         std::stringstream msg;
         msg << i;
-        brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text);
+        brw = VW::details::bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text);
 
         msg << ":" << *v << "\n";
-        brw += bin_text_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), msg, text);
+        brw += VW::details::bin_text_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), msg, text);
       }
     }
     if (!read) { i++; }
@@ -1040,7 +1040,7 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool
   if (read) { regularizer_to_weight(all, b); }
 }
 
-void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
+void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
 
@@ -1102,7 +1102,8 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
     std::stringstream msg;
     msg << ":" << reg_vector << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
 
     if (reg_vector) { save_load_regularizer(*all, b, model_file, read, text); }
     else { GD::save_load_regressor(*all, model_file, read, text); }
