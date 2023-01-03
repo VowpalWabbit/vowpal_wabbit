@@ -38,34 +38,6 @@ T& calloc_or_throw()
   return *calloc_or_throw<T>(1);
 }
 
-using free_fn = void (*)(void*);
-
-template <class T>
-using free_ptr = std::unique_ptr<T, free_fn>;
-
-template <class T>
-void destroy_free(void* temp)
-{
-  ((T*)temp)->~T();
-  free(temp);
-}
-
-template <class T, typename... Args>
-free_ptr<T> scoped_calloc_or_throw(Args&&... args)
-{
-  T* temp = calloc_or_throw<T>(1);
-  try
-  {
-    new (temp) T(std::forward<Args>(args)...);
-  }
-  catch (...)
-  {
-    free(temp);
-    throw;
-  }
-  return std::unique_ptr<T, free_fn>(temp, destroy_free<T>);
-}
-
 namespace VW
 {
 #if __cplusplus >= 201402L  // C++14 and beyond
@@ -126,9 +98,4 @@ T* calloc_mergable_or_throw(size_t nmemb)
 #else
   return calloc_or_throw<T>(nmemb);
 #endif
-}
-
-inline void free_it(void* ptr)
-{
-  if (ptr != nullptr) { free(ptr); }
 }

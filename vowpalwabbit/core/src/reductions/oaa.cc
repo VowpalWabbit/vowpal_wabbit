@@ -193,12 +193,12 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
   {
     if (o.indexing == 0)
     {
-      ADD_PASSTHROUGH_FEATURE(ec, 0, o.pred[o.k - 1].scalar);
-      for (uint32_t i = 0; i < o.k - 1; i++) { ADD_PASSTHROUGH_FEATURE(ec, (i + 1), o.pred[i].scalar); }
+      VW_ADD_PASSTHROUGH_FEATURE(ec, 0, o.pred[o.k - 1].scalar);
+      for (uint32_t i = 0; i < o.k - 1; i++) { VW_ADD_PASSTHROUGH_FEATURE(ec, (i + 1), o.pred[i].scalar); }
     }
     else
     {
-      for (uint32_t i = 1; i <= o.k; i++) { ADD_PASSTHROUGH_FEATURE(ec, i, o.pred[i - 1].scalar); }
+      for (uint32_t i = 1; i <= o.k; i++) { VW_ADD_PASSTHROUGH_FEATURE(ec, i, o.pred[i - 1].scalar); }
     }
   }
 
@@ -443,7 +443,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
                             VW::io::logger& /* logger */)
     {
       float loss = 0;
-      if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labelled()) { loss = ec.weight; }
+      if (ec.l.multi.label != ec.pred.multiclass && ec.l.multi.is_labeled()) { loss = ec.weight; }
 
       // We specifically say it is not labelled when reporting loss as there is
       // no way to output progressive validation loss for subsampling mode

@@ -1929,7 +1929,7 @@ class Example(pylibvw.example):
         Tuple[int, float],
         List[Tuple[float, float, float]],
         Tuple[int, List[int]],
-        str,
+        None,
     ]:
 
         """Get prediction object from this example.
@@ -1954,7 +1954,7 @@ class Example(pylibvw.example):
                 - :py:obj:`~vowpalwabbit.PredictionType.ACTION_PDF_VALUE`: Tuple[int, float]
                 - :py:obj:`~vowpalwabbit.PredictionType.PDF`: List[Tuple[float, float, float]]
                 - :py:obj:`~vowpalwabbit.PredictionType.ACTIVE_MULTICLASS`: Tuple[int, List[int]]
-                - :py:obj:`~vowpalwabbit.PredictionType.NOPRED`: str
+                - :py:obj:`~vowpalwabbit.PredictionType.NOPRED`: None
 
         Examples:
             >>> from vowpalwabbit import Workspace, PredictionType
@@ -1979,6 +1979,9 @@ class Example(pylibvw.example):
             )
             prediction_type = PredictionType(prediction_type)
 
+        def return_nopred_none() -> None:
+            return None
+
         switch_prediction_type = {
             PredictionType.SCALAR: self.get_simplelabel_prediction,
             PredictionType.SCALARS: self.get_scalars,
@@ -1992,7 +1995,7 @@ class Example(pylibvw.example):
             PredictionType.ACTION_PDF_VALUE: self.get_action_pdf_value,
             PredictionType.PDF: self.get_pdf,
             PredictionType.ACTIVE_MULTICLASS: self.get_active_multiclass,
-            PredictionType.NOPRED: self.get_nopred,
+            PredictionType.NOPRED: return_nopred_none,
         }
         return switch_prediction_type[prediction_type]()
 

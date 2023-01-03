@@ -4,11 +4,11 @@
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/learner.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
+#include "vw/text_parser/parse_example_text.h"
 
 vw_net_native::workspace_context* create_workspace(
-    std::string arguments, io_buf* model, trace_message_t trace_listener, void* trace_context)
+    std::string arguments, VW::io_buf* model, trace_message_t trace_listener, void* trace_context)
 {
   vw_net_native::workspace_context* context = new vw_net_native::workspace_context();
   context->vw = VW::initialize(arguments, model, false, trace_listener, trace_context);
@@ -56,7 +56,7 @@ API vw_net_native::workspace_context* CreateWorkspaceWithModelData(char* argumen
 {
   try
   {
-    io_buf model;
+    VW::io_buf model;
     model.add_file(std::unique_ptr<VW::io::reader>(new vw_net_native::stream_io_reader(model_reader_vtable)));
 
     std::string arguments_str(arguments, arguments_size);
@@ -92,7 +92,7 @@ API vw_net_native::ERROR_CODE DeleteWorkspace(
   CATCH_RETURN_STATUS
 }
 
-API prediction_type_t WorkspaceGetOutputPredictionType(vw_net_native::workspace_context* workspace)
+API VW::prediction_type_t WorkspaceGetOutputPredictionType(vw_net_native::workspace_context* workspace)
 {
   return workspace->vw->l->get_output_prediction_type();
 }
@@ -107,7 +107,7 @@ API vw_net_native::ERROR_CODE WorkspaceReload(vw_net_native::workspace_context* 
 
     auto buffer = std::make_shared<std::vector<char>>();
     {
-      io_buf write_buffer;
+      VW::io_buf write_buffer;
       write_buffer.add_file(VW::io::create_vector_writer(buffer));
       VW::save_predictor(*workspace->vw, write_buffer);
     }
@@ -119,7 +119,7 @@ API vw_net_native::ERROR_CODE WorkspaceReload(vw_net_native::workspace_context* 
 
     // reload from model
     // seek to beginning
-    io_buf reader_view_of_buffer;
+    VW::io_buf reader_view_of_buffer;
     reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
 
     workspace->vw = VW::initialize(arguments_str, &reader_view_of_buffer);
@@ -147,7 +147,7 @@ API vw_net_native::ERROR_CODE WorkspaceSavePredictorToWriter(vw_net_native::work
 {
   try
   {
-    io_buf write_buffer;
+    VW::io_buf write_buffer;
     write_buffer.add_file(std::unique_ptr<VW::io::writer>(new vw_net_native::stream_io_writer(writer_vtable)));
     VW::save_predictor(*workspace->vw, write_buffer);
 
@@ -166,14 +166,18 @@ API void WorkspaceGetPerformanceStatistics(
   statistics->weighted_labels = workspace->vw->sd->weighted_labels;
 
   if (workspace->vw->holdout_set_off)
+  {
     if (workspace->vw->sd->weighted_labeled_examples > 0)
+    {
       statistics->average_loss = workspace->vw->sd->sum_loss / workspace->vw->sd->weighted_labeled_examples;
-    else
-      statistics->average_loss = NAN;
+    }
+    else { statistics->average_loss = NAN; }
+  }
   else if ((workspace->vw->sd->holdout_best_loss == FLT_MAX) || (workspace->vw->sd->holdout_best_loss == FLT_MAX * 0.5))
+  {
     statistics->average_loss = NAN;
-  else
-    statistics->average_loss = workspace->vw->sd->holdout_best_loss;
+  }
+  else { statistics->average_loss = workspace->vw->sd->holdout_best_loss; }
 
   float best_constant;
   float best_constant_loss;
@@ -246,12 +250,12 @@ API vw_net_native::ERROR_CODE WorkspaceNotifyEndOfPass(
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_context* workspace, VW::example* ex,
     char* line, size_t length, VW::experimental::api_status* status)
 {
   try
   {
-    VW::read_line(*workspace->vw, ex, VW::string_view(line, length));
+    VW::parsers::text::read_line(*workspace->vw, ex, VW::string_view(line, length));
 
     VW::setup_example(*workspace->vw, ex);
 
@@ -260,7 +264,7 @@ API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context* workspace, VW::example* ex,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
@@ -276,7 +280,7 @@ API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context*
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* workspace, VW::example* ex,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
@@ -292,7 +296,7 @@ API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* w
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_context* workspace, multi_ex* ex_coll,
+API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_context* workspace, VW::multi_ex* ex_coll,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
@@ -308,7 +312,7 @@ API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_con
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_context* workspace, multi_ex* ex_coll,
+API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_context* workspace, VW::multi_ex* ex_coll,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try

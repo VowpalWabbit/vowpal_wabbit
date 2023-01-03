@@ -283,17 +283,18 @@ void learn_freegrad(freegrad& a, base_learner& /* base */, VW::example& ec)
   freegrad_update_after_prediction(a, ec);
 }
 
-void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
+void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = fg.all;
-  if (read) { initialize_regressor(*all); }
+  if (read) { VW::details::initialize_regressor(*all); }
 
   if (model_file.num_files() != 0)
   {
     bool resume = all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
     {
@@ -312,7 +313,7 @@ void end_pass(freegrad& fg)
   {
     if (VW::details::summarize_holdout_set(all, fg.no_win_counter))
     {
-      finalize_regressor(all, all.final_regressor_name);
+      VW::details::finalize_regressor(all, all.final_regressor_name);
     }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
@@ -389,16 +390,17 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
 
   auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
   auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
-  auto* l = VW::LEARNER::make_base_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
-      stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_learn_returns_prediction(true)
-                .set_params_per_weight(UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())
-                .set_save_load(save_load)
-                .set_end_pass(end_pass)
-                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<freegrad>)
-                .set_update_stats(VW::details::update_stats_simple_label<freegrad>)
-                .set_print_update(VW::details::print_update_simple_label<freegrad>)
-                .build();
+  auto* l =
+      VW::LEARNER::make_base_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
+          stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+          .set_learn_returns_prediction(true)
+          .set_params_per_weight(VW::details::UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())
+          .set_save_load(save_load)
+          .set_end_pass(end_pass)
+          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<freegrad>)
+          .set_update_stats(VW::details::update_stats_simple_label<freegrad>)
+          .set_print_update(VW::details::print_update_simple_label<freegrad>)
+          .build();
 
   return make_base(*l);
 }

@@ -62,7 +62,7 @@ class index_feature
 {
 public:
   uint32_t document;
-  feature f;
+  VW::feature f;
   bool operator<(const index_feature b) const { return f.weight_index < b.f.weight_index; }
 };
 
@@ -712,11 +712,10 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
     memset(new_gamma.begin(), 0, sizeof(float) * l.topics);
 
     score = 0;
-    size_t word_count = 0;
     doc_length = 0;
-    for (features& fs : *ec)
+    for (VW::features& fs : *ec)
     {
-      for (features::iterator& f : fs)
+      for (VW::features::iterator& f : fs)
       {
         float* u_for_w = &(weights[f.index()]) + l.topics + 1;
         float c_w = find_cw(l, u_for_w, v);
@@ -724,7 +723,6 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
         score += -f.value() * std::log(c_w);
         size_t max_k = l.topics;
         for (size_t k = 0; k < max_k; k++, ++u_for_w) { new_gamma[k] += xc_w * *u_for_w; }
-        word_count++;
         doc_length += f.value();
       }
     }
@@ -732,7 +730,7 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
   } while (average_diff(*l.all, old_gamma.begin(), new_gamma.begin()) > l.lda_epsilon);
 
   ec->pred.scalars.clear();
-  ec->pred.scalars.resize_but_with_stl_behavior(l.topics);
+  ec->pred.scalars.resize(l.topics);
   memcpy(ec->pred.scalars.begin(), new_gamma.begin(), l.topics * sizeof(float));
 
   score += theta_kl(l, Elogtheta, new_gamma.begin());
@@ -762,13 +760,13 @@ public:
   uint64_t stride;
 };
 
-void save_load(lda& l, io_buf& model_file, bool read, bool text)
+void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *(l.all);
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f),
         all.random_weights, all.lda, all.weights.stride()};
 
@@ -801,13 +799,15 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 
       if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
       {
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+        brw +=
+            VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       }
       else
       {
         // support 32bit build models
         uint32_t j;
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), read, msg, text);
+        brw +=
+            VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), read, msg, text);
         i = j;
       }
 
@@ -818,13 +818,14 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
         {
           VW::weight* v = w + k;
           if (!read && text) { msg << *v + l.lda_rho << " "; }
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
+          brw += VW::details::bin_text_read_write_fixed(
+              model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         if (!read) { msg << "\n"; }
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
+        brw += VW::details::bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
       if (!read) { ++i; }
     } while ((!read && i < length) || (read && brw > 0));
@@ -860,7 +861,7 @@ void learn_batch(lda& l)
     for (size_t d = 0; d < l.examples.size(); d++)
     {
       l.examples[d]->pred.scalars.clear();
-      l.examples[d]->pred.scalars.resize_but_with_stl_behavior(l.topics);
+      l.examples[d]->pred.scalars.resize(l.topics);
       memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
 
       l.examples[d]->pred.scalars.clear();
@@ -994,11 +995,11 @@ void learn(lda& l, base_learner&, VW::example& ec)
   uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
   l.doc_lengths.push_back(0);
-  for (features& fs : ec)
+  for (VW::features& fs : ec)
   {
-    for (features::iterator& f : fs)
+    for (VW::features::iterator& f : fs)
     {
-      index_feature temp = {num_ex, feature(f.value(), f.index())};
+      index_feature temp = {num_ex, VW::feature(f.value(), f.index())};
       l.sorted_features.push_back(temp);
       l.doc_lengths[num_ex] += static_cast<int>(f.value());
     }
@@ -1014,9 +1015,9 @@ void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
     uint64_t stride_shift = l.all->weights.stride_shift();
     uint64_t weight_mask = l.all->weights.mask();
 
-    for (features& fs : ec)
+    for (VW::features& fs : ec)
     {
-      for (features::iterator& f : fs)
+      for (VW::features::iterator& f : fs)
       {
         uint64_t idx = (f.index() & weight_mask) >> stride_shift;
         l.feature_counts[idx] += static_cast<uint32_t>(f.value());
@@ -1054,13 +1055,13 @@ public:
 };
 
 template <class T>
-void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output, T& weights)
+void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<VW::feature>& output, T& weights)
 {
   uint64_t length = static_cast<uint64_t>(1) << all->num_bits;
 
   // get top features for this topic
-  auto cmp = [](feature left, feature right) { return left.x > right.x; };
-  std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
+  auto cmp = [](VW::feature left, VW::feature right) { return left.x > right.x; };
+  std::priority_queue<VW::feature, std::vector<VW::feature>, decltype(cmp)> top_features(cmp);
   typename T::iterator iter = weights.begin();
 
   for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
@@ -1100,12 +1101,12 @@ void compute_coherence_metrics(lda& l, T& weights)
   for (size_t topic = 0; topic < l.topics; topic++)
   {
     // get top features for this topic
-    auto cmp = [](feature& left, feature& right) { return left.x > right.x; };
-    std::priority_queue<feature, std::vector<feature>, decltype(cmp)> top_features(cmp);
+    auto cmp = [](VW::feature& left, VW::feature& right) { return left.x > right.x; };
+    std::priority_queue<VW::feature, std::vector<VW::feature>, decltype(cmp)> top_features(cmp);
     typename T::iterator iter = weights.begin();
     for (uint64_t i = 0; i < std::min(static_cast<uint64_t>(top_words_count), length); i++, ++iter)
     {
-      top_features.push(feature((&(*iter))[topic], iter.index()));
+      top_features.push(VW::feature((&(*iter))[topic], iter.index()));
     }
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
@@ -1113,7 +1114,7 @@ void compute_coherence_metrics(lda& l, T& weights)
       if ((&(*v))[topic] > top_features.top().x)
       {
         top_features.pop();
-        top_features.push(feature((&(*v))[topic], v.index()));
+        top_features.push(VW::feature((&(*v))[topic], v.index()));
       }
     }
 
@@ -1334,8 +1335,8 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   ld->example_t = all.initial_t;
   if (ld->compute_coherence_metrics)
   {
-    ld->feature_counts.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
-    ld->feature_to_example_map.resize(static_cast<uint32_t>(UINT64_ONE << all.num_bits));
+    ld->feature_counts.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.num_bits));
+    ld->feature_to_example_map.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.num_bits));
   }
 
   float temp = ceilf(logf(static_cast<float>(all.lda * 2 + 1)) / logf(2.f));
@@ -1354,11 +1355,10 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   if (minibatch2 > all.example_parser->example_queue_limit)
   {
     bool previous_strict_parse = all.example_parser->strict_parse;
-    delete all.example_parser;
-    all.example_parser = new parser{minibatch2, previous_strict_parse};
+    all.example_parser = VW::make_unique<VW::parser>(minibatch2, previous_strict_parse);
   }
 
-  ld->v.resize_but_with_stl_behavior(all.lda * ld->minibatch);
+  ld->v.resize(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 
@@ -1367,7 +1367,7 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
       VW::prediction_type_t::SCALARS, VW::label_type_t::NOLABEL)
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .set_finish_example(::finish_example)

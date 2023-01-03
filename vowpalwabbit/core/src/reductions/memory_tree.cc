@@ -60,7 +60,7 @@ void copy_example_data(VW::example* dst, VW::example* src, bool oas = false)  //
 // kronecker_prod at feature level:
 
 void diag_kronecker_prod_fs_test(
-    features& f1, features& f2, features& prod_f, float& total_sum_feat_sq, float norm_sq1, float norm_sq2)
+    VW::features& f1, VW::features& f2, VW::features& prod_f, float& total_sum_feat_sq, float norm_sq1, float norm_sq2)
 {
   // originally called delete_v, but that doesn't seem right. Clearing instead
   // prod_f.~features();
@@ -229,8 +229,8 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 {
   float dotprod = 0;
 
-  features& fs_1 = const_cast<features&>(fec1->fs);
-  features& fs_2 = const_cast<features&>(fec2->fs);
+  auto& fs_1 = const_cast<VW::features&>(fec1->fs);
+  auto& fs_2 = const_cast<VW::features&>(fec2->fs);
   if (fs_2.indices.size() == 0) { return 0.f; }
 
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
@@ -1078,7 +1078,8 @@ void end_pass(memory_tree& b)
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
+void save_load_example(
+    VW::example* ec, VW::io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
 {  // deal with tag
    // deal with labels:
   DEPRECATED_WRITEIT(ec->num_features, "num_features");
@@ -1122,7 +1123,7 @@ void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& te
   // deal with features
   for (VW::namespace_index nc : ec->indices)
   {
-    features* fs = &ec->feature_space[nc];
+    VW::features* fs = &ec->feature_space[nc];
     DEPRECATED_WRITEITVAR(fs->size(), "features_", feat_size);
     if (read)
     {
@@ -1136,7 +1137,7 @@ void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& te
   }
 }
 
-void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+void save_load_node(node& cn, VW::io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
   DEPRECATED_WRITEIT(cn.parent, "parent");
   DEPRECATED_WRITEIT(cn.internal, "internal");
@@ -1155,7 +1156,7 @@ void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::s
   for (uint32_t k = 0; k < leaf_n_examples; k++) DEPRECATED_WRITEIT(cn.examples_index[k], "example_location");
 }
 
-void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
+void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bool text)
 {
   std::stringstream msg;
   if (model_file.num_files() > 0)

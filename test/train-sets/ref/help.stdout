@@ -249,17 +249,20 @@ Weight Options:
     --priority_challengers arg              Set number of priority challengers to use. Set to -1 to use half
                                             of total live configs. (type: int, default: -1, keep, experimental)
     --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
+    --csv_trace                             Extended tracing for debugging (type: bool, experimental)
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
-                                            choices {champdupe, one_diff, one_diff_inclusion, rand}, keep,
-                                            experimental)
+                                            choices {champdupe, one_diff, one_diff_inclusion, qbase_cubic,
+                                            rand}, keep, experimental)
     --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
                                             bool, default: false, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
                                             (bonferroni correction) (type: bool, keep, experimental)
+    --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
+                                            experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
                                             separately in regression (type: bool, keep, necessary)
@@ -551,6 +554,17 @@ Weight Options:
 [Reduction] Debug Metrics Options:
     --extra_metrics arg                     Specify filename to write metrics to. Note: There is no fixed
                                             schema (type: str, necessary)
+[Reduction] Eigen Memory Tree Options:
+    --emt                                   Make an eigen memory tree (type: bool, keep, necessary)
+    --emt_tree arg                          Indicates the maximum number of memories the tree can have (type:
+                                            uint, default: 0, keep)
+    --emt_leaf arg                          Indicates the maximum number of memories a leaf can have (type:
+                                            uint, default: 100, keep)
+    --emt_scorer arg                        Indicates the type of scorer to use (type: str, default: self_consistent_rank,
+                                            choices {distance, not_self_consistent_rank, random, self_consistent_rank},
+                                            keep)
+    --emt_router arg                        Indicates the type of router to use (type: str, default: eigen,
+                                            choices {eigen, random}, keep)
 [Reduction] Epsilon-Decaying Exploration Options:
     --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary,
                                             experimental)
@@ -572,6 +586,8 @@ Weight Options:
     --shift_model_bounds arg                Shift maximum update_count for model i from champ_update_count^(i
                                             / num_models) to champ_update_count^((i + shift) / (num_models
                                             + shift)) (type: uint, default: 0, keep, experimental)
+    --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
+                                            experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -777,7 +793,7 @@ Weight Options:
 [Reduction] OjaNewton Options:
     --OjaNewton                             Online Newton with Oja's Sketch (type: bool, keep, necessary)
     --sketch_size arg                       Size of sketch (type: int, default: 10)
-    --epoch_size arg                        Size of epoch (type: int, default: 1)
+    --epoch_size arg                        Size of epoch (type: uint, default: 1)
     --alpha arg                             Mutiplicative constant for indentiy (type: float, default: 1)
     --alpha_inverse arg                     One over alpha, similar to learning rate (type: float)
     --learning_rate_cnt arg                 Constant for the learning rate 1/t (type: float, default: 2)
@@ -800,6 +816,9 @@ Weight Options:
                                             than <thr> threshold (type: float, default: 0.5)
     --top_k arg                             Predict top-<k> labels instead of labels above threshold (type:
                                             uint, default: 0)
+    --probabilities                         Predict probabilities for the predicted labels (type: bool)
+    --plt_force_load_legacy_model           Force the loading of a pre 9.7 model. This option is a migration
+                                            measure and will be removed in the next VW version. (type: bool)
 [Reduction] Recall Tree Options:
     --recall_tree arg                       Use online tree for multiclass (type: uint, keep, necessary)
     --max_candidates arg                    Maximum number of labels per leaf in the tree (type: uint, keep)

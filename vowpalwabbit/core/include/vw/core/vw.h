@@ -57,7 +57,7 @@ VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_a
 VW::workspace* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Experimental (VW::setup_base_i):
-VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skipModelLoad = false,
+VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr);
 
@@ -84,11 +84,21 @@ std::unique_ptr<VW::workspace> initialize_experimental(std::unique_ptr<config::o
     std::unique_ptr<VW::setup_base_i> setup_base = nullptr);
 VW_WARNING_STATE_POP
 
+VW_DEPRECATED(
+    "VW no longer supports manipulating a command line with cmd_string_replace_value. This function will be removed in "
+    "VW 10.")
 void cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value);
 
 // The argv array from both of these functions must be freed.
+VW_DEPRECATED(
+    "This functionality is now implemented by VW::split_command_line which supports escaping, etc. This function will "
+    "be removed in VW 10.")
 char** to_argv(std::string const& s, int& argc);
+VW_DEPRECATED(
+    "This functionality is now implemented by VW::split_command_line which supports escaping, etc. This function will "
+    "be removed in VW 10.")
 char** to_argv_escaped(std::string const& s, int& argc);
+VW_DEPRECATED("This function will be removed in VW 10.")
 void free_args(int argc, char* argv[]);
 
 const char* are_features_compatible(const VW::workspace& vw1, const VW::workspace& vw2);
@@ -109,6 +119,9 @@ void sync_stats(VW::workspace& all);
 
 void start_parser(VW::workspace& all);
 void end_parser(VW::workspace& all);
+
+VW_DEPRECATED(
+    "It is no longer supported to query whether an example is a ring example. This function will be removed in VW 10")
 bool is_ring_example(const VW::workspace& all, const example* ae);
 
 class primitive_feature_space  // just a helper definition.

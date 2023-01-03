@@ -46,6 +46,10 @@ class label
 public:
   std::vector<cb_class> costs;
   float weight = 1.f;
+
+  VW_ATTR(nodiscard) bool is_test_label() const;
+  VW_ATTR(nodiscard) bool is_labeled() const;
+  void reset_to_default();
 };
 
 extern VW::label_parser cb_label;                  // for learning

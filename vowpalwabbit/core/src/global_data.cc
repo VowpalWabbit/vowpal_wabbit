@@ -331,7 +331,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   l = nullptr;
   cost_sensitive = nullptr;
   loss = nullptr;
-  example_parser = nullptr;
 
   reg_mode = 0;
   current_pass = 0;
@@ -427,12 +426,7 @@ workspace::~workspace()
   }
 
   // TODO: migrate all finalization into parser destructor
-  if (example_parser != nullptr)
-  {
-    VW::details::free_parser(*this);
-    delete example_parser;
-    example_parser = nullptr;
-  }
+  if (example_parser != nullptr) { VW::details::free_parser(*this); }
 
   const bool seeded = weights.seeded() > 0;
   if (!seeded)

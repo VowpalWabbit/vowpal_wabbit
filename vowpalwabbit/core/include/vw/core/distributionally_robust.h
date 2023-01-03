@@ -4,31 +4,35 @@
 
 #pragma once
 
+#include "vw/core/vw_fwd.h"
+
 #include <limits>
 #include <string>
 
+namespace VW
+{
+namespace details
+{
 constexpr float BASELINE_DEFAULT_TAU = 0.999f;
 constexpr float CRESSEREAD_DEFAULT_TAU = 1.0f;
 constexpr float DEFAULT_ALPHA = 0.05f;
-
-class io_buf;
-namespace VW
-{
-namespace distributionally_robust
-{
 class Duals;
+}  // namespace details
+
+namespace estimators
+{
 class ChiSquared;
-}  // namespace distributionally_robust
+}
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::distributionally_robust::Duals&);
-size_t write_model_field(io_buf&, const VW::distributionally_robust::Duals&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
-size_t write_model_field(io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::details::Duals&);
+size_t write_model_field(io_buf&, const VW::details::Duals&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::estimators::ChiSquared&);
+size_t write_model_field(io_buf&, const VW::estimators::ChiSquared&, const std::string&, bool);
 }  // namespace model_utils
 
-namespace distributionally_robust
+namespace details
 {
 class Duals
 {
@@ -58,13 +62,14 @@ public:
     n = 0.0;
   }
 
-  friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::Duals&);
-  friend size_t VW::model_utils::write_model_field(
-      io_buf&, const VW::distributionally_robust::Duals&, const std::string&, bool);
+  friend size_t VW::model_utils::read_model_field(io_buf&, VW::details::Duals&);
+  friend size_t VW::model_utils::write_model_field(io_buf&, const VW::details::Duals&, const std::string&, bool);
 };
+using ScoredDual = std::pair<double, VW::details::Duals>;
+}  // namespace details
 
-using ScoredDual = std::pair<double, Duals>;
-
+namespace estimators
+{
 // https://en.wikipedia.org/wiki/Divergence_(statistics)
 class ChiSquared
 {
@@ -79,19 +84,18 @@ public:
   void reset(double _alpha, double _tau);
   double lower_bound_and_update();
   double get_phi() const;
-  ScoredDual cressieread_duals(double r, double sign, double phi) const;
+  VW::details::ScoredDual cressieread_duals(double r, double sign, double phi) const;
   double cressieread_bound(double r, double sign, double phi) const;
   double cressieread_lower_bound() const;
   double cressieread_upper_bound() const;
-  ScoredDual recompute_duals();
+  VW::details::ScoredDual recompute_duals();
   static double chisq_onedof_isf(double alpha);
   const double& effn() { return _n; }
-  friend size_t VW::model_utils::read_model_field(io_buf&, VW::distributionally_robust::ChiSquared&);
+  friend size_t VW::model_utils::read_model_field(io_buf&, VW::estimators::ChiSquared&);
   friend size_t VW::model_utils::write_model_field(
-      io_buf&, const VW::distributionally_robust::ChiSquared&, const std::string&, bool);
+      io_buf&, const VW::estimators::ChiSquared&, const std::string&, bool);
   void save_load(io_buf& model_file, bool read, bool text, const char* name);
 
-private:
   double _alpha;
   double _tau;
   double _wmin;
@@ -109,8 +113,7 @@ private:
   double _delta;
 
   bool _duals_stale;
-  ScoredDual _duals;
+  VW::details::ScoredDual _duals;
 };
-
-}  // namespace distributionally_robust
+}  // namespace estimators
 }  // namespace VW

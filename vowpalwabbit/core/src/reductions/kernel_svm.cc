@@ -13,7 +13,6 @@
 #include "vw/core/memory.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/gd.h"
@@ -238,14 +237,14 @@ static int trim_cache(svm_params& params)
   return alloc;
 }
 
-void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool text)
+void save_load_svm_model(svm_params& params, VW::io_buf& model_file, bool read, bool text)
 {
   svm_model* model = params.model;
   // TODO: check about initialization
 
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), read, msg, text);
 
   if (read) { model->support_vec.reserve(model->num_support); }
@@ -267,15 +266,15 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
     }
   }
 
-  if (read) { model->alpha.resize_but_with_stl_behavior(model->num_support); }
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->alpha.data()),
+  if (read) { model->alpha.resize(model->num_support); }
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->alpha.data()),
       static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
-  if (read) { model->delta.resize_but_with_stl_behavior(model->num_support); }
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->delta.data()),
+  if (read) { model->delta.resize(model->num_support); }
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->delta.data()),
       static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
 }
 
-void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
+void save_load(svm_params& params, VW::io_buf& model_file, bool read, bool text)
 {
   if (text)
   {
@@ -295,11 +294,10 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 {
   float dotprod = 0;
 
-  features& fs_1 = const_cast<features&>(fec1->fs);
-  features& fs_2 = const_cast<features&>(fec2->fs);
+  auto& fs_1 = const_cast<VW::features&>(fec1->fs);
+  auto& fs_2 = const_cast<VW::features&>(fec2->fs);
   if (fs_2.indices.size() == 0) { return 0.f; }
 
-  int numint = 0;
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
   {
     uint64_t ec1pos = fs_1.indices[idx1];
@@ -311,7 +309,6 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 
     if (ec1pos == ec2pos)
     {
-      numint++;
       dotprod += fs_1.values[idx1] * fs_2.values[idx2];
       ++idx2;
     }
@@ -503,7 +500,7 @@ void add_size_t(size_t& t1, const size_t& t2) noexcept { t1 += t2; }
 
 void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 {
-  io_buf* b = new io_buf();
+  VW::io_buf* b = new VW::io_buf();
 
   char* queries;
   VW::flat_example* fec = nullptr;

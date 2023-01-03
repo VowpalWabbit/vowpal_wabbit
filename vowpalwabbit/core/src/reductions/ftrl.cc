@@ -112,16 +112,16 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   size_t num_features_from_interactions = 0;
   if (b.all->weights.sparse)
   {
-    GD::multipredict_info<sparse_parameters> mp = {
+    GD::multipredict_info<VW::sparse_parameters> mp = {
         count, step, pred, all.weights.sparse_weights, static_cast<float>(all.sd->gravity)};
-    GD::foreach_feature<GD::multipredict_info<sparse_parameters>, uint64_t, GD::vec_add_multipredict>(
+    GD::foreach_feature<GD::multipredict_info<VW::sparse_parameters>, uint64_t, GD::vec_add_multipredict>(
         all, ec, mp, num_features_from_interactions);
   }
   else
   {
-    GD::multipredict_info<dense_parameters> mp = {
+    GD::multipredict_info<VW::dense_parameters> mp = {
         count, step, pred, all.weights.dense_weights, static_cast<float>(all.sd->gravity)};
-    GD::foreach_feature<GD::multipredict_info<dense_parameters>, uint64_t, GD::vec_add_multipredict>(
+    GD::foreach_feature<GD::multipredict_info<VW::dense_parameters>, uint64_t, GD::vec_add_multipredict>(
         all, ec, mp, num_features_from_interactions);
   }
   ec.num_features_from_interactions = num_features_from_interactions;
@@ -327,17 +327,18 @@ void NO_SANITIZE_UNDEFINED learn_coin_betting(ftrl& a, base_learner& base, VW::e
   coin_betting_update_after_prediction(a, ec);
 }
 
-void save_load(ftrl& b, io_buf& model_file, bool read, bool text)
+void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
-  if (read) { initialize_regressor(*all); }
+  if (read) { VW::details::initialize_regressor(*all); }
 
   if (model_file.num_files() != 0)
   {
     bool resume = all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
     {
@@ -356,7 +357,7 @@ void end_pass(ftrl& g)
   {
     if (VW::details::summarize_holdout_set(all, g.no_win_counter))
     {
-      finalize_regressor(all, all.final_regressor_name);
+      VW::details::finalize_regressor(all, all.final_regressor_name);
     }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
@@ -479,7 +480,7 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
       stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::SCALAR,
       VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(learn_returns_prediction)
-               .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                .set_sensitivity(sensitivity)
                .set_multipredict(multipredict_ptr)
                .set_save_load(save_load)

@@ -11,6 +11,7 @@
 #include "vw/core/error_reporting.h"
 #include "vw/core/input_parser.h"
 #include "vw/core/interaction_generation_state.h"
+#include "vw/core/metrics_collector.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
@@ -37,7 +38,7 @@
 #  include <thread>
 #endif
 
-using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<VW::features>>;
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
@@ -84,9 +85,9 @@ class trace_message_wrapper
 {
 public:
   void* inner_context;
-  trace_message_t trace_message;
+  VW::trace_message_t trace_message;
 
-  trace_message_wrapper(void* context, trace_message_t trace_message)
+  trace_message_wrapper(void* context, VW::trace_message_t trace_message)
       : inner_context(context), trace_message(trace_message)
   {
   }
@@ -110,7 +111,7 @@ class workspace
 public:
   VW::shared_data* sd;
 
-  parser* example_parser;
+  std::unique_ptr<parser> example_parser;
   std::thread parse_thread;
 
   all_reduce_type selected_all_reduce_type;
@@ -151,9 +152,7 @@ public:
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 
-  // This field is experimental and subject to change.
-  // Used to implement the external binary parser.
-  std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
+  VW::metrics_collector global_metrics;
 
   // Experimental field.
   // Generic parser interface to make it possible to use any external parser.

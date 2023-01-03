@@ -42,16 +42,16 @@ void parse_simple_label(VW::simple_label& ld, VW::reduction_features& red_featur
     case 0:
       break;
     case 1:
-      ld.label = float_of_string(words[0], logger);
+      ld.label = VW::details::float_of_string(words[0], logger);
       break;
     case 2:
-      ld.label = float_of_string(words[0], logger);
-      simple_red_features.weight = float_of_string(words[1], logger);
+      ld.label = VW::details::float_of_string(words[0], logger);
+      simple_red_features.weight = VW::details::float_of_string(words[1], logger);
       break;
     case 3:
-      ld.label = float_of_string(words[0], logger);
-      simple_red_features.weight = float_of_string(words[1], logger);
-      simple_red_features.initial = float_of_string(words[2], logger);
+      ld.label = VW::details::float_of_string(words[0], logger);
+      simple_red_features.weight = VW::details::float_of_string(words[1], logger);
+      simple_red_features.initial = VW::details::float_of_string(words[2], logger);
       break;
     default:
       logger.out_error("Error: {0} is too many tokens for a simple label: {1}", words.size(), fmt::join(words, " "));

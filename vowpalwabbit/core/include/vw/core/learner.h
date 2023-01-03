@@ -43,7 +43,6 @@
 
 namespace VW
 {
-
 template <typename DataT, typename ExampleT>
 using learner_update_stats_func = void(
     const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger);
@@ -157,11 +156,11 @@ class finish_example_data
 public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
   using update_stats_fn = void (*)(
-      const VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
+      const VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using output_example_prediction_fn = void (*)(
       VW::workspace&, const void* data, const void* ex, VW::io::logger& logger);
   using print_update_fn = void (*)(
-      VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
+      VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using cleanup_example_fn = void (*)(const void* data, const void* ex);
 
   void* data = nullptr;
@@ -474,25 +473,39 @@ public:
     _finish_example_fd.print_example_f(all, _finish_example_fd.data, (void*)&ec);
   }
 
-  inline void NO_SANITIZE_UNDEFINED update_stats(VW::workspace& all, const E& ec)
+  inline void NO_SANITIZE_UNDEFINED update_stats(
+      const VW::workspace& all, VW::shared_data& sd, const E& ec, VW::io::logger& logger)
   {
     debug_log_message(ec, "update_stats");
     if (!has_update_stats()) { THROW("fatal: learner did not register update_stats fn: " + _name); }
-    _finish_example_fd.update_stats_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
+    _finish_example_fd.update_stats_f(all, sd, _finish_example_fd.data, (void*)&ec, logger);
+  }
+  inline void NO_SANITIZE_UNDEFINED update_stats(VW::workspace& all, const E& ec)
+  {
+    update_stats(all, *all.sd, ec, all.logger);
   }
 
-  inline void NO_SANITIZE_UNDEFINED output_example_prediction(VW::workspace& all, const E& ec)
+  inline void NO_SANITIZE_UNDEFINED output_example_prediction(VW::workspace& all, const E& ec, VW::io::logger& logger)
   {
     debug_log_message(ec, "output_example_prediction");
     if (!has_output_example_prediction()) { THROW("fatal: learner did not register output_example fn: " + _name); }
-    _finish_example_fd.output_example_prediction_f(all, _finish_example_fd.data, (void*)&ec, all.logger);
+    _finish_example_fd.output_example_prediction_f(all, _finish_example_fd.data, (void*)&ec, logger);
+  }
+  inline void NO_SANITIZE_UNDEFINED output_example_prediction(VW::workspace& all, const E& ec)
+  {
+    output_example_prediction(all, ec, all.logger);
   }
 
-  inline void NO_SANITIZE_UNDEFINED print_update(VW::workspace& all, const E& ec)
+  inline void NO_SANITIZE_UNDEFINED print_update(
+      VW::workspace& all, VW::shared_data& sd, const E& ec, VW::io::logger& logger)
   {
     debug_log_message(ec, "print_update");
     if (!has_print_update()) { THROW("fatal: learner did not register print_update fn: " + _name); }
-    _finish_example_fd.print_update_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
+    _finish_example_fd.print_update_f(all, sd, _finish_example_fd.data, (void*)&ec, logger);
+  }
+  inline void NO_SANITIZE_UNDEFINED print_update(VW::workspace& all, const E& ec)
+  {
+    print_update(all, *all.sd, ec, all.logger);
   }
 
   inline void NO_SANITIZE_UNDEFINED cleanup_example(E& ec)

@@ -57,7 +57,7 @@ inline void inner_loop(single_learner& base, VW::example& ec, uint32_t i, float 
     score = ec.partial_prediction;
     prediction = i;
   }
-  ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
+  VW_ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
 }
 
 #define DO_MULTIPREDICT true
@@ -128,7 +128,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     {
       for (uint32_t i = 0; i <= c.num_classes; i++)
       {
-        ADD_PASSTHROUGH_FEATURE(ec, i, c.pred[i].scalar);
+        VW_ADD_PASSTHROUGH_FEATURE(ec, i, c.pred[i].scalar);
         if (c.pred[i].scalar < c.pred[prediction].scalar) { prediction = i; }
       }
       ec.partial_prediction = c.pred[prediction].scalar;
@@ -137,7 +137,7 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     {
       for (uint32_t i = 1; i <= c.num_classes; i++)
       {
-        ADD_PASSTHROUGH_FEATURE(ec, i, c.pred[i - 1].scalar);
+        VW_ADD_PASSTHROUGH_FEATURE(ec, i, c.pred[i - 1].scalar);
         if (c.pred[i - 1].scalar < c.pred[prediction - 1].scalar) { prediction = i; }
       }
       ec.partial_prediction = c.pred[prediction - 1].scalar;
@@ -168,10 +168,10 @@ void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
     if (second_best_cost < FLT_MAX)
     {
       float margin = second_best_cost - ec.partial_prediction;
-      ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 2, margin);
-      ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 2 + 1 + second_best, 1.);
+      VW_ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 2, margin);
+      VW_ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 2 + 1 + second_best, 1.);
     }
-    else { ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 3, 1.); }
+    else { VW_ADD_PASSTHROUGH_FEATURE(ec, VW::details::CONSTANT * 3, 1.); }
   }
 
   ec.pred.multiclass = prediction;

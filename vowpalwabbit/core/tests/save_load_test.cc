@@ -3,10 +3,10 @@
 // license as described in the file LICENSE.
 
 #include "vw/config/options_cli.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -17,7 +17,7 @@ using namespace ::testing;
 
 #include <string>
 
-TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
+TEST(SaveLoad, SaveResumeBehavesAsIfDatasetConcatenated)
 {
   std::array<std::string, 10> input_data = {
       "0.521144 |T PFF |f t1:-0.0236849 t5:-0.10215 r5:0.727735 t10:-0.0387662 r10:0.911208 t20:-0.00777943 "
@@ -46,7 +46,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   for (const auto& item : input_data)
   {
     auto& ex = VW::get_unused_example(vw_all_data_single_run.get());
-    VW::read_line(*vw_all_data_single_run, &ex, item.c_str());
+    VW::parsers::text::read_line(*vw_all_data_single_run, &ex, item.c_str());
     VW::setup_example(*vw_all_data_single_run, &ex);
     vw_all_data_single_run->learn(ex);
     vw_all_data_single_run->finish_example(ex);
@@ -57,14 +57,14 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   for (size_t i = 0; i < 5; i++)
   {
     auto& ex = VW::get_unused_example(vw_first_half.get());
-    VW::read_line(*vw_first_half, &ex, input_data[i].c_str());
+    VW::parsers::text::read_line(*vw_first_half, &ex, input_data[i].c_str());
     VW::setup_example(*vw_first_half, &ex);
     vw_first_half->learn(ex);
     vw_first_half->finish_example(ex);
   }
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
   VW::save_predictor(*vw_first_half, io_writer);
   io_writer.flush();
@@ -76,7 +76,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   for (size_t i = 5; i < 10; i++)
   {
     auto& ex = VW::get_unused_example(vw_second_half_from_loaded.get());
-    VW::read_line(*vw_second_half_from_loaded, &ex, input_data[i].c_str());
+    VW::parsers::text::read_line(*vw_second_half_from_loaded, &ex, input_data[i].c_str());
     VW::setup_example(*vw_second_half_from_loaded, &ex);
     vw_second_half_from_loaded->learn(ex);
     vw_second_half_from_loaded->finish_example(ex);

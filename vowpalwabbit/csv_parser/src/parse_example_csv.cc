@@ -447,7 +447,7 @@ private:
   inline FORCE_INLINE float string_to_float(VW::string_view sv)
   {
     size_t end_read = 0;
-    float parsed = parse_float(sv.data(), end_read, sv.data() + sv.size());
+    float parsed = VW::details::parse_float(sv.data(), end_read, sv.data() + sv.size());
     // Not a valid float, return NaN
     if (!(end_read == sv.size())) { parsed = std::numeric_limits<float>::quiet_NaN(); }
     return parsed;

@@ -229,7 +229,7 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
   size_t ss = all->weights.stride_shift();
 
   ec.indices.push_back(VW::details::NODE_ID_NAMESPACE);
-  features& fs = ec.feature_space[VW::details::NODE_ID_NAMESPACE];
+  auto& fs = ec.feature_space[VW::details::NODE_ID_NAMESPACE];
 
   if (b.node_only) { fs.push_back(1., ((static_cast<uint64_t>(868771) * cn) << ss) & mask); }
   else
@@ -247,7 +247,7 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
 
 void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, VW::example& ec)
 {
-  features& fs = ec.feature_space[VW::details::NODE_ID_NAMESPACE];
+  auto& fs = ec.feature_space[VW::details::NODE_ID_NAMESPACE];
   fs.clear();
   ec.indices.pop_back();
 }
@@ -440,7 +440,7 @@ void learn(recall_tree& b, single_learner& base, VW::example& ec)
   }
 }
 
-void save_load_tree(recall_tree& b, io_buf& model_file, bool read, bool text)
+void save_load_tree(recall_tree& b, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() > 0)
   {

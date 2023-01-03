@@ -61,15 +61,11 @@ private:
 class baseline_challenger_data
 {
 public:
-  distributionally_robust::ChiSquared baseline;
+  VW::estimators::ChiSquared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;
-  bool emit_metrics;
 
-  baseline_challenger_data(bool emit_metrics, double alpha, double tau)
-      : baseline(alpha, tau), policy_expectation(tau), emit_metrics(emit_metrics)
-  {
-  }
+  baseline_challenger_data(double alpha, double tau) : baseline(alpha, tau), policy_expectation(tau) {}
 
   static int get_chosen_action(const VW::action_scores& action_scores) { return action_scores[0].action; }
 
@@ -167,7 +163,7 @@ void learn_or_predict(baseline_challenger_data& data, multi_learner& base, VW::m
   data.learn_or_predict<is_learn>(base, examples);
 }
 
-void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
+void save_load(baseline_challenger_data& data, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, data); }
@@ -176,7 +172,6 @@ void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
 
 void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 {
-  if (!data.emit_metrics) { return; }
   auto ci = static_cast<float>(data.baseline.lower_bound_and_update());
   auto exp = static_cast<float>(data.policy_expectation.current());
 
@@ -190,7 +185,6 @@ struct options_baseline_challenger_cb_v1
   float alpha;
   float tau;
   bool is_enabled = false;
-  bool emit_metrics;
 };
 
 std::unique_ptr<options_baseline_challenger_cb_v1> get_baseline_challenger_cb_options_instance(
@@ -206,12 +200,12 @@ std::unique_ptr<options_baseline_challenger_cb_v1> get_baseline_challenger_cb_op
                      "perfoming better")
                .experimental())
       .add(make_option("cb_c_alpha", baseline_challenger_cb_opts->alpha)
-               .default_value(DEFAULT_ALPHA)
+               .default_value(VW::details::DEFAULT_ALPHA)
                .keep()
                .help("Confidence level for baseline")
                .experimental())
       .add(make_option("cb_c_tau", baseline_challenger_cb_opts->tau)
-               .default_value(BASELINE_DEFAULT_TAU)
+               .default_value(VW::details::BASELINE_DEFAULT_TAU)
                .keep()
                .help("Time constant for count decay")
                .experimental());
@@ -220,7 +214,6 @@ std::unique_ptr<options_baseline_challenger_cb_v1> get_baseline_challenger_cb_op
 
   if (!options.was_supplied("cb_adf")) { THROW("cb_challenger requires cb_explore_adf or cb_adf"); }
 
-  baseline_challenger_cb_opts->emit_metrics = options.was_supplied("extra_metrics");
   return baseline_challenger_cb_opts;
 }
 
@@ -232,7 +225,7 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
   if (baseline_challenger_cb_opts == nullptr) { return nullptr; }
 
   auto baseline_challenger_cb_data = VW::make_unique<baseline_challenger_data>(
-      baseline_challenger_cb_opts->emit_metrics, baseline_challenger_cb_opts->alpha, baseline_challenger_cb_opts->tau);
+      baseline_challenger_cb_opts->alpha, baseline_challenger_cb_opts->tau);
 
   auto* l =
       make_reduction_learner(std::move(baseline_challenger_cb_data), as_multiline(stack_builder.setup_base_learner()),

@@ -50,7 +50,7 @@ public:
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(multi_learner& base, VW::multi_ex& examples);
   void learn(multi_learner& base, VW::multi_ex& examples);
-  void save_load(io_buf& io, bool read, bool text);
+  void save_load(VW::io_buf& io, bool read, bool text);
 
 private:
   size_t _counter;
@@ -287,14 +287,15 @@ void cb_explore_adf_squarecb::learn(multi_learner& base, VW::multi_ex& examples)
   examples[0]->pred.a_s = std::move(preds);
 }
 
-void cb_explore_adf_squarecb::save_load(io_buf& io, bool read, bool text)
+void cb_explore_adf_squarecb::save_load(VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+    VW::details::bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
 }  // namespace
@@ -380,13 +381,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
-  auto data = VW::make_unique<explore_type>(
-      with_metrics, gamma_scale, gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.model_file_ver, epsilon);
+  auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), gamma_scale, gamma_exponent, elim,
+      c0, min_cb_cost, max_cb_cost, all.model_file_ver, epsilon);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_squarecb_setup))
                 .set_input_label_type(VW::label_type_t::CB)
@@ -394,8 +393,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_finish_example(explore_type::finish_multiline_example)
-                .set_print_example(explore_type::print_multiline_example)
+                .set_print_example(explore_type::print_example)
+                .set_output_example_prediction(explore_type::output_example_prediction)
+                .set_update_stats(explore_type::update_stats)
+                .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
                 .build(&all.logger);
