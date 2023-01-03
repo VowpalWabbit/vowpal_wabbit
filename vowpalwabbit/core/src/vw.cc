@@ -564,7 +564,7 @@ VW::example* VW::import_example(
   setup_example(all, ret);
   return ret;
 }
-example* VW::alloc_examples(size_t count) { return new VW::example[count]; }
+VW::example* VW::alloc_examples(size_t count) { return new VW::example[count]; }
 
 void VW::dealloc_examples(example* example_ptr, size_t /* count */) { delete[] example_ptr; }
 
