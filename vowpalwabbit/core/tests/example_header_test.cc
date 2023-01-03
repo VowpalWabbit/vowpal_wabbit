@@ -10,7 +10,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(example_header_tests, is_example_header_cb)
+TEST(ExampleHeader, IsExampleHeaderCb)
 {
   auto& vw = *VW::initialize("--cb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
   VW::multi_ex examples;
@@ -30,7 +30,7 @@ TEST(example_header_tests, is_example_header_cb)
   VW::finish(vw);
 }
 
-TEST(example_header_tests, is_example_header_ccb)
+TEST(ExampleHeader, IsExampleHeaderCcb)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet", nullptr, false, nullptr, nullptr);
   VW::multi_ex examples;
@@ -43,7 +43,7 @@ TEST(example_header_tests, is_example_header_ccb)
   VW::finish(vw);
 }
 
-TEST(example_header_tests, is_example_header_csoaa)
+TEST(ExampleHeader, IsExampleHeaderCsoaa)
 {
   auto& vw = *VW::initialize("--csoaa_ldf multiline --quiet", nullptr, false, nullptr, nullptr);
   VW::multi_ex examples;
