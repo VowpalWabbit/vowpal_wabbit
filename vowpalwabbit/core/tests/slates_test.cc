@@ -56,7 +56,7 @@ VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, VW::multi_ex>* make_test
       .build();
 }
 
-TEST(slates, slates_reduction_mock_test)
+TEST(Slates, SlatesReductionMockTest)
 {
   auto& vw = *VW::initialize("--slates --quiet");
   VW::multi_ex examples;

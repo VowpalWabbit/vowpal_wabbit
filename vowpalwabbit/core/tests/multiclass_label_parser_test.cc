@@ -24,7 +24,7 @@ void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l)
   lp.parse_label(l, red_fts, mem, nullptr, words, null_logger);
 }
 
-TEST(multiclass_label_parser, multiclass_label_parser)
+TEST(MulticlassLabelParser, MulticlassLabelParser)
 {
   auto lp = VW::multiclass_label_parser_global;
   {

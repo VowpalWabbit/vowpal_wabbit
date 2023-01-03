@@ -14,7 +14,7 @@
 
 using namespace VW::config;
 
-TEST(merge_opts_from_header, merge_from_header_strings_no_opts_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsNoOptsSkip)
 {
   const std::vector<std::string> strings;
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -40,7 +40,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_no_opts_skip)
   EXPECT_EQ(false, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_no_opts_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsNoOptsNoskip)
 {
   const std::vector<std::string> strings;
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -66,7 +66,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_no_opts_noskip)
   EXPECT_EQ(false, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_bool_opt_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolOptSkip)
 {
   const std::vector<std::string> strings{"--bool_opt"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -92,7 +92,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_bool_opt_skip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_bool_opt_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolOptNoskip)
 {
   const std::vector<std::string> strings{"--bool_opt"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -116,7 +116,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_bool_opt_noskip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_int_opt_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntOptSkip)
 {
   const std::vector<std::string> strings{"--int_opt", "3"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -140,7 +140,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_int_opt_skip)
   EXPECT_EQ(false, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_int_opt_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntOptNoskip)
 {
   const std::vector<std::string> strings{"--int_opt", "3"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -164,7 +164,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_int_opt_noskip)
   EXPECT_EQ(false, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_bool_int_opt_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntOptSkip)
 {
   const std::vector<std::string> strings{"--bool_opt", "--int_opt", "3"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -188,7 +188,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_bool_int_opt_skip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_bool_int_opt_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntOptNoskip)
 {
   const std::vector<std::string> strings{"--bool_opt", "--int_opt", "3"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -212,7 +212,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_bool_int_opt_noskip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_int_bool_opt_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolOptSkip)
 {
   const std::vector<std::string> strings{"--int_opt", "3", "--bool_opt"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -236,7 +236,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_int_bool_opt_skip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_int_bool_opt_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolOptNoskip)
 {
   const std::vector<std::string> strings{"--int_opt", "3", "--bool_opt"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -260,7 +260,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_int_bool_opt_noskip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_bool_int_interaction_bool_int_opt_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionBoolIntOptSkip)
 {
   const std::vector<std::string> strings{
       "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
@@ -296,7 +296,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_bool_int_interaction_bool
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_bool_int_interaction_bool_int_opt_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionBoolIntOptNoskip)
 {
   const std::vector<std::string> strings{
       "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
@@ -332,7 +332,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_bool_int_interaction_bool
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_bool_int_interaction_int_bool_opt_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionIntBoolOptSkip)
 {
   const std::vector<std::string> strings{
       "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
@@ -368,7 +368,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_bool_int_interaction_int_
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_bool_int_interaction_int_bool_opt_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionIntBoolOptNoskip)
 {
   const std::vector<std::string> strings{
       "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
@@ -404,7 +404,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_bool_int_interaction_int_
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_int_bool_interaction_bool_int_opt_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionBoolIntOptSkip)
 {
   const std::vector<std::string> strings{
       "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
@@ -440,7 +440,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_int_bool_interaction_bool
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_int_bool_interaction_bool_int_opt_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionBoolIntOptNoskip)
 {
   const std::vector<std::string> strings{
       "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
@@ -476,7 +476,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_int_bool_interaction_bool
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_int_bool_interaction_int_bool_opt_skip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionIntBoolOptSkip)
 {
   const std::vector<std::string> strings{
       "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
@@ -512,7 +512,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_int_bool_interaction_int_
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(merge_opts_from_header, merge_from_header_strings_int_bool_interaction_int_bool_opt_noskip)
+TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionIntBoolOptNoskip)
 {
   const std::vector<std::string> strings{
       "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
@@ -548,7 +548,7 @@ TEST(merge_opts_from_header, merge_from_header_strings_int_bool_interaction_int_
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(merge_opts_from_header, merge_options_from_ccb_header)
+TEST(MergeOptsFromHeader, MergeOptionsFromCcbHeader)
 {
   const std::vector<std::string> strings{"--dsjson", "--epsilon", "0.2", "--ccb_explore_adf"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -559,7 +559,7 @@ TEST(merge_opts_from_header, merge_options_from_ccb_header)
   EXPECT_EQ(true, is_ccb_model);
 }
 
-TEST(merge_opts_from_header, merge_option_from_cb_header)
+TEST(MergeOptsFromHeader, MergeOptionFromCbHeader)
 {
   const std::vector<std::string> strings{"--dsjson", "--epsilon", "0.2", "--cb_explore_adf"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());

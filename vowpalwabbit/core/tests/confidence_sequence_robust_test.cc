@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(confidence_sequence_robust, python_equivalence)
+TEST(ConfidenceSequenceRobust, PythonEquivalence)
 {
   VW::estimators::confidence_sequence_robust csr;
 

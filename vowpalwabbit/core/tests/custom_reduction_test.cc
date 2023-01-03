@@ -137,7 +137,7 @@ public:
 //
 // these test reductions are useful for CI and advanced testing but are not
 // important enough to pollute setup_base(..) default stack
-TEST(custom_reduction, custom_reduction_test)
+TEST(CustomReduction, CustomReductionTest)
 {
   toy_reduction::reset_test_state();
 
@@ -200,7 +200,7 @@ TEST(custom_reduction, custom_reduction_test)
   EXPECT_EQ(prediction_one, prediction_two);
 }
 
-TEST(custom_reduction, custom_reduction_builder_check_throw)
+TEST(CustomReduction, CustomReductionBuilderCheckThrow)
 {
   toy_reduction::reset_test_state();
 

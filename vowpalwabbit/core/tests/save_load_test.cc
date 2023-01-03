@@ -17,7 +17,7 @@ using namespace ::testing;
 
 #include <string>
 
-TEST(save_load, save_resume_behaves_as_if_dataset_concatenated)
+TEST(SaveLoad, SaveResumeBehavesAsIfDatasetConcatenated)
 {
   std::array<std::string, 10> input_data = {
       "0.521144 |T PFF |f t1:-0.0236849 t5:-0.10215 r5:0.727735 t10:-0.0387662 r10:0.911208 t20:-0.00777943 "

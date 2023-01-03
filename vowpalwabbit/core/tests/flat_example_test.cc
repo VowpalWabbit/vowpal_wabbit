@@ -11,7 +11,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(flat_example, sans_interaction_test)
+TEST(FlatExample, SansInteractionTest)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
 
@@ -25,7 +25,7 @@ TEST(flat_example, sans_interaction_test)
   VW::finish_example(*vw, *ex);
 }
 
-TEST(flat_example, with_interaction_test)
+TEST(FlatExample, WithInteractionTest)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--interactions", "xy", "--quiet", "--noconstant"));
 
@@ -39,7 +39,7 @@ TEST(flat_example, with_interaction_test)
   VW::finish_example(*vw, *ex);
 }
 
-TEST(flat_example, empty_example_test)
+TEST(FlatExample, EmptyExampleTest)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
 

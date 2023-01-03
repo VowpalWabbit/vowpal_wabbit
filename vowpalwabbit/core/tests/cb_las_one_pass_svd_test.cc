@@ -20,7 +20,7 @@ using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
         VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
-TEST(las, check_AO_same_actions_same_representation)
+TEST(Las, CheckAOSameActionsSameRepresentation)
 {
   auto d = 3;
   std::vector<VW::workspace*> vws;
@@ -81,7 +81,7 @@ TEST(las, check_AO_same_actions_same_representation)
   }
 }
 
-TEST(las, check_AO_linear_combination_of_actions)
+TEST(Las, CheckAOLinearCombinationOfActions)
 {
   auto d = 3;
   std::vector<VW::workspace*> vws;
@@ -177,7 +177,7 @@ TEST(las, check_AO_linear_combination_of_actions)
 }
 
 #ifdef BUILD_LAS_WITH_SIMD
-TEST(las, compute_dot_prod_scalar_and_simd_have_same_results)
+TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
 {
   float (*compute_dot_prod_simd)(uint64_t, VW::workspace*, uint64_t, VW::example*);
   if (VW::cb_explore_adf::cpu_supports_avx512())
@@ -285,7 +285,7 @@ TEST(las, compute_dot_prod_scalar_and_simd_have_same_results)
   }
 }
 
-TEST(las, scalar_and_simd_generate_same_predictions)
+TEST(Las, ScalarAndSimdGenerateSamePredictions)
 {
   auto generate_example = [](int num_namespaces, int num_features)
   {

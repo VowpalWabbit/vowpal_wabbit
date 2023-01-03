@@ -9,7 +9,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(epsilon, set_epsilon_test)
+TEST(Epsilon, SetEpsilonTest)
 {
   auto vw = VW::initialize("--quiet --cb_explore_adf");
   VW::multi_ex examples;

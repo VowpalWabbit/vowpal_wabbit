@@ -8,7 +8,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(numeric_cast_tests, numeric_cast)
+TEST(NumericCastTests, NumericCast)
 {
   // Correct negative
   EXPECT_EQ(VW::cast_to_smaller_type<int8_t>(static_cast<int32_t>(-7)), -7);
@@ -27,7 +27,7 @@ TEST(numeric_cast_tests, numeric_cast)
   EXPECT_EQ(VW::cast_signed_to_unsigned<uint8_t>(static_cast<int32_t>(10)), 10);
 }
 
-TEST(numeric_cast_tests, cast_unsigned_to_signed)
+TEST(NumericCastTests, CastUnsignedToSigned)
 {
   EXPECT_THROW(VW::cast_unsigned_to_signed<int8_t>(static_cast<uint32_t>(1000)), VW::vw_exception);
   EXPECT_EQ(VW::cast_unsigned_to_signed<int8_t>(static_cast<uint32_t>(60)), 60);

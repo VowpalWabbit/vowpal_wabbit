@@ -15,7 +15,7 @@
 
 using namespace VW::config;
 
-TEST(options_cli, typed_options_parsing)
+TEST(OptionsCli, TypedOptionsParsing)
 {
   auto options = vwtest::make_args("--str_opt", "test_str", "-i", "5", "--bool_opt", "--float_opt", "4.3");
 
@@ -37,7 +37,7 @@ TEST(options_cli, typed_options_parsing)
   EXPECT_FLOAT_EQ(float_opt, 4.3f);
 }
 
-TEST(options_cli, typed_option_collection_parsing)
+TEST(OptionsCli, TypedOptionCollectionParsing)
 {
   auto options = vwtest::make_args("--str_opt", "test_str", "another");
 
@@ -50,7 +50,7 @@ TEST(options_cli, typed_option_collection_parsing)
   EXPECT_EQ(str_opt, (std::vector<std::string>{"test_str", "another"}));
 }
 
-TEST(options_cli, typed_option_collection_parsing_equals_long_option)
+TEST(OptionsCli, TypedOptionCollectionParsingEqualsLongOption)
 {
   auto options = vwtest::make_args("--str_opt=value1", "value2", "--str_opt", "value3");
 
@@ -63,7 +63,7 @@ TEST(options_cli, typed_option_collection_parsing_equals_long_option)
   EXPECT_EQ(str_opt, (std::vector<std::string>{"value1", "value2", "value3"}));
 }
 
-TEST(options_cli, typed_option_collection_parsing_short_option_attached_value)
+TEST(OptionsCli, TypedOptionCollectionParsingShortOptionAttachedValue)
 {
   auto options = vwtest::make_args("-svalue1", "value2", "--str_opt", "value3");
 
@@ -76,7 +76,7 @@ TEST(options_cli, typed_option_collection_parsing_short_option_attached_value)
   EXPECT_EQ(str_opt, (std::vector<std::string>{"value1", "value2", "value3"}));
 }
 
-TEST(options_cli, list_consume_until_option_like)
+TEST(OptionsCli, ListConsumeUntilOptionLike)
 {
   auto options = vwtest::make_args(
       "--str_opt", "a", "b", "--unknown", "c", "--str_opt", "d", "e", "f", "--str_opt", "--option_like", "g");
@@ -97,7 +97,7 @@ TEST(options_cli, list_consume_until_option_like)
   EXPECT_TRUE(found);
 }
 
-TEST(options_cli, list_no_tokens)
+TEST(OptionsCli, ListNoTokens)
 {
   auto options = vwtest::make_args("--str_opt");
 
@@ -118,7 +118,7 @@ TEST(options_cli, list_no_tokens)
   EXPECT_TRUE(exception_caught);
 }
 
-TEST(options_cli, type_conversion_failure)
+TEST(OptionsCli, TypeConversionFailure)
 {
   auto options = vwtest::make_args("--int_opt", "4.3", "--float_opt", "1.2a");
 
@@ -138,7 +138,7 @@ TEST(options_cli, type_conversion_failure)
 // Essentially boost still parses the --bool_opt when it should have technically been consumed by the --str_opt.
 // This is because boost implementation parses each option_description indepdenently whereas the options_cli impl
 // essentially continually adds to a global definition as it goes.
-TEST(options_cli, order_of_parsing)
+TEST(OptionsCli, OrderOfParsing)
 {
   {
     auto options = vwtest::make_args("--str_opt", "--bool_opt");
@@ -175,7 +175,7 @@ TEST(options_cli, order_of_parsing)
   }
 }
 
-TEST(options_cli, bool_implicit_and_explicit_options)
+TEST(OptionsCli, BoolImplicitAndExplicitOptions)
 {
   auto options = vwtest::make_args("--bool_switch");
 
@@ -191,7 +191,7 @@ TEST(options_cli, bool_implicit_and_explicit_options)
   EXPECT_EQ(bool_switch_unspecified, false);
 }
 
-TEST(options_cli, option_missing_required_value)
+TEST(OptionsCli, OptionMissingRequiredValue)
 {
   auto options = vwtest::make_args("--str_opt");
 
@@ -211,7 +211,7 @@ TEST(options_cli, option_missing_required_value)
   EXPECT_EQ(exception_caught, true);
 }
 
-TEST(options_cli, incorrect_option_type_str_for_int)
+TEST(OptionsCli, IncorrectOptionTypeStrForInt)
 {
   auto options = vwtest::make_args("--int_opt", "str");
 
@@ -222,7 +222,7 @@ TEST(options_cli, incorrect_option_type_str_for_int)
   EXPECT_THROW(options->add_and_parse(arg_group), VW::vw_argument_invalid_value_exception);
 }
 
-TEST(options_cli, multiple_locations_one_option)
+TEST(OptionsCli, MultipleLocationsOneOption)
 {
   auto options = vwtest::make_args("--str_opt", "value");
 
@@ -237,7 +237,7 @@ TEST(options_cli, multiple_locations_one_option)
   EXPECT_EQ(str_opt_2, "value");
 }
 
-TEST(options_cli, duplicate_option_clash)
+TEST(OptionsCli, DuplicateOptionClash)
 {
   auto options = vwtest::make_args("--the_opt", "s");
 
@@ -250,7 +250,7 @@ TEST(options_cli, duplicate_option_clash)
   EXPECT_THROW(options->add_and_parse(arg_group), VW::vw_exception);
 }
 
-TEST(options_cli, mismatched_values_duplicate_command_line)
+TEST(OptionsCli, MismatchedValuesDuplicateCommandLine)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "5");
 
@@ -261,7 +261,7 @@ TEST(options_cli, mismatched_values_duplicate_command_line)
   EXPECT_THROW(options->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
 }
 
-TEST(options_cli, get_positional_tokens)
+TEST(OptionsCli, GetPositionalTokens)
 {
   auto options = vwtest::make_args("d1", "--int_opt", "1", "d2", "--int_opt", "1", "d3");
 
@@ -275,7 +275,7 @@ TEST(options_cli, get_positional_tokens)
   EXPECT_EQ(positional_tokens, (std::vector<std::string>{"d1", "d2", "d3"}));
 }
 
-TEST(options_cli, get_positional_tokens_with_terminator)
+TEST(OptionsCli, GetPositionalTokensWithTerminator)
 {
   auto options = vwtest::make_args("d1", "--int_opt", "1", "d2", "--int_opt", "1", "d3", "--", "ab", "--help");
 
@@ -289,7 +289,7 @@ TEST(options_cli, get_positional_tokens_with_terminator)
   EXPECT_EQ(positional_tokens, (std::vector<std::string>{"d1", "d2", "d3", "ab", "--help"}));
 }
 
-TEST(options_cli, matching_values_duplicate_command_line)
+TEST(OptionsCli, MatchingValuesDuplicateCommandLine)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "3");
 
@@ -301,7 +301,7 @@ TEST(options_cli, matching_values_duplicate_command_line)
   EXPECT_EQ(int_opt, 3);
 }
 
-TEST(options_cli, nonmatching_values_command_line)
+TEST(OptionsCli, NonmatchingValuesCommandLine)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "4");
 
@@ -312,7 +312,7 @@ TEST(options_cli, nonmatching_values_command_line)
   EXPECT_THROW(options->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
 }
 
-TEST(options_cli, nonmatching_values_command_line_with_override)
+TEST(OptionsCli, NonmatchingValuesCommandLineWithOverride)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "4");
 
@@ -324,7 +324,7 @@ TEST(options_cli, nonmatching_values_command_line_with_override)
   EXPECT_EQ(int_opt, 3);
 }
 
-TEST(options_cli, add_two_groups)
+TEST(OptionsCli, AddTwoGroups)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test");
 
@@ -342,7 +342,7 @@ TEST(options_cli, add_two_groups)
   EXPECT_EQ(str_opt, "test");
 }
 
-TEST(options_cli, was_supplied_test)
+TEST(OptionsCli, WasSuppliedTest)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test");
 
@@ -365,7 +365,7 @@ TEST(options_cli, was_supplied_test)
   EXPECT_EQ(options->was_supplied("other_opt"), false);
 }
 
-TEST(options_cli, kept_command_line)
+TEST(OptionsCli, KeptCommandLine)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test", "--other_bool_opt");
 
@@ -399,7 +399,7 @@ TEST(options_cli, kept_command_line)
   EXPECT_EQ(serialized_string.find("--int_opt"), std::string::npos);
 }
 
-TEST(options_cli, unregistered_options)
+TEST(OptionsCli, UnregisteredOptions)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test");
 
@@ -414,7 +414,7 @@ TEST(options_cli, unregistered_options)
   EXPECT_THROW(warnings = options->check_unregistered(), VW::vw_exception);
 }
 
-TEST(options_cli, check_necessary)
+TEST(OptionsCli, CheckNecessary)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--str_opt", "test", "--other_bool_opt");
 
@@ -444,7 +444,7 @@ TEST(options_cli, check_necessary)
   EXPECT_EQ(float_opt, 0.08789f);
 }
 
-TEST(options_cli, check_missing_necessary)
+TEST(OptionsCli, CheckMissingNecessary)
 {
   // "int_opt" is necessary but missing from cmd line
   auto options = vwtest::make_args("--str_opt", "test", "--other_bool_opt");
@@ -468,7 +468,7 @@ TEST(options_cli, check_missing_necessary)
   EXPECT_EQ(other_bool_opt, true);
 }
 
-TEST(options_cli, check_multiple_necessary_and_short_name)
+TEST(OptionsCli, CheckMultipleNecessaryAndShortName)
 {
   auto options = vwtest::make_args("-i", "3", "--str_opt", "test", "--other_bool_opt");
 
@@ -494,7 +494,7 @@ TEST(options_cli, check_multiple_necessary_and_short_name)
   EXPECT_EQ(other_bool_opt, true);
 }
 
-TEST(options_cli, check_multiple_necessary_one_missing)
+TEST(OptionsCli, CheckMultipleNecessaryOneMissing)
 {
   auto options = vwtest::make_args("--int_opt", "3", "--other_bool_opt");
 
@@ -519,7 +519,7 @@ TEST(options_cli, check_multiple_necessary_one_missing)
   EXPECT_EQ(other_bool_opt, true);
 }
 
-TEST(options_cli, check_was_supplied_common_prefix_before)
+TEST(OptionsCli, CheckWasSuppliedCommonPrefixBefore)
 {
   auto options = vwtest::make_args("--int_opt_two", "3");
 

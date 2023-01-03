@@ -93,7 +93,7 @@ public:
 //
 // these test reductions are useful for CI and advanced testing but are not
 // important enough to pollute setup_base(..) default stack
-TEST(minimal_reduction, minimal_reduction_test)
+TEST(MinimalReduction, MinimalReductionTest)
 {
   minimal_reduction::reset_test_state();
 

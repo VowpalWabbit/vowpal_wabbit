@@ -13,7 +13,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(merge, add_subtract_model_delta)
+TEST(Merge, AddSubtractModelDelta)
 {
   auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet"));
   auto vw_new = VW::initialize_experimental(vwtest::make_args("--quiet"));
@@ -51,7 +51,7 @@ TEST(merge, add_subtract_model_delta)
   EXPECT_FLOAT_EQ(sd1->total_features, sd2->total_features);
 }
 
-TEST(merge, merge_simple_model)
+TEST(Merge, MergeSimpleModel)
 {
   auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet", "--sgd"));
   auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet", "--sgd"));
@@ -89,7 +89,7 @@ TEST(merge, merge_simple_model)
   }
 }
 
-TEST(merge, merge_simple_model_delta)
+TEST(Merge, MergeSimpleModelDelta)
 {
   auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet"));
   auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet"));
@@ -148,7 +148,7 @@ TEST(merge, merge_simple_model_delta)
   EXPECT_FLOAT_EQ(result_model_merge->sd->weighted_labeled_examples, 3.f);
 }
 
-TEST(merge, merge_cb_model)
+TEST(Merge, MergeCbModel)
 {
   auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
   auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
@@ -200,7 +200,7 @@ TEST(merge, merge_cb_model)
       vw1_cb_adf->get_gen_cs().action_sum + vw2_cb_adf->get_gen_cs().action_sum);
 }
 
-TEST(merge, merge_cb_model_delta)
+TEST(Merge, MergeCbModelDelta)
 {
   auto options_strings = std::vector<std::string>{"--quiet", "--cb_explore_adf"};
   auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
@@ -327,7 +327,7 @@ TEST(merge, merge_cb_model_delta)
   EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().action_sum, model_merged_cb_adf->get_gen_cs().action_sum);
 }
 
-TEST(merge, serialize_deserialize_delta)
+TEST(Merge, SerializeDeserializeDelta)
 {
   auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet"));
   auto vw_new = VW::initialize_experimental(vwtest::make_args("--quiet"));

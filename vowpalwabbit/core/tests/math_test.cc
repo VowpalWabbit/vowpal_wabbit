@@ -7,7 +7,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(math_tests, math_factorial)
+TEST(MathTests, MathFactorial)
 {
   EXPECT_EQ(VW::math::factorial(0), 1);
   EXPECT_EQ(VW::math::factorial(1), 1);
@@ -18,7 +18,7 @@ TEST(math_tests, math_factorial)
   EXPECT_EQ(VW::math::factorial(10), 3628800);
 }
 
-TEST(math_tests, math_number_of_combinations_with_repetition)
+TEST(MathTests, MathNumberOfCombinationsWithRepetition)
 {
   EXPECT_EQ(VW::math::number_of_combinations_with_repetition(1, 1), 1);
   EXPECT_EQ(VW::math::number_of_combinations_with_repetition(5, 1), 5);
@@ -27,7 +27,7 @@ TEST(math_tests, math_number_of_combinations_with_repetition)
   EXPECT_EQ(VW::math::number_of_combinations_with_repetition(10, 2), 55);
 }
 
-TEST(math_tests, math_number_of_permutations_with_repetition)
+TEST(MathTests, MathNumberOfPermutationsWithRepetition)
 {
   EXPECT_EQ(VW::math::number_of_permutations_with_repetition(1, 1), 1);
   EXPECT_EQ(VW::math::number_of_permutations_with_repetition(5, 1), 5);
@@ -36,7 +36,7 @@ TEST(math_tests, math_number_of_permutations_with_repetition)
   EXPECT_EQ(VW::math::number_of_permutations_with_repetition(10, 2), 100);
 }
 
-TEST(math_tests, math_sign)
+TEST(MathTests, MathSign)
 {
   EXPECT_FLOAT_EQ(VW::math::sign(1.f), 1.f);
   EXPECT_FLOAT_EQ(VW::math::sign(-1.f), -1.f);
@@ -46,7 +46,7 @@ TEST(math_tests, math_sign)
   EXPECT_FLOAT_EQ(VW::math::sign(-999.f), -1.f);
 }
 
-TEST(math_tests, math_choose)
+TEST(MathTests, MathChoose)
 {
   EXPECT_EQ(VW::math::choose(1, 1), 1);
   EXPECT_EQ(VW::math::choose(4, 2), 6);

@@ -11,7 +11,7 @@
 
 #include <string>
 
-TEST(custom_ostream, custom_ostream)
+TEST(CustomOstream, CustomOstream)
 {
   auto output_func = [](void* context, const char* buffer, size_t num_bytes) -> ssize_t
   {

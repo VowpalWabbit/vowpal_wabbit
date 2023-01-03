@@ -9,7 +9,7 @@
 
 constexpr float CS_FLOAT_TOL = 0.1f;
 
-TEST(confidence_seq, incremental_fsum_test)
+TEST(ConfidenceSeq, IncrementalFsumTest)
 {
   VW::details::incremental_f_sum fsum;
   fsum += 1.0;
@@ -25,7 +25,7 @@ TEST(confidence_seq, incremental_fsum_test)
   EXPECT_FLOAT_EQ(fsum, 55.0);
 }
 
-TEST(confidence_seq, confidence_sequence_test)
+TEST(ConfidenceSeq, ConfidenceSequenceTest)
 {
   VW::estimators::confidence_sequence cs;
   std::vector<double> rs;

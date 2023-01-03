@@ -150,7 +150,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   return true;
 }
 
-TEST(automl_weights, operations_w_iterations)
+TEST(AutomlWeights, OperationsWIterations)
 {
   const size_t seed = 10;
   const size_t num_iterations = 1331;
@@ -196,7 +196,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   return true;
 }
 
-TEST(automl_weights, noop_samechampconfig_w_iterations)
+TEST(AutomlWeights, NoopSamechampconfigWIterations)
 {
   const size_t seed = 10;
   const size_t num_iterations = 1742;
@@ -215,7 +215,7 @@ TEST(automl_weights, noop_samechampconfig_w_iterations)
   EXPECT_GT(ctr.back(), 0.4f);
 }
 
-TEST(automl_weights, learn_order_w_iterations)
+TEST(AutomlWeights, LearnOrderWIterations)
 {
   callback_map test_hooks;
 
@@ -263,7 +263,7 @@ TEST(automl_weights, learn_order_w_iterations)
   EXPECT_EQ(ctr1, ctr2);
 }
 
-TEST(automl_weights, equal_no_automl_w_iterations)
+TEST(AutomlWeights, EqualNoAutomlWIterations)
 {
   callback_map test_hooks;
 
@@ -332,7 +332,7 @@ TEST(automl_weights, equal_no_automl_w_iterations)
   EXPECT_EQ(ctr1, ctr2);
 }
 
-TEST(automl_weights, equal_spin_off_model_w_iterations)
+TEST(AutomlWeights, EqualSpinOffModelWIterations)
 {
   callback_map test_hooks;
 
@@ -405,7 +405,7 @@ TEST(automl_weights, equal_spin_off_model_w_iterations)
   EXPECT_EQ(ctr1, ctr2);
 }
 
-TEST(automl_weights, equal_spin_off_model_cubic)
+TEST(AutomlWeights, EqualSpinOffModelCubic)
 {
   callback_map test_hooks;
 

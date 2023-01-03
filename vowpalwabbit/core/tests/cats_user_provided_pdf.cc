@@ -9,7 +9,7 @@
 
 #include <vector>
 
-TEST(cats, cats_no_model_action_provided)
+TEST(Cats, CatsNoModelActionProvided)
 {
   std::string json_text = R"(
 {
@@ -50,7 +50,7 @@ TEST(cats, cats_no_model_action_provided)
   VW::finish(*vw);
 }
 
-TEST(cats, cats_pdf_no_model_action_provided)
+TEST(Cats, CatsPdfNoModelActionProvided)
 {
   std::string json_text = R"(
 {
@@ -95,7 +95,7 @@ TEST(cats, cats_pdf_no_model_action_provided)
   VW::finish(*vw);
 }
 
-TEST(cats, cats_pdf_no_model_uniform_random)
+TEST(Cats, CatsPdfNoModelUniformRandom)
 {
   std::string json_text = R"(
 {
@@ -142,7 +142,7 @@ TEST(cats, cats_pdf_no_model_uniform_random)
   VW::finish(*vw);
 }
 
-TEST(cats, cats_pdf_no_model_pdf_provided)
+TEST(Cats, CatsPdfNoModelPdfProvided)
 {
   std::string json_text = R"(
 {

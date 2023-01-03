@@ -7,7 +7,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(wrap_text, wrap_text)
+TEST(WrapText, WrapText)
 {
   auto result = VW::wrap_text("test", 10);
   auto expected = R"(test)";

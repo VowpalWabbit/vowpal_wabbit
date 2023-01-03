@@ -8,7 +8,7 @@
 #include <gtest/gtest.h>
 
 // Test case validating this issue: https://github.com/VowpalWabbit/vowpal_wabbit/issues/2166
-TEST(predict, predict_modifying_state)
+TEST(Predict, PredictModifyingState)
 {
   float prediction_one;
   {

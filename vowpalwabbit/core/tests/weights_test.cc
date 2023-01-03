@@ -17,8 +17,8 @@ class weight_tests : public ::testing::Test
 };
 
 using weight_types = ::testing::Types<VW::sparse_parameters, VW::dense_parameters>;
-TYPED_TEST_SUITE(weight_tests, weight_types, );
-TYPED_TEST(weight_tests, test_default_function_weight_initialization_strided_index)
+TYPED_TEST_SUITE(WeightTests, weight_types, );
+TYPED_TEST(WeightTests, DefaultFunctionWeightInitializationStridedIndex)
 {
   TypeParam w(LENGTH, STRIDE_SHIFT);
   auto weight_initializer = [](VW::weight* weights, uint64_t index) { weights[0] = 1.f * index; };

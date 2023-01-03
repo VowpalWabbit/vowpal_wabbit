@@ -10,7 +10,7 @@
 #include <algorithm>
 #include <cstddef>
 
-TEST(v_array, v_array_size_is_const)
+TEST(VArray, VArraySizeIsConst)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -20,13 +20,13 @@ TEST(v_array, v_array_size_is_const)
   EXPECT_EQ(std::size_t(2), const_list.size());
 }
 
-TEST(v_array, v_array_empty_is_const)
+TEST(VArray, VArrayEmptyIsConst)
 {
   const VW::v_array<int> list;
   EXPECT_EQ(true, list.empty());
 }
 
-TEST(v_array, v_array_dereference)
+TEST(VArray, VArrayDereference)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -35,7 +35,7 @@ TEST(v_array, v_array_dereference)
   EXPECT_EQ(std::size_t(2), list[1]);
 }
 
-TEST(v_array, v_array_clear)
+TEST(VArray, VArrayClear)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -45,7 +45,7 @@ TEST(v_array, v_array_clear)
   EXPECT_EQ(std::size_t(0), list.size());
 }
 
-TEST(v_array, v_array_copy)
+TEST(VArray, VArrayCopy)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -59,7 +59,7 @@ TEST(v_array, v_array_copy)
   EXPECT_EQ(std::size_t(2), list3.size());
 }
 
-TEST(v_array, v_array_move)
+TEST(VArray, VArrayMove)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -73,7 +73,7 @@ TEST(v_array, v_array_move)
   EXPECT_EQ(std::size_t(2), list3.size());
 }
 
-TEST(v_array, v_array_pop_back)
+TEST(VArray, VArrayPopBack)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -86,7 +86,7 @@ TEST(v_array, v_array_pop_back)
   EXPECT_EQ(true, list.empty());
 }
 
-TEST(v_array, v_array_find_exists)
+TEST(VArray, VArrayFindExists)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -99,7 +99,7 @@ TEST(v_array, v_array_find_exists)
   EXPECT_EQ(it, list.begin() + 1);
 }
 
-TEST(v_array, v_array_find_not_exists)
+TEST(VArray, VArrayFindNotExists)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -111,7 +111,7 @@ TEST(v_array, v_array_find_not_exists)
   EXPECT_EQ(it, list.end());
 }
 
-TEST(v_array, v_array_back)
+TEST(VArray, VArrayBack)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -119,7 +119,7 @@ TEST(v_array, v_array_back)
   EXPECT_EQ(2, list.back());
 }
 
-TEST(v_array, v_array_erase_single_element_single_element_array)
+TEST(VArray, VArrayEraseSingleElementSingleElementArray)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -128,7 +128,7 @@ TEST(v_array, v_array_erase_single_element_single_element_array)
   EXPECT_EQ(std::size_t(0), list.size());
 }
 
-TEST(v_array, v_array_erase_single_element_reuse_array)
+TEST(VArray, VArrayEraseSingleElementReuseArray)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -140,7 +140,7 @@ TEST(v_array, v_array_erase_single_element_reuse_array)
   EXPECT_EQ(std::size_t(2), list.size());
 }
 
-TEST(v_array, v_array_erase_range)
+TEST(VArray, VArrayEraseRange)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -155,7 +155,7 @@ TEST(v_array, v_array_erase_range)
   EXPECT_EQ(std::size_t(2), list.size());
 }
 
-TEST(v_array, v_array_erase_range_zero_width)
+TEST(VArray, VArrayEraseRangeZeroWidth)
 {
   VW::v_array<int> list;
   list.push_back(1);
@@ -165,7 +165,7 @@ TEST(v_array, v_array_erase_range_zero_width)
   EXPECT_EQ(std::size_t(2), list.size());
 }
 
-TEST(v_array, v_array_erase_last_element)
+TEST(VArray, VArrayEraseLastElement)
 {
   VW::v_array<int> list;
   list.push_back(5);
@@ -177,7 +177,7 @@ TEST(v_array, v_array_erase_last_element)
   EXPECT_EQ(it, list.end());
 }
 
-TEST(v_array, v_array_insert_from_empty)
+TEST(VArray, VArrayInsertFromEmpty)
 {
   VW::v_array<int> list;
   list.insert(list.begin(), 1);
@@ -186,7 +186,7 @@ TEST(v_array, v_array_insert_from_empty)
   EXPECT_EQ(1, list[0]);
 }
 
-TEST(v_array, v_array_insert_check_iterator)
+TEST(VArray, VArrayInsertCheckIterator)
 {
   VW::v_array<int> list;
   auto it = list.insert(list.begin(), 47);
@@ -196,7 +196,7 @@ TEST(v_array, v_array_insert_check_iterator)
   EXPECT_EQ(47, *it);
 }
 
-TEST(v_array, v_array_insert_end_iterator)
+TEST(VArray, VArrayInsertEndIterator)
 {
   VW::v_array<int> list;
   auto it = list.insert(list.end(), 22);
@@ -206,7 +206,7 @@ TEST(v_array, v_array_insert_end_iterator)
   EXPECT_EQ(22, *it);
 }
 
-TEST(v_array, v_array_insert_multiple_insert)
+TEST(VArray, VArrayInsertMultipleInsert)
 {
   VW::v_array<int> list;
   list.insert(list.begin(), 1);
@@ -247,7 +247,7 @@ TEST(v_array, v_array_insert_multiple_insert)
   EXPECT_EQ(2, list[5]);
 }
 
-TEST(v_array, v_array_insert_in_loop)
+TEST(VArray, VArrayInsertInLoop)
 {
   VW::v_array<int> list;
   const auto num_values_to_insert = 1000;
@@ -258,7 +258,7 @@ TEST(v_array, v_array_insert_in_loop)
   for (auto i = 0; i < num_values_to_insert; i++) { EXPECT_EQ(num_values_to_insert - i - 1, list[i]); }
 }
 
-TEST(v_array, v_array_insert_range)
+TEST(VArray, VArrayInsertRange)
 {
   VW::v_array<int> list;
   std::vector<int> to_insert = {1, 2};
@@ -287,7 +287,7 @@ TEST(v_array, v_array_insert_range)
   EXPECT_EQ(55, list[5]);
 }
 
-TEST(v_array, v_array_insert_range_empty_end)
+TEST(VArray, VArrayInsertRangeEmptyEnd)
 {
   VW::v_array<int> list;
   std::vector<int> to_insert = {1, 2};

@@ -9,7 +9,7 @@
 
 using namespace ::testing;
 
-TEST(ExploreSlim, sampling_rank)
+TEST(ExploreSlim, SamplingRank)
 {
   std::vector<float> scores = {0.f, 3.f, 1.f};  // 1,2,0 <-- top ranking
   std::vector<float> histogram(scores.size() * scores.size());

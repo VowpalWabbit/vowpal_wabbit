@@ -21,7 +21,7 @@ public:
   non_copyable_class& operator=(non_copyable_class&& other) = default;
 };
 
-TEST(guard, swap_guard_execute_on_scope_end)
+TEST(Guard, SwapGuardExecuteOnScopeEnd)
 {
   int original_location = 1;
   int location_to_swap = 99999;
@@ -37,7 +37,7 @@ TEST(guard, swap_guard_execute_on_scope_end)
   EXPECT_EQ(location_to_swap, 99999);
 }
 
-TEST(guard, swap_guard_execute_on_scope_end_no_copy)
+TEST(Guard, SwapGuardExecuteOnScopeEndNoCopy)
 {
   non_copyable_class original_location(1);
   non_copyable_class location_to_swap(99999);
@@ -53,7 +53,7 @@ TEST(guard, swap_guard_execute_on_scope_end_no_copy)
   EXPECT_EQ(location_to_swap.value, 99999);
 }
 
-TEST(guard, swap_guard_cancel)
+TEST(Guard, SwapGuardCancel)
 {
   int original_location = 1;
   int location_to_swap = 99999;
@@ -70,7 +70,7 @@ TEST(guard, swap_guard_cancel)
   EXPECT_EQ(location_to_swap, 1);
 }
 
-TEST(guard, swap_guard_explicit_force_swap)
+TEST(Guard, SwapGuardExplicitForceSwap)
 {
   int original_location = 1;
   int location_to_swap = 99999;
@@ -92,7 +92,7 @@ TEST(guard, swap_guard_explicit_force_swap)
   EXPECT_EQ(location_to_swap, 99999);
 }
 
-TEST(guard, swap_guard_execute_on_scope_end_swap_pointers)
+TEST(Guard, SwapGuardExecuteOnScopeEndSwapPointers)
 {
   int* original_location = new int;
   *original_location = 1;
@@ -122,7 +122,7 @@ TEST(guard, swap_guard_execute_on_scope_end_swap_pointers)
   delete location_to_swap;
 }
 
-TEST(guard, swap_guard_execute_temp_value)
+TEST(Guard, SwapGuardExecuteTempValue)
 {
   int original_location = 1;
 
@@ -134,7 +134,7 @@ TEST(guard, swap_guard_execute_temp_value)
   EXPECT_EQ(original_location, 1);
 }
 
-TEST(guard, swap_guard_execute_temp_value_no_copy)
+TEST(Guard, SwapGuardExecuteTempValueNoCopy)
 {
   non_copyable_class original_location(1);
 
@@ -146,7 +146,7 @@ TEST(guard, swap_guard_execute_temp_value_no_copy)
   EXPECT_EQ(original_location.value, 1);
 }
 
-TEST(guard, swap_guard_unique_ptr)
+TEST(Guard, SwapGuardUniquePtr)
 {
   std::unique_ptr<int> original_location = VW::make_unique<int>(1);
 
@@ -161,7 +161,7 @@ TEST(guard, swap_guard_unique_ptr)
   EXPECT_EQ(*original_location, 1);
 }
 
-TEST(guard, stash_guard_execute_on_scope_end)
+TEST(Guard, StashGuardExecuteOnScopeEnd)
 {
   int target_location = 999;
   {
@@ -179,7 +179,7 @@ public:
   struct_with_non_trivial_ctor() : value(123) {}
 };
 
-TEST(guard, stash_guard_used_default_ctor)
+TEST(Guard, StashGuardUsedDefaultCtor)
 {
   struct_with_non_trivial_ctor target_location;
   EXPECT_EQ(target_location.value, 123);

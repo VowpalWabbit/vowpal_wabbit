@@ -351,7 +351,7 @@ invalid_model_param invalid_model_param[] = {
 
 INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, invalid_model_test, ::testing::ValuesIn(invalid_model_param));
 
-TEST(VowpalWabbitSlim, multiclass_data_4)
+TEST(VowpalWabbitSlim, MulticlassData4)
 {
   vw_predict<VW::sparse_parameters> vw;
   test_data td = get_test_data("multiclass_data_4");
@@ -385,7 +385,7 @@ TEST(VowpalWabbitSlim, multiclass_data_4)
   EXPECT_THAT(out_scores, Pointwise(FloatNear(1e-5f), preds_expected));
 }
 
-TEST(VowpalWabbitSlim, multiclass_data_5)
+TEST(VowpalWabbitSlim, MulticlassData5)
 {
   vw_predict<VW::sparse_parameters> vw;
   test_data td = get_test_data("multiclass_data_5");
@@ -474,7 +474,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
   EXPECT_THAT(rankings, Pointwise(Eq(), ranking_expected));
 }
 
-TEST(VowpalWabbitSlim, interaction_num_bits_bug)
+TEST(VowpalWabbitSlim, InteractionNumBitsBug)
 {
   std::ifstream input(
       VW_SLIM_TEST_DIR "data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model", std::ios::in | std::ios::binary);
@@ -520,7 +520,7 @@ TEST(VowpalWabbitSlim, interaction_num_bits_bug)
   EXPECT_EQ(rankings[0], 3);
 }
 
-TEST(VowpalWabbitSlim, cb_data_epsilon_0_skype_jb)
+TEST(VowpalWabbitSlim, CbDataEpsilon0SkypeJb)
 {
   // Since the model is epsilon=0, the first entry should always be 0.
   std::vector<float> pdf_expected = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -773,7 +773,7 @@ TYPED_TEST_P(vw_slim_tests, model_corrupted)
 REGISTER_TYPED_TEST_SUITE_P(vw_slim_tests, model_not_loaded, model_reduction_mismatch, model_corrupted);
 INSTANTIATE_TYPED_TEST_SUITE_P(VowpalWabbitSlim, vw_slim_tests, WeightParameters, );
 
-TEST(cold_start_model_slim, action_set_not_reordered)
+TEST(ColdStartModelSlim, ActionSetNotReordered)
 {
   std::ifstream input(VW_SLIM_TEST_DIR "data/cold_start.model", std::ios::in | std::ios::binary);
   input.seekg(0, std::ios::end);
