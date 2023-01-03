@@ -298,7 +298,6 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
   auto& fs_2 = const_cast<VW::features&>(fec2->fs);
   if (fs_2.indices.size() == 0) { return 0.f; }
 
-  int numint = 0;
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
   {
     uint64_t ec1pos = fs_1.indices[idx1];
@@ -310,7 +309,6 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 
     if (ec1pos == ec2pos)
     {
-      numint++;
       dotprod += fs_1.values[idx1] * fs_2.values[idx2];
       ++idx2;
     }
