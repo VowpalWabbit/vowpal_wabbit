@@ -538,10 +538,7 @@ void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool 
 }
 
 TEST(Interactions, extentVsCharInteractionsWildcard) { doInteractionFeatureCountTest(true, false, true, True); }
-TEST(Interactions, ExtentVsCharInteractionsCubicWildcard)
-{
-  do_interaction_feature_count_test(true, true, true, true);
-}
+TEST(Interactions, ExtentVsCharInteractionsCubicWildcard) { do_interaction_feature_count_test(true, true, true, true); }
 
 TEST(Interactions, ExtentVsCharInteractionsWildcardPermutations)
 {
