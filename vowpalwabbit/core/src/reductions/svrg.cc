@@ -157,7 +157,7 @@ void learn(svrg& s, base_learner& base, VW::example& ec)
 
 void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 {
-  if (read) { initialize_regressor(*s.all); }
+  if (read) { VW::details::initialize_regressor(*s.all); }
 
   if (model_file.num_files() != 0)
   {
