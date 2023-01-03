@@ -31,6 +31,5 @@ public:
 private:
   bool _are_metrics_enabled;
   std::vector<metrics_callback_fn> _metrics_callbacks;
-  std::string _metrics_filename;
 };
 }  // namespace VW
