@@ -224,8 +224,8 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
       get_baseline_challenger_cb_options_instance(all, all.logger, *stack_builder.get_options());
   if (baseline_challenger_cb_opts == nullptr) { return nullptr; }
 
-  auto baseline_challenger_cb_data = VW::make_unique<baseline_challenger_data>(
-      baseline_challenger_cb_opts->alpha, baseline_challenger_cb_opts->tau);
+  auto baseline_challenger_cb_data =
+      VW::make_unique<baseline_challenger_data>(baseline_challenger_cb_opts->alpha, baseline_challenger_cb_opts->tau);
 
   auto* l =
       make_reduction_learner(std::move(baseline_challenger_cb_data), as_multiline(stack_builder.setup_base_learner()),
