@@ -73,7 +73,7 @@ inline void audit_regressor_interaction(audit_regressor_data& dat, const VW::aud
 
 inline void audit_regressor_feature(audit_regressor_data& dat, const float, const uint64_t ft_idx)
 {
-  parameters& weights = dat.all->weights;
+  auto& weights = dat.all->weights;
   if (weights[ft_idx] != 0) { ++dat.values_audited; }
   else { return; }
 
@@ -99,7 +99,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
   VW::workspace& all = *rd.all;
 
   std::ostringstream tempstream;
-  parameters& weights = rd.all->weights;
+  auto& weights = rd.all->weights;
   for (unsigned char* i = ec.indices.begin(); i != ec.indices.end(); i++)
   {
     auto& fs = ec.feature_space[*i];
@@ -160,14 +160,14 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base
       if (rd.all->weights.sparse)
       {
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
+            audit_regressor_interaction, VW::sparse_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.sparse_weights, num_interacted_features,
             rd.all->generate_interactions_object_cache_state);
       }
       else
       {
         INTERACTIONS::generate_interactions<audit_regressor_data, const uint64_t, audit_regressor_feature, true,
-            audit_regressor_interaction, dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
+            audit_regressor_interaction, VW::dense_parameters>(rd.all->interactions, rd.all->extent_interactions,
             rd.all->permutations, ec, rd, rd.all->weights.dense_weights, num_interacted_features,
             rd.all->generate_interactions_object_cache_state);
       }

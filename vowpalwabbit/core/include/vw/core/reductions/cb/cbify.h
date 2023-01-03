@@ -8,9 +8,6 @@
 #include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
-class parameters;
-class namespace_interactions;
-
 namespace VW
 {
 namespace reductions
