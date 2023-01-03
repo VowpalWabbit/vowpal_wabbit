@@ -14,7 +14,7 @@
 
 using namespace VW::config;
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsNoOptsSkip)
+TEST(MergeOptsFromHeader, StringsNoOptsSkip)
 {
   const std::vector<std::string> strings;
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -40,7 +40,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsNoOptsSkip)
   EXPECT_EQ(false, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsNoOptsNoskip)
+TEST(MergeOptsFromHeader, StringsNoOptsNoskip)
 {
   const std::vector<std::string> strings;
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -66,7 +66,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsNoOptsNoskip)
   EXPECT_EQ(false, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolOptSkip)
+TEST(MergeOptsFromHeader, StringsBoolOptSkip)
 {
   const std::vector<std::string> strings{"--bool_opt"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -92,7 +92,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolOptSkip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolOptNoskip)
+TEST(MergeOptsFromHeader, StringsBoolOptNoskip)
 {
   const std::vector<std::string> strings{"--bool_opt"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -116,7 +116,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolOptNoskip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntOptSkip)
+TEST(MergeOptsFromHeader, StringsIntOptSkip)
 {
   const std::vector<std::string> strings{"--int_opt", "3"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -140,7 +140,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntOptSkip)
   EXPECT_EQ(false, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntOptNoskip)
+TEST(MergeOptsFromHeader, StringsIntOptNoskip)
 {
   const std::vector<std::string> strings{"--int_opt", "3"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -164,7 +164,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntOptNoskip)
   EXPECT_EQ(false, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntOptSkip)
+TEST(MergeOptsFromHeader, StringsBoolIntOptSkip)
 {
   const std::vector<std::string> strings{"--bool_opt", "--int_opt", "3"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -188,7 +188,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntOptSkip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntOptNoskip)
+TEST(MergeOptsFromHeader, StringsBoolIntOptNoskip)
 {
   const std::vector<std::string> strings{"--bool_opt", "--int_opt", "3"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -212,7 +212,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntOptNoskip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolOptSkip)
+TEST(MergeOptsFromHeader, StringsIntBoolOptSkip)
 {
   const std::vector<std::string> strings{"--int_opt", "3", "--bool_opt"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -236,7 +236,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolOptSkip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolOptNoskip)
+TEST(MergeOptsFromHeader, StringsIntBoolOptNoskip)
 {
   const std::vector<std::string> strings{"--int_opt", "3", "--bool_opt"};
   auto opts = VW::make_unique<options_cli>(std::vector<std::string>());
@@ -260,7 +260,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolOptNoskip)
   EXPECT_EQ(true, bool_opt);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionBoolIntOptSkip)
+TEST(MergeOptsFromHeader, StringsBoolIntInteractionBoolIntOptSkip)
 {
   const std::vector<std::string> strings{
       "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
@@ -296,7 +296,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionBoolIntOptSkip
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionBoolIntOptNoskip)
+TEST(MergeOptsFromHeader, StringsBoolIntInteractionBoolIntOptNoskip)
 {
   const std::vector<std::string> strings{
       "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
@@ -332,7 +332,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionBoolIntOptNosk
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionIntBoolOptSkip)
+TEST(MergeOptsFromHeader, StringsBoolIntInteractionIntBoolOptSkip)
 {
   const std::vector<std::string> strings{
       "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
@@ -368,7 +368,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionIntBoolOptSkip
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionIntBoolOptNoskip)
+TEST(MergeOptsFromHeader, StringsBoolIntInteractionIntBoolOptNoskip)
 {
   const std::vector<std::string> strings{
       "--bool_opt1", "--int_opt1", "3", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
@@ -404,7 +404,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsBoolIntInteractionIntBoolOptNosk
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionBoolIntOptSkip)
+TEST(MergeOptsFromHeader, StringsIntBoolInteractionBoolIntOptSkip)
 {
   const std::vector<std::string> strings{
       "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
@@ -440,7 +440,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionBoolIntOptSkip
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionBoolIntOptNoskip)
+TEST(MergeOptsFromHeader, StringsIntBoolInteractionBoolIntOptNoskip)
 {
   const std::vector<std::string> strings{
       "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--bool_opt2", "--int_opt2", "4"};
@@ -476,7 +476,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionBoolIntOptNosk
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionIntBoolOptSkip)
+TEST(MergeOptsFromHeader, StringsIntBoolInteractionIntBoolOptSkip)
 {
   const std::vector<std::string> strings{
       "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};
@@ -512,7 +512,7 @@ TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionIntBoolOptSkip
   EXPECT_EQ(true, bool_opt2);
 }
 
-TEST(MergeOptsFromHeader, MergeFromHeaderStringsIntBoolInteractionIntBoolOptNoskip)
+TEST(MergeOptsFromHeader, StringsIntBoolInteractionIntBoolOptNoskip)
 {
   const std::vector<std::string> strings{
       "--int_opt1", "3", "--bool_opt1", "--interactions", "::", "--int_opt2", "4", "--bool_opt2"};

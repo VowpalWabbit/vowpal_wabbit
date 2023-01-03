@@ -12,7 +12,7 @@
 
 using namespace VW::reductions::cats;
 
-TEST(Cats, CatsTestGetLossZeroForBadPrediction)
+TEST(Cats, GetLossZeroForBadPrediction)
 {
   auto data = VW::make_unique<cats>(nullptr);
   data->min_value = 0;
@@ -33,7 +33,7 @@ TEST(Cats, CatsTestGetLossZeroForBadPrediction)
   EXPECT_FLOAT_EQ(loss, 0.0f);
 }
 
-TEST(Cats, CatsTestGetLossNotZeroForBadPredictionAndLargeB)
+TEST(Cats, GetLossNotZeroForBadPredictionAndLargeB)
 {
   auto data = VW::make_unique<cats>(nullptr);
   data->min_value = 0;
@@ -60,7 +60,7 @@ TEST(Cats, CatsTestGetLossNotZeroForBadPredictionAndLargeB)
   EXPECT_FLOAT_EQ(loss, 0.1875);
 }
 
-TEST(Cats, CatsTestGetLossForGoodPredictionAndSmallBNotCloseToRangeEdges)
+TEST(Cats, GetLossForGoodPredictionAndSmallBNotCloseToRangeEdges)
 {
   auto data = VW::make_unique<cats>(nullptr);
   data->min_value = 1;
@@ -90,7 +90,7 @@ TEST(Cats, CatsTestGetLossForGoodPredictionAndSmallBNotCloseToRangeEdges)
   EXPECT_FLOAT_EQ(loss, 1.0f);
 }
 
-TEST(Cats, CatsTestGetLossForGoodPredictionAndSmallBCloseToRangeEdges)
+TEST(Cats, GetLossForGoodPredictionAndSmallBCloseToRangeEdges)
 {
   auto data = VW::make_unique<cats>(nullptr);
   data->min_value = 1;
@@ -120,7 +120,7 @@ TEST(Cats, CatsTestGetLossForGoodPredictionAndSmallBCloseToRangeEdges)
   EXPECT_FLOAT_EQ(loss, 1.0f);
 }
 
-TEST(Cats, CatsTestGetLossWithDefaultBandwidth)
+TEST(Cats, GetLossWithDefaultBandwidth)
 {
   auto data = VW::make_unique<cats>(nullptr);
   data->min_value = 0;

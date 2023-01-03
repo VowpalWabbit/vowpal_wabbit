@@ -33,7 +33,7 @@ emt_tree* get_emt_tree(VW::workspace& all)
   return (emt_tree*)emt->get_internal_type_erased_data_pointer_test_use_only();
 }
 
-TEST(Emt, EmtParamsTest1)
+TEST(Emt, ParamsTest1)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt"));
   auto* tree = get_emt_tree(*vw);
@@ -46,7 +46,7 @@ TEST(Emt, EmtParamsTest1)
   VW::finish(*vw, false);
 }
 
-TEST(Emt, EmtParamsTest2)
+TEST(Emt, ParamsTest2)
 {
   auto args = vwtest::make_args(
       "--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "distance", "--emt_router", "random", "--emt_leaf", "50");
@@ -61,7 +61,7 @@ TEST(Emt, EmtParamsTest2)
   VW::finish(*vw, false);
 }
 
-TEST(Emt, EmtExactMatchSansRouterTest)
+TEST(Emt, ExactMatchSansRouterTest)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt"));
 
@@ -85,7 +85,7 @@ TEST(Emt, EmtExactMatchSansRouterTest)
   VW::finish(*vw, false);
 }
 
-TEST(Emt, EmtExactMatchWithRouterTest)
+TEST(Emt, ExactMatchWithRouterTest)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 
@@ -107,7 +107,7 @@ TEST(Emt, EmtExactMatchWithRouterTest)
   VW::finish(*vw, false);
 }
 
-TEST(Emt, EmtBounding)
+TEST(Emt, Bounding)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_tree", "5"));
   auto* tree = get_emt_tree(*vw);
@@ -126,7 +126,7 @@ TEST(Emt, EmtBounding)
   VW::finish(*vw, false);
 }
 
-TEST(Emt, EmtSplit)
+TEST(Emt, Split)
 {
   auto args = vwtest::make_args("--quiet", "--emt", "--emt_tree", "10", "--emt_leaf", "3");
   auto vw = VW::initialize_experimental(std::move(args));
@@ -152,7 +152,7 @@ TEST(Emt, EmtSplit)
   VW::finish(*vw, false);
 }
 
-TEST(Emt, EmtInner)
+TEST(Emt, Inner)
 {
   emt_feats v1;
   emt_feats v2;
@@ -174,7 +174,7 @@ TEST(Emt, EmtInner)
   EXPECT_EQ(emt_inner(v1, v2), 16);
 }
 
-TEST(Emt, EmtScaleAdd)
+TEST(Emt, ScaleAdd)
 {
   emt_feats v1;
   emt_feats v2;
@@ -213,7 +213,7 @@ TEST(Emt, EmtScaleAdd)
   EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
 }
 
-TEST(Emt, EmtAbs)
+TEST(Emt, Abs)
 {
   emt_feats v1;
   emt_feats v2;
@@ -234,7 +234,7 @@ TEST(Emt, EmtAbs)
   EXPECT_EQ(v1, v2);
 }
 
-TEST(Emt, EmtNormalize)
+TEST(Emt, Normalize)
 {
   emt_feats v1;
   emt_feats v2;
@@ -252,7 +252,7 @@ TEST(Emt, EmtNormalize)
   EXPECT_EQ(v1, v2);
 }
 
-TEST(Emt, EmtMedian)
+TEST(Emt, Median)
 {
   std::vector<float> v1;
 
@@ -271,7 +271,7 @@ TEST(Emt, EmtMedian)
   EXPECT_EQ(emt_median(v1), 5);
 }
 
-TEST(Emt, EmtRouterEigen)
+TEST(Emt, RouterEigen)
 {
   VW::rand_state rng(1);
 
@@ -315,7 +315,7 @@ TEST(Emt, EmtRouterEigen)
   EXPECT_GE(var, 19.29);
 }
 
-TEST(Emt, EmtShuffle)
+TEST(Emt, Shuffle)
 {
   VW::rand_state rng(2);
 
@@ -328,7 +328,7 @@ TEST(Emt, EmtShuffle)
   EXPECT_EQ(v1[2], 1);
 }
 
-TEST(Emt, EmtSaveLoad)
+TEST(Emt, SaveLoad)
 {
   auto vw_save = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 

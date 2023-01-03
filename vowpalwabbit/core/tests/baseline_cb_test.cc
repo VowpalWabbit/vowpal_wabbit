@@ -42,7 +42,7 @@ int sample(int size, const float* probs, float s)
 
 }  // namespace test_helpers
 
-TEST(BaselineCB, BaselineCbBaselinePerformsBadly)
+TEST(BaselineCB, BaselinePerformsBadly)
 {
   using namespace test_helpers;
   auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
@@ -78,7 +78,7 @@ TEST(BaselineCB, BaselineCbBaselinePerformsBadly)
   vw->finish_example(tst);
 }
 
-TEST(BaselineCB, BaselineCbBaselineTakesOverPolicy)
+TEST(BaselineCB, BaselineTakesOverPolicy)
 {
   using namespace test_helpers;
   auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--cb_c_tau",
@@ -160,7 +160,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
   return metrics;
 }
 
-TEST(BaselineCB, BaselineCbSaveLoadTest)
+TEST(BaselineCB, SaveLoadTest)
 {
   using namespace test_helpers;
 

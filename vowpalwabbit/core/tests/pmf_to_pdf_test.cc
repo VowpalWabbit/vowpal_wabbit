@@ -117,7 +117,7 @@ void check_pdf_limits_are_valid(VW::continuous_actions::probability_density_func
   }
 }
 
-TEST(PmfToPdf, PmfToPdfBasic)
+TEST(PmfToPdf, Basic)
 {
   uint32_t k = 4;
   float h = 10.f;  // h (bandwidth) property of continuous range (max_val - min_val)
@@ -158,7 +158,7 @@ TEST(PmfToPdf, PmfToPdfBasic)
   delete test_harness;
 }
 
-TEST(PmfToPdf, PmfToPdfWLargeBandwidth)
+TEST(PmfToPdf, WLargeBandwidth)
 {
   VW::example ec;
   auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();
@@ -192,7 +192,7 @@ TEST(PmfToPdf, PmfToPdfWLargeBandwidth)
   }
 }
 
-TEST(PmfToPdf, PmfToPdfWLargeDiscretization)
+TEST(PmfToPdf, WLargeDiscretization)
 {
   VW::example ec;
   auto data = VW::make_unique<VW::reductions::pmf_to_pdf_reduction>();

@@ -30,7 +30,7 @@ void parse_slates_label(VW::string_view label, VW::slates::label& l)
   VW::slates::parse_label(l, mem, words, null_logger);
 }
 
-TEST(SlatesLabel, SlatesParseLabel)
+TEST(SlatesLabel, ParseLabel)
 {
   {
     VW::slates::label label;
@@ -111,7 +111,7 @@ TEST(SlatesLabel, SlatesParseLabel)
   }
 }
 
-TEST(SlatesLabel, SlatesCacheSharedLabel)
+TEST(SlatesLabel, CacheSharedLabel)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
   VW::io_buf io_writer;
@@ -134,7 +134,7 @@ TEST(SlatesLabel, SlatesCacheSharedLabel)
   EXPECT_FLOAT_EQ(uncached_label.cost, 0.5);
 }
 
-TEST(SlatesLabel, SlatesCacheActionLabel)
+TEST(SlatesLabel, CacheActionLabel)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
   VW::io_buf io_writer;
@@ -157,7 +157,7 @@ TEST(SlatesLabel, SlatesCacheActionLabel)
   EXPECT_EQ(uncached_label.slot_id, 5);
 }
 
-TEST(SlatesLabel, SlatesCacheSlotLabel)
+TEST(SlatesLabel, CacheSlotLabel)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
   VW::io_buf io_writer;
@@ -181,7 +181,7 @@ TEST(SlatesLabel, SlatesCacheSlotLabel)
   EXPECT_THAT(uncached_label.probabilities, Pointwise(ActionScoreEqual(), expected));
 }
 
-TEST(SlatesLabel, SlatesCopyLabel)
+TEST(SlatesLabel, CopyLabel)
 {
   VW::slates::label label;
   parse_slates_label("slates slot 0:0.5,1:0.25,2:0.25", label);

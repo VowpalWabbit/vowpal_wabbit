@@ -7,7 +7,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(ScopeExit, ScopeExitExecuteOnScopeEnd)
+TEST(ScopeExit, ExecuteOnScopeEnd)
 {
   int calls = 0;
   {
@@ -16,7 +16,7 @@ TEST(ScopeExit, ScopeExitExecuteOnScopeEnd)
   EXPECT_EQ(calls, 1);
 }
 
-TEST(ScopeExit, ScopeExitCancel)
+TEST(ScopeExit, Cancel)
 {
   int calls = 0;
   {
@@ -26,7 +26,7 @@ TEST(ScopeExit, ScopeExitCancel)
   EXPECT_EQ(calls, 0);
 }
 
-TEST(ScopeExit, ScopeExitExplicitCall)
+TEST(ScopeExit, ExplicitCall)
 {
   int calls = 0;
   {

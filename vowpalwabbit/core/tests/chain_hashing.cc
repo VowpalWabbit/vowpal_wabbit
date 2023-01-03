@@ -9,7 +9,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(ChainHashing, ChainHashingBetweenFormats)
+TEST(ChainHashing, BetweenFormats)
 {
   VW::feature_index txt_idx;
   VW::feature_index json_idx;

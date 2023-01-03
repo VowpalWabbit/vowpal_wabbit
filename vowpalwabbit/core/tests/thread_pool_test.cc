@@ -38,7 +38,7 @@ void compare_expected_and_result_vectors(
   }
 }
 
-TEST(ThreadPool, ThreadPoolWithZeroThreads)
+TEST(ThreadPool, WithZeroThreads)
 {
   size_t outer_vector_size = 10;
   size_t inner_vectors_size = 10;
@@ -63,7 +63,7 @@ TEST(ThreadPool, ThreadPoolWithZeroThreads)
   compare_expected_and_result_vectors(get_expected_vector(inner_vectors_size, outer_vector_size), vector_of_vectors);
 }
 
-TEST(ThreadPool, ThreadPoolWithMoreThreadsThanTasks)
+TEST(ThreadPool, WithMoreThreadsThanTasks)
 {
   size_t outer_vector_size = 10;
   size_t inner_vectors_size = 10;
@@ -88,7 +88,7 @@ TEST(ThreadPool, ThreadPoolWithMoreThreadsThanTasks)
   compare_expected_and_result_vectors(get_expected_vector(inner_vectors_size, outer_vector_size), vector_of_vectors);
 }
 
-TEST(ThreadPool, ThreadPoolWithLessThreadsThanTasks)
+TEST(ThreadPool, WithLessThreadsThanTasks)
 {
   size_t outer_vector_size = 10;
   size_t inner_vectors_size = 10;

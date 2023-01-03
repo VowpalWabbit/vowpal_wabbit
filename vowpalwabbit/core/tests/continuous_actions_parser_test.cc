@@ -26,7 +26,7 @@ void parse_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& l, 
   lp.parse_label(l, red_fts, mem, nullptr, words, null_logger);
 }
 
-TEST(Cats, ContinuousActionsParseLabel)
+TEST(Cats, ParseLabel)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -43,7 +43,7 @@ TEST(Cats, ContinuousActionsParseLabel)
   }
 }
 
-TEST(Cats, ContinuousActionsParseLabelAndPdf)
+TEST(Cats, ParseLabelAndPdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -70,7 +70,7 @@ TEST(Cats, ContinuousActionsParseLabelAndPdf)
   }
 }
 
-TEST(Cats, ContinuousActionsParseOnlyPdfNoLabel)
+TEST(Cats, ParseOnlyPdfNoLabel)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -91,7 +91,7 @@ TEST(Cats, ContinuousActionsParseOnlyPdfNoLabel)
   }
 }
 
-TEST(Cats, ContinuousActionsParseMalformedPdf)
+TEST(Cats, ParseMalformedPdf)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -108,7 +108,7 @@ TEST(Cats, ContinuousActionsParseMalformedPdf)
   }
 }
 
-TEST(Cats, ContinuousActionsParseLabelAndChosenAction)
+TEST(Cats, ParseLabelAndChosenAction)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -129,7 +129,7 @@ TEST(Cats, ContinuousActionsParseLabelAndChosenAction)
   }
 }
 
-TEST(Cats, ContinuousActionsChosenActionOnlyNoLabel)
+TEST(Cats, ChosenActionOnlyNoLabel)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -146,7 +146,7 @@ TEST(Cats, ContinuousActionsChosenActionOnlyNoLabel)
   }
 }
 
-TEST(Cats, ContinuousActionsParseLabelPdfAndChosenAction)
+TEST(Cats, ParseLabelPdfAndChosenAction)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -178,7 +178,7 @@ TEST(Cats, ContinuousActionsParseLabelPdfAndChosenAction)
   }
 }
 
-TEST(Cats, ContinuousActionsParseNoLabel)
+TEST(Cats, ParseNoLabel)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -193,7 +193,7 @@ TEST(Cats, ContinuousActionsParseNoLabel)
   }
 }
 
-TEST(Cats, ContinuousActionsParseNoLabelWPrefix)
+TEST(Cats, ParseNoLabelWPrefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
@@ -208,7 +208,7 @@ TEST(Cats, ContinuousActionsParseNoLabelWPrefix)
   }
 }
 
-TEST(Cats, ContinusActionsCheckLabelForPrefix)
+TEST(Cats, CheckLabelForPrefix)
 {
   auto lp = VW::cb_continuous::the_label_parser;
   {
