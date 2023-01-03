@@ -37,7 +37,7 @@
 #  include <thread>
 #endif
 
-using feature_dict = std::unordered_map<std::string, std::unique_ptr<features>>;
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<VW::features>>;
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 using options_deleter_type = void (*)(VW::config::options_i*);
@@ -84,9 +84,9 @@ class trace_message_wrapper
 {
 public:
   void* inner_context;
-  trace_message_t trace_message;
+  VW::trace_message_t trace_message;
 
-  trace_message_wrapper(void* context, trace_message_t trace_message)
+  trace_message_wrapper(void* context, VW::trace_message_t trace_message)
       : inner_context(context), trace_message(trace_message)
   {
   }
@@ -110,7 +110,7 @@ class workspace
 public:
   VW::shared_data* sd;
 
-  parser* example_parser;
+  std::unique_ptr<parser> example_parser;
   std::thread parse_thread;
 
   all_reduce_type selected_all_reduce_type;

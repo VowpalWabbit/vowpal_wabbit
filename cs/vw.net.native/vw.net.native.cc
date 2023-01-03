@@ -6,7 +6,7 @@
 
 API void FreeDupString(char* str) { free(str); }
 
-API uint64_t VwUniformHash(char* key, size_t len, uint64_t seed) { return uniform_hash(key, len, seed); }
+API uint64_t VwUniformHash(char* key, size_t len, uint64_t seed) { return VW::uniform_hash(key, len, seed); }
 
 API size_t StdStringGetLength(const std::string* str) { return str->size(); }
 

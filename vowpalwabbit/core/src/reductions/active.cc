@@ -178,7 +178,7 @@ void return_active_example(VW::workspace& all, active& a, VW::example& ec)
   VW::finish_example(all, ec);
 }
 
-void save_load(active& a, io_buf& io, bool read, bool text)
+void save_load(active& a, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS)

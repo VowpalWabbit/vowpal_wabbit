@@ -10,6 +10,8 @@
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
 
+#include <cfloat>
+
 namespace VW
 {
 class example;
@@ -30,6 +32,10 @@ class continuous_label
 {
 public:
   v_array<continuous_label_elm> costs;
+
+  VW_ATTR(nodiscard) bool is_test_label() const;
+  VW_ATTR(nodiscard) bool is_labeled() const;
+  void reset_to_default();
 };
 
 extern VW::label_parser the_label_parser;

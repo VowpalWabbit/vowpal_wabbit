@@ -9,6 +9,11 @@
 #include <cassert>
 #include <cstdint>
 #include <iterator>
+namespace VW
+{
+
+namespace details
+{
 
 template <typename T>
 class dense_iterator
@@ -78,12 +83,13 @@ private:
   uint64_t _stride;
   uint32_t _stride_shift;
 };
+}  // namespace details
 
 class dense_parameters
 {
 public:
-  using iterator = dense_iterator<VW::weight>;
-  using const_iterator = dense_iterator<const VW::weight>;
+  using iterator = details::dense_iterator<VW::weight>;
+  using const_iterator = details::dense_iterator<const VW::weight>;
 
   dense_parameters(size_t length, uint32_t stride_shift = 0);
   dense_parameters();
@@ -155,3 +161,5 @@ private:
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
 };
+}  // namespace VW
+using dense_parameters VW_DEPRECATED("dense_parameters moved into VW namespace") = VW::dense_parameters;

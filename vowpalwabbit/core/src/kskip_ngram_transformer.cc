@@ -8,8 +8,8 @@
 
 #include <memory>
 
-void add_grams(
-    size_t ngram, size_t skip_gram, features& fs, size_t initial_length, std::vector<size_t>& gram_mask, size_t skips)
+void add_grams(size_t ngram, size_t skip_gram, VW::features& fs, size_t initial_length, std::vector<size_t>& gram_mask,
+    size_t skips)
 {
   if (ngram == 0 && gram_mask.back() < initial_length)
   {

@@ -61,7 +61,7 @@ private:
 class baseline_challenger_data
 {
 public:
-  distributionally_robust::ChiSquared baseline;
+  VW::estimators::ChiSquared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;
   bool emit_metrics;
@@ -167,7 +167,7 @@ void learn_or_predict(baseline_challenger_data& data, multi_learner& base, VW::m
   data.learn_or_predict<is_learn>(base, examples);
 }
 
-void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
+void save_load(baseline_challenger_data& data, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, data); }
@@ -201,12 +201,12 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
                      "perfoming better")
                .experimental())
       .add(make_option("cb_c_alpha", alpha)
-               .default_value(DEFAULT_ALPHA)
+               .default_value(VW::details::DEFAULT_ALPHA)
                .keep()
                .help("Confidence level for baseline")
                .experimental())
       .add(make_option("cb_c_tau", tau)
-               .default_value(BASELINE_DEFAULT_TAU)
+               .default_value(VW::details::BASELINE_DEFAULT_TAU)
                .keep()
                .help("Time constant for count decay")
                .experimental());

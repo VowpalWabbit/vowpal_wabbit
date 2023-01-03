@@ -10,6 +10,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 #include "vw/core/vw.h"
 #include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
@@ -72,32 +73,15 @@ void confidence_print_result(
   }
 }
 
-void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
+void output_example_prediction_confidence(
+    VW::workspace& all, const confidence& /* data */, const VW::example& ec, VW::io::logger& logger)
 {
-  auto& ld = ec.l.simple;
-
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
-  if (ld.label != FLT_MAX && !ec.test_only)
-  {
-    all.sd->weighted_labels += static_cast<double>(ld.label) * static_cast<double>(ec.weight);
-  }
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
-
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
   for (const auto& sink : all.final_prediction_sink)
   {
-    confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, all.logger);
+    confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, logger);
   }
-
-  VW::details::print_update(all, ec);
 }
-
-void return_confidence_example(VW::workspace& all, confidence& /* c */, VW::example& ec)
-{
-  output_and_account_confidence_example(all, ec);
-  VW::finish_example(all, ec);
-}
-
 }  // namespace
 
 base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
@@ -148,7 +132,9 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
                 .set_learn_returns_prediction(true)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_finish_example(return_confidence_example)
+                .set_output_example_prediction(output_example_prediction_confidence)
+                .set_print_update(VW::details::print_update_simple_label<confidence>)
+                .set_update_stats(VW::details::update_stats_simple_label<confidence>)
                 .build();
 
   return make_base(*l);

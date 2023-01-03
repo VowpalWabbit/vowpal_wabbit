@@ -4,7 +4,6 @@
 
 #include "vw/core/constant.h"
 #include "vw/core/feature_group.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 #include "vw/test_common/test_common.h"
@@ -19,7 +18,9 @@ flatbuffers::Offset<void> get_label(flatbuffers::FlatBufferBuilder& builder, VW:
 {
   flatbuffers::Offset<void> label;
   if (label_type == VW::parsers::flatbuffer::Label_SimpleLabel)
+  {
     label = VW::parsers::flatbuffer::CreateSimpleLabel(builder, 0.0, 1.0).Union();
+  }
 
   return label;
 }
@@ -71,7 +72,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example)
 
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  io_buf unused_buffer;
+  VW::io_buf unused_buffer;
   all->flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
 
   auto example = all->flat_converter->data()->example_obj_as_Example();
@@ -113,7 +114,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_collection)
 
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  io_buf unused_buffer;
+  VW::io_buf unused_buffer;
   all->flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
 
   auto collection_examples = all->flat_converter->data()->example_obj_as_ExampleCollection()->examples();

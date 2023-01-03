@@ -155,16 +155,17 @@ void learn(svrg& s, base_learner& base, VW::example& ec)
   s.prev_pass = pass;
 }
 
-void save_load(svrg& s, io_buf& model_file, bool read, bool text)
+void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 {
-  if (read) { initialize_regressor(*s.all); }
+  if (read) { VW::details::initialize_regressor(*s.all); }
 
   if (model_file.num_files() != 0)
   {
     bool resume = s.all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;
@@ -192,7 +193,7 @@ base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(2);
   auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                 .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svrg>)
                 .set_update_stats(VW::details::update_stats_simple_label<svrg>)
                 .set_print_update(VW::details::print_update_simple_label<svrg>)

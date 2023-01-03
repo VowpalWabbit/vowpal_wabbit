@@ -31,7 +31,6 @@ vw_add_library(
 set(vw_config_test_sources
     tests/options_cli_test.cc
     tests/options_test.cc
-    tests/main.cc
 )
 
 vw_add_test_executable(

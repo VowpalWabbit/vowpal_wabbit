@@ -6,13 +6,7 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/v_array.h"
-
-class io_buf;
-namespace VW
-{
-class workspace;
-class example;
-}  // namespace VW
+#include "vw/core/vw_fwd.h"
 
 namespace MULTILABEL
 {

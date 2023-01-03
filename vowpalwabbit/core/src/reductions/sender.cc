@@ -44,7 +44,7 @@ struct sent_example_info
 class sender
 {
 public:
-  io_buf socket_output_buffer;
+  VW::io_buf socket_output_buffer;
   std::unique_ptr<VW::io::socket> socket;
   std::unique_ptr<VW::io::reader> socket_reader;
   VW::workspace* all = nullptr;  // loss example_queue_limit others

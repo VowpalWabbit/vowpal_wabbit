@@ -7,6 +7,7 @@
 #include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
+#include <cfloat>
 #include <cstdint>
 #include <vector>
 
@@ -19,16 +20,16 @@ namespace VW
 class cs_class
 {
 public:
-  float x;
-  uint32_t class_index;
-  float partial_prediction;  // a partial prediction: new!
-  float wap_value;           // used for wap to store values derived from costs
+  float x{};
+  uint32_t class_index{};
+  float partial_prediction{};  // a partial prediction: new!
+  float wap_value{};           // used for wap to store values derived from costs
 
   cs_class(float x, uint32_t class_index, float partial_prediction, float wap_value)
       : x(x), class_index(class_index), partial_prediction(partial_prediction), wap_value(wap_value)
   {
   }
-  cs_class() : x(0.f), class_index(0), partial_prediction(0.f), wap_value(0.f) {}
+  cs_class() = default;
 
   bool operator==(const cs_class& j) const { return class_index == j.class_index; }
 };
@@ -36,12 +37,14 @@ class cs_label
 {
 public:
   std::vector<cs_class> costs;
+
+  VW_ATTR(nodiscard) bool is_test_label() const;
+  void reset_to_default();
 };
 
 extern VW::label_parser cs_label_parser_global;
 
 bool is_cs_example_header(const VW::example& ec);
-void default_cs_label(cs_label& ld);
 namespace details
 {
 void output_cs_example(VW::workspace& all, const VW::example& ec);
@@ -66,9 +69,10 @@ using wclass VW_DEPRECATED(
     "COST_SENSITIVE::wclass renamed to VW::cs_class. COST_SENSITIVE::wclass will be removed in VW 10.") = VW::cs_class;
 
 VW_DEPRECATED(
-    "COST_SENSITIVE::default_label renamed to VW::default_cs_label. COST_SENSITIVE::default_label will be removed in "
+    "COST_SENSITIVE::default_label has been moved to VW::cs_label::reset_to_default. COST_SENSITIVE::default_label "
+    "will be removed in "
     "VW 10.")
-inline void default_label(VW::cs_label& ld) { VW::default_cs_label(ld); }
+inline void default_label(VW::cs_label& ld) { ld.reset_to_default(); }
 // example headers look like "0:-1" or just "shared"
 VW_DEPRECATED(
     "COST_SENSITIVE::ec_is_example_header renamed to VW::is_cs_example_header. COST_SENSITIVE::ec_is_example_header "

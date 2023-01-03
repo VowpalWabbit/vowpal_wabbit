@@ -7,7 +7,6 @@
 #include "vw/common/hash.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
@@ -157,22 +156,22 @@ void copy_example_to_adf(warm_cb& data, VW::example& ec)
     auto& eca = *data.ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::default_label(lab);
+    lab.reset_to_default();
 
     // copy data
     VW::copy_example_data(&eca, &ec);
 
     // offset indices for given action
-    for (features& fs : eca)
+    for (VW::features& fs : eca)
     {
-      for (feature_index& idx : fs.indices)
+      for (VW::feature_index& idx : fs.indices)
       {
         idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask;
       }
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && eca.l.cb.is_test_label()) { eca.tag.push_back('n'); }
   }
 }
 
@@ -484,14 +483,14 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   {
     data.ecs[a] = new VW::example;
     auto& lab = data.ecs[a]->l.cb;
-    CB::default_label(lab);
+    lab.reset_to_default();
   }
 
   // The rest of the initialization is for warm start CB
   data.csls.resize(num_actions);
   for (uint32_t a = 0; a < num_actions; ++a)
   {
-    VW::default_cs_label(data.csls[a]);
+    data.csls[a].reset_to_default();
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
   data.cbls.resize(num_actions);

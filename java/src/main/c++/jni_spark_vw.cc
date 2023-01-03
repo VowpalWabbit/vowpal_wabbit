@@ -11,10 +11,10 @@
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/merge.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <algorithm>
 #include <exception>
@@ -107,7 +107,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
     int size = env->GetArrayLength(model);
     auto* model0 = reinterpret_cast<const char*>(modelGuard.data());
 
-    io_buf buffer;
+    VW::io_buf buffer;
     buffer.add_file(VW::io::create_buffer_view(model0, size));
 
     return reinterpret_cast<jlong>(VW::initialize(g_args.c_str(), &buffer));
@@ -172,7 +172,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFr
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    all->example_parser->text_reader(
+        all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<true>(env, all, ex_coll);
   }
@@ -211,7 +212,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(all, exampleStringGuard.c_str(), exampleStringGuard.length(), ex_coll);
+    all->example_parser->text_reader(
+        all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<false>(env, all, ex_coll);
   }
@@ -249,7 +251,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
   try
   {  // save in stl::vector
     auto model_buffer = std::make_shared<std::vector<char>>();
-    io_buf buffer;
+    VW::io_buf buffer;
     buffer.add_file(VW::io::create_vector_writer(model_buffer));
     VW::save_predictor(*all, buffer);
 
@@ -413,7 +415,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
     if (isEmpty)
     {
       char empty = '\0';
-      VW::read_line(*all, ex, &empty);
+      VW::parsers::text::read_line(*all, ex, &empty);
     }
     else
       all->example_parser->lbl_parser.default_label(ex->l);

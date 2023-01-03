@@ -267,7 +267,7 @@ jobs:
     permissions:
       contents: write
       deployments: write
-      pull-requests: write
+    if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -364,5 +364,4 @@ jobs:
           auto-push: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Push results to gh-pages branch
-        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         run: git push 'https://VowpalWabbit:${{ secrets.GITHUB_TOKEN }}@github.com/VowpalWabbit/vowpal_wabbit.git' gh-pages:gh-pages

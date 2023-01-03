@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <string>
 
-std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
+std::vector<std::string> VW::details::escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {
   std::vector<std::string> tokens;
   std::string current;
