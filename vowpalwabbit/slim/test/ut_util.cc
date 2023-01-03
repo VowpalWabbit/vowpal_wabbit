@@ -292,7 +292,7 @@ std::vector<predict_param> generate_test_params()
   return fixtures;
 }
 
-INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, predict_test, ::testing::ValuesIn(generate_test_params()));
+INSTANTIATE_TEST_SUITE_P(vowpalWabbitSlim, predict_test, ::testing::ValuesIn(generate_test_params()));
 
 struct invalid_model_param
 {
@@ -349,9 +349,9 @@ invalid_model_param invalid_model_param[] = {
         predict_param_weight_type::SPARSE}  // 4 weights
 };
 
-INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, invalid_model_test, ::testing::ValuesIn(invalid_model_param));
+INSTANTIATE_TEST_SUITE_P(vowpalWabbitSlim, invalid_model_test, ::testing::ValuesIn(invalid_model_param));
 
-TEST(vowpal_wabbit_slim, multiclass_data_4)
+TEST(vowpalWabbitSlim, multiclass_data_4)
 {
   vw_predict<VW::sparse_parameters> vw;
   test_data td = get_test_data("multiclass_data_4");
@@ -385,7 +385,7 @@ TEST(vowpal_wabbit_slim, multiclass_data_4)
   EXPECT_THAT(out_scores, Pointwise(FloatNear(1e-5f), preds_expected));
 }
 
-TEST(vowpal_wabbit_slim, multiclass_data_5)
+TEST(vowpalWabbitSlim, multiclass_data_5)
 {
   vw_predict<VW::sparse_parameters> vw;
   test_data td = get_test_data("multiclass_data_5");
@@ -474,7 +474,7 @@ void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int net
   EXPECT_THAT(rankings, Pointwise(Eq(), ranking_expected));
 }
 
-TEST(vowpal_wabbit_slim, interaction_num_bits_bug)
+TEST(vowpalWabbitSlim, interaction_num_bits_bug)
 {
   std::ifstream input(
       VW_SLIM_TEST_DIR "data/Delay_Margin_AudioNetworkPCR_all_cb_FF8.model", std::ios::in | std::ios::binary);
@@ -520,7 +520,7 @@ TEST(vowpal_wabbit_slim, interaction_num_bits_bug)
   EXPECT_EQ(rankings[0], 3);
 }
 
-TEST(vowpal_wabbit_slim, cb_data_epsilon_0_skype_jb)
+TEST(vowpalWabbitSlim, cb_data_epsilon_0_skype_jb)
 {
   // Since the model is epsilon=0, the first entry should always be 0.
   std::vector<float> pdf_expected = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -703,7 +703,7 @@ cb_predict_param cb_predict_params[] = {
         }},
 };
 
-INSTANTIATE_TEST_SUITE_P(VowpalWabbitSlim, cb_predict_test, ::testing::ValuesIn(cb_predict_params));
+INSTANTIATE_TEST_SUITE_P(vowpalWabbitSlim, cb_predict_test, ::testing::ValuesIn(cb_predict_params));
 
 // Test fixture to allow for both sparse and dense parameters
 template <typename W>
@@ -771,7 +771,7 @@ TYPED_TEST_P(vw_slim_tests, model_corrupted)
 }
 
 REGISTER_TYPED_TEST_SUITE_P(vw_slim_tests, model_not_loaded, model_reduction_mismatch, model_corrupted);
-INSTANTIATE_TYPED_TEST_SUITE_P(VowpalWabbitSlim, vw_slim_tests, WeightParameters, );
+INSTANTIATE_TYPED_TEST_SUITE_P(vowpalWabbitSlim, vw_slim_tests, WeightParameters, );
 
 TEST(cold_start_model_slim, action_set_not_reordered)
 {

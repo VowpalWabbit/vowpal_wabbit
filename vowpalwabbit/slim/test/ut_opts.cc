@@ -4,7 +4,7 @@
 using namespace ::testing;
 using namespace vw_slim;
 
-TEST(command_line_options_slim, parsing)
+TEST(commandLineOptionsSlim, parsing)
 {
   EXPECT_THAT(find_opt("-q abc", "-q"), ElementsAre("abc"));
   EXPECT_THAT(find_opt("-q a -q b", "-q"), ElementsAre("a", "b"));
@@ -12,7 +12,7 @@ TEST(command_line_options_slim, parsing)
   EXPECT_THAT(find_opt("-q a -d -q  b -q -q abc", "-q"), ElementsAre("a", "b", "abc"));
 }
 
-TEST(command_line_options_slim, parsing_empty)
+TEST(commandLineOptionsSlim, parsing_empty)
 {
   EXPECT_THAT(find_opt("-a b -qd ", "-q").size(), 0);
   EXPECT_THAT(find_opt("", "-q").size(), 0);
@@ -22,7 +22,7 @@ TEST(command_line_options_slim, parsing_empty)
   EXPECT_THAT(find_opt("-q -d", "-q").size(), 0);
 }
 
-TEST(command_line_options_slim, parsing_float)
+TEST(commandLineOptionsSlim, parsing_float)
 {
   float value;
   EXPECT_TRUE(find_opt_float("--epsilon 0.5", "--epsilon", value));
@@ -35,7 +35,7 @@ TEST(command_line_options_slim, parsing_float)
   EXPECT_FALSE(find_opt_float("--epsilon 0.5 --epsilon 0.4", "--epsilon", value));
 }
 
-TEST(command_line_options_slim, parsing_int)
+TEST(commandLineOptionsSlim, parsing_int)
 {
   int value;
   EXPECT_TRUE(find_opt_int("--bag 2", "--bag", value));
