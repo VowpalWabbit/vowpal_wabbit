@@ -18,7 +18,7 @@ using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
         VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
-TEST(las_tests, check_finding_max_volume)
+TEST(Las, CheckFindingMaxVolume)
 {
   auto d = 3;
   for (const bool use_simd : {false, true})
@@ -61,7 +61,7 @@ TEST(las_tests, check_finding_max_volume)
   }
 }
 
-TEST(las_tests, check_spanner_results_squarecb)
+TEST(Las, CheckSpannerResultsSquarecb)
 {
   auto d = 2;
   std::vector<VW::workspace*> vws;
@@ -194,7 +194,7 @@ TEST(las_tests, check_spanner_results_squarecb)
   }
 }
 
-TEST(las_tests, check_spanner_results_epsilon_greedy)
+TEST(Las, CheckSpannerResultsEpsilonGreedy)
 {
   auto d = 2;
   float epsilon = 0.2f;
@@ -307,7 +307,7 @@ TEST(las_tests, check_spanner_results_epsilon_greedy)
   }
 }
 
-TEST(las_tests, check_uniform_probabilities_before_learning)
+TEST(Las, CheckUniformProbabilitiesBeforeLearning)
 {
   auto d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
@@ -350,7 +350,7 @@ TEST(las_tests, check_uniform_probabilities_before_learning)
   }
 }
 
-TEST(las_tests, check_probabilities_when_d_is_larger)
+TEST(Las, CheckProbabilitiesWhenDIsLarger)
 {
   auto d = 3;
   for (const bool use_simd : {false, true})
@@ -451,7 +451,7 @@ static std::vector<std::string> gen_cb_examples(
   return examples;
 }
 
-TEST(las_tests, check_spanner_chooses_actions_that_clearly_maximise_volume)
+TEST(Las, CheckSpannerChoosesActionsThatClearlyMaximiseVolume)
 {
   // d actions with larger values (factor of 10x)
   // 10d - d (the rest) actions with smaller values
@@ -602,7 +602,7 @@ TEST(las_tests, check_spanner_chooses_actions_that_clearly_maximise_volume)
   }
 }
 
-TEST(las_tests, check_spanner_rejects_same_actions)
+TEST(Las, CheckSpannerRejectsSameActions)
 {
   // 8 actions and I want spanner to reject the duplicate
   auto d = 7;
@@ -689,7 +689,7 @@ TEST(las_tests, check_spanner_rejects_same_actions)
   }
 }
 
-TEST(las_tests, check_spanner_with_actions_that_are_linear_combinations_of_other_actions)
+TEST(Las, CheckSpannerWithActionsThatAreLinearCombinationsOfOtherActions)
 {
   auto d = 8;
   std::vector<VW::workspace*> vws;
@@ -796,7 +796,7 @@ TEST(las_tests, check_spanner_with_actions_that_are_linear_combinations_of_other
   }
 }
 
-TEST(las_tests, check_singular_value_sum_diff_for_diff_ranks_is_small)
+TEST(Las, CheckSingularValueSumDiffForDiffRanksIsSmall)
 {
   // d actions with larger values (factor of 10x)
   // 10d - d (the rest) actions with smaller values
@@ -873,7 +873,7 @@ TEST(las_tests, check_singular_value_sum_diff_for_diff_ranks_is_small)
   }
 }
 
-TEST(las_tests, check_learn_returns_correct_predictions)
+TEST(Las, CheckLearnReturnsCorrectPredictions)
 {
   auto d = 2;
   for (const bool use_simd : {false, true})
