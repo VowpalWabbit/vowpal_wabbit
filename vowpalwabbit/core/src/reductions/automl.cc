@@ -76,27 +76,6 @@ void persist(automl<CMType>& data, VW::metric_sink& metrics)
 }
 
 template <typename CMType>
-void print_update_automl(VW::workspace& all, VW::shared_data& /* sd */, const automl<CMType>& data,
-    const VW::multi_ex& ec, VW::io::logger& /* unused */)
-{
-  data.adf_learner->print_example(all, ec);
-}
-
-template <typename CMType>
-void update_stats_automl(const VW::workspace& /* all */, VW::shared_data& /* sd */, const automl<CMType>& data,
-    const VW::multi_ex& ec, VW::io::logger& /* logger */)
-{
-  interaction_vec_t* incoming_interactions = ec[0]->interactions;
-  uint64_t champ_live_slot = data.cm->current_champ;
-  for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
-  VW::scope_exit(
-      [&ec, &incoming_interactions]
-      {
-        for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
-      });
-}
-
-template <typename CMType>
 void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
 {
   options_i& options = *all.options;
@@ -159,10 +138,8 @@ float calc_priority_favor_popular_namespaces(
 }
 
 // Same as above, returns 0 (includes rest to remove unused variable warning)
-float calc_priority_empty(const ns_based_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
+float calc_priority_empty(const ns_based_config&, const std::map<VW::namespace_index, uint64_t>&)
 {
-  _UNUSED(config);
-  _UNUSED(ns_counter);
   return 0.f;
 }
 }  // namespace
@@ -228,8 +205,6 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_label_type(VW::label_type_t::CB)
-                .set_print_update(print_update_automl)
-                .set_update_stats(update_stats_automl)
                 .set_save_load(save_load_automl)
                 .set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
