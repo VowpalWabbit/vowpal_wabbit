@@ -277,13 +277,14 @@ void save_load_epsilon_decay(
   else { VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text); }
 }
 
-void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
+void output_example_epsilon_decay(
+    VW::workspace& /* all */, const VW::reductions::epsilon_decay::epsilon_decay_data& data, const VW::multi_ex& /* ec */, VW::io::logger& /* logger */)
 {
   if (data._epsilon_decay_audit_str != "")
   {
     VW::io_buf buf;
     buf.add_file(VW::io::open_file_writer(data._epsilon_decay_audit_str));
-    VW::details::bin_text_write(buf, nullptr, 0, data._audit_msg, true);
+    buf.bin_write_fixed(data._audit_msg.str().c_str(), data._audit_msg.str().size());
     buf.flush();
     buf.close_file();
   }
@@ -408,7 +409,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                         .set_params_per_weight(model_count)
                         .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_epsilon_decay)
-                        .set_finish(::finish)
+                        .set_output_example_prediction(output_example_epsilon_decay)
                         .build();
 
     return VW::LEARNER::make_base(*learner);
