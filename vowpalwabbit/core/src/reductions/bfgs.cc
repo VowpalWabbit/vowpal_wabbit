@@ -1121,7 +1121,7 @@ struct options_bfgs_v1
 };
 
 std::unique_ptr<options_bfgs_v1> get_bfgs_options_instance(
-    const VW::workspace& all, VW::io::logger&, options_i& options)
+    const VW::workspace&, VW::io::logger&, options_i& options)
 {
   auto bfgs_opts = VW::make_unique<options_bfgs_v1>();
   option_group_definition conjugate_gradient_options("[Reduction] Conjugate Gradient");
