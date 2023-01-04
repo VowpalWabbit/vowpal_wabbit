@@ -13,6 +13,7 @@
 #include "vw/io/logger.h"
 
 #include <cfloat>
+#include <sstream>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -27,7 +28,6 @@ class cb
 public:
   cb_to_cs cbcs;
   VW::io::logger logger;
-  bool eval = false;
 
   cb(VW::io::logger logger) : logger(std::move(logger)) {}
 };
@@ -81,10 +81,11 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-void update_stats_cb_algs(
-    const VW::workspace&, VW::shared_data& sd, const cb& data, const VW::example& ec, VW::io::logger&)
+template <bool uses_eval>
+void update_stats_cb_algs(const VW::workspace& /* all */, VW::shared_data& sd, const cb& data, const VW::example& ec,
+    VW::io::logger& /* unused */)
 {
-  const auto& ld = data.eval ? ec.l.cb_eval.event : ec.l.cb;
+  const auto& ld = uses_eval ? ec.l.cb_eval.event : ec.l.cb;
   const auto& c = data.cbcs;
   float loss = 0.;
 
@@ -93,10 +94,11 @@ void update_stats_cb_algs(
   sd.update(ec.test_only, !ld.is_test_label(), loss, 1.f, ec.get_num_features());
 }
 
+template <bool uses_eval>
 void output_example_prediction_cb_algs(
-    VW::workspace& all, const cb& data, const VW::example& ec, VW::io::logger& logger)
+    VW::workspace& all, const cb& /* data */, const VW::example& ec, VW::io::logger& logger)
 {
-  const auto& ld = data.eval ? ec.l.cb_eval.event : ec.l.cb;
+  const auto& ld = uses_eval ? ec.l.cb_eval.event : ec.l.cb;
 
   for (auto& sink : all.final_prediction_sink)
   {
@@ -112,14 +114,15 @@ void output_example_prediction_cb_algs(
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
   }
 }
 
+template <bool uses_eval>
 void print_update_cb_algs(
-    VW::workspace& all, VW::shared_data& sd, const cb& data, const VW::example& ec, VW::io::logger&)
+    VW::workspace& all, VW::shared_data& /* sd */, const cb& data, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  const auto& ld = data.eval ? ec.l.cb_eval.event : ec.l.cb;
+  const auto& ld = uses_eval ? ec.l.cb_eval.event : ec.l.cb;
   const auto& c = data.cbcs;
 
   bool is_ld_test_label = ld.is_test_label();
@@ -134,6 +137,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<cb>(all.logger);
   std::string type_string = "dr";
+  bool eval = false;
   bool force_legacy = true;
 
   option_group_definition new_options("[Reduction] Contextual Bandit");
@@ -147,14 +151,14 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
                .default_value("dr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
                .help("Contextual bandit method to use"))
-      .add(make_option("eval", data->eval).help("Evaluate a policy rather than optimizing"))
+      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing"))
       .add(make_option("cb_force_legacy", force_legacy)
                .keep()
                .help("Default to non-adf cb implementation (cb_to_cb_adf)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (!data->eval && !force_legacy) { return nullptr; }
+  if (!eval && !force_legacy) { return nullptr; }
 
   // Ensure serialization of this option in all cases.
   if (!options.was_supplied("cb_type"))
@@ -172,7 +176,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
     case VW::cb_type_t::DR:
       break;
     case VW::cb_type_t::DM:
-      if (data->eval) THROW("direct method can not be used for evaluation --- it is biased.");
+      if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
       problem_multiplier = 1;
       break;
     case VW::cb_type_t::IPS:
@@ -194,16 +198,20 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   }
 
   auto base = as_singleline(stack_builder.setup_base_learner());
-  if (data->eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
+  if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
   else { all.example_parser->lbl_parser = CB::cb_label; }
   c.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
-  std::string name_addition = data->eval ? "-eval" : "";
-  auto learn_ptr = data->eval ? learn_eval : predict_or_learn<true>;
-  auto predict_ptr = data->eval ? predict_eval : predict_or_learn<false>;
-  auto label_type = data->eval ? VW::label_type_t::CB_EVAL : VW::label_type_t::CB;
-  // needed because we move data into the learner, but still need to set a value based on eval
-  auto eval = data->eval;
+  std::string name_addition = eval ? "-eval" : "";
+  auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
+  auto predict_ptr = eval ? predict_eval : predict_or_learn<false>;
+  auto label_type = eval ? VW::label_type_t::CB_EVAL : VW::label_type_t::CB;
+  VW::learner_update_stats_func<cb, VW::example>* update_stats_func =
+      eval ? update_stats_cb_algs<true> : update_stats_cb_algs<false>;
+  VW::learner_output_example_prediction_func<cb, VW::example>* output_example_prediction_func =
+      eval ? output_example_prediction_cb_algs<true> : output_example_prediction_cb_algs<false>;
+  VW::learner_print_update_func<cb, VW::example>* print_update_func =
+      eval ? print_update_cb_algs<true> : print_update_cb_algs<false>;
 
   auto* l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
@@ -213,9 +221,9 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_params_per_weight(problem_multiplier)
                 .set_learn_returns_prediction(eval)
-                .set_update_stats(::update_stats_cb_algs)
-                .set_output_example_prediction(::output_example_prediction_cb_algs)
-                .set_print_update(::print_update_cb_algs)
+                .set_update_stats(update_stats_func)
+                .set_output_example_prediction(output_example_prediction_func)
+                .set_print_update(print_update_func)
                 .build(&all.logger);
 
   return make_base(*l);
