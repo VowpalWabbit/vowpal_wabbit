@@ -56,6 +56,7 @@ set(vw_core_headers
   include/vw/core/loss_functions.h
   include/vw/core/memory.h
   include/vw/core/merge.h
+  include/vw/core/metrics_collector.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
   include/vw/core/multi_model_utils.h
@@ -228,6 +229,7 @@ set(vw_core_sources
   src/learner.cc
   src/loss_functions.cc
   src/merge.cc
+  src/metrics_collector.cc
   src/metric_sink.cc
   src/multiclass.cc
   src/multilabel.cc
@@ -355,6 +357,7 @@ set(vw_core_sources
   src/unique_sort.cc
   src/version.cc
   src/vw_validate.cc
+  src/vw.cc
 )
 
 vw_add_library(
