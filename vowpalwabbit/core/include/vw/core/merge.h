@@ -29,7 +29,7 @@ public:
 
   void serialize(VW::io::writer&) const;
   // Must only load what was previously serialized with the serialize function.
-  static std::unique_ptr<model_delta> deserialize(VW::io::reader&, bool quiet = false);
+  static std::unique_ptr<model_delta> deserialize(VW::io::reader&);
 
 private:
   std::unique_ptr<VW::workspace> _ws;
