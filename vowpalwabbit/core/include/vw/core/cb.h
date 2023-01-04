@@ -99,7 +99,7 @@ VW_DEPRECATED("Renamed to VW::ec_is_example_header_cb")
 inline bool ec_is_example_header(VW::example const& ec) { return VW::ec_is_example_header_cb(ec); }
 
 VW_DEPRECATED("Renamed to VW::get_observed_cost_cb")
-std::pair<bool, cb_class> get_observed_cost_cb(const label& ld) { return VW::get_observed_cost_cb(ld); }
+inline std::pair<bool, cb_class> get_observed_cost_cb(const label& ld) { return VW::get_observed_cost_cb(ld); }
 }  // namespace CB
 
 namespace CB_EVAL
