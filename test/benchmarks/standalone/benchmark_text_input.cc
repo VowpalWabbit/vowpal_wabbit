@@ -281,6 +281,22 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_no_interactions,
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3),
     "--ccb_explore_adf --quiet -q ::")
     ->MinTime(15.0);
+// CCB predict with quadratic interactions
+// 20 slots, 20 context features,  30 actions, 20 action features each
+BENCHMARK_CAPTURE(benchmark_multi_predict, ccb_adf_diff_char_interactions_predict, gen_ccb_examples(
+  10,   // num_examples in dataset
+  30,   // shared_feats_size
+  20,   // shared_feats_count
+  30,   // actions_per_example
+  1,    // feature_groups_size
+  1,    // feature_groups_count
+  30,   // action_feats_size
+  20,   // action_feats_count
+  false,// same_first_char
+  20    // slots_per_example
+  ),
+    "--ccb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
     gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet")
     ->MinTime(15.0);
