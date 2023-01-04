@@ -340,7 +340,7 @@ void update_and_output(VW::workspace& all, CB_ADF::cb_adf& data, const VW::multi
   print_update_cb_adf(all, *all.sd, data, ec_seq, all.logger);
 }
 
-void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
+void save_load(CB_ADF::cb_adf& c, VW::io_buf& model_file, bool read, bool text)
 {
   if (c.get_model_file_ver() != nullptr &&
       *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
@@ -350,11 +350,11 @@ void save_load(CB_ADF::cb_adf& c, io_buf& model_file, bool read, bool text)
 
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), read, msg, text);
 
   msg << "action_sum " << c.get_gen_cs().action_sum << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
 }
 

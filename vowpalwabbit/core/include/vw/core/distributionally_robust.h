@@ -4,10 +4,11 @@
 
 #pragma once
 
+#include "vw/core/vw_fwd.h"
+
 #include <limits>
 #include <string>
 
-class io_buf;
 namespace VW
 {
 namespace details

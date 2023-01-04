@@ -46,7 +46,7 @@ void parse_multiclass_label(VW::multiclass_label& ld, const VW::named_labels* ld
       else
       {
         char* char_after_int = nullptr;
-        ld.label = int_of_string(words[0], char_after_int, logger);
+        ld.label = VW::details::int_of_string(words[0], char_after_int, logger);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
         {
           THROW("Malformed example: label has trailing character(s): " << *char_after_int);
@@ -59,13 +59,13 @@ void parse_multiclass_label(VW::multiclass_label& ld, const VW::named_labels* ld
       else
       {
         char* char_after_int = nullptr;
-        ld.label = int_of_string(words[0], char_after_int, logger);
+        ld.label = VW::details::int_of_string(words[0], char_after_int, logger);
         if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
         {
           THROW("Malformed example: label has trailing character(s): " << *char_after_int);
         }
       }
-      ld.weight = float_of_string(words[1], logger);
+      ld.weight = VW::details::float_of_string(words[1], logger);
       break;
     default:
       THROW("Malformed example, words.size() = " << words.size());

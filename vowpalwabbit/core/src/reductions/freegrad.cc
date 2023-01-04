@@ -283,17 +283,18 @@ void learn_freegrad(freegrad& a, base_learner& /* base */, VW::example& ec)
   freegrad_update_after_prediction(a, ec);
 }
 
-void save_load(freegrad& fg, io_buf& model_file, bool read, bool text)
+void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = fg.all;
-  if (read) { initialize_regressor(*all); }
+  if (read) { VW::details::initialize_regressor(*all); }
 
   if (model_file.num_files() != 0)
   {
     bool resume = all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume)
     {
@@ -312,7 +313,7 @@ void end_pass(freegrad& fg)
   {
     if (VW::details::summarize_holdout_set(all, fg.no_win_counter))
     {
-      finalize_regressor(all, all.final_regressor_name);
+      VW::details::finalize_regressor(all, all.final_regressor_name);
     }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))

@@ -270,7 +270,7 @@ void learn(
 }
 
 void save_load_epsilon_decay(
-    VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay, io_buf& io, bool read, bool text)
+    VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, epsilon_decay); }
@@ -281,9 +281,9 @@ void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
 {
   if (data._epsilon_decay_audit_str != "")
   {
-    io_buf buf;
+    VW::io_buf buf;
     buf.add_file(VW::io::open_file_writer(data._epsilon_decay_audit_str));
-    bin_text_write(buf, nullptr, 0, data._audit_msg, true);
+    VW::details::bin_text_write(buf, nullptr, 0, data._audit_msg, true);
     buf.flush();
     buf.close_file();
   }

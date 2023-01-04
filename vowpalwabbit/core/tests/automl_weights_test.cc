@@ -36,7 +36,7 @@ size_t get_hash_for_feature(VW::workspace& all, const std::string& ns, const std
 }
 
 // see gd.cc:audit_feature(..)
-size_t hash_to_index(parameters& weights, size_t hash)
+size_t hash_to_index(VW::parameters& weights, size_t hash)
 {
   hash = hash & weights.mask();
   hash = hash >> weights.stride_shift();
@@ -46,7 +46,7 @@ size_t hash_to_index(parameters& weights, size_t hash)
 
 // craft feature index for interaction
 // see: interactions_predict.h:process_quadratic_interaction(..)
-size_t interaction_to_index(parameters& weights, size_t one, size_t two)
+size_t interaction_to_index(VW::parameters& weights, size_t one, size_t two)
 {
   // FNV_PRIME from constant.h
   return hash_to_index(weights, (VW::details::FNV_PRIME * one) ^ two);
@@ -150,7 +150,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   return true;
 }
 
-TEST(automl_weights_tests, operations_w_iterations)
+TEST(AutomlWeights, OperationsWIterations)
 {
   const size_t seed = 10;
   const size_t num_iterations = 1331;
@@ -196,7 +196,7 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   return true;
 }
 
-TEST(automl_weights_tests, noop_samechampconfig_w_iterations)
+TEST(AutomlWeights, NoopSamechampconfigWIterations)
 {
   const size_t seed = 10;
   const size_t num_iterations = 1742;
@@ -215,7 +215,7 @@ TEST(automl_weights_tests, noop_samechampconfig_w_iterations)
   EXPECT_GT(ctr.back(), 0.4f);
 }
 
-TEST(automl_weights_tests, learn_order_w_iterations)
+TEST(AutomlWeights, LearnOrderWIterations)
 {
   callback_map test_hooks;
 
@@ -263,7 +263,7 @@ TEST(automl_weights_tests, learn_order_w_iterations)
   EXPECT_EQ(ctr1, ctr2);
 }
 
-TEST(automl_weights_tests, equal_no_automl_w_iterations)
+TEST(AutomlWeights, EqualNoAutomlWIterations)
 {
   callback_map test_hooks;
 
@@ -295,7 +295,7 @@ TEST(automl_weights_tests, equal_no_automl_w_iterations)
   std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
   std::vector<std::tuple<float, float, float, float>> automl_champ_weights_vector;
 
-  dense_iterator<float> qcolcol_it = weights_qcolcol.begin();
+  VW::dense_parameters::iterator qcolcol_it = weights_qcolcol.begin();
   auto end = weights_qcolcol.end();
 
   if (*qcolcol_it != 0.0f)
@@ -332,7 +332,7 @@ TEST(automl_weights_tests, equal_no_automl_w_iterations)
   EXPECT_EQ(ctr1, ctr2);
 }
 
-TEST(automl_weights_tests, equal_spin_off_model_w_iterations)
+TEST(AutomlWeights, EqualSpinOffModelWIterations)
 {
   callback_map test_hooks;
 
@@ -366,7 +366,7 @@ TEST(automl_weights_tests, equal_spin_off_model_w_iterations)
   std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
   std::vector<std::tuple<float, float, float, float>> automl_weights_vector;
 
-  dense_iterator<float> qcolcol_it = weights_qcolcol.begin();
+  VW::dense_parameters::iterator qcolcol_it = weights_qcolcol.begin();
   auto qcolcol_end = weights_qcolcol.end();
 
   if (*qcolcol_it != 0.0f)
@@ -381,7 +381,7 @@ TEST(automl_weights_tests, equal_spin_off_model_w_iterations)
 
   std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
 
-  dense_iterator<float> automl_it = weights_automl.begin();
+  VW::dense_parameters::iterator automl_it = weights_automl.begin();
   auto automl_end = weights_automl.end();
 
   if (*automl_it != 0.0f)
@@ -405,7 +405,7 @@ TEST(automl_weights_tests, equal_spin_off_model_w_iterations)
   EXPECT_EQ(ctr1, ctr2);
 }
 
-TEST(automl_weights_tests, equal_spin_off_model_cubic)
+TEST(AutomlWeights, EqualSpinOffModelCubic)
 {
   callback_map test_hooks;
 
@@ -440,7 +440,7 @@ TEST(automl_weights_tests, equal_spin_off_model_cubic)
   std::vector<std::tuple<float, float, float, float>> qcolcol_weights_vector;
   std::vector<std::tuple<float, float, float, float>> automl_weights_vector;
 
-  dense_iterator<float> qcolcol_it = weights_qcolcol.begin();
+  VW::dense_parameters::iterator qcolcol_it = weights_qcolcol.begin();
   auto qcolcol_end = weights_qcolcol.end();
 
   if (*qcolcol_it != 0.0f)
@@ -455,7 +455,7 @@ TEST(automl_weights_tests, equal_spin_off_model_cubic)
 
   std::sort(qcolcol_weights_vector.begin(), qcolcol_weights_vector.end());
 
-  dense_iterator<float> automl_it = weights_automl.begin();
+  VW::dense_parameters::iterator automl_it = weights_automl.begin();
   auto automl_end = weights_automl.end();
 
   if (*automl_it != 0.0f)

@@ -6,14 +6,14 @@
 
 #include <gtest/gtest.h>
 
-TEST(tutorial_tets, cpp_simulator_without_interaction)
+TEST(Tutorial, CppSimulatorWithoutInteraction)
 {
   auto ctr = simulator::_test_helper("--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5");
   EXPECT_GT(ctr.back(), 0.37f);
   EXPECT_LT(ctr.back(), 0.49f);
 }
 
-TEST(tutorial_tets, cpp_simulator_with_interaction)
+TEST(Tutorial, CppSimulatorWithInteraction)
 {
   auto ctr = simulator::_test_helper("--cb_explore_adf -q UA --quiet --epsilon 0.2 --random_seed 5");
   float without_save = ctr.back();

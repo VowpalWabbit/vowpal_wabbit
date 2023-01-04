@@ -1078,7 +1078,8 @@ void end_pass(memory_tree& b)
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
+void save_load_example(
+    VW::example* ec, VW::io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
 {  // deal with tag
    // deal with labels:
   DEPRECATED_WRITEIT(ec->num_features, "num_features");
@@ -1136,7 +1137,7 @@ void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& te
   }
 }
 
-void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+void save_load_node(node& cn, VW::io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
   DEPRECATED_WRITEIT(cn.parent, "parent");
   DEPRECATED_WRITEIT(cn.internal, "internal");
@@ -1155,7 +1156,7 @@ void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::s
   for (uint32_t k = 0; k < leaf_n_examples; k++) DEPRECATED_WRITEIT(cn.examples_index[k], "example_location");
 }
 
-void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
+void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bool text)
 {
   std::stringstream msg;
   if (model_file.num_files() > 0)
@@ -1298,7 +1299,13 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_output_prediction_type(pred_type)
                .set_input_label_type(label_type);
 
-  if (!oas) { l.set_finish_example(VW::details::finish_multiclass_example<memory_tree&>); }
+  // memory_tree doesn't work correctly in oas mode as it just delegates to GD's stats and reporting implementation
+  if (!oas)
+  {
+    l.set_update_stats(VW::details::update_stats_multiclass_label<memory_tree>);
+    l.set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<memory_tree>);
+    l.set_print_update(VW::details::print_update_multiclass_label<memory_tree>);
+  }
 
   return make_base(*l.build());
 }

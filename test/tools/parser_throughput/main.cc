@@ -109,7 +109,7 @@ int main(int argc, char** argv)
 
   // Other option is the parser can use this io_buf. It's using more memory for no good reason, unless we run out it
   // shouldnt matter in this test tool.
-  io_buf file_contents_as_io_buf;
+  VW::io_buf file_contents_as_io_buf;
   std::ifstream test_file(file_name, std::ios::binary);
   std::vector<char> file_contents((std::istreambuf_iterator<char>(test_file)), std::istreambuf_iterator<char>());
   file_contents_as_io_buf.add_file(VW::io::create_buffer_view(file_contents.data(), file_contents.size()));

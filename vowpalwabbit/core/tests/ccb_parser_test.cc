@@ -27,7 +27,7 @@ void parse_ccb_label(VW::string_view label, VW::ccb_label& l)
   VW::parse_ccb_label(l, mem, words, null_logger);
 }
 
-TEST(ccb_tests, ccb_parse_label)
+TEST(Ccb, ParseLabel)
 {
   {
     auto label = VW::make_unique<VW::ccb_label>();
@@ -109,10 +109,10 @@ TEST(ccb_tests, ccb_parse_label)
   }
 }
 
-TEST(ccb_tests, ccb_cache_label)
+TEST(Ccb, CacheLabel)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   auto label = VW::make_unique<VW::ccb_label>();
@@ -120,7 +120,7 @@ TEST(ccb_tests, ccb_cache_label)
   VW::model_utils::write_model_field(io_writer, *label, "", false);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   auto uncached_label = VW::make_unique<VW::ccb_label>();
@@ -141,7 +141,7 @@ TEST(ccb_tests, ccb_cache_label)
   EXPECT_EQ(uncached_label->type, VW::ccb_example_type::SLOT);
 }
 
-TEST(ccb_tests, ccb_copy_label)
+TEST(Ccb, CopyLabel)
 {
   auto label = VW::make_unique<VW::ccb_label>();
   parse_ccb_label("ccb slot 1:-2.0:0.5,2:0.25,3:0.25 3,4", *label);
