@@ -399,7 +399,7 @@ extern "C"
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(
       const char* pstrArgs, const char* modelData, size_t modelDataSize)
   {
-    io_buf buf;
+    VW::io_buf buf;
     buf.add_file(VW::io::create_buffer_view(modelData, modelDataSize));
     auto* all = VW::initialize(std::string(pstrArgs), &buf);
     return static_cast<VW_HANDLE>(all);
@@ -408,7 +408,7 @@ extern "C"
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(
       const char* pstrArgs, const char* modelData, size_t modelDataSize)
   {
-    io_buf buf;
+    VW::io_buf buf;
     buf.add_file(VW::io::create_buffer_view(modelData, modelDataSize));
 
     auto* all = VW::initialize_escaped(std::string(pstrArgs), &buf);
@@ -419,7 +419,7 @@ extern "C"
   {
   public:
     std::shared_ptr<std::vector<char>> data = std::make_shared<std::vector<char>>();
-    io_buf holding_buffer;
+    VW::io_buf holding_buffer;
   };
 
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_CopyModelData(

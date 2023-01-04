@@ -42,7 +42,7 @@ void name_value(VW::string_view s, std::vector<VW::string_view>& name, float& v,
       v = 1.;
       break;
     case 2:
-      v = float_of_string(name[1], logger);
+      v = VW::details::float_of_string(name[1], logger);
       if (std::isnan(v)) THROW("error NaN value for: " << name[0]);
       break;
     default:
@@ -91,7 +91,7 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
         }
         else
         {
-          VW::cs_class f = {float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
+          VW::cs_class f = {VW::details::float_of_string(reuse_mem.tokens[1], logger), 0, 0., 0.};
           ld.costs.push_back(f);
         }
       }

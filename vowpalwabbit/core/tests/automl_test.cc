@@ -145,7 +145,7 @@ using aml_qbase_cubic = VW::reductions::automl::automl<
 
 // Need to add save_load functionality to multiple structs in automl reduction including
 // config_manager and confidence sequence estimator.
-TEST(automl_tests, save_load_w_iterations)
+TEST(Automl, SaveLoadWIterations)
 {
   const size_t num_iterations = 1000;
   const size_t split = 690;
@@ -169,7 +169,7 @@ TEST(automl_tests, save_load_w_iterations)
   EXPECT_EQ(ctr_no_save, ctr_with_save);
 }
 
-TEST(automl_tests, assert_0th_event_automl_w_iterations)
+TEST(Automl, Assert0thEventAutomlWIterations)
 {
   const size_t zero = 0;
   const size_t num_iterations = 10;
@@ -204,7 +204,7 @@ TEST(automl_tests, assert_0th_event_automl_w_iterations)
   EXPECT_GT(ctr.back(), 0.1f);
 }
 
-TEST(automl_tests, assert_0th_event_metrics_w_iterations)
+TEST(Automl, Assert0thEventMetricsWIterations)
 {
   const auto metric_name = std::string("total_learn_calls");
   const size_t zero = 0;
@@ -215,8 +215,7 @@ TEST(automl_tests, assert_0th_event_metrics_w_iterations)
   test_hooks.emplace(zero,
       [&metric_name, &zero](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
-        VW::metric_sink metrics;
-        all.l->persist_metrics(metrics);
+        auto metrics = all.global_metrics.collect_metrics(all.l);
 
         EXPECT_EQ(metrics.get_uint(metric_name), zero);
         return true;
@@ -226,8 +225,7 @@ TEST(automl_tests, assert_0th_event_metrics_w_iterations)
   test_hooks.emplace(num_iterations,
       [&metric_name, &num_iterations](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
-        VW::metric_sink metrics;
-        all.l->persist_metrics(metrics);
+        auto metrics = all.global_metrics.collect_metrics(all.l);
 
         EXPECT_EQ(metrics.get_uint(metric_name), num_iterations);
         return true;
@@ -240,7 +238,7 @@ TEST(automl_tests, assert_0th_event_metrics_w_iterations)
   EXPECT_GT(ctr.back(), 0.1f);
 }
 
-TEST(automl_tests, assert_live_configs_and_lease_w_iterations)
+TEST(Automl, AssertLiveConfigsAndLeaseWIterations)
 {
   const size_t fifteen = 15;
   const size_t num_iterations = 100;
@@ -286,7 +284,7 @@ TEST(automl_tests, assert_live_configs_and_lease_w_iterations)
 }
 
 // Note higher ctr compared to cpp_simulator_without_interaction in tutorial_test.cc
-TEST(automl_tests, cpp_simulator_automl_w_iterations)
+TEST(Automl, CppSimulatorAutomlWIterations)
 {
   auto ctr = simulator::_test_helper(
       "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
@@ -294,7 +292,7 @@ TEST(automl_tests, cpp_simulator_automl_w_iterations)
   EXPECT_GT(ctr.back(), 0.6f);
 }
 
-TEST(automl_tests, namespace_switch_w_iterations)
+TEST(Automl, NamespaceSwitchWIterations)
 {
   const size_t num_iterations = 1000;
   callback_map test_hooks;
@@ -349,7 +347,7 @@ TEST(automl_tests, namespace_switch_w_iterations)
   EXPECT_GT(ctr.back(), 0.65f);
 }
 
-TEST(automl_tests, clear_configs_w_iterations)
+TEST(Automl, ClearConfigsWIterations)
 {
   const size_t seed = 85;
   const size_t num_iterations = 1000;
@@ -399,7 +397,7 @@ TEST(automl_tests, clear_configs_w_iterations)
   EXPECT_GT(ctr.back(), 0.4f);
 }
 
-TEST(automl_tests, clear_configs_one_diff_w_iterations)
+TEST(Automl, ClearConfigsOneDiffWIterations)
 {
   const size_t num_iterations = 1000;
   const std::vector<uint64_t> swap_after = {500};
@@ -455,7 +453,7 @@ TEST(automl_tests, clear_configs_one_diff_w_iterations)
   EXPECT_GT(ctr.back(), 0.65f);
 }
 
-TEST(automl_tests, q_col_consistency_w_iterations)
+TEST(Automl, QColConsistencyWIterations)
 {
   const size_t seed = 88;
   const size_t num_iterations = 1000;
@@ -468,7 +466,7 @@ TEST(automl_tests, q_col_consistency_w_iterations)
   EXPECT_FLOAT_EQ(ctr_q_col.back(), ctr_aml.back());
 }
 
-TEST(automl_tests, one_diff_impl_unittest_w_iterations)
+TEST(Automl, OneDiffImplUnittestWIterations)
 {
   using namespace VW::reductions::automl;
 
@@ -607,7 +605,7 @@ TEST(automl_tests, one_diff_impl_unittest_w_iterations)
       test_hooks, num_iterations, seed);
 }
 
-TEST(automl_tests, qbase_unittest_w_iterations)
+TEST(Automl, QbaseUnittestWIterations)
 {
   using namespace VW::reductions::automl;
 
@@ -763,7 +761,7 @@ TEST(automl_tests, qbase_unittest_w_iterations)
       test_hooks, num_iterations, seed);
 }
 
-TEST(automl_tests, exc_incl_unit_test)
+TEST(Automl, ExcInclUnitTest)
 {
   using namespace VW::reductions::automl;
 
@@ -786,7 +784,7 @@ TEST(automl_tests, exc_incl_unit_test)
   EXPECT_EQ(interactions, expected2);
 }
 
-TEST(automl_tests, quadcubic_unit_test)
+TEST(Automl, QuadcubicUnitTest)
 {
   using namespace VW::reductions::automl;
 
@@ -804,7 +802,7 @@ TEST(automl_tests, quadcubic_unit_test)
   EXPECT_EQ(interactions, expected2);
 }
 
-TEST(automl_tests, insertion_champ_change_w_iterations)
+TEST(Automl, InsertionChampChangeWIterations)
 {
   const size_t seed = 85;
   const size_t num_iterations = 4136;

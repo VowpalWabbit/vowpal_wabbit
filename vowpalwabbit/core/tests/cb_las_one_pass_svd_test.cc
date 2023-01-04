@@ -5,23 +5,22 @@
 #include "reductions/cb/details/large_action/compute_dot_prod_scalar.h"
 #include "reductions/cb/details/large_action/compute_dot_prod_simd.h"
 #include "reductions/cb/details/large_action_space.h"
-#include "test_common.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
         VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
-BOOST_AUTO_TEST_SUITE(test_suite_las_one_pass_svd)
-
-BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
+TEST(Las, CheckAOSameActionsSameRepresentation)
 {
   auto d = 3;
   std::vector<VW::workspace*> vws;
@@ -44,15 +43,15 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
-    BOOST_CHECK_EQUAL(action_space != nullptr, true);
+    EXPECT_EQ(action_space != nullptr, true);
 
     action_space->explore._populate_all_testing_components();
 
@@ -74,7 +73,7 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
       vw.predict(examples);
 
       // representation of actions 2 and 3 (duplicates) should be the same in U
-      BOOST_CHECK_EQUAL(action_space->explore.U.row(1).isApprox(action_space->explore.U.row(2), FLOAT_TOL), true);
+      EXPECT_TRUE(action_space->explore.U.row(1).isApprox(action_space->explore.U.row(2), vwtest::EXPLICIT_FLOAT_TOL));
 
       vw.finish_example(examples);
     }
@@ -82,7 +81,7 @@ BOOST_AUTO_TEST_CASE(check_AO_same_actions_same_representation)
   }
 }
 
-BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
+TEST(Las, CheckAOLinearCombinationOfActions)
 {
   auto d = 3;
   std::vector<VW::workspace*> vws;
@@ -106,15 +105,15 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
     vw.l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      BOOST_FAIL("cb_explore_adf_large_action_space not found in enabled reductions");
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
     VW::LEARNER::multi_learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
-    auto action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
-    BOOST_CHECK_EQUAL(action_space != nullptr, true);
+    EXPECT_EQ(action_space != nullptr, true);
 
     action_space->explore._populate_all_testing_components();
 
@@ -169,7 +168,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 
       Eigen::VectorXf action_lin_rep = action_2 + 2.f * action_3;
 
-      BOOST_CHECK_EQUAL(action_lin_rep.isApprox(action_4, FLOAT_TOL), true);
+      EXPECT_TRUE(action_lin_rep.isApprox(action_4, vwtest::EXPLICIT_FLOAT_TOL));
 
       vw.finish_example(examples);
     }
@@ -178,7 +177,7 @@ BOOST_AUTO_TEST_CASE(check_AO_linear_combination_of_actions)
 }
 
 #ifdef BUILD_LAS_WITH_SIMD
-BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
+TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
 {
   float (*compute_dot_prod_simd)(uint64_t, VW::workspace*, uint64_t, VW::example*);
   if (VW::cb_explore_adf::cpu_supports_avx512())
@@ -203,7 +202,9 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
       s += " |";
       s += static_cast<char>('A' + i);
       for (int j = 0; j < num_features; ++j)
+      {
         s += std::string(" ") + static_cast<char>('a' + i) + std::to_string(rand() % 1000);
+      }
     }
     return s;
   };
@@ -220,11 +221,11 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
         INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
             vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
-    BOOST_REQUIRE_EQUAL(interactions.size(), 0);
+    EXPECT_EQ(interactions.size(), 0);
 
     float result_scalar = VW::cb_explore_adf::compute_dot_prod_scalar(column_index, vw, seed, ex);
     float result_simd = compute_dot_prod_simd(column_index, vw, seed, ex);
-    BOOST_CHECK_CLOSE(result_simd, result_scalar, FLOAT_TOL);
+    EXPECT_FLOAT_EQ(result_simd, result_scalar);
     vw->finish_example(examples);
     VW::finish(*vw);
   }
@@ -238,11 +239,11 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
         INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
             vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
-    BOOST_REQUIRE_EQUAL(interactions.size(), 0);
+    EXPECT_EQ(interactions.size(), 0);
 
     float result_scalar = VW::cb_explore_adf::compute_dot_prod_scalar(column_index, vw, seed, ex);
     float result_simd = compute_dot_prod_simd(column_index, vw, seed, ex);
-    BOOST_CHECK_CLOSE(result_simd, result_scalar, FLOAT_TOL);
+    EXPECT_FLOAT_EQ(result_simd, result_scalar);
     vw->finish_example(examples);
     VW::finish(*vw);
   }
@@ -256,11 +257,11 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
         INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
             vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
-    BOOST_REQUIRE_EQUAL(interactions.size(), 6);
+    EXPECT_EQ(interactions.size(), 6);
 
     float result_scalar = VW::cb_explore_adf::compute_dot_prod_scalar(column_index, vw, seed, ex);
     float result_simd = compute_dot_prod_simd(column_index, vw, seed, ex);
-    BOOST_CHECK_CLOSE(result_simd, result_scalar, FLOAT_TOL);
+    EXPECT_FLOAT_EQ(result_simd, result_scalar);
     vw->finish_example(examples);
     VW::finish(*vw);
   }
@@ -274,17 +275,17 @@ BOOST_AUTO_TEST_CASE(compute_dot_prod_scalar_and_simd_have_same_results)
         INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
             vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
-    BOOST_REQUIRE_EQUAL(interactions.size(), 6);
+    EXPECT_EQ(interactions.size(), 6);
 
     float result_scalar = VW::cb_explore_adf::compute_dot_prod_scalar(column_index, vw, seed, ex);
     float result_simd = compute_dot_prod_simd(column_index, vw, seed, ex);
-    BOOST_CHECK_CLOSE(result_simd, result_scalar, FLOAT_TOL);
+    EXPECT_FLOAT_EQ(result_simd, result_scalar);
     vw->finish_example(examples);
     VW::finish(*vw);
   }
 }
 
-BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
+TEST(Las, ScalarAndSimdGenerateSamePredictions)
 {
   auto generate_example = [](int num_namespaces, int num_features)
   {
@@ -294,7 +295,9 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
       s += " |";
       s += static_cast<char>('A' + i);
       for (int j = 0; j < num_features; ++j)
+      {
         s += std::string(" ") + static_cast<char>('a' + i) + std::to_string(rand() % 1000);
+      }
     }
     return s;
   };
@@ -312,21 +315,21 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 
     auto* vw_scalar = VW::initialize(vw_cmd);
     VW::multi_ex ex_scalar;
-    for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
+    for (const auto& example : examples) { ex_scalar.push_back(VW::read_example(*vw_scalar, example)); }
     vw_scalar->predict(ex_scalar);
     auto& scores_scalar = ex_scalar[0]->pred.a_s;
 
     auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
-    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
     vw_simd->predict(ex_simd);
     auto& scores_simd = ex_simd[0]->pred.a_s;
 
-    BOOST_CHECK_EQUAL(scores_scalar.size(), scores_simd.size());
+    EXPECT_EQ(scores_scalar.size(), scores_simd.size());
     for (size_t i = 0; i < scores_scalar.size(); ++i)
     {
-      BOOST_CHECK_EQUAL(scores_scalar[i].action, scores_simd[i].action);
-      BOOST_CHECK_CLOSE(scores_scalar[i].score, scores_simd[i].score, FLOAT_TOL);
+      EXPECT_EQ(scores_scalar[i].action, scores_simd[i].action);
+      EXPECT_FLOAT_EQ(scores_scalar[i].score, scores_simd[i].score);
     }
 
     vw_scalar->finish_example(ex_scalar);
@@ -340,21 +343,21 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 
     auto* vw_scalar = VW::initialize(vw_cmd);
     VW::multi_ex ex_scalar;
-    for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
+    for (const auto& example : examples) { ex_scalar.push_back(VW::read_example(*vw_scalar, example)); }
     vw_scalar->predict(ex_scalar);
     auto& scores_scalar = ex_scalar[0]->pred.a_s;
 
     auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
-    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
     vw_simd->predict(ex_simd);
     auto& scores_simd = ex_simd[0]->pred.a_s;
 
-    BOOST_CHECK_EQUAL(scores_scalar.size(), scores_simd.size());
+    EXPECT_EQ(scores_scalar.size(), scores_simd.size());
     for (size_t i = 0; i < scores_scalar.size(); ++i)
     {
-      BOOST_CHECK_EQUAL(scores_scalar[i].action, scores_simd[i].action);
-      BOOST_CHECK_CLOSE(scores_scalar[i].score, scores_simd[i].score, FLOAT_TOL);
+      EXPECT_EQ(scores_scalar[i].action, scores_simd[i].action);
+      EXPECT_FLOAT_EQ(scores_scalar[i].score, scores_simd[i].score);
     }
 
     vw_scalar->finish_example(ex_scalar);
@@ -368,21 +371,21 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 
     auto* vw_scalar = VW::initialize(vw_cmd);
     VW::multi_ex ex_scalar;
-    for (const auto& example : examples) ex_scalar.push_back(VW::read_example(*vw_scalar, example));
+    for (const auto& example : examples) { ex_scalar.push_back(VW::read_example(*vw_scalar, example)); }
     vw_scalar->predict(ex_scalar);
     auto& scores_scalar = ex_scalar[0]->pred.a_s;
 
     auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
-    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
     vw_simd->predict(ex_simd);
     auto& scores_simd = ex_simd[0]->pred.a_s;
 
-    BOOST_CHECK_EQUAL(scores_scalar.size(), scores_simd.size());
+    EXPECT_EQ(scores_scalar.size(), scores_simd.size());
     for (size_t i = 0; i < scores_scalar.size(); ++i)
     {
-      BOOST_CHECK_EQUAL(scores_scalar[i].action, scores_simd[i].action);
-      BOOST_CHECK_CLOSE(scores_scalar[i].score, scores_simd[i].score, FLOAT_TOL);
+      EXPECT_EQ(scores_scalar[i].action, scores_simd[i].action);
+      EXPECT_FLOAT_EQ(scores_scalar[i].score, scores_simd[i].score);
     }
 
     vw_scalar->finish_example(ex_scalar);
@@ -396,15 +399,21 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 
     auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
-    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
 
-    auto match_message = [](const VW::vw_exception& ex)
-    {
-      std::string expected_message = "Generic interactions are not supported yet in LAS SIMD implementations";
-      BOOST_CHECK_EQUAL(ex.what(), expected_message);
-      return true;
-    };
-    BOOST_CHECK_EXCEPTION(vw_simd->predict(ex_simd), VW::vw_exception, match_message);
+    EXPECT_THROW(
+        {
+          try
+          {
+            vw_simd->predict(ex_simd);
+          }
+          catch (const VW::vw_exception& e)
+          {
+            EXPECT_STREQ("Generic interactions are not supported yet in LAS SIMD implementations", e.what());
+            throw;
+          }
+        },
+        VW::vw_exception);
 
     vw_simd->finish_example(ex_simd);
     VW::finish(*vw_simd);
@@ -416,20 +425,24 @@ BOOST_AUTO_TEST_CASE(scalar_and_simd_generate_same_predictions)
 
     auto* vw_simd = VW::initialize(vw_cmd + " --las_hint_explicit_simd");
     VW::multi_ex ex_simd;
-    for (const auto& example : examples) ex_simd.push_back(VW::read_example(*vw_simd, example));
+    for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
 
-    auto match_message = [](const VW::vw_exception& ex)
-    {
-      std::string expected_message = "Extent_interactions are not supported yet in LAS SIMD implementations";
-      BOOST_CHECK_EQUAL(ex.what(), expected_message);
-      return true;
-    };
-    BOOST_CHECK_EXCEPTION(vw_simd->predict(ex_simd), VW::vw_exception, match_message);
+    EXPECT_THROW(
+        {
+          try
+          {
+            vw_simd->predict(ex_simd);
+          }
+          catch (const VW::vw_exception& e)
+          {
+            EXPECT_STREQ("Extent_interactions are not supported yet in LAS SIMD implementations", e.what());
+            throw;
+          }
+        },
+        VW::vw_exception);
 
     vw_simd->finish_example(ex_simd);
     VW::finish(*vw_simd);
   }
 }
 #endif
-
-BOOST_AUTO_TEST_SUITE_END()

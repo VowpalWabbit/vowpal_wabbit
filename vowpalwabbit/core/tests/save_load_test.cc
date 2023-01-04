@@ -17,7 +17,7 @@ using namespace ::testing;
 
 #include <string>
 
-TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
+TEST(SaveLoad, SaveResumeBehavesAsIfDatasetConcatenated)
 {
   std::array<std::string, 10> input_data = {
       "0.521144 |T PFF |f t1:-0.0236849 t5:-0.10215 r5:0.727735 t10:-0.0387662 r10:0.911208 t20:-0.00777943 "
@@ -64,7 +64,7 @@ TEST(save_load_test, save_resume_behaves_as_if_dataset_concatenated)
   }
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
   VW::save_predictor(*vw_first_half, io_writer);
   io_writer.flush();

@@ -45,7 +45,7 @@ public:
     predict_or_learn_impl<false>(base, examples);
   }
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-  void save_load(io_buf& io, bool read, bool text);
+  void save_load(VW::io_buf& io, bool read, bool text);
 
 private:
   size_t _cover_size;
@@ -224,14 +224,15 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   if (is_learn) { ++_counter; }
 }
 
-void cb_explore_adf_cover::save_load(io_buf& io, bool read, bool text)
+void cb_explore_adf_cover::save_load(VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover adf storing example counter:  = " << _counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+    VW::details::bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
 }  // namespace
@@ -322,14 +323,12 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
     epsilon_decay = true;
   }
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   auto* scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
-  auto data =
-      VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon,
-          epsilon_decay, first_only, as_multiline(all.cost_sensitive), scorer, cb_type, all.model_file_ver, all.logger);
+  auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(),
+      VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon, epsilon_decay, first_only,
+      as_multiline(all.cost_sensitive), scorer, cb_type, all.model_file_ver, all.logger);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
                 .set_input_label_type(VW::label_type_t::CB)

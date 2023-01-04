@@ -2,14 +2,14 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "test_common.h"
 #include "vw/test_common/test_common.h"
 
-#include <boost/test/test_tools.hpp>
-#include <boost/test/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 #include <vector>
 
-BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
+TEST(Cats, NoModelActionProvided)
 {
   std::string json_text = R"(
 {
@@ -31,26 +31,26 @@ BOOST_AUTO_TEST_CASE(cats_no_model_action_provided)
       nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
+  EXPECT_EQ(examples.size(), 1);
 
   const auto& reduction_features =
       examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
-  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), true);
+  EXPECT_EQ(reduction_features.is_pdf_set(), false);
+  EXPECT_EQ(reduction_features.is_chosen_action_set(), true);
 
-  BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185.121, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(reduction_features.chosen_action, 185.121f);
 
   vw->predict(*examples[0]);
 
-  BOOST_CHECK_GE(examples[0]->pred.pdf_value.action, 185);
-  BOOST_CHECK_GT(examples[0]->pred.pdf_value.pdf_value, 0.);
+  EXPECT_GE(examples[0]->pred.pdf_value.action, 185);
+  EXPECT_GT(examples[0]->pred.pdf_value.pdf_value, 0.);
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
+TEST(Cats, PdfNoModelActionProvided)
 {
   std::string json_text = R"(
 {
@@ -73,29 +73,29 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_action_provided)
       nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
+  EXPECT_EQ(examples.size(), 1);
 
   const auto& reduction_features =
       examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
-  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), true);
+  EXPECT_EQ(reduction_features.is_pdf_set(), false);
+  EXPECT_EQ(reduction_features.is_chosen_action_set(), true);
 
-  BOOST_CHECK_CLOSE(reduction_features.chosen_action, 185.121, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(reduction_features.chosen_action, 185.121f);
 
   vw->predict(*examples[0]);
 
-  BOOST_CHECK_GT(examples[0]->pred.pdf.size(), 1);
+  EXPECT_GT(examples[0]->pred.pdf.size(), 1);
 
   float sum = 0;
   for (auto& p : examples[0]->pred.pdf) { sum += (p.right - p.left) * p.pdf_value; }
-  BOOST_CHECK_CLOSE(sum, 1.f, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(sum, 1.f);
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(cats_pdf_no_model_uniform_random)
+TEST(Cats, PdfNoModelUniformRandom)
 {
   std::string json_text = R"(
 {
@@ -119,30 +119,30 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_uniform_random)
       nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
+  EXPECT_EQ(examples.size(), 1);
 
   const auto& reduction_features =
       examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), false);
-  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
+  EXPECT_EQ(reduction_features.is_pdf_set(), false);
+  EXPECT_EQ(reduction_features.is_chosen_action_set(), false);
 
   vw->predict(*examples[0]);
 
   float sum = 0;
   for (auto& p : examples[0]->pred.pdf) { sum += (p.right - p.left) * p.pdf_value; }
-  BOOST_CHECK_CLOSE(sum, 1.f, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(sum, 1.f);
 
-  BOOST_CHECK_EQUAL(examples[0]->pred.pdf.size(), 1);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].left, min_value, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].right, max_value, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].pdf_value, static_cast<float>(1.f / (max_value - min_value)), FLOAT_TOL);
+  EXPECT_EQ(examples[0]->pred.pdf.size(), 1);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[0].left, min_value);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[0].right, max_value);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[0].pdf_value, static_cast<float>(1.f / (max_value - min_value)));
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);
 }
 
-BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
+TEST(Cats, PdfNoModelPdfProvided)
 {
   std::string json_text = R"(
 {
@@ -167,30 +167,30 @@ BOOST_AUTO_TEST_CASE(cats_pdf_no_model_pdf_provided)
       nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  BOOST_CHECK_EQUAL(examples.size(), 1);
+  EXPECT_EQ(examples.size(), 1);
 
   const auto& reduction_features =
       examples[0]->ex_reduction_features.template get<VW::continuous_actions::reduction_features>();
 
-  BOOST_CHECK_EQUAL(reduction_features.is_pdf_set(), true);
-  BOOST_CHECK_EQUAL(reduction_features.is_chosen_action_set(), false);
+  EXPECT_EQ(reduction_features.is_pdf_set(), true);
+  EXPECT_EQ(reduction_features.is_chosen_action_set(), false);
 
-  BOOST_CHECK_EQUAL(reduction_features.pdf.size(), 2);
+  EXPECT_EQ(reduction_features.pdf.size(), 2);
 
   vw->predict(*examples[0]);
 
   float sum = 0;
   for (auto& p : examples[0]->pred.pdf) { sum += (p.right - p.left) * p.pdf_value; }
-  BOOST_CHECK_CLOSE(sum, 1.f, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(sum, 1.f);
 
-  BOOST_CHECK_EQUAL(examples[0]->pred.pdf.size(), 2);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].left, min_value, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].right, 8109.67, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[0].pdf_value, 2.10314e-06, FLOAT_TOL);
+  EXPECT_EQ(examples[0]->pred.pdf.size(), 2);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[0].left, min_value);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[0].right, 8109.67);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[0].pdf_value, 2.10314e-06);
 
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[1].left, 8109.67, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[1].right, max_value, FLOAT_TOL);
-  BOOST_CHECK_CLOSE(examples[0]->pred.pdf[1].pdf_value, 6.20426e-05, FLOAT_TOL);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[1].left, 8109.67);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[1].right, max_value);
+  EXPECT_FLOAT_EQ(examples[0]->pred.pdf[1].pdf_value, 6.20426e-05);
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);

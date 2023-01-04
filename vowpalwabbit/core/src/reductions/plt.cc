@@ -344,7 +344,7 @@ void finish(plt& p)
   }
 }
 
-void save_load_tree(plt& p, io_buf& model_file, bool read, bool text)
+void save_load_tree(plt& p, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
 

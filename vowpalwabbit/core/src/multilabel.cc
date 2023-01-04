@@ -36,7 +36,7 @@ void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
 
       for (const auto& parse_name : reuse_mem.tokens)
       {
-        uint32_t n = int_of_string(parse_name, logger);
+        uint32_t n = VW::details::int_of_string(parse_name, logger);
         ld.label_v.push_back(n);
       }
       break;
@@ -53,11 +53,11 @@ VW::label_parser multilabel = {
         const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words, VW::io::logger& logger)
     { parse_label(label.multilabels, reuse_mem, words, logger); },
     // cache_label
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, VW::io_buf& cache,
         const std::string& upstream_name, bool text)
     { return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache)
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::io_buf& cache)
     { return VW::model_utils::read_model_field(cache, label.multilabels); },
     // get_weight
     [](const VW::polylabel& label, const VW::reduction_features& /* red_features */)

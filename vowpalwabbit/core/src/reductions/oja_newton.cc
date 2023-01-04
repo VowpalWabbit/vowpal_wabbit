@@ -73,7 +73,7 @@ public:
   bool normalize = false;
   bool random_init = false;
 
-  void initialize_Z(parameters& weights)  // NOLINT
+  void initialize_Z(VW::parameters& weights)  // NOLINT
   {
     uint32_t length = 1 << all->num_bits;
     if (normalize)  // initialize normalization part
@@ -94,7 +94,8 @@ public:
       for (uint32_t i = 0; i < length; i++)
       {
         VW::weight& w = weights.strided_index(i);
-        float r1, r2;
+        float r1;
+        float r2;
         for (int j = 1; j <= m; j++)
         {
           // box-muller tranform: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
@@ -465,12 +466,12 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, 
   oja_newton_ptr.check();
 }
 
-void save_load(OjaNewton& oja_newton_ptr, io_buf& model_file, bool read, bool text)
+void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *oja_newton_ptr.all;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     oja_newton_ptr.initialize_Z(all.weights);
   }
 
@@ -479,7 +480,8 @@ void save_load(OjaNewton& oja_newton_ptr, io_buf& model_file, bool read, bool te
     bool resume = all.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;
