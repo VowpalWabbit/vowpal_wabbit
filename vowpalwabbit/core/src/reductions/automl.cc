@@ -76,13 +76,28 @@ void persist(automl<CMType>& data, VW::metric_sink& metrics)
 }
 
 template <typename CMType>
-void print_example_automl(VW::workspace& all, automl<CMType>& data, const VW::multi_ex& ec)
+void print_update_automl(VW::workspace& all, VW::shared_data& /* sd */, const automl<CMType>& data,
+    const VW::multi_ex& ec, VW::io::logger& /* unused */)
 {
   data.adf_learner->print_example(all, ec);
 }
 
 template <typename CMType>
-void pre_save_load(VW::workspace& all, automl<CMType>& data)
+void update_stats_automl(const VW::workspace& /* all */, VW::shared_data& /* sd */, const automl<CMType>& data,
+    const VW::multi_ex& ec, VW::io::logger& /* logger */)
+{
+  interaction_vec_t* incoming_interactions = ec[0]->interactions;
+  uint64_t champ_live_slot = data.cm->current_champ;
+  for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
+  VW::scope_exit(
+        [&ec, &incoming_interactions]
+        {
+          for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
+        });
+}
+
+template <typename CMType>
+void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
 {
   options_i& options = *all.options;
   if (!data.should_save_predict_only_model) { return; }
@@ -124,7 +139,7 @@ void pre_save_load(VW::workspace& all, automl<CMType>& data)
 }
 
 template <typename CMType>
-void save_load_aml(automl<CMType>& aml, VW::io_buf& io, bool read, bool text)
+void save_load_automl(automl<CMType>& aml, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }
@@ -213,12 +228,13 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_label_type(VW::label_type_t::CB)
-                .set_print_example(print_example_automl)
-                .set_save_load(save_load_aml<config_manager_type>)
+                .set_print_update(print_update_automl)
+                .set_update_stats(update_stats_automl)
+                .set_save_load(save_load_automl)
                 .set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
                 .set_learn_returns_prediction(true)
-                .set_pre_save_load(::pre_save_load<config_manager_type>)
+                .set_pre_save_load(pre_save_load_automl)
                 .build();
   return make_base(*l);
 }
