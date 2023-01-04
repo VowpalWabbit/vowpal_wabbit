@@ -465,7 +465,7 @@ public:
     else { THROW("No finish functions were registered in the stack."); }
   }
 
-  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)
+  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, const E& ec)
   {
     debug_log_message(ec, "print_example");
     if (!has_legacy_print_example()) { THROW("fatal: learner did not register print example fn: " + _name); }
