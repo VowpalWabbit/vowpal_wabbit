@@ -705,6 +705,8 @@ Weight Options:
     --hessian_on                            Use second derivative in line search (type: bool)
     --mem arg                               Memory in bfgs (type: int, default: 15)
     --termination arg                       Termination threshold (type: float, default: 0.001)
+    --early_terminate arg                   Specify the number of passes tolerated when holdout loss doesn't
+                                            decrease before early termination (type: uint, default: 3)
 [Reduction] Latent Dirichlet Allocation Options:
     --lda arg                               Run lda with <int> topics (type: uint, keep, necessary)
     --lda_alpha arg                         Prior on sparsity of per-document topic weights (type: float,

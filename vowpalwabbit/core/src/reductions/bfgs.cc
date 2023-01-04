@@ -1141,7 +1141,7 @@ std::unique_ptr<options_bfgs_v1> get_bfgs_options_instance(
                .default_value(0.001f)
                .help("Termination threshold"))
       .add(make_option("early_terminate", bfgs_opts->early_terminate)
-               .default_value(0)
+               .default_value(3)
                .help("Specify the number of passes tolerated when holdout loss doesn't decrease before early "
                      "termination"));
 
