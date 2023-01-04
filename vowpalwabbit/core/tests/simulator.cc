@@ -224,12 +224,20 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
   simulator::cb_sim sim(seed);
   // first chunk
   auto ctr = sim.run_simulation(first_vw, before_save, true, 1, swap_after);
-  // save
-  std::string model_file = "test_save_load.vw";
-  VW::save_predictor(*first_vw, model_file);
+
+  auto backing_vector = std::make_shared<std::vector<char>>();
+  {
+    VW::io_buf io_writer;
+    io_writer.add_file(VW::io::create_vector_writer(backing_vector));
+    VW::save_predictor(*first_vw, io_writer);
+    io_writer.flush();
+  }
+
   VW::finish(*first_vw);
   // reload in another instance
-  auto other_vw = VW::initialize(vw_arg + " --quiet -i " + model_file);
+  VW::io_buf io_reader;
+  io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+  auto* other_vw = VW::initialize(vw_arg + " --quiet", &io_reader);
   // continue
   ctr = sim.run_simulation(other_vw, split, true, before_save + 1, swap_after);
   VW::finish(*other_vw);

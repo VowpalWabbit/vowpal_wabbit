@@ -38,7 +38,7 @@ public:
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-  void save_load(io_buf& io, bool read, bool text);
+  void save_load(VW::io_buf& io, bool read, bool text);
 
 private:
   size_t _tau;
@@ -79,14 +79,14 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, VW::multi_
   exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-void cb_explore_adf_first::save_load(io_buf& io, bool read, bool text)
+void cb_explore_adf_first::save_load(VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_FIRST_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb first adf storing example counter:  = " << _tau << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), read, msg, text);
+    VW::details::bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&_tau), sizeof(_tau), read, msg, text);
   }
 }
 }  // namespace
@@ -122,11 +122,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
-  auto data =
-      VW::make_unique<explore_type>(with_metrics, VW::cast_to_smaller_type<size_t>(tau), epsilon, all.model_file_ver);
+  auto data = VW::make_unique<explore_type>(
+      all.global_metrics.are_metrics_enabled(), VW::cast_to_smaller_type<size_t>(tau), epsilon, all.model_file_ver);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,

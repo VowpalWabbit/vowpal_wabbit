@@ -15,7 +15,7 @@
   "features": {
     "tests": {
       "description": "Build Tests",
-      "dependencies": ["gtest", "boost-test"]
+      "dependencies": ["gtest"]
     },
     "flatbuffers": {
       "description": "Enable flatbuffers support",

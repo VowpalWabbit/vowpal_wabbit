@@ -712,7 +712,6 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
     memset(new_gamma.begin(), 0, sizeof(float) * l.topics);
 
     score = 0;
-    size_t word_count = 0;
     doc_length = 0;
     for (VW::features& fs : *ec)
     {
@@ -724,7 +723,6 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
         score += -f.value() * std::log(c_w);
         size_t max_k = l.topics;
         for (size_t k = 0; k < max_k; k++, ++u_for_w) { new_gamma[k] += xc_w * *u_for_w; }
-        word_count++;
         doc_length += f.value();
       }
     }
@@ -762,13 +760,13 @@ public:
   uint64_t stride;
 };
 
-void save_load(lda& l, io_buf& model_file, bool read, bool text)
+void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *(l.all);
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f),
         all.random_weights, all.lda, all.weights.stride()};
 
@@ -801,13 +799,15 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 
       if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
       {
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+        brw +=
+            VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       }
       else
       {
         // support 32bit build models
         uint32_t j;
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), read, msg, text);
+        brw +=
+            VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), read, msg, text);
         i = j;
       }
 
@@ -818,13 +818,14 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
         {
           VW::weight* v = w + k;
           if (!read && text) { msg << *v + l.lda_rho << " "; }
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
+          brw += VW::details::bin_text_read_write_fixed(
+              model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         if (!read) { msg << "\n"; }
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
+        brw += VW::details::bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
       if (!read) { ++i; }
     } while ((!read && i < length) || (read && brw > 0));

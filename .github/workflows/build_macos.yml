@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -30,10 +30,13 @@ jobs:
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_BUILD_CSV=On -DVW_INSTALL=Off
       - name: Build
         run: cmake --build build --target all
-      - name: Test
+      - name: Unit tests
+        working-directory: build
         run: |
           # Run unit tests
-          ctest --test-dir build --extra-verbose --output-on-failure --label-regex VWTestList
+          ctest --output-on-failure --no-tests=error --label-regex VWTestList --parallel 2
+      - name: Test
+        run: |
           # Run integration tests
           python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty
           python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty --extra_options=--onethread
