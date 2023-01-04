@@ -138,10 +138,7 @@ float calc_priority_favor_popular_namespaces(
 }
 
 // Same as above, returns 0 (includes rest to remove unused variable warning)
-float calc_priority_empty(const ns_based_config&, const std::map<VW::namespace_index, uint64_t>&)
-{
-  return 0.f;
-}
+float calc_priority_empty(const ns_based_config&, const std::map<VW::namespace_index, uint64_t>&) { return 0.f; }
 }  // namespace
 
 template <typename T, typename E>
