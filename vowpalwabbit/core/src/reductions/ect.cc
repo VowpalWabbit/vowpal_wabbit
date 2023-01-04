@@ -287,10 +287,7 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
   }
 }
 
-void predict(ect& e, single_learner& base, VW::example& ec)
-{
-  ec.pred.multiclass = ect_predict(e, base, ec);
-}
+void predict(ect& e, single_learner& base, VW::example& ec) { ec.pred.multiclass = ect_predict(e, base, ec); }
 
 void learn(ect& e, single_learner& base, VW::example& ec)
 {
