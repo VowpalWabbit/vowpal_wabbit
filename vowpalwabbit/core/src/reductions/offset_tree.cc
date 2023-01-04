@@ -150,7 +150,7 @@ const offset_tree::scores_t& offset_tree::predict(LEARNER::single_learner& base,
     return _scores;
   }
 
-  const CB::label saved_label = ec.l.cb;
+  const VW::cb_label saved_label = ec.l.cb;
   ec.l.cb.costs.clear();
 
   // Get predictions for all internal nodes

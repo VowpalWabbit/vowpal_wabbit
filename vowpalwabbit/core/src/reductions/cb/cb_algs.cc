@@ -17,13 +17,12 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-using namespace CB;
 using namespace GEN_CS;
 
 namespace CB_ALGS
 {
 void generic_output_example(
-    VW::workspace& all, float loss, const VW::example& ec, const CB::label& ld, const CB::cb_class* known_cost)
+    VW::workspace& all, float loss, const VW::example& ec, const VW::cb_label& ld, const VW::cb_class* known_cost)
 {
   all.sd->update(ec.test_only, !ld.is_test_label(), loss, 1.f, ec.get_num_features());
 
@@ -37,7 +36,7 @@ void generic_output_example(
     std::stringstream output_string_stream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
-      cb_class cl = ld.costs[i];
+      VW::cb_class cl = ld.costs[i];
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.action << ':' << cl.partial_prediction;
     }
@@ -45,8 +44,8 @@ void generic_output_example(
   }
 
   bool is_ld_test_label = ld.is_test_label();
-  if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, known_cost); }
-  else { print_update(all, is_ld_test_label, ec, nullptr, false, nullptr); }
+  if (!is_ld_test_label) { VW::details::print_update_cb(all, is_ld_test_label, ec, nullptr, false, known_cost); }
+  else { VW::details::print_update_cb(all, is_ld_test_label, ec, nullptr, false, nullptr); }
 }
 }  // namespace CB_ALGS
 namespace
@@ -67,7 +66,7 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
-  else { c.known_cost = CB::cb_class{}; }
+  else { c.known_cost = VW::cb_class{}; }
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
@@ -98,7 +97,7 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
-  else { c.known_cost = CB::cb_class{}; }
+  else { c.known_cost = VW::cb_class{}; }
   gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
   for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
@@ -109,7 +108,7 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   ec.pred.multiclass = ec.l.cb_eval.action;
 }
 
-void output_example(VW::workspace& all, cb& data, const VW::example& ec, const CB::label& ld)
+void output_example(VW::workspace& all, cb& data, const VW::example& ec, const VW::cb_label& ld)
 {
   float loss = 0.;
 
@@ -199,8 +198,8 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   }
 
   auto base = as_singleline(stack_builder.setup_base_learner());
-  if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
-  else { all.example_parser->lbl_parser = CB::cb_label; }
+  if (eval) { all.example_parser->lbl_parser = VW::cb_eval_label_parser_global; }
+  else { all.example_parser->lbl_parser = VW::cb_label_parser_global; }
   c.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   std::string name_addition = eval ? "-eval" : "";
