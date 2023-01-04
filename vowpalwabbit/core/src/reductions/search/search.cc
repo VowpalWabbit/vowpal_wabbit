@@ -504,12 +504,13 @@ std::string number_to_natural(size_t big)
   return ss.str();
 }
 
-void print_update(search_private& priv)
+void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const search& data,
+    const VW::multi_ex& /* ec_seq */, VW::io::logger& /* unused */)
 {
   // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
-  VW::workspace& all = *priv.all;
+  auto& priv = *data.priv;
   if (!priv.printed_output_header && !all.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
@@ -2439,12 +2440,6 @@ void end_pass(search& sch)
   }
 }
 
-void finish_multiline_example(VW::workspace& all, search& sch, VW::multi_ex& ec_seq)
-{
-  print_update(*sch.priv);
-  VW::finish_example(all, ec_seq);
-}
-
 void end_examples(search& sch)
 {
   search_private& priv = *sch.priv;
@@ -3380,7 +3375,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
           stack_builder.get_setupfn_name(search_setup))
           .set_learn_returns_prediction(true)
           .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
-          .set_finish_example(finish_multiline_example)
+          .set_print_update(print_update_search)
           .set_end_examples(end_examples)
           .set_finish(search_finish)
           .set_end_pass(end_pass)
