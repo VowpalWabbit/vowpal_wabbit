@@ -98,8 +98,23 @@
           ${python-clang-tidy-package}/bin/clang-tidy-diff -p1 -path $TMPDIR/compile_commands_build -quiet -use-color "$@" <&0
         '';
       in
+      let cpp-docs = pkgs.stdenv.mkDerivation {
+        name = "cpp-docs";
+        src = self;
+        buildInputs = [ pkgs.doxygen ];
+        phases = [ "installPhase" "fixupPhase" ];
+        installPhase = ''
+          cd $src/doc
+          mkdir -p $out
+          # This is required to override the output directory to the derivations output directory
+          ( cat Doxyfile ; echo "OUTPUT_DIRECTORY=$out" ) | ${pkgs.doxygen}/bin/doxygen -
+        '';
+      }; in
       {
         formatter = pkgs.nixpkgs-fmt;
+        packages = {
+          vw-cpp-docs = cpp-docs;
+        };
         devShell = pkgs.mkShell {
           packages = [
             python-clang-tidy-package
