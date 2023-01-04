@@ -158,8 +158,7 @@ std::unique_ptr<model_delta> model_delta::deserialize(VW::io::reader& input, boo
   auto command_line = std::vector<std::string>{"--preserve_performance_counters"};
   if (quiet) { command_line.emplace_back("--quiet"); }
   return VW::make_unique<model_delta>(VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(command_line),
-      VW::make_unique<reader_ref_adapter>(input)));
+      VW::make_unique<VW::config::options_cli>(command_line), VW::make_unique<reader_ref_adapter>(input)));
 }
 
 VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger)
