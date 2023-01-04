@@ -370,7 +370,7 @@ TEST(Merge, SerializeDeserializeDelta)
 
   writer->flush();
   auto reader = VW::io::create_buffer_view(backing_buffer->data(), backing_buffer->size());
-  auto deserialized_delta = VW::model_delta::deserialize(*reader);
+  auto deserialized_delta = VW::model_delta::deserialize(*reader, true);
 
   EXPECT_FLOAT_EQ(delta.unsafe_get_workspace_ptr()->sd->weighted_labeled_examples,
       deserialized_delta->unsafe_get_workspace_ptr()->sd->weighted_labeled_examples);

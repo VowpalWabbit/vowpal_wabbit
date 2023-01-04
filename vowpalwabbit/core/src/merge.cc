@@ -153,10 +153,12 @@ void model_delta::serialize(VW::io::writer& output) const
   VW::save_predictor(*_ws, buffer);
 }
 
-std::unique_ptr<model_delta> model_delta::deserialize(VW::io::reader& input)
+std::unique_ptr<model_delta> model_delta::deserialize(VW::io::reader& input, bool quiet)
 {
+  auto command_line = std::vector<std::string>{"--preserve_performance_counters"};
+  if (quiet) { command_line.emplace_back("--quiet"); }
   return VW::make_unique<model_delta>(VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--preserve_performance_counters"}),
+      VW::make_unique<VW::config::options_cli>(command_line),
       VW::make_unique<reader_ref_adapter>(input)));
 }
 
