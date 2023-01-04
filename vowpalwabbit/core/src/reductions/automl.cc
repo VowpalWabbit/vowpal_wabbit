@@ -90,10 +90,10 @@ void update_stats_automl(const VW::workspace& /* all */, VW::shared_data& /* sd 
   uint64_t champ_live_slot = data.cm->current_champ;
   for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
   VW::scope_exit(
-        [&ec, &incoming_interactions]
-        {
-          for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
-        });
+      [&ec, &incoming_interactions]
+      {
+        for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
+      });
 }
 
 template <typename CMType>
