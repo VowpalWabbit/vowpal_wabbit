@@ -286,7 +286,7 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions, gen_ccb_examp
 BENCHMARK_CAPTURE(benchmark_multi_predict, ccb_adf_diff_char_interactions_predict, gen_ccb_examples(
   10,   // num_examples in dataset
   30,   // shared_feats_size
-  20,   // shared_feats_count
+  20,   // shared_feats_count (actual number of shared features in example)
   30,   // actions_per_example
   1,    // feature_groups_size
   1,    // feature_groups_count
