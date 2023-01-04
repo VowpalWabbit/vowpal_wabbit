@@ -98,13 +98,13 @@ VW_STD14_CONSTEXPR inline uint32_t murmurhash_x86_32(const char* data, size_t le
   switch (len & 3u)
   {
     case 3:
-      k1 ^= tail[2] << 16;
+      k1 ^= static_cast<unsigned char>(tail[2]) << 16;
       VW_FALLTHROUGH
     case 2:
-      k1 ^= tail[1] << 8;
+      k1 ^= static_cast<unsigned char>(tail[1]) << 8;
       VW_FALLTHROUGH
     case 1:
-      k1 ^= tail[0];
+      k1 ^= static_cast<unsigned char>(tail[0]);
       k1 *= c1;
       k1 = details::rotl32(k1, 15);
       k1 *= c2;
