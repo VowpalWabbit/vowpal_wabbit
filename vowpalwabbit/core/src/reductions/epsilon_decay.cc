@@ -277,8 +277,9 @@ void save_load_epsilon_decay(
   else { VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text); }
 }
 
-void output_example_epsilon_decay(
-    VW::workspace& /* all */, const VW::reductions::epsilon_decay::epsilon_decay_data& data, const VW::multi_ex& /* ec */, VW::io::logger& /* logger */)
+void output_example_epsilon_decay(VW::workspace& /* all */,
+    const VW::reductions::epsilon_decay::epsilon_decay_data& data, const VW::multi_ex& /* ec */,
+    VW::io::logger& /* logger */)
 {
   if (data._epsilon_decay_audit_str != "")
   {
