@@ -102,7 +102,7 @@
         name = "cpp-docs";
         src = self;
         buildInputs = [ pkgs.doxygen ];
-        phases = [ "installPhase" "fixupPhase" ];
+        phases = [ "installPhase" ];
         installPhase = ''
           cd $src/doc
           mkdir -p $out
