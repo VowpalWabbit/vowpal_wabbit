@@ -11,7 +11,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(version_test, verify_vw_versions)
+TEST(Version, VerifyVwVersions)
 {
   using namespace VW::version_definitions;
 
@@ -26,7 +26,7 @@ TEST(version_test, verify_vw_versions)
   EXPECT_TRUE(VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG < VERSION_FILE_WITH_CB_TO_CBADF);
 }
 
-TEST(version_test, verify_vw_version_operators)
+TEST(Version, VerifyVwVersionOperators)
 {
   EXPECT_TRUE((VW::version_struct{0, 0, 0} == VW::version_struct{0, 0, 0}));
   EXPECT_TRUE((VW::version_struct{1, 1, 1} == VW::version_struct{1, 1, 1}));
@@ -41,7 +41,7 @@ TEST(version_test, verify_vw_version_operators)
   EXPECT_TRUE((VW::version_struct{5, 70, 80} < VW::version_struct{11, 1, 1}));
 }
 
-TEST(version_test, verify_vw_version_tostring)
+TEST(Version, VerifyVwVersionTostring)
 {
   EXPECT_EQ((VW::version_struct{0, 0, 0}.to_string()), "0.0.0");
   EXPECT_EQ((VW::version_struct{1, 1, 1}.to_string()), "1.1.1");
@@ -56,7 +56,7 @@ TEST(version_test, verify_vw_version_tostring)
   EXPECT_EQ((VW::version_struct{5, 70, 80}.to_string()), "5.70.80");
 }
 
-TEST(version_test, verify_vw_version_fromstring)
+TEST(Version, VerifyVwVersionFromstring)
 {
   EXPECT_TRUE((VW::version_struct{0, 0, 0} == VW::version_struct{"0.0.0"}));
   EXPECT_TRUE((VW::version_struct{1, 1, 1} == VW::version_struct{"1.1.1"}));

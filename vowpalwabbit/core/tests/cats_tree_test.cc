@@ -122,7 +122,7 @@ bool operator!=(const VW::simple_label_reduction_features& lhs, const VW::simple
   return !(lhs.weight == rhs.weight && lhs.initial == rhs.initial);
 }
 
-TEST(cats_tree_tests, otc_algo_learn_1_action_till_root)
+TEST(CatsTree, OtcAlgoLearn1ActionTillRoot)
 {
   reduction_test_harness* pharness = nullptr;
   predictions_t preds_to_return = {1.f, -1.f};
@@ -152,7 +152,7 @@ TEST(cats_tree_tests, otc_algo_learn_1_action_till_root)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_1_action)
+TEST(CatsTree, OtcAlgoLearn1Action)
 {
   reduction_test_harness* pharness = nullptr;
   predictions_t preds_to_return = {-1.f};
@@ -182,7 +182,7 @@ TEST(cats_tree_tests, otc_algo_learn_1_action)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_2_action_siblings)
+TEST(CatsTree, OtcAlgoLearn2ActionSiblings)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -214,7 +214,7 @@ TEST(cats_tree_tests, otc_algo_learn_2_action_siblings)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_2_action_notSiblings)
+TEST(CatsTree, OtcAlgoLearn2ActionNotSiblings)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -246,7 +246,7 @@ TEST(cats_tree_tests, otc_algo_learn_2_action_notSiblings)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_2_action_notSiblings_bandwidth_1)
+TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -282,7 +282,7 @@ TEST(cats_tree_tests, otc_algo_learn_2_action_notSiblings_bandwidth_1)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_2_action_separate)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparate)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -314,7 +314,7 @@ TEST(cats_tree_tests, otc_algo_learn_2_action_separate)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_2_action_separate_2)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparate2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -346,7 +346,7 @@ TEST(cats_tree_tests, otc_algo_learn_2_action_separate_2)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_2_action_separate_bandwidth_2)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -378,7 +378,7 @@ TEST(cats_tree_tests, otc_algo_learn_2_action_separate_bandwidth_2)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_2_action_separate_2_bandwidth_2)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparate2Bandwidth2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -410,7 +410,7 @@ TEST(cats_tree_tests, otc_algo_learn_2_action_separate_2_bandwidth_2)
   delete base;
 }
 
-TEST(cats_tree_tests, otc_algo_learn_2_action_separate_bandwidth_1_asym)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth1Asym)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -446,7 +446,7 @@ TEST(cats_tree_tests, otc_algo_learn_2_action_separate_bandwidth_1_asym)
   delete base;
 }
 
-TEST(cats_tree_tests, offset_tree_cont_predict)
+TEST(CatsTree, OffsetTreeContPredict)
 {
   // 0 node tree
   predict_test_helper({}, 0, 0, 0);
@@ -467,7 +467,7 @@ TEST(cats_tree_tests, offset_tree_cont_predict)
   predict_test_helper({1, 1}, 6, 8, 2);
 }
 
-TEST(cats_tree_tests, build_min_depth_tree_cont_5)
+TEST(CatsTree, BuildMinDepthTreeCont5)
 {
   VW::reductions::cats::min_depth_binary_tree tree;
   tree.build_tree(4, 1);
@@ -483,7 +483,7 @@ TEST(cats_tree_tests, build_min_depth_tree_cont_5)
   EXPECT_THAT(tree.nodes, ::testing::ContainerEq(expected));
 }
 
-TEST(cats_tree_tests, build_min_depth_tree_cont_1)
+TEST(CatsTree, BuildMinDepthTreeCont1)
 {
   VW::reductions::cats::min_depth_binary_tree tree;
   tree.build_tree(1, 0);

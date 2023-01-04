@@ -97,7 +97,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
 }
 }  // namespace
 
-TEST(offset_tree_tests, offset_tree_learn_basic)
+TEST(OffsetTree, OffsetTreeLearnBasic)
 {
   // Setup a test harness base reduction
   const auto test_harness = get_test_harness_reduction({{.9f, .1f}, {.9f, .1f}});
@@ -111,7 +111,7 @@ TEST(offset_tree_tests, offset_tree_learn_basic)
   delete test_harness;
 }
 
-TEST(offset_tree_tests, offset_tree_predict)
+TEST(OffsetTree, OffsetTreePredict)
 {
   // 0 node tree
   predict_test_helper({{}}, {});
@@ -131,7 +131,7 @@ TEST(offset_tree_tests, offset_tree_predict)
       {.9f * .9f * .9f, .9f * .9f * .1f, .9f * .1f * .9f, .9f * .1f * .1f, .1f});
 }
 
-TEST(offset_tree_tests, build_min_depth_tree_11)
+TEST(OffsetTree, BuildMinDepthTree11)
 {
   VW::reductions::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(11);
@@ -144,7 +144,7 @@ TEST(offset_tree_tests, build_min_depth_tree_11)
   EXPECT_THAT(tree.nodes, ContainerEq(expected));
 }
 
-TEST(offset_tree_tests, build_min_depth_tree_4)
+TEST(OffsetTree, BuildMinDepthTree4)
 {
   VW::reductions::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(4);
@@ -153,7 +153,7 @@ TEST(offset_tree_tests, build_min_depth_tree_4)
   EXPECT_THAT(tree.nodes, ContainerEq(expected));
 }
 
-TEST(offset_tree_tests, build_min_depth_tree_3)
+TEST(OffsetTree, BuildMinDepthTree3)
 {
   VW::reductions::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(3);
@@ -162,7 +162,7 @@ TEST(offset_tree_tests, build_min_depth_tree_3)
   EXPECT_THAT(tree.nodes, ContainerEq(expected));
 }
 
-TEST(offset_tree_tests, build_min_depth_tree_1)
+TEST(OffsetTree, BuildMinDepthTree1)
 {
   VW::reductions::offset_tree::min_depth_binary_tree tree;
   tree.build_tree(1);
