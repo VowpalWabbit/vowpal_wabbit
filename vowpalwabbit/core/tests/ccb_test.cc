@@ -13,7 +13,7 @@
 
 #include <vector>
 
-TEST(ccb_tests, ccb_explicit_included_actions_no_overlap)
+TEST(Ccb, ExplicitIncludedActionsNoOverlap)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
   VW::multi_ex examples;
@@ -47,7 +47,7 @@ TEST(ccb_tests, ccb_explicit_included_actions_no_overlap)
   VW::finish(vw);
 }
 
-TEST(ccb_tests, ccb_exploration_reproducibility_test)
+TEST(Ccb, ExplorationReproducibilityTest)
 {
   auto vw = VW::initialize(
       "--ccb_explore_adf --epsilon 0.2 --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
@@ -87,7 +87,7 @@ TEST(ccb_tests, ccb_exploration_reproducibility_test)
   VW::finish(*vw);
 }
 
-TEST(ccb_tests, ccb_invalid_example_checks)
+TEST(Ccb, InvalidExampleChecks)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
   VW::multi_ex examples;
@@ -130,7 +130,7 @@ std::set<std::string> interaction_vec_t_to_set(const std::vector<std::vector<VW:
   return result;
 }
 
-TEST(ccb_tests, ccb_insert_interactions_impl_test)
+TEST(Ccb, InsertInteractionsImplTest)
 {
   auto& vw = *VW::initialize("--ccb_explore_adf --quiet -q AA -q BB -q AB -q ::");
 

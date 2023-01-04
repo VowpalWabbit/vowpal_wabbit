@@ -30,7 +30,7 @@ void parse_slates_label(VW::string_view label, VW::slates::label& l)
   VW::slates::parse_label(l, mem, words, null_logger);
 }
 
-TEST(slates_label_tests, slates_parse_label)
+TEST(SlatesLabel, ParseLabel)
 {
   {
     VW::slates::label label;
@@ -111,10 +111,10 @@ TEST(slates_label_tests, slates_parse_label)
   }
 }
 
-TEST(slates_label_tests, slates_cache_shared_label)
+TEST(SlatesLabel, CacheSharedLabel)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::slates::label label;
@@ -122,7 +122,7 @@ TEST(slates_label_tests, slates_cache_shared_label)
   VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;
@@ -134,10 +134,10 @@ TEST(slates_label_tests, slates_cache_shared_label)
   EXPECT_FLOAT_EQ(uncached_label.cost, 0.5);
 }
 
-TEST(slates_label_tests, slates_cache_action_label)
+TEST(SlatesLabel, CacheActionLabel)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::slates::label label;
@@ -145,7 +145,7 @@ TEST(slates_label_tests, slates_cache_action_label)
   VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;
@@ -157,10 +157,10 @@ TEST(slates_label_tests, slates_cache_action_label)
   EXPECT_EQ(uncached_label.slot_id, 5);
 }
 
-TEST(slates_label_tests, slates_cache_slot_label)
+TEST(SlatesLabel, CacheSlotLabel)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf io_writer;
+  VW::io_buf io_writer;
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::slates::label label;
@@ -168,7 +168,7 @@ TEST(slates_label_tests, slates_cache_slot_label)
   VW::model_utils::write_model_field(io_writer, label, "", false);
   io_writer.flush();
 
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   VW::slates::label uncached_label;
@@ -181,7 +181,7 @@ TEST(slates_label_tests, slates_cache_slot_label)
   EXPECT_THAT(uncached_label.probabilities, Pointwise(ActionScoreEqual(), expected));
 }
 
-TEST(slates_label_tests, slates_copy_label)
+TEST(SlatesLabel, CopyLabel)
 {
   VW::slates::label label;
   parse_slates_label("slates slot 0:0.5,1:0.25,2:0.25", label);

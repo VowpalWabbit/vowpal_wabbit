@@ -7,7 +7,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(scope_exit_tests, scope_exit_execute_on_scope_end)
+TEST(ScopeExit, ExecuteOnScopeEnd)
 {
   int calls = 0;
   {
@@ -16,7 +16,7 @@ TEST(scope_exit_tests, scope_exit_execute_on_scope_end)
   EXPECT_EQ(calls, 1);
 }
 
-TEST(scope_exit_tests, scope_exit_cancel)
+TEST(ScopeExit, Cancel)
 {
   int calls = 0;
   {
@@ -26,7 +26,7 @@ TEST(scope_exit_tests, scope_exit_cancel)
   EXPECT_EQ(calls, 0);
 }
 
-TEST(scope_exit_tests, scope_exit_explicit_call)
+TEST(ScopeExit, ExplicitCall)
 {
   int calls = 0;
   {

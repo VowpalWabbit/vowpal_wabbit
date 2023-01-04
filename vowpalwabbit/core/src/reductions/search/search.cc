@@ -2344,7 +2344,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   {
     size_t prev_num = priv.num_calls_to_run_previous / priv.save_every_k_runs;
     size_t this_num = priv.num_calls_to_run / priv.save_every_k_runs;
-    if (this_num > prev_num) { save_predictor(all, all.final_regressor_name, this_num); }
+    if (this_num > prev_num) { VW::details::save_predictor(all, all.final_regressor_name, this_num); }
     priv.num_calls_to_run_previous = priv.num_calls_to_run;
   }
 }
@@ -2624,12 +2624,12 @@ void parse_neighbor_features(
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_string(cmd[0], logger);
+      posn = VW::details::int_of_string(cmd[0], logger);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_string(cmd[0], logger);
+      posn = VW::details::int_of_string(cmd[0], logger);
       ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else { logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview); }

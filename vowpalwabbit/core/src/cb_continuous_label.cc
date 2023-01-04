@@ -29,9 +29,9 @@ void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW
     VW::tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 3) { continue; }
     VW::continuous_actions::pdf_segment seg;
-    seg.left = float_of_string(reuse_mem.tokens[0], logger);
-    seg.right = float_of_string(reuse_mem.tokens[1], logger);
-    seg.pdf_value = float_of_string(reuse_mem.tokens[2], logger);
+    seg.left = VW::details::float_of_string(reuse_mem.tokens[0], logger);
+    seg.right = VW::details::float_of_string(reuse_mem.tokens[1], logger);
+    seg.pdf_value = VW::details::float_of_string(reuse_mem.tokens[2], logger);
     cats_reduction_features.pdf.push_back(seg);
   }
   if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.clear(); }
@@ -45,7 +45,7 @@ void parse_chosen_action(const std::vector<VW::string_view>& words, size_t words
   {
     VW::tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 1) { continue; }
-    cats_reduction_features.chosen_action = float_of_string(reuse_mem.tokens[0], logger);
+    cats_reduction_features.chosen_action = VW::details::float_of_string(reuse_mem.tokens[0], logger);
     break;  // there can only be one chosen action
   }
 }
@@ -81,15 +81,15 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
         THROW("malformed cost specification: "
             << "reuse_mem.tokens");
 
-      f.action = float_of_string(reuse_mem.tokens[0], logger);
+      f.action = VW::details::float_of_string(reuse_mem.tokens[0], logger);
 
-      if (reuse_mem.tokens.size() > 1) { f.cost = float_of_string(reuse_mem.tokens[1], logger); }
+      if (reuse_mem.tokens.size() > 1) { f.cost = VW::details::float_of_string(reuse_mem.tokens[1], logger); }
 
       if (std::isnan(f.cost))
         THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
       f.pdf_value = .0;
-      if (reuse_mem.tokens.size() > 2) { f.pdf_value = float_of_string(reuse_mem.tokens[2], logger); }
+      if (reuse_mem.tokens.size() > 2) { f.pdf_value = VW::details::float_of_string(reuse_mem.tokens[2], logger); }
 
       if (std::isnan(f.pdf_value))
         THROW("error NaN pdf_value (" << reuse_mem.tokens[2] << " for action: " << reuse_mem.tokens[0]);

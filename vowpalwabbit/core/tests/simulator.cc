@@ -227,7 +227,7 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
 
   auto backing_vector = std::make_shared<std::vector<char>>();
   {
-    io_buf io_writer;
+    VW::io_buf io_writer;
     io_writer.add_file(VW::io::create_vector_writer(backing_vector));
     VW::save_predictor(*first_vw, io_writer);
     io_writer.flush();
@@ -235,7 +235,7 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
 
   VW::finish(*first_vw);
   // reload in another instance
-  io_buf io_reader;
+  VW::io_buf io_reader;
   io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
   auto* other_vw = VW::initialize(vw_arg + " --quiet", &io_reader);
   // continue
