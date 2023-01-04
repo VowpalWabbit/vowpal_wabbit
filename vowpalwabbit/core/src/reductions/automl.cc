@@ -76,24 +76,9 @@ void persist(automl<CMType>& data, VW::metric_sink& metrics)
 }
 
 template <typename CMType>
-void finish_example(VW::workspace& all, automl<CMType>& data, VW::multi_ex& ec)
+void print_example_automl(VW::workspace& all, automl<CMType>& data, const VW::multi_ex& ec)
 {
-  interaction_vec_t* incoming_interactions = ec[0]->interactions;
-
-  uint64_t champ_live_slot = data.cm->current_champ;
-  for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
-
-  {
-    auto restore_guard = VW::scope_exit(
-        [&ec, &incoming_interactions]
-        {
-          for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
-        });
-
-    data.adf_learner->print_example(all, ec);
-  }
-
-  VW::finish_example(all, ec);
+  data.adf_learner->print_example(all, ec);
 }
 
 template <typename CMType>
@@ -228,7 +213,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_label_type(VW::label_type_t::CB)
-                .set_finish_example(::finish_example<config_manager_type>)
+                .set_print_example(print_example_automl)
                 .set_save_load(save_load_aml<config_manager_type>)
                 .set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
