@@ -35,9 +35,11 @@ public:
 template <bool is_learn>
 void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  MULTILABEL::labels multilabels = ec.l.multilabels;
-  MULTILABEL::labels preds = ec.pred.multilabels;
+  const auto& multilabels = ec.l.multilabels;
+  auto& preds = ec.pred.multilabels;
+  auto& probabilities = ec.pred.scalars;
   preds.label_v.clear();
+  probabilities.clear();
 
   ec.l.simple = {FLT_MAX};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
@@ -59,8 +61,9 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::examp
     {
       preds.label_v.push_back(i);
     }
-    if (o.probabilities) { ec.pred.scalars.push_back(std::move(ec.pred.scalar)); }
+    if (o.probabilities) { probabilities.push_back(std::move(ec.pred.scalar)); }
   }
+
   if (is_learn)
   {
     if (multilabel_index < multilabels.label_v.size())
@@ -68,11 +71,6 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::examp
       o.logger.out_error(
           "label {0} is not in {{0,{1}}} This won't work right.", multilabels.label_v[multilabel_index], o.k - 1);
     }
-  }
-  if (!o.probabilities)
-  {
-    ec.pred.multilabels = preds;
-    ec.l.multilabels = multilabels;
   }
 }
 
