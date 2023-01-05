@@ -1309,6 +1309,7 @@ void save_load(gd& g, VW::io_buf& model_file, bool read, bool text)
     }
     else
     {
+      // ppw state needs to be saved for consistent predictions
       if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_GD_PPW_STATE)
       {
         if (read)
