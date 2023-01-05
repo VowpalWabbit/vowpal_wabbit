@@ -24,23 +24,15 @@ jobs:
   cpp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Configure
-        run: |
-          sudo apt update
-          sudo apt install doxygen graphviz
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v18
       - name: Build docs
-        run: |
-          cd doc
-          doxygen --version
-          doxygen
+        run: nix build --print-build-logs .#vw-cpp-docs
       - name: Upload built docs
         uses: actions/upload-artifact@v1
         with:
           name: cxx_docs
-          path: doc/html/
+          path: result/html/
   dump-options-build:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
