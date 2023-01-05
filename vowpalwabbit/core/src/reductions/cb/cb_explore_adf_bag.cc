@@ -160,14 +160,6 @@ void output_example_prediction_bag(VW::workspace& all, const cb_explore_adf_base
   ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
   cb_explore_adf_base<cb_explore_adf_bag>::output_example_prediction(all, data, ec_seq, logger);
 }
-
-void print_example(VW::workspace& all, cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq)
-{
-  assert(ec_seq.size() > 0);
-  // TODO: We should not be modifying a const object...
-  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
-  cb_explore_adf_base<cb_explore_adf_bag>::print_example(all, data, ec_seq);
-}
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_base_i& stack_builder)
@@ -204,7 +196,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
 
   size_t problem_multiplier = VW::cast_to_smaller_type<size_t>(bag_size);
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon,
@@ -216,7 +208,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_print_example(::print_example)
                 .set_output_example_prediction(::output_example_prediction_bag)
                 .set_update_stats(::update_stats_bag)
                 .set_print_update(::print_update_bag)

@@ -14,8 +14,8 @@ extern "C"
   API void SimpleLabelUpdateExample(vw_net_native::workspace_context* workspace, VW::example* ex, float label,
       float* maybe_weight, float* maybe_initial);
 
-  API CB::cb_class* CbLabelReadFromExampleDangerous(VW::example* ex);
-  API void CbLabelUpdateExample(VW::example* ex, const CB::cb_class* f);
+  API VW::cb_class* CbLabelReadFromExampleDangerous(VW::example* ex);
+  API void CbLabelUpdateExample(VW::example* ex, const VW::cb_class* f);
 
   API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::workspace_context* workspace,
       VW::example* ex, const char* label, size_t label_len, VW::experimental::api_status* status = nullptr);

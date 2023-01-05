@@ -22,7 +22,6 @@
 #include "vw/io/logger.h"
 
 using namespace VW::LEARNER;
-using namespace CB;
 using namespace GEN_CS;
 using namespace CB_ALGS;
 using namespace VW::config;
@@ -30,12 +29,12 @@ using namespace exploration;
 
 namespace CB_ADF
 {
-cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
+VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
 {
   bool found = false;
   uint32_t found_index = 0;
   uint32_t i = 0;
-  CB::cb_class known_cost;
+  VW::cb_class known_cost;
 
   for (const auto* example_ptr : examples)
   {
@@ -125,7 +124,7 @@ void cb_adf::learn_sm(multi_learner& base, VW::multi_ex& examples)
 
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    CB::label ld = examples[i]->l.cb;
+    VW::cb_label ld = examples[i]->l.cb;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       chosen_action = i;
@@ -329,15 +328,8 @@ void print_update_cb_adf(VW::workspace& all, VW::shared_data& /* sd */, const CB
 
   const bool labeled_example = data.gen_cs.known_cost.probability > 0;
   const auto& ec = *ec_seq.front();
-  if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, data.known_cost()); }
-  else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
-}
-
-void update_and_output(VW::workspace& all, CB_ADF::cb_adf& data, const VW::multi_ex& ec_seq)
-{
-  update_stats_cb_adf(all, *all.sd, data, ec_seq, all.logger);
-  output_example_prediction_cb_adf(all, data, ec_seq, all.logger);
-  print_update_cb_adf(all, *all.sd, data, ec_seq, all.logger);
+  if (labeled_example) { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, data.known_cost()); }
+  else { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
 void save_load(CB_ADF::cb_adf& c, VW::io_buf& model_file, bool read, bool text)
@@ -470,7 +462,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   auto ld = VW::make_unique<CB_ADF::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
 
   auto base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   CB_ADF::cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
@@ -481,8 +473,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_learn_returns_prediction(lrp)
                 .set_params_per_weight(problem_multiplier)
-                // TODO: remove print_example
-                .set_print_example(::update_and_output)
                 .set_save_load(::save_load)
                 .set_merge(::cb_adf_merge)
                 .set_add(::cb_adf_add)

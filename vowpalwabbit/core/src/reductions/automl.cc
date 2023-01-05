@@ -54,7 +54,7 @@ void predict_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 template <typename CMType, bool is_explore>
 void learn_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 {
-  CB::cb_class logged{};
+  VW::cb_class logged{};
   uint64_t labelled_action = 0;
   const auto it = std::find_if(ec.begin(), ec.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
 
@@ -76,28 +76,7 @@ void persist(automl<CMType>& data, VW::metric_sink& metrics)
 }
 
 template <typename CMType>
-void finish_example(VW::workspace& all, automl<CMType>& data, VW::multi_ex& ec)
-{
-  interaction_vec_t* incoming_interactions = ec[0]->interactions;
-
-  uint64_t champ_live_slot = data.cm->current_champ;
-  for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[champ_live_slot].first.live_interactions); }
-
-  {
-    auto restore_guard = VW::scope_exit(
-        [&ec, &incoming_interactions]
-        {
-          for (VW::example* ex : ec) { ex->interactions = incoming_interactions; }
-        });
-
-    data.adf_learner->print_example(all, ec);
-  }
-
-  VW::finish_example(all, ec);
-}
-
-template <typename CMType>
-void pre_save_load(VW::workspace& all, automl<CMType>& data)
+void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
 {
   options_i& options = *all.options;
   if (!data.should_save_predict_only_model) { return; }
@@ -139,7 +118,7 @@ void pre_save_load(VW::workspace& all, automl<CMType>& data)
 }
 
 template <typename CMType>
-void save_load_aml(automl<CMType>& aml, VW::io_buf& io, bool read, bool text)
+void save_load_automl(automl<CMType>& aml, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }
@@ -159,12 +138,7 @@ float calc_priority_favor_popular_namespaces(
 }
 
 // Same as above, returns 0 (includes rest to remove unused variable warning)
-float calc_priority_empty(const ns_based_config& config, const std::map<VW::namespace_index, uint64_t>& ns_counter)
-{
-  _UNUSED(config);
-  _UNUSED(ns_counter);
-  return 0.f;
-}
+float calc_priority_empty(const ns_based_config&, const std::map<VW::namespace_index, uint64_t>&) { return 0.f; }
 }  // namespace
 
 template <typename T, typename E>
@@ -228,12 +202,11 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_label_type(VW::label_type_t::CB)
-                .set_finish_example(::finish_example<config_manager_type>)
-                .set_save_load(save_load_aml<config_manager_type>)
+                .set_save_load(save_load_automl)
                 .set_persist_metrics(persist_ptr)
                 .set_output_prediction_type(base_learner->get_output_prediction_type())
                 .set_learn_returns_prediction(true)
-                .set_pre_save_load(::pre_save_load<config_manager_type>)
+                .set_pre_save_load(pre_save_load_automl)
                 .build();
   return make_base(*l);
 }
