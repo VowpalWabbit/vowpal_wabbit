@@ -80,7 +80,7 @@ float get_adanormalhedge_weights(float r, float c)
 {
   float r_pos = r > 0.f ? r : 0.f;
   if (c == 0.f || r_pos == 0.f) { return 0.f; }
-  return 2.f * r_pos * correctedExp(r_pos * r_pos / (3.f * c)) / (3.f * c);
+  return 2.f * r_pos * VW::details::correctedExp(r_pos * r_pos / (3.f * c)) / (3.f * c);
 }
 
 template <bool is_learn>
