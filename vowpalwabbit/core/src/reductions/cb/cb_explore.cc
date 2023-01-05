@@ -205,7 +205,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
     // cost observed, not default
     if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
     else { data.cbcs.known_cost = VW::cb_class{}; }
-    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
+    VW::details::gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
     for (uint32_t i = 0; i < num_actions; i++) { probabilities[i] = 0.f; }
 
     ec.l.cs = std::move(data.second_cs_label);
