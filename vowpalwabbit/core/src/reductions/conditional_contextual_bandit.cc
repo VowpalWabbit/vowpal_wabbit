@@ -65,7 +65,7 @@ public:
   VW::example* shared = nullptr;
   VW::multi_ex actions, slots;
   std::vector<uint32_t> origin_index;
-  CB::cb_class cb_label;
+  VW::cb_class cb_label;
   std::vector<bool> exclude_list, include_list;
   std::vector<VW::ccb_label> stored_labels;
   size_t action_with_label = 0;
@@ -82,7 +82,7 @@ public:
   bool all_slots_loss_report = false;
   bool no_pred = false;
 
-  VW::vector_pool<CB::cb_class> cb_label_pool;
+  VW::vector_pool<VW::cb_class> cb_label_pool;
   VW::v_array_pool<VW::action_score> action_score_pool;
 
   VW::version_struct model_file_version;
@@ -137,7 +137,7 @@ bool split_multi_example_and_stash_labels(const VW::multi_ex& examples, ccb_data
 void create_cb_labels(ccb_data& data)
 {
   data.cb_label_pool.acquire_object(data.shared->l.cb.costs);
-  data.shared->l.cb.costs.push_back(CB::cb_class{});
+  data.shared->l.cb.costs.push_back(VW::cb_class{});
   for (VW::example* action : data.actions) { data.cb_label_pool.acquire_object(action->l.cb.costs); }
   data.shared->l.cb.weight = 1.0;
 }
@@ -190,7 +190,7 @@ void exclude_chosen_action(ccb_data& data, const VW::multi_ex& examples)
   int32_t action_index = -1;
   for (size_t i = 0; i < examples.size(); i++)
   {
-    const CB::label& ld = examples[i]->l.cb;
+    const VW::cb_label& ld = examples[i]->l.cb;
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
     {
       action_index = static_cast<int32_t>(i) - 1; /* un-1-index for shared */
@@ -485,7 +485,7 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
                          << "slot:" << slot_id << " " << ccb_decision_to_string(data) << std::endl;
         for (const auto& ex : data.cb_ex)
         {
-          if (CB::ec_is_example_header(*ex)) { slot->num_features = (data.cb_ex.size() - 1) * ex->num_features; }
+          if (VW::ec_is_example_header_cb(*ex)) { slot->num_features = (data.cb_ex.size() - 1) * ex->num_features; }
           else
           {
             slot->num_features += ex->num_features;

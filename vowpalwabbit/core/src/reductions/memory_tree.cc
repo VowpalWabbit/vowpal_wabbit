@@ -1299,7 +1299,13 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_output_prediction_type(pred_type)
                .set_input_label_type(label_type);
 
-  if (!oas) { l.set_finish_example(VW::details::finish_multiclass_example<memory_tree&>); }
+  // memory_tree doesn't work correctly in oas mode as it just delegates to GD's stats and reporting implementation
+  if (!oas)
+  {
+    l.set_update_stats(VW::details::update_stats_multiclass_label<memory_tree>);
+    l.set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<memory_tree>);
+    l.set_print_update(VW::details::print_update_multiclass_label<memory_tree>);
+  }
 
   return make_base(*l.build());
 }

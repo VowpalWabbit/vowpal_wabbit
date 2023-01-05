@@ -50,7 +50,8 @@ inline float squared_loss_impl_get_update(float prediction, float label, float u
      */
     return 2.f * (label - prediction) * update_scale;
   }
-  return (label - prediction) * (1.f - correctedExp(-2.f * update_scale * pred_per_update)) / pred_per_update;
+  return (label - prediction) * (1.f - VW::details::correctedExp(-2.f * update_scale * pred_per_update)) /
+      pred_per_update;
 }
 
 inline float squared_loss_impl_get_unsafe_update(float prediction, float label, float update_scale)
@@ -220,7 +221,7 @@ public:
     {
       _logger.out_warn("The label {} is not -1 or 1 after rounding as the logistic loss function expects.", label);
     }
-    return std::log(1 + correctedExp(-label * prediction));
+    return std::log(1 + VW::details::correctedExp(-label * prediction));
   }
 
   float get_update(float prediction, float label, float update_scale, float pred_per_update) const override
@@ -233,7 +234,7 @@ public:
   float get_update_sub(float prediction, float label, float update_scale, float pred_per_update) const
   {
     float w, x;
-    float d = correctedExp(label * prediction);
+    float d = VW::details::correctedExp(label * prediction);
     if (update_scale * pred_per_update < 1e-6)
     {
       /* As with squared loss, for small eta_t we replace the update
@@ -255,7 +256,7 @@ public:
 
   float get_unsafe_update_sub(float prediction, float label, float update_scale) const
   {
-    float d = correctedExp(label * prediction);
+    float d = VW::details::correctedExp(label * prediction);
     return label * update_scale / (1 + d);
   }
 
@@ -266,8 +267,8 @@ public:
      * The absolute error of this approximation is less than 9e-5.
      * Faster/better approximations can be substituted here.
      */
-    double w = x >= 1. ? 0.86 * x + 0.01 : correctedExp(0.8 * x - 0.65);  // initial guess
-    double r = x >= 1. ? x - log(w) - w : 0.2 * x + 0.65 - w;             // residual
+    double w = x >= 1. ? 0.86 * x + 0.01 : VW::details::correctedExp(0.8 * x - 0.65);  // initial guess
+    double r = x >= 1. ? x - log(w) - w : 0.2 * x + 0.65 - w;                          // residual
     double t = 1. + w;
     double u = 2. * t * (t + 2. * r / 3.);                                     // magic
     return static_cast<float>(w * (1. + r / t * (u - r) / (u - 2. * r)) - x);  // more magic
@@ -281,7 +282,7 @@ public:
 
   float first_derivative_sub(float prediction, float label) const
   {
-    float v = -label / (1 + correctedExp(label * prediction));
+    float v = -label / (1 + VW::details::correctedExp(label * prediction));
     return v;
   }
 
@@ -300,7 +301,7 @@ public:
 
   float second_derivative_sub(float prediction, float label) const
   {
-    float p = 1 / (1 + correctedExp(label * prediction));
+    float p = 1 / (1 + VW::details::correctedExp(label * prediction));
 
     return p * (1 - p);
   }
@@ -486,7 +487,7 @@ std::unique_ptr<loss_function> get_loss_function(
   else if (funcName == "hinge") { return VW::make_unique<hingeloss>(all.logger); }
   else if (funcName == "logistic")
   {
-    if (all.set_minmax != noop_mm)
+    if (all.set_minmax != VW::details::noop_mm)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;
@@ -500,7 +501,7 @@ std::unique_ptr<loss_function> get_loss_function(
   else if (funcName == "expectile") { return VW::make_unique<expectileloss>(function_parameter_0); }
   else if (funcName == "poisson")
   {
-    if (all.set_minmax != noop_mm)
+    if (all.set_minmax != VW::details::noop_mm)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;

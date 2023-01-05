@@ -71,7 +71,7 @@ private:
 
   // for backing up cb example data when computing sensitivities
   std::vector<VW::action_scores> _ex_as;
-  std::vector<std::vector<CB::cb_class>> _ex_costs;
+  std::vector<std::vector<VW::cb_class>> _ex_costs;
   void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
@@ -275,7 +275,7 @@ void cb_explore_adf_squarecb::learn(multi_learner& base, VW::multi_ex& examples)
   VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
-    CB::label& ld = examples[i]->l.cb;
+    VW::cb_label& ld = examples[i]->l.cb;
     if (ld.costs.size() == 1)
     {
       ld.costs[0].probability = 1.f;  // no importance weighting
@@ -379,7 +379,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
   size_t problem_multiplier = 1;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
@@ -393,7 +393,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_print_example(explore_type::print_example)
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)

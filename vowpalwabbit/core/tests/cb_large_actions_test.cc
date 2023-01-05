@@ -64,7 +64,7 @@ TEST(Las, CreationOfTheOgAMatrix)
     uint64_t action_index = 0;
     auto* ex = examples[action_index];
     // test sanity - test assumes no shared features
-    EXPECT_EQ(!CB::ec_is_example_header(*ex), true);
+    EXPECT_EQ(!VW::ec_is_example_header_cb(*ex), true);
     for (auto ns : ex->indices)
     {
       for (size_t i = 0; i < ex->feature_space[ns].indices.size(); i++)
@@ -275,7 +275,7 @@ TEST(Las, CheckAtTimesOmegaIsY)
       {
         auto* ex = examples[action_index];
         // test sanity - test assumes no shared features
-        EXPECT_EQ(!CB::ec_is_example_header(*ex), true);
+        EXPECT_EQ(!VW::ec_is_example_header_cb(*ex), true);
         for (auto ns : ex->indices)
         {
           _UNUSED(ns);

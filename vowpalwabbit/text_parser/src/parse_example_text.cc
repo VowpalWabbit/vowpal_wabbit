@@ -43,7 +43,7 @@ private:
   VW::v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
-  std::array<std::vector<std::shared_ptr<feature_dict>>, VW::NUM_NAMESPACES>* _namespace_dictionaries;
+  std::array<std::vector<std::shared_ptr<VW::details::feature_dict>>, VW::NUM_NAMESPACES>* _namespace_dictionaries;
   VW::io::logger* _logger;
 
   // TODO: Currently this function is called by both warning and error conditions. We only log
