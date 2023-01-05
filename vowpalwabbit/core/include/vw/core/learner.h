@@ -295,7 +295,7 @@ public:
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
-    //assert(details::get_offset(ec) < max_ft_offset); Note: *** Test 160 fails with this ***
+    // assert(details::get_offset(ec) < max_ft_offset); Note: *** Test 160 fails with this ***
     debug_log_message(ec, "learn");
     _learn_fd.learn_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
@@ -315,7 +315,7 @@ public:
     assert((is_multiline() && std::is_same<multi_ex, E>::value) ||
         (!is_multiline() && std::is_same<example, E>::value));  // sanity check under debug compile
     details::increment_offset(ec, increment, i);
-    //assert(details::get_offset(ec) < max_ft_offset); Note: *** Test 68 fails with this ***
+    // assert(details::get_offset(ec) < max_ft_offset); Note: *** Test 68 fails with this ***
     debug_log_message(ec, "predict");
     _learn_fd.predict_f(_learn_fd.data, *_learn_fd.base, (void*)&ec);
     details::decrement_offset(ec, increment, i);
@@ -343,7 +343,7 @@ public:
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         details::increment_offset(ec, increment, 1);
-        //assert(details::get_offset(ec) < max_ft_offset); Note: *** Test 160 fails with this ***
+        // assert(details::get_offset(ec) < max_ft_offset); Note: *** Test 160 fails with this ***
       }
       details::decrement_offset(ec, increment, lo + count);
     }
