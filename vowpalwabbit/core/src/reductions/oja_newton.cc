@@ -485,10 +485,7 @@ void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, boo
 
     std::vector<GD::per_model_state> temp_pms = {GD::per_model_state()};
     if (resume) { GD::save_load_online_state(all, model_file, read, text, temp_pms); }
-    else
-    {
-      GD::save_load_regressor(all, model_file, read, text);
-    }
+    else { GD::save_load_regressor(all, model_file, read, text); }
   }
 }
 }  // namespace

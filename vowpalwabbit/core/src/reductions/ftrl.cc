@@ -341,10 +341,7 @@ void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
         model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     if (resume) { GD::save_load_online_state(*all, model_file, read, text, b.per_model_states, nullptr, b.ftrl_size); }
-    else
-    {
-      GD::save_load_regressor(*all, model_file, read, text);
-    }
+    else { GD::save_load_regressor(*all, model_file, read, text); }
   }
 }
 

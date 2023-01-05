@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/reductions/gd.h"
+
 #include "vw/core/array_parameters.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/crossplat_compat.h"
@@ -747,7 +748,9 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
 float sensitivity(gd& g, base_learner& /* base */, VW::example& ec)
 {
   if (g.current_model_state == nullptr)
-  { g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride())); }
+  {
+    g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride()));
+  }
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
   g.current_model_state = nullptr;
@@ -798,7 +801,9 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
 void update(gd& g, base_learner&, VW::example& ec)
 {
   if (g.current_model_state == nullptr)
-  { g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride())); }
+  {
+    g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride()));
+  }
   // invariant: not a test label, importance weight > 0
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
@@ -1232,10 +1237,7 @@ void save_load_online_state(VW::workspace& all, VW::io_buf& model_file, bool rea
       pms.clear();
       VW::model_utils::read_model_field(model_file, pms);
     }
-    else
-    {
-      VW::model_utils::write_model_field(model_file, pms, "gd_ppw_state", text);
-    }
+    else { VW::model_utils::write_model_field(model_file, pms, "gd_ppw_state", text); }
   }
 
   if (read &&

@@ -169,10 +169,7 @@ void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 
     std::vector<GD::per_model_state> temp_pms = {GD::per_model_state()};
     if (resume) { GD::save_load_online_state(*s.all, model_file, read, text, temp_pms); }
-    else
-    {
-      GD::save_load_regressor(*s.all, model_file, read, text);
-    }
+    else { GD::save_load_regressor(*s.all, model_file, read, text); }
   }
 }
 }  // namespace
