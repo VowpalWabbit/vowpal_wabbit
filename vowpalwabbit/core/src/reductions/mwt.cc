@@ -61,7 +61,7 @@ class mwt
 public:
   std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
   std::vector<policy_data> evals;                     // accrued losses of features.
-  std::pair<bool, CB::cb_class> optional_observation;
+  std::pair<bool, VW::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
   double total = 0.;
   uint32_t num_classes = 0;
@@ -326,6 +326,6 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
                 .set_print_update(::print_update_mwt)
                 .build();
 
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return make_base(*l);
 }
