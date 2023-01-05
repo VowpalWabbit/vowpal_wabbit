@@ -12,6 +12,8 @@ CCB: has_seen_multi_slot_example = true
 event_sum 33
 action_sum 132
 :0
+gd_ppw_state[0]normalized_sum_norm_x = 2617.0427210330963
+gd_ppw_state[0]total_weight = 4.682491600513458
 m^d*p^d:85:1.60767e-05
 Baction^d*F^d*_ccb_slot_index^index2:117:1.60767e-05
 0^ff:162:0.000558327

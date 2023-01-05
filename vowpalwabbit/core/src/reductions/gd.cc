@@ -1309,6 +1309,16 @@ void save_load(gd& g, VW::io_buf& model_file, bool read, bool text)
     }
     else
     {
+      if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_GD_PPW_STATE)
+      {
+        if (read)
+        {
+          g.per_model_states.clear();
+          g.per_model_states.emplace_back();
+          VW::model_utils::read_model_field(model_file, g.per_model_states[0]);
+        }
+        else { VW::model_utils::write_model_field(model_file, g.per_model_states[0], "gd_ppw_state[0]", text); }
+      }
       if (!all.weights.not_null()) { THROW("Model weights not initialized."); }
       save_load_regressor(all, model_file, read, text);
     }

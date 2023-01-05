@@ -8,6 +8,8 @@ lda:0
 options:
 Checksum: 2704463348
 :0
+gd_ppw_state[0]normalized_sum_norm_x = 13
+gd_ppw_state[0]total_weight = 6
 happiness^true:42986:0.297672
 emotion^happiness^true:106841:0.208726
 Constant:116060:0.651544

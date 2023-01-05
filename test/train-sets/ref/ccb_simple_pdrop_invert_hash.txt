@@ -1,4 +1,4 @@
-Id
+Id 
 Min label:-1
 Max label:0
 bits:18
@@ -11,6 +11,8 @@ CCB: has_seen_multi_slot_example = true
 event_sum 2
 action_sum 5
 :0
+gd_ppw_state[0]normalized_sum_norm_x = 117.33331298828125
+gd_ppw_state[0]total_weight = 14.666664123535156
 sj^f2:18865:-0.103116
 sj^f2*_ccb_slot_index^index1:25338:-0.103116
 _ccb_slot_index^index1:25433:-0.103116

@@ -1780,16 +1780,6 @@ _automl_config_manager_index_queue[161].first = -12
 _automl_config_manager_index_queue[161].second = 3
 _automl_config_manager_index_queue[162].first = -12
 _automl_config_manager_index_queue[162].second = 2
-_automl_config_manager_per_live_model_state_double.size() = 9
-_automl_config_manager_per_live_model_state_double[0] = 98.98610879850912
-_automl_config_manager_per_live_model_state_double[1] = 0.30612243711948395
-_automl_config_manager_per_live_model_state_double[2] = 0
-_automl_config_manager_per_live_model_state_double[3] = 101.435088295465
-_automl_config_manager_per_live_model_state_double[4] = 0.30612243711948395
-_automl_config_manager_per_live_model_state_double[5] = 0
-_automl_config_manager_per_live_model_state_double[6] = 103.88406779242086
-_automl_config_manager_per_live_model_state_double[7] = 0.30612243711948395
-_automl_config_manager_per_live_model_state_double[8] = 0
 _automl_config_manager_per_live_model_state_uint64.size() = 6
 _automl_config_manager_per_live_model_state_uint64[0] = 3
 _automl_config_manager_per_live_model_state_uint64[1] = 36
@@ -1801,7 +1791,7 @@ event_sum 0
 action_sum 0
 :1
 initial_t 0
-norm normalizer 0
+norm normalizer 98.9861
 t 3
 sum_loss -0.122449
 sum_loss_since_last_dump 0
@@ -1813,11 +1803,18 @@ weighted_labels 0
 weighted_unlabeled_examples 0
 example_number 3
 total_features 30090
-total_weight 0
+total_weight 0.306122
 sd::oec.weighted_labeled_examples 3
 current_pass 1
 l1_state 0
 l2_state 1
+gd_ppw_state.size() = 3
+gd_ppw_state[0]normalized_sum_norm_x = 98.98610879850912
+gd_ppw_state[0]total_weight = 0.30612243711948395
+gd_ppw_state[1]normalized_sum_norm_x = 101.435088295465
+gd_ppw_state[1]total_weight = 0.30612243711948395
+gd_ppw_state[2]normalized_sum_norm_x = 103.88406779242086
+gd_ppw_state[2]total_weight = 0.30612243711948395
 824:-0.00344349 0.273984 1
 825:-0.00338733 0.274929 1
 826:-0.00333381 0.275914 1
