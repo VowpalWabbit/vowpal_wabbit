@@ -120,7 +120,6 @@ option(VW_INSTALL "Add install targets." OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
-option(BUILD_DOCS "Add documentation targets." Off)
 option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
@@ -230,10 +229,6 @@ add_subdirectory(utl/dump_options)
 
 if (BUILD_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)
-endif()
-
-if(BUILD_DOCS)
-  add_subdirectory(doc)
 endif()
 
 if(BUILD_JAVA)
