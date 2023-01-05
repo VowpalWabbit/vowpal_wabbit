@@ -722,6 +722,13 @@ public:
   {
   }
 
+  virtual ~common_learner_builder()
+  {
+    // If the builder is destroyed before calling build(), then we need to delete the learner.
+    // This can happen if an exception is thrown during construction.
+    delete learner_ptr;
+  }
+
   FluentBuilderT& set_predict(void (*fn_ptr)(DataT&, BaseLearnerT&, ExampleT&))
   {
     this->learner_ptr->_learn_fd.predict_f = (details::learn_data::fn)fn_ptr;
@@ -984,7 +991,9 @@ public:
           base_in_label_type, this->learner_ptr->_merge_fn, this->learner_ptr->_merge_with_all_fn);
     }
 
-    return this->learner_ptr;
+    auto result = this->learner_ptr;
+    this->learner_ptr = nullptr;
+    return result;
   }
 };
 
@@ -1036,7 +1045,12 @@ public:
     return *this;
   }
 
-  learner<char, ExampleT>* build() { return this->learner_ptr; }
+  learner<char, ExampleT>* build()
+  {
+    auto result = this->learner_ptr;
+    this->learner_ptr = nullptr;
+    return result;
+  }
 };
 
 template <class DataT, class ExampleT>
@@ -1107,7 +1121,9 @@ public:
     {
       THROW("cannot set both merge_with_all and merge_with_all_fn");
     }
-    return this->learner_ptr;
+    auto result = this->learner_ptr;
+    this->learner_ptr = nullptr;
+    return result;
   }
 };
 VW_WARNING_STATE_POP
