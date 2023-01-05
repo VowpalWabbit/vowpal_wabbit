@@ -214,6 +214,11 @@ public:
   const bool _ccb_on;
   config_oracle_impl _config_oracle;
   bool reward_as_cost;
+  
+  // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
+  std::vector<uint64_t> per_live_model_state_uint64;
+  uint64_t* _cb_adf_event_sum = nullptr;
+  uint64_t* _cb_adf_action_sum = nullptr;
 
   // Stores all namespaces currently seen
   std::map<namespace_index, uint64_t> ns_counter;
