@@ -166,7 +166,6 @@ public:
   void* data = nullptr;
   base_learner* base = nullptr;
   fn finish_example_f = nullptr;
-  fn print_example_f = nullptr;
   update_stats_fn update_stats_f = nullptr;
   output_example_prediction_fn output_example_prediction_f = nullptr;
   print_update_fn print_update_f = nullptr;
@@ -465,14 +464,6 @@ public:
     else { THROW("No finish functions were registered in the stack."); }
   }
 
-  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, const E& ec)
-  {
-    debug_log_message(ec, "print_example");
-    if (!has_legacy_print_example()) { THROW("fatal: learner did not register print example fn: " + _name); }
-
-    _finish_example_fd.print_example_f(all, _finish_example_fd.data, (void*)&ec);
-  }
-
   inline void NO_SANITIZE_UNDEFINED update_stats(
       const VW::workspace& all, VW::shared_data& sd, const E& ec, VW::io::logger& logger)
   {
@@ -598,7 +589,6 @@ public:
   }
 
   VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_fd.finish_example_f != nullptr; }
-  VW_ATTR(nodiscard) bool has_legacy_print_example() const { return _finish_example_fd.print_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_update_stats() const { return _finish_example_fd.update_stats_f != nullptr; }
   VW_ATTR(nodiscard) bool has_print_update() const { return _finish_example_fd.print_update_f != nullptr; }
   VW_ATTR(nodiscard) bool has_output_example_prediction() const
@@ -812,13 +802,6 @@ public:
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.finish_example_f = (details::finish_example_data::fn)(fn_ptr);
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, const ExampleT&))
-  {
-    learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.print_example_f = (details::finish_example_data::fn)(fn_ptr);
     return *static_cast<FluentBuilderT*>(this);
   }
 
