@@ -45,7 +45,7 @@ namespace
 class warm_cb
 {
 public:
-  CB::label cb_label;
+  VW::cb_label cb_label;
   uint64_t app_seed = 0;
   VW::action_scores a_s;
   // used as the seed
@@ -77,7 +77,7 @@ public:
   std::vector<float> lambdas;
   VW::action_scores a_s_adf;
   std::vector<float> cumulative_costs;
-  CB::cb_class cl_adf;
+  VW::cb_class cl_adf;
   uint32_t ws_train_size = 0;
   uint32_t ws_vali_size = 0;
   VW::multi_ex ws_vali;
@@ -87,7 +87,7 @@ public:
   VW::multiclass_label mc_label;
   VW::cs_label cs_label;
   std::vector<VW::cs_label> csls;
-  std::vector<CB::label> cbls;
+  std::vector<VW::cb_label> cbls;
   bool use_cs = 0;
 
   ~warm_cb()
@@ -282,7 +282,7 @@ uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, VW::example&
 
 void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
-  CB::cb_class& cl = data.cl_adf;
+  VW::cb_class& cl = data.cl_adf;
   // IPS for approximating the cumulative costs for all lambdas
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {

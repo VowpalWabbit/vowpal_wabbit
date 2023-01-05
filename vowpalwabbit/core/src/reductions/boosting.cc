@@ -137,7 +137,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
   {
     if (is_learn)
     {
-      float w = 1 / (1 + correctedExp(s));
+      float w = 1 / (1 + VW::details::correctedExp(s));
 
       ec.weight = u * w;
 
@@ -152,7 +152,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
       final_prediction += ec.pred.scalar * o.alpha[i];
 
       // update alpha
-      o.alpha[i] += eta * z / (1 + correctedExp(s));
+      o.alpha[i] += eta * z / (1 + VW::details::correctedExp(s));
       if (o.alpha[i] > 2.) { o.alpha[i] = 2; }
       if (o.alpha[i] < -2.) { o.alpha[i] = -2; }
 
@@ -193,7 +193,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   {
     if (is_learn)
     {
-      float w = 1 / (1 + correctedExp(s));
+      float w = 1 / (1 + VW::details::correctedExp(s));
 
       ec.weight = u * w;
 
@@ -215,7 +215,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
       v_normalization += o.v[i];
 
       // update alpha
-      o.alpha[i] += eta * z / (1 + correctedExp(s));
+      o.alpha[i] += eta * z / (1 + VW::details::correctedExp(s));
       if (o.alpha[i] > 2.) { o.alpha[i] = 2; }
       if (o.alpha[i] < -2.) { o.alpha[i] = -2; }
 

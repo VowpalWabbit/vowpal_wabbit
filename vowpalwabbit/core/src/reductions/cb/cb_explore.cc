@@ -45,7 +45,7 @@ public:
   VW::v_array<uint32_t> preds;
   VW::v_array<float> cover_probs;
 
-  CB::label cb_label;
+  VW::cb_label cb_label;
   VW::cs_label cs_label;
   VW::cs_label second_cs_label;
 
@@ -206,7 +206,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
     auto optional_cost = get_observed_cost_cb(data.cb_label);
     // cost observed, not default
     if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
-    else { data.cbcs.known_cost = CB::cb_class{}; }
+    else { data.cbcs.known_cost = VW::cb_class{}; }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
     for (uint32_t i = 0; i < num_actions; i++) { probabilities[i] = 0.f; }
 
@@ -254,13 +254,13 @@ void print_update_cb_explore(
   }
 }
 
-float calc_loss(const cb_explore& data, const VW::example& ec, const CB::label& ld)
+float calc_loss(const cb_explore& data, const VW::example& ec, const VW::cb_label& ld)
 {
   float loss = 0.f;
 
   const cb_to_cs& c = data.cbcs;
 
-  auto optional_cost = CB::get_observed_cost_cb(ld);
+  auto optional_cost = VW::get_observed_cost_cb(ld);
   // cost observed, not default
   if (optional_cost.first == true)
   {

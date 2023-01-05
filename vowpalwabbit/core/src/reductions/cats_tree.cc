@@ -22,8 +22,8 @@
 using namespace VW::config;
 using namespace VW::LEARNER;
 
-using CB::cb_class;
 using std::vector;
+using VW::cb_class;
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::CATS_TREE
@@ -162,7 +162,7 @@ uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
 
   // Handle degenerate cases of zero node trees
   if (_binary_tree.leaf_node_count() == 0) { return 0; }
-  CB::label saved_label = std::move(ec.l.cb);
+  VW::cb_label saved_label = std::move(ec.l.cb);
   ec.l.simple.label = std::numeric_limits<float>::max();  // says it is a test example
   auto cur_node = nodes[0];
 
@@ -371,6 +371,6 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
                 .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .build();
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return make_base(*l);
 }

@@ -85,7 +85,7 @@ public:
       if (lbl_example != examples.end())
       {
         const auto labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), lbl_example));
-        const CB::cb_class& logged = (*lbl_example)->l.cb.costs[0];
+        const VW::cb_class& logged = (*lbl_example)->l.cb.costs[0];
 
         double r = -logged.cost;
         double w = (labelled_action == chosen_action ? 1 : 0) / logged.probability;

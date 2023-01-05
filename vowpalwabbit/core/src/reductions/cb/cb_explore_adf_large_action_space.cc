@@ -63,7 +63,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
   _triplets.clear();
   for (auto* ex : examples)
   {
-    assert(!CB::ec_is_example_header(*ex));
+    assert(!VW::ec_is_example_header_cb(*ex));
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
@@ -403,7 +403,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   }
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   if (use_two_pass_svd_impl)
   {

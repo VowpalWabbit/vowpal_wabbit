@@ -30,8 +30,8 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
-  CB::label backup_ld;
-  CB::label new_ld;
+  VW::cb_label backup_ld;
+  VW::cb_label new_ld;
   bool is_test_label = ec.l.cb.is_test_label();
 
   uint32_t chosen_action = 0;

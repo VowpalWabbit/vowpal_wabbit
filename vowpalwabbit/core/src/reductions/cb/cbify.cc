@@ -121,7 +121,7 @@ public:
 class cbify
 {
 public:
-  CB::label cb_label;
+  VW::cb_label cb_label;
   uint64_t app_seed = 0;
   VW::action_scores a_s;
   cbify_reg regression_data;
@@ -137,7 +137,7 @@ public:
 
   // for ldf inputs
   std::vector<std::vector<VW::cs_class>> cs_costs;
-  std::vector<std::vector<CB::cb_class>> cb_costs;
+  std::vector<std::vector<VW::cb_class>> cb_costs;
   std::vector<VW::action_scores> cb_as;
 };
 
@@ -219,7 +219,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW:
           data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
-  CB::cb_class cb;
+  VW::cb_class cb;
   cb.action = chosen_action + 1;
   cb.probability = ec.pred.a_s[chosen_action].score;
 
@@ -368,7 +368,7 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
   // Create a new cb label
   const auto action = chosen_action + 1;
   const auto cost = use_cs ? loss_cs(data, csl.costs, action) : loss(data, ld.label, action);
-  ec.l.cb.costs.push_back(CB::cb_class{
+  ec.l.cb.costs.push_back(VW::cb_class{
       cost,
       action,                           // action
       ec.pred.a_s[chosen_action].score  // probability
@@ -411,7 +411,7 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
   if (use_cs) { csl = ec.l.cs; }
   else { ld = ec.l.multi; }
 
-  CB::cb_class cl;
+  VW::cb_class cl;
   cl.action = out_ec.pred.a_s[data.chosen_action].action + 1;
   cl.probability = out_ec.pred.a_s[data.chosen_action].score;
 
@@ -467,7 +467,7 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_se
 
 void do_actual_learning_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  CB::cb_class cl;
+  VW::cb_class cl;
 
   cl.action = data.cb_as[0][data.chosen_action].action + 1;
   cl.probability = data.cb_as[0][data.chosen_action].score;

@@ -149,9 +149,6 @@ int report_error(api_status* status, int scode, const All&... all)
   }
   return scode;
 }
-}  // namespace experimental
-}  // namespace VW
-
 /**
  * @brief left shift operator to serialize types into stringstream held in status_builder
  *
@@ -167,6 +164,8 @@ VW::experimental::status_builder& operator<<(VW::experimental::status_builder& s
   if (sb._status != nullptr) { sb._os << ", " << val; }
   return sb;
 }
+}  // namespace experimental
+}  // namespace VW
 
 // This is weird, but we want these to be able to use the left-shift operator, but that is undesirable to
 // have in the experimental namespace because we want to avoid forcing consumers to import it. So temporarily

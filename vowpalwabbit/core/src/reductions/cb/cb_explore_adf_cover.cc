@@ -67,7 +67,7 @@ private:
   VW::cs_label _cs_labels;
   VW::cs_label _cs_labels_2;
   std::vector<VW::cs_label> _prepped_cs_labels;
-  std::vector<CB::label> _cb_labels;
+  std::vector<VW::cb_label> _cb_labels;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };
@@ -309,7 +309,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool epsilon_decay;
   if (options.was_supplied("epsilon"))

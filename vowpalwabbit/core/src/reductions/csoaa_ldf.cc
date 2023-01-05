@@ -322,7 +322,7 @@ void convert_to_probabilities(VW::multi_ex& ec_seq)
     // cost),
     // so we need to take score = -partial_prediction,
     // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-    float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
+    float prob = 1.f / (1.f + VW::details::correctedExp(example->partial_prediction));
     example->pred.prob = prob;
     sum_prob += prob;
   }

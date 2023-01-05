@@ -18,7 +18,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-using namespace CB;
 using namespace GEN_CS;
 
 namespace
@@ -39,7 +38,7 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
-  else { c.known_cost = CB::cb_class{}; }
+  else { c.known_cost = VW::cb_class{}; }
 
   // cost observed, not default
   if (optional_cost.first && (c.known_cost.action < 1 || c.known_cost.action > c.num_actions))
@@ -70,7 +69,7 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
-  else { c.known_cost = CB::cb_class{}; }
+  else { c.known_cost = VW::cb_class{}; }
   gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
   for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
@@ -110,7 +109,7 @@ void output_example_prediction_cb_algs(
     std::stringstream output_string_stream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
     {
-      cb_class cl = ld.costs[i];
+      VW::cb_class cl = ld.costs[i];
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.action << ':' << cl.partial_prediction;
     }
@@ -126,8 +125,8 @@ void print_update_cb_algs(
   const auto& c = data.cbcs;
 
   bool is_ld_test_label = ld.is_test_label();
-  if (!is_ld_test_label) { print_update(all, is_ld_test_label, ec, nullptr, false, &c.known_cost); }
-  else { print_update(all, is_ld_test_label, ec, nullptr, false, nullptr); }
+  if (!is_ld_test_label) { VW::details::print_update_cb(all, is_ld_test_label, ec, nullptr, false, &c.known_cost); }
+  else { VW::details::print_update_cb(all, is_ld_test_label, ec, nullptr, false, nullptr); }
 }
 }  // namespace
 
@@ -197,9 +196,9 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
     options.insert("csoaa", ss.str());
   }
 
-  auto base = as_singleline(stack_builder.setup_base_learner());
-  if (eval) { all.example_parser->lbl_parser = CB_EVAL::cb_eval; }
-  else { all.example_parser->lbl_parser = CB::cb_label; }
+  auto* base = as_singleline(stack_builder.setup_base_learner());
+  if (eval) { all.example_parser->lbl_parser = VW::cb_eval_label_parser_global; }
+  else { all.example_parser->lbl_parser = VW::cb_label_parser_global; }
   c.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
   std::string name_addition = eval ? "-eval" : "";
