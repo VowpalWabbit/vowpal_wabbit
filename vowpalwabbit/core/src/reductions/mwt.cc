@@ -19,10 +19,9 @@
 #include <cmath>
 
 using namespace VW::LEARNER;
-using namespace CB_ALGS;
 using namespace VW::config;
 
-void MWT::print_scalars(
+void VW::details::print_scalars(
     VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
@@ -186,7 +185,10 @@ void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const
 void output_example_prediction_mwt(
     VW::workspace& all, const mwt& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  {
+    VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  }
 }
 
 void print_update_mwt(

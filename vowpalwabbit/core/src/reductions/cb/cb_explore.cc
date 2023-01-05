@@ -25,8 +25,6 @@
 #include <utility>
 
 using namespace VW::LEARNER;
-using namespace GEN_CS;
-using namespace CB_ALGS;
 using namespace exploration;
 using namespace VW::config;
 using std::endl;
@@ -41,7 +39,7 @@ class cb_explore
 {
 public:
   std::shared_ptr<VW::rand_state> random_state;
-  cb_to_cs cbcs;
+  VW::details::cb_to_cs cbcs;
   VW::v_array<uint32_t> preds;
   VW::v_array<float> cover_probs;
 
@@ -258,7 +256,7 @@ float calc_loss(const cb_explore& data, const VW::example& ec, const VW::cb_labe
 {
   float loss = 0.f;
 
-  const cb_to_cs& c = data.cbcs;
+  const VW::details::cb_to_cs& c = data.cbcs;
 
   auto optional_cost = VW::get_observed_cost_cb(ld);
   // cost observed, not default
