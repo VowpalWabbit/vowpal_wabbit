@@ -45,7 +45,7 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
 }
 
 template <bool is_learn, INTERACTIONS::generate_func_t<VW::namespace_index> generate_func,
-    INTERACTIONS::generate_func_t<extent_term> generate_func_extents, bool leave_duplicate_interactions>
+    INTERACTIONS::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
 void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
@@ -75,7 +75,7 @@ void transform_single_ex(INTERACTIONS::interactions_generator& data, VW::LEARNER
 }
 
 template <INTERACTIONS::generate_func_t<VW::namespace_index> generate_func,
-    INTERACTIONS::generate_func_t<extent_term> generate_func_extents, bool leave_duplicate_interactions>
+    INTERACTIONS::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
 void update(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
@@ -145,7 +145,7 @@ inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER
 }
 
 template <INTERACTIONS::generate_func_t<VW::namespace_index> generate_func,
-    INTERACTIONS::generate_func_t<extent_term> generate_func_extents, bool leave_duplicate_interactions>
+    INTERACTIONS::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
 inline void multipredict(INTERACTIONS::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec,
     size_t count, size_t, VW::polyprediction* pred, bool finalize_predictions)
 {

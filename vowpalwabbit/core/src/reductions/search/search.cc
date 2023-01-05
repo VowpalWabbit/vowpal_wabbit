@@ -123,11 +123,11 @@ class action_repr
 {
 public:
   action a = 0;
-  features* repr = nullptr;
+  VW::features* repr = nullptr;
   action_repr() = default;
-  action_repr(action _a, features* _repr) : a(_a)
+  action_repr(action _a, VW::features* _repr) : a(_a)
   {
-    if (_repr != nullptr) { repr = new features(*_repr); }
+    if (_repr != nullptr) { repr = new VW::features(*_repr); }
   }
   action_repr(action _a) : a(_a), repr(nullptr) {}
 };
@@ -217,7 +217,7 @@ public:
   std::vector<action> test_action_sequence;  // if test-mode was run, what was the corresponding action sequence; it's a
                                              // vector cuz we might expose it to the library
   action learn_oracle_action = 0;            // store an oracle action for debugging purposes
-  features last_action_repr;
+  VW::features last_action_repr;
 
   VW::polylabel allowed_actions_cache;
 
@@ -333,7 +333,7 @@ void clear_memo_foreach_action(search_private& priv)
 
 search::search()
 {
-  priv = &calloc_or_throw<search_private>();
+  priv = &VW::details::calloc_or_throw<search_private>();
   new (priv) search_private();
 }
 
@@ -505,12 +505,13 @@ std::string number_to_natural(size_t big)
   return ss.str();
 }
 
-void print_update(search_private& priv)
+void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const search& data,
+    const VW::multi_ex& /* ec_seq */, VW::io::logger& /* unused */)
 {
   // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
-  VW::workspace& all = *priv.all;
+  auto& priv = *data.priv;
   if (!priv.printed_output_header && !all.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
@@ -586,7 +587,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   size_t ss = priv.all->weights.stride_shift();
 
   uint64_t idx2 = ((idx & mask) >> ss) & mask;
-  features& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
+  auto& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
   cdbg << "adding: " << fs.indices.back() << ':' << fs.values.back() << endl;
   if (priv.all->audit)
@@ -608,7 +609,7 @@ void del_features_in_top_namespace(search_private& /* priv */, VW::example& ec, 
     //{ THROW("internal error (bug): expecting top namespace to be '" << ns << "' but it was " <<
     //(size_t)ec.indices.last()); }
   }
-  features& fs = ec.feature_space[ns];
+  auto& fs = ec.feature_space[ns];
   ec.indices.pop_back();
   ec.num_features -= fs.size();
   ec.reset_total_sum_feat_sq();
@@ -655,7 +656,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
       }
     }
 
-    features& fs = me.feature_space[VW::details::NEIGHBOR_NAMESPACE];
+    auto& fs = me.feature_space[VW::details::NEIGHBOR_NAMESPACE];
     size_t sz = fs.size();
     if ((sz > 0) && (fs.sum_feat_sq > 0.))
     {
@@ -830,7 +831,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
     for (size_t i = 0; i < I; i++)
     {
       if (condition_on_actions[i].repr == nullptr) { continue; }
-      features& fs = *(condition_on_actions[i].repr);
+      VW::features& fs = *(condition_on_actions[i].repr);
       char name = condition_on_names[i];
       for (size_t k = 0; k < fs.size(); k++)
       {
@@ -855,7 +856,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
     cdbg << "END adding passthrough features" << endl;
   }
 
-  features& con_fs = ec.feature_space[VW::details::CONDITIONING_NAMESPACE];
+  auto& con_fs = ec.feature_space[VW::details::CONDITIONING_NAMESPACE];
   if ((con_fs.size() > 0) && (con_fs.sum_feat_sq > 0.))
   {
     ec.indices.push_back(VW::details::CONDITIONING_NAMESPACE);
@@ -910,7 +911,7 @@ inline void cs_cost_push_back(bool is_cb, VW::polylabel& ld, uint32_t index, flo
 {
   if (is_cb)
   {
-    CB::cb_class cost{value, index, 0.};
+    VW::cb_class cost{value, index, 0.};
     ld.cb.costs.push_back(cost);
   }
   else
@@ -1059,7 +1060,7 @@ void allowed_actions_to_label(search_private& priv, size_t ec_cnt, const action*
 template <class T>
 void ensure_size(VW::v_array<T>& A, size_t sz)
 {
-  A.resize_but_with_stl_behavior(sz);
+  A.resize(sz);
 }
 
 template <class T>
@@ -1071,7 +1072,7 @@ void ensure_size(std::vector<T>& A, size_t sz)
 template <class T>
 void set_at(VW::v_array<T>& v, T item, size_t pos)
 {
-  if (pos >= v.size()) { v.resize_but_with_stl_behavior(pos + 1); }
+  if (pos >= v.size()) { v.resize(pos + 1); }
   v[pos] = item;
 }
 
@@ -1303,7 +1304,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
   bool need_partial_predictions = need_memo_foreach_action(priv) ||
       (priv.metaoverride && priv.metaoverride->_foreach_action) || (override_action != static_cast<action>(-1));
 
-  VW::default_cs_label(priv.ldf_test_label);
+  priv.ldf_test_label.reset_to_default();
   VW::cs_class wc = {0., 1, 0., 0.};
   priv.ldf_test_label.costs.push_back(wc);
 
@@ -1730,7 +1731,7 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
       // copy conditioning stuff and allowed actions
       if (priv.auto_condition_features)
       {
-        priv.learn_condition_on.resize_but_with_stl_behavior(condition_on_cnt);
+        priv.learn_condition_on.resize(condition_on_cnt);
         ensure_size(priv.learn_condition_on_act, condition_on_cnt);
 
         memcpy(priv.learn_condition_on.begin(), condition_on, condition_on_cnt * sizeof(ptag));
@@ -1968,11 +1969,11 @@ void hoopla_permute(size_t* B, size_t* end)
   size_t N = end - B;  // NOLINT
   std::sort(B, end, cmp_size_t);
   // make some temporary space
-  size_t* A = calloc_or_throw<size_t>((N + 1) * 2);  // NOLINT
-  A[N] = B[0];                                       // arbitrarily choose the maximum in the middle
-  A[N + 1] = B[N - 1];                               // so the maximum goes next to it
-  size_t lo = N, hi = N + 1;                         // which parts of A have we filled in? [lo,hi]
-  size_t i = 0, j = N - 1;                           // which parts of B have we already covered? [0,i] and [j,N-1]
+  size_t* A = VW::details::calloc_or_throw<size_t>((N + 1) * 2);  // NOLINT
+  A[N] = B[0];                                                    // arbitrarily choose the maximum in the middle
+  A[N + 1] = B[N - 1];                                            // so the maximum goes next to it
+  size_t lo = N, hi = N + 1;                                      // which parts of A have we filled in? [lo,hi]
+  size_t i = 0, j = N - 1;  // which parts of B have we already covered? [0,i] and [j,N-1]
   while (i + 1 < j)
   {
     // there are four options depending on where things get placed
@@ -2344,7 +2345,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   {
     size_t prev_num = priv.num_calls_to_run_previous / priv.save_every_k_runs;
     size_t this_num = priv.num_calls_to_run / priv.save_every_k_runs;
-    if (this_num > prev_num) { save_predictor(all, all.final_regressor_name, this_num); }
+    if (this_num > prev_num) { VW::details::save_predictor(all, all.final_regressor_name, this_num); }
     priv.num_calls_to_run_previous = priv.num_calls_to_run;
   }
 }
@@ -2440,12 +2441,6 @@ void end_pass(search& sch)
   }
 }
 
-void finish_multiline_example(VW::workspace& all, search& sch, VW::multi_ex& ec_seq)
-{
-  print_update(*sch.priv);
-  VW::finish_example(all, ec_seq);
-}
-
 void end_examples(search& sch)
 {
   search_private& priv = *sch.priv;
@@ -2505,7 +2500,7 @@ void search_initialize(VW::workspace* all, search& sch)
   priv.active_uncertainty.clear();
   priv.active_known.clear();
 
-  VW::default_cs_label(priv.empty_cs_label);
+  priv.empty_cs_label.reset_to_default();
 
   priv.raw_output_string_stream = VW::make_unique<std::stringstream>();
 }
@@ -2563,7 +2558,7 @@ std::vector<VW::cs_label> read_allowed_transitions(action A, const char* filenam
     THROW("error: could not read file " << filename << " (" << VW::io::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 
-  bool* bg = calloc_or_throw<bool>((static_cast<size_t>(A + 1)) * (A + 1));
+  bool* bg = VW::details::calloc_or_throw<bool>((static_cast<size_t>(A + 1)) * (A + 1));
   int rd, from, to, count = 0;
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
@@ -2630,12 +2625,12 @@ void parse_neighbor_features(
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_string(cmd[0], logger);
+      posn = VW::details::int_of_string(cmd[0], logger);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_string(cmd[0], logger);
+      posn = VW::details::int_of_string(cmd[0], logger);
       ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else { logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview); }
@@ -2694,7 +2689,7 @@ action search::predict(VW::example& ec, ptag mytag, const action* oracle_actions
       assert((mytag >= priv->ptag_to_action.size()) || (priv->ptag_to_action[mytag].repr == nullptr));
       set_at(priv->ptag_to_action, action_repr(a, &(priv->last_action_repr)), mytag);
     }
-    else { set_at(priv->ptag_to_action, action_repr(a, (features*)nullptr), mytag); }
+    else { set_at(priv->ptag_to_action, action_repr(a, (VW::features*)nullptr), mytag); }
     cdbg << "set_at " << mytag << endl;
   }
   if (priv->auto_hamming_loss)
@@ -3223,7 +3218,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(priv.allowed_actions_cache);
+    VW::cb_label_parser_global.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cb.costs.clear();
     priv.gte_label.cb.costs.clear();
   }
@@ -3381,7 +3376,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
           stack_builder.get_setupfn_name(search_setup))
           .set_learn_returns_prediction(true)
           .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
-          .set_finish_example(finish_multiline_example)
+          .set_print_update(print_update_search)
           .set_end_examples(end_examples)
           .set_finish(search_finish)
           .set_end_pass(end_pass)

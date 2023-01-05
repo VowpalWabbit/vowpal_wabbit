@@ -25,5 +25,3 @@ add_library(vw_c_api ${vw_c_public_headers} ${vw_c_impl_files} ${vw_c_private_he
 target_include_directories(vw_c_api PUBLIC include/ ${CMAKE_CURRENT_BINARY_DIR}/include/)
 target_link_libraries(vw_c_api PRIVATE vw_core vw_io)
 target_compile_definitions(vw_c_api PRIVATE VWDLL_EXPORTS)
-
-add_subdirectory(test)

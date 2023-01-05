@@ -22,7 +22,7 @@ VW::LEARNER::base_learner* cb_adf_setup(VW::setup_base_i& stack_builder);
 namespace CB_ADF  // NOLINT
 {
 VW::example* test_adf_sequence(const VW::multi_ex& ec_seq);
-CB::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
+VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 class cb_adf
 {
 public:
@@ -30,7 +30,7 @@ public:
 
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
   void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
-  bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq);
+  bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq, VW::shared_data& sd) const;
 
   cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, VW::workspace* all)
       : _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p), _all(all)
@@ -54,7 +54,8 @@ public:
         gen_cs.cb_type == VW::cb_type_t::SM;
   }
 
-  CB::cb_class* known_cost() { return &gen_cs.known_cost; }
+  VW::cb_class* known_cost() { return &gen_cs.known_cost; }
+  const VW::cb_class* known_cost() const { return &gen_cs.known_cost; }
 
 private:
   void learn_ips(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
@@ -65,7 +66,7 @@ private:
   void learn_mtr(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 
 private:
-  std::vector<CB::label> _cb_labels;
+  std::vector<VW::cb_label> _cb_labels;
   VW::cs_label _cs_labels;
   std::vector<VW::cs_label> _prepped_cs_labels;
 

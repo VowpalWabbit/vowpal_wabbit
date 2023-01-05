@@ -6,7 +6,6 @@
 
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/guard.h"
 #include "vw/core/learner.h"
@@ -167,9 +166,9 @@ void pmf_to_pdf_reduction::learn(example& ec)
   auto actual_bandwidth = !tree_bandwidth ? 1 : 2 * b;  // avoid zero division
 
   ec.l.cb.costs.push_back(
-      CB::cb_class(cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
+      VW::cb_class(cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
   ec.l.cb.costs.push_back(
-      CB::cb_class(cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
+      VW::cb_class(cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 

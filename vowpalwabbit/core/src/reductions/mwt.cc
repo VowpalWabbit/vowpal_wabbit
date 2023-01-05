@@ -60,15 +60,15 @@ class mwt
 {
 public:
   std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
-  std::vector<policy_data> evals;  // accrued losses of features.
-  std::pair<bool, CB::cb_class> optional_observation;
+  std::vector<policy_data> evals;                     // accrued losses of features.
+  std::pair<bool, VW::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
   double total = 0.;
   uint32_t num_classes = 0;
   bool learn = false;
 
   VW::v_array<VW::namespace_index> indices;  // excluded namespaces
-  std::array<features, VW::NUM_NAMESPACES> feature_space;
+  std::array<VW::features, VW::NUM_NAMESPACES> feature_space;
   VW::workspace* all = nullptr;
 };
 
@@ -123,7 +123,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
         if (learn)
         {
           c.feature_space[ns].clear();
-          for (features::iterator& f : ec.feature_space[ns])
+          for (VW::features::iterator& f : ec.feature_space[ns])
           {
             uint64_t new_index =
                 ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
@@ -169,7 +169,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   ec.pred.scalars = preds;
 }
 
-void update_stats_mwt(const VW::workspace& /* all */, shared_data& sd, const mwt& data, const VW::example& ec,
+void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const mwt& data, const VW::example& ec,
     VW::io::logger& /* logger */)
 {
   float loss = 0.;
@@ -190,7 +190,7 @@ void output_example_prediction_mwt(
 }
 
 void print_update_mwt(
-    VW::workspace& all, shared_data& /* sd */, const mwt& data, const VW::example& ec, VW::io::logger& /* unused */)
+    VW::workspace& all, VW::shared_data& /* sd */, const mwt& data, const VW::example& ec, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
       all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
@@ -209,7 +209,7 @@ void print_update_mwt(
   }
 }
 
-void save_load(mwt& c, io_buf& model_file, bool read, bool text)
+void save_load(mwt& c, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
 
@@ -217,33 +217,34 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   // total
   msg << "total: " << c.total;
-  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
+  VW::details::bin_text_read_write_fixed_validated(
+      model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
 
   // policies
   size_t policies_size = c.policies.size();
-  bin_text_read_write_fixed_validated(
+  VW::details::bin_text_read_write_fixed_validated(
       model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), read, msg, text);
 
-  if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
+  if (read) { c.policies.resize(policies_size); }
   else
   {
     msg << "policies: ";
-    for (feature_index& policy : c.policies) { msg << policy << " "; }
+    for (VW::feature_index& policy : c.policies) { msg << policy << " "; }
   }
 
-  bin_text_read_write_fixed_validated(
-      model_file, reinterpret_cast<char*>(c.policies.begin()), policies_size * sizeof(feature_index), read, msg, text);
+  VW::details::bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
+      policies_size * sizeof(VW::feature_index), read, msg, text);
 
   // c.evals is already initialized nicely to the same size as the regressor.
-  for (feature_index& policy : c.policies)
+  for (VW::feature_index& policy : c.policies)
   {
     policy_data& pd = c.evals[policy];
     if (read) { msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " "; }
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
@@ -325,6 +326,6 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
                 .set_print_update(::print_update_mwt)
                 .build();
 
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return make_base(*l);
 }

@@ -37,16 +37,20 @@ void setup_example(VW::workspace& all, example* ae);
 class polylabel
 {
 public:
-  VW::no_label empty = static_cast<char>(0);
+  VW::no_label empty;
   VW::simple_label simple;
   VW::multiclass_label multi;
   VW::cs_label cs;
-  CB::label cb;
+  VW::cb_label cb;
   VW::cb_continuous::continuous_label cb_cont;
   VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
-  CB_EVAL::label cb_eval;
+  VW::cb_eval_label cb_eval;
   MULTILABEL::labels multilabels;
+};
+
+struct no_pred
+{
 };
 
 class polyprediction
@@ -71,7 +75,7 @@ public:
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
   VW::active_multiclass_prediction active_multiclass;
-  char nopred = static_cast<char>(0);
+  no_pred nopred;
 };
 
 std::string to_string(const v_array<float>& scalars, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
@@ -163,13 +167,17 @@ inline bool example_is_newline(const example& ec) { return ec.is_newline; }
 
 inline bool valid_ns(char c) { return !(c == '|' || c == ':'); }
 
+namespace details
+{
 inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t i, float x)
 {
   if (ec.passthrough) { ec.passthrough->push_back(x, (VW::details::FNV_PRIME * magic) ^ i); }
 }
+}  // namespace details
 
-#define ADD_PASSTHROUGH_FEATURE(ec, i, x) \
-  VW::add_passthrough_feature_magic(ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
+#define VW_ADD_PASSTHROUGH_FEATURE(ec, i, x)  \
+  VW::details::add_passthrough_feature_magic( \
+      ec, __FILE__[0] * 483901 + __FILE__[1] * 3417 + __FILE__[2] * 8490177, i, x);
 
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
@@ -177,6 +185,8 @@ using example_factory_t = example& (*)(void*);
 
 namespace details
 {
+void clean_example(VW::workspace& all, example& ec);
+
 void append_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
 void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
 
@@ -216,9 +226,3 @@ inline bool example_is_newline(const VW::example& ec) { return VW::example_is_ne
 
 VW_DEPRECATED("valid_ns moved into VW namespace")
 inline bool valid_ns(char c) { return VW::valid_ns(c); }
-
-VW_DEPRECATED("add_passthrough_feature_magic moved into VW namespace")
-inline void add_passthrough_feature_magic(VW::example& ec, uint64_t magic, uint64_t i, float x)
-{
-  return VW::add_passthrough_feature_magic(ec, magic, i, x);
-}

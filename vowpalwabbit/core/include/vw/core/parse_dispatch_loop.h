@@ -6,13 +6,16 @@
 
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/parser.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"
 
 #include <functional>
 
+namespace VW
+{
+namespace details
+{
 // DispatchFuncT should be of the form - void(VW::workspace&, const VW::multi_ex&)
 template <typename DispatchFuncT>
 void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
@@ -34,7 +37,7 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
       }
       else
       {
-        reset_source(all, all.num_bits);
+        VW::details::reset_source(all, all.num_bits);
         all.do_reset_source = false;
         all.passes_complete++;
 
@@ -53,7 +56,7 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
         if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
         {
-          lock_done(*all.example_parser);
+          VW::details::lock_done(*all.example_parser);
         }
         example_number = 0;
       }
@@ -77,5 +80,8 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
     // Stash the exception so it can be thrown on the main thread.
     all.example_parser->exc_ptr = std::current_exception();
   }
-  lock_done(*all.example_parser);
+  VW::details::lock_done(*all.example_parser);
 }
+
+}  // namespace details
+}  // namespace VW

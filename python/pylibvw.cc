@@ -14,7 +14,6 @@
 #include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/reductions/search/search.h"
 #include "vw/core/reductions/search/search_hooktask.h"
@@ -22,6 +21,7 @@
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
+#include "vw/text_parser/parse_example_text.h"
 
 // see http://www.boost.org/doc/libs/1_56_0/doc/html/bbv2/installation.html
 #define BOOST_PYTHON_USE_GCC_SYMBOL_VISIBILITY 1
@@ -327,10 +327,9 @@ py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
 
-  if (all->options->was_supplied("extra_metrics"))
+  if (all->global_metrics.are_metrics_enabled())
   {
-    VW::metric_sink metrics;
-    all->l->persist_metrics(metrics);
+    auto metrics = all->global_metrics.collect_metrics(all->l);
 
     python_dict_writer writer(dictionary);
     metrics.visit(writer);
@@ -403,7 +402,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lCOST_SENSITIVE:
       return &VW::cs_label_parser_global;
     case lCONTEXTUAL_BANDIT:
-      return &CB::cb_label;
+      return &VW::cb_label_parser_global;
     case lCONDITIONAL_CONTEXTUAL_BANDIT:
       return &VW::ccb_label_parser_global;
     case lSLATES:
@@ -411,7 +410,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lCONTINUOUS:
       return &VW::cb_continuous::the_label_parser;
     case lCONTEXTUAL_BANDIT_EVAL:
-      return &CB_EVAL::cb_eval;
+      return &VW::cb_eval_label_parser_global;
     case lMULTILABEL:
       return &MULTILABEL::multilabel;
     default:
@@ -425,8 +424,8 @@ size_t my_get_label_type(VW::workspace* all)
   if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
   else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
-  else if (lp->parse_label == CB::cb_label.parse_label) { return lCONTEXTUAL_BANDIT; }
-  else if (lp->parse_label == CB_EVAL::cb_eval.parse_label) { return lCONTEXTUAL_BANDIT_EVAL; }
+  else if (lp->parse_label == VW::cb_label_parser_global.parse_label) { return lCONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == VW::cb_eval_label_parser_global.parse_label) { return lCONTEXTUAL_BANDIT_EVAL; }
   else if (lp->parse_label == VW::ccb_label_parser_global.parse_label) { return lCONDITIONAL_CONTEXTUAL_BANDIT; }
   else if (lp->parse_label == VW::slates::slates_label_parser.parse_label) { return lSLATES; }
   else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label) { return lCONTINUOUS; }
@@ -472,13 +471,13 @@ size_t my_get_prediction_type(vw_ptr all)
 void my_delete_example(void* voidec)
 {
   VW::example* ec = (VW::example*)voidec;
-  VW::dealloc_examples(ec, 1);
+  delete ec;
 }
 
 VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
 {
   VW::label_parser* lp = get_label_parser(&*vw, labelType);
-  VW::example* ec = VW::alloc_examples(1);
+  VW::example* ec = new VW::example;
   lp->default_label(ec->l);
   ec->interactions = &vw->interactions;
   ec->extent_interactions = &vw->extent_interactions;
@@ -494,7 +493,7 @@ example_ptr my_empty_example(vw_ptr vw, size_t labelType)
 example_ptr my_read_example(vw_ptr all, size_t labelType, char* str)
 {
   VW::example* ec = my_empty_example0(all, labelType);
-  VW::read_line(*all, ec, str);
+  VW::parsers::text::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
   return boost::shared_ptr<VW::example>(ec, my_delete_example);
 }
@@ -550,7 +549,7 @@ py::list my_parse(vw_ptr& all, char* str)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  all->example_parser->text_reader(all.get(), str, strlen(str), examples);
+  all->example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
 
   py::list example_collection;
   for (auto* ex : examples)
@@ -920,8 +919,6 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
   for (uint32_t l : labels.label_v) { values.append(l); }
   return values;
 }
-
-char ex_get_nopred(example_ptr ec) { return ec->pred.nopred; }
 
 uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
@@ -1522,7 +1519,6 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
-      .def("get_nopred", &ex_get_nopred, "Get nopred from example prediction")
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
           "Assuming a cost_sensitive label type, get the prediction")
       .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs,

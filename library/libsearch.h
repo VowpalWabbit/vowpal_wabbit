@@ -20,8 +20,8 @@ class SearchTask  // NOLINT
 public:
   SearchTask(VW::workspace& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
   {
-    _bogus_example = VW::alloc_examples(1);
-    VW::read_line(vw_obj, _bogus_example, (char*)"1 | x");
+    _bogus_example = new VW::example;
+    VW::parsers::text::read_line(vw_obj, _bogus_example, (char*)"1 | x");
     VW::setup_example(vw_obj, _bogus_example);
 
     _trigger.push_back(_bogus_example);
@@ -35,7 +35,7 @@ public:
   virtual ~SearchTask()
   {
     _trigger.clear();  // the individual examples get cleaned up below
-    VW::dealloc_examples(_bogus_example, 1);
+    delete _bogus_example;
   }
 
   virtual void _run(Search::search& sch, INPUT& input_example, OUTPUT& output) {

@@ -22,7 +22,7 @@ class tree_node
 public:
   tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t parent_id, bool is_leaf);
 
-  inline bool operator==(const tree_node& rhs) const;
+  bool operator==(const tree_node& rhs) const;
   bool operator!=(const tree_node& rhs) const;
 
   uint32_t id;

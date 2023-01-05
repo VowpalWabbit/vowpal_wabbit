@@ -16,15 +16,13 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+namespace VW
+{
+namespace details
+{
 
 // This function returns a vector of strings (not string_views) because we need to remove the escape characters
 std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty = false);
-
-inline const char* safe_index(const char* start, char v, const char* max)
-{
-  while (start != max && *start != v) { start++; }
-  return start;
-}
 
 // The following function is a home made strtof. The
 // differences are :
@@ -123,9 +121,8 @@ inline int int_of_string(VW::string_view s, VW::io::logger& logger)
   char* end = nullptr;
   return int_of_string(s, end, logger);
 }
+}  // namespace details
 
-namespace VW
-{
 std::string trim_whitespace(const std::string& s);
 VW::string_view trim_whitespace(VW::string_view str);
 

@@ -45,7 +45,7 @@ void save(example& ec, VW::workspace& all)
   }
 
   if (!all.quiet) { *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl; }
-  ::save_predictor(all, final_regressor_name, 0);
+  VW::details::save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
 }
@@ -68,7 +68,7 @@ void drain_examples(VW::workspace& all)
   if (all.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
-    while ((ec = VW::get_example(all.example_parser)) != nullptr) { VW::finish_example(all, *ec); }
+    while ((ec = VW::get_example(all.example_parser.get())) != nullptr) { VW::finish_example(all, *ec); }
   }
   all.l->end_examples();
 }
@@ -213,7 +213,7 @@ class ready_examples_queue
 public:
   ready_examples_queue(VW::workspace& master) : _master(master) {}
 
-  example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser) : nullptr; }
+  example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser.get()) : nullptr; }
 
 private:
   VW::workspace& _master;
@@ -292,7 +292,7 @@ void generic_driver_onethread(VW::workspace& all)
     examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };
-  parse_dispatch(all, multi_ex_fptr);
+  VW::details::parse_dispatch(all, multi_ex_fptr);
   handler.process_remaining();
   all.l->end_examples();
 }
@@ -306,7 +306,7 @@ void generic_driver_onethread(VW::workspace& all)
 float VW::LEARNER::details::recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
-  if (label_type == VW::label_type_t::CB) { return CB::ec_is_example_header(ec); }
+  if (label_type == VW::label_type_t::CB) { return VW::ec_is_example_header_cb(ec); }
   else if (label_type == VW::label_type_t::CCB) { return reductions::ccb::ec_is_example_header(ec); }
   else if (label_type == VW::label_type_t::CS) { return VW::is_cs_example_header(ec); }
   return false;

@@ -131,12 +131,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   size_t problem_multiplier = 1;
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
-
-  bool with_metrics = options.was_supplied("extra_metrics");
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
-  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, first_only);
+  auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, first_only);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
@@ -147,8 +145,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_finish_example(explore_type::finish_multiline_example)
-                .set_print_example(explore_type::print_multiline_example)
+                .set_output_example_prediction(explore_type::output_example_prediction)
+                .set_update_stats(explore_type::update_stats)
+                .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build(&all.logger);
   return make_base(*l);

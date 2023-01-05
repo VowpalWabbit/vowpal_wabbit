@@ -6,13 +6,7 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/v_array.h"
-
-class io_buf;
-namespace VW
-{
-class workspace;
-class example;
-}  // namespace VW
+#include "vw/core/vw_fwd.h"
 
 namespace MULTILABEL
 {
@@ -22,11 +16,12 @@ public:
   VW::v_array<uint32_t> label_v;
 };
 
-void output_example(VW::workspace& all, const VW::example& ec);
+void update_stats(const VW::workspace& all, const VW::example& ec);
+void output_example_prediction(VW::workspace& all, const VW::example& ec);
+void print_update(VW::workspace& all, const VW::example& ec);
 
 extern VW::label_parser multilabel;
 
-void print_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq);
 }  // namespace MULTILABEL
 
 namespace VW

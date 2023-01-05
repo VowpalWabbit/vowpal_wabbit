@@ -49,7 +49,7 @@ public:
 
       if (it != examples.end())
       {
-        const CB::cb_class logged = (*it)->l.cb.costs[0];
+        const VW::cb_class logged = (*it)->l.cb.costs[0];
         const uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
 
         const auto& action_scores = examples[0]->pred.a_s;
@@ -90,7 +90,7 @@ public:
   }
 
 private:
-  VW::distributionally_robust::ChiSquared _chisq;
+  VW::estimators::ChiSquared _chisq;
   std::vector<float> _save_weight;
 };
 template <bool is_learn, bool is_explore>
@@ -113,7 +113,7 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
   new_options.add(make_option("cb_dro", cb_dro_option).keep().necessary().help("Use DRO for cb learning"))
       .add(make_option("cb_dro_alpha", alpha).default_value(0.05f).keep().help("Confidence level for cb dro"))
       .add(make_option("cb_dro_tau", tau)
-               .default_value(BASELINE_DEFAULT_TAU)
+               .default_value(VW::details::BASELINE_DEFAULT_TAU)
                .keep()
                .help("Time constant for count decay for cb dro"))
       .add(make_option("cb_dro_wmax", wmax)

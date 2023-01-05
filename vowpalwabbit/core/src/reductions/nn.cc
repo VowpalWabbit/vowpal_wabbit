@@ -96,7 +96,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.output_layer.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   uint64_t nn_index = NN_CONSTANT << all.weights.stride_shift();
 
-  features& fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+  VW::features& fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
@@ -132,7 +132,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.interactions = &all.interactions;
   n.outputweight.extent_interactions = &all.extent_interactions;
   n.outputweight.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
-  features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+  VW::features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].push_back(outfs.values[0], outfs.indices[0]);
   if (all.audit || all.hash_inv)
   {
@@ -157,13 +157,13 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
   bool should_output = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) { finish_setup(n, *(n.all)); }
   // Yes, copy all of shared data.
-  shared_data sd{*n.all->sd};
+  VW::shared_data sd{*n.all->sd};
   {
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
     auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
     VW::simple_label ld = ec.l.simple;
-    void (*save_set_minmax)(shared_data*, float) = n.all->set_minmax;
+    void (*save_set_minmax)(VW::shared_data*, float) = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
@@ -175,7 +175,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
     std::ostringstream output_string_stream;
 
-    n.all->set_minmax = noop_mm;
+    n.all->set_minmax = VW::details::noop_mm;
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
     save_max_label = n.all->sd->max_label;
@@ -210,8 +210,8 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       {
         for (unsigned int i = 0; i < n.k; ++i)
         {
-          ADD_PASSTHROUGH_FEATURE(ec, i * 2, hiddenbias_pred[i].scalar);
-          ADD_PASSTHROUGH_FEATURE(ec, i * 2 + 1, hidden_units[i].scalar);
+          VW_ADD_PASSTHROUGH_FEATURE(ec, i * 2, hiddenbias_pred[i].scalar);
+          VW_ADD_PASSTHROUGH_FEATURE(ec, i * 2 + 1, hidden_units[i].scalar);
         }
       }
     }
@@ -244,7 +244,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
     n.outputweight.ft_offset = ec.ft_offset;
 
-    n.all->set_minmax = noop_mm;
+    n.all->set_minmax = VW::details::noop_mm;
     auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss, n.squared_loss);
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = -1;
@@ -254,7 +254,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     for (unsigned int i = 0; i < n.k; ++i)
     {
       float sigmah = (dropped_out[i]) ? 0.0f : dropscale * fasttanh(hidden_units[i].scalar);
-      features& out_fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
+      VW::features& out_fs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
       out_fs.values[i] = sigmah;
       out_fs.sum_feat_sq += sigmah * sigmah;
 
@@ -293,7 +293,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
        * save_nn_output_namespace contains the COPIED value
        * save_nn_output_namespace is destroyed
        */
-      features save_nn_output_namespace = std::move(ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE]);
+      VW::features save_nn_output_namespace = std::move(ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE]);
       ec.feature_space[VW::details::NN_OUTPUT_NAMESPACE] =
           n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
 
@@ -334,7 +334,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
         if (std::fabs(gradient) > 0)
         {
           auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
-          n.all->set_minmax = noop_mm;
+          n.all->set_minmax = VW::details::noop_mm;
           save_min_label = n.all->sd->min_label;
           n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
           save_max_label = n.all->sd->max_label;
@@ -466,14 +466,14 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
   n->finished_setup = false;
   n->squared_loss = get_loss_function(all, "squared", 0);
 
-  n->xsubi = all.random_seed;
+  n->xsubi = all.get_random_state()->get_current_state();
 
   n->save_xsubi = n->xsubi;
 
-  n->hidden_units = calloc_or_throw<float>(n->k);
-  n->dropped_out = calloc_or_throw<bool>(n->k);
-  n->hidden_units_pred = calloc_or_throw<VW::polyprediction>(n->k);
-  n->hiddenbias_pred = calloc_or_throw<VW::polyprediction>(n->k);
+  n->hidden_units = VW::details::calloc_or_throw<float>(n->k);
+  n->dropped_out = VW::details::calloc_or_throw<bool>(n->k);
+  n->hidden_units_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
+  n->hiddenbias_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
 
   auto base = as_singleline(stack_builder.setup_base_learner());
   n->increment = base->increment;  // Indexing of output layer is odd.

@@ -24,8 +24,8 @@ using namespace VW::LEARNER;
 using namespace rapidjson;
 namespace
 {
-void insert_dsjson_metrics(
-    const dsjson_metrics* ds_metrics, VW::metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
+void insert_dsjson_metrics(const VW::details::dsjson_metrics* ds_metrics, VW::metric_sink& metrics,
+    const std::vector<std::string>& enabled_reductions)
 {
   // ds_metrics is nullptr when --dsjson is disabled
   if (ds_metrics != nullptr)
@@ -55,7 +55,6 @@ void insert_dsjson_metrics(
 class metrics_data
 {
 public:
-  std::string out_file;
   size_t learn_count = 0;
   size_t predict_count = 0;
 };
@@ -113,6 +112,7 @@ void list_to_json_file(const std::string& filename, const VW::metric_sink& metri
   }
   else { logger.err_warn("skipping metrics. could not open file for metrics: {}", filename); }
 }
+
 void persist(metrics_data& data, VW::metric_sink& metrics)
 {
   metrics.set_uint("total_predict_calls", data.predict_count);
@@ -135,40 +135,42 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
 }
 }  // namespace
 
+void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sink)
+{
+  sink.set_uint("total_log_calls", all.logger.get_log_count());
+
+  std::vector<std::string> enabled_reductions;
+  if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
+  insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_reductions);
+}
+
 void VW::reductions::output_metrics(VW::workspace& all)
 {
-  if (all.options->was_supplied("extra_metrics"))
+  metrics_collector& manager = all.global_metrics;
+  if (manager.are_metrics_enabled())
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    VW::metric_sink list_metrics;
-
-    all.l->persist_metrics(list_metrics);
-
-    for (auto& metric_hook : all.metric_output_hooks) { metric_hook(list_metrics); }
-
-    list_metrics.set_uint("total_log_calls", all.logger.get_log_count());
-
-    std::vector<std::string> enabled_reductions;
-    if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
-    insert_dsjson_metrics(all.example_parser->metrics.get(), list_metrics, enabled_reductions);
-
-    list_to_json_file(filename, list_metrics, all.logger);
+    list_to_json_file(filename, manager.collect_metrics(all.l), all.logger);
   }
 }
 
 VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
+  VW::config::options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+
   auto data = VW::make_unique<metrics_data>();
 
+  std::string out_file;
   option_group_definition new_options("[Reduction] Debug Metrics");
-  new_options.add(make_option("extra_metrics", data->out_file)
+  new_options.add(make_option("extra_metrics", out_file)
                       .necessary()
                       .help("Specify filename to write metrics to. Note: There is no fixed schema"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (data->out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
+  if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
+  all.global_metrics = VW::metrics_collector(true);
 
   auto* base_learner = stack_builder.setup_base_learner();
 

@@ -153,7 +153,7 @@ void update_weights(cbzo& data, VW::example& ec)
 }
 VW_WARNING_STATE_POP
 
-void set_minmax(shared_data* sd, float label, bool min_fixed, bool max_fixed)
+void set_minmax(VW::shared_data* sd, float label, bool min_fixed, bool max_fixed)
 {
   if (!min_fixed) { sd->min_label = std::min(label, sd->min_label); }
   if (!max_fixed) { sd->max_label = std::max(label, sd->max_label); }
@@ -191,8 +191,9 @@ inline float close_lesser_value(float x)
 // Approximates a uniform pmf over two values 'a' and 'b' as a 2 spike pdf
 void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf)
 {
-  float left = close_lesser_value(a), right = close_greater_value(a);
-  float pdf_val = static_cast<float>(0.5 / (right - left));
+  float left = close_lesser_value(a);
+  float right = close_greater_value(a);
+  auto pdf_val = static_cast<float>(0.5 / (right - left));
   pdf.push_back({left, right, pdf_val});
 
   left = close_lesser_value(b);
@@ -226,50 +227,53 @@ void NO_SANITIZE_UNDEFINED learn(cbzo& data, base_learner& base, VW::example& ec
   update_weights<policy, feature_mask_off>(data, ec);
 }
 
-inline void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text)
+inline void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, bool text)
 {
   GD::save_load_regressor(all, model_file, read, text);
 }
 
-void save_load(cbzo& data, io_buf& model_file, bool read, bool text)
+void save_load(cbzo& data, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *data.all;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     if (data.all->initial_constant != 0.0f) { set_weight(all, VW::details::CONSTANT, 0, data.all->initial_constant); }
   }
   if (model_file.num_files() > 0) { save_load_regressor(all, model_file, read, text); }
 }
 
-bool is_labeled(VW::example& ec) { return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX); }
+bool is_labeled(const VW::example& ec)
+{
+  return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
+}
 
-void report_progress(VW::workspace& all, VW::example& ec)
+void update_stats_cbzo(const VW::workspace& /* all */, VW::shared_data& sd, const cbzo& /* data */,
+    const VW::example& ec, VW::io::logger& /* logger */)
 {
   const auto& costs = ec.l.cb_cont.costs;
-  all.sd->update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.get_num_features());
-  all.sd->weighted_labels += ec.weight;
+  sd.update(ec.test_only, is_labeled(ec), costs.empty() ? 0.0f : costs[0].cost, ec.weight, ec.get_num_features());
+  sd.weighted_labels += ec.weight;
+}
 
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
+void output_example_prediction_cbzo(
+    VW::workspace& all, const cbzo& /* data */, const VW::example& ec, VW::io::logger& logger)
+{
+  auto pred_repr = VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10);
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), pred_repr, ec.tag, logger); }
+}
+
+void print_update_cbzo(VW::workspace& all, VW::shared_data& sd, const cbzo& /* data */, const VW::example& ec,
+    VW::io::logger& /* unused */)
+{
+  if (sd.weighted_examples() >= sd.dump_interval && !all.quiet)
   {
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+    const auto& costs = ec.l.cb_cont.costs;
+    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : VW::to_string(costs[0]),
         VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
         all.progress_add, all.progress_arg);
   }
-}
-
-void output_prediction(VW::workspace& all, VW::example& ec)
-{
-  std::string pred_repr = VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10);
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), pred_repr, ec.tag, all.logger); }
-}
-
-void finish_example(VW::workspace& all, cbzo&, VW::example& ec)
-{
-  report_progress(all, ec);
-  output_prediction(all, ec);
-  VW::finish_example(all, ec);
 }
 
 void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, base_learner&, VW::example&)
@@ -346,8 +350,8 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("feature_mask")) { feature_mask_off = false; }
 
   uint8_t policy;
-  if (policy_str.compare("constant") == 0) { policy = CONSTANT_POLICY; }
-  else if (policy_str.compare("linear") == 0) { policy = LINEAR_POLICY; }
+  if (policy_str == "constant") { policy = CONSTANT_POLICY; }
+  else if (policy_str == "linear") { policy = LINEAR_POLICY; }
   else
     THROW("policy must be in {'constant', 'linear'}");
 
@@ -370,7 +374,9 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
       stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
                 .set_params_per_weight(0)
                 .set_save_load(save_load)
-                .set_finish_example(::finish_example)
+                .set_output_example_prediction(output_example_prediction_cbzo)
+                .set_print_update(print_update_cbzo)
+                .set_update_stats(update_stats_cbzo)
                 .build();
 
   return make_base(*l);

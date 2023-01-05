@@ -43,6 +43,21 @@
 
 namespace VW
 {
+template <typename DataT, typename ExampleT>
+using learner_update_stats_func = void(
+    const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_output_example_prediction_func = void(
+    VW::workspace& all, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_print_update_func = void(
+    VW::workspace& all, shared_data&, const DataT&, const ExampleT&, VW::io::logger& logger);
+
+template <typename DataT, typename ExampleT>
+using learner_cleanup_example_func = void(DataT&, ExampleT&);
+
 /// \brief Contains the VW::LEARNER::learner object and utilities for
 /// interacting with it.
 namespace LEARNER
@@ -141,17 +156,16 @@ class finish_example_data
 public:
   using fn = void (*)(VW::workspace&, void* data, void* ex);
   using update_stats_fn = void (*)(
-      const VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
+      const VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using output_example_prediction_fn = void (*)(
       VW::workspace&, const void* data, const void* ex, VW::io::logger& logger);
   using print_update_fn = void (*)(
-      VW::workspace&, shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
+      VW::workspace&, VW::shared_data& sd, const void* data, const void* ex, VW::io::logger& logger);
   using cleanup_example_fn = void (*)(const void* data, const void* ex);
 
   void* data = nullptr;
   base_learner* base = nullptr;
   fn finish_example_f = nullptr;
-  fn print_example_f = nullptr;
   update_stats_fn update_stats_f = nullptr;
   output_example_prediction_fn output_example_prediction_f = nullptr;
   print_update_fn print_update_f = nullptr;
@@ -450,33 +464,39 @@ public:
     else { THROW("No finish functions were registered in the stack."); }
   }
 
-  inline void NO_SANITIZE_UNDEFINED print_example(VW::workspace& all, E& ec)
-  {
-    debug_log_message(ec, "print_example");
-    if (!has_legacy_print_example()) { THROW("fatal: learner did not register print example fn: " + _name); }
-
-    _finish_example_fd.print_example_f(all, _finish_example_fd.data, (void*)&ec);
-  }
-
-  inline void NO_SANITIZE_UNDEFINED update_stats(VW::workspace& all, const E& ec)
+  inline void NO_SANITIZE_UNDEFINED update_stats(
+      const VW::workspace& all, VW::shared_data& sd, const E& ec, VW::io::logger& logger)
   {
     debug_log_message(ec, "update_stats");
     if (!has_update_stats()) { THROW("fatal: learner did not register update_stats fn: " + _name); }
-    _finish_example_fd.update_stats_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
+    _finish_example_fd.update_stats_f(all, sd, _finish_example_fd.data, (void*)&ec, logger);
+  }
+  inline void NO_SANITIZE_UNDEFINED update_stats(VW::workspace& all, const E& ec)
+  {
+    update_stats(all, *all.sd, ec, all.logger);
   }
 
-  inline void NO_SANITIZE_UNDEFINED output_example_prediction(VW::workspace& all, const E& ec)
+  inline void NO_SANITIZE_UNDEFINED output_example_prediction(VW::workspace& all, const E& ec, VW::io::logger& logger)
   {
     debug_log_message(ec, "output_example_prediction");
     if (!has_output_example_prediction()) { THROW("fatal: learner did not register output_example fn: " + _name); }
-    _finish_example_fd.output_example_prediction_f(all, _finish_example_fd.data, (void*)&ec, all.logger);
+    _finish_example_fd.output_example_prediction_f(all, _finish_example_fd.data, (void*)&ec, logger);
+  }
+  inline void NO_SANITIZE_UNDEFINED output_example_prediction(VW::workspace& all, const E& ec)
+  {
+    output_example_prediction(all, ec, all.logger);
   }
 
-  inline void NO_SANITIZE_UNDEFINED print_update(VW::workspace& all, const E& ec)
+  inline void NO_SANITIZE_UNDEFINED print_update(
+      VW::workspace& all, VW::shared_data& sd, const E& ec, VW::io::logger& logger)
   {
     debug_log_message(ec, "print_update");
     if (!has_print_update()) { THROW("fatal: learner did not register print_update fn: " + _name); }
-    _finish_example_fd.print_update_f(all, *all.sd, _finish_example_fd.data, (void*)&ec, all.logger);
+    _finish_example_fd.print_update_f(all, sd, _finish_example_fd.data, (void*)&ec, logger);
+  }
+  inline void NO_SANITIZE_UNDEFINED print_update(VW::workspace& all, const E& ec)
+  {
+    print_update(all, *all.sd, ec, all.logger);
   }
 
   inline void NO_SANITIZE_UNDEFINED cleanup_example(E& ec)
@@ -569,7 +589,6 @@ public:
   }
 
   VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_fd.finish_example_f != nullptr; }
-  VW_ATTR(nodiscard) bool has_legacy_print_example() const { return _finish_example_fd.print_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_update_stats() const { return _finish_example_fd.update_stats_f != nullptr; }
   VW_ATTR(nodiscard) bool has_print_update() const { return _finish_example_fd.print_update_f != nullptr; }
   VW_ATTR(nodiscard) bool has_output_example_prediction() const
@@ -786,17 +805,9 @@ public:
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_print_example(void (*fn_ptr)(VW::workspace& all, DataT&, const ExampleT&))
-  {
-    learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_finish_example_fd.print_example_f = (details::finish_example_data::fn)(fn_ptr);
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
   // Responsibilities of update stats:
   // - Call shared_data::update
-  FluentBuilderT& set_update_stats(
-      void (*fn_ptr)(const VW::workspace& all, shared_data& sd, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.update_stats_f = (details::finish_example_data::update_stats_fn)(fn_ptr);
@@ -805,8 +816,7 @@ public:
 
   // Responsibilities of output example prediction:
   // - Output predictions
-  FluentBuilderT& set_output_example_prediction(
-      void (*fn_ptr)(VW::workspace& all, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.output_example_prediction_f =
@@ -817,8 +827,7 @@ public:
   // Responsibilities of output example prediction:
   // - Call shared_data::print_update
   // Note this is only called when required based on the user specified backoff and logging settings.
-  FluentBuilderT& set_print_update(
-      void (*fn_ptr)(VW::workspace& all, shared_data&, const DataT&, const ExampleT&, VW::io::logger& logger))
+  FluentBuilderT& set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.print_update_f = (details::finish_example_data::print_update_fn)(fn_ptr);
@@ -827,7 +836,7 @@ public:
 
   // This call is **optional**, correctness cannot depend on it.
   // However, it can be used to optimistically reuse memory.
-  FluentBuilderT& set_cleanup_example(void (*fn_ptr)(DataT&, ExampleT&))
+  FluentBuilderT& set_cleanup_example(learner_cleanup_example_func<DataT, ExampleT>* fn_ptr)
   {
     learner_ptr->_finish_example_fd.data = learner_ptr->_learn_fd.data;
     learner_ptr->_finish_example_fd.cleanup_example_f = (details::finish_example_data::cleanup_example_fn)(fn_ptr);

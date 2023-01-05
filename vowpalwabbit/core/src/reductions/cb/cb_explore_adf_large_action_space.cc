@@ -63,7 +63,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
   _triplets.clear();
   for (auto* ex : examples)
   {
-    assert(!CB::ec_is_example_header(*ex));
+    assert(!VW::ec_is_example_header_cb(*ex));
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
@@ -312,8 +312,9 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_params_per_weight(problem_multiplier)
-                .set_finish_example(explore_type::finish_multiline_example)
-                .set_print_example(explore_type::print_multiline_example)
+                .set_output_example_prediction(explore_type::output_example_prediction)
+                .set_update_stats(explore_type::update_stats)
+                .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
@@ -402,22 +403,21 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   }
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
-
-  bool with_metrics = options.was_supplied("extra_metrics");
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   if (use_two_pass_svd_impl)
   {
     auto impl_type = implementation_type::two_pass_svd;
     return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
+        all.global_metrics.are_metrics_enabled(), d, gamma_scale, gamma_exponent, c, apply_shrink_factor,
+        thread_pool_size, block_size,
         /*use_explicit_simd=*/false);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
     return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all,
-        with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
-        use_simd_in_one_pass_svd_impl);
+        all.global_metrics.are_metrics_enabled(), d, gamma_scale, gamma_exponent, c, apply_shrink_factor,
+        thread_pool_size, block_size, use_simd_in_one_pass_svd_impl);
   }
 }

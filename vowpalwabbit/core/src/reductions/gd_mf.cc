@@ -40,9 +40,9 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
   // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
-  parameters& weights = all.weights;
+  auto& weights = all.weights;
   uint64_t mask = weights.mask();
-  for (features& fs : ec)
+  for (VW::features& fs : ec)
   {
     bool audit = !fs.space_names.empty();
     for (const auto& f : fs.audit_range())
@@ -86,7 +86,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
+  VW::details::print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -124,7 +124,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
   float linear_prediction = 0.;
   // linear terms
 
-  for (features& fs : ec) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction); }
+  for (VW::features& fs : ec) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction); }
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -187,7 +187,7 @@ float mf_predict(gdmf& d, VW::example& ec)
 }
 
 template <class T>
-void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
+void sd_offset_update(T& weights, VW::features& fs, uint64_t offset, float update, float regularization)
 {
   for (size_t i = 0; i < fs.size(); i++)
   {
@@ -209,7 +209,7 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
   float regularization = eta_t * all.l2_lambda;
 
   // linear update
-  for (features& fs : ec) { sd_offset_update<T>(weights, fs, 0, update, regularization); }
+  for (VW::features& fs : ec) { sd_offset_update<T>(weights, fs, 0, update, regularization); }
 
   // quadratic update
   for (const auto& i : all.interactions)
@@ -254,13 +254,13 @@ void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
   }
 }
 
-void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *d.all;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
@@ -284,7 +284,8 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       size_t K = d.rank * 2 + 1;  // NOLINT
       std::stringstream msg;
       msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+      brw +=
+          VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
         VW::weight* w_i = &(all.weights.strided_index(i));
@@ -292,13 +293,14 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         {
           VW::weight* v = w_i + k;
           msg << v << " ";
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
+          brw += VW::details::bin_text_read_write_fixed(
+              model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         msg << "\n";
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
+        brw += VW::details::bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
 
       if (!read) { ++i; }
@@ -311,18 +313,18 @@ void end_pass(gdmf& d)
   VW::workspace* all = d.all;
 
   all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass) { save_predictor(*all, all->final_regressor_name, all->current_pass); }
+  if (all->save_per_pass) { VW::details::save_predictor(*all, all->final_regressor_name, all->current_pass); }
 
   if (!all->holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
     {
-      finalize_regressor(*all, all->final_regressor_name);
+      VW::details::finalize_regressor(*all, all->final_regressor_name);
     }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
     {
-      set_done(*all);
+      VW::details::set_done(*all);
     }
   }
 }
@@ -389,7 +391,7 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 
   auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
                 .set_end_pass(end_pass)

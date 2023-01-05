@@ -52,6 +52,7 @@
 #include "vw/core/reductions/csoaa.h"
 #include "vw/core/reductions/csoaa_ldf.h"
 #include "vw/core/reductions/ect.h"
+#include "vw/core/reductions/eigen_memory_tree.h"
 #include "vw/core/reductions/epsilon_decay.h"
 #include "vw/core/reductions/explore_eval.h"
 #include "vw/core/reductions/expreplay.h"
@@ -93,10 +94,10 @@
 #include "vw/core/reductions/svrg.h"
 #include "vw/core/reductions/topk.h"
 
-void register_reductions(std::vector<reduction_setup_fn>& reductions,
-    std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
+void register_reductions(std::vector<VW::reduction_setup_fn>& reductions,
+    std::vector<std::tuple<std::string, VW::reduction_setup_fn>>& reduction_stack)
 {
-  std::map<reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
+  std::map<VW::reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
       {VW::reductions::ftrl_setup, "ftrl"}, {VW::reductions::sender_setup, "sender"}, {VW::reductions::nn_setup, "nn"},
       {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
       {VW::reductions::csldf_setup, "csoaa_ldf"},
@@ -126,9 +127,9 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
   }
 }
 
-void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
+void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_fn>>& reduction_stack)
 {
-  std::vector<reduction_setup_fn> reductions;
+  std::vector<VW::reduction_setup_fn> reductions;
 
   // Base algorithms
   reductions.push_back(VW::reductions::gd_setup);
@@ -174,6 +175,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>
   reductions.push_back(VW::reductions::ect_setup);
   reductions.push_back(VW::reductions::log_multi_setup);
   reductions.push_back(VW::reductions::recall_tree_setup);
+  reductions.push_back(VW::reductions::eigen_memory_tree_setup);
   reductions.push_back(VW::reductions::memory_tree_setup);
   reductions.push_back(VW::reductions::classweight_setup);
   reductions.push_back(VW::reductions::multilabel_oaa_setup);

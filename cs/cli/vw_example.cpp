@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/cb.h"
 #define NOMINMAX
 
 #include "vowpalwabbit.h"
@@ -11,7 +12,7 @@
 #include "vw/core/reductions/gd.h"
 #include <algorithm>
 #include "vw/core/shared_data.h"
-#include "vw/core/parse_example.h"
+#include "vw/text_parser/parse_example_text.h"
 
 namespace VW
 {
@@ -75,9 +76,9 @@ ILabel^ VowpalWabbitExample::Label::get()
   auto lp = m_owner->Native->m_vw->example_parser->lbl_parser;
   if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     label = gcnew SimpleLabel();
-  else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
+  else if (!memcmp(&lp, &VW::cb_label_parser_global, sizeof(lp)))
     label = gcnew ContextualBanditLabel();
-  else if (!memcmp(&lp, &CB_EVAL::cb_eval, sizeof(lp)))
+  else if (!memcmp(&lp, &VW::cb_eval_label_parser_global, sizeof(lp)))
     label = gcnew SimpleLabel();
   else if (!memcmp(&lp, &VW::cs_label_parser_global, sizeof(lp)))
     label = gcnew SimpleLabel();
@@ -107,7 +108,7 @@ void VowpalWabbitExample::Label::set(ILabel^ label)
 
 void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)
 { char empty = '\0';
-  VW::read_line(*vw->m_vw, m_example, &empty);
+  VW::parsers::text::read_line(*vw->m_vw, m_example, &empty);
 
   VW::setup_example(*vw->m_vw, m_example);
 }

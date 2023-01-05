@@ -561,7 +561,7 @@ void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regulariza
 
   if (b.regularizers == nullptr)
   {
-    b.regularizers = calloc_or_throw<VW::weight>(2 * length);
+    b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
 
     if (b.regularizers == nullptr) THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
@@ -873,7 +873,7 @@ int process_pass(VW::workspace& all, bfgs& b)
   b.net_time = static_cast<double>(
       std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-  if (all.save_per_pass) { save_predictor(all, all.final_regressor_name, b.current_pass); }
+  if (all.save_per_pass) { VW::details::save_predictor(all, all.final_regressor_name, b.current_pass); }
   return status;
 }
 
@@ -955,18 +955,18 @@ void end_pass(bfgs& b)
       {
         if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
         {
-          finalize_regressor(*all, all->final_regressor_name);
+          VW::details::finalize_regressor(*all, all->final_regressor_name);
         }
         if (b.early_stop_thres == b.no_win_counter)
         {
-          set_done(*all);
+          VW::details::set_done(*all);
           *(b.all->trace_message) << "Early termination reached w.r.t. holdout set error";
         }
       }
       if (b.final_pass == b.current_pass)
       {
-        finalize_regressor(*all, all->final_regressor_name);
-        set_done(*all);
+        VW::details::finalize_regressor(*all, all->final_regressor_name);
+        VW::details::set_done(*all);
       }
     }
     else
@@ -997,9 +997,8 @@ void learn(bfgs& b, base_learner& base, VW::example& ec)
   }
 }
 
-void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool read, bool text)
+void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
-  int c = 0;
   uint32_t length = 2 * (1 << all.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
@@ -1011,7 +1010,6 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool
     VW::weight* v;
     if (read)
     {
-      c++;
       brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&i), sizeof(i));
       if (brw > 0)
       {
@@ -1025,13 +1023,12 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool
       v = &(b.regularizers[i]);
       if (*v != 0.)
       {
-        c++;
         std::stringstream msg;
         msg << i;
-        brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text);
+        brw = VW::details::bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text);
 
         msg << ":" << *v << "\n";
-        brw += bin_text_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), msg, text);
+        brw += VW::details::bin_text_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), msg, text);
       }
     }
     if (!read) { i++; }
@@ -1040,7 +1037,7 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, io_buf& model_file, bool
   if (read) { regularizer_to_weight(all, b); }
 }
 
-void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
+void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
 
@@ -1048,18 +1045,18 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
   if (read)
   {
-    initialize_regressor(*all);
+    VW::details::initialize_regressor(*all);
     if (all->per_feature_regularizer_input != "")
     {
-      b.regularizers = calloc_or_throw<VW::weight>(2 * length);
+      b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
       if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
     }
     int m = b.m;
 
     b.mem_stride = (m == 0) ? CG_EXTRA : 2 * m;
-    b.mem = calloc_or_throw<float>(all->length() * b.mem_stride);
-    b.rho = calloc_or_throw<double>(m);
-    b.alpha = calloc_or_throw<double>(m);
+    b.mem = VW::details::calloc_or_throw<float>(all->length() * b.mem_stride);
+    b.rho = VW::details::calloc_or_throw<double>(m);
+    b.alpha = VW::details::calloc_or_throw<double>(m);
 
     uint32_t stride_shift = all->weights.stride_shift();
 
@@ -1102,7 +1099,8 @@ void save_load(bfgs& b, io_buf& model_file, bool read, bool text)
 
     std::stringstream msg;
     msg << ":" << reg_vector << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
 
     if (reg_vector) { save_load_regularizer(*all, b, model_file, read, text); }
     else { GD::save_load_regressor(*all, model_file, read, text); }

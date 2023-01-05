@@ -5,7 +5,6 @@
 #include "vw/core/reductions/cb/cb_explore.h"
 
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/global_data.h"
@@ -46,7 +45,7 @@ public:
   VW::v_array<uint32_t> preds;
   VW::v_array<float> cover_probs;
 
-  CB::label cb_label;
+  VW::cb_label cb_label;
   VW::cs_label cs_label;
   VW::cs_label second_cs_label;
 
@@ -207,7 +206,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
     auto optional_cost = get_observed_cost_cb(data.cb_label);
     // cost observed, not default
     if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
-    else { data.cbcs.known_cost = CB::cb_class{}; }
+    else { data.cbcs.known_cost = VW::cb_class{}; }
     gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
     for (uint32_t i = 0; i < num_actions; i++) { probabilities[i] = 0.f; }
 
@@ -238,9 +237,10 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
   ec.l.cs = VW::cs_label{};
 }
 
-void print_update_cb_explore(VW::workspace& all, bool is_test, VW::example& ec, std::stringstream& pred_string)
+void print_update_cb_explore(
+    VW::workspace& all, VW::shared_data& sd, bool is_test, const VW::example& ec, std::stringstream& pred_string)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if ((sd.weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs)
   {
     std::stringstream label_string;
     if (is_test) { label_string << "unknown"; }
@@ -249,18 +249,18 @@ void print_update_cb_explore(VW::workspace& all, bool is_test, VW::example& ec, 
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        pred_string.str(), ec.get_num_features(), all.progress_add, all.progress_arg);
+    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(),
+        ec.get_num_features(), all.progress_add, all.progress_arg);
   }
 }
 
-float calc_loss(cb_explore& data, VW::example& ec, const CB::label& ld)
+float calc_loss(const cb_explore& data, const VW::example& ec, const VW::cb_label& ld)
 {
   float loss = 0.f;
 
-  cb_to_cs& c = data.cbcs;
+  const cb_to_cs& c = data.cbcs;
 
-  auto optional_cost = CB::get_observed_cost_cb(ld);
+  auto optional_cost = VW::get_observed_cost_cb(ld);
   // cost observed, not default
   if (optional_cost.first == true)
   {
@@ -273,15 +273,7 @@ float calc_loss(cb_explore& data, VW::example& ec, const CB::label& ld)
   return loss;
 }
 
-void finish_example(VW::workspace& all, cb_explore& data, VW::example& ec)
-{
-  float loss = calc_loss(data, ec, ec.l.cb);
-
-  CB_EXPLORE::generic_output_example(all, loss, ec, ec.l.cb);
-  VW::finish_example(all, ec);
-}
-
-void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
+void save_load(cb_explore& cb, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
 
@@ -289,37 +281,47 @@ void save_load(cb_explore& cb, io_buf& io, bool read, bool text)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover storing VW::example counter:  = " << cb.counter << "\n"; }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&cb.counter), sizeof(cb.counter), read, msg, text);
+    VW::details::bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&cb.counter), sizeof(cb.counter), read, msg, text);
   }
 }
-}  // namespace
 
-namespace CB_EXPLORE
+void update_stats_cb_explore(
+    const VW::workspace&, VW::shared_data& sd, const cb_explore& data, const VW::example& ec, VW::io::logger&)
 {
-void generic_output_example(VW::workspace& all, float loss, VW::example& ec, CB::label& ld)
-{
-  all.sd->update(ec.test_only, !CB::is_test_label(ld), loss, 1.f, ec.get_num_features());
+  const auto& ld = ec.l.cb;
+  float loss = calc_loss(data, ec, ld);
+  sd.update(ec.test_only, !ld.is_test_label(), loss, 1.f, ec.get_num_features());
+}
 
+void output_example_prediction_cb_explore(
+    VW::workspace& all, const cb_explore&, const VW::example& ec, VW::io::logger& logger)
+{
   std::stringstream ss;
+
+  for (const auto& act_score : ec.pred.a_s) { ss << std::fixed << act_score.score << " "; }
+  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss.str(), ec.tag, logger); }
+}
+
+void print_update_cb_explore(
+    VW::workspace& all, VW::shared_data& sd, const cb_explore&, const VW::example& ec, VW::io::logger&)
+{
   float maxprob = 0.f;
   uint32_t maxid = 0;
-  for (uint32_t i = 0; i < ec.pred.a_s.size(); i++)
+  const auto& ld = ec.l.cb;
+  for (const auto& act_score : ec.pred.a_s)
   {
-    ss << std::fixed << ec.pred.a_s[i].score << " ";
-    if (ec.pred.a_s[i].score > maxprob)
+    if (act_score.score > maxprob)
     {
-      maxprob = ec.pred.a_s[i].score;
-      maxid = ec.pred.a_s[i].action + 1;
+      maxprob = act_score.score;
+      maxid = act_score.action + 1;
     }
   }
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger); }
-
-  std::stringstream sso;
-  sso << maxid << ":" << std::fixed << maxprob;
-  print_update_cb_explore(all, CB::is_test_label(ld), ec, sso);
+  std::stringstream ss;
+  ss << maxid << ":" << std::fixed << maxprob;
+  print_update_cb_explore(all, sd, ld.is_test_label(), ec, ss);
 }
-
-}  // namespace CB_EXPLORE
+}  // namespace
 
 base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
 {
@@ -394,7 +396,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
     }
     data->cs = reinterpret_cast<learner<cb_explore, VW::example>*>(as_singleline(all.cost_sensitive));
     for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(VW::cs_class{}); }
-    data->cover_probs.resize_but_with_stl_behavior(num_actions);
+    data->cover_probs.resize(num_actions);
     data->preds.reserve(data->cover_size);
     learn_ptr = predict_or_learn_cover<true>;
     predict_ptr = predict_or_learn_cover<false>;
@@ -429,7 +431,9 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
                 .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(params_per_weight)
-                .set_finish_example(::finish_example)
+                .set_update_stats(::update_stats_cb_explore)
+                .set_output_example_prediction(::output_example_prediction_cb_explore)
+                .set_print_update(::print_update_cb_explore)
                 .set_save_load(save_load)
                 .build(&all.logger);
 

@@ -32,7 +32,7 @@ public:
 private:
   void transform_prediction(example& ec);
 
-  CB::label temp_lbl_cb;
+  VW::cb_label temp_lbl_cb;
   VW::action_scores temp_pred_a_s;
 };
 }  // namespace reductions

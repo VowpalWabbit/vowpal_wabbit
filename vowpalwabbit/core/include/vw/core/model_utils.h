@@ -4,6 +4,7 @@
 #pragma once
 
 #include "vw/core/io_buf.h"
+#include "vw/core/memory.h"
 #include "vw/core/v_array.h"
 
 #include <fmt/format.h>
@@ -133,6 +134,10 @@ template <typename K, typename V>
 size_t read_model_field(io_buf&, std::map<K, V>&);
 template <typename K, typename V>
 size_t write_model_field(io_buf&, const std::map<K, V>&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, std::unique_ptr<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const std::unique_ptr<T>&, const std::string&, bool);
 
 inline size_t read_model_field(io_buf& io, std::string& str)
 {
@@ -199,7 +204,7 @@ size_t read_model_field(io_buf& io, std::vector<T>& vec)
   {
     T v;
     bytes += read_model_field(io, v);
-    vec.push_back(v);
+    vec.push_back(std::move(v));
   }
   return bytes;
 }
@@ -329,9 +334,43 @@ size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::strin
   for (const auto& pair : map)
   {
     bytes += write_model_field(io, pair.first, fmt::format("{}.key{}", upstream_name, i), text);
-    bytes += write_model_field(io, pair.second, fmt::format("{}[{}]", upstream_name, pair.first), text);
+    bytes += write_model_field(io, pair.second, fmt::format("{}[key{}]", upstream_name, i), text);
     ++i;
   }
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::unique_ptr<T>& ptr)
+{
+  size_t bytes = 0;
+  bool is_null{};
+  bytes += read_model_field(io, is_null);
+
+  if (is_null)
+  {
+    ptr = nullptr;
+    return bytes;
+  }
+
+  ptr = VW::make_unique<T>();
+  bytes += read_model_field(io, *ptr);
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::unique_ptr<T>& ptr, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  if (ptr == nullptr)
+  {
+    bytes += write_model_field(io, true, fmt::format("{}.is_null()", upstream_name), text);
+    return bytes;
+  }
+
+  bytes += write_model_field(io, false, fmt::format("{}.is_null()", upstream_name), text);
+  bytes += write_model_field(io, *ptr, upstream_name, text);
+
   return bytes;
 }
 

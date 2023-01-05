@@ -7,12 +7,12 @@
 #include "vw/common/hash.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
+#include "vw/core/vw_fwd.h"
 #include "vw/explore/explore.h"
 #include "vw/io/logger.h"
 
@@ -45,7 +45,7 @@ namespace
 class warm_cb
 {
 public:
-  CB::label cb_label;
+  VW::cb_label cb_label;
   uint64_t app_seed = 0;
   VW::action_scores a_s;
   // used as the seed
@@ -77,7 +77,7 @@ public:
   std::vector<float> lambdas;
   VW::action_scores a_s_adf;
   std::vector<float> cumulative_costs;
-  CB::cb_class cl_adf;
+  VW::cb_class cl_adf;
   uint32_t ws_train_size = 0;
   uint32_t ws_vali_size = 0;
   VW::multi_ex ws_vali;
@@ -87,14 +87,14 @@ public:
   VW::multiclass_label mc_label;
   VW::cs_label cs_label;
   std::vector<VW::cs_label> csls;
-  std::vector<CB::label> cbls;
+  std::vector<VW::cb_label> cbls;
   bool use_cs = 0;
 
   ~warm_cb()
   {
-    for (size_t a = 0; a < num_actions; ++a) { VW::dealloc_examples(ecs[a], 1); }
+    for (size_t a = 0; a < num_actions; ++a) { delete ecs[a]; }
 
-    for (auto* ex : ws_vali) { VW::dealloc_examples(ex, 1); }
+    for (auto* ex : ws_vali) { delete ex; }
   }
 };
 
@@ -156,22 +156,22 @@ void copy_example_to_adf(warm_cb& data, VW::example& ec)
     auto& eca = *data.ecs[a];
     // clear label
     auto& lab = eca.l.cb;
-    CB::default_label(lab);
+    lab.reset_to_default();
 
     // copy data
     VW::copy_example_data(&eca, &ec);
 
     // offset indices for given action
-    for (features& fs : eca)
+    for (VW::features& fs : eca)
     {
-      for (feature_index& idx : fs.indices)
+      for (VW::feature_index& idx : fs.indices)
       {
         idx = ((((idx >> ss) * 28904713) + 4832917 * static_cast<uint64_t>(a)) << ss) & mask;
       }
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && CB::cb_label.test_label(eca.l)) { eca.tag.push_back('n'); }
+    if (CB_ALGS::example_is_newline_not_header(eca) && eca.l.cb.is_test_label()) { eca.tag.push_back('n'); }
   }
 }
 
@@ -282,7 +282,7 @@ uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, VW::example&
 
 void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
-  CB::cb_class& cl = data.cl_adf;
+  VW::cb_class& cl = data.cl_adf;
   // IPS for approximating the cumulative costs for all lambdas
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
@@ -296,7 +296,7 @@ template <bool use_cs>
 void add_to_vali(warm_cb& data, VW::example& ec)
 {
   // TODO: set the first parameter properly
-  VW::example* ec_copy = VW::alloc_examples(1);
+  VW::example* ec_copy = new VW::example;
   VW::copy_example_data_with_label(ec_copy, &ec);
   data.ws_vali.push_back(ec_copy);
 }
@@ -481,16 +481,16 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
   data.ecs.resize(num_actions);
   for (size_t a = 0; a < num_actions; ++a)
   {
-    data.ecs[a] = VW::alloc_examples(1);
+    data.ecs[a] = new VW::example;
     auto& lab = data.ecs[a]->l.cb;
-    CB::default_label(lab);
+    lab.reset_to_default();
   }
 
   // The rest of the initialization is for warm start CB
   data.csls.resize(num_actions);
   for (uint32_t a = 0; a < num_actions; ++a)
   {
-    VW::default_cs_label(data.csls[a]);
+    data.csls[a].reset_to_default();
     data.csls[a].costs.push_back({0, a + 1, 0, 0});
   }
   data.cbls.resize(num_actions);

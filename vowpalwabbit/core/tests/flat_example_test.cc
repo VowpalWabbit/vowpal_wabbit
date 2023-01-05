@@ -11,7 +11,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(flat_example_tests, sans_interaction_test)
+TEST(FlatExample, SansInteractionTest)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
 
@@ -25,7 +25,7 @@ TEST(flat_example_tests, sans_interaction_test)
   VW::finish_example(*vw, *ex);
 }
 
-TEST(flat_example_tests, with_interaction_test)
+TEST(FlatExample, WithInteractionTest)
 {
   auto vw = VW::initialize_experimental(vwtest::make_args("--interactions", "xy", "--quiet", "--noconstant"));
 
@@ -34,6 +34,19 @@ TEST(flat_example_tests, with_interaction_test)
 
   EXPECT_THAT(flat.fs.values, testing::UnorderedElementsAre(2, 3, 6));
   EXPECT_EQ(flat.total_sum_feat_sq, 49);
+
+  VW::free_flatten_example(&flat);
+  VW::finish_example(*vw, *ex);
+}
+
+TEST(FlatExample, EmptyExampleTest)
+{
+  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
+
+  auto* ex = VW::read_example(*vw, "1 |x a:0");
+  auto& flat = *VW::flatten_sort_example(*vw, ex);
+
+  EXPECT_TRUE(flat.fs.empty());
 
   VW::free_flatten_example(&flat);
   VW::finish_example(*vw, *ex);

@@ -24,7 +24,7 @@ public:
   tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t parent_id, uint32_t depth,
       bool left_only, bool right_only, bool is_leaf);
 
-  inline bool operator==(const tree_node& rhs) const;
+  bool operator==(const tree_node& rhs) const;
   bool operator!=(const tree_node& rhs) const;
 
   inline bool is_root() const { return id == parent_id; }
@@ -73,7 +73,7 @@ public:
   void init(uint32_t num_actions, uint32_t bandwidth);
   int32_t learner_count() const;
   uint32_t predict(LEARNER::single_learner& base, example& ec);
-  void init_node_costs(std::vector<CB::cb_class>& ac);
+  void init_node_costs(std::vector<VW::cb_class>& ac);
   const tree_node& get_sibling(const tree_node& tree_node);
   float return_cost(const tree_node& w);
   void learn(LEARNER::single_learner& base, example& ec);

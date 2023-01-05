@@ -45,74 +45,17 @@ public:
   float weight = 0.f;
 
   ccb_label() = default;
+  ccb_label(ccb_label&& other) noexcept;
+  ccb_label& operator=(ccb_label&& other) noexcept;
+  ccb_label(const ccb_label& other);
+  ccb_label& operator=(const ccb_label& other);
+  ~ccb_label();
 
-  ccb_label(ccb_label&& other) noexcept
-  {
-    type = ccb_example_type::UNSET;
-    outcome = nullptr;
-    weight = 0.f;
-
-    std::swap(type, other.type);
-    std::swap(outcome, other.outcome);
-    std::swap(explicit_included_actions, other.explicit_included_actions);
-    std::swap(weight, other.weight);
-  }
-
-  ccb_label& operator=(ccb_label&& other) noexcept
-  {
-    std::swap(type, other.type);
-    std::swap(outcome, other.outcome);
-    std::swap(explicit_included_actions, other.explicit_included_actions);
-    std::swap(weight, other.weight);
-    return *this;
-  }
-
-  ccb_label(const ccb_label& other)
-  {
-    type = other.type;
-    outcome = nullptr;
-    if (other.outcome)
-    {
-      outcome = new ccb_outcome();
-      *outcome = *other.outcome;
-    }
-    explicit_included_actions = other.explicit_included_actions;
-    weight = other.weight;
-  }
-
-  ccb_label& operator=(const ccb_label& other)
-  {
-    if (this == &other) { return *this; }
-
-    if (outcome)
-    {
-      delete outcome;
-      outcome = nullptr;
-    }
-
-    type = other.type;
-    outcome = nullptr;
-    if (other.outcome)
-    {
-      outcome = new ccb_outcome();
-      *outcome = *other.outcome;
-    }
-    explicit_included_actions = other.explicit_included_actions;
-    weight = other.weight;
-    return *this;
-  }
-
-  ~ccb_label()
-  {
-    if (outcome)
-    {
-      delete outcome;
-      outcome = nullptr;
-    }
-  }
+  VW_ATTR(nodiscard) bool is_test_label() const;
+  VW_ATTR(nodiscard) bool is_labeled() const;
+  void reset_to_default();
 };
 
-void default_ccb_label(ccb_label& ld);
 void parse_ccb_label(ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words,
     VW::io::logger& logger);
 
@@ -150,8 +93,9 @@ using conditional_contextual_bandit_outcome VW_DEPRECATED(
     "will be removed in VW 10.") = VW::ccb_outcome;
 using label VW_DEPRECATED("CCB::label renamed to VW::ccb_label. CCB::label will be removed in VW 10.") = VW::ccb_label;
 
-VW_DEPRECATED("CCB::default_label renamed to VW::default_ccb_label. CCB::default_label will be removed in VW 10.")
-inline void default_label(VW::ccb_label& ld) { VW::default_ccb_label(ld); }
+VW_DEPRECATED(
+    "CCB::default_label moved to VW::ccb_label::reset_to_default. CCB::default_label will be removed in VW 10.")
+inline void default_label(VW::ccb_label& ld) { ld.reset_to_default(); }
 
 VW_DEPRECATED("CCB::parse_label renamed to VW::parse_ccb_label. CCB::parse_label will be removed in VW 10.")
 inline void parse_label(VW::ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem,

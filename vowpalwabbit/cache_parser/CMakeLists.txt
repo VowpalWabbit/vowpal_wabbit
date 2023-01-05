@@ -15,6 +15,6 @@ vw_add_library(
 
 vw_add_test_executable(
   FOR_LIB "cache_parser"
-  SOURCES "tests/cache_test.cc" "tests/main.cc"
+  SOURCES "tests/cache_test.cc"
   EXTRA_DEPS vw_core vw_io vw_test_common
 )
