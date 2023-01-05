@@ -94,8 +94,4 @@ inline bool example_is_newline_not_header(VW::example const& ec)
 {
   return (VW::example_is_newline(ec) && !VW::ec_is_example_header_cb(ec));
 }
-
-void generic_output_example(
-    VW::workspace& all, float loss, const VW::example& ec, const VW::cb_label& ld, const VW::cb_class* known_cost);
-
 }  // namespace CB_ALGS

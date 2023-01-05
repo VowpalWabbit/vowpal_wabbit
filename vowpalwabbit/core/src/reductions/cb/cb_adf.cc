@@ -332,13 +332,6 @@ void print_update_cb_adf(VW::workspace& all, VW::shared_data& /* sd */, const CB
   else { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
-void update_and_output(VW::workspace& all, CB_ADF::cb_adf& data, const VW::multi_ex& ec_seq)
-{
-  update_stats_cb_adf(all, *all.sd, data, ec_seq, all.logger);
-  output_example_prediction_cb_adf(all, data, ec_seq, all.logger);
-  print_update_cb_adf(all, *all.sd, data, ec_seq, all.logger);
-}
-
 void save_load(CB_ADF::cb_adf& c, VW::io_buf& model_file, bool read, bool text)
 {
   if (c.get_model_file_ver() != nullptr &&
@@ -480,8 +473,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_learn_returns_prediction(lrp)
                 .set_params_per_weight(problem_multiplier)
-                // TODO: remove print_example
-                .set_print_example(::update_and_output)
                 .set_save_load(::save_load)
                 .set_merge(::cb_adf_merge)
                 .set_add(::cb_adf_add)
