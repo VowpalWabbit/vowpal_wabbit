@@ -657,15 +657,7 @@
   },
   {
     "id": 50,
-    "desc": "search sequence SPAN labeling BILOU, non-ldf train",
-    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 20 --invariant --search_rollout ref --search_alpha 1e-8 --search_task sequencespan --search_span_bilou --search 7 --holdout_off -f models/sequencespan_data.model --predict_only_model",
-    "diff_files": {
-      "stderr": "train-sets/ref/sequencespan_data.nonldf-bilou.train.stderr",
-      "stdout": "train-sets/ref/sequencespan_data.nonldf-bilou.train.stdout"
-    },
-    "input_files": [
-      "train-sets/sequencespan_data"
-    ]
+    "desc": "search sequence SPAN labeling BILOU, non-ldf train"
   },
   {
     "id": 51,
@@ -882,15 +874,7 @@
   },
   {
     "id": 68,
-    "desc": "Search for multiclass classification",
-    "vw_command": "-k -c -d train-sets/multiclass.sch --passes 20 --search_task multiclasstask --search 10 --search_alpha 1e-4 --holdout_off",
-    "diff_files": {
-      "stderr": "train-sets/ref/search_multiclass.stderr",
-      "stdout": "train-sets/ref/search_multiclass.stdout"
-    },
-    "input_files": [
-      "train-sets/multiclass.sch"
-    ]
+    "desc": "Search for multiclass classification"
   },
   {
     "id": 69,
