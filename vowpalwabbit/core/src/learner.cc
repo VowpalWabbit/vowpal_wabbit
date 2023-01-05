@@ -306,7 +306,7 @@ void generic_driver_onethread(VW::workspace& all)
 float VW::LEARNER::details::recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
-  if (label_type == VW::label_type_t::CB) { return CB::ec_is_example_header(ec); }
+  if (label_type == VW::label_type_t::CB) { return VW::ec_is_example_header_cb(ec); }
   else if (label_type == VW::label_type_t::CCB) { return reductions::ccb::ec_is_example_header(ec); }
   else if (label_type == VW::label_type_t::CS) { return VW::is_cs_example_header(ec); }
   return false;
