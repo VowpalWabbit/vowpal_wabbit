@@ -95,7 +95,6 @@ public:
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  static void print_example(VW::workspace& all, cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq);
   static void update_stats(const VW::workspace& all, VW::shared_data& sd, const cb_explore_adf_base<ExploreType>& data,
       const multi_ex& ec_seq, VW::io::logger& logger);
   static void output_example_prediction(
@@ -177,15 +176,6 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     predict(data, base, examples);
     if (data._metrics) { data._metrics->metric_predict_in_learn++; }
   }
-}
-
-template <typename ExploreType>
-inline void cb_explore_adf_base<ExploreType>::print_example(
-    VW::workspace& all, cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq)
-{
-  data._update_stats(all, *(all.sd), ec_seq, all.logger);
-  data._output_example_prediction(all, ec_seq, all.logger);
-  data._print_update(all, *(all.sd), ec_seq, all.logger);
 }
 
 template <typename ExploreType>
