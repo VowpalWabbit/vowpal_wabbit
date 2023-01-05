@@ -549,22 +549,16 @@ void get_gold_actions(Search::search& sch, uint32_t idx, uint64_t /* n */, VW::v
     return;
   }
   size_t best_action = 1;
-  size_t count = 0;
   for (uint32_t i = 1; i <= 4; i++)
   {
     if (i == 4 && sys == ARC_HYBRID) { continue; }
     if (action_loss[i] < action_loss[best_action] && is_valid(i, valid_actions))
     {
       best_action = i;
-      count = 1;
       gold_actions.clear();
       gold_actions.push_back(i);
     }
-    else if (action_loss[i] == action_loss[best_action] && is_valid(i, valid_actions))
-    {
-      count++;
-      gold_actions.push_back(i);
-    }
+    else if (action_loss[i] == action_loss[best_action] && is_valid(i, valid_actions)) { gold_actions.push_back(i); }
   }
 }
 

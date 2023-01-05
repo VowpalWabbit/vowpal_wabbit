@@ -99,7 +99,7 @@ std::unique_ptr<VW::workspace> copy_workspace(const VW::workspace* ws, VW::io::l
   command_line.emplace_back("--preserve_performance_counters");
 
   auto backing_vector = std::make_shared<std::vector<char>>();
-  io_buf temp_buffer;
+  VW::io_buf temp_buffer;
   temp_buffer.add_file(VW::io::create_vector_writer(backing_vector));
   VW::save_predictor(*const_cast<VW::workspace*>(ws), temp_buffer);
   return VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(command_line),
@@ -155,9 +155,9 @@ void model_delta::serialize(VW::io::writer& output) const
 
 std::unique_ptr<model_delta> model_delta::deserialize(VW::io::reader& input)
 {
+  auto command_line = std::vector<std::string>{"--preserve_performance_counters", "--quiet"};
   return VW::make_unique<model_delta>(VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--preserve_performance_counters"}),
-      VW::make_unique<reader_ref_adapter>(input)));
+      VW::make_unique<VW::config::options_cli>(command_line), VW::make_unique<reader_ref_adapter>(input)));
 }
 
 VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger)
@@ -262,7 +262,7 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
 }
 }  // namespace VW
 
-std::unique_ptr<VW::workspace> operator+(const VW::workspace& base, const VW::model_delta& md)
+std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW::model_delta& md)
 {
   const VW::workspace* delta = md.unsafe_get_workspace_ptr();
   validate_compatibility(std::vector<const VW::workspace*>{&base, delta}, nullptr);
@@ -309,7 +309,7 @@ std::unique_ptr<VW::workspace> operator+(const VW::workspace& base, const VW::mo
   return destination_workspace;
 }
 
-VW::model_delta operator-(const VW::workspace& ws1, const VW::workspace& ws2)
+VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2)
 {
   validate_compatibility(std::vector<const VW::workspace*>{&ws1, &ws2}, nullptr);
   auto dest_command_line = VW::split_command_line(get_keep_command_line(ws1));

@@ -67,8 +67,7 @@ std::unique_ptr<VW::workspace> merge_models(const VW::workspace* base_workspace,
  */
 VW::model_delta merge_deltas(
     const std::vector<const VW::model_delta*>& deltas_to_merge, VW::io::logger* logger = nullptr);
-}  // namespace VW
 
 std::unique_ptr<VW::workspace> operator+(const VW::workspace& ws, const VW::model_delta& md);
-
 VW::model_delta operator-(const VW::workspace& ws1, const VW::workspace& ws2);
+}  // namespace VW

@@ -15,10 +15,8 @@
 #include "vw/core/debug_log.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
-#include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
-#include "vw/core/vw.h"
 
 #include <cfloat>
 
@@ -92,58 +90,36 @@ void predict_or_learn(cats_pdf& reduction, single_learner&, VW::example& ec)
 
 ///////////////////////////////////////////////////
 // BEGIN: functions to output progress
-class reduction_output
-{
-public:
-  static void report_progress(VW::workspace& all, const cats_pdf&, const VW::example& ec);
-  static void output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
-      const VW::continuous_actions::probability_density_function& prediction);
 
-private:
-  static inline bool does_example_have_label(const VW::example& ec);
-  static void print_update_cb_cont(VW::workspace& all, const VW::example& ec);
-};
-
-// Free function to tie function pointers to output class methods
-void finish_example(VW::workspace& all, cats_pdf& data, VW::example& ec)
+// "average loss" "since last" "example counter" "example weight"
+// "current label" "current predict" "current features"
+void update_stats_cats_pdf(const VW::workspace& /* all */, VW::shared_data& sd, const cats_pdf& /* data */,
+    const VW::example& ec, VW::io::logger& /* logger */)
 {
-  // add output example
-  reduction_output::report_progress(all, data, ec);
-  reduction_output::output_predictions(all.final_prediction_sink, ec.pred.pdf);
-  VW::finish_example(all, ec);
+  const auto& cb_cont_costs = ec.l.cb_cont.costs;
+  sd.update(ec.test_only, ec.l.cb_cont.is_labeled(), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost, ec.weight,
+      ec.get_num_features());
+  sd.weighted_labels += ec.weight;
 }
 
-void reduction_output::output_predictions(std::vector<std::unique_ptr<VW::io::writer>>& predict_file_descriptors,
-    const VW::continuous_actions::probability_density_function& prediction)
+void output_example_prediction_cats_pdf(
+    VW::workspace& all, const cats_pdf& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
   // output to the prediction to all files
-  const std::string str = VW::to_string(prediction, -1);
-  for (auto& f : predict_file_descriptors)
+  const auto str = VW::to_string(ec.pred.pdf, VW::details::AS_MANY_AS_NEEDED_FLOAT_FORMATTING_DECIMAL_PRECISION);
+  for (auto& f : all.final_prediction_sink)
   {
     f->write(str.c_str(), str.size());
     f->write("\n\n", 2);
   }
 }
 
-// "average loss" "since last" "example counter" "example weight"
-// "current label" "current predict" "current features"
-void reduction_output::report_progress(VW::workspace& all, const cats_pdf&, const VW::example& ec)
+void print_update_cats_pdf(VW::workspace& all, VW::shared_data& /* sd */, const cats_pdf& /* data */,
+    const VW::example& ec, VW::io::logger& /* unused */)
 {
-  const auto& cb_cont_costs = ec.l.cb_cont.costs;
-  all.sd->update(ec.test_only, does_example_have_label(ec), cb_cont_costs.empty() ? 0.f : cb_cont_costs[0].cost,
-      ec.weight, ec.get_num_features());
-  all.sd->weighted_labels += ec.weight;
-  print_update_cb_cont(all, ec);
-}
-
-inline bool reduction_output::does_example_have_label(const VW::example& ec)
-{
-  return (!ec.l.cb_cont.costs.empty() && ec.l.cb_cont.costs[0].action != FLT_MAX);
-}
-
-void reduction_output::print_update_cb_cont(VW::workspace& all, const VW::example& ec)
-{
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  const bool should_print_driver_update =
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+  if (should_print_driver_update)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only
@@ -182,13 +158,15 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
   options.insert("cats_tree", std::to_string(num_actions));
 
   LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
-  bool always_predict = all.final_prediction_sink.size() > 0;
+  bool always_predict = !all.final_prediction_sink.empty();
   auto p_reduction = VW::make_unique<cats_pdf>(as_singleline(p_base), always_predict);
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_pdf_setup))
                 .set_output_prediction_type(VW::prediction_type_t::PDF)
-                .set_finish_example(::finish_example)
+                .set_output_example_prediction(output_example_prediction_cats_pdf)
+                .set_print_update(print_update_cats_pdf)
+                .set_update_stats(update_stats_cats_pdf)
                 .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 

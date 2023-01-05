@@ -605,7 +605,7 @@ void cleanup_example_ccb(ccb_data& data, VW::multi_ex& ec_seq)
   }
 }
 
-void save_load(ccb_data& sm, io_buf& io, bool read, bool text)
+void save_load(ccb_data& sm, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
 

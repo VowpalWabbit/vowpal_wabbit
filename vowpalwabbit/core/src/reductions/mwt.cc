@@ -60,7 +60,7 @@ class mwt
 {
 public:
   std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
-  std::vector<policy_data> evals;  // accrued losses of features.
+  std::vector<policy_data> evals;                     // accrued losses of features.
   std::pair<bool, CB::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
   double total = 0.;
@@ -209,7 +209,7 @@ void print_update_mwt(
   }
 }
 
-void save_load(mwt& c, io_buf& model_file, bool read, bool text)
+void save_load(mwt& c, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
 
@@ -217,11 +217,12 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   // total
   msg << "total: " << c.total;
-  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
+  VW::details::bin_text_read_write_fixed_validated(
+      model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
 
   // policies
   size_t policies_size = c.policies.size();
-  bin_text_read_write_fixed_validated(
+  VW::details::bin_text_read_write_fixed_validated(
       model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), read, msg, text);
 
   if (read) { c.policies.resize(policies_size); }
@@ -231,7 +232,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
     for (VW::feature_index& policy : c.policies) { msg << policy << " "; }
   }
 
-  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
+  VW::details::bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
       policies_size * sizeof(VW::feature_index), read, msg, text);
 
   // c.evals is already initialized nicely to the same size as the regressor.
@@ -239,11 +240,11 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   {
     policy_data& pd = c.evals[policy];
     if (read) { msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " "; }
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }

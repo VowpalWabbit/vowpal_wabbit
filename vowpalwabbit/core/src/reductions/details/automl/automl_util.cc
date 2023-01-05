@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "../automl_impl.h"
+#include "vw/core/automl_impl.h"
 #include "vw/core/interactions.h"
 #include "vw/core/multi_model_utils.h"
 #include "vw/core/vw.h"
@@ -79,13 +79,14 @@ std::string ns_to_str(unsigned char ns)
   else { return std::string(1, ns); }
 }
 
-std::string interaction_vec_t_to_string(
-    const std::vector<std::vector<namespace_index>>& interactions, const std::string& interaction_type)
+std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_index>>& interactions)
 {
   std::stringstream ss;
   for (const std::vector<VW::namespace_index>& v : interactions)
   {
-    interaction_type == "quadratic" ? ss << "-q " : ss << "-cubic ";
+    if (v.size() == 2) { ss << "-q "; }
+    else if (v.size() == 3) { ss << "--cubic="; }
+    else { THROW("Only supports up to cubic interactions"); }
     for (VW::namespace_index c : v) { ss << ns_to_str(c); }
     ss << " ";
   }

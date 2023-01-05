@@ -63,8 +63,8 @@ void merge_weights_simple(size_t length, const std::vector<std::reference_wrappe
 }
 
 void merge_weights_with_save_resume(size_t length,
-    const std::vector<std::reference_wrapper<const dense_parameters>>& source,
-    const std::vector<float>& /*per_model_weighting*/, VW::workspace& output_workspace, dense_parameters& weights)
+    const std::vector<std::reference_wrapper<const VW::dense_parameters>>& source,
+    const std::vector<float>& /*per_model_weighting*/, VW::workspace& output_workspace, VW::dense_parameters& weights)
 {
   // Adaptive totals
   std::vector<float> adaptive_totals(length, 0.f);
@@ -193,13 +193,13 @@ void end_pass(gd& g)
     else { VW::details::accumulate_avg(all, all.weights, 0); }
   }
   all.eta *= all.eta_decay_rate;
-  if (all.save_per_pass) { save_predictor(all, all.final_regressor_name, all.current_pass); }
+  if (all.save_per_pass) { VW::details::save_predictor(all, all.final_regressor_name, all.current_pass); }
 
   if (!all.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, g.no_win_counter))
     {
-      finalize_regressor(all, all.final_regressor_name);
+      VW::details::finalize_regressor(all, all.final_regressor_name);
     }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
@@ -217,7 +217,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
   // Weight aggregation is based on same method as allreduce.
   if (output_workspace.weights.sparse)
   {
-    std::vector<std::reference_wrapper<const sparse_parameters>> source;
+    std::vector<std::reference_wrapper<const VW::sparse_parameters>> source;
     source.reserve(all_workspaces.size());
     for (const auto* workspace : all_workspaces) { source.emplace_back(workspace->weights.sparse_weights); }
     if (output_workspace.weights.adaptive) { THROW("Sparse parameters not supported for merging with save_resume"); }
@@ -225,7 +225,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
   }
   else
   {
-    std::vector<std::reference_wrapper<const dense_parameters>> source;
+    std::vector<std::reference_wrapper<const VW::dense_parameters>> source;
     source.reserve(all_workspaces.size());
     for (const auto* workspace : all_workspaces) { source.emplace_back(workspace->weights.dense_weights); }
     if (output_workspace.weights.adaptive)
@@ -335,7 +335,7 @@ inline void audit_interaction(audit_results& dat, const VW::audit_strings* f)
 
 inline void audit_feature(audit_results& dat, const float ft_weight, const uint64_t ft_idx)
 {
-  parameters& weights = dat.all.weights;
+  auto& weights = dat.all.weights;
   uint64_t index = ft_idx & weights.mask();
   size_t stride_shift = weights.stride_shift();
 
@@ -377,7 +377,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
 
 void print_lda_features(VW::workspace& all, VW::example& ec)
 {
-  parameters& weights = all.weights;
+  VW::parameters& weights = all.weights;
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
   for (VW::features& fs : ec) { count += fs.size(); }
@@ -525,31 +525,31 @@ void multipredict(gd& g, base_learner&, VW::example& ec, size_t count, size_t st
   size_t num_features_from_interactions = 0;
   if (g.all->weights.sparse)
   {
-    multipredict_info<sparse_parameters> mp = {
+    multipredict_info<VW::sparse_parameters> mp = {
         count, step, pred, g.all->weights.sparse_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
     {
-      foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(
+      foreach_feature<multipredict_info<VW::sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
     else
     {
-      foreach_feature<multipredict_info<sparse_parameters>, uint64_t, vec_add_multipredict>(
+      foreach_feature<multipredict_info<VW::sparse_parameters>, uint64_t, vec_add_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
   }
   else
   {
-    multipredict_info<dense_parameters> mp = {
+    multipredict_info<VW::dense_parameters> mp = {
         count, step, pred, g.all->weights.dense_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
     {
-      foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_trunc_multipredict>(
+      foreach_feature<multipredict_info<VW::dense_parameters>, uint64_t, vec_add_trunc_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
     else
     {
-      foreach_feature<multipredict_info<dense_parameters>, uint64_t, vec_add_multipredict>(
+      foreach_feature<multipredict_info<VW::dense_parameters>, uint64_t, vec_add_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
   }
@@ -859,7 +859,7 @@ void sync_weights(VW::workspace& all)
   all.sd->contraction = 1.;
 }
 
-size_t write_index(io_buf& model_file, std::stringstream& msg, bool text, uint32_t num_bits, uint64_t i)
+size_t write_index(VW::io_buf& model_file, std::stringstream& msg, bool text, uint32_t num_bits, uint64_t i)
 {
   size_t brw;
   uint32_t old_i = 0;
@@ -869,9 +869,9 @@ size_t write_index(io_buf& model_file, std::stringstream& msg, bool text, uint32
   if (num_bits < 31)
   {
     old_i = static_cast<uint32_t>(i);
-    brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&old_i), sizeof(old_i), msg, text);
+    brw = VW::details::bin_text_write_fixed(model_file, reinterpret_cast<char*>(&old_i), sizeof(old_i), msg, text);
   }
-  else { brw = bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text); }
+  else { brw = VW::details::bin_text_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), msg, text); }
 
   return brw;
 }
@@ -893,7 +893,7 @@ std::string to_string(const VW::details::invert_hash_info& info)
 }
 
 template <class T>
-void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text, T& weights)
+void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, bool text, T& weights)
 {
   size_t brw = 1;
 
@@ -912,11 +912,11 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
         if (map_it != all.index_name_map.end())
         {
           msg << to_string(map_it->second);
-          bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
+          VW::details::bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
         }
 
         msg << ":" << weight_index << ":" << weight_value << "\n";
-        bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
+        VW::details::bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
       }
     }
     return;
@@ -955,20 +955,20 @@ void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool
         std::stringstream msg;
         brw = write_index(model_file, msg, text, all.num_bits, i);
         msg << ":" << *v << "\n";
-        brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
+        brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
     }
   }
 }
 
-void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text)
+void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, bool text)
 {
   if (all.weights.sparse) { save_load_regressor(all, model_file, read, text, all.weights.sparse_weights); }
   else { save_load_regressor(all, model_file, read, text, all.weights.dense_weights); }
 }
 
 template <class T>
-void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool read, bool text, gd* g,
+void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, bool read, bool text, gd* g,
     std::stringstream& msg, uint32_t ftrl_size, T& weights)
 {
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
@@ -1031,7 +1031,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
           if (map_it != all.index_name_map.end())
           {
             msg << to_string(map_it->second) << ":";
-            bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
+            VW::details::bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
           }
         }
       }
@@ -1042,7 +1042,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
         {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
+          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
         }
       }
       else if (ftrl_size == 4)
@@ -1051,7 +1051,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
         {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
+          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
         }
       }
       else if (ftrl_size == 6)
@@ -1062,7 +1062,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
               << (&(*v))[5] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
+          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
         }
       }
       else if (g == nullptr || (!all.weights.adaptive && !all.weights.normalized))
@@ -1071,7 +1071,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
         {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
+          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
         }
       }
       else if ((all.weights.adaptive && !all.weights.normalized) || (!all.weights.adaptive && all.weights.normalized))
@@ -1081,7 +1081,7 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
         {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 2 * sizeof(*v), msg, text);
+          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 2 * sizeof(*v), msg, text);
         }
       }
       else
@@ -1091,41 +1091,42 @@ void save_load_online_state_weights(VW::workspace& all, io_buf& model_file, bool
         {
           brw = write_index(model_file, msg, text, all.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
-          brw += bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
+          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
         }
       }
     }
   }
 }
 
-void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, bool text,
+void save_load_online_state(VW::workspace& all, VW::io_buf& model_file, bool read, bool text,
     std::vector<per_model_state>& pms, gd* g, uint32_t ftrl_size)
 {
   std::stringstream msg;
 
   msg << "initial_t " << all.initial_t << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.initial_t), sizeof(all.initial_t), read, msg, text);
 
   assert(pms.size() >= 1);
   msg << "norm normalizer " << pms[0].normalized_sum_norm_x << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[0].normalized_sum_norm_x),
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[0].normalized_sum_norm_x),
       sizeof(pms[0].normalized_sum_norm_x), read, msg, text);
 
   msg << "t " << all.sd->t << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->t), sizeof(all.sd->t), read, msg, text);
+  VW::details::bin_text_read_write_fixed(
+      model_file, reinterpret_cast<char*>(&all.sd->t), sizeof(all.sd->t), read, msg, text);
 
   msg << "sum_loss " << all.sd->sum_loss << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.sd->sum_loss), sizeof(all.sd->sum_loss), read, msg, text);
 
   msg << "sum_loss_since_last_dump " << all.sd->sum_loss_since_last_dump << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->sum_loss_since_last_dump),
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->sum_loss_since_last_dump),
       sizeof(all.sd->sum_loss_since_last_dump), read, msg, text);
 
   float dump_interval = all.sd->dump_interval;
   msg << "dump_interval " << dump_interval << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&dump_interval), sizeof(dump_interval), read, msg, text);
   if (!read || (all.training && all.preserve_performance_counters))
   {  // update dump_interval from input model
@@ -1133,31 +1134,31 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
   }
 
   msg << "min_label " << all.sd->min_label << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.sd->min_label), sizeof(all.sd->min_label), read, msg, text);
 
   msg << "max_label " << all.sd->max_label << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), read, msg, text);
 
   msg << "weighted_labeled_examples " << all.sd->weighted_labeled_examples << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_labeled_examples),
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_labeled_examples),
       sizeof(all.sd->weighted_labeled_examples), read, msg, text);
 
   msg << "weighted_labels " << all.sd->weighted_labels << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.sd->weighted_labels), sizeof(all.sd->weighted_labels), read, msg, text);
 
   msg << "weighted_unlabeled_examples " << all.sd->weighted_unlabeled_examples << "\n";
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_unlabeled_examples),
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->weighted_unlabeled_examples),
       sizeof(all.sd->weighted_unlabeled_examples), read, msg, text);
 
   msg << "example_number " << all.sd->example_number << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.sd->example_number), sizeof(all.sd->example_number), read, msg, text);
 
   msg << "total_features " << all.sd->total_features << "\n";
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.sd->total_features), sizeof(all.sd->total_features), read, msg, text);
 
   if (!read || all.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
@@ -1167,25 +1168,26 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
 
     // fix average loss
     msg << "total_weight " << pms[0].total_weight << "\n";
-    bin_text_read_write_fixed(
+    VW::details::bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&pms[0].total_weight), sizeof(pms[0].total_weight), read, msg, text);
 
     // fix "loss since last" for first printed out example details
     msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->old_weighted_labeled_examples),
+    VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.sd->old_weighted_labeled_examples),
         sizeof(all.sd->old_weighted_labeled_examples), read, msg, text);
 
     // fix "number of examples per pass"
     msg << "current_pass " << all.current_pass << "\n";
     if (all.model_file_ver >= VW::version_definitions::VERSION_PASS_UINT64)
     {
-      bin_text_read_write_fixed(
+      VW::details::bin_text_read_write_fixed(
           model_file, reinterpret_cast<char*>(&all.current_pass), sizeof(all.current_pass), read, msg, text);
     }
     else  // backwards compatiblity.
     {
       size_t temp_pass = static_cast<size_t>(all.current_pass);
-      bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&temp_pass), sizeof(temp_pass), read, msg, text);
+      VW::details::bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&temp_pass), sizeof(temp_pass), read, msg, text);
       all.current_pass = temp_pass;
     }
   }
@@ -1194,7 +1196,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
   {
     msg << "l1_state " << all.sd->gravity << "\n";
     auto local_gravity = all.sd->gravity;
-    bin_text_read_write_fixed(
+    VW::details::bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&local_gravity), sizeof(local_gravity), read, msg, text);
 
     // all.sd->gravity - command line value
@@ -1209,7 +1211,7 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
 
     msg << "l2_state " << all.sd->contraction << "\n";
     auto local_contraction = all.sd->contraction;
-    bin_text_read_write_fixed(
+    VW::details::bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&local_contraction), sizeof(local_contraction), read, msg, text);
 
     // all.sd->contraction - command line value
@@ -1257,12 +1259,12 @@ void save_load_online_state(VW::workspace& all, io_buf& model_file, bool read, b
   else { save_load_online_state_weights(all, model_file, read, text, g, msg, ftrl_size, all.weights.dense_weights); }
 }
 
-void save_load(gd& g, io_buf& model_file, bool read, bool text)
+void save_load(gd& g, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *g.all;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
 
     if (all.weights.adaptive && all.initial_t > 0)
     {
@@ -1291,7 +1293,8 @@ void save_load(gd& g, io_buf& model_file, bool read, bool text)
     bool resume = all.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
     if (resume)
     {
       if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
@@ -1562,7 +1565,7 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
       make_base_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
           VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
           .set_learn_returns_prediction(true)
-          .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
+          .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
           .set_sensitivity(bare->sensitivity)
           .set_multipredict(bare->multipredict)
           .set_update(bare->update)

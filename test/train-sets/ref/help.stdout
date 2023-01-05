@@ -253,14 +253,16 @@ Weight Options:
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
-                                            choices {champdupe, one_diff, one_diff_inclusion, rand}, keep,
-                                            experimental)
+                                            choices {champdupe, one_diff, one_diff_inclusion, qbase_cubic,
+                                            rand}, keep, experimental)
     --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
                                             bool, default: false, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
                                             (bonferroni correction) (type: bool, keep, experimental)
+    --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
+                                            experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
                                             separately in regression (type: bool, keep, necessary)
@@ -584,6 +586,8 @@ Weight Options:
     --shift_model_bounds arg                Shift maximum update_count for model i from champ_update_count^(i
                                             / num_models) to champ_update_count^((i + shift) / (num_models
                                             + shift)) (type: uint, default: 0, keep, experimental)
+    --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
+                                            experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -812,6 +816,9 @@ Weight Options:
                                             than <thr> threshold (type: float, default: 0.5)
     --top_k arg                             Predict top-<k> labels instead of labels above threshold (type:
                                             uint, default: 0)
+    --probabilities                         Predict probabilities for the predicted labels (type: bool)
+    --plt_force_load_legacy_model           Force the loading of a pre 9.7 model. This option is a migration
+                                            measure and will be removed in the next VW version. (type: bool)
 [Reduction] Recall Tree Options:
     --recall_tree arg                       Use online tree for multiclass (type: uint, keep, necessary)
     --max_candidates arg                    Maximum number of labels per leaf in the tree (type: uint, keep)

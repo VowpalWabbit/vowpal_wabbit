@@ -2,11 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#if !defined(__APPLE__) && !defined(_WIN32)
-#  define __STDCPP_MATH_SPEC_FUNCS__ 201003L
-#  define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
-#endif
-
 #include "vw/core/confidence_sequence_robust.h"
 
 #include "vw/core/metric_sink.h"
@@ -95,13 +90,7 @@ countable_discrete_base::countable_discrete_base(double eta, double r, double k,
     : log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
-    , zeta_r(
-#if !defined(__APPLE__) && !defined(_WIN32)
-          std::riemann_zeta(r)
-#else
-          1.6449340668482264  // std::riemann_zeta(r) -- Assuming r=2.0 is constant
-#endif
-              )
+    , zeta_r(1.6449340668482264)  // std::riemann_zeta(r) -- Assuming r=2.0 is constant
     , scale_fac(0.5 * (1.0 + polylog(r, eta) / (eta * zeta_r)))
     , log_scale_fac(std::log1p(scale_fac - 1.0))
     , t(0)
@@ -144,7 +133,7 @@ double countable_discrete_base::log_wealth_mix(
   double y = s / sqrt_tp1 - (t / sqrt_tp1) * mu;
   std::vector<double> log_es;
   std::vector<double> log_ws;
-  for (const std::pair<const unsigned long, double>& memo_p : memo)
+  for (const auto& memo_p : memo)
   {
     uint64_t j = memo_p.first;
     double v = memo_p.second;
@@ -202,11 +191,8 @@ double countable_discrete_base::root_brentq(
   double s = 0;
   double d = 0;
 
-  unsigned int iter = 0;
   while (std::abs(fc) > toll_f && std::abs(b - a) > toll_x)
   {
-    ++iter;
-
     if (fa != fc && fb != fc)  // use inverse quadratic interopolation
     {
       s = (a * fb * fc / ((fa - fb) * (fa - fc))) + (b * fa * fc / ((fb - fa) * (fb - fc))) +

@@ -14,7 +14,6 @@ namespace VW
 {
 namespace details
 {
-
 // Used in parse_source
 class input_options
 {
@@ -56,6 +55,17 @@ std::vector<extent_term> parse_full_name_interactions(VW::workspace& all, VW::st
  * @return std::tuple<std::string, std::string> (namespace, feature)
  */
 std::tuple<std::string, std::string> extract_ignored_feature(VW::string_view namespace_feature);
+
+std::unique_ptr<VW::workspace> parse_args(std::unique_ptr<config::options_i, options_deleter_type> options,
+    VW::trace_message_t trace_listener, void* trace_context, VW::io::logger* custom_logger);
+config::options_i& load_header_merge_options(
+    config::options_i& options, VW::workspace& all, io_buf& model, bool& interactions_settings_duplicated);
+void parse_modules(config::options_i& options, VW::workspace& all, bool interactions_settings_duplicated,
+    std::vector<std::string>& dictionary_namespaces);
+void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> learner_builder);
+void parse_sources(config::options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load);
+void print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enabled_reductions);
+void parse_dictionary_argument(VW::workspace& all, const std::string& str);
 }  // namespace details
 }  // namespace VW
 

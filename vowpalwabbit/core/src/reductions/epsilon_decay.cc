@@ -15,11 +15,6 @@
 #include "vw/core/prediction_type.h"
 #include "vw/core/vw.h"
 
-// TODO: delete this three includes
-#include "vw/core/reductions/cb/cb_adf.h"
-#include "vw/core/reductions/gd.h"
-#include "vw/core/shared_data.h"
-
 #include <utility>
 
 using namespace VW::config;
@@ -39,7 +34,7 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, uint64_t min_champ_examples,
-    float initial_epsilon, uint64_t shift_model_bounds)
+    float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost)
     : _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
@@ -50,6 +45,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _min_champ_examples(min_champ_examples)
     , _initial_epsilon(initial_epsilon)
     , _shift_model_bounds(shift_model_bounds)
+    , _reward_as_cost(reward_as_cost)
 {
   _weight_indices.resize(model_count);
   conf_seq_estimators.reserve(model_count);
@@ -73,7 +69,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
   {
     logged = (*it)->l.cb.costs[0];
     labelled_action = std::distance(examples.begin(), it);
-    const float r = -logged.cost;
+    const float r = _reward_as_cost ? logged.cost : -logged.cost;
     if (_epsilon_decay_audit_str != "")
     {
       _audit_msg << "Example: " << _global_counter << " Labelled_action: " << labelled_action
@@ -82,25 +78,15 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
     }
     auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
     // Process each model, then update the upper/lower bounds for each model
-    for (int64_t model_ind = 0; model_ind < model_count; ++model_ind)
+    for (int64_t model_ind = model_count - 1; model_ind >= 0; --model_ind)
     {
       if (!_constant_epsilon)
       {
         ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(
             init_ep, conf_seq_estimators[model_ind][model_ind].update_count);
       }
-      std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[model_ind] * 3]);
-      std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[model_ind] * 3 + 1]);
-      std::swap(*_sd_gravity, per_live_model_state_double[_weight_indices[model_ind] * 3 + 2]);
-      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[_weight_indices[model_ind] * 2]);
-      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[_weight_indices[model_ind] * 2 + 1]);
       if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[model_ind]); }
       base.learn(examples, _weight_indices[model_ind]);
-      std::swap(*_gd_normalized, per_live_model_state_double[_weight_indices[model_ind] * 3]);
-      std::swap(*_gd_total_weight, per_live_model_state_double[_weight_indices[model_ind] * 3 + 1]);
-      std::swap(*_sd_gravity, per_live_model_state_double[_weight_indices[model_ind] * 3 + 2]);
-      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[_weight_indices[model_ind] * 2]);
-      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[_weight_indices[model_ind] * 2 + 1]);
       for (const auto& a_s : examples[0]->pred.a_s)
       {
         if (a_s.action == labelled_action)
@@ -113,15 +99,12 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
           }
           if (_epsilon_decay_audit_str != "")
           {
-            if (model_ind != model_count - 1)
-            {
-              _audit_msg << "challenger[" << (model_ind + 1) << "] ";
-
-              _audit_msg << "update_count: " << conf_seq_estimators[model_ind][model_ind].update_count
-                         << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
-                         << " champ_ub: " << conf_seq_estimators[model_count - 1][model_ind].upper_bound()
-                         << " p_pred: " << a_s.score << "\n";
-            }
+            if (model_ind != model_count - 1) { _audit_msg << "challenger[" << (model_ind + 1) << "] "; }
+            else { _audit_msg << "champ "; }
+            _audit_msg << "update_count: " << conf_seq_estimators[model_ind][model_ind].update_count
+                       << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
+                       << " champ_ub: " << conf_seq_estimators[model_count - 1][model_ind].upper_bound()
+                       << " p_pred: " << a_s.score << "\n";
           }
           break;
         }
@@ -272,7 +255,7 @@ void learn(
 }
 
 void save_load_epsilon_decay(
-    VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay, io_buf& io, bool read, bool text)
+    VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, epsilon_decay); }
@@ -283,9 +266,9 @@ void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
 {
   if (data._epsilon_decay_audit_str != "")
   {
-    io_buf buf;
+    VW::io_buf buf;
     buf.add_file(VW::io::open_file_writer(data._epsilon_decay_audit_str));
-    bin_text_write(buf, nullptr, 0, data._audit_msg, true);
+    VW::details::bin_text_write(buf, nullptr, 0, data._audit_msg, true);
     buf.flush();
     buf.close_file();
   }
@@ -310,6 +293,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   uint64_t min_champ_examples;
   float initial_epsilon;
   uint64_t shift_model_bounds;
+  bool reward_as_cost;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -330,12 +314,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .experimental())
       .add(make_option("epsilon_decay_significance_level", epsilon_decay_significance_level)
                .keep()
-               .default_value(DEFAULT_ALPHA)
+               .default_value(VW::details::DEFAULT_ALPHA)
                .help("Set significance level for champion change")
                .experimental())
       .add(make_option("epsilon_decay_estimator_decay", epsilon_decay_estimator_decay)
                .keep()
-               .default_value(CRESSEREAD_DEFAULT_TAU)
+               .default_value(VW::details::CRESSEREAD_DEFAULT_TAU)
                .help("Time constant for count decay")
                .experimental())
       .add(make_option("epsilon_decay_audit", epsilon_decay_audit_str)
@@ -365,6 +349,10 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .keep()
                .help("Shift maximum update_count for model i from champ_update_count^(i / num_models) to "
                      "champ_update_count^((i + shift) / (num_models + shift))")
+               .experimental())
+      .add(make_option("reward_as_cost", reward_as_cost)
+               .keep()
+               .help("Treat rewards as cost (do not negate sign)")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -375,23 +363,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon, shift_model_bounds);
+      epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon, shift_model_bounds,
+      reward_as_cost);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
   auto* base_learner = stack_builder.setup_base_learner();
-
-  GD::gd& gd = *static_cast<GD::gd*>(
-      base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
-  auto& adf_data = *static_cast<CB_ADF::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
-                                                     ->get_internal_type_erased_data_pointer_test_use_only());
-  data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
-  data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
-  data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
-  data->_gd_total_weight = &(gd.per_model_states[0].total_weight);
-  data->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
-  data->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
-  data->_sd_gravity = &(all.sd->gravity);
 
   if (base_learner->is_multiline())
   {

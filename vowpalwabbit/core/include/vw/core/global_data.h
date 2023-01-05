@@ -11,6 +11,7 @@
 #include "vw/core/error_reporting.h"
 #include "vw/core/input_parser.h"
 #include "vw/core/interaction_generation_state.h"
+#include "vw/core/metrics_collector.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
@@ -84,9 +85,9 @@ class trace_message_wrapper
 {
 public:
   void* inner_context;
-  trace_message_t trace_message;
+  VW::trace_message_t trace_message;
 
-  trace_message_wrapper(void* context, trace_message_t trace_message)
+  trace_message_wrapper(void* context, VW::trace_message_t trace_message)
       : inner_context(context), trace_message(trace_message)
   {
   }
@@ -151,9 +152,7 @@ public:
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 
-  // This field is experimental and subject to change.
-  // Used to implement the external binary parser.
-  std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
+  VW::metrics_collector global_metrics;
 
   // Experimental field.
   // Generic parser interface to make it possible to use any external parser.

@@ -43,7 +43,7 @@ public:
     predict_or_learn_impl<false>(base, examples);
   }
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-  void save_load(io_buf& model_file, bool read, bool text);
+  void save_load(VW::io_buf& model_file, bool read, bool text);
 
 private:
   float _epsilon;
@@ -131,17 +131,19 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
   for (size_t i = 0; i < num_actions; i++) { preds[i] = _action_probs[i]; }
 }
 
-void cb_explore_adf_synthcover::save_load(io_buf& model_file, bool read, bool text)
+void cb_explore_adf_synthcover::save_load(VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
   if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) { msg << "_min_cost " << _min_cost << "\n"; }
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&_min_cost), sizeof(_min_cost), read, msg, text);
 
     if (!read) { msg << "_max_cost " << _max_cost << "\n"; }
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&_max_cost), sizeof(_max_cost), read, msg, text);
   }
 }
 }  // namespace
@@ -197,10 +199,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = CB::cb_label;
 
-  bool with_metrics = options.was_supplied("extra_metrics");
-
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
-  auto data = VW::make_unique<explore_type>(with_metrics, epsilon, psi,
+  auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, psi,
       VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state(), all.model_file_ver);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_synthcover_setup))
@@ -209,8 +209,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_finish_example(explore_type::finish_multiline_example)
-                .set_print_example(explore_type::print_multiline_example)
+                .set_output_example_prediction(explore_type::output_example_prediction)
+                .set_update_stats(explore_type::update_stats)
+                .set_print_update(explore_type::print_update)
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build(&all.logger);

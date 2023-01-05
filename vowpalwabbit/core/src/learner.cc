@@ -45,7 +45,7 @@ void save(example& ec, VW::workspace& all)
   }
 
   if (!all.quiet) { *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl; }
-  ::save_predictor(all, final_regressor_name, 0);
+  VW::details::save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
 }

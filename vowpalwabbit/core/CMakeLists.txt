@@ -6,6 +6,7 @@ set(vw_core_headers
   include/vw/core/array_parameters_dense.h
   include/vw/core/array_parameters_sparse.h
   include/vw/core/array_parameters.h
+  include/vw/core/automl_impl.h
   include/vw/core/best_constant.h
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
@@ -47,7 +48,6 @@ set(vw_core_headers
   include/vw/core/interactions_predict.h
   include/vw/core/interactions.h
   include/vw/core/io_buf.h
-  include/vw/core/json_utils.h
   include/vw/core/kskip_ngram_transformer.h
   include/vw/core/label_dictionary.h
   include/vw/core/label_parser.h
@@ -56,6 +56,7 @@ set(vw_core_headers
   include/vw/core/loss_functions.h
   include/vw/core/memory.h
   include/vw/core/merge.h
+  include/vw/core/metrics_collector.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
   include/vw/core/multi_model_utils.h
@@ -228,6 +229,7 @@ set(vw_core_sources
   src/learner.cc
   src/loss_functions.cc
   src/merge.cc
+  src/metrics_collector.cc
   src/metric_sink.cc
   src/multiclass.cc
   src/multilabel.cc
@@ -355,13 +357,14 @@ set(vw_core_sources
   src/unique_sort.cc
   src/version.cc
   src/vw_validate.cc
+  src/vw.cc
 )
 
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
-    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser vw_text_parser
+    PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser vw_text_parser vw_json_parser
     PRIVATE_DEPS
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
@@ -422,13 +425,66 @@ vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
     SOURCES
+      tests/automl_test.cc
+      tests/automl_weights_test.cc
+      tests/baseline_cb_test.cc
+      tests/cats_test.cc
+      tests/cats_tree_test.cc
+      tests/cats_user_provided_pdf.cc
+      tests/cb_explore_adf_test.cc
+      tests/cb_large_actions_test.cc
+      tests/cb_las_one_pass_svd_test.cc
+      tests/cb_las_spanner_test.cc
+      tests/ccb_parser_test.cc
+      tests/ccb_test.cc
+      tests/chain_hashing.cc
       tests/confidence_sequence_robust_test.cc
+      tests/confidence_sequence_test.cc
+      tests/continuous_actions_parser_test.cc
+      tests/custom_reduction_test.cc
+      tests/distributionally_robust_test.cc
       tests/eigen_memory_tree_test.cc
+      tests/epsilon_decay_test.cc
+      tests/epsilon_test.cc
+      tests/example_header_test.cc
+      tests/example_test.cc
+      tests/feature_group_test.cc
       tests/flat_example_test.cc
-      tests/main.cc
+      tests/guard_test.cc
+      tests/interactions_test.cc
+      tests/loss_functions_test.cc
+      tests/math_test.cc
+      tests/merge_header_opts_test.cc
       tests/merge_test.cc
+      tests/minimal_custom_reduction.cc
       tests/model_util_test.cc
+      tests/multiclass_label_parser_test.cc
+      tests/numeric_cast_test.cc
+      tests/object_pool_test.cc
+      tests/offset_tree_test.cc
       tests/parse_args_test.cc
+      tests/parser_test.cc
+      tests/pmf_to_pdf_test.cc
+      tests/power_test.cc
+      tests/prediction_test.cc
+      tests/random_test.cc
       tests/save_load_test.cc
+      tests/scope_exit_test.cc
+      tests/simulator.cc
+      tests/simulator.h
+      tests/slates_parser_test.cc
+      tests/slates_test.cc
+      tests/status_builder_test.cc
+      tests/tag_utils_test.cc
       tests/thread_pool_test.cc
+      tests/tokenize_test.cc
+      tests/tutorial_test.cc
+      tests/v_array_test.cc
+      tests/vw_versions_test.cc
+      tests/weights_test.cc
 )
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
+  # Tests are allowed to access private headers.
+  target_include_directories(vw_core_test PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
+endif()

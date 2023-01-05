@@ -504,12 +504,13 @@ std::string number_to_natural(size_t big)
   return ss.str();
 }
 
-void print_update(search_private& priv)
+void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const search& data,
+    const VW::multi_ex& /* ec_seq */, VW::io::logger& /* unused */)
 {
   // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
-  VW::workspace& all = *priv.all;
+  auto& priv = *data.priv;
   if (!priv.printed_output_header && !all.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
@@ -2343,7 +2344,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   {
     size_t prev_num = priv.num_calls_to_run_previous / priv.save_every_k_runs;
     size_t this_num = priv.num_calls_to_run / priv.save_every_k_runs;
-    if (this_num > prev_num) { save_predictor(all, all.final_regressor_name, this_num); }
+    if (this_num > prev_num) { VW::details::save_predictor(all, all.final_regressor_name, this_num); }
     priv.num_calls_to_run_previous = priv.num_calls_to_run;
   }
 }
@@ -2437,12 +2438,6 @@ void end_pass(search& sch)
     all->options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
     all->options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
   }
-}
-
-void finish_multiline_example(VW::workspace& all, search& sch, VW::multi_ex& ec_seq)
-{
-  print_update(*sch.priv);
-  VW::finish_example(all, ec_seq);
 }
 
 void end_examples(search& sch)
@@ -2629,12 +2624,12 @@ void parse_neighbor_features(
     char ns = ' ';
     if (cmd.size() == 1)
     {
-      posn = int_of_string(cmd[0], logger);
+      posn = VW::details::int_of_string(cmd[0], logger);
       ns = ' ';
     }
     else if (cmd.size() == 2)
     {
-      posn = int_of_string(cmd[0], logger);
+      posn = VW::details::int_of_string(cmd[0], logger);
       ns = (!cmd[1].empty()) ? cmd[1].front() : ' ';
     }
     else { logger.err_warn("Ignoring malformed neighbor specification: '{}'", strview); }
@@ -3380,7 +3375,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
           stack_builder.get_setupfn_name(search_setup))
           .set_learn_returns_prediction(true)
           .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
-          .set_finish_example(finish_multiline_example)
+          .set_print_update(print_update_search)
           .set_end_examples(end_examples)
           .set_finish(search_finish)
           .set_end_pass(end_pass)

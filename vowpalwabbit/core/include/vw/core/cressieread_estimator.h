@@ -17,13 +17,17 @@ public:
   float last_r = 0.0;
   uint64_t update_count = 0;
 
-  cressieread_estimator() : chisq(DEFAULT_ALPHA, CRESSEREAD_DEFAULT_TAU, 0, std::numeric_limits<double>::infinity()) {}
+  cressieread_estimator()
+      : chisq(
+            VW::details::DEFAULT_ALPHA, VW::details::CRESSEREAD_DEFAULT_TAU, 0, std::numeric_limits<double>::infinity())
+  {
+  }
   cressieread_estimator(double alpha, double tau) : chisq(alpha, tau, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
   void persist(metric_sink&, const std::string&);
   float current_ips() const;
-  void reset_stats(double alpha = DEFAULT_ALPHA, double tau = CRESSEREAD_DEFAULT_TAU);
+  void reset_stats(double alpha = VW::details::DEFAULT_ALPHA, double tau = VW::details::CRESSEREAD_DEFAULT_TAU);
   float lower_bound();
   float upper_bound();
 };

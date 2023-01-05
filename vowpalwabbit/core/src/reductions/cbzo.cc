@@ -227,17 +227,17 @@ void NO_SANITIZE_UNDEFINED learn(cbzo& data, base_learner& base, VW::example& ec
   update_weights<policy, feature_mask_off>(data, ec);
 }
 
-inline void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text)
+inline void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, bool text)
 {
   GD::save_load_regressor(all, model_file, read, text);
 }
 
-void save_load(cbzo& data, io_buf& model_file, bool read, bool text)
+void save_load(cbzo& data, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *data.all;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     if (data.all->initial_constant != 0.0f) { set_weight(all, VW::details::CONSTANT, 0, data.all->initial_constant); }
   }
   if (model_file.num_files() > 0) { save_load_regressor(all, model_file, read, text); }

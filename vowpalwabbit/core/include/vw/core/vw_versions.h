@@ -69,5 +69,8 @@ constexpr VW::version_struct VERSION_FILE_WITH_GD_PPW_STATE{9, 7, 0};
 /// Moved option values from command line to model data
 constexpr VW::version_struct VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX{9, 6, 0};
 
+/// PLT had an incorrect save_load impl which relied on the adaptive value prior to this version.
+constexpr VW::version_struct VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX{9, 7, 0};
+
 }  // namespace version_definitions
 }  // namespace VW
