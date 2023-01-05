@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "vw/common/future_compat.h"
 #include <cassert>
 #include <queue>
 #include <stack>
@@ -92,6 +93,7 @@ public:
     return size;
   }
 
+  VW_DEPRECATED("Pools will no longer be able to check if an object is from the pool in VW 10.")
   bool is_from_pool(const T* obj) const
   {
     for (auto& bound : _chunk_bounds)
@@ -185,12 +187,16 @@ public:
     std::unique_lock<std::mutex> lock(_lock);
     return _inner_pool.size();
   }
+      VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
 
+  VW_DEPRECATED("Pools will no longer be able to check if an object is from the pool in VW 10.")
   bool is_from_pool(const T* obj) const
   {
     std::unique_lock<std::mutex> lock(_lock);
     return _inner_pool.is_from_pool(obj);
   }
+  VW_WARNING_STATE_POP
 
 private:
   mutable std::mutex _lock;
