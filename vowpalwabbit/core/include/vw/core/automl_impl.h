@@ -292,8 +292,8 @@ public:
     }
   }
   // This fn gets called before learning any example
-  void one_step(VW::LEARNER::multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
-  void offset_learn(VW::LEARNER::multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
+  void one_step(VW::LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
+  void offset_learn(VW::LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
 };
 }  // namespace automl
 
