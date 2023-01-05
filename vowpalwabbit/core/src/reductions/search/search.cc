@@ -333,7 +333,7 @@ void clear_memo_foreach_action(search_private& priv)
 
 search::search()
 {
-  priv = &calloc_or_throw<search_private>();
+  priv = &VW::details::calloc_or_throw<search_private>();
   new (priv) search_private();
 }
 
@@ -1968,11 +1968,11 @@ void hoopla_permute(size_t* B, size_t* end)
   size_t N = end - B;  // NOLINT
   std::sort(B, end, cmp_size_t);
   // make some temporary space
-  size_t* A = calloc_or_throw<size_t>((N + 1) * 2);  // NOLINT
-  A[N] = B[0];                                       // arbitrarily choose the maximum in the middle
-  A[N + 1] = B[N - 1];                               // so the maximum goes next to it
-  size_t lo = N, hi = N + 1;                         // which parts of A have we filled in? [lo,hi]
-  size_t i = 0, j = N - 1;                           // which parts of B have we already covered? [0,i] and [j,N-1]
+  size_t* A = VW::details::calloc_or_throw<size_t>((N + 1) * 2);  // NOLINT
+  A[N] = B[0];                                                    // arbitrarily choose the maximum in the middle
+  A[N + 1] = B[N - 1];                                            // so the maximum goes next to it
+  size_t lo = N, hi = N + 1;                                      // which parts of A have we filled in? [lo,hi]
+  size_t i = 0, j = N - 1;  // which parts of B have we already covered? [0,i] and [j,N-1]
   while (i + 1 < j)
   {
     // there are four options depending on where things get placed
@@ -2557,7 +2557,7 @@ std::vector<VW::cs_label> read_allowed_transitions(action A, const char* filenam
     THROW("error: could not read file " << filename << " (" << VW::io::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 
-  bool* bg = calloc_or_throw<bool>((static_cast<size_t>(A + 1)) * (A + 1));
+  bool* bg = VW::details::calloc_or_throw<bool>((static_cast<size_t>(A + 1)) * (A + 1));
   int rd, from, to, count = 0;
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {

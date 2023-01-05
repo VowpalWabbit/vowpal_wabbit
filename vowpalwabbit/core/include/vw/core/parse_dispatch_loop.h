@@ -12,6 +12,10 @@
 
 #include <functional>
 
+namespace VW
+{
+namespace details
+{
 // DispatchFuncT should be of the form - void(VW::workspace&, const VW::multi_ex&)
 template <typename DispatchFuncT>
 void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
@@ -78,3 +82,6 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
   }
   VW::details::lock_done(*all.example_parser);
 }
+
+}  // namespace details
+}  // namespace VW

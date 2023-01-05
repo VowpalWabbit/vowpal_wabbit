@@ -292,7 +292,7 @@ void generic_driver_onethread(VW::workspace& all)
     examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };
-  parse_dispatch(all, multi_ex_fptr);
+  VW::details::parse_dispatch(all, multi_ex_fptr);
   handler.process_remaining();
   all.l->end_examples();
 }

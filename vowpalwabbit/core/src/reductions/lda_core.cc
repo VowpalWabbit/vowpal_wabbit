@@ -449,7 +449,7 @@ inline float digamma<float, lda_math_mode::USE_PRECISE>(float x)
 template <>
 inline float exponential<float, lda_math_mode::USE_PRECISE>(float x)
 {
-  return correctedExp(x);
+  return VW::details::correctedExp(x);
 }
 template <>
 inline float powf<float, lda_math_mode::USE_PRECISE>(float x, float p)
@@ -917,7 +917,7 @@ void learn_batch(lda& l)
     float* weights_for_w = &(weights[s->f.weight_index & weights.mask()]);
     float decay_component = l.decay_levels.end()[-2] -
         l.decay_levels.end()[static_cast<int>(-1 - l.example_t + *(weights_for_w + l.all->lda))];
-    float decay = std::fmin(1.0f, correctedExp(decay_component));
+    float decay = std::fmin(1.0f, VW::details::correctedExp(decay_component));
     float* u_for_w = weights_for_w + l.all->lda + 1;
 
     *(weights_for_w + l.all->lda) = static_cast<float>(l.example_t);
@@ -1252,7 +1252,7 @@ void end_examples(lda& l, T& weights)
   {
     float decay_component =
         l.decay_levels.back() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
-    float decay = std::fmin(1.f, correctedExp(decay_component));
+    float decay = std::fmin(1.f, VW::details::correctedExp(decay_component));
 
     VW::weight* wp = &(*iter);
     for (size_t i = 0; i < l.all->lda; ++i) { wp[i] *= decay; }
