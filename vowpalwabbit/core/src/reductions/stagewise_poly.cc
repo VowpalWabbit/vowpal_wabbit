@@ -138,7 +138,7 @@ inline size_t depthsbits_sizeof(const stagewise_poly& poly) { return (2 * poly.a
 
 void depthsbits_create(stagewise_poly& poly)
 {
-  poly.depthsbits = calloc_or_throw<uint8_t>(2 * poly.all->length());
+  poly.depthsbits = VW::details::calloc_or_throw<uint8_t>(2 * poly.all->length());
   for (uint64_t i = 0; i < poly.all->length() * 2; i += 2)
   {
     poly.depthsbits[i] = DEFAULT_DEPTH;
@@ -253,7 +253,7 @@ void sort_data_ensure_sz(stagewise_poly& poly, size_t len)
     std::cout << ", new size " << poly.sd_len << std::endl;
 #endif              // DEBUG
     free(poly.sd);  // okay for null.
-    poly.sd = calloc_or_throw<sort_data>(poly.sd_len);
+    poly.sd = VW::details::calloc_or_throw<sort_data>(poly.sd_len);
   }
   assert(len <= poly.sd_len);
 }

@@ -198,7 +198,7 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
   }
   c->search = options.was_supplied("search");
 
-  c->pred = calloc_or_throw<VW::polyprediction>(c->num_classes);
+  c->pred = VW::details::calloc_or_throw<VW::polyprediction>(c->num_classes);
   size_t ws = c->num_classes;
   auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
