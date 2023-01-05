@@ -45,7 +45,7 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   }
 
   // generate a cost-sensitive example to update classifiers
-  gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
+  VW::details::gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
 
   if (c.cb_type != VW::cb_type_t::DM)
   {
@@ -68,7 +68,7 @@ void learn_eval(cb& data, single_learner&, VW::example& ec)
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
   else { c.known_cost = VW::cb_class{}; }
-  gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
+  VW::details::gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
   for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
   {
