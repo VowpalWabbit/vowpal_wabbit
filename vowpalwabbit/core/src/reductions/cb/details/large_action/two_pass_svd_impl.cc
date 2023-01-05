@@ -84,7 +84,7 @@ bool two_pass_svd_impl::generate_Y(const multi_ex& examples, const std::vector<f
 
   for (auto* ex : examples)
   {
-    assert(!CB::ec_is_example_header(*ex));
+    assert(!VW::ec_is_example_header_cb(*ex));
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
@@ -140,7 +140,7 @@ void two_pass_svd_impl::generate_B(const multi_ex& examples, const std::vector<f
   uint64_t row_index = 0;
   for (auto* ex : examples)
   {
-    assert(!CB::ec_is_example_header(*ex));
+    assert(!VW::ec_is_example_header_cb(*ex));
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;

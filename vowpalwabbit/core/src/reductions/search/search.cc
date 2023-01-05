@@ -910,7 +910,7 @@ inline void cs_cost_push_back(bool is_cb, VW::polylabel& ld, uint32_t index, flo
 {
   if (is_cb)
   {
-    CB::cb_class cost{value, index, 0.};
+    VW::cb_class cost{value, index, 0.};
     ld.cb.costs.push_back(cost);
   }
   else
@@ -3217,7 +3217,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(priv.allowed_actions_cache);
+    VW::cb_label_parser_global.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cb.costs.clear();
     priv.gte_label.cb.costs.clear();
   }
