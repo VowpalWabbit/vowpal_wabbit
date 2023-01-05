@@ -9,8 +9,8 @@ lda:0
 options: --interact ab
 Checksum: 2819888933
 :0
-gd_ppw_state[0]normalized_sum_norm_x = 35.006378173828125
-gd_ppw_state[0]total_weight = 6
+_gd_ppw_state[0]_normalized_sum_norm_x = 35.006378173828125
+_gd_ppw_state[0]_total_weight = 6
 80026:0.148807
 80029:-22.8098
 80031:9.01437

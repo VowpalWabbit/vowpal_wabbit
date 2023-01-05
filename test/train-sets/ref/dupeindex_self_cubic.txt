@@ -9,8 +9,8 @@ lda:0
 options: --interactions aaa --noconstant --ignore_linear a
 Checksum: 204924803
 :0
-gd_ppw_state[0]normalized_sum_norm_x = 20
-gd_ppw_state[0]total_weight = 1
+_gd_ppw_state[0]_normalized_sum_norm_x = 20
+_gd_ppw_state[0]_total_weight = 1
 ab^feat_1*ab^feat_1*ab^feat_2:9267:0.0446532
 ac^feat_3*ac^feat_4*ac^feat_4:10957:0.0446532
 ab^feat_1*ab^feat_1*ab^feat_1:17567:0.0446532

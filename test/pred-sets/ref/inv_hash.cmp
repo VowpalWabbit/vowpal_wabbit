@@ -8,8 +8,8 @@ lda:0
 options: --oaa 3 --quadratic ::
 Checksum: 1543578543
 :0
-gd_ppw_state[0]normalized_sum_norm_x = 43
-gd_ppw_state[0]total_weight = 2
+_gd_ppw_state[0]_normalized_sum_norm_x = 43
+_gd_ppw_state[0]_total_weight = 2
 f^y*f^c:132:-0.05178
 f^y*f^c[1]:133:0.0666978
 f^y*f^c[2]:134:-0.0666978

@@ -28,5 +28,5 @@ current_pass 1
 l1_state 5.34
 l2_state 0.003
 gd_ppw_state.size() = 1
-gd_ppw_state[0]normalized_sum_norm_x = 0
-gd_ppw_state[0]total_weight = 0
+gd_ppw_state[0]_normalized_sum_norm_x = 0
+gd_ppw_state[0]_total_weight = 0

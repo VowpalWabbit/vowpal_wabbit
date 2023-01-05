@@ -1318,7 +1318,7 @@ void save_load(gd& g, VW::io_buf& model_file, bool read, bool text)
           g.per_model_states.emplace_back();
           VW::model_utils::read_model_field(model_file, g.per_model_states[0]);
         }
-        else { VW::model_utils::write_model_field(model_file, g.per_model_states[0], "gd_ppw_state[0]", text); }
+        else { VW::model_utils::write_model_field(model_file, g.per_model_states[0], "_gd_ppw_state[0]", text); }
       }
       if (!all.weights.not_null()) { THROW("Model weights not initialized."); }
       save_load_regressor(all, model_file, read, text);
@@ -1425,8 +1425,8 @@ size_t read_model_field(io_buf& model, GD::per_model_state& pms)
 size_t write_model_field(io_buf& model, const GD::per_model_state& pms, const std::string& name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(model, pms.normalized_sum_norm_x, name + "normalized_sum_norm_x", text);
-  bytes += write_model_field(model, pms.total_weight, name + "total_weight", text);
+  bytes += write_model_field(model, pms.normalized_sum_norm_x, name + "_normalized_sum_norm_x", text);
+  bytes += write_model_field(model, pms.total_weight, name + "_total_weight", text);
   return bytes;
 }
 }  // namespace model_utils

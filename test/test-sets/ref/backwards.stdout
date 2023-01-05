@@ -9,8 +9,8 @@ lda:0
 options: --oaa 3
 Checksum: 4098939232
 :0
-gd_ppw_state[0]normalized_sum_norm_x = 8
-gd_ppw_state[0]total_weight = 1
+_gd_ppw_state[0]_normalized_sum_norm_x = 8
+_gd_ppw_state[0]_total_weight = 1
 f^c*e^y:20368:-0.0540374
 f^c*e^y[1]:20369:-0.0908917
 f^c*e^y[2]:20370:0.0914445

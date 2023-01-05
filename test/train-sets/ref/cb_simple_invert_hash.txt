@@ -10,8 +10,8 @@ Checksum: 3590524534
 event_sum 1
 action_sum 2
 :0
-gd_ppw_state[0]normalized_sum_norm_x = 3
-gd_ppw_state[0]total_weight = 1
+_gd_ppw_state[0]_normalized_sum_norm_x = 3
+_gd_ppw_state[0]_total_weight = 1
 Constant:116060:-0.193097
 shared^f1:147509:-0.193097
 action^f2:257122:-0.193097
