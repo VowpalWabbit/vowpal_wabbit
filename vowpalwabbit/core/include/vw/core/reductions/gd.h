@@ -217,7 +217,7 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
   }
 }
 
-}  // namespace INTERACTIONS
+}  // namespace VW
 
 namespace INTERACTIONS  // NOLINT
 {

@@ -206,7 +206,7 @@ void parse_label_cb_eval(VW::cb_eval_label& ld, VW::label_parser_reuse_mem& reus
   const auto rest_of_tokens = std::vector<VW::string_view>(words.begin() + 1, words.end());
   ::parse_label_cb(ld.event, reuse_mem, rest_of_tokens, logger);
 }
-}
+}  // namespace
 
 VW::label_parser VW::cb_eval_label_parser_global = {
     // default_label
