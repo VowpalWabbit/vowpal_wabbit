@@ -1,9 +1,11 @@
+// Copyright (c) by respective owners including Yahoo!, Microsoft, and
+// individual contributors. All rights reserved. Released under a BSD (revised)
+// license as described in the file LICENSE.
+
 #pragma once
 
 #include "vw/common/hash.h"
-
-// get the error code defined in master
-#include "explore.h"
+#include "vw/explore/explore_error_codes.h"
 
 #include <algorithm>
 #include <cassert>
@@ -14,8 +16,13 @@
 #include <stdexcept>
 #include <vector>
 
-namespace exploration
+namespace VW
 {
+namespace explore
+{
+namespace details
+{
+
 constexpr uint64_t CONSTANT_A = 0xeece66d5deece66dULL;
 constexpr uint64_t CONSTANT_C = 2147483647;
 
@@ -57,13 +64,6 @@ int generate_epsilon_greedy(
   *(pmf_first + top_action) += 1.f - epsilon;
 
   return S_EXPLORATION_OK;
-}
-
-template <typename It>
-int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pmf_first, It pmf_last)
-{
-  using pmf_category = typename std::iterator_traits<It>::iterator_category;
-  return generate_epsilon_greedy(epsilon, top_action, pmf_first, pmf_last, pmf_category());
 }
 
 template <typename InputIt, typename OutputIt>
@@ -109,15 +109,6 @@ int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, st
 }
 
 template <typename InputIt, typename OutputIt>
-int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, OutputIt pmf_first, OutputIt pmf_last)
-{
-  using scores_category = typename std::iterator_traits<InputIt>::iterator_category;
-  using pmf_category = typename std::iterator_traits<OutputIt>::iterator_category;
-
-  return generate_softmax(lambda, scores_first, scores_last, scores_category(), pmf_first, pmf_last, pmf_category());
-}
-
-template <typename InputIt, typename OutputIt>
 int generate_bag(InputIt top_actions_first, InputIt top_actions_last, std::input_iterator_tag /* top_actions_tag */,
     OutputIt pmf_first, OutputIt pmf_last, std::random_access_iterator_tag /* pmf_tag */)
 {
@@ -140,15 +131,6 @@ int generate_bag(InputIt top_actions_first, InputIt top_actions_last, std::input
   for (OutputIt d = pmf_first; d != pmf_last && t_a != top_actions_last; ++d, ++t_a) { *d = *t_a * normalizer; }
 
   return S_EXPLORATION_OK;
-}
-
-template <typename InputIt, typename OutputIt>
-int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt pmf_first, OutputIt pmf_last)
-{
-  using top_actions_category = typename std::iterator_traits<InputIt>::iterator_category;
-  using pmf_category = typename std::iterator_traits<OutputIt>::iterator_category;
-
-  return generate_bag(top_actions_first, top_actions_last, top_actions_category(), pmf_first, pmf_last, pmf_category());
 }
 
 template <typename It>
@@ -215,15 +197,6 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
 }
 
 template <typename It>
-int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last)
-{
-  using pmf_category = typename std::iterator_traits<It>::iterator_category;
-
-  return enforce_minimum_probability(
-      uniform_epsilon, consider_zero_valued_elements, pmf_first, pmf_last, pmf_category());
-}
-
-template <typename It>
 int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last, std::random_access_iterator_tag /* pmf_tag */)
 {
   if (pmf_first == pmf_last || pmf_last < pmf_first) { return E_EXPLORATION_BAD_RANGE; }
@@ -238,14 +211,6 @@ int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last, std::rand
   }
 
   return S_EXPLORATION_OK;
-}
-
-template <typename It>
-int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last)
-{
-  using pmf_category = typename std::iterator_traits<It>::iterator_category;
-
-  return mix_with_uniform(uniform_epsilon, pmf_first, pmf_last, pmf_category());
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
@@ -300,16 +265,6 @@ int sample_after_normalizing(
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
-// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
-// be used to inplace mutate it.
-template <typename It>
-int sample_after_normalizing(uint64_t seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
-{
-  using pmf_category = typename std::iterator_traits<It>::iterator_category;
-  return sample_after_normalizing(seed, pmf_first, pmf_last, chosen_index, pmf_category());
-}
-
-// Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
 // will result in a very biased distribution.
 // If unsure how to update seed between calls, merand48 (in rand48.h) can be used to inplace mutate it.
 template <typename It>
@@ -320,17 +275,6 @@ int sample_after_normalizing(
   return sample_after_normalizing(seed_hash, pmf_first, pmf_last, chosen_index, pmf_category);
 }
 
-// Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
-// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
-// be used to inplace mutate it.
-template <typename It>
-int sample_after_normalizing(const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
-{
-  using pmf_category = typename std::iterator_traits<It>::iterator_category;
-  return sample_after_normalizing(seed, pmf_first, pmf_last, chosen_index, pmf_category());
-}
-
-//
 template <typename ActionIt>
 int swap_chosen(
     ActionIt action_first, ActionIt action_last, std::forward_iterator_tag /* action_category */, uint32_t chosen_index)
@@ -347,13 +291,6 @@ int swap_chosen(
   if (chosen_index != 0) { std::iter_swap(action_first, action_first + chosen_index); }
 
   return S_EXPLORATION_OK;
-}
-
-template <typename ActionsIt>
-int swap_chosen(ActionsIt action_first, ActionsIt action_last, uint32_t chosen_index)
-{
-  using actionit_category = typename std::iterator_traits<ActionsIt>::iterator_category;
-  return swap_chosen(action_first, action_last, actionit_category(), chosen_index);
 }
 
 // Pick a discrete action in proportion to the scores.
@@ -406,21 +343,6 @@ int sample_scores(
   return S_EXPLORATION_OK;
 }
 
-// Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
-// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
-// be used to inplace mutate it.
-/**
- * @brief Sample a continuous value from the provided pdf.
- *
- * @tparam It Iterator type of the pmf. Must be a RandomAccessIterator.
- * @param p_seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash. The seed state will be
- * advanced
- * @param pdf_first Iterator pointing to the beginning of the pdf.
- * @param pdf_last Iterator pointing to the end of the pdf.
- * @param chosen_value returns the sampled continuous value.
- * @param pdf_value returns the probablity density at the sampled location.
- * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
- */
 template <typename It>
 int sample_pdf(
     uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value, std::random_access_iterator_tag)
@@ -437,7 +359,7 @@ int sample_pdf(
   constexpr float edge_avoid_factor = 1.0001f;
   float draw = 0.f;
   do {
-    draw = edge_avoid_factor * total_pdf_mass * exploration::uniform_random_merand48_advance(*p_seed);
+    draw = edge_avoid_factor * total_pdf_mass * explore::details::uniform_random_merand48_advance(*p_seed);
   } while (draw >= total_pdf_mass);
 
   float acc_mass = 0.f;
@@ -460,26 +382,83 @@ int sample_pdf(
   return S_EXPLORATION_OK;
 }
 
+}  // namespace details
+
+template <typename It>
+int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pmf_first, It pmf_last)
+{
+  using pmf_category = typename std::iterator_traits<It>::iterator_category;
+  return details::generate_epsilon_greedy(epsilon, top_action, pmf_first, pmf_last, pmf_category());
+}
+
+template <typename InputIt, typename OutputIt>
+int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, OutputIt pmf_first, OutputIt pmf_last)
+{
+  using scores_category = typename std::iterator_traits<InputIt>::iterator_category;
+  using pmf_category = typename std::iterator_traits<OutputIt>::iterator_category;
+
+  return details::generate_softmax(
+      lambda, scores_first, scores_last, scores_category(), pmf_first, pmf_last, pmf_category());
+}
+
+template <typename InputIt, typename OutputIt>
+int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt pmf_first, OutputIt pmf_last)
+{
+  using top_actions_category = typename std::iterator_traits<InputIt>::iterator_category;
+  using pmf_category = typename std::iterator_traits<OutputIt>::iterator_category;
+
+  return details::generate_bag(
+      top_actions_first, top_actions_last, top_actions_category(), pmf_first, pmf_last, pmf_category());
+}
+
+template <typename It>
+int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last)
+{
+  using pmf_category = typename std::iterator_traits<It>::iterator_category;
+
+  return details::enforce_minimum_probability(
+      uniform_epsilon, consider_zero_valued_elements, pmf_first, pmf_last, pmf_category());
+}
+template <typename It>
+int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last)
+{
+  using pmf_category = typename std::iterator_traits<It>::iterator_category;
+
+  return details::mix_with_uniform(uniform_epsilon, pmf_first, pmf_last, pmf_category());
+}
+
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
 // be used to inplace mutate it.
-/**
- * @brief Sample a continuous value from the provided pdf.
- *
- * @tparam It Iterator type of the pmf. Must be a RandomAccessIterator.
- * @param p_seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash. The seed state will be
- * advanced
- * @param pdf_first Iterator pointing to the beginning of the pdf.
- * @param pdf_last Iterator pointing to the end of the pdf.
- * @param chosen_value returns the sampled continuous value.
- * @param pdf_value returns the probablity density at the sampled location.
- * @return int returns 0 on success, otherwise an error code as defined by E_EXPLORATION_*.
- */
+template <typename It>
+int sample_after_normalizing(uint64_t seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
+{
+  using pmf_category = typename std::iterator_traits<It>::iterator_category;
+  return details::sample_after_normalizing(seed, pmf_first, pmf_last, chosen_index, pmf_category());
+}
+
+// Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
+// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
+// be used to inplace mutate it.
+template <typename It>
+int sample_after_normalizing(const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
+{
+  using pmf_category = typename std::iterator_traits<It>::iterator_category;
+  return details::sample_after_normalizing(seed, pmf_first, pmf_last, chosen_index, pmf_category());
+}
+
+template <typename ActionsIt>
+int swap_chosen(ActionsIt action_first, ActionsIt action_last, uint32_t chosen_index)
+{
+  using actionit_category = typename std::iterator_traits<ActionsIt>::iterator_category;
+  return details::swap_chosen(action_first, action_last, actionit_category(), chosen_index);
+}
+
 template <typename It>
 int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value)
 {
   using pdf_category = typename std::iterator_traits<It>::iterator_category;
-  return sample_pdf(p_seed, pdf_first, pdf_last, chosen_value, pdf_value, pdf_category());
+  return details::sample_pdf(p_seed, pdf_first, pdf_last, chosen_value, pdf_value, pdf_category());
 }
-
-}  // namespace exploration
+}  // namespace explore
+}  // namespace VW
