@@ -315,22 +315,23 @@ bool ec_is_example_header(const example& ec, label_type_t label_type)
 }  // namespace LEARNER
 }  // namespace VW
 
-void VW::LEARNER::details::learner_build_diagnostic(VW::io::logger& logger, VW::string_view this_name,
-    VW::string_view base_name, prediction_type_t in_pred_type, prediction_type_t base_out_pred_type,
-    label_type_t out_label_type, label_type_t base_in_label_type, details::merge_fn merge_fn_ptr,
-    details::merge_with_all_fn merge_with_all_fn_ptr)
+void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name,
+    prediction_type_t in_pred_type, prediction_type_t base_out_pred_type, label_type_t out_label_type,
+    label_type_t base_in_label_type, details::merge_fn merge_fn_ptr, details::merge_with_all_fn merge_with_all_fn_ptr)
 {
   if (in_pred_type != base_out_pred_type)
   {
-    logger.err_warn(
-        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
-        "reduction: {}.",
+    const auto message = fmt::format(
+        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base reduction: {}.",
         to_string(in_pred_type), this_name, to_string(base_out_pred_type), base_name);
+    THROW(message);
   }
   if (out_label_type != base_in_label_type)
   {
-    logger.err_warn("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
-        to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
+    const auto message =
+        fmt::format("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
+            to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
+    THROW(message);
   }
 
   if (merge_fn_ptr != nullptr && merge_with_all_fn_ptr != nullptr)

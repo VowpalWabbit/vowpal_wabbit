@@ -163,11 +163,13 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_pdf_setup))
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::PDF)
                 .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .set_output_example_prediction(output_example_prediction_cats_pdf)
                 .set_print_update(print_update_cats_pdf)
                 .set_update_stats(update_stats_cats_pdf)
-                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
