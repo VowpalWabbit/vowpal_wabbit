@@ -25,7 +25,6 @@
 #include <utility>
 
 using namespace VW::LEARNER;
-using namespace exploration;
 using namespace VW::config;
 using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
@@ -108,7 +107,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example
   probs.reserve(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) { probs.push_back({i, 0}); }
   uint32_t chosen = ec.pred.multiclass - 1;
-  generate_epsilon_greedy(data.epsilon, chosen, begin_scores(probs), end_scores(probs));
+  VW::explore::generate_epsilon_greedy(data.epsilon, chosen, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
@@ -154,7 +153,8 @@ void get_cover_probabilities(
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
-  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
+  VW::explore::enforce_minimum_probability(
+      min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>

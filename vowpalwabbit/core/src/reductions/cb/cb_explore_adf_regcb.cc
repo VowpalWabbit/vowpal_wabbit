@@ -208,7 +208,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
       if (_min_costs[preds[i].action] <= min_max_cost) { preds[i].score = 1; }
       else { preds[i].score = 0; }
       // explore uniformly on support
-      exploration::enforce_minimum_probability(
+      VW::explore::enforce_minimum_probability(
           1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
     }
   }
