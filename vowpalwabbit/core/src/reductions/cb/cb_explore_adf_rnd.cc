@@ -249,9 +249,9 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, VW::multi_ex
   auto& preds = examples[0]->pred.a_s;
   float max_bonus = std::max(1e-3f, *std::max_element(_bonuses.begin(), _bonuses.end()));
   compute_ci(preds, max_bonus);
-  exploration::generate_softmax(
+  VW::explore::generate_softmax(
       -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 }  // namespace
 
@@ -320,6 +320,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

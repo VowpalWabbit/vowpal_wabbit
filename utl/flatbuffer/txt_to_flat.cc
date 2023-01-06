@@ -24,7 +24,7 @@
 
 using namespace VW::config;
 
-VW::workspace* setup(std::unique_ptr<options_i, options_deleter_type> options)
+VW::workspace* setup(std::unique_ptr<options_i, VW::options_deleter_type> options)
 {
   VW::workspace* all = nullptr;
   try
@@ -64,7 +64,7 @@ int main(int argc, char* argv[])
   std::vector<std::string> opts(argv + 1, argv + argc);
   opts.emplace_back("--quiet");
 
-  std::unique_ptr<options_cli, options_deleter_type> ptr(
+  std::unique_ptr<options_cli, VW::options_deleter_type> ptr(
       new options_cli(opts), [](VW::config::options_i* ptr) { delete ptr; });
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(std::move(ptr)));

@@ -76,7 +76,7 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, VW::multi_
     preds[0].score = 1.0;
   }
 
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 void cb_explore_adf_first::save_load(VW::io_buf& io, bool read, bool text)
@@ -139,6 +139,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

@@ -404,7 +404,7 @@ void print_features(VW::workspace& all, VW::example& ec)
       }
     }
     size_t num_interacted_features = 0;
-    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(
+    VW::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(
         all, ec, dat, num_interacted_features);
 
     stable_sort(dat.results.begin(), dat.results.end());

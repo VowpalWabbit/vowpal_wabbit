@@ -134,6 +134,8 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
   auto* l = VW::LEARNER::make_reduction_learner(std::move(s), base, learn_fn, predict_fn, name)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_multipredict(multipredict_f)
                 .set_update(update)

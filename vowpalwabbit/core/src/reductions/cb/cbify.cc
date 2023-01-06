@@ -20,7 +20,6 @@
 #include <vector>
 
 using namespace VW::LEARNER;
-using namespace exploration;
 
 using namespace VW::config;
 
@@ -214,7 +213,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW:
   base.predict(ec);
 
   uint32_t chosen_action;
-  if (sample_after_normalizing(
+  if (VW::explore::sample_after_normalizing(
           data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
@@ -360,7 +359,7 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
   base.predict(ec);
 
   uint32_t chosen_action;
-  if (sample_after_normalizing(
+  if (VW::explore::sample_after_normalizing(
           data.app_seed + data.example_counter++, begin_scores(ec.pred.a_s), end_scores(ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
@@ -392,7 +391,7 @@ void predict_adf(cbify& data, multi_learner& base, VW::example& ec)
 
   auto& out_ec = *data.adf_data.ecs[0];
 
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
+  if (VW::explore::sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
           end_scores(out_ec.pred.a_s), data.chosen_action))
     THROW("Failed to sample from pdf");
 
@@ -447,7 +446,7 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_se
 
   auto& out_ec = *ec_seq[0];
 
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
+  if (VW::explore::sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
           end_scores(out_ec.pred.a_s), data.chosen_action))
     THROW("Failed to sample from pdf");
 
@@ -813,7 +812,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
             .set_update_stats(update_stats_func)
             .set_output_example_prediction(output_example_prediction_func)
             .set_print_update(print_update_func)
-            .build(&all.logger);
+            .build();
   }
   else
   {
@@ -890,7 +889,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
             .set_update_stats(update_stats_func)
             .set_output_example_prediction(output_example_prediction_func)
             .set_print_update(print_update_func)
-            .build(&all.logger);
+            .build();
   }
 
   return make_base(*l);
@@ -939,7 +938,7 @@ VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stac
                 .set_output_example_prediction(output_example_prediction_cbify_ldf)
                 .set_print_update(print_update_cbify_ldf)
                 .set_update_stats(update_stats_cbify_ldf)
-                .build(&all.logger);
+                .build();
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
 
   return make_base(*l);
