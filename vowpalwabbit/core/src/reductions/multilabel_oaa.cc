@@ -170,7 +170,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
           .set_print_update(print_update_multilabel_oaa)
           .build();
 
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
+  all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
 
   return make_base(*l);
 }
