@@ -420,7 +420,8 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
   const auto inner_kernel_func = [&](VW::features::const_audit_iterator begin, VW::features::const_audit_iterator end,
                                      VW::feature_value value, VW::feature_index index)
   {
-    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
+    details::inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
+        dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
   const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(dat, audit_str); };
@@ -438,7 +439,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
     {
       // Skip over any interaction with an empty namespace.
       if (details::has_empty_interaction_quadratic(ec.feature_space, ns)) { continue; }
-      num_features += process_quadratic_interaction<audit>(
+      num_features += details::process_quadratic_interaction<audit>(
           details::generate_quadratic_char_combination(ec.feature_space, ns[0], ns[1]), permutations, inner_kernel_func,
           depth_audit_func);
     }
@@ -446,7 +447,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
     {
       // Skip over any interaction with an empty namespace.
       if (details::has_empty_interaction_cubic(ec.feature_space, ns)) { continue; }
-      num_features += process_cubic_interaction<audit>(
+      num_features += details::process_cubic_interaction<audit>(
           details::generate_cubic_char_combination(ec.feature_space, ns[0], ns[1], ns[2]), permutations,
           inner_kernel_func, depth_audit_func);
     }
@@ -456,7 +457,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
       // Skip over any interaction with an empty namespace.
       if (details::has_empty_interaction(ec.feature_space, ns)) { continue; }
       num_features +=
-          process_generic_interaction<audit>(details::generate_generic_char_combination(ec.feature_space, ns),
+          details::process_generic_interaction<audit>(details::generate_generic_char_combination(ec.feature_space, ns),
               permutations, inner_kernel_func, depth_audit_func, cache.state_data);
     }
   }
@@ -470,25 +471,25 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
       continue;
     }
 
-    generate_generic_extent_combination_iterative(
+    details::generate_generic_extent_combination_iterative(
         ec.feature_space, ns,
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
           const size_t len = ns.size();
           if (len == 2)
           {
-            num_features += process_quadratic_interaction<audit>(
+            num_features += details::process_quadratic_interaction<audit>(
                 std::make_tuple(combination[0], combination[1]), permutations, inner_kernel_func, depth_audit_func);
           }
           else if (len == 3)
           {
-            num_features +=
-                process_cubic_interaction<audit>(std::make_tuple(combination[0], combination[1], combination[2]),
-                    permutations, inner_kernel_func, depth_audit_func);
+            num_features += details::process_cubic_interaction<audit>(
+                std::make_tuple(combination[0], combination[1], combination[2]), permutations, inner_kernel_func,
+                depth_audit_func);
           }
           else
           {
-            num_features += process_generic_interaction<audit>(
+            num_features += details::process_generic_interaction<audit>(
                 combination, permutations, inner_kernel_func, depth_audit_func, cache.state_data);
           }
         },
