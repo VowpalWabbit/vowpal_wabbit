@@ -33,4 +33,3 @@ TEST(UniformHash, NonAscii)
   EXPECT_EQ(VW::uniform_hash(str.c_str(), str.size(), 0), 2574050673);
   EXPECT_EQ(VW::uniform_hash(str.c_str(), str.size(), 2493003127), 2630240042);
 }
-
