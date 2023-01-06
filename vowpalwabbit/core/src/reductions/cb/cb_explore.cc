@@ -153,7 +153,8 @@ void get_cover_probabilities(
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
-  VW::explore::enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
+  VW::explore::enforce_minimum_probability(
+      min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>

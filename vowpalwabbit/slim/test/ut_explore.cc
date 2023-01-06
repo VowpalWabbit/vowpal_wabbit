@@ -41,12 +41,10 @@ TEST(ExploreSlim, SamplingRank)
       std::iter_swap(std::begin(pdf), std::begin(pdf) + chosen_action_idx);
     }
 
-    for (size_t i = 0; i < ranking.size(); i++) { histogram[i * ranking.size() + ranking[i]]++;
-}
+    for (size_t i = 0; i < ranking.size(); i++) { histogram[i * ranking.size() + ranking[i]]++; }
   }
 
-  for (auto& d : histogram) { d /= rep;
-}
+  for (auto& d : histogram) { d /= rep; }
 
   // best order is 0, 2, 1
   // rows: slots

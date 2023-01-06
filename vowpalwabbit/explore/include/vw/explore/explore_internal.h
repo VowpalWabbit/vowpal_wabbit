@@ -5,7 +5,6 @@
 #pragma once
 
 #include "vw/common/hash.h"
-
 #include "vw/explore/explore_error_codes.h"
 
 #include <algorithm>
@@ -109,8 +108,6 @@ int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, st
   return S_EXPLORATION_OK;
 }
 
-
-
 template <typename InputIt, typename OutputIt>
 int generate_bag(InputIt top_actions_first, InputIt top_actions_last, std::input_iterator_tag /* top_actions_tag */,
     OutputIt pmf_first, OutputIt pmf_last, std::random_access_iterator_tag /* pmf_tag */)
@@ -135,8 +132,6 @@ int generate_bag(InputIt top_actions_first, InputIt top_actions_last, std::input
 
   return S_EXPLORATION_OK;
 }
-
-
 
 template <typename It>
 int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last,
@@ -201,7 +196,6 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
   return S_EXPLORATION_OK;
 }
 
-
 template <typename It>
 int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last, std::random_access_iterator_tag /* pmf_tag */)
 {
@@ -218,7 +212,6 @@ int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last, std::rand
 
   return S_EXPLORATION_OK;
 }
-
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
 // will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
@@ -270,7 +263,6 @@ int sample_after_normalizing(
 
   return S_EXPLORATION_OK;
 }
-
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
 // will result in a very biased distribution.
@@ -351,7 +343,6 @@ int sample_scores(
   return S_EXPLORATION_OK;
 }
 
-
 template <typename It>
 int sample_pdf(
     uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value, std::random_access_iterator_tag)
@@ -391,9 +382,7 @@ int sample_pdf(
   return S_EXPLORATION_OK;
 }
 
-
-}  // namespace explore
-
+}  // namespace details
 
 template <typename It>
 int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pmf_first, It pmf_last)
@@ -408,7 +397,8 @@ int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, Ou
   using scores_category = typename std::iterator_traits<InputIt>::iterator_category;
   using pmf_category = typename std::iterator_traits<OutputIt>::iterator_category;
 
-  return details::generate_softmax(lambda, scores_first, scores_last, scores_category(), pmf_first, pmf_last, pmf_category());
+  return details::generate_softmax(
+      lambda, scores_first, scores_last, scores_category(), pmf_first, pmf_last, pmf_category());
 }
 
 template <typename InputIt, typename OutputIt>
@@ -417,7 +407,8 @@ int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt p
   using top_actions_category = typename std::iterator_traits<InputIt>::iterator_category;
   using pmf_category = typename std::iterator_traits<OutputIt>::iterator_category;
 
-  return details::generate_bag(top_actions_first, top_actions_last, top_actions_category(), pmf_first, pmf_last, pmf_category());
+  return details::generate_bag(
+      top_actions_first, top_actions_last, top_actions_category(), pmf_first, pmf_last, pmf_category());
 }
 
 template <typename It>
@@ -469,5 +460,5 @@ int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value,
   using pdf_category = typename std::iterator_traits<It>::iterator_category;
   return details::sample_pdf(p_seed, pdf_first, pdf_last, chosen_value, pdf_value, pdf_category());
 }
-}
-}
+}  // namespace explore
+}  // namespace VW

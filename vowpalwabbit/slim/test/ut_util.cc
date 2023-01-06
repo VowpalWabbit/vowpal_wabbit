@@ -30,8 +30,7 @@ std::vector<float> read_floats(std::istream& data)
   std::vector<float> floats;
 
   std::string line;
-  while (std::getline(data, line)) { floats.push_back((float)atof(line.c_str()));
-}
+  while (std::getline(data, line)) { floats.push_back((float)atof(line.c_str())); }
 
   return floats;
 }
@@ -209,9 +208,7 @@ void run_predict_in_memory(
       preds.push_back(score);
     }
   }
-  else {
-    FAIL() << "Unknown data file: " << data_filename;
-}
+  else { FAIL() << "Unknown data file: " << data_filename; }
 
   // compare output
   std::vector<float> preds_expected = read_floats(td.pred, td.pred_len);
@@ -248,13 +245,16 @@ struct predict_test : public ::testing::TestWithParam<predict_param>
 
 TEST_P(predict_test, Run)
 {
-  if (GetParam().weight_type == predict_param_weight_type::SPARSE) {
+  if (GetParam().weight_type == predict_param_weight_type::SPARSE)
+  {
     run_predict_in_memory<VW::sparse_parameters>(
         GetParam().model_filename, GetParam().data_filename, GetParam().prediction_reference_filename);
-  } else {
+  }
+  else
+  {
     run_predict_in_memory<VW::dense_parameters>(
         GetParam().model_filename, GetParam().data_filename, GetParam().prediction_reference_filename);
-}
+  }
 }
 
 std::vector<predict_param> generate_test_params()
@@ -277,9 +277,8 @@ std::vector<predict_param> generate_test_params()
   for (size_t i = 0; i < sizeof(predict_params) / sizeof(predict_param); i++)
   {
     predict_param p = predict_params[i];
-    if (p.weight_type != predict_param_weight_type::ALL) {
-      fixtures.push_back(p);
-    } else
+    if (p.weight_type != predict_param_weight_type::ALL) { fixtures.push_back(p); }
+    else
     {
       std::initializer_list<predict_param_weight_type> weight_types = {
           predict_param_weight_type::SPARSE, predict_param_weight_type::DENSE};
@@ -323,8 +322,7 @@ TEST_P(invalid_model_test, Run)
   for (size_t end = 0; end < model_file_size - 1; ++end)
   {
     // we're not able to detect if complete index:weight pairs are missing
-    if (undetectable_offsets.find(end) != undetectable_offsets.end()) { continue;
-}
+    if (undetectable_offsets.find(end) != undetectable_offsets.end()) { continue; }
 
     // type parameterized and value parameterized test cases can't be combined:
     // https://stackoverflow.com/questions/8507385/google-test-is-there-a-way-to-combine-a-test-which-is-both-type-parameterized-a
@@ -655,12 +653,10 @@ TEST_P(cb_predict_test, CBRunPredict)
     ASSERT_EQ(S_VW_PREDICT_OK, vw.predict(generate_string_seed(i).c_str(), shared, ex, 3, pdf, ranking));
 
     ASSERT_EQ(pdf_expected.size(), ranking.size());
-    for (size_t i = 0; i < ranking.size(); i++) { histogram[i * ranking.size() + ranking[i]]++;
-}
+    for (size_t i = 0; i < ranking.size(); i++) { histogram[i * ranking.size() + ranking[i]]++; }
   }
 
-  for (auto& d : histogram) { d /= rep;
-}
+  for (auto& d : histogram) { d /= rep; }
 
 #ifdef VW_SLIM_TEST_DEBUG
     // std::fstream log(VW_SLIM_TEST_DEBUG, std::fstream::app);
