@@ -503,72 +503,6 @@ void do_actual_learning_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_s
   }
 }
 
-void output_example(VW::workspace& all, const VW::example& ec, bool& hit_loss, const VW::multi_ex* ec_seq)
-{
-  const auto& costs = ec.l.cs.costs;
-
-  if (VW::example_is_newline(ec)) { return; }
-  if (VW::is_cs_example_header(ec)) { return; }
-
-  all.sd->total_features += ec.get_num_features();
-
-  float loss = 0.;
-
-  uint32_t predicted_class = ec.pred.multiclass;
-
-  if (!ec.l.cs.is_test_label())
-  {
-    for (auto const& cost : costs)
-    {
-      if (hit_loss) { break; }
-      if (predicted_class == cost.class_index)
-      {
-        loss = cost.x;
-        hit_loss = true;
-      }
-    }
-
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
-  }
-
-  for (const auto& sink : all.final_prediction_sink)
-  {
-    all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
-  }
-
-  if (all.raw_prediction != nullptr)
-  {
-    std::string output_string;
-    std::stringstream output_string_stream(output_string);
-    for (size_t i = 0; i < costs.size(); i++)
-    {
-      if (i > 0) { output_string_stream << ' '; }
-      output_string_stream << costs[i].class_index << ':' << costs[i].partial_prediction;
-    }
-    // outputStringStream << std::endl;
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
-  }
-
-  VW::details::print_cs_update(all, ec.l.cs.is_test_label(), ec, ec_seq, false, predicted_class);
-}
-
-void output_example_seq(VW::workspace& all, const VW::multi_ex& ec_seq)
-{
-  if (ec_seq.empty()) { return; }
-  all.sd->weighted_labeled_examples += ec_seq[0]->weight;
-  all.sd->example_number++;
-
-  bool hit_loss = false;
-  for (VW::example* ec : ec_seq) { output_example(all, *ec, hit_loss, &(ec_seq)); }
-
-  if (all.raw_prediction != nullptr)
-  {
-    VW::v_array<char> empty;
-    all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
-  }
-}
-
 void output_example_regression_discrete(VW::workspace& all, cbify& data, VW::example& ec)
 {
   // data contains the cb vector, which store among other things, loss
@@ -641,15 +575,100 @@ void finish_example_cb_reg_discrete(VW::workspace& all, cbify& data, VW::example
   VW::finish_example(all, ec);
 }
 
-void finish_multiline_example(VW::workspace& all, cbify&, VW::multi_ex& ec_seq)
+void update_stats_cbify_ldf(const VW::workspace& /* all */, VW::shared_data& sd, const cbify& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& /* logger */)
 {
-  if (!ec_seq.empty())
+  if (ec_seq.empty()) { return; }
+
+  sd.weighted_labeled_examples += ec_seq[0]->weight;
+  sd.example_number++;
+
+  bool hit_loss = false;
+  for (VW::example* ec_ptr : ec_seq)
   {
-    output_example_seq(all, ec_seq);
-    // global_print_newline(all);
+    auto& ec = *ec_ptr;
+    const auto& costs = ec.l.cs.costs;
+
+    if (VW::example_is_newline(ec)) { continue; }
+    if (VW::is_cs_example_header(ec)) { continue; }
+
+    sd.total_features += ec.get_num_features();
+
+    float loss = 0.;
+
+    uint32_t predicted_class = ec.pred.multiclass;
+
+    if (!ec.l.cs.is_test_label())
+    {
+      for (auto const& cost : costs)
+      {
+        if (hit_loss) { break; }
+        if (predicted_class == cost.class_index)
+        {
+          loss = cost.x;
+          hit_loss = true;
+        }
+      }
+
+      sd.sum_loss += loss;
+      sd.sum_loss_since_last_dump += loss;
+    }
   }
-  VW::finish_example(all, ec_seq);
 }
+
+void output_example_prediction_cbify_ldf(
+    VW::workspace& all, const cbify& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
+{
+  if (ec_seq.empty()) { return; }
+
+  for (VW::example* ec_ptr : ec_seq)
+  {
+    auto& ec = *ec_ptr;
+    const auto& costs = ec.l.cs.costs;
+
+    if (VW::example_is_newline(ec)) { continue; }
+    if (VW::is_cs_example_header(ec)) { continue; }
+
+    for (const auto& sink : all.final_prediction_sink)
+    {
+      all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, logger);
+    }
+
+    if (all.raw_prediction != nullptr)
+    {
+      std::string output_string;
+      std::stringstream output_string_stream(output_string);
+      for (size_t i = 0; i < costs.size(); i++)
+      {
+        if (i > 0) { output_string_stream << ' '; }
+        output_string_stream << costs[i].class_index << ':' << costs[i].partial_prediction;
+      }
+      all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+    }
+  }
+
+  // To output a newline.
+  if (all.raw_prediction != nullptr)
+  {
+    VW::v_array<char> empty;
+    all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
+  }
+}
+
+void print_update_cbify_ldf(VW::workspace& all, VW::shared_data& /* sd */, const cbify& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+{
+  if (ec_seq.empty()) { return; }
+
+  for (VW::example* ec_ptr : ec_seq)
+  {
+    auto& ec = *ec_ptr;
+    if (VW::example_is_newline(ec)) { continue; }
+    if (VW::is_cs_example_header(ec)) { continue; }
+    VW::details::print_cs_update(all, ec.l.cs.is_test_label(), ec, &ec_seq, false, ec.pred.multiclass);
+  }
+}
+
 }  // namespace
 
 VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_builder)
@@ -913,7 +932,9 @@ VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stac
                 .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_finish_example(finish_multiline_example)
+                .set_output_example_prediction(output_example_prediction_cbify_ldf)
+                .set_print_update(print_update_cbify_ldf)
+                .set_update_stats(update_stats_cbify_ldf)
                 .build(&all.logger);
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
 
