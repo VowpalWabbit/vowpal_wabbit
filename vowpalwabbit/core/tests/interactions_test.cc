@@ -436,7 +436,7 @@ TEST(Interactions, ExtentInteractionExpansionTest)
   {
     const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|user_info");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(
+    VW::details::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
@@ -450,7 +450,7 @@ TEST(Interactions, ExtentInteractionExpansionTest)
   {
     const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|user_info|user_info");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(
+    VW::details::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
@@ -464,7 +464,7 @@ TEST(Interactions, ExtentInteractionExpansionTest)
   {
     const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|extra");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(
+    VW::details::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
