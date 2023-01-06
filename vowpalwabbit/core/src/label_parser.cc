@@ -32,7 +32,7 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
       return VW::cs_label_parser_global;
 
     case VW::label_type_t::MULTILABEL:
-      return MULTILABEL::multilabel;
+      return VW::multiclass_label_parser_global;
 
     case VW::label_type_t::MULTICLASS:
       return VW::multiclass_label_parser_global;

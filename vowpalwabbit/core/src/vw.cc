@@ -736,7 +736,7 @@ VW::v_array<float>& VW::get_cost_sensitive_prediction_confidence_scores(example*
 
 uint32_t* VW::get_multilabel_predictions(example* ec, size_t& len)
 {
-  MULTILABEL::labels labels = ec->pred.multilabels;
+  auto& labels = ec->pred.multilabels;
   len = labels.label_v.size();
   return labels.label_v.begin();
 }

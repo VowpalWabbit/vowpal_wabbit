@@ -35,8 +35,8 @@ public:
 template <bool is_learn>
 void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  MULTILABEL::labels multilabels = ec.l.multilabels;
-  MULTILABEL::labels preds = ec.pred.multilabels;
+  auto& multilabels = ec.l.multilabels;
+  auto& preds = ec.pred.multilabels;
   preds.label_v.clear();
 
   ec.l.simple = {FLT_MAX};
@@ -79,7 +79,7 @@ void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::examp
 void update_stats_multilabel_oaa(
     const VW::workspace& all, VW::shared_data&, const multi_oaa&, const VW::example& ec, VW::io::logger&)
 {
-  MULTILABEL::update_stats(all, ec);
+  VW::details::update_stats_multilabel(all, ec);
 }
 
 void output_example_prediction_multilabel_oaa(
@@ -99,13 +99,13 @@ void output_example_prediction_multilabel_oaa(
     const auto ss_str = output_string_stream.str();
     for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
   }
-  MULTILABEL::output_example_prediction(all, ec);
+  VW::details::output_example_prediction_multilabel(all, ec);
 }
 
 void print_update_multilabel_oaa(
     VW::workspace& all, VW::shared_data&, const multi_oaa&, const VW::example& ec, VW::io::logger&)
 {
-  MULTILABEL::print_update(all, ec);
+  VW::details::print_update_multilabel(all, ec);
 }
 
 }  // namespace
@@ -170,7 +170,7 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
           .set_print_update(print_update_multilabel_oaa)
           .build();
 
-  all.example_parser->lbl_parser = MULTILABEL::multilabel;
+  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   return make_base(*l);
 }
