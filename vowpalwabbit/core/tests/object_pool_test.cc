@@ -63,9 +63,12 @@ TEST(ObjectPool, ObjectPoolTest)
   EXPECT_EQ(pool.size(), 2);
   EXPECT_EQ(pool.empty(), false);
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   obj other_obj;
   EXPECT_EQ(pool.is_from_pool(o2), true);
   EXPECT_EQ(pool.is_from_pool(&other_obj), false);
+  VW_WARNING_STATE_POP
 
   pool.return_object(o2);
 }
