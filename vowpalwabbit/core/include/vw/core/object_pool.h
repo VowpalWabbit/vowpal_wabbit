@@ -36,13 +36,6 @@ struct null_mutex
 };
 
 template <typename T>
-class default_cleanup
-{
-public:
-  void operator()(T*) {}
-};
-
-template <typename T>
 class default_initializer
 {
 public:
@@ -66,7 +59,6 @@ public:
     while (!_pool.empty())
     {
       auto front = _pool.front();
-      _cleanup(front);
       _pool.pop();
     }
   }
