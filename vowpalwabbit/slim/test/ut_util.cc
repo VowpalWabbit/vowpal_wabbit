@@ -659,14 +659,14 @@ TEST_P(cb_predict_test, CBRunPredict)
   for (auto& d : histogram) { d /= rep; }
 
 #ifdef VW_SLIM_TEST_DEBUG
-    // std::fstream log(VW_SLIM_TEST_DEBUG, std::fstream::app);
-    // for (size_t i = 0; i < 3; i++)
-    //{
-    //	log << "slot " << i << " ";
-    //	for (size_t j = 0; j < 3; j++)
-    //		log << histogram[i * 3 + j] << " ";
-    //	log << std::endl;
-    //}
+  // std::fstream log(VW_SLIM_TEST_DEBUG, std::fstream::app);
+  // for (size_t i = 0; i < 3; i++)
+  //{
+  //	log << "slot " << i << " ";
+  //	for (size_t j = 0; j < 3; j++)
+  //		log << histogram[i * 3 + j] << " ";
+  //	log << std::endl;
+  //}
 #endif
 
   EXPECT_THAT(histogram, Pointwise(FloatNear(1e-2f), GetParam().ranking_pdf_expected));

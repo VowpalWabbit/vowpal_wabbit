@@ -37,7 +37,7 @@ bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& 
   {
     for (const auto& ns : ex->indices)
     {
-      if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
+      if (!VW::is_interaction_ns(ns)) { continue; }
       if (!is_allowed_to_remove(ns)) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
