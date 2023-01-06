@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1672969912144,
+  "lastUpdate": 1672971371560,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -78582,6 +78582,150 @@ window.BENCHMARK_DATA = {
             "value": 97.34116811038778,
             "unit": "ns/iter",
             "extra": "iterations: 43210334\ncpu: 97.33382991207635 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jackgerrits@users.noreply.github.com",
+            "name": "Jack Gerrits",
+            "username": "jackgerrits"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "93fcc332305b3bb3372e5954967608135e109487",
+          "message": "ci: output valgrind logs on unit test failure (#4430)",
+          "timestamp": "2023-01-05T20:33:07-05:00",
+          "tree_id": "647465aec5ef4d3b919ccdf5c78486bea79d27ac",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/93fcc332305b3bb3372e5954967608135e109487"
+        },
+        "date": 1672971364442,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 7419.477030436198,
+            "unit": "ns",
+            "range": "± 109.83805937020232"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 11290.906851632255,
+            "unit": "ns",
+            "range": "± 136.78750342305437"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 921.8044090270996,
+            "unit": "ns",
+            "range": "± 9.259953984496548"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 737.9973093668619,
+            "unit": "ns",
+            "range": "± 8.145246207685744"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 1068974.1536458333,
+            "unit": "ns",
+            "range": "± 2126.504782379113"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 659415.8268229166,
+            "unit": "ns",
+            "range": "± 5149.3003579578635"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 661690.7924107143,
+            "unit": "ns",
+            "range": "± 4694.378603517006"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 1068387.4869791667,
+            "unit": "ns",
+            "range": "± 13156.318710964077"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 656860.7649739584,
+            "unit": "ns",
+            "range": "± 7132.234687635147"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 4034448.125,
+            "unit": "ns",
+            "range": "± 49885.059251337836"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 1339946.2524414062,
+            "unit": "ns",
+            "range": "± 24790.31243486"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 1078548.7723214286,
+            "unit": "ns",
+            "range": "± 10961.13510941494"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 3298874.21875,
+            "unit": "ns",
+            "range": "± 24396.01873012684"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 1096540.8463541667,
+            "unit": "ns",
+            "range": "± 15244.053053692161"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 3899.5606994628906,
+            "unit": "ns",
+            "range": "± 67.10790667020117"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 13450.515747070312,
+            "unit": "ns",
+            "range": "± 114.26833552766986"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 130056.46449497768,
+            "unit": "ns",
+            "range": "± 1406.6000080021154"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 22055.377432016227,
+            "unit": "ns",
+            "range": "± 194.35563927875415"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 5080175.725446428,
+            "unit": "ns",
+            "range": "± 58168.51941474635"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 275769.1373697917,
+            "unit": "ns",
+            "range": "± 4986.769256929103"
           }
         ]
       }
