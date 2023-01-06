@@ -262,6 +262,8 @@ public:
   using end_fptr_type = void (*)(VW::workspace&, void*, void*);
   using finish_fptr_type = void (*)(void*);
 
+  ~learner() { delete _finisher_fd.base; }
+
   void* get_internal_type_erased_data_pointer_test_use_only() { return _learner_data.get(); }
 
   // For all functions here that invoke stored function pointers,
@@ -393,14 +395,13 @@ public:
     if (_persist_metrics_fd.base) { _persist_metrics_fd.base->persist_metrics(metrics); }
   }
 
+  // Autorecursive
   inline void NO_SANITIZE_UNDEFINED finish()
   {
+    // TODO: ensure that finish does not actually manage memory but just does driver finalization.
+    // Then move the call to finish from the destructor of workspace to driver_finalize
     if (_finisher_fd.data) { _finisher_fd.func(_finisher_fd.data); }
-    if (_finisher_fd.base)
-    {
-      _finisher_fd.base->finish();
-      delete _finisher_fd.base;
-    }
+    if (_finisher_fd.base) { _finisher_fd.base->finish(); }
   }
 
   void NO_SANITIZE_UNDEFINED end_pass()
