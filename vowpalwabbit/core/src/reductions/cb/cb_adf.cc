@@ -23,7 +23,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-using namespace exploration;
 
 VW::cb_class VW::get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
 {
@@ -141,7 +140,7 @@ void VW::reductions::cb_adf::learn_sm(multi_learner& base, VW::multi_ex& example
 
   // Lambda is -1 in the call to generate_softmax because in vw, lower score is better; for softmax higher score is
   // better.
-  generate_softmax(-1.0, begin_scores(_a_s), end_scores(_a_s), begin_scores(_prob_s), end_scores(_prob_s));
+  VW::explore::generate_softmax(-1.0, begin_scores(_a_s), end_scores(_a_s), begin_scores(_prob_s), end_scores(_prob_s));
 
   // TODO: Check Marco's example that causes VW to report prob > 1.
 
