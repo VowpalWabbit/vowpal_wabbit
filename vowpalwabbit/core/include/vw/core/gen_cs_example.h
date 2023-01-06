@@ -8,8 +8,11 @@
 
 #include <cfloat>
 
-namespace GEN_CS
+namespace VW
 {
+namespace details
+{
+
 class cb_to_cs
 {
 public:
@@ -22,7 +25,7 @@ public:
   float last_pred_reg = 0.f;
   float last_correct_cost = 0.f;
 
-  CB::cb_class known_cost;
+  VW::cb_class known_cost;
 };
 
 class cb_to_cs_adf
@@ -38,17 +41,17 @@ public:
 
   // for DR
   VW::cs_label pred_scores;
-  CB::cb_class known_cost;
+  VW::cb_class known_cost;
   VW::LEARNER::single_learner* scorer = nullptr;
 };
 
 float safe_probability(float prob, VW::io::logger& logger);
 
 void gen_cs_example_ips(
-    cb_to_cs& c, const CB::label& ld, VW::cs_label& cs_ld, VW::io::logger& logger, float clip_p = 0.f);
+    cb_to_cs& c, const VW::cb_label& ld, VW::cs_label& cs_ld, VW::io::logger& logger, float clip_p = 0.f);
 
 template <bool is_learn>
-void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs_label& cs_ld)
+void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const VW::cb_label& ld, VW::cs_label& cs_ld)
 {  // this implements the direct estimation method, where costs are directly specified by the learned regressor.
 
   float min = FLT_MAX;
@@ -65,7 +68,7 @@ void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs
     {
       VW::cs_class wc = {0., i, 0., 0.};
       // get cost prediction for this action
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, i, 0);
+      wc.x = VW::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, i, 0);
       if (wc.x < min)
       {
         min = wc.x;
@@ -93,7 +96,7 @@ void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs
       VW::cs_class wc = {0., cl.action, 0., 0.};
 
       // get cost prediction for this action
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl.action, 0);
+      wc.x = VW::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl.action, 0);
       if (wc.x < min || (wc.x == min && cl.action < argmin))
       {
         min = wc.x;
@@ -123,7 +126,7 @@ void gen_cs_label(cb_to_cs& c, VW::example& ec, VW::cs_label& cs_ld, uint32_t ac
   VW::cs_class wc = {0., action, 0., 0.};
 
   // get cost prediction for this action
-  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, action, c.num_actions);
+  wc.x = VW::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, action, c.num_actions);
 
   c.pred_scores.costs.push_back(wc);
   // add correction if we observed cost for this action and regressor is wrong
@@ -141,7 +144,8 @@ void gen_cs_label(cb_to_cs& c, VW::example& ec, VW::cs_label& cs_ld, uint32_t ac
 }
 
 template <bool is_learn>
-void gen_cs_example_dr(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs_label& cs_ld, float /*clip_p*/ = 0.f)
+void gen_cs_example_dr(
+    cb_to_cs& c, VW::example& ec, const VW::cb_label& ld, VW::cs_label& cs_ld, float /*clip_p*/ = 0.f)
 {
   // this implements the doubly robust method
   VW_DBG(ec) << "gen_cs_example_dr:" << is_learn << std::endl;
@@ -169,7 +173,7 @@ void gen_cs_example_dr(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs& c, VW::example& ec, const CB::label& ld, VW::cs_label& cs_ld, VW::io::logger& logger)
+void gen_cs_example(cb_to_cs& c, VW::example& ec, const VW::cb_label& ld, VW::cs_label& cs_ld, VW::io::logger& logger)
 {
   switch (c.cb_type)
   {
@@ -208,7 +212,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
   cs_labels.costs.clear();
   for (size_t i = 0; i < examples.size(); i++)
   {
-    if (CB_ALGS::example_is_newline_not_header(*examples[i])) { continue; }
+    if (VW::example_is_newline_not_header_cb(*examples[i])) { continue; }
 
     VW::cs_class wc = {0., static_cast<uint32_t>(i), 0., 0.};
 
@@ -219,10 +223,10 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
       // get cost prediction for this label
       // num_actions should be 1 effectively.
       // my get_cost_pred function will use 1 for 'index-1+base'
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 0, 2);
+      wc.x = VW::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 0, 2);
       c.known_cost.action = known_index;
     }
-    else { wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, CB::cb_class{}, *(examples[i]), 0, 2); }
+    else { wc.x = VW::get_cost_pred<is_learn>(c.scorer, VW::cb_class{}, *(examples[i]), 0, 2); }
 
     c.pred_scores.costs.push_back(wc);  // done
 
@@ -255,12 +259,12 @@ void gen_cs_example(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labe
   }
 }
 
-void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, VW::cs_label& cs_labels,
+void cs_prep_labels(VW::multi_ex& examples, std::vector<VW::cb_label>& cb_labels, VW::cs_label& cs_labels,
     std::vector<VW::cs_label>& prepped_cs_labels, uint64_t offset);
 
 template <bool is_learn>
 void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples,
-    std::vector<CB::label>& cb_labels, VW::cs_label& cs_labels, std::vector<VW::cs_label>& prepped_cs_labels,
+    std::vector<VW::cb_label>& cb_labels, VW::cs_label& cs_labels, std::vector<VW::cs_label>& prepped_cs_labels,
     bool predict_first, uint64_t offset, size_t id = 0)
 {
   VW_DBG(*examples[0]) << "cs_ldf_" << (is_learn ? "<learn>" : "<predict>") << ": ex=" << examples[0]->example_counter
@@ -296,4 +300,5 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& exa
   else { base.predict(examples, static_cast<int32_t>(id)); }
 }
 
-}  // namespace GEN_CS
+}  // namespace details
+}  // namespace VW

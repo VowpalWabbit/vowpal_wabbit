@@ -49,7 +49,7 @@ public:
 
       if (it != examples.end())
       {
-        const CB::cb_class logged = (*it)->l.cb.costs[0];
+        const VW::cb_class logged = (*it)->l.cb.costs[0];
         const uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
 
         const auto& action_scores = examples[0]->pred.a_s;

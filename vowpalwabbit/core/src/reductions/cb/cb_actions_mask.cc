@@ -32,7 +32,7 @@ void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::multi_
   {
     base.learn(examples);
 
-    VW::example* label_example = CB_ADF::test_adf_sequence(examples);
+    VW::example* label_example = VW::test_cb_adf_sequence(examples);
 
     if (base.learn_returns_prediction || label_example == nullptr)
     {

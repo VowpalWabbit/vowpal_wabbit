@@ -561,7 +561,7 @@ void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regulariza
 
   if (b.regularizers == nullptr)
   {
-    b.regularizers = calloc_or_throw<VW::weight>(2 * length);
+    b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
 
     if (b.regularizers == nullptr) THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
@@ -1048,15 +1048,15 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
     VW::details::initialize_regressor(*all);
     if (all->per_feature_regularizer_input != "")
     {
-      b.regularizers = calloc_or_throw<VW::weight>(2 * length);
+      b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
       if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
     }
     int m = b.m;
 
     b.mem_stride = (m == 0) ? CG_EXTRA : 2 * m;
-    b.mem = calloc_or_throw<float>(all->length() * b.mem_stride);
-    b.rho = calloc_or_throw<double>(m);
-    b.alpha = calloc_or_throw<double>(m);
+    b.mem = VW::details::calloc_or_throw<float>(all->length() * b.mem_stride);
+    b.rho = VW::details::calloc_or_throw<double>(m);
+    b.alpha = VW::details::calloc_or_throw<double>(m);
 
     uint32_t stride_shift = all->weights.stride_shift();
 
