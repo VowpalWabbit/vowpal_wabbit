@@ -212,7 +212,7 @@ TEST(Interactions, SortAndFilterInteractions)
 
   size_t removed_count = 0;
   size_t sorted_count = 0;
-  VW::sort_and_filter_duplicate_interactions(input, false, removed_count, sorted_count);
+  VW::details::sort_and_filter_duplicate_interactions(input, false, removed_count, sorted_count);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
   EXPECT_THAT(input, ContainerEq(compare_set));

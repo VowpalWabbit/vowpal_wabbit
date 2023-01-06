@@ -49,6 +49,9 @@ float eval_sum_ft_squared_of_generated_ft(bool permutations,
     const std::vector<std::vector<VW::extent_term>>& extent_interactions,
     const std::array<VW::features, VW::NUM_NAMESPACES>& feature_spaces);
 
+template <typename T>
+using generate_func_t = std::vector<std::vector<T>>(const std::set<T>& namespaces, size_t num_to_pick);
+
 namespace details
 {
 
@@ -116,7 +119,6 @@ inline bool must_be_left_sorted(const std::vector<T>& oi)
 
   return false;  // 'aaa' or 'abc'
 }
-}  // namespace details
 
 // used from parse_args.cc
 // filter duplicate namespaces treating them as unordered sets of namespaces.
@@ -179,11 +181,6 @@ void sort_and_filter_duplicate_interactions(
 
   vec = res;
 }
-template <typename T>
-using generate_func_t = std::vector<std::vector<T>>(const std::set<T>& namespaces, size_t num_to_pick);
-
-namespace details
-{
 
 template <typename T>
 std::vector<std::vector<T>> generate_namespace_combinations_with_repetition(
@@ -341,7 +338,7 @@ std::vector<std::vector<VW::namespace_index>> compile_interactions(
   std::sort(final_interactions.begin(), final_interactions.end(), VW::details::sort_interactions_comparator);
   size_t removed_cnt = 0;
   size_t sorted_cnt = 0;
-  VW::sort_and_filter_duplicate_interactions(
+  VW::details::sort_and_filter_duplicate_interactions(
       final_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
   return final_interactions;
 }
@@ -363,7 +360,7 @@ std::vector<std::vector<VW::extent_term>> compile_extent_interactions(
   }
   size_t removed_cnt = 0;
   size_t sorted_cnt = 0;
-  VW::sort_and_filter_duplicate_interactions(
+  VW::details::sort_and_filter_duplicate_interactions(
       final_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
   return final_interactions;
 }
@@ -478,6 +475,6 @@ VW_DEPRECATED("Moved to VW namespace")
 void sort_and_filter_duplicate_interactions(
     std::vector<std::vector<T>>& vec, bool filter_duplicates, size_t& removed_cnt, size_t& sorted_cnt)
 {
-  VW::sort_and_filter_duplicate_interactions(vec, filter_duplicates, removed_cnt, sorted_cnt);
+  VW::details::sort_and_filter_duplicate_interactions(vec, filter_duplicates, removed_cnt, sorted_cnt);
 }
 }  // namespace INTERACTIONS

@@ -752,7 +752,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     size_t removed_cnt = 0;
     size_t sorted_cnt = 0;
     // Sorts individual interactions
-    VW::sort_and_filter_duplicate_interactions(
+    VW::details::sort_and_filter_duplicate_interactions(
         decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0 && !all.quiet)
