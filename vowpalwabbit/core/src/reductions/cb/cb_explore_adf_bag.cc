@@ -109,10 +109,10 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex&
   for (uint32_t i = 0; i < _scores.size(); i++) { _action_probs.push_back({i, 0.}); }
 
   // generate distribution over actions
-  exploration::generate_bag(
+  VW::explore::generate_bag(
       begin(_top_actions), end(_top_actions), begin_scores(_action_probs), end_scores(_action_probs));
 
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
   sort_action_probs(_action_probs, _scores);
   std::copy(std::begin(_action_probs), std::end(_action_probs), std::begin(preds));
 }
