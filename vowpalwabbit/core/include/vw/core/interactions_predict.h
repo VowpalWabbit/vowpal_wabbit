@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "vw/common/future_compat.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/constant.h"
 #include "vw/core/example_predict.h"
@@ -17,10 +18,12 @@
 #include <utility>
 #include <vector>
 
+namespace VW
+{
+namespace details
+{
 const static VW::audit_strings EMPTY_AUDIT_STRINGS;
 
-namespace INTERACTIONS
-{
 /*
  * By default include interactions of feature with itself.
  * This approach produces slightly more interactions but it's safer
@@ -398,6 +401,7 @@ size_t process_generic_interaction(const std::vector<VW::details::features_range
 
   return num_features;
 }
+}  // namespace details
 
 // this templated function generates new features for given example and set of interactions
 // and passes each of them to given function FuncT()
@@ -416,7 +420,8 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
   const auto inner_kernel_func = [&](VW::features::const_audit_iterator begin, VW::features::const_audit_iterator end,
                                      VW::feature_value value, VW::feature_index index)
   {
-    inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(dat, begin, end, ec.ft_offset, weights, value, index);
+    details::inner_kernel<DataT, WeightOrIndexT, FuncT, audit, audit_func>(
+        dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
   const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(dat, audit_str); };
@@ -433,57 +438,58 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
     if (len == 2)  // special case of pairs
     {
       // Skip over any interaction with an empty namespace.
-      if (has_empty_interaction_quadratic(ec.feature_space, ns)) { continue; }
-      num_features +=
-          process_quadratic_interaction<audit>(generate_quadratic_char_combination(ec.feature_space, ns[0], ns[1]),
-              permutations, inner_kernel_func, depth_audit_func);
+      if (details::has_empty_interaction_quadratic(ec.feature_space, ns)) { continue; }
+      num_features += details::process_quadratic_interaction<audit>(
+          details::generate_quadratic_char_combination(ec.feature_space, ns[0], ns[1]), permutations, inner_kernel_func,
+          depth_audit_func);
     }
     else if (len == 3)  // special case for triples
     {
       // Skip over any interaction with an empty namespace.
-      if (has_empty_interaction_cubic(ec.feature_space, ns)) { continue; }
-      num_features +=
-          process_cubic_interaction<audit>(generate_cubic_char_combination(ec.feature_space, ns[0], ns[1], ns[2]),
-              permutations, inner_kernel_func, depth_audit_func);
+      if (details::has_empty_interaction_cubic(ec.feature_space, ns)) { continue; }
+      num_features += details::process_cubic_interaction<audit>(
+          details::generate_cubic_char_combination(ec.feature_space, ns[0], ns[1], ns[2]), permutations,
+          inner_kernel_func, depth_audit_func);
     }
     else  // generic case: quatriples, etc.
 #endif
     {
       // Skip over any interaction with an empty namespace.
-      if (has_empty_interaction(ec.feature_space, ns)) { continue; }
-      num_features += process_generic_interaction<audit>(generate_generic_char_combination(ec.feature_space, ns),
-          permutations, inner_kernel_func, depth_audit_func, cache.state_data);
+      if (details::has_empty_interaction(ec.feature_space, ns)) { continue; }
+      num_features +=
+          details::process_generic_interaction<audit>(details::generate_generic_char_combination(ec.feature_space, ns),
+              permutations, inner_kernel_func, depth_audit_func, cache.state_data);
     }
   }
 
   for (const auto& ns : extent_interactions)
   {
-    if (has_empty_interaction(ec.feature_space, ns)) { continue; }
+    if (details::has_empty_interaction(ec.feature_space, ns)) { continue; }
     if (std::any_of(ns.begin(), ns.end(),
             [](const VW::extent_term& term) { return term.first == VW::details::WILDCARD_NAMESPACE; }))
     {
       continue;
     }
 
-    generate_generic_extent_combination_iterative(
+    details::generate_generic_extent_combination_iterative(
         ec.feature_space, ns,
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
           const size_t len = ns.size();
           if (len == 2)
           {
-            num_features += process_quadratic_interaction<audit>(
+            num_features += details::process_quadratic_interaction<audit>(
                 std::make_tuple(combination[0], combination[1]), permutations, inner_kernel_func, depth_audit_func);
           }
           else if (len == 3)
           {
-            num_features +=
-                process_cubic_interaction<audit>(std::make_tuple(combination[0], combination[1], combination[2]),
-                    permutations, inner_kernel_func, depth_audit_func);
+            num_features += details::process_cubic_interaction<audit>(
+                std::make_tuple(combination[0], combination[1], combination[2]), permutations, inner_kernel_func,
+                depth_audit_func);
           }
           else
           {
-            num_features += process_generic_interaction<audit>(
+            num_features += details::process_generic_interaction<audit>(
                 combination, permutations, inner_kernel_func, depth_audit_func, cache.state_data);
           }
         },
@@ -491,4 +497,22 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
   }
 }  // foreach interaction in all.interactions
 
+}  // namespace VW
+
+namespace INTERACTIONS  // NOLINT
+{
+
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,
+    void (*audit_func)(DataT&, const VW::audit_strings*),
+    class WeightsT>  // nullptr func can't be used as template param in old compilers
+VW_DEPRECATED("Moved into VW namespace") inline void generate_interactions(
+    const std::vector<std::vector<VW::namespace_index>>& interactions,
+    const std::vector<std::vector<VW::extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
+    DataT& dat, WeightsT& weights, size_t& num_features,
+    VW::details::generate_interactions_object_cache&
+        cache)  // default value removed to eliminate ambiguity in old complers
+{
+  VW::generate_interactions<DataT, WeightOrIndexT, FuncT, audit, audit_func, WeightsT>(
+      interactions, extent_interactions, permutations, ec, dat, weights, num_features, cache);
+}
 }  // namespace INTERACTIONS

@@ -18,8 +18,6 @@
 
 using namespace VW::config;
 
-namespace INTERACTIONS
-{
 namespace
 {
 template <typename FuncT>
@@ -125,7 +123,7 @@ float calculate_count_and_sum_ft_sq_for_combinations(const std::array<VW::featur
 }  // namespace
 
 // returns number of new features that will be generated for example and sum of their squared values
-float eval_sum_ft_squared_of_generated_ft(bool permutations,
+float VW::eval_sum_ft_squared_of_generated_ft(bool permutations,
     const std::vector<std::vector<VW::namespace_index>>& interactions,
     const std::vector<std::vector<VW::extent_term>>& extent_interactions,
     const std::array<VW::features, VW::NUM_NAMESPACES>& feature_spaces)
@@ -145,13 +143,14 @@ float eval_sum_ft_squared_of_generated_ft(bool permutations,
   return sum_ft_sq;
 }
 
-bool sort_interactions_comparator(const std::vector<VW::namespace_index>& a, const std::vector<VW::namespace_index>& b)
+bool VW::details::sort_interactions_comparator(
+    const std::vector<VW::namespace_index>& a, const std::vector<VW::namespace_index>& b)
 {
   if (a.size() != b.size()) { return a.size() < b.size(); }
   return a < b;
 }
 
-std::vector<std::vector<VW::namespace_index>> expand_quadratics_wildcard_interactions(
+std::vector<std::vector<VW::namespace_index>> VW::details::expand_quadratics_wildcard_interactions(
     bool leave_duplicate_interactions, const std::set<VW::namespace_index>& new_example_indices)
 {
   std::set<std::vector<VW::namespace_index>> interactions;
@@ -171,5 +170,3 @@ std::vector<std::vector<VW::namespace_index>> expand_quadratics_wildcard_interac
   }
   return std::vector<std::vector<VW::namespace_index>>(interactions.begin(), interactions.end());
 }
-
-}  // namespace INTERACTIONS
