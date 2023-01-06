@@ -12,21 +12,16 @@
 
 namespace VW
 {
+VW::example* test_cb_adf_sequence(const VW::multi_ex& ec_seq);
+VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 namespace reductions
 {
 VW::LEARNER::base_learner* cb_adf_setup(VW::setup_base_i& stack_builder);
-}
-}  // namespace VW
 
-// TODO: Move these functions into VW lib and not reductions
-namespace CB_ADF  // NOLINT
-{
-VW::example* test_adf_sequence(const VW::multi_ex& ec_seq);
-VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 class cb_adf
 {
 public:
-  GEN_CS::cb_to_cs_adf gen_cs;
+  VW::details::cb_to_cs_adf gen_cs;
 
   void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
   void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
@@ -42,8 +37,8 @@ public:
 
   bool get_rank_all() const { return _rank_all; }
 
-  const GEN_CS::cb_to_cs_adf& get_gen_cs() const { return gen_cs; }
-  GEN_CS::cb_to_cs_adf& get_gen_cs() { return gen_cs; }
+  const VW::details::cb_to_cs_adf& get_gen_cs() const { return gen_cs; }
+  VW::details::cb_to_cs_adf& get_gen_cs() { return gen_cs; }
 
   const VW::version_struct* get_model_file_ver() const;
 
@@ -83,4 +78,19 @@ private:
 
   VW::workspace* _all = nullptr;
 };
+}  // namespace reductions
+}  // namespace VW
+
+namespace CB_ADF  // NOLINT
+{
+VW_DEPRECATED("Moved into VW namespace.") inline VW::example* test_adf_sequence(const VW::multi_ex& ec_seq)
+{
+  return VW::test_cb_adf_sequence(ec_seq);
+}
+VW_DEPRECATED("Moved into VW namespace.")
+inline VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
+{
+  return VW::get_observed_cost_or_default_cb_adf(examples);
+}
+using cb_adf VW_DEPRECATED("Moved into VW namespace.") = VW::reductions::cb_adf;
 }  // namespace CB_ADF

@@ -387,8 +387,9 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   GD::gd& gd = *static_cast<GD::gd*>(
       base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
-  auto& adf_data = *static_cast<CB_ADF::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
-                                                     ->get_internal_type_erased_data_pointer_test_use_only());
+  auto& adf_data =
+      *static_cast<VW::reductions::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
+                                                ->get_internal_type_erased_data_pointer_test_use_only());
   data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
   data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);

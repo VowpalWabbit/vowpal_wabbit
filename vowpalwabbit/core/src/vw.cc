@@ -527,7 +527,10 @@ void VW::end_parser(VW::workspace& all) { all.parse_thread.join(); }
 
 bool VW::is_ring_example(const VW::workspace& all, const example* ae)
 {
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return all.example_parser->example_pool.is_from_pool(ae);
+  VW_WARNING_STATE_POP
 }
 
 VW::example* VW::read_example(VW::workspace& all, const char* example_line)
