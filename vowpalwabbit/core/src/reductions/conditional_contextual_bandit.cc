@@ -543,8 +543,8 @@ void update_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb
         num_labeled++;
         if (i == 0 || data.all_slots_loss_report)
         {
-          const float l = CB_ALGS::get_cost_estimate(outcome->probabilities[VW::details::TOP_ACTION_INDEX],
-              outcome->cost, preds[i][VW::details::TOP_ACTION_INDEX].action);
+          const float l = VW::get_cost_estimate(outcome->probabilities[VW::details::TOP_ACTION_INDEX], outcome->cost,
+              preds[i][VW::details::TOP_ACTION_INDEX].action);
           loss += l * preds[i][VW::details::TOP_ACTION_INDEX].score * ec_seq[VW::details::SHARED_EX_INDEX]->weight;
         }
       }
