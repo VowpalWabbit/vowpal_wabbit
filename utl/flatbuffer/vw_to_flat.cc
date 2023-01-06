@@ -452,7 +452,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     {
       if (!VW::example_is_newline(*ae) ||
           (all.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
-              !CB_ALGS::example_is_newline_not_header(*ae)) ||
+              !VW::example_is_newline_not_header_cb(*ae)) ||
           ((all.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
                ae->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT) ||
               (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&

@@ -835,7 +835,10 @@ void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
 void return_example(VW::workspace& all, VW::example& ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.get_num_features());
-  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  {
+    VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
   {
