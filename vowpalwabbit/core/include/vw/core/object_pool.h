@@ -53,10 +53,7 @@ public:
     new_chunk(initial_chunk_size);
   }
 
-  ~object_pool_impl()
-  {
-    assert(_pool.size() == size());
-  }
+  ~object_pool_impl() { assert(_pool.size() == size()); }
 
   void return_object(T* obj)
   {
