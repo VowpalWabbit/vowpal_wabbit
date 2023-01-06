@@ -175,7 +175,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
     std::ostringstream output_string_stream;
 
-    n.all->set_minmax = noop_mm;
+    n.all->set_minmax = VW::details::noop_mm;
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
     save_max_label = n.all->sd->max_label;
@@ -244,7 +244,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
     n.outputweight.ft_offset = ec.ft_offset;
 
-    n.all->set_minmax = noop_mm;
+    n.all->set_minmax = VW::details::noop_mm;
     auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss, n.squared_loss);
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = -1;
@@ -334,7 +334,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
         if (std::fabs(gradient) > 0)
         {
           auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
-          n.all->set_minmax = noop_mm;
+          n.all->set_minmax = VW::details::noop_mm;
           save_min_label = n.all->sd->min_label;
           n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
           save_max_label = n.all->sd->max_label;
@@ -470,10 +470,10 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
 
   n->save_xsubi = n->xsubi;
 
-  n->hidden_units = calloc_or_throw<float>(n->k);
-  n->dropped_out = calloc_or_throw<bool>(n->k);
-  n->hidden_units_pred = calloc_or_throw<VW::polyprediction>(n->k);
-  n->hiddenbias_pred = calloc_or_throw<VW::polyprediction>(n->k);
+  n->hidden_units = VW::details::calloc_or_throw<float>(n->k);
+  n->dropped_out = VW::details::calloc_or_throw<bool>(n->k);
+  n->hidden_units_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
+  n->hiddenbias_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
 
   auto base = as_singleline(stack_builder.setup_base_learner());
   n->increment = base->increment;  // Indexing of output layer is odd.

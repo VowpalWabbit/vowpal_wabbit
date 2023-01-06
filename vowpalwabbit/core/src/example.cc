@@ -107,7 +107,7 @@ namespace VW
 {
 flat_example* flatten_example(VW::workspace& all, example* ec)
 {
-  flat_example& fec = calloc_or_throw<flat_example>();
+  flat_example& fec = VW::details::calloc_or_throw<flat_example>();
   fec.l = ec->l;
   fec.tag = ec->tag;
   fec.ex_reduction_features = ec->ex_reduction_features;
