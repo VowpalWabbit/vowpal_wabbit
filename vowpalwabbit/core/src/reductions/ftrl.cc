@@ -114,15 +114,15 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   {
     VW::details::multipredict_info<VW::sparse_parameters> mp = {
         count, step, pred, all.weights.sparse_weights, static_cast<float>(all.sd->gravity)};
-    VW::foreach_feature<VW::details::multipredict_info<VW::sparse_parameters>, uint64_t, VW::details::vec_add_multipredict>(
-        all, ec, mp, num_features_from_interactions);
+    VW::foreach_feature<VW::details::multipredict_info<VW::sparse_parameters>, uint64_t,
+        VW::details::vec_add_multipredict>(all, ec, mp, num_features_from_interactions);
   }
   else
   {
     VW::details::multipredict_info<VW::dense_parameters> mp = {
         count, step, pred, all.weights.dense_weights, static_cast<float>(all.sd->gravity)};
-    VW::foreach_feature<VW::details::multipredict_info<VW::dense_parameters>, uint64_t, VW::details::vec_add_multipredict>(
-        all, ec, mp, num_features_from_interactions);
+    VW::foreach_feature<VW::details::multipredict_info<VW::dense_parameters>, uint64_t,
+        VW::details::vec_add_multipredict>(all, ec, mp, num_features_from_interactions);
   }
   ec.num_features_from_interactions = num_features_from_interactions;
   if (all.sd->contraction != 1.)
@@ -131,7 +131,10 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   }
   if (finalize_predictions)
   {
-    for (size_t c = 0; c < count; c++) { pred[c].scalar = VW::details::finalize_prediction(all.sd, all.logger, pred[c].scalar); }
+    for (size_t c = 0; c < count; c++)
+    {
+      pred[c].scalar = VW::details::finalize_prediction(all.sd, all.logger, pred[c].scalar);
+    }
   }
   if (audit)
   {

@@ -13,16 +13,16 @@
 
 namespace VW
 {
-  namespace details
-  {
-    template <class DataT>
+namespace details
+{
+template <class DataT>
 inline void dummy_func(DataT&, const VW::audit_strings*)
 {
 }  // should never be called due to call_audit overload
 
 inline void vec_add(float& p, float fx, float fw) { p += fw * fx; }
 
-  }
+}  // namespace details
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_index)
 template <class DataT, void (*FuncT)(DataT&, float feature_value, uint64_t feature_index), class WeightsT>
 void foreach_feature(WeightsT& /*weights*/, const VW::features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
@@ -105,8 +105,6 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear,
       extent_interactions, permutations, ec, dat, num_interacted_features_ignored, cache);
 }
 
-
-
 template <class WeightsT>
 inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
     std::array<bool, VW::NUM_NAMESPACES>& ignore_linear,
@@ -130,7 +128,7 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
       extent_interactions, permutations, ec, initial, num_interacted_features, cache);
   return initial;
 }
-}
+}  // namespace VW
 
 // namespace GD
 // {
@@ -146,7 +144,8 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
 // // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
 // template <class DataT, void (*FuncT)(DataT&, const float feature_value, float& weight_reference), class WeightsT>
 // VW_DEPRECATED("Moved to VW namespace")
-// inline void foreach_feature(WeightsT& weights, const VW::features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
+// inline void foreach_feature(WeightsT& weights, const VW::features& fs, DataT& dat, uint64_t offset = 0, float mult
+// = 1.)
 // {
 //   VW::foreach_feature<DataT, FuncT, WeightsT>(weights, fs, dat, offset, mult);
 // }
@@ -170,7 +169,8 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
 //     VW::details::generate_interactions_object_cache& cache)  // default value removed to eliminate
 //                                                              // ambiguity in old complers
 // {
-//   VW::generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(interactions, extent_interactions, permutations, ec,
+//   VW::generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(interactions, extent_interactions, permutations,
+//   ec,
 //       dat, weights, num_interacted_features, cache);
 // }
 
@@ -184,7 +184,8 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
 //     const std::vector<std::vector<VW::extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
 //     DataT& dat, size_t& num_interacted_features, VW::details::generate_interactions_object_cache& cache)
 // {
-//   VW::foreach_feature<DataT, WeightOrIndexT, FuncT, WeightsT>(weights, ignore_some_linear, ignore_linear, interactions,
+//   VW::foreach_feature<DataT, WeightOrIndexT, FuncT, WeightsT>(weights, ignore_some_linear, ignore_linear,
+//   interactions,
 //       extent_interactions, permutations, ec, dat, num_interacted_features, cache);
 // }
 
@@ -196,7 +197,8 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
 //     const std::vector<std::vector<VW::extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
 //     DataT& dat, VW::details::generate_interactions_object_cache& cache)
 // {
-//   VW::foreach_feature<DataT, WeightOrIndexT, FuncT, WeightsT>(weights, ignore_some_linear, ignore_linear, interactions,
+//   VW::foreach_feature<DataT, WeightOrIndexT, FuncT, WeightsT>(weights, ignore_some_linear, ignore_linear,
+//   interactions,
 //       extent_interactions, permutations, ec, dat, cache);
 // }
 
@@ -208,7 +210,8 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
 //     const std::vector<std::vector<VW::extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
 //     VW::details::generate_interactions_object_cache& cache, float initial = 0.f)
 // {
-//   return VW::inline_predict(weights, ignore_some_linear, ignore_linear, interactions, extent_interactions, permutations, ec,
+//   return VW::inline_predict(weights, ignore_some_linear, ignore_linear, interactions, extent_interactions,
+//   permutations, ec,
 //       cache, initial);
 // }
 
@@ -220,7 +223,8 @@ inline float inline_predict(WeightsT& weights, bool ignore_some_linear,
 //     const std::vector<std::vector<VW::extent_term>>& extent_interactions, bool permutations, VW::example_predict& ec,
 //     size_t& num_interacted_features, VW::details::generate_interactions_object_cache& cache, float initial = 0.f)
 // {
-//   return VW::inline_predict(weights, ignore_some_linear, ignore_linear, interactions, extent_interactions, permutations, ec,
+//   return VW::inline_predict(weights, ignore_some_linear, ignore_linear, interactions, extent_interactions,
+//   permutations, ec,
 //       num_interacted_features, cache, initial);
 // }
 // }  // namespace GD

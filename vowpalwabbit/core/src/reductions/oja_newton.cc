@@ -350,7 +350,8 @@ void predict(OjaNewton& oja_newton_ptr, base_learner&, VW::example& ec)
   oja_newton_ptr.data.prediction = 0;
   VW::foreach_feature<oja_n_update_data, make_pred>(*oja_newton_ptr.all, ec, oja_newton_ptr.data);
   ec.partial_prediction = oja_newton_ptr.data.prediction;
-  ec.pred.scalar = VW::details::finalize_prediction(oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
+  ec.pred.scalar =
+      VW::details::finalize_prediction(oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
 }
 
 void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)  // NOLINT
@@ -485,7 +486,10 @@ void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, boo
 
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;
-    if (resume) { VW::details::save_load_online_state_gd(all, model_file, read, text, temp, temp_normalized_sum_norm_x); }
+    if (resume)
+    {
+      VW::details::save_load_online_state_gd(all, model_file, read, text, temp, temp_normalized_sum_norm_x);
+    }
     else { VW::details::save_load_regressor_gd(all, model_file, read, text); }
   }
 }

@@ -169,7 +169,10 @@ void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;
-    if (resume) { VW::details::save_load_online_state_gd(*s.all, model_file, read, text, temp, temp_normalized_sum_norm_x); }
+    if (resume)
+    {
+      VW::details::save_load_online_state_gd(*s.all, model_file, read, text, temp, temp_normalized_sum_norm_x);
+    }
     else { VW::details::save_load_regressor_gd(*s.all, model_file, read, text); }
   }
 }
