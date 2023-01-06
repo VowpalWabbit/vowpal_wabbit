@@ -244,7 +244,8 @@ private:
         }
 
         VW::string_view spelling_strview(_spelling.data(), _spelling.size());
-        word_hash = hashstring(spelling_strview.data(), spelling_strview.length(), (uint64_t)_channel_hash);
+        word_hash =
+            VW::details::hashstring(spelling_strview.data(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash, VW::details::SPELLING_NAMESPACE);
         if (audit)
         {
