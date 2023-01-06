@@ -56,11 +56,6 @@ public:
   ~object_pool_impl()
   {
     assert(_pool.size() == size());
-    while (!_pool.empty())
-    {
-      auto front = _pool.front();
-      _pool.pop();
-    }
   }
 
   void return_object(T* obj)
