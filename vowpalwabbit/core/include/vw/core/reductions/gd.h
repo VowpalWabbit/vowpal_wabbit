@@ -299,10 +299,7 @@ inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, siz
 }
 
 VW_DEPRECATED("Moved to VW namespace")
-inline float inline_predict(VW::workspace& all, VW::example& ec)
-{
-  return VW::inline_predict(all, ec);
-}
+inline float inline_predict(VW::workspace& all, VW::example& ec) { return VW::inline_predict(all, ec); }
 
 VW_DEPRECATED("Moved to VW namespace")
 inline float inline_predict(VW::workspace& all, VW::example& ec, size_t& num_generated_features)
@@ -311,8 +308,5 @@ inline float inline_predict(VW::workspace& all, VW::example& ec, size_t& num_gen
 }
 
 VW_DEPRECATED("Moved to VW namespace")
-inline float trunc_weight(const float w, const float gravity)
-{
-  return VW::trunc_weight(w, gravity);
-}
-}
+inline float trunc_weight(const float w, const float gravity) { return VW::trunc_weight(w, gravity); }
+}  // namespace GD
