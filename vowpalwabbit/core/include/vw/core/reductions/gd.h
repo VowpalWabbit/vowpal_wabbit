@@ -247,72 +247,72 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
 
 }  // namespace INTERACTIONS
 
-// namespace GD
-// {
+namespace GD
+{
 
-// using gd = VW::reductions::gd;
+using gd = VW::reductions::gd;
 
-// // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
-// template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
-// VW_DEPRECATED("Moved to VW namespace")
-// inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat)
-// {
-//   VW::foreach_feature<DataT, WeightOrIndexT, FuncT>(all, ec, dat);
-// }
+// iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
+VW_DEPRECATED("Moved to VW namespace")
+inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat)
+{
+  VW::foreach_feature<DataT, WeightOrIndexT, FuncT>(all, ec, dat);
+}
 
-// // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
-// template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
-// VW_DEPRECATED("Moved to VW namespace")
-// inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, size_t& num_interacted_features)
-// {
-//   VW::foreach_feature<DataT, WeightOrIndexT, FuncT>(all, ec, dat, num_interacted_features);
-// }
+// iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
+template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
+VW_DEPRECATED("Moved to VW namespace")
+inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, size_t& num_interacted_features)
+{
+  VW::foreach_feature<DataT, WeightOrIndexT, FuncT>(all, ec, dat, num_interacted_features);
+}
 
-// // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,
-// // feature_weight)
-// template <class DataT, void (*FuncT)(DataT&, float, float&)>
-// VW_DEPRECATED("Moved to VW namespace")
-// inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat)
-// {
-//   VW::foreach_feature<DataT, float&, FuncT>(all, ec, dat);
-// }
+// iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,
+// feature_weight)
+template <class DataT, void (*FuncT)(DataT&, float, float&)>
+VW_DEPRECATED("Moved to VW namespace")
+inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat)
+{
+  VW::foreach_feature<DataT, float&, FuncT>(all, ec, dat);
+}
 
-// template <class DataT, void (*FuncT)(DataT&, float, float)>
-// VW_DEPRECATED("Moved to VW namespace")
-// inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat)
-// {
-//   VW::foreach_feature<DataT, float, FuncT>(all, ec, dat);
-// }
+template <class DataT, void (*FuncT)(DataT&, float, float)>
+VW_DEPRECATED("Moved to VW namespace")
+inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat)
+{
+  VW::foreach_feature<DataT, float, FuncT>(all, ec, dat);
+}
 
-// template <class DataT, void (*FuncT)(DataT&, float, float&)>
-// VW_DEPRECATED("Moved to VW namespace")
-// inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, size_t& num_interacted_features)
-// {
-//   VW::foreach_feature<DataT, float&, FuncT>(all, ec, dat, num_interacted_features);
-// }
+template <class DataT, void (*FuncT)(DataT&, float, float&)>
+VW_DEPRECATED("Moved to VW namespace")
+inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, size_t& num_interacted_features)
+{
+  VW::foreach_feature<DataT, float&, FuncT>(all, ec, dat, num_interacted_features);
+}
 
-// template <class DataT, void (*FuncT)(DataT&, float, const float&)>
-// VW_DEPRECATED("Moved to VW namespace")
-// inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, size_t& num_interacted_features)
-// {
-//   VW::foreach_feature<DataT, const float&, FuncT>(all, ec, dat, num_interacted_features);
-// }
+template <class DataT, void (*FuncT)(DataT&, float, const float&)>
+VW_DEPRECATED("Moved to VW namespace")
+inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, size_t& num_interacted_features)
+{
+  VW::foreach_feature<DataT, const float&, FuncT>(all, ec, dat, num_interacted_features);
+}
 
-// VW_DEPRECATED("Moved to VW namespace")
-// inline float inline_predict(VW::workspace& all, VW::example& ec)
-// {
-//   return VW::inline_predict(all, ec);
-// }
+VW_DEPRECATED("Moved to VW namespace")
+inline float inline_predict(VW::workspace& all, VW::example& ec)
+{
+  return VW::inline_predict(all, ec);
+}
 
-// VW_DEPRECATED("Moved to VW namespace")
-// inline float inline_predict(VW::workspace& all, VW::example& ec, size_t& num_generated_features)
-// {
-//   return VW::inline_predict(all, ec, num_generated_features);
-// }
+VW_DEPRECATED("Moved to VW namespace")
+inline float inline_predict(VW::workspace& all, VW::example& ec, size_t& num_generated_features)
+{
+  return VW::inline_predict(all, ec, num_generated_features);
+}
 
-// VW_DEPRECATED("Moved to VW namespace")
-// inline float trunc_weight(const float w, const float gravity)
-// {
-//   return VW::trunc_weight(w, gravity);
-// }
-// }
+VW_DEPRECATED("Moved to VW namespace")
+inline float trunc_weight(const float w, const float gravity)
+{
+  return VW::trunc_weight(w, gravity);
+}
+}
