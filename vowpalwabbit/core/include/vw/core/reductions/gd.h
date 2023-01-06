@@ -182,7 +182,7 @@ inline float trunc_weight(const float w, const float gravity)
 
 }  // namespace GD
 
-namespace INTERACTIONS
+namespace VW
 {
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const VW::audit_strings*)>
 inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
@@ -215,6 +215,27 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
     generate_interactions<R, S, T, VW::dense_parameters>(all.interactions, all.extent_interactions, all.permutations,
         ec, dat, all.weights.dense_weights, num_interacted_features, all.generate_interactions_object_cache_state);
   }
+}
+
+}  // namespace INTERACTIONS
+
+namespace INTERACTIONS  // NOLINT
+{
+template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const VW::audit_strings*)>
+VW_DEPRECATED("Moved to VW namespace")
+inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
+{
+  // call version in VW namespace
+  VW::generate_interactions<R, S, T, audit, audit_func>(all, ec, dat, num_interacted_features);
+}
+
+// this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
+template <class R, class S, void (*T)(R&, float, S)>
+VW_DEPRECATED("Moved to VW namespace")
+inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
+{
+  // call version in VW namespace
+  VW::generate_interactions<R, S, T>(all, ec, dat, num_interacted_features);
 }
 
 }  // namespace INTERACTIONS

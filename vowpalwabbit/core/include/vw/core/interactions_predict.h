@@ -498,7 +498,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
 
 }  // namespace VW
 
-namespace INTERACTIONS
+namespace INTERACTIONS  // NOLINT
 {
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT), bool audit,

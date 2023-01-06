@@ -144,7 +144,7 @@ public:
 
     for (const auto& inter : _interactions)
     {
-      if (INTERACTIONS::contains_wildcard(inter))
+      if (VW::contains_wildcard(inter))
       {
         _contains_wildcard = true;
         break;
@@ -268,7 +268,7 @@ public:
     {
       // permutations is not supported by slim so we can just use combinations!
       _generate_interactions.update_interactions_if_new_namespace_seen<
-          INTERACTIONS::generate_namespace_combinations_with_repetition, false>(_interactions, ex.indices);
+          VW::details::generate_namespace_combinations_with_repetition, false>(_interactions, ex.indices);
       score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
           _unused_extent_interactions,
           /* permutations */ false, ex, _generate_interactions_object_cache);
@@ -475,7 +475,7 @@ private:
   std::vector<std::vector<VW::namespace_index>> _interactions;
   std::vector<std::vector<VW::extent_term>> _unused_extent_interactions;
   VW::details::generate_interactions_object_cache _generate_interactions_object_cache;
-  INTERACTIONS::interactions_generator _generate_interactions;
+  VW::interactions_generator _generate_interactions;
   bool _contains_wildcard;
   std::array<bool, VW::NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;
