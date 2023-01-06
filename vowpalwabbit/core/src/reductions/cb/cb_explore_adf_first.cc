@@ -76,7 +76,7 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, VW::multi_
     preds[0].score = 1.0;
   }
 
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 void cb_explore_adf_first::save_load(VW::io_buf& io, bool read, bool text)

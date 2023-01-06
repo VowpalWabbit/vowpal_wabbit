@@ -21,7 +21,6 @@
 #include <vector>
 
 using namespace VW::LEARNER;
-using namespace exploration;
 using namespace VW::config;
 
 #define WARM_START 1
@@ -361,7 +360,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 
   auto& out_ec = *data.ecs[0];
   uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
+  if (VW::explore::sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
           end_scores(out_ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
