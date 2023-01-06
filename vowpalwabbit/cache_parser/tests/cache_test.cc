@@ -19,7 +19,7 @@ using namespace ::testing;
 
 TEST(Cache, WriteAndReadExample)
 {
-  auto workspace = VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto workspace = VW::initialize(vwtest::make_args("--quiet"));
   VW::example src_ex;
   VW::parsers::text::read_line(*workspace, &src_ex, "3.5 |ns1 example value test |ss2 ex:0.5");
 
@@ -56,7 +56,7 @@ TEST(Cache, WriteAndReadExample)
 
 TEST(Cache, WriteAndReadLargeExample)
 {
-  auto workspace = VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto workspace = VW::initialize(vwtest::make_args("--quiet"));
   VW::example src_ex;
   VW::parsers::text::read_line(*workspace, &src_ex,
       "| example value test a b:0.3 c:0.1 d e f:0.3 g h i j k l m n o p q r s t u v w x y:5.5 z a1 b1:0.343 c1:0.1 d1 "
