@@ -58,10 +58,7 @@ public:
   void return_object(T* obj)
   {
     std::unique_lock<TMutex> lock(_lock);
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    assert(is_from_pool(obj));
-    VW_WARNING_STATE_POP
+    assert(no_lock_is_from_pool(obj));
     _pool.push(obj);
   }
 
@@ -101,6 +98,12 @@ public:
   bool is_from_pool(const T* obj) const
   {
     std::unique_lock<TMutex> lock(_lock);
+    return no_lock_is_from_pool(obj);
+  }
+
+private:
+  bool no_lock_is_from_pool(const T* obj) const
+  {
     for (auto& bound : _chunk_bounds)
     {
       if (obj >= bound.first && obj <= bound.second) { return true; }
@@ -109,7 +112,6 @@ public:
     return false;
   }
 
-private:
   void new_chunk(size_t size)
   {
     if (size == 0) { return; }
