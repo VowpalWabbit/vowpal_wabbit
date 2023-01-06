@@ -26,6 +26,15 @@
 
 namespace VW
 {
+namespace details
+{
+struct null_mutex
+{
+  void lock() {}
+  void unlock() {}
+  bool try_lock() { return true; }
+};
+
 template <typename T>
 class default_cleanup
 {
@@ -40,18 +49,18 @@ public:
   T* operator()(T* obj) { return obj; }
 };
 
-template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
-class no_lock_object_pool
+template <typename T, typename TMutex = null_mutex, typename TInitializer = default_initializer<T>>
+class object_pool_impl
 {
 public:
-  no_lock_object_pool() = default;
-  no_lock_object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
+  object_pool_impl() = default;
+  object_pool_impl(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
       : _initializer(initializer), _initial_chunk_size(initial_chunk_size), _chunk_size(chunk_size)
   {
     new_chunk(initial_chunk_size);
   }
 
-  ~no_lock_object_pool()
+  ~object_pool_impl()
   {
     assert(_pool.size() == size());
     while (!_pool.empty())
@@ -64,6 +73,7 @@ public:
 
   void return_object(T* obj)
   {
+    std::unique_lock<TMutex> lock(_lock);
     VW_WARNING_STATE_PUSH
     VW_WARNING_DISABLE_DEPRECATED_USAGE
     assert(is_from_pool(obj));
@@ -73,6 +83,7 @@ public:
 
   T* get_object()
   {
+    std::unique_lock<TMutex> lock(_lock);
     if (_pool.empty()) { new_chunk(_chunk_size); }
 
     auto obj = _pool.front();
@@ -80,10 +91,15 @@ public:
     return obj;
   }
 
-  bool empty() const { return _pool.empty(); }
+  bool empty() const
+  {
+    std::unique_lock<TMutex> lock(_lock);
+    return _pool.empty();
+  }
 
   size_t size() const
   {
+    std::unique_lock<TMutex> lock(_lock);
     size_t size = 0;
     auto num_chunks = _chunk_bounds.size();
 
@@ -100,6 +116,7 @@ public:
   VW_DEPRECATED("Pools will no longer be able to check if an object is from the pool in VW 10.")
   bool is_from_pool(const T* obj) const
   {
+    std::unique_lock<TMutex> lock(_lock);
     for (auto& bound : _chunk_bounds)
     {
       if (obj >= bound.first && obj <= bound.second) { return true; }
@@ -120,8 +137,8 @@ private:
     for (size_t i = 0; i < size; i++) { _pool.push(_initializer(&chunk[i])); }
   }
 
+  mutable TMutex _lock;
   TInitializer _initializer;
-  TCleanup _cleanup;
   size_t _initial_chunk_size = 0;
   size_t _chunk_size = 8;
 
@@ -129,6 +146,14 @@ private:
   std::vector<std::pair<T*, T*>> _chunk_bounds;
   std::queue<T*> _pool;
 };
+
+}  // namespace details
+
+template <typename T, typename TInitializer = details::default_initializer<T>>
+using no_lock_object_pool = details::object_pool_impl<T, details::null_mutex, TInitializer>;
+
+template <typename T, typename TInitializer = details::default_initializer<T>>
+using object_pool = details::object_pool_impl<T, std::mutex, TInitializer>;
 
 template <typename T>
 class moved_object_pool
@@ -156,54 +181,5 @@ public:
 
 private:
   std::stack<T> _pool;
-};
-
-template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
-class object_pool
-{
-public:
-  object_pool() = default;
-  object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
-      : _inner_pool(initial_chunk_size, initializer, chunk_size)
-  {
-  }
-
-  void return_object(T* obj)
-  {
-    std::unique_lock<std::mutex> lock(_lock);
-    _inner_pool.return_object(obj);
-  }
-
-  T* get_object()
-  {
-    std::unique_lock<std::mutex> lock(_lock);
-    return _inner_pool.get_object();
-  }
-
-  bool empty() const
-  {
-    std::unique_lock<std::mutex> lock(_lock);
-    return _inner_pool.empty();
-  }
-
-  size_t size() const
-  {
-    std::unique_lock<std::mutex> lock(_lock);
-    return _inner_pool.size();
-  }
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-
-  VW_DEPRECATED("Pools will no longer be able to check if an object is from the pool in VW 10.")
-  bool is_from_pool(const T* obj) const
-  {
-    std::unique_lock<std::mutex> lock(_lock);
-    return _inner_pool.is_from_pool(obj);
-  }
-  VW_WARNING_STATE_POP
-
-private:
-  mutable std::mutex _lock;
-  no_lock_object_pool<T, TInitializer, TCleanup> _inner_pool;
 };
 }  // namespace VW
