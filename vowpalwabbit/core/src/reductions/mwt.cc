@@ -19,10 +19,9 @@
 #include <cmath>
 
 using namespace VW::LEARNER;
-using namespace CB_ALGS;
 using namespace VW::config;
 
-void MWT::print_scalars(
+void VW::details::print_scalars(
     VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
@@ -61,7 +60,7 @@ class mwt
 public:
   std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
   std::vector<policy_data> evals;                     // accrued losses of features.
-  std::pair<bool, CB::cb_class> optional_observation;
+  std::pair<bool, VW::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
   double total = 0.;
   uint32_t num_classes = 0;
@@ -186,7 +185,10 @@ void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const
 void output_example_prediction_mwt(
     VW::workspace& all, const mwt& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  {
+    VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  }
 }
 
 void print_update_mwt(
@@ -326,6 +328,6 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
                 .set_print_update(::print_update_mwt)
                 .build();
 
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return make_base(*l);
 }

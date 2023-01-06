@@ -17,7 +17,7 @@ VW::weight* VW::sparse_parameters::get_or_default_and_get(size_t i) const
   auto iter = _map.find(index);
   if (iter == _map.end())
   {
-    _map.insert(std::make_pair(index, calloc_mergable_or_throw<VW::weight>(stride())));
+    _map.insert(std::make_pair(index, VW::details::calloc_mergable_or_throw<VW::weight>(stride())));
     iter = _map.find(index);
     if (_default_func != nullptr) { _default_func(iter->second, index); }
   }

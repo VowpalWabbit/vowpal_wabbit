@@ -184,7 +184,7 @@ uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
       uint32_t problem_number =
           e.last_pair + (finals_winner | ((static_cast<uint32_t>(1)) << i)) - 1;  // This is unique.
 
-      base.learn(ec, problem_number);
+      base.predict(ec, problem_number);
 
       if (ec.pred.scalar > e.class_boundary) { finals_winner = finals_winner | ((static_cast<size_t>(1)) << i); }
     }
@@ -193,7 +193,7 @@ uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
   uint32_t id = e.final_nodes[finals_winner];
   while (id >= e.k)
   {
-    base.learn(ec, id - e.k);
+    base.predict(ec, id - e.k);
 
     if (ec.pred.scalar > e.class_boundary) { id = e.directions[id].right; }
     else { id = e.directions[id].left; }
@@ -287,18 +287,7 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
   }
 }
 
-void predict(ect& e, single_learner& base, VW::example& ec)
-{
-  VW::multiclass_label mc = ec.l.multi;
-  if (mc.label == 0 || (mc.label > e.k && mc.label != static_cast<uint32_t>(-1)))
-  {
-    // In order to print curly braces, they need to be embedded within curly braces to escape them.
-    // The funny looking part will just print {1, e.k}
-    e.logger.out_warn("label {0} is not in {{1, {1}}} This won't work right.", mc.label, e.k);
-  }
-  ec.pred.multiclass = ect_predict(e, base, ec);
-  ec.l.multi = mc;
-}
+void predict(ect& e, single_learner& base, VW::example& ec) { ec.pred.multiclass = ect_predict(e, base, ec); }
 
 void learn(ect& e, single_learner& base, VW::example& ec)
 {

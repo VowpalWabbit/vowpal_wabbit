@@ -36,7 +36,7 @@ void parser::parse_cb_label(polylabel* l, const CBLabel* label)
   l->cb.weight = label->weight();
   for (auto const& cost : *(label->costs()))
   {
-    CB::cb_class f;
+    VW::cb_class f;
     f.action = cost->action();
     f.cost = cost->cost();
     f.probability = cost->probability();
@@ -86,7 +86,7 @@ void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
   l->cb_eval.event.weight = label->event()->weight();
   for (const auto& cb_cost : *(label->event()->costs()))
   {
-    CB::cb_class f;
+    VW::cb_class f;
     f.cost = cb_cost->cost();
     f.action = cb_cost->action();
     f.probability = cb_cost->probability();

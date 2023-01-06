@@ -41,11 +41,11 @@ public:
   VW::simple_label simple;
   VW::multiclass_label multi;
   VW::cs_label cs;
-  CB::label cb;
+  VW::cb_label cb;
   VW::cb_continuous::continuous_label cb_cont;
   VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
-  CB_EVAL::label cb_eval;
+  VW::cb_eval_label cb_eval;
   MULTILABEL::labels multilabels;
 };
 

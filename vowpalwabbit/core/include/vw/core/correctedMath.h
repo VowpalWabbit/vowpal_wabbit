@@ -9,6 +9,11 @@
 
 #include <cmath>
 
+namespace VW
+{
+namespace details
+{
+
 #ifdef _WIN32
 // this is a bug in VS2013, fixed in VS2015 runtime
 template <typename T>
@@ -21,5 +26,12 @@ T correctedExp(T exponent)
 // std::exp is used because on Linux, not using the namespace caused a different implementation of
 // exp to be linked providing incorrect values when `#include <boost/program_options.hpp>` was
 // removed in global_data.h
-#  define correctedExp std::exp  // NOLINT
+template <typename T>
+T correctedExp(T exponent)
+{
+  return std::exp(exponent);
+}
 #endif
+
+}  // namespace details
+}  // namespace VW

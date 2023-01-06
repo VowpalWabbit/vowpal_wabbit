@@ -15,8 +15,11 @@ VW::LEARNER::base_learner* mwt_setup(VW::setup_base_i& stack_builder);
 }  // namespace VW
 
 // TODO: move this somewhere else
-namespace MWT
+namespace VW
+{
+namespace details
 {
 void print_scalars(
     VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger);
-}  // namespace MWT
+}
+}  // namespace VW
