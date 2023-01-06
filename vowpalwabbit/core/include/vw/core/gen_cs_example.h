@@ -8,8 +8,11 @@
 
 #include <cfloat>
 
-namespace GEN_CS
+namespace VW
 {
+namespace details
+{
+
 class cb_to_cs
 {
 public:
@@ -65,7 +68,7 @@ void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const VW::cb_label& ld, VW:
     {
       VW::cs_class wc = {0., i, 0., 0.};
       // get cost prediction for this action
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, i, 0);
+      wc.x = VW::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, i, 0);
       if (wc.x < min)
       {
         min = wc.x;
@@ -93,7 +96,7 @@ void gen_cs_example_dm(cb_to_cs& c, VW::example& ec, const VW::cb_label& ld, VW:
       VW::cs_class wc = {0., cl.action, 0., 0.};
 
       // get cost prediction for this action
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl.action, 0);
+      wc.x = VW::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, cl.action, 0);
       if (wc.x < min || (wc.x == min && cl.action < argmin))
       {
         min = wc.x;
@@ -123,7 +126,7 @@ void gen_cs_label(cb_to_cs& c, VW::example& ec, VW::cs_label& cs_ld, uint32_t ac
   VW::cs_class wc = {0., action, 0., 0.};
 
   // get cost prediction for this action
-  wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, action, c.num_actions);
+  wc.x = VW::get_cost_pred<is_learn>(c.scorer, c.known_cost, ec, action, c.num_actions);
 
   c.pred_scores.costs.push_back(wc);
   // add correction if we observed cost for this action and regressor is wrong
@@ -209,7 +212,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
   cs_labels.costs.clear();
   for (size_t i = 0; i < examples.size(); i++)
   {
-    if (CB_ALGS::example_is_newline_not_header(*examples[i])) { continue; }
+    if (VW::example_is_newline_not_header_cb(*examples[i])) { continue; }
 
     VW::cs_class wc = {0., static_cast<uint32_t>(i), 0., 0.};
 
@@ -220,10 +223,10 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
       // get cost prediction for this label
       // num_actions should be 1 effectively.
       // my get_cost_pred function will use 1 for 'index-1+base'
-      wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 0, 2);
+      wc.x = VW::get_cost_pred<is_learn>(c.scorer, c.known_cost, *(examples[i]), 0, 2);
       c.known_cost.action = known_index;
     }
-    else { wc.x = CB_ALGS::get_cost_pred<is_learn>(c.scorer, VW::cb_class{}, *(examples[i]), 0, 2); }
+    else { wc.x = VW::get_cost_pred<is_learn>(c.scorer, VW::cb_class{}, *(examples[i]), 0, 2); }
 
     c.pred_scores.costs.push_back(wc);  // done
 
@@ -297,4 +300,5 @@ void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& exa
   else { base.predict(examples, static_cast<int32_t>(id)); }
 }
 
-}  // namespace GEN_CS
+}  // namespace details
+}  // namespace VW

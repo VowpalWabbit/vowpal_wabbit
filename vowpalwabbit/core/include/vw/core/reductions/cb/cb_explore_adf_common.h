@@ -15,7 +15,7 @@
 #include "vw/core/action_score.h"    // used in sort_action_probs
 #include "vw/core/cb.h"              // required for VW::cb_label
 #include "vw/core/example.h"         // used in predict
-#include "vw/core/gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
+#include "vw/core/gen_cs_example.h"  // required for VW::details::cb_to_cs_adf
 #include "vw/core/global_data.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/print_utils.h"
@@ -122,8 +122,8 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::predict(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
-  example* label_example = CB_ADF::test_adf_sequence(examples);
-  data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
+  example* label_example = VW::test_cb_adf_sequence(examples);
+  data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
 
   if (label_example != nullptr)
   {
@@ -147,10 +147,10 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::learn(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
-  example* label_example = CB_ADF::test_adf_sequence(examples);
+  example* label_example = VW::test_cb_adf_sequence(examples);
   if (label_example != nullptr)
   {
-    data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
+    data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
     if (data._metrics)
@@ -238,7 +238,7 @@ void cb_explore_adf_base<ExploreType>::_update_stats(
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = CB_ALGS::get_cost_estimate(_known_cost, preds[i].action);
+      float l = VW::get_cost_estimate(_known_cost, preds[i].action);
       loss += l * preds[i].score * ec_seq[ec_seq.size() - preds.size() + i]->weight;
     }
   }
