@@ -327,11 +327,11 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
     if (pred_total <= 1.)  // single edge
     {
       D.neighbor_predictions[0] = static_cast<float>(last_pred);
-      GD::foreach_feature<task_data, uint64_t, add_edge_features_single_fn>(sch.get_vw_pointer_unsafe(), edge, D);
+      VW::foreach_feature<task_data, uint64_t, add_edge_features_single_fn>(sch.get_vw_pointer_unsafe(), edge, D);
     }
     else
     {  // lots of edges
-      GD::foreach_feature<task_data, uint64_t, add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
+      VW::foreach_feature<task_data, uint64_t, add_edge_features_group_fn>(sch.get_vw_pointer_unsafe(), edge, D);
     }
   }
   ec[n]->indices.push_back(VW::details::NEIGHBOR_NAMESPACE);

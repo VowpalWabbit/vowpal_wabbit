@@ -317,7 +317,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       else { base.predict(n.output_layer, n.k); }
     }
 
-    n.prediction = GD::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
+    n.prediction = VW::details::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
 
     if (should_output)
     {
@@ -355,7 +355,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
               float nu = n.outputweight.pred.scalar;
               float gradhw = 0.5f * nu * gradient * sigmahprime;
 
-              ec.l.simple.label = GD::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
+              ec.l.simple.label = VW::details::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
               ec.pred.scalar = hidden_units[i].scalar;
               if (ec.l.simple.label != hidden_units[i].scalar) { base.update(ec, i); }
             }

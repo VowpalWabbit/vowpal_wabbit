@@ -85,7 +85,7 @@ inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
 float sensitivity(ftrl& b, base_learner& /* base */, VW::example& ec)
 {
   uncertainty uncetain(b);
-  GD::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
+  VW::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
   return uncetain.score;
 }
 
@@ -93,10 +93,10 @@ template <bool audit>
 void predict(ftrl& b, base_learner&, VW::example& ec)
 {
   size_t num_features_from_interactions = 0;
-  ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
+  ec.partial_prediction = VW::inline_predict(*b.all, ec, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
-  if (audit) { GD::print_audit_features(*(b.all), ec); }
+  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  if (audit) { VW::details::print_audit_features(*(b.all), ec); }
 }
 
 template <bool audit>
@@ -112,16 +112,16 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   size_t num_features_from_interactions = 0;
   if (b.all->weights.sparse)
   {
-    GD::multipredict_info<VW::sparse_parameters> mp = {
+    VW::details::multipredict_info<VW::sparse_parameters> mp = {
         count, step, pred, all.weights.sparse_weights, static_cast<float>(all.sd->gravity)};
-    GD::foreach_feature<GD::multipredict_info<VW::sparse_parameters>, uint64_t, GD::vec_add_multipredict>(
+    VW::foreach_feature<VW::details::multipredict_info<VW::sparse_parameters>, uint64_t, VW::details::vec_add_multipredict>(
         all, ec, mp, num_features_from_interactions);
   }
   else
   {
-    GD::multipredict_info<VW::dense_parameters> mp = {
+    VW::details::multipredict_info<VW::dense_parameters> mp = {
         count, step, pred, all.weights.dense_weights, static_cast<float>(all.sd->gravity)};
-    GD::foreach_feature<GD::multipredict_info<VW::dense_parameters>, uint64_t, GD::vec_add_multipredict>(
+    VW::foreach_feature<VW::details::multipredict_info<VW::dense_parameters>, uint64_t, VW::details::vec_add_multipredict>(
         all, ec, mp, num_features_from_interactions);
   }
   ec.num_features_from_interactions = num_features_from_interactions;
@@ -131,14 +131,14 @@ void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t 
   }
   if (finalize_predictions)
   {
-    for (size_t c = 0; c < count; c++) { pred[c].scalar = GD::finalize_prediction(all.sd, all.logger, pred[c].scalar); }
+    for (size_t c = 0; c < count; c++) { pred[c].scalar = VW::details::finalize_prediction(all.sd, all.logger, pred[c].scalar); }
   }
   if (audit)
   {
     for (size_t c = 0; c < count; c++)
     {
       ec.pred.scalar = pred[c].scalar;
-      GD::print_audit_features(all, ec);
+      VW::details::print_audit_features(all, ec);
       ec.ft_offset += static_cast<uint64_t>(step);
     }
     ec.ft_offset -= static_cast<uint64_t>(step * count);
@@ -252,7 +252,7 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   b.data.normalized_squared_norm_x = 0;
 
   size_t num_features_from_interactions = 0;
-  GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
+  VW::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
 
   b.normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
@@ -261,7 +261,7 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
 void update_state_and_predict_pistol(ftrl& b, base_learner&, VW::example& ec)
@@ -269,30 +269,30 @@ void update_state_and_predict_pistol(ftrl& b, base_learner&, VW::example& ec)
   b.data.predict = 0;
 
   size_t num_features_from_interactions = 0;
-  GD::foreach_feature<ftrl_update_data, inner_update_pistol_state_and_predict>(
+  VW::foreach_feature<ftrl_update_data, inner_update_pistol_state_and_predict>(
       *b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
 
   ec.partial_prediction = b.data.predict;
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
 void update_after_prediction_proximal(ftrl& b, VW::example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  GD::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
+  VW::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  GD::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
+  VW::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
 void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+  VW::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
 }
 
 // NO_SANITIZE_UNDEFINED needed in learn functions because
@@ -312,7 +312,7 @@ void NO_SANITIZE_UNDEFINED learn_pistol(ftrl& a, base_learner& base, VW::example
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
-  if (audit) { GD::print_audit_features(*(a.all), ec); }
+  if (audit) { VW::details::print_audit_features(*(a.all), ec); }
   // update state based on the prediction
   update_after_prediction_pistol(a, ec);
 }
@@ -322,7 +322,7 @@ void NO_SANITIZE_UNDEFINED learn_coin_betting(ftrl& a, base_learner& base, VW::e
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
-  if (audit) { GD::print_audit_features(*(a.all), ec); }
+  if (audit) { VW::details::print_audit_features(*(a.all), ec); }
   // update state based on the prediction
   coin_betting_update_after_prediction(a, ec);
 }
@@ -342,10 +342,10 @@ void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
 
     if (resume)
     {
-      GD::save_load_online_state(
+      VW::details::save_load_online_state_gd(
           *all, model_file, read, text, b.total_weight, b.normalized_sum_norm_x, nullptr, b.ftrl_size);
     }
-    else { GD::save_load_regressor(*all, model_file, read, text); }
+    else { VW::details::save_load_regressor_gd(*all, model_file, read, text); }
   }
 }
 
