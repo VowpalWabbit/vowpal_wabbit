@@ -227,7 +227,7 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& example
     }
     preds[a_min].score = 1.f - total_weight;
 
-    exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+    VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
   }
   else  // elimination variant
   {

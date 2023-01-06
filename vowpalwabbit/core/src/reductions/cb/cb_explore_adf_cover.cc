@@ -204,7 +204,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     }
   }
 
-  exploration::enforce_minimum_probability(
+  VW::explore::enforce_minimum_probability(
       min_prob * num_actions, !_nounif, begin_scores(_action_probs), end_scores(_action_probs));
 
   sort_action_probs(_action_probs, _scores);
