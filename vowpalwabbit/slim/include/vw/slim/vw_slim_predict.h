@@ -341,7 +341,7 @@ public:
         uint32_t top_action = (uint32_t)(top_action_iterator - std::begin(scores));
 
         RETURN_EXPLORATION_ON_FAIL(
-            exploration::generate_epsilon_greedy(_epsilon, top_action, std::begin(pdf), std::end(pdf)));
+            VW::explore::generate_epsilon_greedy(_epsilon, top_action, std::begin(pdf), std::end(pdf)));
         break;
       }
       case vw_predict_exploration::softmax:
@@ -350,7 +350,7 @@ public:
         RETURN_ON_FAIL(predict(shared, actions, num_actions, scores));
 
         // generate exploration distribution
-        RETURN_EXPLORATION_ON_FAIL(exploration::generate_softmax(
+        RETURN_EXPLORATION_ON_FAIL(VW::explore::generate_softmax(
             _lambda, std::begin(scores), std::end(scores), std::begin(pdf), std::end(pdf)));
         break;
       }
@@ -388,11 +388,11 @@ public:
 
         // generate exploration distribution
         RETURN_EXPLORATION_ON_FAIL(
-            exploration::generate_bag(std::begin(top_actions), std::end(top_actions), std::begin(pdf), std::end(pdf)));
+            VW::explore::generate_bag(std::begin(top_actions), std::end(top_actions), std::begin(pdf), std::end(pdf)));
 
         if (_minimum_epsilon > 0)
           RETURN_EXPLORATION_ON_FAIL(
-              exploration::enforce_minimum_probability(_minimum_epsilon, true, std::begin(pdf), std::end(pdf)));
+              VW::explore::enforce_minimum_probability(_minimum_epsilon, true, std::begin(pdf), std::end(pdf)));
 
         break;
       }
@@ -406,7 +406,7 @@ public:
     // Sample from the pdf
     uint32_t chosen_action_idx;
     RETURN_EXPLORATION_ON_FAIL(
-        exploration::sample_after_normalizing(event_id, std::begin(pdf), std::end(pdf), chosen_action_idx));
+        VW::explore::sample_after_normalizing(event_id, std::begin(pdf), std::end(pdf), chosen_action_idx));
 
     // Swap top element with chosen one (unless chosen is the top)
     if (chosen_action_idx != 0)
