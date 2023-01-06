@@ -556,8 +556,10 @@ base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
                 .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<recall_tree>)
                 .set_print_update(VW::details::print_update_multiclass_label<recall_tree>)
                 .set_save_load(save_load_tree)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_input_label_type(VW::label_type_t::MULTICLASS)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
                 .build();
 
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;

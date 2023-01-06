@@ -32,6 +32,28 @@ epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
 }
 }  // namespace epsilon_decay_test
 
+TEST(EpsilonDecay, ThrowIfNoExplore)
+{
+  EXPECT_THROW(
+      {
+        VW::workspace* vw = nullptr;
+        try
+        {
+          vw = VW::initialize("--epsilon_decay --cb_adf");
+        }
+        catch (const VW::vw_exception& e)
+        {
+          EXPECT_STREQ(
+              "Input prediction type: prediction_type_t::ACTION_PROBS of reduction: epsilon_decay does not match "
+              "output prediction type: prediction_type_t::ACTION_SCORES of base reduction: cb_adf.",
+              e.what());
+          throw;
+        }
+        VW::finish(*vw);
+      },
+      VW::vw_exception);
+}
+
 TEST(EpsilonDecay, InitWIterations)
 {
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty

@@ -285,8 +285,10 @@ VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& s
   auto* l = make_reduction_learner(
       std::move(otree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(offset_tree_setup))
                 .set_params_per_weight(ws)
+                .set_input_prediction_type(prediction_type_t::ACTION_PROBS)
                 .set_output_prediction_type(prediction_type_t::ACTION_PROBS)
                 .set_input_label_type(label_type_t::CB)
+                .set_output_label_type(label_type_t::CB)
                 .build();
 
   return make_base(*l);
