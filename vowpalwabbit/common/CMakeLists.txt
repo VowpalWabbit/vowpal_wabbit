@@ -22,5 +22,5 @@ vw_add_test_executable(
     SOURCES
       tests/basic_tokenize_test.cc
       tests/text_utils_test.cc
-      tests/uniform_hash_test.cc
+      tests/hash_test.cc
 )
