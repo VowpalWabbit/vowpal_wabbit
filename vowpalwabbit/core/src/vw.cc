@@ -156,8 +156,11 @@ VW::workspace* initialize_with_builder(int argc, char* argv[], VW::io_buf* model
   std::unique_ptr<VW::config::options_i, VW::options_deleter_type> options(
       new VW::config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
       [](VW::config::options_i* ptr) { delete ptr; });
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize_with_builder(
       std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(setup_base));
+  VW_WARNING_STATE_POP
 }
 }  // namespace
 
@@ -177,7 +180,10 @@ VW::workspace* VW::initialize(config::options_i& options, io_buf* model, bool sk
 VW::workspace* VW::initialize(
     const std::string& s, io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context)
 {
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
+  VW_WARNING_STATE_POP
 }
 VW::workspace* VW::initialize(int argc, char* argv[], io_buf* model, bool skip_model_load,
     VW::trace_message_t trace_listener, void* trace_context)
