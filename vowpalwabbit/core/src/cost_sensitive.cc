@@ -239,6 +239,76 @@ void VW::details::finish_cs_example(VW::workspace& all, VW::example& ec)
   VW::finish_example(all, ec);
 }
 
+void VW::details::update_stats_cs_label(
+    const VW::workspace& /* all */, shared_data& sd, const VW::example& ec, VW::io::logger& logger)
+{
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.multiclass;
+  float loss = 0.;
+  if (!label.is_test_label())
+  {
+    // need to compute exact loss
+    auto pred = static_cast<size_t>(multiclass_prediction);
+
+    float chosen_loss = FLT_MAX;
+    float min = FLT_MAX;
+    for (const auto& cl : label.costs)
+    {
+      if (cl.class_index == pred) { chosen_loss = cl.x; }
+      if (cl.x < min) { min = cl.x; }
+    }
+    if (chosen_loss == FLT_MAX)
+    {
+      logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {{1..k}} range?");
+    }
+
+    loss = (chosen_loss - min) * ec.weight;
+    // TODO(alberto): add option somewhere to allow using absolute loss instead?
+    // loss = chosen_loss;
+  }
+
+  sd.update(ec.test_only, !label.is_test_label(), loss, ec.weight, ec.get_num_features());
+}
+void VW::details::output_example_prediction_cs_label(
+    VW::workspace& all, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.multiclass;
+
+  for (auto& sink : all.final_prediction_sink)
+  {
+    if (!all.sd->ldict)
+    {
+      all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger);
+    }
+    else
+    {
+      VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
+      all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
+    }
+  }
+
+  if (all.raw_prediction != nullptr)
+  {
+    std::stringstream output_string_stream;
+    for (unsigned int i = 0; i < label.costs.size(); i++)
+    {
+      VW::cs_class cl = label.costs[i];
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << cl.class_index << ':' << cl.partial_prediction;
+    }
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+  }
+}
+void VW::details::print_update_cs_label(
+    VW::workspace& all, shared_data& /* sd */, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.multiclass;
+
+  print_cs_update(all, label.is_test_label(), ec, nullptr, false, multiclass_prediction);
+}
+
 namespace VW
 {
 VW::label_parser cs_label_parser_global = {
