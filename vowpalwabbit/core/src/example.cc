@@ -10,6 +10,7 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/text_utils.h"
+#include "vw/core/vw.h"
 
 #include <algorithm>
 #include <climits>
@@ -20,7 +21,7 @@ float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
   float sum_features_squared = 0.f;
   for (const VW::features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
 
-  float calculated_sum_features_squared = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
+  float calculated_sum_features_squared = VW::eval_sum_ft_squared_of_generated_ft(
       permutations, *ec.interactions, *ec.extent_interactions, ec.feature_space);
   sum_features_squared += calculated_sum_features_squared;
   return sum_features_squared;
@@ -82,104 +83,12 @@ float collision_cleanup(VW::features& fs)
 
 namespace VW
 {
-void copy_example_label(example* dst, example* src, void (*)(polylabel*, polylabel*))
-{
-  dst->l = src->l;
-  dst->ex_reduction_features = src->ex_reduction_features;
-}
-
-void copy_example_label(example* dst, const example* src) { dst->l = src->l; }
-
-void copy_example_metadata(example* dst, const example* src)
-{
-  dst->tag = src->tag;
-  dst->example_counter = src->example_counter;
-
-  dst->ft_offset = src->ft_offset;
-
-  dst->partial_prediction = src->partial_prediction;
-  if (src->passthrough == nullptr) { dst->passthrough = nullptr; }
-  else { dst->passthrough = new features(*src->passthrough); }
-  dst->loss = src->loss;
-  dst->weight = src->weight;
-  dst->confidence = src->confidence;
-  dst->test_only = src->test_only;
-  dst->end_pass = src->end_pass;
-  dst->is_newline = src->is_newline;
-  dst->sorted = src->sorted;
-}
-
-void copy_example_data(example* dst, const example* src)
-{
-  copy_example_metadata(dst, src);
-
-  // copy feature data
-  dst->indices = src->indices;
-  for (namespace_index c : src->indices) { dst->feature_space[c] = src->feature_space[c]; }
-  dst->num_features = src->num_features;
-  dst->total_sum_feat_sq = src->total_sum_feat_sq;
-  dst->_total_sum_feat_sq_calculated = src->_total_sum_feat_sq_calculated;
-  dst->_use_permutations = src->_use_permutations;
-  dst->interactions = src->interactions;
-  dst->extent_interactions = src->extent_interactions;
-  dst->debug_current_reduction_depth = src->debug_current_reduction_depth;
-}
-
-void copy_example_data_with_label(example* dst, const example* src)
-{
-  copy_example_data(dst, src);
-  copy_example_label(dst, src);
-}
-
-void move_feature_namespace(example* dst, example* src, namespace_index c)
-{
-  if (std::find(src->indices.begin(), src->indices.end(), c) == src->indices.end())
-  {
-    return;  // index not present in src
-  }
-  if (std::find(dst->indices.begin(), dst->indices.end(), c) == dst->indices.end()) { dst->indices.push_back(c); }
-
-  auto& fdst = dst->feature_space[c];
-  auto& fsrc = src->feature_space[c];
-
-  src->num_features -= fsrc.size();
-  src->reset_total_sum_feat_sq();
-  std::swap(fdst, fsrc);
-  dst->num_features += fdst.size();
-  dst->reset_total_sum_feat_sq();
-}
 
 }  // namespace VW
 
-class features_and_source
-{
-public:
-  VW::v_array<VW::feature> feature_map;  // map to store sparse feature vectors
-  uint32_t stride_shift;
-  uint64_t mask;
-};
-
-void vec_store(features_and_source& p, float fx, uint64_t fi)
-{
-  p.feature_map.push_back(VW::feature(fx, (fi >> p.stride_shift) & p.mask));
-}
-
 namespace VW
 {
-feature* get_features(VW::workspace& all, example* ec, size_t& feature_map_len)
-{
-  features_and_source fs;
-  fs.stride_shift = all.weights.stride_shift();
-  fs.mask = all.weights.mask() >> all.weights.stride_shift();
-  GD::foreach_feature<features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
-  auto* features_array = new feature[fs.feature_map.size()];
-  std::memcpy(features_array, fs.feature_map.data(), fs.feature_map.size() * sizeof(feature));
-  feature_map_len = fs.feature_map.size();
-  return features_array;
-}
-
-void return_features(feature* f) { delete[] f; }
 }  // namespace VW
 
 class full_features_and_source
@@ -198,7 +107,7 @@ namespace VW
 {
 flat_example* flatten_example(VW::workspace& all, example* ec)
 {
-  flat_example& fec = calloc_or_throw<flat_example>();
+  flat_example& fec = VW::details::calloc_or_throw<flat_example>();
   fec.l = ec->l;
   fec.tag = ec->tag;
   fec.ex_reduction_features = ec->ex_reduction_features;
@@ -213,7 +122,7 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
   else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
-  GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
+  VW::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);
 
@@ -238,25 +147,18 @@ void free_flatten_example(flat_example* fec)
   }
 }
 
-example* alloc_examples(size_t count) { return new VW::example[count]; }
-
-void dealloc_examples(example* example_ptr, size_t /* count */) { delete[] example_ptr; }
-
-void finish_example(VW::workspace&, example&);
-void clean_example(VW::workspace&, example&);
-
-void finish_example(VW::workspace& all, multi_ex& ec_seq)
-{
-  for (example* ecc : ec_seq) { VW::finish_example(all, *ecc); }
-}
-
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples)
 {
-  for (auto ec : examples) { clean_example(all, *ec); }
+  for (auto ec : examples) { details::clean_example(all, *ec); }
   examples.clear();
 }
 namespace details
 {
+void clean_example(VW::workspace& all, example& ec)
+{
+  VW::empty_example(all, ec);
+  all.example_parser->example_pool.return_object(&ec);
+}
 void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs)
 {
   // print_update is called after this del_example_namespace,

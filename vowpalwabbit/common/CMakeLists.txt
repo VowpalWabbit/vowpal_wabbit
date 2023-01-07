@@ -21,6 +21,6 @@ vw_add_test_executable(
     FOR_LIB "common"
     SOURCES
       tests/basic_tokenize_test.cc
-      tests/main.cc
+      tests/hash_test.cc
       tests/text_utils_test.cc
 )

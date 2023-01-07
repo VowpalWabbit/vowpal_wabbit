@@ -8,7 +8,7 @@ cd $REPO_DIR
 
 # Run unit tests
 cd $REPO_DIR/build
-ctest --verbose --output-on-failure --label-regex VWTestList
+ctest --verbose --output-on-failure --label-regex VWTestList --parallel 2
 
 # Run integration tests
 cd $REPO_DIR

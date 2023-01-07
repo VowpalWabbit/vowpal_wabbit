@@ -49,7 +49,7 @@ public:
 
       if (it != examples.end())
       {
-        const CB::cb_class logged = (*it)->l.cb.costs[0];
+        const VW::cb_class logged = (*it)->l.cb.costs[0];
         const uint32_t labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), it));
 
         const auto& action_scores = examples[0]->pred.a_s;
@@ -175,6 +175,6 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
                 .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(pred_type)
                 .set_output_prediction_type(pred_type)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

@@ -49,7 +49,7 @@ void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
     (*all.trace_message).write(ec.tag.begin(), ec.tag.size());
   }
   (*all.trace_message) << "| ";
-  GD::foreach_feature<VW::workspace, uint64_t, print_feature>(*(p.all), ec, *p.all);
+  VW::foreach_feature<VW::workspace, uint64_t, print_feature>(*(p.all), ec, *p.all);
   (*all.trace_message) << std::endl;
 }
 }  // namespace

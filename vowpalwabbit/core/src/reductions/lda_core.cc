@@ -449,7 +449,7 @@ inline float digamma<float, lda_math_mode::USE_PRECISE>(float x)
 template <>
 inline float exponential<float, lda_math_mode::USE_PRECISE>(float x)
 {
-  return correctedExp(x);
+  return VW::details::correctedExp(x);
 }
 template <>
 inline float powf<float, lda_math_mode::USE_PRECISE>(float x, float p)
@@ -712,7 +712,6 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
     memset(new_gamma.begin(), 0, sizeof(float) * l.topics);
 
     score = 0;
-    size_t word_count = 0;
     doc_length = 0;
     for (VW::features& fs : *ec)
     {
@@ -724,7 +723,6 @@ float lda_loop(lda& l, VW::v_array<float>& Elogtheta, float* v, VW::example* ec,
         score += -f.value() * std::log(c_w);
         size_t max_k = l.topics;
         for (size_t k = 0; k < max_k; k++, ++u_for_w) { new_gamma[k] += xc_w * *u_for_w; }
-        word_count++;
         doc_length += f.value();
       }
     }
@@ -762,13 +760,13 @@ public:
   uint64_t stride;
 };
 
-void save_load(lda& l, io_buf& model_file, bool read, bool text)
+void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *(l.all);
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     initial_weights init{all.initial_t, static_cast<float>(l.lda_D / all.lda / all.length() * 200.f),
         all.random_weights, all.lda, all.weights.stride()};
 
@@ -801,13 +799,15 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 
       if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
       {
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+        brw +=
+            VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       }
       else
       {
         // support 32bit build models
         uint32_t j;
-        brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), read, msg, text);
+        brw +=
+            VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&j), sizeof(j), read, msg, text);
         i = j;
       }
 
@@ -818,13 +818,14 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
         {
           VW::weight* v = w + k;
           if (!read && text) { msg << *v + l.lda_rho << " "; }
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
+          brw += VW::details::bin_text_read_write_fixed(
+              model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         if (!read) { msg << "\n"; }
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
+        brw += VW::details::bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
       if (!read) { ++i; }
     } while ((!read && i < length) || (read && brw > 0));
@@ -834,7 +835,10 @@ void save_load(lda& l, io_buf& model_file, bool read, bool text)
 void return_example(VW::workspace& all, VW::example& ec)
 {
   all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.get_num_features());
-  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  {
+    VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  }
 
   if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
   {
@@ -916,7 +920,7 @@ void learn_batch(lda& l)
     float* weights_for_w = &(weights[s->f.weight_index & weights.mask()]);
     float decay_component = l.decay_levels.end()[-2] -
         l.decay_levels.end()[static_cast<int>(-1 - l.example_t + *(weights_for_w + l.all->lda))];
-    float decay = std::fmin(1.0f, correctedExp(decay_component));
+    float decay = std::fmin(1.0f, VW::details::correctedExp(decay_component));
     float* u_for_w = weights_for_w + l.all->lda + 1;
 
     *(weights_for_w + l.all->lda) = static_cast<float>(l.example_t);
@@ -932,7 +936,7 @@ void learn_batch(lda& l)
   for (size_t d = 0; d < batch_size; d++)
   {
     float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), l.examples[d], l.all->power_t);
-    if (l.all->audit) { GD::print_audit_features(*l.all, *l.examples[d]); }
+    if (l.all->audit) { VW::details::print_audit_features(*l.all, *l.examples[d]); }
     // If the doc is empty, give it loss of 0.
     if (l.doc_lengths[d] > 0)
     {
@@ -1251,7 +1255,7 @@ void end_examples(lda& l, T& weights)
   {
     float decay_component =
         l.decay_levels.back() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
-    float decay = std::fmin(1.f, correctedExp(decay_component));
+    float decay = std::fmin(1.f, VW::details::correctedExp(decay_component));
 
     VW::weight* wp = &(*iter);
     for (size_t i = 0; i < l.all->lda; ++i) { wp[i] *= decay; }

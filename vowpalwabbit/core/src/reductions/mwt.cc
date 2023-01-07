@@ -19,10 +19,9 @@
 #include <cmath>
 
 using namespace VW::LEARNER;
-using namespace CB_ALGS;
 using namespace VW::config;
 
-void MWT::print_scalars(
+void VW::details::print_scalars(
     VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
@@ -61,7 +60,7 @@ class mwt
 public:
   std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
   std::vector<policy_data> evals;                     // accrued losses of features.
-  std::pair<bool, CB::cb_class> optional_observation;
+  std::pair<bool, VW::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
   double total = 0.;
   uint32_t num_classes = 0;
@@ -99,7 +98,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
     // For each nonzero feature in observed namespaces, check it's value.
     for (unsigned char ns : ec.indices)
     {
-      if (c.namespaces[ns]) { GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c); }
+      if (c.namespaces[ns]) { VW::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c); }
     }
     for (uint64_t policy : c.policies)
     {
@@ -186,7 +185,10 @@ void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const
 void output_example_prediction_mwt(
     VW::workspace& all, const mwt& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  {
+    VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  }
 }
 
 void print_update_mwt(
@@ -209,7 +211,7 @@ void print_update_mwt(
   }
 }
 
-void save_load(mwt& c, io_buf& model_file, bool read, bool text)
+void save_load(mwt& c, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
 
@@ -217,11 +219,12 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   // total
   msg << "total: " << c.total;
-  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
+  VW::details::bin_text_read_write_fixed_validated(
+      model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
 
   // policies
   size_t policies_size = c.policies.size();
-  bin_text_read_write_fixed_validated(
+  VW::details::bin_text_read_write_fixed_validated(
       model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), read, msg, text);
 
   if (read) { c.policies.resize(policies_size); }
@@ -231,7 +234,7 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
     for (VW::feature_index& policy : c.policies) { msg << policy << " "; }
   }
 
-  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
+  VW::details::bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
       policies_size * sizeof(VW::feature_index), read, msg, text);
 
   // c.evals is already initialized nicely to the same size as the regressor.
@@ -239,11 +242,11 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
   {
     policy_data& pd = c.evals[policy];
     if (read) { msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " "; }
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
@@ -314,17 +317,21 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_or_learn<false, false, false>;
   }
 
-  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
-      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
+  base_learner* base = stack_builder.setup_base_learner();
+
+  auto* l = make_reduction_learner(
+      std::move(c), as_singleline(base), learn_ptr, pred_ptr, stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                 .set_learn_returns_prediction(true)
+                .set_input_prediction_type(base->get_output_prediction_type())
                 .set_output_prediction_type(VW::prediction_type_t::SCALARS)
                 .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(base->get_input_label_type())
                 .set_save_load(save_load)
                 .set_output_example_prediction(::output_example_prediction_mwt)
                 .set_update_stats(::update_stats_mwt)
                 .set_print_update(::print_update_mwt)
                 .build();
 
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return make_base(*l);
 }

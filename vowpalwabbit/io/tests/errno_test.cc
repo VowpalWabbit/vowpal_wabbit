@@ -9,7 +9,7 @@
 
 #include <cerrno>
 
-TEST(errno_tests, check_strerr_can_retrieve_error_message)
+TEST(ErrNo, CheckStrerrCanRetrieveErrorMessage)
 {
   // EIO is just a randomly chosen error to test with.
   auto message = VW::io::strerror_to_string(EIO);

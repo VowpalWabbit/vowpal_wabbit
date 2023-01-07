@@ -40,7 +40,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
   // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
-  parameters& weights = all.weights;
+  auto& weights = all.weights;
   uint64_t mask = weights.mask();
   for (VW::features& fs : ec)
   {
@@ -86,7 +86,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
+  VW::details::print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -124,7 +124,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
   float linear_prediction = 0.;
   // linear terms
 
-  for (VW::features& fs : ec) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction); }
+  for (VW::features& fs : ec) { VW::foreach_feature<float, VW::details::vec_add, T>(weights, fs, linear_prediction); }
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -144,13 +144,13 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
         // l^k is from index+1 to index+d.rank
         // float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         pred_offset x_dot_l = {0., k};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
+        VW::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         // float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(),
         // k+d.rank);
         pred_offset x_dot_r = {0., k + d.rank};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
+        VW::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
 
         prediction += x_dot_l.p * x_dot_r.p;
 
@@ -167,7 +167,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   all.set_minmax(all.sd, ec.l.simple.label);
 
-  ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   if (ec.l.simple.label != FLT_MAX)
   {
@@ -254,13 +254,13 @@ void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
   }
 }
 
-void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *d.all;
   uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     if (all.random_weights)
     {
       uint32_t stride = all.weights.stride();
@@ -284,7 +284,8 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
       size_t K = d.rank * 2 + 1;  // NOLINT
       std::stringstream msg;
       msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+      brw +=
+          VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
         VW::weight* w_i = &(all.weights.strided_index(i));
@@ -292,13 +293,14 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
         {
           VW::weight* v = w_i + k;
           msg << v << " ";
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
+          brw += VW::details::bin_text_read_write_fixed(
+              model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         msg << "\n";
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
+        brw += VW::details::bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
 
       if (!read) { ++i; }
@@ -311,13 +313,13 @@ void end_pass(gdmf& d)
   VW::workspace* all = d.all;
 
   all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass) { save_predictor(*all, all->final_regressor_name, all->current_pass); }
+  if (all->save_per_pass) { VW::details::save_predictor(*all, all->final_regressor_name, all->current_pass); }
 
   if (!all->holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
     {
-      finalize_regressor(*all, all->final_regressor_name);
+      VW::details::finalize_regressor(*all, all->final_regressor_name);
     }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))

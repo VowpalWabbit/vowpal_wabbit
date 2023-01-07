@@ -89,7 +89,7 @@ public:
   double upper_bound() const;
 
   // Constant values -- do not require reset or save_load
-  const double alpha;
+  double alpha;
 
   uint64_t update_count;
   double last_w;

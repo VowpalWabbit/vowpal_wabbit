@@ -50,7 +50,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     // There is a cost defined.
     if (words.size() == 3)
     {
-      ld.cost = float_of_string(words[2], logger);
+      ld.cost = VW::details::float_of_string(words[2], logger);
       ld.labeled = true;
     }
     else if (words.size() != 2) { THROW("Slates shared labels must be of the form: slates shared [global_cost]"); }
@@ -61,7 +61,7 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
     if (words.size() != 3) { THROW("Slates action labels must be of the form: slates action <slot_id>"); }
 
     char* char_after_int = nullptr;
-    ld.slot_id = int_of_string(words[2], char_after_int, logger);
+    ld.slot_id = VW::details::int_of_string(words[2], char_after_int, logger);
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
     {
       THROW("Slot id seems to be malformed");
@@ -83,8 +83,8 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
         if (split_colons.size() != 2) { THROW("Malformed action score token"); }
 
         // Element 0 is the action, element 1 is the probability
-        ld.probabilities.push_back(
-            {static_cast<uint32_t>(int_of_string(split_colons[0], logger)), float_of_string(split_colons[1], logger)});
+        ld.probabilities.push_back({static_cast<uint32_t>(VW::details::int_of_string(split_colons[0], logger)),
+            VW::details::float_of_string(split_colons[1], logger)});
       }
 
       // If a full distribution has been given, check if it sums to 1, otherwise throw.

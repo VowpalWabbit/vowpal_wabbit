@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "../automl_impl.h"
+#include "vw/core/automl_impl.h"
 #include "vw/core/interactions.h"
 #include "vw/core/multi_model_utils.h"
 #include "vw/core/vw.h"
@@ -37,7 +37,7 @@ bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& 
   {
     for (const auto& ns : ex->indices)
     {
-      if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
+      if (!VW::is_interaction_ns(ns)) { continue; }
       if (!is_allowed_to_remove(ns)) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }

@@ -8,6 +8,8 @@
 #include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
+#include "vw/core/multiclass.h"
+#include "vw/core/multilabel.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
@@ -368,8 +370,8 @@ float train_node(memory_tree& b, single_learner& base, VW::example& ec, const ui
   // note: here we first train the router and then predict.
   VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
-  MULTILABEL::labels multilabels;
-  MULTILABEL::labels preds;
+  VW::multilabel_label multilabels;
+  VW::multilabel_prediction preds;
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -454,8 +456,8 @@ void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
     uint32_t ec_pos = b.nodes[cn].examples_index[ec_id];
     VW::multiclass_label mc{0, 0};
     uint32_t save_multi_pred = 0;
-    MULTILABEL::labels multilabels;
-    MULTILABEL::labels preds;
+    VW::multilabel_label multilabels;
+    VW::multilabel_prediction preds;
     if (b.oas == false)
     {
       mc = b.examples[ec_pos]->l.multi;
@@ -561,8 +563,8 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
 {
   VW::v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels from the leaf.
-  MULTILABEL::labels multilabels = ec.l.multilabels;
-  MULTILABEL::labels preds = ec.pred.multilabels;
+  auto& multilabels = ec.l.multilabels;
+  auto& preds = ec.pred.multilabels;
   ec.l.simple = {FLT_MAX};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   for (size_t i = 0; i < leaf_labs.size(); i++)
@@ -584,8 +586,8 @@ inline uint32_t compute_hamming_loss_via_oas(
   selected_labs.clear();
   VW::v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels stored in the leaf.
-  MULTILABEL::labels multilabels = ec.l.multilabels;
-  MULTILABEL::labels preds = ec.pred.multilabels;
+  auto& multilabels = ec.l.multilabels;
+  auto& preds = ec.pred.multilabels;
   ec.l.simple = {FLT_MAX};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
   for (size_t i = 0; i < leaf_labs.size(); i++)
@@ -661,8 +663,8 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
 {
   VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
-  MULTILABEL::labels multilabels;
-  MULTILABEL::labels preds;
+  VW::multilabel_label multilabels;
+  VW::multilabel_prediction preds;
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -727,8 +729,8 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
 {
   VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
-  MULTILABEL::labels multilabels;
-  MULTILABEL::labels preds;
+  VW::multilabel_label multilabels;
+  VW::multilabel_prediction preds;
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -825,8 +827,8 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 
   VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
-  MULTILABEL::labels multilabels;
-  MULTILABEL::labels preds;
+  VW::multilabel_label multilabels;
+  VW::multilabel_prediction preds;
   if (b.oas == false)
   {
     mc = ec.l.multi;
@@ -907,8 +909,8 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
       float ec_input_weight = ec.weight;
 
       VW::multiclass_label mc{0, 0};
-      MULTILABEL::labels multilabels;
-      MULTILABEL::labels preds;
+      VW::multilabel_label multilabels;
+      VW::multilabel_prediction preds;
       if (b.oas == false) { mc = ec.l.multi; }
       else
       {
@@ -1078,7 +1080,8 @@ void end_pass(memory_tree& b)
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
+void save_load_example(
+    VW::example* ec, VW::io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
 {  // deal with tag
    // deal with labels:
   DEPRECATED_WRITEIT(ec->num_features, "num_features");
@@ -1136,7 +1139,7 @@ void save_load_example(VW::example* ec, io_buf& model_file, bool& read, bool& te
   }
 }
 
-void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+void save_load_node(node& cn, VW::io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
 {
   DEPRECATED_WRITEIT(cn.parent, "parent");
   DEPRECATED_WRITEIT(cn.internal, "internal");
@@ -1155,7 +1158,7 @@ void save_load_node(node& cn, io_buf& model_file, bool& read, bool& text, std::s
   for (uint32_t k = 0; k < leaf_n_examples; k++) DEPRECATED_WRITEIT(cn.examples_index[k], "example_location");
 }
 
-void save_load_memory_tree(memory_tree& b, io_buf& model_file, bool read, bool text)
+void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bool text)
 {
   std::stringstream msg;
   if (model_file.num_files() > 0)
@@ -1285,7 +1288,7 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
-    all.example_parser->lbl_parser = MULTILABEL::multilabel;
+    all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
     pred_type = VW::prediction_type_t::MULTILABELS;
     label_type = VW::label_type_t::MULTILABEL;
   }
@@ -1295,10 +1298,18 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_params_per_weight(num_learners)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
-               .set_output_prediction_type(pred_type)
-               .set_input_label_type(label_type);
+               .set_input_label_type(label_type)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(pred_type);
 
-  if (!oas) { l.set_finish_example(VW::details::finish_multiclass_example<memory_tree&>); }
+  // memory_tree doesn't work correctly in oas mode as it just delegates to GD's stats and reporting implementation
+  if (!oas)
+  {
+    l.set_update_stats(VW::details::update_stats_multiclass_label<memory_tree>);
+    l.set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<memory_tree>);
+    l.set_print_update(VW::details::print_update_multiclass_label<memory_tree>);
+  }
 
   return make_base(*l.build());
 }

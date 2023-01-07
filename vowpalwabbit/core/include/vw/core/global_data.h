@@ -11,6 +11,7 @@
 #include "vw/core/error_reporting.h"
 #include "vw/core/input_parser.h"
 #include "vw/core/interaction_generation_state.h"
+#include "vw/core/metrics_collector.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
@@ -37,31 +38,28 @@
 #  include <thread>
 #endif
 
-using feature_dict = std::unordered_map<std::string, std::unique_ptr<VW::features>>;
-using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
-
-using options_deleter_type = void (*)(VW::config::options_i*);
+using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
 
 namespace VW
 {
-class workspace;
-
-class all_reduce_base;
-enum class all_reduce_type;
-}  // namespace VW
-
-using vw VW_DEPRECATED("Use VW::workspace instead of ::vw. ::vw will be removed in VW 10.") = VW::workspace;
-
+namespace details
+{
+using feature_dict = std::unordered_map<std::string, std::unique_ptr<VW::features>>;
 class dictionary_info
 {
 public:
   std::string name;
   uint64_t file_hash;
-  std::shared_ptr<feature_dict> dict;
+  std::shared_ptr<details::feature_dict> dict;
 };
+}  // namespace details
+using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
+using options_deleter_type = void (*)(VW::config::options_i*);
+class workspace;
 
-namespace VW
-{
+class all_reduce_base;
+enum class all_reduce_type;
+
 class default_reduction_stack_setup;
 namespace parsers
 {
@@ -78,7 +76,9 @@ class csv_parser_options;
 }  // namespace csv
 #endif
 }  // namespace parsers
-}  // namespace VW
+
+namespace details
+{
 
 class trace_message_wrapper
 {
@@ -93,10 +93,6 @@ public:
   ~trace_message_wrapper() = default;
 };
 
-namespace VW
-{
-namespace details
-{
 class invert_hash_info
 {
 public:
@@ -151,9 +147,7 @@ public:
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 
-  // This field is experimental and subject to change.
-  // Used to implement the external binary parser.
-  std::vector<std::function<void(VW::metric_sink&)>> metric_output_hooks;
+  VW::metrics_collector global_metrics;
 
   // Experimental field.
   // Generic parser interface to make it possible to use any external parser.
@@ -177,7 +171,7 @@ public:
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
-  std::shared_ptr<trace_message_wrapper> trace_message_wrapper_context;
+  std::shared_ptr<details::trace_message_wrapper> trace_message_wrapper_context;
   std::unique_ptr<std::ostream> trace_message;
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;
@@ -231,9 +225,10 @@ public:
 
   // feature_dict can be created in either loaded_dictionaries or namespace_dictionaries.
   // use shared pointers to avoid the question of ownership
-  std::vector<dictionary_info> loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
+  std::vector<details::dictionary_info>
+      loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
   // This array is required to be value initialized so that the std::vectors are constructed.
-  std::array<std::vector<std::shared_ptr<feature_dict>>, NUM_NAMESPACES>
+  std::array<std::vector<std::shared_ptr<details::feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
 
   VW::io::logger logger;
@@ -326,13 +321,17 @@ private:
   std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
   std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
 };
-}  // namespace VW
 
+namespace details
+{
 void print_result_by_ref(
     VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 
 void noop_mm(VW::shared_data*, float label);
-void compile_gram(
-    std::vector<std::string> grams, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, char* descriptor, bool quiet);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool quiet,
     VW::io::logger& logger);
+}  // namespace details
+}  // namespace VW
+
+using reduction_setup_fn VW_DEPRECATED("") = VW::reduction_setup_fn;
+using options_deleter_type VW_DEPRECATED("") = VW::options_deleter_type;

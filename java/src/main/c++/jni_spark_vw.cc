@@ -107,7 +107,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_initializ
     int size = env->GetArrayLength(model);
     auto* model0 = reinterpret_cast<const char*>(modelGuard.data());
 
-    io_buf buffer;
+    VW::io_buf buffer;
     buffer.add_file(VW::io::create_buffer_view(model0, size));
 
     return reinterpret_cast<jlong>(VW::initialize(g_args.c_str(), &buffer));
@@ -251,7 +251,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getM
   try
   {  // save in stl::vector
     auto model_buffer = std::make_shared<std::vector<char>>();
-    io_buf buffer;
+    VW::io_buf buffer;
     buffer.add_file(VW::io::create_vector_writer(model_buffer));
     VW::save_predictor(*all, buffer);
 
@@ -644,7 +644,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiL
 
   try
   {
-    MULTILABEL::labels* ld = &ex->l.multilabels;
+    auto* ld = &ex->l.multilabels;
 
     CriticalArrayGuard classesGuard(env, classes);
     int* classes0 = (int*)classesGuard.data();
@@ -710,8 +710,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContex
 
   try
   {
-    CB::label* ld = &ex->l.cb;
-    CB::cb_class f;
+    VW::cb_label* ld = &ex->l.cb;
+    VW::cb_class f;
 
     f.action = (uint32_t)action;
     f.cost = (float)cost;
@@ -732,8 +732,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
   try
   {
     // https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/vowpalwabbit/parse_example_json.h#L437
-    CB::label* ld = &ex->l.cb;
-    CB::cb_class f;
+    VW::cb_label* ld = &ex->l.cb;
+    VW::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = (uint32_t)VW::uniform_hash("shared", 6 /*length of string*/, 0);
@@ -889,16 +889,16 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
       const auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       ostr << "simple " << ld->label << ":" << red_fts.weight << ":" << red_fts.initial;
     }
-    else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
+    else if (!memcmp(&lp, &VW::cb_label_parser_global, sizeof(lp)))
     {
-      CB::label* ld = &ex->l.cb;
+      VW::cb_label* ld = &ex->l.cb;
       ostr << "CB " << ld->costs.size();
 
       if (ld->costs.size() > 0)
       {
         ostr << " ";
 
-        CB::cb_class& f = ld->costs[0];
+        VW::cb_class& f = ld->costs[0];
 
         // Ignore checking if f.action == VW::uniform_hash("shared")
         if (f.partial_prediction == 0 && f.cost == FLT_MAX && f.probability == -1.f)

@@ -76,7 +76,7 @@ void free_svm_model(svm_model* model)
   {
     model->support_vec[i]->~svm_example();
     // Warning C6001 is triggered by the following:
-    // example is allocated using (a) '&calloc_or_throw<svm_example>()' and freed using (b)
+    // example is allocated using (a) '&VW::details::calloc_or_throw<svm_example>()' and freed using (b)
     // 'free(model->support_vec[i])'
     //
     // When the call to allocation is replaced by (a) 'new svm_example()' and deallocated using (b) 'operator delete
@@ -142,7 +142,7 @@ void svm_example::init_svm_example(VW::flat_example* fec)
 svm_example::~svm_example()
 {
   // free flatten example contents
-  // VW::flat_example* fec = &calloc_or_throw<VW::flat_example>();
+  // VW::flat_example* fec = &VW::details::calloc_or_throw<VW::flat_example>();
   //*fec = ex;
   // free_flatten_example(fec);  // free contents of flat example and frees fec.
 }
@@ -237,14 +237,14 @@ static int trim_cache(svm_params& params)
   return alloc;
 }
 
-void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool text)
+void save_load_svm_model(svm_params& params, VW::io_buf& model_file, bool read, bool text)
 {
   svm_model* model = params.model;
   // TODO: check about initialization
 
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
-  bin_text_read_write_fixed(
+  VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&(model->num_support)), sizeof(model->num_support), read, msg, text);
 
   if (read) { model->support_vec.reserve(model->num_support); }
@@ -254,7 +254,7 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
     if (read)
     {
       auto fec = VW::make_unique<VW::flat_example>();
-      auto* tmp = &calloc_or_throw<svm_example>();
+      auto* tmp = &VW::details::calloc_or_throw<svm_example>();
       VW::model_utils::read_model_field(model_file, *fec, params.all->example_parser->lbl_parser);
       tmp->ex = *fec;
       model->support_vec.push_back(tmp);
@@ -267,14 +267,14 @@ void save_load_svm_model(svm_params& params, io_buf& model_file, bool read, bool
   }
 
   if (read) { model->alpha.resize(model->num_support); }
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->alpha.data()),
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->alpha.data()),
       static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
   if (read) { model->delta.resize(model->num_support); }
-  bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->delta.data()),
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(model->delta.data()),
       static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
 }
 
-void save_load(svm_params& params, io_buf& model_file, bool read, bool text)
+void save_load(svm_params& params, VW::io_buf& model_file, bool read, bool text)
 {
   if (text)
   {
@@ -298,7 +298,6 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
   auto& fs_2 = const_cast<VW::features&>(fec2->fs);
   if (fs_2.indices.size() == 0) { return 0.f; }
 
-  int numint = 0;
   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
   {
     uint64_t ec1pos = fs_1.indices[idx1];
@@ -310,7 +309,6 @@ float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
 
     if (ec1pos == ec2pos)
     {
-      numint++;
       dotprod += fs_1.values[idx1] * fs_2.values[idx2];
       ++idx2;
     }
@@ -371,7 +369,7 @@ void predict(svm_params& params, base_learner&, VW::example& ec)
   VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
   {
-    svm_example* sec = &calloc_or_throw<svm_example>();
+    svm_example* sec = &VW::details::calloc_or_throw<svm_example>();
     sec->init_svm_example(fec);
     float score;
     predict(params, &sec, &score, 1);
@@ -502,7 +500,7 @@ void add_size_t(size_t& t1, const size_t& t2) noexcept { t1 += t2; }
 
 void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 {
-  io_buf* b = new io_buf();
+  VW::io_buf* b = new VW::io_buf();
 
   char* queries;
   VW::flat_example* fec = nullptr;
@@ -517,7 +515,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     delete params.pool[i];
   }
 
-  size_t* sizes = calloc_or_throw<size_t>(all.all_reduce->total);
+  size_t* sizes = VW::details::calloc_or_throw<size_t>(all.all_reduce->total);
   sizes[all.all_reduce->node] = b->unflushed_bytes_count();
   VW::details::all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
 
@@ -530,7 +528,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
   if (total_sum > 0)
   {
-    queries = calloc_or_throw<char>(total_sum);
+    queries = VW::details::calloc_or_throw<char>(total_sum);
     size_t bytes_copied = b->copy_to(queries + prev_sum, total_sum - prev_sum);
     if (bytes_copied < b->unflushed_bytes_count()) THROW("kernel_svm: Failed to alloc enough space.");
 
@@ -544,7 +542,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     {
       if (!VW::model_utils::read_model_field(*b, *fec, all.example_parser->lbl_parser))
       {
-        params.pool[i] = &calloc_or_throw<svm_example>();
+        params.pool[i] = &VW::details::calloc_or_throw<svm_example>();
         params.pool[i]->init_svm_example(fec);
         train_pool[i] = true;
         params.pool_pos++;
@@ -563,10 +561,10 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
 void train(svm_params& params)
 {
-  bool* train_pool = calloc_or_throw<bool>(params.pool_size);
+  bool* train_pool = VW::details::calloc_or_throw<bool>(params.pool_size);
   for (size_t i = 0; i < params.pool_size; i++) { train_pool[i] = false; }
 
-  float* scores = calloc_or_throw<float>(params.pool_pos);
+  float* scores = VW::details::calloc_or_throw<float>(params.pool_pos);
   predict(params, params.pool, scores, params.pool_pos);
 
   if (params.active)
@@ -634,7 +632,7 @@ void train(svm_params& params)
       {
         bool overshoot = update(params, model_pos);
 
-        double* subopt = calloc_or_throw<double>(model->num_support);
+        double* subopt = VW::details::calloc_or_throw<double>(model->num_support);
         for (size_t j = 0; j < params.reprocess; j++)
         {
           if (model->num_support == 0) { break; }
@@ -678,7 +676,7 @@ void learn(svm_params& params, base_learner&, VW::example& ec)
   VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
   {
-    svm_example* sec = &calloc_or_throw<svm_example>();
+    svm_example* sec = &VW::details::calloc_or_throw<svm_example>();
     sec->init_svm_example(fec);
     float score = 0;
     predict(params, &sec, &score, 1);
@@ -757,7 +755,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   float loss_parameter = 0.0;
   all.loss = get_loss_function(all, loss_function, loss_parameter);
 
-  params->model = &calloc_or_throw<svm_model>();
+  params->model = &VW::details::calloc_or_throw<svm_model>();
   new (params->model) svm_model();
   params->model->num_support = 0;
   params->maxcache = 1024 * 1024 * 1024;
@@ -771,7 +769,7 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   if (all.active) { params->active = true; }
   if (params->active) { params->active_c = 1.; }
 
-  params->pool = calloc_or_throw<svm_example*>(params->pool_size);
+  params->pool = VW::details::calloc_or_throw<svm_example*>(params->pool_size);
   params->pool_pos = 0;
 
   if (!options.was_supplied("subsample") && params->para_active)
@@ -788,14 +786,14 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
   {
     params->kernel_type = SVM_KER_RBF;
     *params->all->trace_message << "bandwidth = " << bandwidth << endl;
-    params->kernel_params = &calloc_or_throw<double>();
+    params->kernel_params = &VW::details::calloc_or_throw<double>();
     *(static_cast<float*>(params->kernel_params)) = bandwidth;
   }
   else if (kernel_type.compare("poly") == 0)
   {
     params->kernel_type = SVM_KER_POLY;
     *params->all->trace_message << "degree = " << degree << endl;
-    params->kernel_params = &calloc_or_throw<int>();
+    params->kernel_params = &VW::details::calloc_or_throw<int>();
     *(static_cast<int*>(params->kernel_params)) = degree;
   }
   else { params->kernel_type = SVM_KER_LIN; }

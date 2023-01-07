@@ -11,7 +11,7 @@ using namespace ::testing;
 
 #include <string>
 
-TEST(test_utils_tests, extract_ignored_feature_test)
+TEST(TestUtils, ExtractIgnoredFeatureTest)
 {
   auto namespace_feature = extract_ignored_feature("namespace|feature");
   auto ns = std::get<0>(namespace_feature);

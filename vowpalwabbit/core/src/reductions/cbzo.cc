@@ -84,7 +84,7 @@ inline float constant_inference(VW::workspace& all)
 float linear_inference(VW::workspace& all, VW::example& ec)
 {
   float dotprod = 0;
-  GD::foreach_feature<float, accumulate_dotprod>(all, ec, dotprod);
+  VW::foreach_feature<float, accumulate_dotprod>(all, ec, dotprod);
   return dotprod;
 }
 
@@ -139,7 +139,7 @@ void linear_update(cbzo& data, VW::example& ec)
   upd_data.part_grad = part_grad;
   upd_data.all = data.all;
 
-  GD::foreach_feature<linear_update_data, uint64_t, linear_per_feature_update<feature_mask_off>>(
+  VW::foreach_feature<linear_update_data, uint64_t, linear_per_feature_update<feature_mask_off>>(
       *data.all, ec, upd_data);
 }
 
@@ -167,7 +167,7 @@ void print_audit_features(VW::workspace& all, VW::example& ec)
         VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10), ec.tag, all.logger);
   }
 
-  GD::print_features(all, ec);
+  VW::details::print_features(all, ec);
 }
 
 // Returns a value close to x and greater than it
@@ -227,17 +227,17 @@ void NO_SANITIZE_UNDEFINED learn(cbzo& data, base_learner& base, VW::example& ec
   update_weights<policy, feature_mask_off>(data, ec);
 }
 
-inline void save_load_regressor(VW::workspace& all, io_buf& model_file, bool read, bool text)
+inline void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, bool text)
 {
-  GD::save_load_regressor(all, model_file, read, text);
+  VW::details::save_load_regressor_gd(all, model_file, read, text);
 }
 
-void save_load(cbzo& data, io_buf& model_file, bool read, bool text)
+void save_load(cbzo& data, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *data.all;
   if (read)
   {
-    initialize_regressor(all);
+    VW::details::initialize_regressor(all);
     if (data.all->initial_constant != 0.0f) { set_weight(all, VW::details::CONSTANT, 0, data.all->initial_constant); }
   }
   if (model_file.num_files() > 0) { save_load_regressor(all, model_file, read, text); }

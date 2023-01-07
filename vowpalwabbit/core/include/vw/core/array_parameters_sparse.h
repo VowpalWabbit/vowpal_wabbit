@@ -11,8 +11,13 @@
 #include <cstddef>
 #include <functional>
 #include <unordered_map>
+namespace VW
+{
 
 class sparse_parameters;
+namespace details
+{
+
 using weight_map = std::unordered_map<uint64_t, VW::weight*>;
 
 template <typename T>
@@ -48,12 +53,12 @@ public:
 private:
   weight_map::iterator _iter;
 };
-
+}  // namespace details
 class sparse_parameters
 {
 public:
-  using iterator = sparse_iterator<VW::weight>;
-  using const_iterator = sparse_iterator<const VW::weight>;
+  using iterator = details::sparse_iterator<VW::weight>;
+  using const_iterator = details::sparse_iterator<const VW::weight>;
 
   sparse_parameters(size_t length, uint32_t stride_shift = 0);
   sparse_parameters();
@@ -107,7 +112,7 @@ public:
 
 private:
   // This must be mutable because the const operator[] must be able to intialize default weights to return.
-  mutable weight_map _map;
+  mutable details::weight_map _map;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
   uint32_t _stride_shift;
   bool _seeded;  // whether the instance is sharing model state with others
@@ -118,3 +123,5 @@ private:
   // The map itself is mutable to facilitate this
   VW::weight* get_or_default_and_get(size_t i) const;
 };
+}  // namespace VW
+using sparse_parameters VW_DEPRECATED("sparse_parameters moved into VW namespace") = VW::sparse_parameters;

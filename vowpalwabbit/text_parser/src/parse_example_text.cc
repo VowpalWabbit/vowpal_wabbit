@@ -43,7 +43,7 @@ private:
   VW::v_array<char> _spelling;
   uint32_t _hash_seed;
   uint64_t _parse_mask;
-  std::array<std::vector<std::shared_ptr<feature_dict>>, VW::NUM_NAMESPACES>* _namespace_dictionaries;
+  std::array<std::vector<std::shared_ptr<VW::details::feature_dict>>, VW::NUM_NAMESPACES>* _namespace_dictionaries;
   VW::io::logger* _logger;
 
   // TODO: Currently this function is called by both warning and error conditions. We only log
@@ -99,7 +99,7 @@ private:
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _v = float_feature_value = parse_float(sv.data(), end_read, sv.data() + sv.size());
+      _v = float_feature_value = VW::details::parse_float(sv.data(), end_read, sv.data() + sv.size());
       if (end_read == 0) { return false; }
       if (std::isnan(_v))
       {
@@ -244,7 +244,8 @@ private:
         }
 
         VW::string_view spelling_strview(_spelling.data(), _spelling.size());
-        word_hash = hashstring(spelling_strview.data(), spelling_strview.length(), (uint64_t)_channel_hash);
+        word_hash =
+            VW::details::hashstring(spelling_strview.data(), spelling_strview.length(), (uint64_t)_channel_hash);
         spell_fs.push_back(_v, word_hash, VW::details::SPELLING_NAMESPACE);
         if (audit)
         {
@@ -307,7 +308,7 @@ private:
       ++_read_idx;
       size_t end_read = 0;
       VW::string_view sv = _line.substr(_read_idx);
-      _cur_channel_v = parse_float(sv.data(), end_read, sv.data() + sv.size());
+      _cur_channel_v = VW::details::parse_float(sv.data(), end_read, sv.data() + sv.size());
       if (end_read + _read_idx >= _line.size())
       {
         parser_warning("malformed example! Float expected after : \"", _line.substr(0, _read_idx), "\"",

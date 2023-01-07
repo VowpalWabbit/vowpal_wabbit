@@ -120,7 +120,6 @@ option(VW_INSTALL "Add install targets." OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
-option(BUILD_DOCS "Add documentation targets." Off)
 option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
@@ -169,29 +168,6 @@ endif()
 # The only way to tell it was used is if it was turned off, since the default is true.
 if(DEFINED BUILD_TESTS)
   message(WARNING "Value of BUILD_TESTS option ignored. Please use the standard option BUILD_TESTING.")
-endif()
-
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  include(CTest)
-  if(BUILD_TESTING)
-    if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
-      message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
-    endif()
-    if(VW_GTEST_SYS_DEP)
-      find_package(GTest REQUIRED)
-    else()
-      cmake_minimum_required(VERSION 3.11)
-      include(FetchContent)
-      FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-      )
-      # For Windows: Prevent overriding the parent project's compiler/linker settings
-      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-      set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-      FetchContent_MakeAvailable(googletest)
-    endif()
-  endif()
 endif()
 
 if(VW_INSTALL AND NOT FMT_SYS_DEP)
@@ -255,10 +231,6 @@ if (BUILD_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)
 endif()
 
-if(BUILD_DOCS)
-  add_subdirectory(doc)
-endif()
-
 if(BUILD_JAVA)
   add_subdirectory(java)
 endif()
@@ -272,8 +244,6 @@ if(BUILD_BENCHMARKS)
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
-  # Boost test is only required if we are building tests
-  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
   add_subdirectory(test)
 
   # Don't offer these make dependent targets on Windows

@@ -34,6 +34,5 @@ vw_add_test_executable(
     SOURCES
       tests/errno_test.cc
       tests/io_adapter_test.cc
-      tests/main.cc
       tests/ostream_test.cc
 )

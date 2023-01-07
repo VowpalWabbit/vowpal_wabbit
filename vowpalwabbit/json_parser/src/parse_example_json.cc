@@ -214,7 +214,7 @@ template <bool audit>
 class LabelObjectState : public BaseState<audit>
 {
 public:
-  CB::cb_class cb_label;
+  VW::cb_class cb_label;
   VW::cb_continuous::continuous_label_elm cont_label_element = {0., 0., 0.};
   bool found = false;
   bool found_cb = false;
@@ -382,7 +382,7 @@ public:
         probs.clear();
 
         ld.outcome = outcome;
-        cb_label = CB::cb_class{};
+        cb_label = VW::cb_class{};
       }
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::SLATES)
@@ -396,7 +396,7 @@ public:
         for (size_t i = 0; i < this->actions.size(); i++) { ld.probabilities.push_back({actions[i], probs[i]}); }
         actions.clear();
         probs.clear();
-        cb_label = CB::cb_class{};
+        cb_label = VW::cb_class{};
       }
     }
     else if (found_cb)
@@ -405,7 +405,7 @@ public:
       ld.costs.push_back(cb_label);
 
       found_cb = false;
-      cb_label = CB::cb_class{};
+      cb_label = VW::cb_class{};
     }
     else if (found_cb_continuous)
     {
@@ -580,8 +580,8 @@ public:
     // mark shared example
     if (ctx._label_parser.label_type == VW::label_type_t::CB)
     {
-      CB::label* ld = &ctx.ex->l.cb;
-      CB::cb_class f;
+      VW::cb_label* ld = &ctx.ex->l.cb;
+      VW::cb_class f;
 
       f.partial_prediction = 0.;
       f.action = static_cast<uint32_t>(VW::uniform_hash("shared", 6, 0));
@@ -1495,7 +1495,7 @@ class Context
 {
 public:
   VW::label_parser _label_parser;
-  hash_func_t _hash_func;
+  VW::hash_func_t _hash_func;
   uint64_t _hash_seed;
   uint64_t _parse_mask;
   bool _chain_hash;
@@ -1565,7 +1565,7 @@ public:
     root_state = &default_state;
   }
 
-  void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+  void init(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger)
   {
     assert(reuse_mem != nullptr);
@@ -1633,7 +1633,7 @@ class VWReaderHandler : public rapidjson::BaseReaderHandler<rapidjson::UTF8<>, V
 public:
   Context<audit> ctx;
 
-  void init(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
+  void init(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
       VW::multi_ex* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, void* example_factory_context,

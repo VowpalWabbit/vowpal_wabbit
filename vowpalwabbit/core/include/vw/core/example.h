@@ -41,12 +41,12 @@ public:
   VW::simple_label simple;
   VW::multiclass_label multi;
   VW::cs_label cs;
-  CB::label cb;
+  VW::cb_label cb;
   VW::cb_continuous::continuous_label cb_cont;
   VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
-  CB_EVAL::label cb_eval;
-  MULTILABEL::labels multilabels;
+  VW::cb_eval_label cb_eval;
+  VW::multilabel_label multilabels;
 };
 
 struct no_pred
@@ -70,7 +70,7 @@ public:
   VW::action_scores a_s;       // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
   uint32_t multiclass = 0;
-  MULTILABEL::labels multilabels;
+  VW::multilabel_prediction multilabels;
   float prob = 0.f;                                          // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action
@@ -185,6 +185,8 @@ using example_factory_t = example& (*)(void*);
 
 namespace details
 {
+void clean_example(VW::workspace& all, example& ec);
+
 void append_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
 void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs);
 

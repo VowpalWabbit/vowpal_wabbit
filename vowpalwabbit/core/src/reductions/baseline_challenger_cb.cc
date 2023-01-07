@@ -64,12 +64,8 @@ public:
   VW::estimators::ChiSquared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;
-  bool emit_metrics;
 
-  baseline_challenger_data(bool emit_metrics, double alpha, double tau)
-      : baseline(alpha, tau), policy_expectation(tau), emit_metrics(emit_metrics)
-  {
-  }
+  baseline_challenger_data(double alpha, double tau) : baseline(alpha, tau), policy_expectation(tau) {}
 
   static int get_chosen_action(const VW::action_scores& action_scores) { return action_scores[0].action; }
 
@@ -89,7 +85,7 @@ public:
       if (lbl_example != examples.end())
       {
         const auto labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), lbl_example));
-        const CB::cb_class& logged = (*lbl_example)->l.cb.costs[0];
+        const VW::cb_class& logged = (*lbl_example)->l.cb.costs[0];
 
         double r = -logged.cost;
         double w = (labelled_action == chosen_action ? 1 : 0) / logged.probability;
@@ -167,7 +163,7 @@ void learn_or_predict(baseline_challenger_data& data, multi_learner& base, VW::m
   data.learn_or_predict<is_learn>(base, examples);
 }
 
-void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
+void save_load(baseline_challenger_data& data, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, data); }
@@ -176,7 +172,6 @@ void save_load(baseline_challenger_data& data, io_buf& io, bool read, bool text)
 
 void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 {
-  if (!data.emit_metrics) { return; }
   auto ci = static_cast<float>(data.baseline.lower_bound_and_update());
   auto exp = static_cast<float>(data.policy_expectation.current());
 
@@ -188,6 +183,7 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
 VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
+
   float alpha;
   float tau;
   bool is_enabled = false;
@@ -215,13 +211,14 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
 
   if (!options.was_supplied("cb_adf")) { THROW("cb_challenger requires cb_explore_adf or cb_adf"); }
 
-  bool emit_metrics = options.was_supplied("extra_metrics");
-  auto data = VW::make_unique<baseline_challenger_data>(emit_metrics, alpha, tau);
+  auto data = VW::make_unique<baseline_challenger_data>(alpha, tau);
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_save_load(save_load)
                 .set_persist_metrics(persist_metrics)
                 .build();

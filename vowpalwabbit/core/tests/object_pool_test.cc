@@ -22,7 +22,7 @@ public:
   obj* operator()(obj* o) { return o; }
 };
 
-TEST(object_pool_test, object_pool_test)
+TEST(ObjectPool, ObjectPoolTest)
 {
   {
     VW::object_pool<obj> pool_with_size{50};
@@ -63,9 +63,12 @@ TEST(object_pool_test, object_pool_test)
   EXPECT_EQ(pool.size(), 2);
   EXPECT_EQ(pool.empty(), false);
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   obj other_obj;
   EXPECT_EQ(pool.is_from_pool(o2), true);
   EXPECT_EQ(pool.is_from_pool(&other_obj), false);
+  VW_WARNING_STATE_POP
 
   pool.return_object(o2);
 }

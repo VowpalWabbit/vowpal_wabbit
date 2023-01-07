@@ -13,9 +13,9 @@
 //   defined in the cc file (con: can't inline those functions)
 // - templatize all input parameters (con: no type safety)
 #include "vw/core/action_score.h"    // used in sort_action_probs
-#include "vw/core/cb.h"              // required for CB::label
+#include "vw/core/cb.h"              // required for VW::cb_label
 #include "vw/core/example.h"         // used in predict
-#include "vw/core/gen_cs_example.h"  // required for GEN_CS::cb_to_cs_adf
+#include "vw/core/gen_cs_example.h"  // required for VW::details::cb_to_cs_adf
 #include "vw/core/global_data.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/print_utils.h"
@@ -95,7 +95,6 @@ public:
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
 
-  static void print_example(VW::workspace& all, cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq);
   static void update_stats(const VW::workspace& all, VW::shared_data& sd, const cb_explore_adf_base<ExploreType>& data,
       const multi_ex& ec_seq, VW::io::logger& logger);
   static void output_example_prediction(
@@ -106,10 +105,10 @@ public:
   ExploreType explore;
 
 private:
-  CB::cb_class _known_cost;
+  VW::cb_class _known_cost;
   // used in output_example
-  CB::label _action_label;
-  CB::label _empty_label;
+  VW::cb_label _action_label;
+  VW::cb_label _empty_label;
   VW::action_scores _saved_pred;
   std::unique_ptr<cb_explore_metrics> _metrics;
 
@@ -123,8 +122,8 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::predict(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
-  example* label_example = CB_ADF::test_adf_sequence(examples);
-  data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
+  example* label_example = VW::test_cb_adf_sequence(examples);
+  data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
 
   if (label_example != nullptr)
   {
@@ -148,10 +147,10 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::learn(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
-  example* label_example = CB_ADF::test_adf_sequence(examples);
+  example* label_example = VW::test_cb_adf_sequence(examples);
   if (label_example != nullptr)
   {
-    data._known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
+    data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
     // learn iff label_example != nullptr
     data.explore.learn(base, examples);
     if (data._metrics)
@@ -177,15 +176,6 @@ inline void cb_explore_adf_base<ExploreType>::learn(
     predict(data, base, examples);
     if (data._metrics) { data._metrics->metric_predict_in_learn++; }
   }
-}
-
-template <typename ExploreType>
-inline void cb_explore_adf_base<ExploreType>::print_example(
-    VW::workspace& all, cb_explore_adf_base<ExploreType>& data, const multi_ex& ec_seq)
-{
-  data._update_stats(all, *(all.sd), ec_seq, all.logger);
-  data._output_example_prediction(all, ec_seq, all.logger);
-  data._print_update(all, *(all.sd), ec_seq, all.logger);
 }
 
 template <typename ExploreType>
@@ -224,7 +214,7 @@ void cb_explore_adf_base<ExploreType>::_update_stats(
 
   for (const auto& example : ec_seq)
   {
-    if (CB::ec_is_example_header(*example))
+    if (VW::ec_is_example_header_cb(*example))
     {
       num_features += (ec_seq.size() - 1) *
           (example->get_num_features() - example->feature_space[VW::details::CONSTANT_NAMESPACE].size());
@@ -248,7 +238,7 @@ void cb_explore_adf_base<ExploreType>::_update_stats(
   {
     for (uint32_t i = 0; i < preds.size(); i++)
     {
-      float l = CB_ALGS::get_cost_estimate(_known_cost, preds[i].action);
+      float l = VW::get_cost_estimate(_known_cost, preds[i].action);
       loss += l * preds[i].score * ec_seq[ec_seq.size() - preds.size() + i]->weight;
     }
   }
@@ -297,8 +287,8 @@ void cb_explore_adf_base<ExploreType>::_print_update(
   if (ec_seq.size() <= 0) { return; }
   bool labeled_example = (_known_cost.probability > 0);
   auto& ec = *ec_seq[0];
-  if (labeled_example) { CB::print_update(all, !labeled_example, ec, &ec_seq, true, &_known_cost); }
-  else { CB::print_update(all, !labeled_example, ec, &ec_seq, true, nullptr); }
+  if (labeled_example) { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, &_known_cost); }
+  else { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
 template <typename ExploreType>

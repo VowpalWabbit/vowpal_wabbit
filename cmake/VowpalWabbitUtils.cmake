@@ -7,9 +7,28 @@ if(USE_LATEST_STD)
   DetectCXXStandard(VW_CXX_STANDARD)
 endif()
 
-option(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL "Internal flag." OFF)
-if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
-  find_program(VALGRIND "valgrind" REQUIRED)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  include(CTest)
+  if(BUILD_TESTING)
+    if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
+      message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
+    endif()
+    if(VW_GTEST_SYS_DEP)
+      find_package(GTest REQUIRED)
+    else()
+      cmake_minimum_required(VERSION 3.11)
+      include(FetchContent)
+      FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
+      )
+      # For Windows: Prevent overriding the parent project's compiler/linker settings
+      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+      set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+      FetchContent_MakeAvailable(googletest)
+    endif()
+    include(GoogleTest)
+  endif()
 endif()
 
 # Given a lib name writes to OUTPUT what the correspinding target name will be
@@ -253,6 +272,16 @@ function(vw_add_executable)
   endif()
 endfunction()
 
+
+set(GTEST_MAIN_FILE_CONTENTS "#include <gtest/gtest.h>\n\
+\n\
+int main(int argc, char** argv)\n\
+{\n\
+  ::testing::InitGoogleTest(&argc, argv);\n\
+  return RUN_ALL_TESTS();\n\
+}\n"
+)
+
 function(vw_add_test_executable)
   cmake_parse_arguments(VW_TEST
   ""
@@ -275,7 +304,10 @@ function(vw_add_test_executable)
   if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 
     vw_get_test_target(FULL_TEST_NAME ${VW_TEST_FOR_LIB})
-    add_executable(${FULL_TEST_NAME} ${VW_TEST_SOURCES})
+
+    file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/${FULL_TEST_NAME}_main.cc "${GTEST_MAIN_FILE_CONTENTS}")
+
+    add_executable(${FULL_TEST_NAME} ${CMAKE_CURRENT_BINARY_DIR}/${FULL_TEST_NAME}_main.cc ${VW_TEST_SOURCES})
     target_link_libraries(${FULL_TEST_NAME} PUBLIC
       ${FULL_FOR_LIB_NAME}
       ${VW_TEST_EXTRA_DEPS}
@@ -286,11 +318,6 @@ function(vw_add_test_executable)
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD ${VW_CXX_STANDARD})
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)
-    if(VW_UNIT_TEST_WITH_VALGRIND_INTERNAL)
-      add_test(NAME ${FULL_TEST_NAME} COMMAND ${VALGRIND} --error-exitcode=100 --track-origins=yes --leak-check=full $<TARGET_FILE:${FULL_TEST_NAME}>)
-    else()
-      add_test(NAME ${FULL_TEST_NAME} COMMAND ${FULL_TEST_NAME})
-    endif()
-    set_tests_properties(${FULL_TEST_NAME} PROPERTIES LABELS "VWTestList")
+    gtest_discover_tests(${FULL_TEST_NAME} PROPERTIES LABELS VWTestList DISCOVERY_TIMEOUT 60)
   endif()
 endfunction()

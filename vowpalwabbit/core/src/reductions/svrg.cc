@@ -43,7 +43,7 @@ public:
   svrg(VW::workspace* all) : all(all) {}
 };
 
-// Mimic GD::inline_predict but with offset for predicting with either
+// Mimic VW::inline_predict but with offset for predicting with either
 // stable versus inner weights.
 
 template <int offset>
@@ -58,7 +58,7 @@ inline float inline_predict(VW::workspace& all, VW::example& ec)
 {
   const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   float acc = simple_red_features.initial;
-  GD::foreach_feature<float, vec_add<offset> >(all, ec, acc);
+  VW::foreach_feature<float, vec_add<offset> >(all, ec, acc);
   return acc;
 }
 
@@ -66,13 +66,13 @@ inline float inline_predict(VW::workspace& all, VW::example& ec)
 
 float predict_stable(const svrg& s, VW::example& ec)
 {
-  return GD::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
+  return VW::details::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
 void predict(svrg& s, base_learner&, VW::example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
-  ec.pred.scalar = GD::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
 }
 
 float gradient_scalar(const svrg& s, const VW::example& ec, float pred)
@@ -111,13 +111,13 @@ void update_inner(const svrg& s, VW::example& ec)
   u.g_scalar_stable = gradient_scalar(s, ec, predict_stable(s, ec));
   u.eta = s.all->eta;
   u.norm = static_cast<float>(s.stable_grad_count);
-  GD::foreach_feature<update, update_inner_feature>(*s.all, ec, u);
+  VW::foreach_feature<update, update_inner_feature>(*s.all, ec, u);
 }
 
 void update_stable(const svrg& s, VW::example& ec)
 {
   float g = gradient_scalar(s, ec, predict_stable(s, ec));
-  GD::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
+  VW::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
 }
 
 void learn(svrg& s, base_learner& base, VW::example& ec)
@@ -155,21 +155,25 @@ void learn(svrg& s, base_learner& base, VW::example& ec)
   s.prev_pass = pass;
 }
 
-void save_load(svrg& s, io_buf& model_file, bool read, bool text)
+void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 {
-  if (read) { initialize_regressor(*s.all); }
+  if (read) { VW::details::initialize_regressor(*s.all); }
 
   if (model_file.num_files() != 0)
   {
     bool resume = s.all->save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
     double temp = 0.;
     double temp_normalized_sum_norm_x = 0.;
-    if (resume) { GD::save_load_online_state(*s.all, model_file, read, text, temp, temp_normalized_sum_norm_x); }
-    else { GD::save_load_regressor(*s.all, model_file, read, text); }
+    if (resume)
+    {
+      VW::details::save_load_online_state_gd(*s.all, model_file, read, text, temp, temp_normalized_sum_norm_x);
+    }
+    else { VW::details::save_load_regressor_gd(*s.all, model_file, read, text); }
   }
 }
 }  // namespace

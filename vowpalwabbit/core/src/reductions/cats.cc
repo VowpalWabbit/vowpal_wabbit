@@ -198,11 +198,13 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
 
   auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
+                .set_input_label_type(VW::label_type_t::CONTINUOUS)
+                .set_output_label_type(VW::label_type_t::CONTINUOUS)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
                 .set_output_example_prediction(output_example_prediction_cats)
                 .set_print_update(print_update_cats)
                 .set_update_stats(update_stats_cats)
-                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                 .build();
 
   return make_base(*l);
