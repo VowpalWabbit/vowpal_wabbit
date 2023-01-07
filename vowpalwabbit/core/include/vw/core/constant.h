@@ -50,6 +50,7 @@ constexpr const char* SLOT_TYPE = "slot";
 constexpr const char* CA_LABEL = "ca";
 constexpr const char* PDF = "pdf";
 constexpr const char* CHOSEN_ACTION = "chosen_action";
+// GRAPH_FEEDBACK_TYPE is an experimental type for an experimental reduction
 constexpr const char* GRAPH_FEEDBACK_TYPE = "graph";
 
 static constexpr uint32_t SHARED_EX_INDEX = 0;

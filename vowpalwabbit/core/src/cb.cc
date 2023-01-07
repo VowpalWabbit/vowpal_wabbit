@@ -31,6 +31,7 @@ std::pair<bool, VW::cb_class> VW::get_observed_cost_cb(const VW::cb_label& ld)
   return std::make_pair(false, VW::cb_class{});
 }
 
+// this is an experimental input for the experimental graph feedback reduction to be added
 void parse_graph_feedback_matrix(const std::vector<VW::string_view>& words, size_t current_word_index,
     VW::label_parser_reuse_mem& reuse_mem, VW::reduction_features& red_features, VW::io::logger& logger)
 {
