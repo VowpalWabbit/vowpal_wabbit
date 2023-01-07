@@ -65,8 +65,8 @@ void parse_graph_feedback_matrix(const std::vector<VW::string_view>& words, size
   }
 }
 
-static void parse_label_cb(VW::cb_label& ld, VW::reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-    const std::vector<VW::string_view>& words, VW::io::logger& logger)
+static void parse_label_cb(VW::cb_label& ld, VW::reduction_features& red_features,
+    VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   ld.weight = 1.0;
 
@@ -242,8 +242,8 @@ void default_label_cb_eval(VW::cb_eval_label& ld)
 
 bool test_label_cb_eval(const VW::cb_eval_label& ld) { return ld.event.is_test_label(); }
 
-void parse_label_cb_eval(VW::cb_eval_label& ld, VW::reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-    const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_label_cb_eval(VW::cb_eval_label& ld, VW::reduction_features& red_features,
+    VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
