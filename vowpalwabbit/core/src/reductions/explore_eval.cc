@@ -145,8 +145,8 @@ void update_stats_explore_eval(const VW::workspace& all, VW::shared_data& sd, co
   for (size_t i = 0; i < ec_seq.size(); i++) { holdout_example &= ec_seq[i]->test_only; }
 
   sd.update(holdout_example, labeled_example, loss, ec.weight, num_features);
-  sd.explore_eval_data.weighted_update_count = data.weighted_update_count;
-  sd.explore_eval_data.average_accepted_example_weight =
+  sd.reduction_stats["explore_eval_weighted_update_count"] = data.weighted_update_count;
+  sd.reduction_stats["explore_eval_average_accepted_example_weight"] =
       data.weighted_update_count / static_cast<float>(data.update_count);
 }
 

@@ -1102,10 +1102,18 @@ float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq()
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
-float get_explore_eval_weighted_update_count(vw_ptr vw) { return vw->sd->explore_eval_data.weighted_update_count; }
+float get_explore_eval_weighted_update_count(vw_ptr vw)
+{
+  return vw->sd->reduction_stats.count("explore_eval_weighted_update_count")
+      ? vw->sd->reduction_stats["explore_eval_weighted_update_count"]
+      : 0.f;
+}
+
 float get_explore_eval_average_accepted_example_weight(vw_ptr vw)
 {
-  return vw->sd->explore_eval_data.average_accepted_example_weight;
+  return vw->sd->reduction_stats.count("explore_eval_average_accepted_example_weight")
+      ? vw->sd->reduction_stats["explore_eval_average_accepted_example_weight"]
+      : 0.f;
 }
 
 bool search_should_output(search_ptr _sch) { return _sch->output().good(); }
