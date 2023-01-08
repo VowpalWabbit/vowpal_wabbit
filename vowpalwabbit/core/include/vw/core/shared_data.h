@@ -14,6 +14,12 @@ namespace VW
 {
 class shared_data
 {
+  struct explore_eval_sd
+  {
+    float weighted_update_count = 0.f;
+    float average_accepted_example_weight = 0.f;
+  };
+
 public:
   shared_data();
   ~shared_data();
@@ -39,6 +45,8 @@ public:
   double contraction = 1.;
   float min_label = 0.f;  // minimum label encountered
   float max_label = 0.f;  // maximum label encountered
+
+  explore_eval_sd explore_eval_data;
 
   std::unique_ptr<VW::named_labels> ldict;
 

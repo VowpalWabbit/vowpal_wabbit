@@ -1102,6 +1102,11 @@ float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq()
 double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
+float get_explore_eval_weighted_update_count(vw_ptr vw) { return vw->sd->explore_eval_data.weighted_update_count; }
+float get_explore_eval_average_accepted_example_weight(vw_ptr vw)
+{
+  return vw->sd->explore_eval_data.average_accepted_example_weight;
+}
 
 bool search_should_output(search_ptr _sch) { return _sch->output().good(); }
 void search_output(search_ptr _sch, std::string s) { _sch->output() << s; }
@@ -1397,6 +1402,10 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
       .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
+      .def("get_explore_eval_weighted_update_count", &get_explore_eval_weighted_update_count,
+          "return the weighted update count (acceptance rate) for explore_eval")
+      .def("get_explore_eval_average_accepted_example_weight", &get_explore_eval_average_accepted_example_weight,
+          "return the average weight of accepted examples for explore_eval")
 
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
       .def("get_options", &get_options, "get available vw options")
