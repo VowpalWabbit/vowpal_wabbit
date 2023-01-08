@@ -767,6 +767,7 @@ def test_merge_models_with_base():
     assert model2.get_weight_from_name("bar") != 0
     assert merged_model.get_weight_from_name("bar") != 0
 
+
 def test_get_explore_eval_stats():
     vw = vowpalwabbit.Workspace("--cb_explore_adf --explore_eval --dsjson")
 
