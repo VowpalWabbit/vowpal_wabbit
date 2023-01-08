@@ -158,8 +158,6 @@ void print_update_explore_eval(VW::workspace& all, VW::shared_data& /*sd*/, cons
   if (data.known_cost.probability <= 0) { labeled_example = false; }
 
   VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, nullptr);
-
-  VW::details::global_print_newline(all.final_prediction_sink, all.logger);
 }
 
 void output_example_prediction_explore_eval(
@@ -188,6 +186,8 @@ void output_example_prediction_explore_eval(
     all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
     all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
   }
+
+  VW::details::global_print_newline(all.final_prediction_sink, all.logger);
 }
 
 template <bool is_learn>
