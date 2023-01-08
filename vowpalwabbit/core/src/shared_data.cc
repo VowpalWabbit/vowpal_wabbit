@@ -51,7 +51,7 @@ VW::shared_data::shared_data(const shared_data& other)
   is_more_than_two_labels_observed = other.is_more_than_two_labels_observed;
   first_observed_label = other.first_observed_label;
   second_observed_label = other.second_observed_label;
-  reduction_stats = other.reduction_stats
+  explore_eval_data = other.explore_eval_data;
 }
 
 VW::shared_data& VW::shared_data::operator=(const shared_data& other)
@@ -87,7 +87,7 @@ VW::shared_data& VW::shared_data::operator=(const shared_data& other)
   is_more_than_two_labels_observed = other.is_more_than_two_labels_observed;
   first_observed_label = other.first_observed_label;
   second_observed_label = other.second_observed_label;
-  reduction_stats = other.reduction_stats
+  explore_eval_data = other.explore_eval_data;
   return *this;
 }
 
@@ -123,7 +123,7 @@ VW::shared_data::shared_data(shared_data&& other) noexcept
   is_more_than_two_labels_observed = other.is_more_than_two_labels_observed;
   first_observed_label = other.first_observed_label;
   second_observed_label = other.second_observed_label;
-  reduction_stats = other.reduction_stats
+  explore_eval_data = other.explore_eval_data;
 }
 
 VW::shared_data& VW::shared_data::operator=(shared_data&& other) noexcept
@@ -158,7 +158,7 @@ VW::shared_data& VW::shared_data::operator=(shared_data&& other) noexcept
   is_more_than_two_labels_observed = other.is_more_than_two_labels_observed;
   first_observed_label = other.first_observed_label;
   second_observed_label = other.second_observed_label;
-  reduction_stats = other.reduction_stats
+  explore_eval_data = other.explore_eval_data;
   return *this;
 }
 
