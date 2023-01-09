@@ -412,7 +412,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lCONTEXTUAL_BANDIT_EVAL:
       return &VW::cb_eval_label_parser_global;
     case lMULTILABEL:
-      return &VW::multiclass_label_parser_global;
+      return &VW::multilabel_label_parser_global;
     default:
       THROW("get_label_parser called on invalid label type");
   }
