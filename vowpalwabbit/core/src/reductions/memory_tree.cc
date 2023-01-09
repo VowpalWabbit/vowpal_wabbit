@@ -1296,8 +1296,10 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
                .set_params_per_weight(num_learners)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
-               .set_output_prediction_type(pred_type)
-               .set_input_label_type(label_type);
+               .set_input_label_type(label_type)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(pred_type);
 
   // memory_tree doesn't work correctly in oas mode as it just delegates to GD's stats and reporting implementation
   if (!oas)
