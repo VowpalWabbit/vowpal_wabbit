@@ -433,7 +433,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
                 .set_output_example_prediction(::output_example_prediction_cb_explore)
                 .set_print_update(::print_update_cb_explore)
                 .set_save_load(save_load)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

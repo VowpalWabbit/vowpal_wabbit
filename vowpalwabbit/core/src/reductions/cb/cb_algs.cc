@@ -221,7 +221,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
                 .set_update_stats(update_stats_func)
                 .set_output_example_prediction(output_example_prediction_func)
                 .set_print_update(print_update_func)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }
