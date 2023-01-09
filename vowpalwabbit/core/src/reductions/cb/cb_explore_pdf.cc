@@ -102,7 +102,6 @@ void predict_or_learn(cb_explore_pdf& reduction, single_learner&, VW::example& e
 VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   option_group_definition new_options("[Reduction] Continuous Actions: cb_explore_pdf");
   bool invoked = false;
   float epsilon;
@@ -146,6 +145,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i
                 .set_output_label_type(VW::label_type_t::CONTINUOUS)
                 .set_input_prediction_type(VW::prediction_type_t::PDF)
                 .set_output_prediction_type(VW::prediction_type_t::PDF)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }
