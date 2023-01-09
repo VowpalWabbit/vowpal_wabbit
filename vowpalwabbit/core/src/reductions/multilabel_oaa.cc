@@ -35,8 +35,8 @@ public:
 template <bool is_learn>
 void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
 {
-  auto& multilabels = ec.l.multilabels;
-  auto& preds = ec.pred.multilabels;
+  auto multilabels = ec.l.multilabels;
+  auto preds = ec.pred.multilabels;
   preds.label_v.clear();
 
   ec.l.simple = {FLT_MAX};
