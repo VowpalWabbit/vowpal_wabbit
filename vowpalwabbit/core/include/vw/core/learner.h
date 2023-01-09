@@ -144,15 +144,6 @@ public:
   fn pre_save_load_f;
 };
 
-class resize_ppw_state_data
-{
-public:
-  using fn = void (*)(void*, size_t factor, size_t mfo);
-  void* data = nullptr;
-  base_learner* base = nullptr;
-  fn resize_ppw_state_f;
-};
-
 class save_metric_data
 {
 public:
@@ -426,8 +417,8 @@ public:
   void NO_SANITIZE_UNDEFINED resize_ppw_state(size_t factor, size_t mfo)
   {
     max_ft_offset = mfo;
-    _resize_ppw_state_fd.resize_ppw_state_f(_resize_ppw_state_fd.data, factor, max_ft_offset);
-    if (_resize_ppw_state_fd.base) { _resize_ppw_state_fd.base->resize_ppw_state(factor, max_ft_offset); }
+    _learn_fd.resize_ppw_f(_learn_fd.data, factor, max_ft_offset);
+    if (_learn_fd.base) { _learn_fd.base->resize_ppw_state(factor, max_ft_offset); }
   }
 
   inline void NO_SANITIZE_UNDEFINED finish()
@@ -667,7 +658,6 @@ private:
   details::func_data _end_pass_fd;
   details::func_data _end_examples_fd;
   details::pre_save_load_data _pre_save_load_fd;
-  details::resize_ppw_state_data _resize_ppw_state_fd;
   details::save_metric_data _persist_metrics_fd;
   details::func_data _finisher_fd;
   std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
@@ -1034,17 +1024,13 @@ public:
 
   FluentBuilderT& set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t, size_t)) &
   {
-    learner_ptr->_resize_ppw_state_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_resize_ppw_state_fd.resize_ppw_state_f = (details::learn_data::resize_ppw_fn)fn_ptr;
-    learner_ptr->_resize_ppw_state_fd.base = learner_ptr->_learn_fd.base;
+    this->learner_ptr->_learn_fd.resize_ppw_f = (details::learn_data::resize_ppw_fn)fn_ptr;
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT&& set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t, size_t)) &&
   {
-    learner_ptr->_resize_ppw_state_fd.data = learner_ptr->_learn_fd.data;
-    learner_ptr->_resize_ppw_state_fd.resize_ppw_state_f = (details::learn_data::resize_ppw_fn)fn_ptr;
-    learner_ptr->_resize_ppw_state_fd.base = learner_ptr->_learn_fd.base;
+    this->learner_ptr->_learn_fd.resize_ppw_f = (details::learn_data::resize_ppw_fn)fn_ptr;
     return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
@@ -1174,6 +1160,11 @@ public:
   {
     this->learner_ptr->weights = params_per_weight;
     this->learner_ptr->increment = this->learner_ptr->_learn_fd.base->increment * this->learner_ptr->weights;
+    if (params_per_weight > 1)
+    {
+      this->learner_ptr->_learn_fd.base->resize_ppw_state(params_per_weight, this->learner_ptr->increment);
+      this->learner_ptr->max_ft_offset = this->learner_ptr->increment;
+    }
     return std::move(*this);
   }
 
@@ -1292,6 +1283,11 @@ public:
   {
     this->learner_ptr->weights = params_per_weight;
     this->learner_ptr->increment = this->learner_ptr->_learn_fd.base->increment * this->learner_ptr->weights;
+    if (params_per_weight > 1)
+    {
+      this->learner_ptr->_learn_fd.base->resize_ppw_state(params_per_weight, this->learner_ptr->increment);
+      this->learner_ptr->max_ft_offset = this->learner_ptr->increment;
+    }
     return std::move(*this);
   }
 
