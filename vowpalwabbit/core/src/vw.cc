@@ -11,6 +11,7 @@
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/learner.h"
+#include "vw/core/memory.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parse_dispatch_loop.h"
 #include "vw/core/parse_primitives.h"
@@ -155,8 +156,11 @@ VW::workspace* initialize_with_builder(int argc, char* argv[], VW::io_buf* model
   std::unique_ptr<VW::config::options_i, VW::options_deleter_type> options(
       new VW::config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
       [](VW::config::options_i* ptr) { delete ptr; });
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize_with_builder(
       std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(setup_base));
+  VW_WARNING_STATE_POP
 }
 }  // namespace
 
@@ -176,7 +180,10 @@ VW::workspace* VW::initialize(config::options_i& options, io_buf* model, bool sk
 VW::workspace* VW::initialize(
     const std::string& s, io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context)
 {
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
+  VW_WARNING_STATE_POP
 }
 VW::workspace* VW::initialize(int argc, char* argv[], io_buf* model, bool skip_model_load,
     VW::trace_message_t trace_listener, void* trace_context)
@@ -266,6 +273,78 @@ std::unique_ptr<VW::workspace> VW::initialize_experimental(std::unique_ptr<confi
   }
   return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
       driver_output_func, driver_output_func_context, custom_logger, std::move(setup_base));
+}
+
+std::unique_ptr<VW::workspace> VW::initialize(std::unique_ptr<config::options_i> options,
+    std::unique_ptr<VW::io::reader> model_override_reader, bool skip_model_load,
+    driver_output_func_t driver_output_func, void* driver_output_func_context, VW::io::logger* custom_logger)
+{
+  auto* released_options = options.release();
+  std::unique_ptr<config::options_i, options_deleter_type> options_custom_deleter(
+      released_options, [](VW::config::options_i* ptr) { delete ptr; });
+
+  // Skip model load should be implemented by a caller not passing model loading args.
+  std::unique_ptr<io_buf> model(nullptr);
+  if (model_override_reader != nullptr)
+  {
+    model = VW::make_unique<io_buf>();
+    model->add_file(std::move(model_override_reader));
+  }
+  return initialize_internal(std::move(options_custom_deleter), model.get(), skip_model_load /* skip model load */,
+      driver_output_func, driver_output_func_context, custom_logger, nullptr);
+}
+
+std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const std::vector<std::string>& extra_args,
+    driver_output_func_t driver_output_func, void* driver_output_func_context, VW::io::logger* custom_logger)
+{
+  config::cli_options_serializer serializer;
+  for (auto const& option : vw_model.options->get_all_options())
+  {
+    if (vw_model.options->was_supplied(option->m_name))
+    {
+      // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the
+      // model.
+      if (option->m_name == "no_stdin" || option->m_name == "initial_regressor") { continue; }
+
+      serializer.add(*option);
+    }
+  }
+
+  auto serialized_options = VW::split_command_line(serializer.str());
+  serialized_options.insert(serialized_options.end(), extra_args.begin(), extra_args.end());
+
+  auto options = VW::make_unique<config::options_cli>(serialized_options);
+
+  auto new_model = VW::initialize(std::move(options), nullptr, true /* skip_model_load */, driver_output_func,
+      driver_output_func_context, custom_logger);
+  delete new_model->sd;
+
+  // reference model states stored in the specified VW instance
+  new_model->weights.shallow_copy(vw_model.weights);  // regressor
+  new_model->sd = vw_model.sd;                        // shared data
+
+  return new_model;
+}
+
+void VW::finalize_driver(VW::workspace& all)
+{
+  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
+  if (!all.quiet && !all.options->was_supplied("audit_regressor"))
+  {
+    all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off);
+  }
+
+  details::finalize_regressor(all, all.final_regressor_name);
+  if (all.options->was_supplied("dump_json_weights_experimental"))
+  {
+    auto content = all.dump_weights_to_json_experimental();
+    auto writer = VW::io::open_file_writer(all.json_weights_file_name);
+    writer->write(content.c_str(), content.length());
+  }
+  all.global_metrics.register_metrics_callback(
+      [&all](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(all, sink); });
+  VW::reductions::output_metrics(all);
+  all.logger.log_summary();
 }
 
 VW::workspace* VW::initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
@@ -472,23 +551,7 @@ void VW::finish(VW::workspace& all, bool delete_all)
         if (delete_all) { delete &all; }
       });
 
-  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!all.quiet && !all.options->was_supplied("audit_regressor"))
-  {
-    all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off);
-  }
-
-  details::finalize_regressor(all, all.final_regressor_name);
-  if (all.options->was_supplied("dump_json_weights_experimental"))
-  {
-    auto content = all.dump_weights_to_json_experimental();
-    auto writer = VW::io::open_file_writer(all.json_weights_file_name);
-    writer->write(content.c_str(), content.length());
-  }
-  all.global_metrics.register_metrics_callback(
-      [&all](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(all, sink); });
-  VW::reductions::output_metrics(all);
-  all.logger.log_summary();
+  finalize_driver(all);
 }
 
 void VW::sync_stats(VW::workspace& all)

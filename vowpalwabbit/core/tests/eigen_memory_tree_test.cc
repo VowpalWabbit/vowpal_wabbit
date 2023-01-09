@@ -35,7 +35,7 @@ emt_tree* get_emt_tree(VW::workspace& all)
 
 TEST(Emt, ParamsTest1)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt"));
   auto* tree = get_emt_tree(*vw);
 
   EXPECT_EQ(tree->leaf_split, 100);
@@ -50,7 +50,7 @@ TEST(Emt, ParamsTest2)
 {
   auto args = vwtest::make_args(
       "--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "distance", "--emt_router", "random", "--emt_leaf", "50");
-  auto vw = VW::initialize_experimental(std::move(args));
+  auto vw = VW::initialize(std::move(args));
   auto tree = get_emt_tree(*vw);
 
   EXPECT_EQ(tree->leaf_split, 50);
@@ -63,7 +63,7 @@ TEST(Emt, ParamsTest2)
 
 TEST(Emt, ExactMatchSansRouterTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt"));
 
   auto* ex1 = VW::read_example(*vw, "1 | 1 2 3");
   auto* ex2 = VW::read_example(*vw, "2 | 2 3 4");
@@ -87,7 +87,7 @@ TEST(Emt, ExactMatchSansRouterTest)
 
 TEST(Emt, ExactMatchWithRouterTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 
   for (int i = 0; i < 10; i++)
   {
@@ -109,7 +109,7 @@ TEST(Emt, ExactMatchWithRouterTest)
 
 TEST(Emt, Bounding)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_tree", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_tree", "5"));
   auto* tree = get_emt_tree(*vw);
 
   for (int i = 0; i < 10; i++)
@@ -129,7 +129,7 @@ TEST(Emt, Bounding)
 TEST(Emt, Split)
 {
   auto args = vwtest::make_args("--quiet", "--emt", "--emt_tree", "10", "--emt_leaf", "3");
-  auto vw = VW::initialize_experimental(std::move(args));
+  auto vw = VW::initialize(std::move(args));
   auto* tree = get_emt_tree(*vw);
 
   for (int i = 0; i < 4; i++)
@@ -330,7 +330,7 @@ TEST(Emt, Shuffle)
 
 TEST(Emt, SaveLoad)
 {
-  auto vw_save = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
+  auto vw_save = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 
   for (int i = 0; i < 10; i++)
   {
@@ -345,9 +345,8 @@ TEST(Emt, SaveLoad)
   VW::save_predictor(*vw_save, io_writer);
   io_writer.flush();
 
-  auto vw_load =
-      VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
-          VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+  auto vw_load = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
+      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   for (int i = 0; i < 10; i++)
   {
