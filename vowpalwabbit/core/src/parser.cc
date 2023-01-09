@@ -165,7 +165,7 @@ void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::par
 void set_string_reader(VW::workspace& all)
 {
   all.example_parser->reader = VW::parsers::text::read_features_string;
-  all.print_by_ref = print_result_by_ref;
+  all.print_by_ref = VW::details::print_result_by_ref;
 }
 
 bool is_currently_json_reader(const VW::workspace& all)

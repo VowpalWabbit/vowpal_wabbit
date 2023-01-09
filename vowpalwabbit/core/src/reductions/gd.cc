@@ -404,7 +404,7 @@ void print_features(VW::workspace& all, VW::example& ec)
       }
     }
     size_t num_interacted_features = 0;
-    INTERACTIONS::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(
+    VW::generate_interactions<audit_results, const uint64_t, audit_feature, true, audit_interaction>(
         all, ec, dat, num_interacted_features);
 
     stable_sort(dat.results.begin(), dat.results.end());
@@ -422,7 +422,7 @@ void print_features(VW::workspace& all, VW::example& ec)
 
 void print_audit_features(VW::workspace& all, VW::example& ec)
 {
-  if (all.audit) { print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag, all.logger); }
+  if (all.audit) { VW::details::print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag, all.logger); }
   fflush(stdout);
   print_features(all, ec);
 }
