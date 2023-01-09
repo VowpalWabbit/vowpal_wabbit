@@ -45,7 +45,7 @@ int sample(int size, const float* probs, float s)
 TEST(BaselineCB, BaselinePerformsBadly)
 {
   using namespace test_helpers;
-  auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
       "--extra_metrics", "ut_metrics.json", "--random_seed", "5"));
   float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
   float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
@@ -80,8 +80,8 @@ TEST(BaselineCB, BaselinePerformsBadly)
 TEST(BaselineCB, BaselineTakesOverPolicy)
 {
   using namespace test_helpers;
-  auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--cb_c_tau",
-      "0.995", "--quiet", "--power_t", "0", "-l", "0.001", "--extra_metrics", "ut_metrics.json", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--cb_c_tau", "0.995",
+      "--quiet", "--power_t", "0", "-l", "0.001", "--extra_metrics", "ut_metrics.json", "--random_seed", "5"));
   float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
   float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
@@ -131,7 +131,7 @@ TEST(BaselineCB, BaselineTakesOverPolicy)
 VW::metric_sink run_simulation(int steps, int switch_step)
 {
   using namespace test_helpers;
-  auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
       "--extra_metrics", "ut_metrics.json", "--random_seed", "5"));
   float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
   float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
@@ -149,8 +149,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
     if (i == switch_step)
     {
       VW::save_predictor(*vw, "model_file.vw");
-      vw = VW::initialize_experimental(
-          vwtest::make_args("--quiet", "--extra_metrics", "ut_metrics.json", "-i", "model_file.vw"));
+      vw = VW::initialize(vwtest::make_args("--quiet", "--extra_metrics", "ut_metrics.json", "-i", "model_file.vw"));
     }
   }
   auto metrics = vw->global_metrics.collect_metrics(vw->l);
