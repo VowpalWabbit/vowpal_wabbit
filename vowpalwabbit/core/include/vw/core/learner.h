@@ -144,6 +144,15 @@ public:
   fn pre_save_load_f;
 };
 
+class resize_ppw_state_data
+{
+public:
+  using fn = void (*)(void*, size_t factor, size_t mfo);
+  void* data = nullptr;
+  base_learner* base = nullptr;
+  fn resize_ppw_state_f;
+};
+
 class save_metric_data
 {
 public:
@@ -209,9 +218,9 @@ inline size_t get_offset(const multi_ex& ec_seq)
   return ec_seq[0]->ft_offset;
 }
 
-void learner_build_diagnostic(VW::io::logger& logger, VW::string_view this_name, VW::string_view base_name,
-    prediction_type_t in_pred_type, prediction_type_t base_out_pred_type, label_type_t out_label_type,
-    label_type_t base_in_label_type, details::merge_fn merge_fn_ptr, details::merge_with_all_fn merge_with_all_fn_ptr);
+void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name, prediction_type_t in_pred_type,
+    prediction_type_t base_out_pred_type, label_type_t out_label_type, label_type_t base_in_label_type,
+    details::merge_fn merge_fn_ptr, details::merge_with_all_fn merge_with_all_fn_ptr);
 }  // namespace details
 
 bool ec_is_example_header(example const& ec, label_type_t label_type);
@@ -273,6 +282,8 @@ public:
 
   using end_fptr_type = void (*)(VW::workspace&, void*, void*);
   using finish_fptr_type = void (*)(void*);
+
+  ~learner() { delete _finisher_fd.base; }
 
   void* get_internal_type_erased_data_pointer_test_use_only() { return _learner_data.get(); }
 
@@ -415,18 +426,16 @@ public:
   void NO_SANITIZE_UNDEFINED resize_ppw_state(size_t factor, size_t mfo)
   {
     max_ft_offset = mfo;
-    _learn_fd.resize_ppw_f(_learn_fd.data, factor, max_ft_offset);
-    if (_learn_fd.base) { _learn_fd.base->resize_ppw_state(factor, max_ft_offset); }
+    _resize_ppw_state_fd.resize_ppw_state_f(_resize_ppw_state_fd.data, factor, max_ft_offset);
+    if (_resize_ppw_state_fd.base) { _resize_ppw_state_fd.base->resize_ppw_state(factor, max_ft_offset); }
   }
 
   inline void NO_SANITIZE_UNDEFINED finish()
   {
+    // TODO: ensure that finish does not actually manage memory but just does driver finalization.
+    // Then move the call to finish from the destructor of workspace to driver_finalize
     if (_finisher_fd.data) { _finisher_fd.func(_finisher_fd.data); }
-    if (_finisher_fd.base)
-    {
-      _finisher_fd.base->finish();
-      delete _finisher_fd.base;
-    }
+    if (_finisher_fd.base) { _finisher_fd.base->finish(); }
   }
 
   void NO_SANITIZE_UNDEFINED end_pass()
@@ -658,6 +667,7 @@ private:
   details::func_data _end_pass_fd;
   details::func_data _end_examples_fd;
   details::pre_save_load_data _pre_save_load_fd;
+  details::resize_ppw_state_data _resize_ppw_state_fd;
   details::save_metric_data _persist_metrics_fd;
   details::func_data _finisher_fd;
   std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
@@ -1024,14 +1034,18 @@ public:
 
   FluentBuilderT& set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t, size_t)) &
   {
-    this->learner_ptr->_learn_fd.resize_ppw_f = (details::learn_data::resize_ppw_fn)fn_ptr;
+    learner_ptr->_resize_ppw_state_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_resize_ppw_state_fd.resize_ppw_state_f = (details::learn_data::resize_ppw_fn)fn_ptr;
+    learner_ptr->_resize_ppw_state_fd.base = learner_ptr->_learn_fd.base;
     return *static_cast<FluentBuilderT*>(this);
   }
 
-  FluentBuilderT& set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t, size_t)) &&
+  FluentBuilderT&& set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t, size_t)) &&
   {
-    this->learner_ptr->_learn_fd.resize_ppw_f = (details::learn_data::resize_ppw_fn)fn_ptr;
-    return *static_cast<FluentBuilderT*>(this);
+    learner_ptr->_resize_ppw_state_fd.data = learner_ptr->_learn_fd.data;
+    learner_ptr->_resize_ppw_state_fd.resize_ppw_state_f = (details::learn_data::resize_ppw_fn)fn_ptr;
+    learner_ptr->_resize_ppw_state_fd.base = learner_ptr->_learn_fd.base;
+    return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
   // This is the label type of the example passed into the learn function. This
@@ -1205,18 +1219,15 @@ public:
     return std::move(*this);
   }
 
-  learner<DataT, ExampleT>* build(VW::io::logger* logger = nullptr)
+  learner<DataT, ExampleT>* build()
   {
-    if (logger != nullptr)
-    {
-      prediction_type_t in_pred_type = this->learner_ptr->get_input_prediction_type();
-      prediction_type_t base_out_pred_type = this->learner_ptr->_learn_fd.base->get_output_prediction_type();
-      label_type_t out_label_type = this->learner_ptr->get_output_label_type();
-      label_type_t base_in_label_type = this->learner_ptr->_learn_fd.base->get_input_label_type();
-      details::learner_build_diagnostic(*logger, this->learner_ptr->get_name(),
-          this->learner_ptr->get_learn_base()->get_name(), in_pred_type, base_out_pred_type, out_label_type,
-          base_in_label_type, this->learner_ptr->_merge_fn, this->learner_ptr->_merge_with_all_fn);
-    }
+    prediction_type_t in_pred_type = this->learner_ptr->get_input_prediction_type();
+    prediction_type_t base_out_pred_type = this->learner_ptr->_learn_fd.base->get_output_prediction_type();
+    label_type_t out_label_type = this->learner_ptr->get_output_label_type();
+    label_type_t base_in_label_type = this->learner_ptr->_learn_fd.base->get_input_label_type();
+    details::learner_build_diagnostic(this->learner_ptr->get_name(), this->learner_ptr->get_learn_base()->get_name(),
+        in_pred_type, base_out_pred_type, out_label_type, base_in_label_type, this->learner_ptr->_merge_fn,
+        this->learner_ptr->_merge_with_all_fn);
 
     return this->learner_ptr.release();
   }

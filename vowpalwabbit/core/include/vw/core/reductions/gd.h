@@ -192,20 +192,20 @@ size_t write_model_field(io_buf&, const GD::per_model_state&, const std::string&
 }  // namespace model_utils
 }  // namespace VW
 
-namespace INTERACTIONS
+namespace VW
 {
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const VW::audit_strings*)>
 inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
   {
-    generate_interactions<R, S, T, audit, audit_func, VW::sparse_parameters>(*ec.interactions, *ec.extent_interactions,
+    VW::generate_interactions<R, S, T, audit, audit_func, VW::sparse_parameters>(*ec.interactions, *ec.extent_interactions,
         all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all.generate_interactions_object_cache_state);
   }
   else
   {
-    generate_interactions<R, S, T, audit, audit_func, VW::dense_parameters>(*ec.interactions, *ec.extent_interactions,
+    VW::generate_interactions<R, S, T, audit, audit_func, VW::dense_parameters>(*ec.interactions, *ec.extent_interactions,
         all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all.generate_interactions_object_cache_state);
   }
@@ -217,12 +217,12 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
 {
   if (all.weights.sparse)
   {
-    generate_interactions<R, S, T, VW::sparse_parameters>(all.interactions, all.extent_interactions, all.permutations,
+    VW::generate_interactions<R, S, T, VW::sparse_parameters>(all.interactions, all.extent_interactions, all.permutations,
         ec, dat, all.weights.sparse_weights, num_interacted_features, all.generate_interactions_object_cache_state);
   }
   else
   {
-    generate_interactions<R, S, T, VW::dense_parameters>(all.interactions, all.extent_interactions, all.permutations,
+    VW::generate_interactions<R, S, T, VW::dense_parameters>(all.interactions, all.extent_interactions, all.permutations,
         ec, dat, all.weights.dense_weights, num_interacted_features, all.generate_interactions_object_cache_state);
   }
 }

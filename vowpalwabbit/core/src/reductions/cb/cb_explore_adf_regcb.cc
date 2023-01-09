@@ -208,7 +208,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
       if (_min_costs[preds[i].action] <= min_max_cost) { preds[i].score = 1; }
       else { preds[i].score = 0; }
       // explore uniformly on support
-      exploration::enforce_minimum_probability(
+      VW::explore::enforce_minimum_probability(
           1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
     }
   }
@@ -318,6 +318,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

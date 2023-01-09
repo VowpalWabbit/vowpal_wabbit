@@ -25,9 +25,6 @@
 #include <utility>
 
 using namespace VW::LEARNER;
-using namespace GEN_CS;
-using namespace CB_ALGS;
-using namespace exploration;
 using namespace VW::config;
 using std::endl;
 // All exploration algorithms return a vector of probabilities, to be used by GenericExplorer downstream
@@ -41,7 +38,7 @@ class cb_explore
 {
 public:
   std::shared_ptr<VW::rand_state> random_state;
-  cb_to_cs cbcs;
+  VW::details::cb_to_cs cbcs;
   VW::v_array<uint32_t> preds;
   VW::v_array<float> cover_probs;
 
@@ -110,7 +107,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example
   probs.reserve(data.cbcs.num_actions);
   for (uint32_t i = 0; i < data.cbcs.num_actions; i++) { probs.push_back({i, 0}); }
   uint32_t chosen = ec.pred.multiclass - 1;
-  generate_epsilon_greedy(data.epsilon, chosen, begin_scores(probs), end_scores(probs));
+  VW::explore::generate_epsilon_greedy(data.epsilon, chosen, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
@@ -156,7 +153,8 @@ void get_cover_probabilities(
   }
   uint32_t num_actions = data.cbcs.num_actions;
 
-  enforce_minimum_probability(min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
+  VW::explore::enforce_minimum_probability(
+      min_prob * num_actions, !data.nounif, begin_scores(probs), end_scores(probs));
 }
 
 template <bool is_learn>
@@ -207,7 +205,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
     // cost observed, not default
     if (optional_cost.first) { data.cbcs.known_cost = optional_cost.second; }
     else { data.cbcs.known_cost = VW::cb_class{}; }
-    gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
+    VW::details::gen_cs_example<false>(data.cbcs, ec, data.cb_label, data.cs_label, data.logger);
     for (uint32_t i = 0; i < num_actions; i++) { probabilities[i] = 0.f; }
 
     ec.l.cs = std::move(data.second_cs_label);
@@ -258,7 +256,7 @@ float calc_loss(const cb_explore& data, const VW::example& ec, const VW::cb_labe
 {
   float loss = 0.f;
 
-  const cb_to_cs& c = data.cbcs;
+  const VW::details::cb_to_cs& c = data.cbcs;
 
   auto optional_cost = VW::get_observed_cost_cb(ld);
   // cost observed, not default
@@ -435,7 +433,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
                 .set_output_example_prediction(::output_example_prediction_cb_explore)
                 .set_print_update(::print_update_cb_explore)
                 .set_save_load(save_load)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

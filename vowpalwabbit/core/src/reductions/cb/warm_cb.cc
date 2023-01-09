@@ -21,7 +21,6 @@
 #include <vector>
 
 using namespace VW::LEARNER;
-using namespace exploration;
 using namespace VW::config;
 
 #define WARM_START 1
@@ -171,7 +170,7 @@ void copy_example_to_adf(warm_cb& data, VW::example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && eca.l.cb.is_test_label()) { eca.tag.push_back('n'); }
+    if (VW::example_is_newline_not_header_cb(eca) && eca.l.cb.is_test_label()) { eca.tag.push_back('n'); }
   }
 }
 
@@ -361,7 +360,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 
   auto& out_ec = *data.ecs[0];
   uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
+  if (VW::explore::sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
           end_scores(out_ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
@@ -633,7 +632,7 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
                 .set_learn_returns_prediction(true)
                 .set_finish_example(finish_ptr)
                 .set_finish(::finish)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

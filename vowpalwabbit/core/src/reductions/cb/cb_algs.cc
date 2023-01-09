@@ -18,14 +18,12 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-using namespace GEN_CS;
-
 namespace
 {
 class cb
 {
 public:
-  cb_to_cs cbcs;
+  VW::details::cb_to_cs cbcs;
   VW::io::logger logger;
 
   cb(VW::io::logger logger) : logger(std::move(logger)) {}
@@ -34,7 +32,7 @@ public:
 template <bool is_learn>
 void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
 {
-  cb_to_cs& c = data.cbcs;
+  VW::details::cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
@@ -47,7 +45,7 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   }
 
   // generate a cost-sensitive example to update classifiers
-  gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
+  VW::details::gen_cs_example<is_learn>(c, ec, ec.l.cb, ec.l.cs, data.logger);
 
   if (c.cb_type != VW::cb_type_t::DM)
   {
@@ -65,12 +63,12 @@ void predict_eval(cb&, single_learner&, VW::example&) { THROW("can not use a tes
 
 void learn_eval(cb& data, single_learner&, VW::example& ec)
 {
-  cb_to_cs& c = data.cbcs;
+  VW::details::cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
   // cost observed, not default
   if (optional_cost.first) { c.known_cost = optional_cost.second; }
   else { c.known_cost = VW::cb_class{}; }
-  gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
+  VW::details::gen_cs_example<true>(c, ec, ec.l.cb_eval.event, ec.l.cs, data.logger);
 
   for (size_t i = 0; i < ec.l.cb_eval.event.costs.size(); i++)
   {
@@ -88,7 +86,7 @@ void update_stats_cb_algs(const VW::workspace& /* all */, VW::shared_data& sd, c
   const auto& c = data.cbcs;
   float loss = 0.;
 
-  if (!ld.is_test_label()) { loss = CB_ALGS::get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
+  if (!ld.is_test_label()) { loss = VW::get_cost_estimate(c.known_cost, c.pred_scores, ec.pred.multiclass); }
 
   sd.update(ec.test_only, !ld.is_test_label(), loss, 1.f, ec.get_num_features());
 }
@@ -166,7 +164,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
     options.add_and_parse(new_options);
   }
 
-  cb_to_cs& c = data->cbcs;
+  VW::details::cb_to_cs& c = data->cbcs;
 
   // todo: is this being used?
   size_t problem_multiplier = 2;  // default for DR
@@ -224,7 +222,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
                 .set_update_stats(update_stats_func)
                 .set_output_example_prediction(output_example_prediction_func)
                 .set_print_update(print_update_func)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

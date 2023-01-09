@@ -47,7 +47,8 @@ static void parse_label_cb(VW::cb_label& ld, VW::label_parser_reuse_mem& reuse_m
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() > 3) { THROW("malformed cost specification: " << word); }
 
     f.partial_prediction = 0.;
-    f.action = static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
+    f.action =
+        static_cast<uint32_t>(VW::details::hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
     f.cost = FLT_MAX;
 
     if (reuse_mem.tokens.size() > 1) { f.cost = VW::details::float_of_string(reuse_mem.tokens[1], logger); }
@@ -199,13 +200,13 @@ void parse_label_cb_eval(VW::cb_eval_label& ld, VW::label_parser_reuse_mem& reus
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
-  ld.action = static_cast<uint32_t>(hashstring(words[0].data(), words[0].length(), 0));
+  ld.action = static_cast<uint32_t>(VW::details::hashstring(words[0].data(), words[0].length(), 0));
 
   // TODO - make this a span and there is no allocation
   const auto rest_of_tokens = std::vector<VW::string_view>(words.begin() + 1, words.end());
   ::parse_label_cb(ld.event, reuse_mem, rest_of_tokens, logger);
 }
-}
+}  // namespace
 
 VW::label_parser VW::cb_eval_label_parser_global = {
     // default_label

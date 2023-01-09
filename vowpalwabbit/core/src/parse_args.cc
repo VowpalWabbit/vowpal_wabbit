@@ -617,7 +617,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.example_parser->hasher = get_hasher(hash_function);
+  all.example_parser->hasher = VW::get_hasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -737,8 +737,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
-          [](const std::vector<VW::namespace_index>& interaction)
-          { return INTERACTIONS::contains_wildcard(interaction); });
+          [](const std::vector<VW::namespace_index>& interaction) { return VW::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
         all.logger.err_warn(
@@ -748,12 +747,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
 
     // Sorts the overall list
-    std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
+    std::sort(decoded_interactions.begin(), decoded_interactions.end(), VW::details::sort_interactions_comparator);
 
     size_t removed_cnt = 0;
     size_t sorted_cnt = 0;
     // Sorts individual interactions
-    INTERACTIONS::sort_and_filter_duplicate_interactions(
+    VW::details::sort_and_filter_duplicate_interactions(
         decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0 && !all.quiet)

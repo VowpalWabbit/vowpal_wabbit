@@ -54,7 +54,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
     VW::details::generate_interactions_object_cache& cache)  // default value removed to eliminate
                                                              // ambiguity in old complers
 {
-  INTERACTIONS::generate_interactions<DataT, WeightOrIndexT, FuncT, false, dummy_func<DataT>, WeightsT>(
+  VW::generate_interactions<DataT, WeightOrIndexT, FuncT, false, dummy_func<DataT>, WeightsT>(
       interactions, extent_interactions, permutations, ec, dat, weights, num_interacted_features, cache);
 }
 

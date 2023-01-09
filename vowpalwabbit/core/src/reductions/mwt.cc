@@ -19,10 +19,9 @@
 #include <cmath>
 
 using namespace VW::LEARNER;
-using namespace CB_ALGS;
 using namespace VW::config;
 
-void MWT::print_scalars(
+void VW::details::print_scalars(
     VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
@@ -186,7 +185,10 @@ void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const
 void output_example_prediction_mwt(
     VW::workspace& all, const mwt& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
+  for (auto& sink : all.final_prediction_sink)
+  {
+    VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  }
 }
 
 void print_update_mwt(
@@ -315,11 +317,15 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_or_learn<false, false, false>;
   }
 
-  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
-      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
+  base_learner* base = stack_builder.setup_base_learner();
+
+  auto* l = make_reduction_learner(
+      std::move(c), as_singleline(base), learn_ptr, pred_ptr, stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                 .set_learn_returns_prediction(true)
+                .set_input_prediction_type(base->get_output_prediction_type())
                 .set_output_prediction_type(VW::prediction_type_t::SCALARS)
                 .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(base->get_input_label_type())
                 .set_save_load(save_load)
                 .set_output_example_prediction(::output_example_prediction_mwt)
                 .set_update_stats(::update_stats_mwt)

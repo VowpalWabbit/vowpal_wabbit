@@ -51,10 +51,10 @@ void cb_explore_adf_softmax::predict_or_learn_impl(VW::LEARNER::multi_learner& b
   VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
   VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
-  exploration::generate_softmax(
+  VW::explore::generate_softmax(
       -_lambda, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
 
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 }  // namespace
 VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_softmax_setup(VW::setup_base_i& stack_builder)
@@ -108,6 +108,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_softmax_setup(VW::setu
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

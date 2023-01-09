@@ -376,10 +376,9 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_input_label_type(VW::label_type_t::CB)
                         .set_output_label_type(VW::label_type_t::CB)
-                        .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                        .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                         .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                         .set_params_per_weight(model_count)
-                        .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_epsilon_decay)
                         .set_finish(::finish)
                         .build();

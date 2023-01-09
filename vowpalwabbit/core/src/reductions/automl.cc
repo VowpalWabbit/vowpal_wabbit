@@ -182,9 +182,9 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
   // GD::gd& gd = *static_cast<GD::gd*>(
   //     base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
   auto& adf_data =
-      *static_cast<CB_ADF::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
-  // data->cm->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
-  // data->cm->_gd_total_weight = &(gd.per_model_states[0].total_weight);
+      *static_cast<VW::reductions::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
+  //data->cm->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
+  //data->cm->_gd_total_weight = &(gd.per_model_states[0].total_weight);
   data->cm->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
   data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
   // data->cm->_sd_gravity = &(all.sd->gravity);
@@ -193,13 +193,12 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
       predict_automl<config_manager_type, true>,
       stack_builder.get_setupfn_name(VW::reductions::automl_setup))
                 .set_params_per_weight(ppw)  // refactor pm
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_input_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_label_type(VW::label_type_t::CB)
                 .set_save_load(save_load_automl)
                 .set_persist_metrics(persist_ptr)
-                .set_output_prediction_type(base_learner->get_output_prediction_type())
                 .set_learn_returns_prediction(true)
                 .set_pre_save_load(pre_save_load_automl)
                 .build();

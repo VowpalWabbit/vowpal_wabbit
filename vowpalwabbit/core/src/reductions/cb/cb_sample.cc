@@ -82,7 +82,7 @@ public:
       if (tag_provided_seed) { seed = VW::uniform_hash(tag_seed.data(), tag_seed.size(), 0); }
 
       // Sampling is done after the base learner has generated a pdf.
-      auto result = exploration::sample_after_normalizing(
+      auto result = VW::explore::sample_after_normalizing(
           seed, VW::begin_scores(action_scores), VW::end_scores(action_scores), chosen_action);
       assert(result == S_EXPLORATION_OK);
       _UNUSED(result);
@@ -91,7 +91,7 @@ public:
       if (!tag_provided_seed) { _random_state->get_and_update_random(); }
     }
 
-    auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
+    auto result = VW::explore::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
     assert(result == S_EXPLORATION_OK);
 
     VW_DBG(examples) << "cb " << cb_decision_to_string(examples[0]->pred.a_s)
@@ -139,6 +139,6 @@ base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_learn_returns_prediction(true)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

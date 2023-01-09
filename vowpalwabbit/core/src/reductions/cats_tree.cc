@@ -257,7 +257,8 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
         if (ec.weight < weight_th)
         {
           // generate a new seed
-          uint64_t new_random_seed = VW::uniform_hash(&app_seed, sizeof(app_seed), app_seed);
+          uint64_t new_random_seed = VW::uniform_hash(
+              reinterpret_cast<const char*>(&app_seed), sizeof(app_seed), static_cast<uint32_t>(app_seed));
           // pick a uniform random number between 0.0 - .001f
           float random_draw = merand48(new_random_seed) * weight_th;
           if (random_draw < ec.weight) { ec.weight = weight_th; }
@@ -366,8 +367,10 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
   auto* l = make_reduction_learner(
       std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
                 .set_params_per_weight(params_per_weight)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .build();
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return make_base(*l);

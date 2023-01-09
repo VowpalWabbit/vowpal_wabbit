@@ -95,8 +95,10 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))
                       .set_learn_returns_prediction(base->learn_returns_prediction)
+                      .set_input_prediction_type(base->get_output_prediction_type())
                       .set_output_prediction_type(base->get_output_prediction_type())
                       .set_input_label_type(label_type_t::SIMPLE)
+                      .set_output_label_type(label_type_t::SIMPLE)
                       .build();
   return VW::LEARNER::make_base(*learner);
 }
