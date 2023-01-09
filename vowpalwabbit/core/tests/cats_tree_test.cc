@@ -246,7 +246,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblings)
   delete base;
 }
 
-TEST(CatsTree, OtcAlgoLearn_2ActionNotSiblingsBandwidth1)
+TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -314,7 +314,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate)
   delete base;
 }
 
-TEST(CatsTree, OtcAlgoLearn_2ActionSeparate2)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparate2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -346,7 +346,7 @@ TEST(CatsTree, OtcAlgoLearn_2ActionSeparate2)
   delete base;
 }
 
-TEST(CatsTree, OtcAlgoLearn_2ActionSeparateBandwidth2)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -378,7 +378,7 @@ TEST(CatsTree, OtcAlgoLearn_2ActionSeparateBandwidth2)
   delete base;
 }
 
-TEST(CatsTree, OtcAlgoLearn_2ActionSeparate_2Bandwidth2)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparate2Bandwidth2)
 {
   VW::example ec;
   ec.ft_offset = 0;
@@ -410,7 +410,7 @@ TEST(CatsTree, OtcAlgoLearn_2ActionSeparate_2Bandwidth2)
   delete base;
 }
 
-TEST(CatsTree, OtcAlgoLearn_2ActionSeparateBandwidth1Asym)
+TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth1Asym)
 {
   VW::example ec;
   ec.ft_offset = 0;
