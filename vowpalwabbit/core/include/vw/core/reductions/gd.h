@@ -199,14 +199,14 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
 {
   if (all.weights.sparse)
   {
-    VW::generate_interactions<R, S, T, audit, audit_func, VW::sparse_parameters>(*ec.interactions, *ec.extent_interactions,
-        all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
+    VW::generate_interactions<R, S, T, audit, audit_func, VW::sparse_parameters>(*ec.interactions,
+        *ec.extent_interactions, all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all.generate_interactions_object_cache_state);
   }
   else
   {
-    VW::generate_interactions<R, S, T, audit, audit_func, VW::dense_parameters>(*ec.interactions, *ec.extent_interactions,
-        all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
+    VW::generate_interactions<R, S, T, audit, audit_func, VW::dense_parameters>(*ec.interactions,
+        *ec.extent_interactions, all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all.generate_interactions_object_cache_state);
   }
 }
@@ -217,13 +217,15 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
 {
   if (all.weights.sparse)
   {
-    VW::generate_interactions<R, S, T, VW::sparse_parameters>(all.interactions, all.extent_interactions, all.permutations,
-        ec, dat, all.weights.sparse_weights, num_interacted_features, all.generate_interactions_object_cache_state);
+    VW::generate_interactions<R, S, T, VW::sparse_parameters>(all.interactions, all.extent_interactions,
+        all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
+        all.generate_interactions_object_cache_state);
   }
   else
   {
-    VW::generate_interactions<R, S, T, VW::dense_parameters>(all.interactions, all.extent_interactions, all.permutations,
-        ec, dat, all.weights.dense_weights, num_interacted_features, all.generate_interactions_object_cache_state);
+    VW::generate_interactions<R, S, T, VW::dense_parameters>(all.interactions, all.extent_interactions,
+        all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
+        all.generate_interactions_object_cache_state);
   }
 }
 
