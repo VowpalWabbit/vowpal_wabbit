@@ -429,7 +429,7 @@ size_t my_get_label_type(VW::workspace* all)
   else if (lp->parse_label == VW::ccb_label_parser_global.parse_label) { return lCONDITIONAL_CONTEXTUAL_BANDIT; }
   else if (lp->parse_label == VW::slates::slates_label_parser.parse_label) { return lSLATES; }
   else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label) { return lCONTINUOUS; }
-  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTILABEL; }
+  else if (lp->parse_label == VW::multilabel_label_parser_global.parse_label) { return lMULTILABEL; }
   else { THROW("unsupported label parser used"); }
 }
 
