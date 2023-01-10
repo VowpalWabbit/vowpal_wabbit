@@ -110,6 +110,7 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   VW::reductions::cats::cats_tree tree;
   tree.init(num_leaves, bandwidth);
   VW::example ec;
+  test_base->max_ft_offset = tree.learner_count();
   auto ret_val = tree.predict(*as_singleline(test_base), ec);
   EXPECT_EQ(ret_val, expected_action);
   delete test_base;
@@ -136,6 +137,7 @@ TEST(CatsTree, OtcAlgoLearn1ActionTillRoot)
   ec.l.cb = VW::cb_label();
   ec.l.cb.costs.push_back(VW::cb_class{3.5f, 2, 0.5f});
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -166,6 +168,7 @@ TEST(CatsTree, OtcAlgoLearn1Action)
   ec.l.cb = VW::cb_label();
   ec.l.cb.costs.push_back(VW::cb_class{3.5f, 2, 0.5f});
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -198,6 +201,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSiblings)
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -230,6 +234,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblings)
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -262,6 +267,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 1);
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -298,6 +304,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate)
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -330,6 +337,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate2)
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -362,6 +370,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth2)
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 2);
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -394,6 +403,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate2Bandwidth2)
   VW::reductions::cats::cats_tree tree;
   tree.init(16, 2);
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
@@ -426,6 +436,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth1Asym)
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 1);
 
+  base->max_ft_offset = tree.learner_count();
   tree.learn(*as_singleline(base), ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
