@@ -212,7 +212,7 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
 
   {
     // No interactions, few features
-    auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf --large_action_space --quiet"));
+    auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--quiet"));
     VW::multi_ex examples;
     examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/5)));
     auto* ex = examples[0];
@@ -229,7 +229,7 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
   }
   {
     // No interactions, many features
-    auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf --large_action_space --quiet"));
+    auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--quiet"));
     VW::multi_ex examples;
     examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/50)));
     auto* ex = examples[0];
