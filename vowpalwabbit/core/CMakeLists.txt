@@ -11,6 +11,7 @@ set(vw_core_headers
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
   include/vw/core/cb_continuous_label.h
+  include/vw/core/cb_graph_feedback_reduction_features.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
   include/vw/core/daemon_utils.h
@@ -432,6 +433,7 @@ vw_add_test_executable(
       tests/cats_tree_test.cc
       tests/cats_user_provided_pdf.cc
       tests/cb_explore_adf_test.cc
+      tests/cb_graph_feedback_label_text_parse_test.cc
       tests/cb_large_actions_test.cc
       tests/cb_las_one_pass_svd_test.cc
       tests/cb_las_spanner_test.cc
