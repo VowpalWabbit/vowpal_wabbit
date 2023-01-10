@@ -268,17 +268,38 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 
   if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end()) { args_vec.push_back("--no_stdin"); }
 
-  trace_message_t trace_listener = nullptr;
+  driver_output_func_t trace_listener = nullptr;
   void* trace_context = nullptr;
 
+  VW::io::logger* logger_ptr = nullptr;
   if (py_log)
   {
     trace_listener = (py_log_wrapper::trace_listener_py);
     trace_context = py_log.get();
+
+    const auto log_function = [](void* context, VW::io::log_level level, const std::string& message) {
+      _UNUSED(level);
+      auto logger = static_cast<py_log_wrapper*>(context);
+      try
+      {
+        auto inst = static_cast<py_log_wrapper*>(wrapper);
+        inst->py_log.attr("log")(message);
+      }
+      catch (...)
+      {
+        // TODO: Properly translate and return Python exception. #2169
+        PyErr_Print();
+        PyErr_Clear();
+        std::cerr << "error using python logging. ignoring." << std::endl;
+      }
+    }
+
+    auto custom_logger = VW::io::create_custom_sink_logger(py_log.get(), log_function);
+    logger_ptr = &custom_logger;
   }
 
   auto options = VW::make_unique<VW::config::options_cli>(args_vec);
-  auto foo = VW::initialize(std::move(options), nullptr, false, trace_listener, trace_context);
+  auto foo = VW::initialize(std::move(options), nullptr, trace_listener, trace_context, logger_ptr);
   return boost::shared_ptr<VW::workspace>(foo.release());
 }
 

@@ -97,8 +97,9 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nul
  * VW::split_command_line() can be used to split the string similar to how a
  * shell would
  * \code
- * auto all = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line("--cb_explore_adf
- * --epsilon=0.1 --quadratic=::"))); \endcode
+ * auto all = VW::initialize(VW::make_unique<VW::config::options_cli>(
+ *   VW::split_command_line("--cb_explore_adf --epsilon=0.1 --quadratic=::")));
+ * \endcode
  *
  * **Note:** You used to need to call VW::finish() to free the workspace. This is no
  * longer needed and the destructor will free the workspace. However,
