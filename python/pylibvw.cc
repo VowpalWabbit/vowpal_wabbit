@@ -277,7 +277,8 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
     trace_listener = (py_log_wrapper::trace_listener_py);
     trace_context = py_log.get();
 
-    const auto log_function = [](void* context, VW::io::log_level level, const std::string& message) {
+    const auto log_function = [](void* context, VW::io::log_level level, const std::string& message)
+    {
       _UNUSED(level);
       try
       {
