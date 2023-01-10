@@ -358,7 +358,7 @@ py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
   return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
-void my_audit_example(vw_ptr all, example_ptr ec) { GD::print_audit_features(*all, *ec); }
+void my_audit_example(vw_ptr all, example_ptr ec) { VW::details::print_audit_features(*all, *ec); }
 
 const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
 

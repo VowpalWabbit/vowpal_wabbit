@@ -55,7 +55,7 @@ inline float compute_dot_prod_scalar(uint64_t col, VW::workspace* _all, uint64_t
 
   AO_triplet_constructor tc(_all->weights.mask(), col, _seed, final_dot_prod);
 
-  GD::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+  VW::foreach_feature<AO_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
       _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
       (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
       (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
