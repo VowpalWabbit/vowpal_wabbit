@@ -184,7 +184,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
   auto ppw = max_live_configs;
   auto* persist_ptr = verbose_metrics ? persist<config_manager_type, true> : persist<config_manager_type, false>;
   data->adf_learner = as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
-  GD::gd& gd = *static_cast<GD::gd*>(
+  VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
       base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
   auto& adf_data =
       *static_cast<VW::reductions::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
