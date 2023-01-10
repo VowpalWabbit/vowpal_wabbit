@@ -46,7 +46,7 @@ public:
   VW::ccb_label conditional_contextual_bandit;
   VW::slates::label slates;
   VW::cb_eval_label cb_eval;
-  MULTILABEL::labels multilabels;
+  VW::multilabel_label multilabels;
 };
 
 struct no_pred
@@ -70,7 +70,7 @@ public:
   VW::action_scores a_s;       // a sequence of classes with scores.  Also used for probabilities.
   VW::decision_scores_t decision_scores;
   uint32_t multiclass = 0;
-  MULTILABEL::labels multilabels;
+  VW::multilabel_prediction multilabels;
   float prob = 0.f;                                          // for --probabilities --csoaa_ldf=mc
   VW::continuous_actions::probability_density_function pdf;  // probability density defined over an action range
   VW::continuous_actions::probability_density_function_value pdf_value;  // probability density value for a given action

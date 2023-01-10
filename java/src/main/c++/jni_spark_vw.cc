@@ -644,7 +644,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiL
 
   try
   {
-    MULTILABEL::labels* ld = &ex->l.multilabels;
+    auto* ld = &ex->l.multilabels;
 
     CriticalArrayGuard classesGuard(env, classes);
     int* classes0 = (int*)classesGuard.data();

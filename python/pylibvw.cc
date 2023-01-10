@@ -412,7 +412,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
     case lCONTEXTUAL_BANDIT_EVAL:
       return &VW::cb_eval_label_parser_global;
     case lMULTILABEL:
-      return &MULTILABEL::multilabel;
+      return &VW::multilabel_label_parser_global;
     default:
       THROW("get_label_parser called on invalid label type");
   }
@@ -429,7 +429,7 @@ size_t my_get_label_type(VW::workspace* all)
   else if (lp->parse_label == VW::ccb_label_parser_global.parse_label) { return lCONDITIONAL_CONTEXTUAL_BANDIT; }
   else if (lp->parse_label == VW::slates::slates_label_parser.parse_label) { return lSLATES; }
   else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label) { return lCONTINUOUS; }
-  else if (lp->parse_label == MULTILABEL::multilabel.parse_label) { return lMULTILABEL; }
+  else if (lp->parse_label == VW::multilabel_label_parser_global.parse_label) { return lMULTILABEL; }
   else { THROW("unsupported label parser used"); }
 }
 
@@ -914,7 +914,7 @@ py::tuple ex_get_active_multiclass(example_ptr ec)
 py::list ex_get_multilabel_predictions(example_ptr ec)
 {
   py::list values;
-  MULTILABEL::labels labels = ec->pred.multilabels;
+  const auto& labels = ec->pred.multilabels;
 
   for (uint32_t l : labels.label_v) { values.append(l); }
   return values;

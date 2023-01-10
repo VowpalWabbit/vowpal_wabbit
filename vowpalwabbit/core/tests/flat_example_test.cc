@@ -13,7 +13,7 @@
 
 TEST(FlatExample, SansInteractionTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--noconstant"));
 
   auto* ex = VW::read_example(*vw, "1 |x a:2 |y b:3");
   auto& flat = *VW::flatten_sort_example(*vw, ex);
@@ -27,7 +27,7 @@ TEST(FlatExample, SansInteractionTest)
 
 TEST(FlatExample, WithInteractionTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--interactions", "xy", "--quiet", "--noconstant"));
+  auto vw = VW::initialize(vwtest::make_args("--interactions", "xy", "--quiet", "--noconstant"));
 
   auto* ex = VW::read_example(*vw, "1 |x a:2 |y b:3");
   auto& flat = *VW::flatten_sort_example(*vw, ex);
@@ -41,7 +41,7 @@ TEST(FlatExample, WithInteractionTest)
 
 TEST(FlatExample, EmptyExampleTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--noconstant"));
 
   auto* ex = VW::read_example(*vw, "1 |x a:0");
   auto& flat = *VW::flatten_sort_example(*vw, ex);

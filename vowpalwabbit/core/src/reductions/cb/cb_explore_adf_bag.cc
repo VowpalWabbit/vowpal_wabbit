@@ -212,6 +212,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
                 .set_update_stats(::update_stats_bag)
                 .set_print_update(::print_update_bag)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

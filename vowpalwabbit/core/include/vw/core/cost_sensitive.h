@@ -58,6 +58,29 @@ void finish_cs_example(VW::workspace& all, T&, VW::example& ec)
 }
 void print_cs_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool multilabel, uint32_t prediction);
+
+void update_stats_cs_label(const VW::workspace& all, shared_data& sd, const VW::example& ec, VW::io::logger& logger);
+void output_example_prediction_cs_label(VW::workspace& all, const VW::example& ec, VW::io::logger& logger);
+void print_update_cs_label(VW::workspace& all, shared_data& sd, const VW::example& ec, VW::io::logger& logger);
+
+template <typename UnusedDataT>
+void update_stats_cs_label(const VW::workspace& all, shared_data& sd, const UnusedDataT& /* unused */,
+    const VW::example& ec, VW::io::logger& logger)
+{
+  update_stats_cs_label(all, sd, ec, logger);
+}
+template <typename UnusedDataT>
+void output_example_prediction_cs_label(
+    VW::workspace& all, const UnusedDataT& /* unused */, const VW::example& ec, VW::io::logger& logger)
+{
+  output_example_prediction_cs_label(all, ec, logger);
+}
+template <typename UnusedDataT>
+void print_update_cs_label(
+    VW::workspace& all, shared_data& sd, const UnusedDataT& /* unused */, const VW::example& ec, VW::io::logger& logger)
+{
+  print_update_cs_label(all, sd, ec, logger);
+}
 }  // namespace details
 }  // namespace VW
 
