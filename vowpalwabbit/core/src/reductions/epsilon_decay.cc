@@ -385,7 +385,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   // to make sure there are not subtle bugs
   auto* base_learner = stack_builder.setup_base_learner();
 
-  GD::gd& gd = *static_cast<GD::gd*>(
+  VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
       base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
   auto& adf_data =
       *static_cast<VW::reductions::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))

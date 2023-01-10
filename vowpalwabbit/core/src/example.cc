@@ -122,7 +122,7 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
   else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
-  GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
+  VW::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);
 
