@@ -98,7 +98,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
     // For each nonzero feature in observed namespaces, check it's value.
     for (unsigned char ns : ec.indices)
     {
-      if (c.namespaces[ns]) { GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c); }
+      if (c.namespaces[ns]) { VW::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c); }
     }
     for (uint64_t policy : c.policies)
     {

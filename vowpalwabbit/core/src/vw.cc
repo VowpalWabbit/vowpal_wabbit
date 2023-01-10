@@ -844,7 +844,7 @@ VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_n
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
   fs.mask = all.weights.mask() >> all.weights.stride_shift();
-  GD::foreach_feature<::features_and_source, uint64_t, vec_store>(all, *ec, fs);
+  VW::foreach_feature<::features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
   auto* features_array = new feature[fs.feature_map.size()];
   std::memcpy(features_array, fs.feature_map.data(), fs.feature_map.size() * sizeof(feature));
