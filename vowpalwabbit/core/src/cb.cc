@@ -7,6 +7,7 @@
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/cb_graph_feedback_reduction_features.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
@@ -30,17 +31,52 @@ std::pair<bool, VW::cb_class> VW::get_observed_cost_cb(const VW::cb_label& ld)
   return std::make_pair(false, VW::cb_class{});
 }
 
-static void parse_label_cb(VW::cb_label& ld, VW::label_parser_reuse_mem& reuse_mem,
-    const std::vector<VW::string_view>& words, VW::io::logger& logger)
+// this is an experimental input for the experimental graph feedback reduction to be added
+void parse_graph_feedback_matrix(const std::vector<VW::string_view>& words, size_t current_word_index,
+    VW::label_parser_reuse_mem& reuse_mem, VW::reduction_features& red_features, VW::io::logger& logger)
+{
+  auto& graph_reduction_features = red_features.template get<VW::cb_graph_feedback::reduction_features>();
+
+  // example: shared graph 0,1,5 2,4,5 0,2,5 |
+  // here we only process the triplets
+
+  for (size_t i = current_word_index; i < words.size(); i++)
+  {
+    VW::tokenize(',', words[i], reuse_mem.tokens);
+
+    if (reuse_mem.tokens.empty() ||
+        (reuse_mem.tokens.size() == 1 && reuse_mem.tokens[0].size() > 0 &&
+            (reuse_mem.tokens[0][0] == ' ' || reuse_mem.tokens[0][0] == '|')))
+    {
+      // this check is necessary in order to check if an incomplete tripet was given or if we have reached the end of
+      // the label
+      return;
+    }
+    if (reuse_mem.tokens.size() != 3)
+    {
+      THROW("malformed example, graph expects triplets but was given an input with: " << reuse_mem.tokens.size()
+                                                                                      << " elements");
+    }
+
+    auto row = VW::details::int_of_string(reuse_mem.tokens[0], logger);
+    auto col = VW::details::int_of_string(reuse_mem.tokens[1], logger);
+    auto val = VW::details::float_of_string(reuse_mem.tokens[2], logger);
+    graph_reduction_features.push_triplet(row, col, val);
+  }
+}
+
+static void parse_label_cb(VW::cb_label& ld, VW::reduction_features& red_features,
+    VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   ld.weight = 1.0;
 
-  for (auto const& word : words)
+  for (size_t i = 0; i < words.size(); i++)
   {
     // Format is the following:
     // <action>:<cost>:<probability> | shared
     // for example "1:2:0.5"
     // action = 1, cost = 2, probability = 0.5
+    const auto& word = words[i];
     VW::cb_class f;
     VW::tokenize(':', word, reuse_mem.tokens);
 
@@ -71,10 +107,21 @@ static void parse_label_cb(VW::cb_label& ld, VW::label_parser_reuse_mem& reuse_m
       logger.err_warn("invalid probability < 0 specified for an action, resetting to 0.");
       f.probability = .0;
     }
-    if (reuse_mem.tokens[0] == "shared")
+    if (reuse_mem.tokens[0] == VW::details::SHARED_TYPE)
     {
       if (reuse_mem.tokens.size() == 1) { f.probability = -1.f; }
       else { logger.err_warn("shared feature vectors should not have costs"); }
+    }
+    if (reuse_mem.tokens[0] == VW::details::GRAPH_FEEDBACK_TYPE)
+    {
+      if (ld.costs.size() < 1 || ld.costs.back().probability != -1.f)
+      {
+        THROW("malformed example, graph should only be present after shared")
+      }
+      // graph provided in shared example label
+      // example: shared graph 0,1,5 2,4,5 0,2,5 |
+      parse_graph_feedback_matrix(words, i + 1, reuse_mem, red_features, logger);
+      return;
     }
 
     ld.costs.push_back(f);
@@ -85,9 +132,9 @@ VW::label_parser VW::cb_label_parser_global = {
     // default_label
     [](VW::polylabel& label) { label.cb.reset_to_default(); },
     // parse_label
-    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
+    [](VW::polylabel& label, VW::reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
-    { ::parse_label_cb(label.cb, reuse_mem, words, logger); },
+    { ::parse_label_cb(label.cb, red_features, reuse_mem, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/, VW::io_buf& cache,
         const std::string& upstream_name, bool text)
@@ -195,8 +242,8 @@ void default_label_cb_eval(VW::cb_eval_label& ld)
 
 bool test_label_cb_eval(const VW::cb_eval_label& ld) { return ld.event.is_test_label(); }
 
-void parse_label_cb_eval(VW::cb_eval_label& ld, VW::label_parser_reuse_mem& reuse_mem,
-    const std::vector<VW::string_view>& words, VW::io::logger& logger)
+void parse_label_cb_eval(VW::cb_eval_label& ld, VW::reduction_features& red_features,
+    VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
@@ -204,7 +251,7 @@ void parse_label_cb_eval(VW::cb_eval_label& ld, VW::label_parser_reuse_mem& reus
 
   // TODO - make this a span and there is no allocation
   const auto rest_of_tokens = std::vector<VW::string_view>(words.begin() + 1, words.end());
-  ::parse_label_cb(ld.event, reuse_mem, rest_of_tokens, logger);
+  ::parse_label_cb(ld.event, red_features, reuse_mem, rest_of_tokens, logger);
 }
 }  // namespace
 
@@ -212,9 +259,9 @@ VW::label_parser VW::cb_eval_label_parser_global = {
     // default_label
     [](VW::polylabel& label) { default_label_cb_eval(label.cb_eval); },
     // parse_label
-    [](VW::polylabel& label, VW::reduction_features& /*red_features*/, VW::label_parser_reuse_mem& reuse_mem,
+    [](VW::polylabel& label, VW::reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
         const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
-    { parse_label_cb_eval(label.cb_eval, reuse_mem, words, logger); },
+    { parse_label_cb_eval(label.cb_eval, red_features, reuse_mem, words, logger); },
     // cache_label
     [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/, VW::io_buf& cache,
         const std::string& upstream_name, bool text)
