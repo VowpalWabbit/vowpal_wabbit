@@ -228,7 +228,7 @@ static void benchmark_multi_predict(
 {
   auto args = VW::split_command_line(cmd);
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
-  std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+  std::vector<multi_ex> examples_vec = load_examples(vw.get(), examples_str);
 
   for (multi_ex examples : examples_vec) { vw->learn(examples); }
 

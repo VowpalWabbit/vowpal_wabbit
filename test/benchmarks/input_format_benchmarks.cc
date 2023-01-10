@@ -68,11 +68,11 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
   VW::multi_ex examples;
   io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
-  examples.push_back(&VW::get_unused_example(vw));
+  examples.push_back(&VW::get_unused_example(vw.get()));
 
   for (auto _ : state)
   {
-    vw->example_parser->reader(vw, buffer, examples);
+    vw->example_parser->reader(vw.get(), buffer, examples);
     VW::empty_example(*vw, *examples[0]);
     buffer.reset();
     benchmark::ClobberMemory();
