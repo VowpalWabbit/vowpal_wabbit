@@ -13,7 +13,7 @@
 #include "vw/core/loss_functions.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/print_utils.h"
-#include "vw/core/reductions/gd.h"  // GD::foreach_feature() needed in subtract_example()
+#include "vw/core/reductions/gd.h"  // VW::foreach_feature() needed in subtract_example()
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -78,7 +78,7 @@ void subtract_example(VW::workspace& all, VW::example* ec, VW::example* ecsub)
 {
   auto& wap_fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   wap_fs.sum_feat_sq = 0;
-  GD::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
+  VW::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(VW::details::WAP_LDF_NAMESPACE);
   ec->num_features += wap_fs.size();
   ec->reset_total_sum_feat_sq();

@@ -61,7 +61,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer(
 
 TEST(FlatbufferParser, FlatbufferStandaloneExample)
 {
-  auto all = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
   flatbuffers::FlatBufferBuilder builder;
 
@@ -103,7 +103,7 @@ TEST(FlatbufferParser, FlatbufferStandaloneExample)
 
 TEST(FlatbufferParser, FlatbufferCollection)
 {
-  auto all = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
   flatbuffers::FlatBufferBuilder builder;
 

@@ -25,7 +25,7 @@ TEST(CsvParser, ComplexCsvSimpleLabelExamples)
       // Example 2
       "\f0,4.9,3.0,-1.4,\"2\",0x6E,'te\"\"st,1.0,-2,\v";
 
-  auto vw = VW::initialize_experimental(
+  auto vw = VW::initialize(
       vwtest::make_args("--no_stdin", "--quiet", "-a", "--csv", "--csv_ns_value", "sepal:-2.2,petal:2,sepal1:1"));
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -150,7 +150,7 @@ TEST(CsvParser, MultipleFileExamples)
    * Equivalent VW Text format:
    * 4 a| a:1 b:2 c:3
    */
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_separator", "\\t"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_separator", "\\t"));
 
   VW::io_buf buffer;
   VW::multi_ex examples;
@@ -220,8 +220,8 @@ TEST(CsvParser, MulticlassExamples)
       // Example 2
       "2;3.0is;2test;NaN\n";
 
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "-a", "--csv", "--csv_separator",
-      ";", "--chain_hash", "--named_labels", "2test,1test", "--oaa", "2"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "-a", "--csv", "--csv_separator", ";",
+      "--chain_hash", "--named_labels", "2test,1test", "--oaa", "2"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -296,7 +296,7 @@ TEST(CsvParser, ReplaceHeader)
       // Example 1
       "1$2$3$4\n";
 
-  auto vw = VW::initialize_experimental(
+  auto vw = VW::initialize(
       vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_separator", "$", "--csv_header", ",,_label,"));
 
   VW::io_buf buffer;
@@ -341,8 +341,8 @@ TEST(CsvParser, NoHeader)
   std::string example_string =
       // Example 1
       "1&2&3&4\n";
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "-a", "--csv", "--csv_separator",
-      "&", "--csv_no_file_header", "--csv_header", "n1|a,_label,n1|b,a"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "-a", "--csv", "--csv_separator", "&",
+      "--csv_no_file_header", "--csv_header", "n1|a,_label,n1|b,a"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -391,7 +391,7 @@ TEST(CsvParser, EmptyHeaderAndExampleLine)
       // New line
       ",,,\n";
 
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -412,7 +412,7 @@ TEST(CsvParser, EmptyLineErrorThrown)
       // Empty line
       "\n";
 
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -429,7 +429,7 @@ TEST(CsvParser, ForbiddenCsvSeparatorErrorThrown)
   std::vector<std::string> csv_separator_forbid_chars = {"\"", "|", ":"};
   for (const std::string& csv_separator_forbid_char : csv_separator_forbid_chars)
   {
-    EXPECT_THROW(VW::initialize_experimental(
+    EXPECT_THROW(VW::initialize(
                      vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_separator", csv_separator_forbid_char)),
         VW::vw_exception);
   }
@@ -438,20 +438,19 @@ TEST(CsvParser, ForbiddenCsvSeparatorErrorThrown)
 TEST(CsvParser, MulticharacterCsvSeparatorErrorThrown)
 {
   EXPECT_THROW(
-      VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_separator", "\\a")),
-      VW::vw_exception);
+      VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_separator", "\\a")), VW::vw_exception);
 }
 
 TEST(CsvParser, NoHeaderWithoutSpecifyingErrorThrown)
 {
-  EXPECT_THROW(VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_no_file_header")),
-      VW::vw_exception);
+  EXPECT_THROW(
+      VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_no_file_header")), VW::vw_exception);
 }
 
 TEST(CsvParser, MalformedNamespaceValuePairNoElementErrorThrown)
 {
   std::string example_string = " \n";
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_ns_value", ":5,"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_ns_value", ":5,"));
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
@@ -464,7 +463,7 @@ TEST(CsvParser, MalformedNamespaceValuePairNoElementErrorThrown)
 TEST(CsvParser, MalformedNamespaceValuePairOneElementErrorThrown)
 {
   std::string example_string = " \n";
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_ns_value", "a:5,0"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_ns_value", "a:5,0"));
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
@@ -477,8 +476,7 @@ TEST(CsvParser, MalformedNamespaceValuePairOneElementErrorThrown)
 TEST(CsvParser, MalformedNamespaceValuePairThreeElementErrorThrown)
 {
   std::string example_string = " \n";
-  auto vw =
-      VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_ns_value", "c:5,b:a:6"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_ns_value", "c:5,b:a:6"));
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
@@ -491,7 +489,7 @@ TEST(CsvParser, MalformedNamespaceValuePairThreeElementErrorThrown)
 TEST(CsvParser, NanNamespaceValueErrorThrown)
 {
   std::string example_string = " \n";
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_ns_value", "c:a"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--csv_ns_value", "c:a"));
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
@@ -508,7 +506,7 @@ TEST(CsvParser, MalformedHeaderErrorThrown)
       "a,b|c|d,_label\n"
       "1,2,3\n";
 
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -530,7 +528,7 @@ TEST(CsvParser, UnmatchingElementErrorThrown)
       // Example 2 has 4 elements
       "3,4,5,6\n";
 
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -549,7 +547,7 @@ TEST(CsvParser, UnmatchingQuotesErrorThrown)
       // Malformed Header
       "abc,\"bd\"e,_label\n";
 
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -566,7 +564,7 @@ TEST(CsvParser, QuotesEolErrorThrown)
   std::string example_string =
       // Malformed Header
       "abc,\"bd\"\"e,_label\n";
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
@@ -608,7 +606,7 @@ TEST(CsvParser, MultilineExamples)
       ",0.5,2,1,,,\n"
       ",,,,,,\n";
 
-  auto vw = VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--cb_adf"));
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--csv", "--cb_adf"));
 
   VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));

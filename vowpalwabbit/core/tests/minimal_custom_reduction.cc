@@ -8,6 +8,7 @@
 // this test is a copy from unit_test/prediction_test.cc
 // it adds a noop reduction on top
 
+#include "vw/config/options_cli.h"
 #include "vw/core/learner.h"
 #include "vw/core/reduction_stack.h"
 #include "vw/core/vw.h"
@@ -97,7 +98,7 @@ TEST(MinimalReduction, MinimalReductionTest)
 {
   minimal_reduction::reset_test_state();
 
-  std::string sgd_args = "--quiet --sgd --noconstant --learning_rate 0.1";
+  const std::vector<std::string> sgd_args = {"--quiet", "--sgd", "--noconstant", "--learning_rate", "0.1"};
 
   float prediction_one;
   {
@@ -105,25 +106,25 @@ TEST(MinimalReduction, MinimalReductionTest)
 
     EXPECT_TRUE(minimal_reduction::added_to_learner == false);
     EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
-    auto& vw = *VW::initialize_with_builder(sgd_args, nullptr, false, nullptr, nullptr, std::move(learner_builder));
+    auto vw = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(sgd_args), nullptr, nullptr, nullptr,
+        nullptr, std::move(learner_builder));
     EXPECT_TRUE(minimal_reduction::added_to_learner);
     EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
 
-    auto& pre_learn_predict_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
-    auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
-    auto& predict_example = *VW::read_example(vw, "| 1:1.0");
+    auto& pre_learn_predict_example = *VW::read_example(*vw, "0.19574759682114784 | 1:1.430");
+    auto& learn_example = *VW::read_example(*vw, "0.19574759682114784 | 1:1.430");
+    auto& predict_example = *VW::read_example(*vw, "| 1:1.0");
 
     EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
-    vw.predict(pre_learn_predict_example);
+    vw->predict(pre_learn_predict_example);
     EXPECT_TRUE(minimal_reduction::called_learn_predict);
 
-    vw.finish_example(pre_learn_predict_example);
-    vw.learn(learn_example);
-    vw.finish_example(learn_example);
-    vw.predict(predict_example);
+    vw->finish_example(pre_learn_predict_example);
+    vw->learn(learn_example);
+    vw->finish_example(learn_example);
+    vw->predict(predict_example);
     prediction_one = predict_example.pred.scalar;
-    vw.finish_example(predict_example);
-    VW::finish(vw);
+    vw->finish_example(predict_example);
 
     EXPECT_TRUE(minimal_reduction::added_to_learner);
     EXPECT_TRUE(minimal_reduction::called_learn_predict);
@@ -136,17 +137,16 @@ TEST(MinimalReduction, MinimalReductionTest)
   {
     EXPECT_TRUE(minimal_reduction::added_to_learner == false);
     EXPECT_TRUE(minimal_reduction::called_learn_predict == false);
-    auto& vw = *VW::initialize(sgd_args);
+    auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(sgd_args));
 
-    auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
-    auto& predict_example = *VW::read_example(vw, "| 1:1.0");
+    auto& learn_example = *VW::read_example(*vw, "0.19574759682114784 | 1:1.430");
+    auto& predict_example = *VW::read_example(*vw, "| 1:1.0");
 
-    vw.learn(learn_example);
-    vw.finish_example(learn_example);
-    vw.predict(predict_example);
+    vw->learn(learn_example);
+    vw->finish_example(learn_example);
+    vw->predict(predict_example);
     prediction_two = predict_example.pred.scalar;
-    vw.finish_example(predict_example);
-    VW::finish(vw);
+    vw->finish_example(predict_example);
 
     // both should be false since it uses the default stack builder
     EXPECT_TRUE(minimal_reduction::added_to_learner == false);

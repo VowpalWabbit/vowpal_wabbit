@@ -18,7 +18,7 @@ using namespace VW::config;
 
 std::unique_ptr<VW::workspace> setup(std::unique_ptr<options_i> options)
 {
-  auto all = VW::initialize_experimental(std::move(options));
+  auto all = VW::initialize(std::move(options));
   all->vw_is_main = true;
   return all;
 }
@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     if (skip_driver)
     {
       // Leave deletion up to the unique_ptr
-      for (auto& v : alls) { VW::finish(*v, false); }
+      for (auto& v : alls) { VW::finalize_driver(*v); }
       return 0;
     }
 
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
 
       VW::sync_stats(*v);
       // Leave deletion up to the unique_ptr
-      VW::finish(*v, false);
+      VW::finalize_driver(*v);
     }
   }
   catch (VW::vw_exception& e)

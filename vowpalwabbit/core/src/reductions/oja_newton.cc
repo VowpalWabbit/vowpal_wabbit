@@ -348,9 +348,10 @@ void make_pred(oja_n_update_data& data, float x, float& wref)
 void predict(OjaNewton& oja_newton_ptr, base_learner&, VW::example& ec)
 {
   oja_newton_ptr.data.prediction = 0;
-  GD::foreach_feature<oja_n_update_data, make_pred>(*oja_newton_ptr.all, ec, oja_newton_ptr.data);
+  VW::foreach_feature<oja_n_update_data, make_pred>(*oja_newton_ptr.all, ec, oja_newton_ptr.data);
   ec.partial_prediction = oja_newton_ptr.data.prediction;
-  ec.pred.scalar = GD::finalize_prediction(oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
+  ec.pred.scalar =
+      VW::details::finalize_prediction(oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
 }
 
 void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)  // NOLINT
@@ -408,7 +409,7 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, 
 
   if (oja_newton_ptr.normalize)
   {
-    GD::foreach_feature<oja_n_update_data, update_normalization>(*oja_newton_ptr.all, ec, data);
+    VW::foreach_feature<oja_n_update_data, update_normalization>(*oja_newton_ptr.all, ec, data);
   }
 
   VW::example* next_in_batch = nullptr;
@@ -440,7 +441,7 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, 
 
       data.norm2_x = 0;
       std::fill(data.Zx.begin(), data.Zx.end(), 0.f);
-      GD::foreach_feature<oja_n_update_data, compute_Zx_and_norm>(*oja_newton_ptr.all, ex, data);
+      VW::foreach_feature<oja_n_update_data, compute_Zx_and_norm>(*oja_newton_ptr.all, ex, data);
       oja_newton_ptr.compute_AZx();
 
       oja_newton_ptr.update_eigenvalues();
@@ -448,7 +449,7 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, 
 
       oja_newton_ptr.update_K();
 
-      GD::foreach_feature<oja_n_update_data, update_Z_and_wbar>(*oja_newton_ptr.all, ex, data);
+      VW::foreach_feature<oja_n_update_data, update_Z_and_wbar>(*oja_newton_ptr.all, ex, data);
     }
 
     oja_newton_ptr.update_A();
@@ -459,7 +460,7 @@ void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, 
   }
 
   std::fill(data.Zx.begin(), data.Zx.end(), 0.f);
-  GD::foreach_feature<oja_n_update_data, update_wbar_and_Zx>(*oja_newton_ptr.all, ec, data);
+  VW::foreach_feature<oja_n_update_data, update_wbar_and_Zx>(*oja_newton_ptr.all, ec, data);
   oja_newton_ptr.compute_AZx();
 
   oja_newton_ptr.update_b();
@@ -483,9 +484,9 @@ void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, boo
     VW::details::bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    std::vector<GD::per_model_state> temp_pms = {GD::per_model_state()};
-    if (resume) { GD::save_load_online_state(all, model_file, read, text, temp_pms); }
-    else { GD::save_load_regressor(all, model_file, read, text); }
+    std::vector<VW::reductions::details::per_model_state> temp_pms = {VW::reductions::details::per_model_state()};
+    if (resume) { VW::details::save_load_online_state_gd(all, model_file, read, text, temp_pms); }
+    else { VW::details::save_load_regressor_gd(all, model_file, read, text); }
   }
 }
 }  // namespace

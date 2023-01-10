@@ -61,17 +61,17 @@ public:
   size_t no_win_counter;
   size_t early_stop_thres;
   uint32_t freegrad_size;
-  std::vector<GD::per_model_state> per_model_states;
+  std::vector<VW::reductions::details::per_model_state> per_model_states;
 };
 
 template <bool audit>
 void predict(freegrad& b, base_learner& /* base */, VW::example& ec)
 {
   size_t num_features_from_interactions = 0;
-  ec.partial_prediction = GD::inline_predict(*b.all, ec, num_features_from_interactions);
+  ec.partial_prediction = VW::inline_predict(*b.all, ec, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
-  if (audit) { GD::print_audit_features(*(b.all), ec); }
+  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  if (audit) { VW::details::print_audit_features(*(b.all), ec); }
 }
 
 void inner_freegrad_predict(freegrad_update_data& d, float x, float& wref)
@@ -108,7 +108,7 @@ void freegrad_predict(freegrad& fg, VW::example& ec)
   float projection_radius;
 
   // Compute the unprojected predict
-  GD::foreach_feature<freegrad_update_data, inner_freegrad_predict>(
+  VW::foreach_feature<freegrad_update_data, inner_freegrad_predict>(
       *fg.all, ec, fg.update_data, num_features_from_interactions);
   norm_w_pred = sqrtf(fg.update_data.squared_norm_prediction);
 
@@ -123,7 +123,7 @@ void freegrad_predict(freegrad& fg, VW::example& ec)
   ec.partial_prediction = fg.update_data.predict;
 
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.pred.scalar = GD::finalize_prediction(fg.all->sd, fg.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(fg.all->sd, fg.all->logger, ec.partial_prediction);
 }
 
 void gradient_dot_w(freegrad_update_data& d, float x, float& wref)
@@ -252,10 +252,10 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
   fg.update_data.update = fg.all->loss->first_derivative(fg.all->sd, ec.pred.scalar, ec.l.simple.label);
 
   // Compute gradient norm
-  GD::foreach_feature<freegrad_update_data, gradient_dot_w>(*fg.all, ec, fg.update_data);
+  VW::foreach_feature<freegrad_update_data, gradient_dot_w>(*fg.all, ec, fg.update_data);
 
   // Performing the update
-  GD::foreach_feature<freegrad_update_data, inner_freegrad_update_after_prediction>(*fg.all, ec, fg.update_data);
+  VW::foreach_feature<freegrad_update_data, inner_freegrad_update_after_prediction>(*fg.all, ec, fg.update_data);
 
   // Update the maximum gradient norm value
   clipped_grad_norm = sqrtf(fg.update_data.squared_norm_clipped_grad);
@@ -276,7 +276,7 @@ void learn_freegrad(freegrad& a, base_learner& /* base */, VW::example& ec)
 {
   // update state based on the example and predict
   freegrad_predict(a, ec);
-  if (audit) { GD::print_audit_features(*(a.all), ec); }
+  if (audit) { VW::details::print_audit_features(*(a.all), ec); }
 
   // update state based on the prediction
   freegrad_update_after_prediction(a, ec);
@@ -297,9 +297,10 @@ void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text)
 
     if (resume)
     {
-      GD::save_load_online_state(*all, model_file, read, text, fg.per_model_states, nullptr, fg.freegrad_size);
+      VW::details::save_load_online_state_gd(
+          *all, model_file, read, text, fg.per_model_states, nullptr, fg.freegrad_size);
     }
-    else { GD::save_load_regressor(*all, model_file, read, text); }
+    else { VW::details::save_load_regressor_gd(*all, model_file, read, text); }
   }
 }
 
@@ -364,7 +365,7 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   fg_ptr->project = project;
   fg_ptr->adaptiveradius = adaptiveradius;
   fg_ptr->no_win_counter = 0;
-  auto single_model_state = GD::per_model_state();
+  auto single_model_state = VW::reductions::details::per_model_state();
   single_model_state.normalized_sum_norm_x = 0;
   single_model_state.total_weight = 0.;
   fg_ptr->per_model_states.emplace_back(single_model_state);

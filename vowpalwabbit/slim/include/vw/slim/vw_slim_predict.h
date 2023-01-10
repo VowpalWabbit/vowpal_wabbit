@@ -269,13 +269,13 @@ public:
       // permutations is not supported by slim so we can just use combinations!
       _generate_interactions.update_interactions_if_new_namespace_seen<
           VW::details::generate_namespace_combinations_with_repetition, false>(_interactions, ex.indices);
-      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
+      score = VW::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
           _unused_extent_interactions,
           /* permutations */ false, ex, _generate_interactions_object_cache);
     }
     else
     {
-      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, _unused_extent_interactions,
+      score = VW::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, _unused_extent_interactions,
           /* permutations */ false, ex, _generate_interactions_object_cache);
     }
     return S_VW_PREDICT_OK;
