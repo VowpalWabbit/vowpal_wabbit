@@ -2,8 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "qr_decomposition.h"
 #include "reductions/cb/details/large_action_space.h"
-#include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"

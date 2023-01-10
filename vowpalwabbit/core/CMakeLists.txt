@@ -78,7 +78,6 @@ set(vw_core_headers
   include/vw/core/prediction_type.h
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
-  include/vw/core/qr_decomposition.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
@@ -191,6 +190,7 @@ set(vw_core_headers
   include/vw/core/vw_validate.h
   include/vw/core/vw_versions.h
   include/vw/core/vw.h
+  src/qr_decomposition.h
 )
 
 set(vw_core_sources
