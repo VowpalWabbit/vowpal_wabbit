@@ -25,7 +25,7 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
   auto es = const_cast<char*>(example_string.c_str());
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--cb", "2", "--quiet"}));
   VW::multi_ex examples;
-  examples.push_back(&VW::get_unused_example(vw));
+  examples.push_back(&VW::get_unused_example(vw.get()));
   for (auto _ : state)
   {
     VW::parsers::text::read_line(*vw, examples[0], es);
@@ -213,7 +213,7 @@ static void benchmark_multi(
 {
   auto args = VW::split_command_line(cmd);
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
-  std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+  std::vector<multi_ex> examples_vec = load_examples(vw.get(), examples_str);
 
   for (auto _ : state)
   {
