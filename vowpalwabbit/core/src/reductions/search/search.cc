@@ -424,7 +424,7 @@ int select_learner(search_private& priv, int policy, size_t learner_id, bool is_
       if (!is_local) { learner_id += 1 + static_cast<size_t>(is_training ^ (priv.all->sd->example_number % 2 == 1)); }
     }
     int p = static_cast<int>(policy * priv.num_learners + learner_id);
-    return p;
+    return p % (priv.total_number_of_policies * priv.num_learners);
   }
 }
 
@@ -3366,9 +3366,6 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
 
   cdbg << "num_learners = " << priv.num_learners << endl;
 
-  size_t ws = 1;
-  if (task_string == "sequencespan" || task_string == "multiclasstask") { ws = 2; }
-
   // No normal prediction is produced so the base prediction type is used. That type is unlikely to be accessible
   // though. TODO: either let search return a prediction or add a NO_PRED type.
 
@@ -3383,7 +3380,6 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
           .set_finish(search_finish)
           .set_end_pass(end_pass)
           .set_input_label_type(expected_label_type)
-          .set_params_per_weight(ws)
           // .set_output_label(priv.cb_learner ? label_type_t::CB : label_type_t::CS)
           // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
           .build();
