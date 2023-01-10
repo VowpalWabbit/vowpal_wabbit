@@ -116,6 +116,31 @@ public class VWScalarsLearnerTest extends VWTestHelper {
         assertEquals(3, vector.length);
     }
 
+    @Test
+    public void csoaaLdf() throws IOException {
+        String[][] data = new String[][]{
+            new String[]{"1:1.0 | a_1 b_1 c_1", "2:0.0 | a_2 b_2 c_2", "3:2.0 | a_3 b_3 c_3"},
+            new String[]{"1:1.0 | b_1 c_1 d_1", "2:0.0 | b_2 c_2 d_2"},
+            new String[]{"1:1.0 | a_1 b_1 c_1", "3:2.0 | a_3 b_3 c_3"}
+        };
+
+        VWScalarsLearner vw = VWLearners.create("--quiet --csoaa_ldf=mc --loss_function=logistic --probabilities");
+        float[][] pred = new float[data.length][];
+        for (int i=0; i<data.length; ++i) {
+            pred[i] = vw.learn(data[i]);
+        }
+        vw.close();
+
+        float[][] expected = new float[][]{
+                new float[]{0.333333f, 0.33333334f, 0.33333334f},
+                new float[]{0.38244691f, 0.61757493f},
+                new float[]{0.4915067f, 0.50853986f},
+        };
+        assertEquals(expected.length, pred.length);
+        for (int i=0; i<expected.length; ++i)
+            assertArrayEquals(expected[i], pred[i], 0.001f);
+    }
+
     private void writeVwModelToDisk() throws IOException {
         final VWScalarsLearner vwModel =  VWLearners.create(String.format("--quiet -b 4 --lda 3 -f %s --readable_model %s",
                 model, readableModel));
