@@ -19,7 +19,7 @@ TEST(TagUtils, TagWithSeedSeedExtraction)
 {
   auto opts = VW::make_unique<VW::config::options_cli>(
       std::vector<std::string>{"--json", "--chain_hash", "--no_stdin", "--quiet"});
-  auto vw = VW::initialize_experimental(std::move(opts));
+  auto vw = VW::initialize(std::move(opts));
   std::string json = R"(
   {
     "_label": 1,

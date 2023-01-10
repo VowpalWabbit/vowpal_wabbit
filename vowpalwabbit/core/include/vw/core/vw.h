@@ -38,30 +38,84 @@
 
 namespace VW
 {
+using driver_output_func_t = void (*)(void*, const std::string&);
+
 /*    Caveats:
     (1) Some commandline parameters do not make sense as a library.
     (2) The code is not yet reentrant.
    */
+
+// TODO: uncomment when all uses are migrated
+// VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
     bool skip_model_load = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+
+// TODO: uncomment when all uses are migrated
+// VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize(config::options_i& options, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+
+// TODO: uncomment when all uses are migrated
+// VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+
+// TODO: uncomment when all uses are migrated
+// VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
+// TODO: uncomment when all uses are migrated
+// VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_args,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
+
+// TODO: uncomment when all uses are migrated
+// VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
+
 // Experimental (VW::setup_base_i):
+VW_DEPRECATED("For scenarios requiring the builder, initialize_experimental should be used.")
 VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr,
     std::unique_ptr<VW::setup_base_i> = nullptr);
 
-using driver_output_func_t = void (*)(void*, const std::string&);
+/**
+ * @brief Initialize a workspace.
+ *
+ * @param options The options to initialize the workspace with. Usually an
+ * instance of VW::config::options_cli.
+ * @param model_override_reader optional reading source to read the model from.
+ * Will override any model specified on the command line.
+ * @param skip_model_load If true both the model_override_reader and any model arguments will be ignored.
+ * @param driver_output_func optional function to forward driver ouput to
+ * @param driver_output_func_context context for driver_output_func
+ * @param custom_logger optional custom logger object to override with
+ * @param setup_base optional advanced override of reduction stack
+ * @return std::unique_ptr<VW::workspace> initialized workspace
+ */
+std::unique_ptr<VW::workspace> initialize(std::unique_ptr<config::options_i> options,
+    std::unique_ptr<VW::io::reader> model_override_reader = nullptr, bool skip_model_load = false,
+    driver_output_func_t driver_output_func = nullptr, void* driver_output_func_context = nullptr,
+    VW::io::logger* custom_logger = nullptr);
+
+/// Creates a workspace based off of another workspace. What this means is that
+/// the model weights and the shared_data object are shared. This function needs
+/// to be used with caution. Reduction data is not shared, therefore this
+/// function is unsafe to use for situations where reduction state is required
+/// for proper operation such as marginal and cb_adf. Learn on a seeded instance
+/// is unsafe, and prediction is also potentiaslly unsafe.
+std::unique_ptr<VW::workspace> seed_vw_model(VW::workspace& vw_model, const std::vector<std::string>& extra_args,
+    driver_output_func_t driver_output_func = nullptr, void* driver_output_func_context = nullptr,
+    VW::io::logger* custom_logger = nullptr);
+
+/// This is used to perform finalization steps the driver/cli would normally do.
+/// If using VW in library mode, this call is optional.
+/// Some things this function does are: print summary, finalize regressor, output metrics, etc
+void finalize_driver(VW::workspace& all);
+
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML
 /**
@@ -113,7 +167,11 @@ VW_WARNING_DISABLE_BADLY_FORMED_XML
  * @param all workspace to be finished
  * @param delete_all whethere to also also call delete on this instance.
  */
+// TODO: uncomment when all uses are migrated
+// VW_DEPRECATED("If needing to cleanup memory, rely on the workspace destructor. Driver finalization is now handled by
+// finalize_driver.")
 void finish(VW::workspace& all, bool delete_all = true);
+
 VW_WARNING_STATE_POP
 void sync_stats(VW::workspace& all);
 

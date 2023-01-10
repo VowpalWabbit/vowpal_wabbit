@@ -141,33 +141,32 @@ TEST(CustomReduction, General)
 {
   toy_reduction::reset_test_state();
 
-  std::string sgd_args = "--quiet --sgd --noconstant --learning_rate 0.1";
-
+  const std::vector<std::string> sgd_args = {"--quiet", "--sgd", "--noconstant", "--learning_rate", "0.1"};
   float prediction_one;
   {
     auto learner_builder = VW::make_unique<custom_builder>();
 
     EXPECT_TRUE(toy_reduction::added_to_learner == false);
     EXPECT_TRUE(toy_reduction::called_learn_predict == false);
-    auto& vw = *VW::initialize_with_builder(sgd_args, nullptr, false, nullptr, nullptr, std::move(learner_builder));
+    auto vw = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(sgd_args), nullptr, nullptr, nullptr,
+        nullptr, std::move(learner_builder));
     EXPECT_TRUE(toy_reduction::added_to_learner);
     EXPECT_TRUE(toy_reduction::called_learn_predict == false);
 
-    auto& pre_learn_predict_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
-    auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
-    auto& predict_example = *VW::read_example(vw, "| 1:1.0");
+    auto& pre_learn_predict_example = *VW::read_example(*vw, "0.19574759682114784 | 1:1.430");
+    auto& learn_example = *VW::read_example(*vw, "0.19574759682114784 | 1:1.430");
+    auto& predict_example = *VW::read_example(*vw, "| 1:1.0");
 
     EXPECT_TRUE(toy_reduction::called_learn_predict == false);
-    vw.predict(pre_learn_predict_example);
+    vw->predict(pre_learn_predict_example);
     EXPECT_TRUE(toy_reduction::called_learn_predict);
 
-    vw.finish_example(pre_learn_predict_example);
-    vw.learn(learn_example);
-    vw.finish_example(learn_example);
-    vw.predict(predict_example);
+    vw->finish_example(pre_learn_predict_example);
+    vw->learn(learn_example);
+    vw->finish_example(learn_example);
+    vw->predict(predict_example);
     prediction_one = predict_example.pred.scalar;
-    vw.finish_example(predict_example);
-    VW::finish(vw);
+    vw->finish_example(predict_example);
 
     EXPECT_TRUE(toy_reduction::added_to_learner);
     EXPECT_TRUE(toy_reduction::called_learn_predict);
@@ -180,17 +179,16 @@ TEST(CustomReduction, General)
   {
     EXPECT_TRUE(toy_reduction::added_to_learner == false);
     EXPECT_TRUE(toy_reduction::called_learn_predict == false);
-    auto& vw = *VW::initialize(sgd_args);
+    auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(sgd_args));
 
-    auto& learn_example = *VW::read_example(vw, "0.19574759682114784 | 1:1.430");
-    auto& predict_example = *VW::read_example(vw, "| 1:1.0");
+    auto& learn_example = *VW::read_example(*vw, "0.19574759682114784 | 1:1.430");
+    auto& predict_example = *VW::read_example(*vw, "| 1:1.0");
 
-    vw.learn(learn_example);
-    vw.finish_example(learn_example);
-    vw.predict(predict_example);
+    vw->learn(learn_example);
+    vw->finish_example(learn_example);
+    vw->predict(predict_example);
     prediction_two = predict_example.pred.scalar;
-    vw.finish_example(predict_example);
-    VW::finish(vw);
+    vw->finish_example(predict_example);
 
     // both should be false since it uses the default stack builder
     EXPECT_TRUE(toy_reduction::added_to_learner == false);
@@ -204,7 +202,7 @@ TEST(CustomReduction, BuilderCheckThrow)
 {
   toy_reduction::reset_test_state();
 
-  std::string ksvm_args = "--ksvm --quiet";
+  const std::vector<std::string> ksvm_args = {"--ksvm", "--quiet"};
 
   // this test should throw with:
   // Error: unrecognised option '--ksvm'
@@ -213,7 +211,8 @@ TEST(CustomReduction, BuilderCheckThrow)
   {
     auto learner_builder = VW::make_unique<custom_builder>();
 
-    EXPECT_THROW(VW::initialize_with_builder(ksvm_args, nullptr, false, nullptr, nullptr, std::move(learner_builder)),
+    EXPECT_THROW(VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(ksvm_args), nullptr, nullptr,
+                     nullptr, nullptr, std::move(learner_builder)),
         VW::vw_exception);
 
     // check that toy_reduction didn't get added to learner
@@ -225,6 +224,6 @@ TEST(CustomReduction, BuilderCheckThrow)
   // --ksvm'
   // since its using the default builder that has --ksvm
   {
-    EXPECT_NO_THROW(VW::finish(*VW::initialize(ksvm_args)));
+    EXPECT_NO_THROW(VW::initialize(VW::make_unique<VW::config::options_cli>(ksvm_args)));
   }
 }
