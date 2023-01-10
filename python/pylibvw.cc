@@ -268,7 +268,7 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 
   if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end()) { args_vec.push_back("--no_stdin"); }
 
-  driver_output_func_t trace_listener = nullptr;
+  VW::driver_output_func_t trace_listener = nullptr;
   void* trace_context = nullptr;
 
   VW::io::logger* logger_ptr = nullptr;
@@ -279,10 +279,9 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 
     const auto log_function = [](void* context, VW::io::log_level level, const std::string& message) {
       _UNUSED(level);
-      auto logger = static_cast<py_log_wrapper*>(context);
       try
       {
-        auto inst = static_cast<py_log_wrapper*>(wrapper);
+        auto inst = static_cast<py_log_wrapper*>(context);
         inst->py_log.attr("log")(message);
       }
       catch (...)
@@ -292,7 +291,7 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
         PyErr_Clear();
         std::cerr << "error using python logging. ignoring." << std::endl;
       }
-    }
+    };
 
     auto custom_logger = VW::io::create_custom_sink_logger(py_log.get(), log_function);
     logger_ptr = &custom_logger;
@@ -358,7 +357,7 @@ py::dict get_learner_metrics(vw_ptr all)
 
 void my_finish(vw_ptr all)
 {
-  VW::finalize_driver(*all);  // don't delete all because python will do that for us!
+  all->finalize_driver();  // don't delete all because python will do that for us!
 }
 
 void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
