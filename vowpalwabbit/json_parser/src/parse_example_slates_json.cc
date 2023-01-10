@@ -39,7 +39,7 @@ inline float get_number(const rapidjson::Value& value)
 
 template <bool audit>
 void handle_features_value(const char* key_namespace, const Value& value, VW::example* current_example,
-    std::vector<VW::parsers::json::details::namespace_builder<audit>>& namespaces, hash_func_t hash_func,
+    std::vector<VW::parsers::json::details::namespace_builder<audit>>& namespaces, VW::hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash)
 {
   assert(key_namespace != nullptr);
@@ -152,7 +152,7 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
 // NO_SANITIZE_UNDEFINED needed because example_factory function pointer may be typecasted
 template <bool audit>
 void NO_SANITIZE_UNDEFINED parse_context(const Value& context, const VW::label_parser& lbl_parser,
-    hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples,
+    VW::hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples,
     VW::example_factory_t example_factory, void* ex_factory_context, VW::multi_ex& slot_examples,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {

@@ -27,9 +27,10 @@
 namespace
 {
 
-std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<VW::config::options_i, options_deleter_type> options,
-    VW::io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context,
-    VW::io::logger* custom_logger, std::unique_ptr<VW::setup_base_i> setup_base = nullptr)
+std::unique_ptr<VW::workspace> initialize_internal(
+    std::unique_ptr<VW::config::options_i, VW::options_deleter_type> options, VW::io_buf* model, bool skip_model_load,
+    VW::trace_message_t trace_listener, void* trace_context, VW::io::logger* custom_logger,
+    std::unique_ptr<VW::setup_base_i> setup_base = nullptr)
 {
   // Set up logger as early as possible
   auto all = VW::details::parse_args(std::move(options), trace_listener, trace_context, custom_logger);
@@ -138,7 +139,7 @@ std::unique_ptr<VW::workspace> initialize_internal(std::unique_ptr<VW::config::o
 
   return all;
 }
-VW::workspace* initialize_with_builder(std::unique_ptr<VW::config::options_i, options_deleter_type> options,
+VW::workspace* initialize_with_builder(std::unique_ptr<VW::config::options_i, VW::options_deleter_type> options,
     VW::io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context,
 
     std::unique_ptr<VW::setup_base_i> setup_base = nullptr)
@@ -151,7 +152,7 @@ VW::workspace* initialize_with_builder(std::unique_ptr<VW::config::options_i, op
 VW::workspace* initialize_with_builder(int argc, char* argv[], VW::io_buf* model, bool skip_model_load,
     VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> setup_base)
 {
-  std::unique_ptr<VW::config::options_i, options_deleter_type> options(
+  std::unique_ptr<VW::config::options_i, VW::options_deleter_type> options(
       new VW::config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
       [](VW::config::options_i* ptr) { delete ptr; });
   return initialize_with_builder(
@@ -340,14 +341,14 @@ void VW::cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_re
 char** VW::to_argv_escaped(std::string const& s, int& argc)
 {
   std::vector<std::string> tokens = VW::details::escaped_tokenize(' ', s);
-  char** argv = calloc_or_throw<char*>(tokens.size() + 1);
-  argv[0] = calloc_or_throw<char>(2);
+  char** argv = VW::details::calloc_or_throw<char*>(tokens.size() + 1);
+  argv[0] = VW::details::calloc_or_throw<char>(2);
   argv[0][0] = 'b';
   argv[0][1] = '\0';
 
   for (size_t i = 0; i < tokens.size(); i++)
   {
-    argv[i + 1] = calloc_or_throw<char>(tokens[i].length() + 1);
+    argv[i + 1] = VW::details::calloc_or_throw<char>(tokens[i].length() + 1);
     sprintf_s(argv[i + 1], (tokens[i].length() + 1), "%s", tokens[i].data());
   }
 
@@ -361,15 +362,15 @@ char** VW::to_argv(std::string const& s, int& argc)
   std::vector<VW::string_view> foo;
   VW::tokenize(' ', strview, foo);
 
-  char** argv = calloc_or_throw<char*>(foo.size() + 1);
+  char** argv = VW::details::calloc_or_throw<char*>(foo.size() + 1);
   // small optimization to avoid a string copy before tokenizing
-  argv[0] = calloc_or_throw<char>(2);
+  argv[0] = VW::details::calloc_or_throw<char>(2);
   argv[0][0] = 'b';
   argv[0][1] = '\0';
   for (size_t i = 0; i < foo.size(); i++)
   {
     const size_t len = foo[i].length();
-    argv[i + 1] = calloc_or_throw<char>(len + 1);
+    argv[i + 1] = VW::details::calloc_or_throw<char>(len + 1);
     memcpy(argv[i + 1], foo[i].data(), len);
     // copy() is supported with boost::string_view, not with string_ref
     // foo[i].copy(argv[i], len);
@@ -518,7 +519,7 @@ void thread_dispatch(VW::workspace& all, const VW::multi_ex& examples)
 {
   for (auto* example : examples) { all.example_parser->ready_parsed_examples.push(example); }
 }
-void main_parse_loop(VW::workspace* all) { parse_dispatch(*all, thread_dispatch); }
+void main_parse_loop(VW::workspace* all) { VW::details::parse_dispatch(*all, thread_dispatch); }
 }  // namespace
 
 void VW::start_parser(VW::workspace& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
@@ -526,7 +527,10 @@ void VW::end_parser(VW::workspace& all) { all.parse_thread.join(); }
 
 bool VW::is_ring_example(const VW::workspace& all, const example* ae)
 {
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return all.example_parser->example_pool.is_from_pool(ae);
+  VW_WARNING_STATE_POP
 }
 
 VW::example* VW::read_example(VW::workspace& all, const char* example_line)

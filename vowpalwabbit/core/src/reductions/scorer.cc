@@ -67,13 +67,13 @@ void update(scorer& s, VW::LEARNER::single_learner& base, VW::example& ec)
 }
 
 // y = f(x) -> [0, 1]
-inline float logistic(float in) { return 1.f / (1.f + correctedExp(-in)); }
+inline float logistic(float in) { return 1.f / (1.f + VW::details::correctedExp(-in)); }
 
 // http://en.wikipedia.org/wiki/Generalized_logistic_curve
 // where the lower & upper asymptotes are -1 & 1 respectively
 // 'glf1' stands for 'Generalized Logistic Function with [-1,1] range'
 //    y = f(x) -> [-1, 1]
-inline float glf1(float in) { return 2.f / (1.f + correctedExp(-in)) - 1.f; }
+inline float glf1(float in) { return 2.f / (1.f + VW::details::correctedExp(-in)) - 1.f; }
 
 inline float id(float in) { return in; }
 }  // namespace
@@ -134,6 +134,8 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
   auto* l = VW::LEARNER::make_reduction_learner(std::move(s), base, learn_fn, predict_fn, name)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_multipredict(multipredict_f)
                 .set_update(update)

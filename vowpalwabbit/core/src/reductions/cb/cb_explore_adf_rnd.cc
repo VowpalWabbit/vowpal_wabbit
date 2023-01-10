@@ -70,7 +70,7 @@ private:
   std::vector<float> _bonuses;
   std::vector<float> _initials;
 
-  CB::cb_class _save_class;
+  VW::cb_class _save_class;
 
   template <bool is_learn>
   void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
@@ -249,9 +249,9 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, VW::multi_ex
   auto& preds = examples[0]->pred.a_s;
   float max_bonus = std::max(1e-3f, *std::max_element(_bonuses.begin(), _bonuses.end()));
   compute_ci(preds, max_bonus);
-  exploration::generate_softmax(
+  VW::explore::generate_softmax(
       -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 }  // namespace
 
@@ -302,7 +302,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
   size_t problem_multiplier = 1 + numrnd;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, alpha, invlambda, numrnd,
@@ -316,11 +316,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_print_example(explore_type::print_example)
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

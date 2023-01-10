@@ -76,7 +76,7 @@ void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, VW::multi_
     preds[0].score = 1.0;
   }
 
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
 void cb_explore_adf_first::save_load(VW::io_buf& io, bool read, bool text)
@@ -120,7 +120,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
   size_t problem_multiplier = 1;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
   auto data = VW::make_unique<explore_type>(
@@ -134,12 +134,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_print_example(explore_type::print_example)
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

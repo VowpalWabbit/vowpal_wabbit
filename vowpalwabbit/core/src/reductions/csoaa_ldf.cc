@@ -322,7 +322,7 @@ void convert_to_probabilities(VW::multi_ex& ec_seq)
     // cost),
     // so we need to take score = -partial_prediction,
     // thus probability(correct_class) = 1 / (1+exp(-(-partial_prediction)))
-    float prob = 1.f / (1.f + correctedExp(example->partial_prediction));
+    float prob = 1.f / (1.f + VW::details::correctedExp(example->partial_prediction));
     example->pred.prob = prob;
     sum_prob += prob;
   }
@@ -710,7 +710,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
 
-  single_learner* pbase = as_singleline(stack_builder.setup_base_learner());
+  single_learner* base = as_singleline(stack_builder.setup_base_learner());
 
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
   std::string name_addition;
@@ -735,10 +735,12 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_csoaa_ldf;
   }
 
-  auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
+  auto* l = make_reduction_learner(std::move(ld), base, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
                 .set_input_label_type(VW::label_type_t::CS)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(pred_type)
                 .build();
 
