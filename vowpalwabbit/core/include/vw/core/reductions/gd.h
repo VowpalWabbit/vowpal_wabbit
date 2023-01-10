@@ -65,7 +65,8 @@ void print_features(VW::workspace& all, VW::example& ec);
 void print_audit_features(VW::workspace&, VW::example& ec);
 void save_load_regressor_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text);
 void save_load_online_state_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text,
-    std::vector<VW::reductions::details::per_model_state>& pms, VW::reductions::gd* g = nullptr, uint32_t ftrl_size = 0);
+    std::vector<VW::reductions::details::per_model_state>& pms, VW::reductions::gd* g = nullptr,
+    uint32_t ftrl_size = 0);
 
 template <class T>
 class multipredict_info

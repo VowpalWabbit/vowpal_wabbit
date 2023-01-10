@@ -345,7 +345,7 @@ public:
         // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
         // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
         details::increment_offset(ec, increment, 1);
-        //assert(details::get_offset(ec) < max_ft_offset); NOTE: Test 160 breaks this
+        // assert(details::get_offset(ec) < max_ft_offset); NOTE: Test 160 breaks this
       }
       details::decrement_offset(ec, increment, lo + count);
     }
