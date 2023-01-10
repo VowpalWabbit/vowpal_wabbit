@@ -4,9 +4,12 @@
 
 #include "vw/c_wrapper/vwdll.h"
 
+#include "vw/common/text_utils.h"
+#include "vw/config/options_cli.h"
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_args.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/parser.h"
 #include "vw/core/simple_label.h"
 #include "vw/core/vw.h"
@@ -63,23 +66,27 @@ extern "C"
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeA(const char* pstrArgs)
   {
     std::string s(pstrArgs);
-    auto* all = VW::initialize(s);
-    return static_cast<VW_HANDLE>(all);
+    std::vector<std::string> args;
+    VW::tokenize(' ', s, args);
+    auto all = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+    return static_cast<VW_HANDLE>(all.release());
   }
 
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeEscapedA(const char* pstrArgs)
   {
-    std::string s(pstrArgs);
-    auto* all = VW::initialize_escaped(s);
-    return static_cast<VW_HANDLE>(all);
+    auto all = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(std::string(pstrArgs))));
+    return static_cast<VW_HANDLE>(all.release());
   }
 
-  VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char* extraArgs)
+  VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_SeedWithModel(VW_HANDLE handle, const char* extra_args)
   {
-    std::string s(extraArgs);
+    std::string s(extra_args);
+    std::vector<std::string> extra_args_vec;
+    VW::tokenize(' ', s, extra_args_vec);
+
     auto* origmodel = static_cast<VW::workspace*>(handle);
-    auto* newmodel = VW::seed_vw_model(origmodel, s);
-    return static_cast<VW_HANDLE>(newmodel);
+    auto newmodel = VW::seed_vw_model(*origmodel, extra_args_vec);
+    return static_cast<VW_HANDLE>(newmodel.release());
   }
 
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
@@ -97,7 +104,8 @@ extern "C"
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_Finish(VW_HANDLE handle)
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
-    VW::finish(*pointer);
+    pointer->finalize_driver();
+    delete pointer;
   }
 
   VW_DLL_PUBLIC VW_EXAMPLE VW_CALLING_CONV VW_ImportExample(
@@ -399,20 +407,20 @@ extern "C"
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModel(
       const char* pstrArgs, const char* modelData, size_t modelDataSize)
   {
-    VW::io_buf buf;
-    buf.add_file(VW::io::create_buffer_view(modelData, modelDataSize));
-    auto* all = VW::initialize(std::string(pstrArgs), &buf);
-    return static_cast<VW_HANDLE>(all);
+    std::string s = pstrArgs;
+    std::vector<std::string> args;
+    VW::tokenize(' ', s, args);
+    auto all = VW::initialize(
+        VW::make_unique<VW::config::options_cli>(args), VW::io::create_buffer_view(modelData, modelDataSize));
+    return static_cast<VW_HANDLE>(all.release());
   }
 
   VW_DLL_PUBLIC VW_HANDLE VW_CALLING_CONV VW_InitializeWithModelEscaped(
       const char* pstrArgs, const char* modelData, size_t modelDataSize)
   {
-    VW::io_buf buf;
-    buf.add_file(VW::io::create_buffer_view(modelData, modelDataSize));
-
-    auto* all = VW::initialize_escaped(std::string(pstrArgs), &buf);
-    return static_cast<VW_HANDLE>(all);
+    auto all = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(std::string(pstrArgs))),
+        VW::io::create_buffer_view(modelData, modelDataSize));
+    return static_cast<VW_HANDLE>(all.release());
   }
 
   class buffer_holder

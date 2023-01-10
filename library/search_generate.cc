@@ -1,4 +1,6 @@
 #include "libsearch.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 
 #include <cstdio>
@@ -425,9 +427,10 @@ private:
 
 void run_easy()
 {
-  VW::workspace& vw_obj = *VW::initialize(
-      "--search 29 --quiet --search_task hook --example_queue_limit 1024 --search_rollin learn --search_rollout none");
-  Generator task(vw_obj);
+  auto vw_obj = VW::initialize(
+      VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--search", "29", "--quiet", "--search_task",
+          "hook", "--example_queue_limit", "1024", "--search_rollin", "learn", "--search_rollout", "none"}));
+  Generator task(*vw_obj);
   output out("");
 
   std::vector<input> training_data = {input("maison", "house"), input("lune", "moon"),
@@ -522,7 +525,8 @@ void train()
       "none -q i: --ngram i15 --skips i5 --ngram c15 --ngram w6 --skips c3 --skips w3");  //  --search_use_passthrough_repr");
                                                                                           //  // -q si -q wi -q ci -q di
                                                                                           //  -f my_model
-  VW::workspace* vw_obj = VW::initialize(init_str);
+  auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(init_str)));
+
   cerr << init_str << endl;
   // Generator gen(*vw_obj, nullptr); // &dict);
   for (size_t pass = 1; pass <= 20; pass++)
@@ -533,14 +537,14 @@ void train()
     // run_istream(gen, "phrase-table.te", false, 100000);
     run_easy();
   }
-  VW::finish(*vw_obj);
+  vw_obj->finalize_driver();
 }
 
 void predict()
 {
-  VW::workspace& vw_obj = *VW::initialize("--quiet -t --example_queue_limit 1024 -i my_model");
-  // run(vw_obj);
-  VW::finish(vw_obj);
+  auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(
+      std::vector<std::string>{"--quiet", "-t", "--example_queue_limit", "1024", "-i", "my_model"}));
+  vw_obj->finalize_driver();
 }
 
 int main(int argc, char* argv[])

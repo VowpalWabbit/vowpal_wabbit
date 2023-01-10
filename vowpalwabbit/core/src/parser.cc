@@ -527,8 +527,9 @@ void VW::details::enable_sources(
         if (got_sigterm)
         {
           for (size_t i = 0; i < num_children; i++) { kill(children[i], SIGTERM); }
-          VW::finish(all);
-          exit(0);
+          all.finalize_driver();
+          delete &all;
+          std::exit(0);
         }
         if (pid < 0) { continue; }
         for (size_t i = 0; i < num_children; i++)

@@ -42,8 +42,6 @@ TEST(Emt, ParamsTest1)
   EXPECT_EQ(tree->scorer_type, emt_scorer_type::SELF_CONSISTENT_RANK);
   EXPECT_EQ(tree->router_type, emt_router_type::EIGEN);
   EXPECT_EQ(tree->bounder->max_size, 0);
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, ParamsTest2)
@@ -57,8 +55,6 @@ TEST(Emt, ParamsTest2)
   EXPECT_EQ(tree->scorer_type, emt_scorer_type::DISTANCE);
   EXPECT_EQ(tree->router_type, emt_router_type::RANDOM);
   EXPECT_EQ(tree->bounder->max_size, 20);
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, ExactMatchSansRouterTest)
@@ -82,7 +78,6 @@ TEST(Emt, ExactMatchSansRouterTest)
 
   vw->finish_example(*ex1);
   vw->finish_example(*ex2);
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, ExactMatchWithRouterTest)
@@ -103,8 +98,6 @@ TEST(Emt, ExactMatchWithRouterTest)
     EXPECT_EQ(ex->pred.multiclass, i);
     vw->finish_example(*ex);
   }
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, Bounding)
@@ -122,8 +115,6 @@ TEST(Emt, Bounding)
   EXPECT_EQ(tree->bounder->list.size(), 5);
   EXPECT_EQ(tree->root->examples.size(), 5);
   EXPECT_EQ(tree->root->router_weights.size(), 0);
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, Split)
@@ -148,8 +139,6 @@ TEST(Emt, Split)
   EXPECT_GE(tree->root->router_weights.size(), 0);
   EXPECT_EQ(tree->root->right->router_weights.size(), 0);
   EXPECT_EQ(tree->root->left->router_weights.size(), 0);
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, Inner)
@@ -355,9 +344,6 @@ TEST(Emt, SaveLoad)
     EXPECT_EQ(ex->pred.multiclass, i);
     vw_load->finish_example(*ex);
   }
-
-  VW::finish(*vw_save, false);
-  VW::finish(*vw_load, false);
 }
 
 }  // namespace eigen_memory_tree_test

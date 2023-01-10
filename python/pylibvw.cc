@@ -277,12 +277,9 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
     trace_context = py_log.get();
   }
 
-  std::unique_ptr<VW::config::options_i, options_deleter_type> options(
-      new VW::config::options_cli(args_vec), [](VW::config::options_i* ptr) { delete ptr; });
-
-  VW::workspace* foo = VW::initialize(std::move(options), nullptr, false, trace_listener, trace_context);
-  // return boost::shared_ptr<VW::workspace>(foo, [](vw *all){VW::finish(*all);});
-  return boost::shared_ptr<VW::workspace>(foo);
+  auto options = VW::make_unique<VW::config::options_cli>(args_vec);
+  auto foo = VW::initialize(std::move(options), nullptr, false, trace_listener, trace_context);
+  return boost::shared_ptr<VW::workspace>(foo.release());
 }
 
 vw_ptr my_initialize(py::list args) { return my_initialize_with_log(args, nullptr); }
@@ -340,7 +337,7 @@ py::dict get_learner_metrics(vw_ptr all)
 
 void my_finish(vw_ptr all)
 {
-  VW::finish(*all, false);  // don't delete all because python will do that for us!
+  VW::finalize_driver(*all);  // don't delete all because python will do that for us!
 }
 
 void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }

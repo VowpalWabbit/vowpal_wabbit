@@ -276,8 +276,8 @@ std::unique_ptr<VW::workspace> VW::initialize_experimental(std::unique_ptr<confi
 }
 
 std::unique_ptr<VW::workspace> VW::initialize(std::unique_ptr<config::options_i> options,
-    std::unique_ptr<VW::io::reader> model_override_reader, bool skip_model_load,
-    driver_output_func_t driver_output_func, void* driver_output_func_context, VW::io::logger* custom_logger)
+    std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
+    void* driver_output_func_context, VW::io::logger* custom_logger)
 {
   auto* released_options = options.release();
   std::unique_ptr<config::options_i, options_deleter_type> options_custom_deleter(
@@ -290,7 +290,7 @@ std::unique_ptr<VW::workspace> VW::initialize(std::unique_ptr<config::options_i>
     model = VW::make_unique<io_buf>();
     model->add_file(std::move(model_override_reader));
   }
-  return initialize_internal(std::move(options_custom_deleter), model.get(), skip_model_load /* skip model load */,
+  return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
       driver_output_func, driver_output_func_context, custom_logger, nullptr);
 }
 
@@ -315,8 +315,11 @@ std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const 
 
   auto options = VW::make_unique<config::options_cli>(serialized_options);
 
-  auto new_model = VW::initialize(std::move(options), nullptr, true /* skip_model_load */, driver_output_func,
-      driver_output_func_context, custom_logger);
+  std::unique_ptr<config::options_i, options_deleter_type> options_custom_deleter(
+      new VW::config::options_cli(serialized_options), [](VW::config::options_i* ptr) { delete ptr; });
+
+  auto new_model = initialize_internal(std::move(options_custom_deleter), nullptr, false /* skip model load */,
+      driver_output_func, driver_output_func_context, custom_logger, nullptr);
   delete new_model->sd;
 
   // reference model states stored in the specified VW instance
@@ -324,27 +327,6 @@ std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const 
   new_model->sd = vw_model.sd;                        // shared data
 
   return new_model;
-}
-
-void VW::finalize_driver(VW::workspace& all)
-{
-  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!all.quiet && !all.options->was_supplied("audit_regressor"))
-  {
-    all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off);
-  }
-
-  details::finalize_regressor(all, all.final_regressor_name);
-  if (all.options->was_supplied("dump_json_weights_experimental"))
-  {
-    auto content = all.dump_weights_to_json_experimental();
-    auto writer = VW::io::open_file_writer(all.json_weights_file_name);
-    writer->write(content.c_str(), content.length());
-  }
-  all.global_metrics.register_metrics_callback(
-      [&all](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(all, sink); });
-  VW::reductions::output_metrics(all);
-  all.logger.log_summary();
 }
 
 VW::workspace* VW::initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
@@ -551,7 +533,7 @@ void VW::finish(VW::workspace& all, bool delete_all)
         if (delete_all) { delete &all; }
       });
 
-  finalize_driver(all);
+  all.finalize_driver();
 }
 
 void VW::sync_stats(VW::workspace& all)

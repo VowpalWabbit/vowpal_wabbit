@@ -3,6 +3,7 @@
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/crossplat_compat.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/parser.h"
 #include "vw/core/vw.h"
 
@@ -52,7 +53,7 @@ int main(int argc, char* argv[])
   }
 
   // initialize model
-  VW::workspace* model = VW::initialize(vwparams);
+  auto model = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(vwparams)));
   model->audit = true;
 
   string target("--rank ");
@@ -131,6 +132,6 @@ int main(int argc, char* argv[])
   constant << weights[ec->feature_space[VW::details::CONSTANT_NAMESPACE].indices[0]] << std::endl;
 
   // clean up
-  VW::finish(*model);
+  model->finalize_driver();
   fclose(file);
 }

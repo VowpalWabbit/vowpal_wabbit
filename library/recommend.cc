@@ -3,6 +3,8 @@
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/crossplat_compat.h"
+#include "vw/core/memory.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 #include "vw/io/errno_handling.h"
 
@@ -199,7 +201,7 @@ int main(int argc, char* argv[])
 
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
   if (verbose > 0) { fprintf(stderr, "initializing vw...\n"); }
-  VW::workspace* model = VW::initialize(vwparams);
+  auto model = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(vwparams)));
 
   char* estr = NULL;
 
@@ -262,7 +264,7 @@ int main(int argc, char* argv[])
 
   if (verbose > 0) { progress(); }
 
-  VW::finish(*model);
+  model->finalize_driver();
   fclose(fI);
   fclose(fU);
   return 0;

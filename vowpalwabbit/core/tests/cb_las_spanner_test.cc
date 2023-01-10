@@ -3,6 +3,8 @@
 // license as described in the file LICENSE.
 
 #include "reductions/cb/details/large_action_space.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/memory.h"
 #include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
@@ -14,6 +16,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <string>
+
 using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
         VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
@@ -23,14 +27,16 @@ TEST(Las, CheckFindingMaxVolume)
   auto d = 3;
   for (const bool use_simd : {false, true})
   {
-    auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-            " --quiet --random_seed 0" + (use_simd ? " --las_hint_explicit_simd" : ""),
-        nullptr, false, nullptr, nullptr);
-    uint64_t seed = vw.get_random_state()->get_current_state() * 10.f;
+    std::vector<std::string> args{"--cb_explore_adf", "--large_action_space", "--max_actions", std::to_string(d),
+        "--quiet", "--random_seed", "0"};
+    if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+    auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+
+    uint64_t seed = vw->get_random_state()->get_current_state() * 10.f;
     VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::one_pass_svd_impl,
         VW::cb_explore_adf::one_rank_spanner_state>
         largecb(
-            /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, &vw, seed, 1 << vw.num_bits,
+            /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, vw.get(), seed, 1 << vw->num_bits,
             /*thread_pool_size*/ 0, /*block_size*/ 0, /*use_explicit_simd=*/use_simd,
             VW::cb_explore_adf::implementation_type::one_pass_svd);
     largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
@@ -56,27 +62,25 @@ TEST(Las, CheckFindingMaxVolume)
     largecb.spanner_state.find_max_volume(largecb.U, phi, max_volume, U_rid);
     EXPECT_NEAR(max_volume - 2.16666675f, 0.f, vwtest::EXPLICIT_FLOAT_TOL);
     EXPECT_EQ(U_rid, 5);
-
-    VW::finish(vw);
   }
 }
 
 TEST(Las, CheckSpannerResultsSquarecb)
 {
   auto d = 2;
-  std::vector<VW::workspace*> vws;
+  std::vector<std::unique_ptr<VW::workspace>> vws;
   for (const int seed : {1, 0})
   {
     for (const bool use_simd : {false, true})
     {
-      auto* vw = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " + std::to_string(d) +
-              " --quiet --random_seed " + std::to_string(seed) + (use_simd ? " --las_hint_explicit_simd" : ""),
-          nullptr, false, nullptr, nullptr);
-      vws.push_back(vw);
+      std::vector<std::string> args{"--cb_explore_adf", "--large_action_space", "--max_actions", std::to_string(d),
+          "--quiet", "--random_seed", std::to_string(seed)};
+      if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+      vws.push_back(VW::initialize(VW::make_unique<VW::config::options_cli>(args)));
     }
   }
 
-  for (auto* vw_ptr : vws)
+  for (auto& vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
 
@@ -190,7 +194,6 @@ TEST(Las, CheckSpannerResultsSquarecb)
 
       vw.finish_example(examples);
     }
-    VW::finish(vw);
   }
 }
 
@@ -199,21 +202,20 @@ TEST(Las, CheckSpannerResultsEpsilonGreedy)
   auto d = 2;
   float epsilon = 0.2f;
 
-  std::vector<VW::workspace*> vws;
+  std::vector<std::unique_ptr<VW::workspace>> vws;
   for (const int seed : {3, 0})
   {
     for (const bool use_simd : {false, true})
     {
-      auto* vw = VW::initialize("--cb_explore_adf --epsilon " + std::to_string(epsilon) +
-              " --large_action_space --max_actions " + std::to_string(d) +
-              " --quiet --thread_pool_size 4 --random_seed " + std::to_string(seed) +
-              (use_simd ? " --las_hint_explicit_simd" : ""),
-          nullptr, false, nullptr, nullptr);
-      vws.push_back(vw);
+      std::vector<std::string> args{"--cb_explore_adf", "--epsilon", std::to_string(epsilon), "--large_action_space",
+          "--max_actions", std::to_string(d), "--quiet", "--thread_pool_size", "4", "--random_seed",
+          std::to_string(seed)};
+      if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+      vws.push_back(VW::initialize(VW::make_unique<VW::config::options_cli>(args)));
     }
   }
 
-  for (auto* vw_ptr : vws)
+  for (auto& vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
 
@@ -303,25 +305,20 @@ TEST(Las, CheckSpannerResultsEpsilonGreedy)
 
       vw.finish_example(examples);
     }
-    VW::finish(vw);
   }
 }
 
 TEST(Las, CheckUniformProbabilitiesBeforeLearning)
 {
   auto d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --noconstant --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  std::vector<std::pair<std::unique_ptr<VW::workspace>, bool>> vws;
+  auto vw_epsilon = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--max_actions",
+      std::to_string(d), "--quiet", "--noconstant", "--two_pass_svd"));
+  vws.emplace_back(std::move(vw_epsilon), false);
 
-  vws.emplace_back(vw_epsilon, false);
-
-  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --noconstant --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
-
-  vws.emplace_back(vw_squarecb, true);
+  auto vw_squarecb = VW::initialize(vwtest::make_args("--cb_explore_adf", "--squarecb", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--noconstant", "--two_pass_svd"));
+  vws.emplace_back(std::move(vw_squarecb), true);
 
   for (auto& vw_pair : vws)
   {
@@ -346,7 +343,6 @@ TEST(Las, CheckUniformProbabilitiesBeforeLearning)
 
       vw.finish_example(examples);
     }
-    VW::finish(vw);
   }
 }
 
@@ -355,52 +351,53 @@ TEST(Las, CheckProbabilitiesWhenDIsLarger)
   auto d = 3;
   for (const bool use_simd : {false, true})
   {
-    auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-            " --quiet --random_seed 5" + (use_simd ? " --las_hint_explicit_simd" : ""),
-        nullptr, false, nullptr, nullptr);
+    std::vector<std::string> args{"--cb_explore_adf", "--large_action_space", "--max_actions", std::to_string(d),
+        "--quiet", "--random_seed", "5"};
+    if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+    auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
-      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
-      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
+      examples.push_back(VW::read_example(*vw, "0:1.0:0.5 | 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(*vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(*vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
-      vw.learn(examples);
-      vw.finish_example(examples);
+      vw->learn(examples);
+      vw->finish_example(examples);
     }
 
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_1:0.5 a_2:0.65 a_3:0.12"));
-      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
+      examples.push_back(VW::read_example(*vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(*vw, "0:1.0:0.5 | a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(*vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
-      vw.learn(examples);
-      vw.finish_example(examples);
+      vw->learn(examples);
+      vw->finish_example(examples);
     }
 
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
-      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
-      examples.push_back(VW::read_example(vw, "0:1.0:0.5 | a_4:0.8 a_5:0.32 a_6:0.15"));
+      examples.push_back(VW::read_example(*vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(*vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(*vw, "0:1.0:0.5 | a_4:0.8 a_5:0.32 a_6:0.15"));
 
-      vw.learn(examples);
-      vw.finish_example(examples);
+      vw->learn(examples);
+      vw->finish_example(examples);
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw->l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
     VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+        as_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -408,11 +405,11 @@ TEST(Las, CheckProbabilitiesWhenDIsLarger)
     {
       VW::multi_ex examples;
 
-      examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13"));
-      examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
-      examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
+      examples.push_back(VW::read_example(*vw, "| 1:0.1 2:0.12 3:0.13"));
+      examples.push_back(VW::read_example(*vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+      examples.push_back(VW::read_example(*vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
 
-      vw.predict(examples);
+      vw->predict(examples);
 
       const auto num_actions = examples.size();
       const auto& preds = examples[0]->pred.a_s;
@@ -421,9 +418,8 @@ TEST(Las, CheckProbabilitiesWhenDIsLarger)
       EXPECT_NEAR(preds[1].score - 0.0166666675f, 0.f, vwtest::EXPLICIT_FLOAT_TOL);
       EXPECT_NEAR(preds[2].score - 0.0166666675f, 0.f, vwtest::EXPLICIT_FLOAT_TOL);
 
-      vw.finish_example(examples);
+      vw->finish_example(examples);
     }
-    VW::finish(vw);
   }
 }
 
@@ -463,19 +459,19 @@ TEST(Las, CheckSpannerChoosesActionsThatClearlyMaximiseVolume)
   auto exs = gen_cb_examples(K - d, 10, 1.f);
   auto dexs = gen_cb_examples(d, 10, 100.f, false);
 
-  std::vector<VW::workspace*> vws;
+  std::vector<std::unique_ptr<VW::workspace>> vws;
   for (const int seed : {6, 0})
   {
     for (const bool use_simd : {false, true})
     {
-      auto* vw = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " + std::to_string(d) +
-              " --quiet --random_seed " + std::to_string(seed) + (use_simd ? " --las_hint_explicit_simd" : ""),
-          nullptr, false, nullptr, nullptr);
-      vws.push_back(vw);
+      std::vector<std::string> args{"--cb_explore_adf", "--squarecb", "--large_action_space", "--max_actions",
+          std::to_string(d), "--quiet", "--random_seed", std::to_string(seed)};
+      if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+      vws.push_back(VW::initialize(VW::make_unique<VW::config::options_cli>(args)));
     }
   }
 
-  for (auto* vw_ptr : vws)
+  for (auto& vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
 
@@ -597,8 +593,6 @@ TEST(Las, CheckSpannerChoosesActionsThatClearlyMaximiseVolume)
 
       vw.finish_example(examples);
     }
-
-    VW::finish(vw);
   }
 }
 
@@ -606,20 +600,19 @@ TEST(Las, CheckSpannerRejectsSameActions)
 {
   // 8 actions and I want spanner to reject the duplicate
   auto d = 7;
-  std::vector<VW::workspace*> vws;
+  std::vector<std::unique_ptr<VW::workspace>> vws;
   for (const int seed : {8, 0})
   {
     for (const bool use_simd : {false, true})
     {
-      auto* vw_squarecb =
-          VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " + std::to_string(d) +
-                  " --quiet --random_seed " + std::to_string(seed) + (use_simd ? " --las_hint_explicit_simd" : ""),
-              nullptr, false, nullptr, nullptr);
-      vws.push_back(vw_squarecb);
+      std::vector<std::string> args{"--cb_explore_adf", "--squarecb", "--large_action_space", "--max_actions",
+          std::to_string(d), "--quiet", "--random_seed", std::to_string(seed)};
+      if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+      vws.push_back(VW::initialize(VW::make_unique<VW::config::options_cli>(args)));
     }
   }
 
-  for (auto* vw_ptr : vws)
+  for (auto& vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
 
@@ -684,28 +677,25 @@ TEST(Las, CheckSpannerRejectsSameActions)
 
       vw.finish_example(examples);
     }
-
-    VW::finish(vw);
   }
 }
 
 TEST(Las, CheckSpannerWithActionsThatAreLinearCombinationsOfOtherActions)
 {
   auto d = 8;
-  std::vector<VW::workspace*> vws;
+  std::vector<std::unique_ptr<VW::workspace>> vws;
   for (const int seed : {10, 0})
   {
     for (const bool use_simd : {false, true})
     {
-      auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-              std::to_string(d) + " --quiet --noconstant --random_seed " + std::to_string(seed) +
-              (use_simd ? " --las_hint_explicit_simd" : ""),
-          nullptr, false, nullptr, nullptr);
-      vws.push_back(vw_squarecb);
+      std::vector<std::string> args{"--cb_explore_adf", "--squarecb", "--large_action_space", "--max_actions",
+          std::to_string(d), "--quiet", "--random_seed", std::to_string(seed)};
+      if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+      vws.push_back(VW::initialize(VW::make_unique<VW::config::options_cli>(args)));
     }
   }
 
-  for (auto* vw_ptr : vws)
+  for (auto& vw_ptr : vws)
   {
     auto& vw = *vw_ptr;
     std::vector<std::string> e_r;
@@ -791,8 +781,6 @@ TEST(Las, CheckSpannerWithActionsThatAreLinearCombinationsOfOtherActions)
 
       vw.finish_example(examples);
     }
-
-    VW::finish(vw);
   }
 }
 
@@ -810,29 +798,30 @@ TEST(Las, CheckSingularValueSumDiffForDiffRanksIsSmall)
 
   for (const bool use_simd : {false, true})
   {
-    auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-            " --quiet --random_seed 12" + (use_simd ? " --las_hint_explicit_simd" : ""),
-        nullptr, false, nullptr, nullptr);
+    std::vector<std::string> args{"--cb_explore_adf", "--large_action_space", "--max_actions", std::to_string(d),
+        "--quiet", "--random_seed", "12"};
+    if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+    auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
     {
       VW::multi_ex examples;
 
-      for (const auto& ex : dexs) { examples.push_back(VW::read_example(vw, ex)); }
-      for (const auto& ex : exs) { examples.push_back(VW::read_example(vw, ex)); }
+      for (const auto& ex : dexs) { examples.push_back(VW::read_example(*vw, ex)); }
+      for (const auto& ex : exs) { examples.push_back(VW::read_example(*vw, ex)); }
 
-      vw.learn(examples);
-      vw.finish_example(examples);
+      vw->learn(examples);
+      vw->finish_example(examples);
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw->l->get_enabled_reductions(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
     VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+        as_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -845,31 +834,29 @@ TEST(Las, CheckSingularValueSumDiffForDiffRanksIsSmall)
       action_space->explore._test_only_set_rank(d);
       VW::multi_ex examples;
 
-      for (const auto& ex : dexs) { examples.push_back(VW::read_example(vw, ex)); }
-      for (const auto& ex : exs) { examples.push_back(VW::read_example(vw, ex)); }
+      for (const auto& ex : dexs) { examples.push_back(VW::read_example(*vw, ex)); }
+      for (const auto& ex : exs) { examples.push_back(VW::read_example(*vw, ex)); }
 
-      vw.predict(examples);
+      vw->predict(examples);
 
       small_rank_sum = action_space->explore.S.sum();
-      vw.finish_example(examples);
+      vw->finish_example(examples);
     }
 
     {
       action_space->explore._test_only_set_rank(d + 10);
       VW::multi_ex examples;
 
-      for (const auto& ex : dexs) { examples.push_back(VW::read_example(vw, ex)); }
-      for (const auto& ex : exs) { examples.push_back(VW::read_example(vw, ex)); }
+      for (const auto& ex : dexs) { examples.push_back(VW::read_example(*vw, ex)); }
+      for (const auto& ex : exs) { examples.push_back(VW::read_example(*vw, ex)); }
 
-      vw.predict(examples);
+      vw->predict(examples);
 
       larger_rank_sum = action_space->explore.S.sum();
-      vw.finish_example(examples);
+      vw->finish_example(examples);
     }
 
     EXPECT_NEAR(small_rank_sum - larger_rank_sum, 0.f, 100.0f);
-
-    VW::finish(vw);
   }
 }
 
@@ -878,29 +865,28 @@ TEST(Las, CheckLearnReturnsCorrectPredictions)
   auto d = 2;
   for (const bool use_simd : {false, true})
   {
-    auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-            " --quiet --random_seed 12" + (use_simd ? " --las_hint_explicit_simd" : ""),
-        nullptr, false, nullptr, nullptr);
+    std::vector<std::string> args{"--cb_explore_adf", "--large_action_space", "--max_actions", std::to_string(d),
+        "--quiet", "--random_seed", "12"};
+    if (use_simd) { args.emplace_back("--las_hint_explicit_simd"); }
+    auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
     VW::multi_ex examples;
-    examples.push_back(VW::read_example(vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
-    examples.push_back(VW::read_example(vw, "| a_1:0.1 a_2:0.25 a_3:0.12 a100:1 a200:0.1"));
-    examples.push_back(VW::read_example(vw, "| a_1:0.2 a_2:0.32 a_3:0.15 a100:0.2 a200:0.2"));
-    examples.push_back(VW::read_example(vw, "| a_1:0.5 a_2:0.89 a_3:0.42 a100:1.4 a200:0.5"));
-    examples.push_back(VW::read_example(vw, "| a_4:0.8 a_5:0.32 a_6:0.15 d1:0.2 d10: 0.2"));
-    examples.push_back(VW::read_example(vw, "| a_7 a_8 a_9 v1:0.99"));
-    examples.push_back(VW::read_example(vw, "| a_10 a_11 a_12"));
-    examples.push_back(VW::read_example(vw, "| a_13 a_14 a_15"));
-    examples.push_back(VW::read_example(vw, "| a_16 a_17 a_18:0.2"));
+    examples.push_back(VW::read_example(*vw, "| 1:0.1 2:0.12 3:0.13 b200:2 c500:9"));
+    examples.push_back(VW::read_example(*vw, "| a_1:0.1 a_2:0.25 a_3:0.12 a100:1 a200:0.1"));
+    examples.push_back(VW::read_example(*vw, "| a_1:0.2 a_2:0.32 a_3:0.15 a100:0.2 a200:0.2"));
+    examples.push_back(VW::read_example(*vw, "| a_1:0.5 a_2:0.89 a_3:0.42 a100:1.4 a200:0.5"));
+    examples.push_back(VW::read_example(*vw, "| a_4:0.8 a_5:0.32 a_6:0.15 d1:0.2 d10: 0.2"));
+    examples.push_back(VW::read_example(*vw, "| a_7 a_8 a_9 v1:0.99"));
+    examples.push_back(VW::read_example(*vw, "| a_10 a_11 a_12"));
+    examples.push_back(VW::read_example(*vw, "| a_13 a_14 a_15"));
+    examples.push_back(VW::read_example(*vw, "| a_16 a_17 a_18:0.2"));
 
-    vw.learn(examples);
+    vw->learn(examples);
 
     const auto& preds = examples[0]->pred.a_s;
 
     EXPECT_EQ(preds.size(), examples.size());
 
-    vw.finish_example(examples);
-
-    VW::finish(vw);
+    vw->finish_example(examples);
   }
 }
