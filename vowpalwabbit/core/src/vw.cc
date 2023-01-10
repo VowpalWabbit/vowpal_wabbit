@@ -214,8 +214,11 @@ VW::workspace* VW::seed_vw_model(
   auto serialized_options = serializer.str();
   serialized_options = serialized_options + " " + extra_args;
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   VW::workspace* new_model =
       VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
+  VW_WARNING_STATE_POP
   delete new_model->sd;
 
   // reference model states stored in the specified VW instance
@@ -238,7 +241,10 @@ VW::workspace* VW::initialize_escaped(
 
   try
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     ret = initialize(argc, argv, model, skip_model_load, trace_listener, trace_context);
+    VW_WARNING_STATE_POP
   }
   catch (...)
   {
