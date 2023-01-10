@@ -13,7 +13,7 @@
 #include "vw/core/loss_functions.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/print_utils.h"
-#include "vw/core/reductions/gd.h"  // GD::foreach_feature() needed in subtract_example()
+#include "vw/core/reductions/gd.h"  // VW::foreach_feature() needed in subtract_example()
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -78,7 +78,7 @@ void subtract_example(VW::workspace& all, VW::example* ec, VW::example* ecsub)
 {
   auto& wap_fs = ec->feature_space[VW::details::WAP_LDF_NAMESPACE];
   wap_fs.sum_feat_sq = 0;
-  GD::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
+  VW::foreach_feature<VW::example&, uint64_t, subtract_feature>(all, *ecsub, *ec);
   ec->indices.push_back(VW::details::WAP_LDF_NAMESPACE);
   ec->num_features += wap_fs.size();
   ec->reset_total_sum_feat_sq();
@@ -710,7 +710,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
 
-  single_learner* pbase = as_singleline(stack_builder.setup_base_learner());
+  single_learner* base = as_singleline(stack_builder.setup_base_learner());
 
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
   std::string name_addition;
@@ -735,10 +735,12 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_csoaa_ldf;
   }
 
-  auto* l = make_reduction_learner(std::move(ld), pbase, learn_csoaa_ldf, pred_ptr, name + name_addition)
+  auto* l = make_reduction_learner(std::move(ld), base, learn_csoaa_ldf, pred_ptr, name + name_addition)
                 .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
                 .set_input_label_type(VW::label_type_t::CS)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(pred_type)
                 .build();
 

@@ -102,8 +102,8 @@ std::unique_ptr<VW::workspace> copy_workspace(const VW::workspace* ws, VW::io::l
   VW::io_buf temp_buffer;
   temp_buffer.add_file(VW::io::create_vector_writer(backing_vector));
   VW::save_predictor(*const_cast<VW::workspace*>(ws), temp_buffer);
-  return VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(command_line),
-      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()), nullptr, nullptr, logger);
+  return VW::initialize(VW::make_unique<VW::config::options_cli>(command_line),
+      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()), false, nullptr, nullptr, logger);
 }
 
 std::vector<float> calc_per_model_weighting(const std::vector<float>& example_counts)
@@ -156,7 +156,7 @@ void model_delta::serialize(VW::io::writer& output) const
 std::unique_ptr<model_delta> model_delta::deserialize(VW::io::reader& input)
 {
   auto command_line = std::vector<std::string>{"--preserve_performance_counters", "--quiet"};
-  return VW::make_unique<model_delta>(VW::initialize_experimental(
+  return VW::make_unique<model_delta>(VW::initialize(
       VW::make_unique<VW::config::options_cli>(command_line), VW::make_unique<reader_ref_adapter>(input)));
 }
 
@@ -173,8 +173,8 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   if (logger == nullptr) { command_line.emplace_back("--quiet"); }
   else { command_line.emplace_back("--driver_output_off"); }
   command_line.emplace_back("--preserve_performance_counters");
-  auto dest_workspace = VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(command_line), nullptr, nullptr, nullptr, logger);
+  auto dest_workspace =
+      VW::initialize(VW::make_unique<VW::config::options_cli>(command_line), nullptr, false, nullptr, nullptr, logger);
 
   // Get example counts and compute weighting of models
   std::vector<float> example_counts;
@@ -270,8 +270,8 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
   dest_command_line.emplace_back("--quiet");
   dest_command_line.emplace_back("--preserve_performance_counters");
 
-  auto destination_workspace = VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
+  auto destination_workspace = VW::initialize(
+      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, false, nullptr, nullptr, nullptr);
 
   auto* target_learner = destination_workspace->l;
   while (target_learner != nullptr)
@@ -316,8 +316,8 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
   dest_command_line.emplace_back("--quiet");
   dest_command_line.emplace_back("--preserve_performance_counters");
 
-  auto destination_workspace = VW::initialize_experimental(
-      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
+  auto destination_workspace = VW::initialize(
+      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, false, nullptr, nullptr, nullptr);
 
   auto* target_learner = destination_workspace->l;
   while (target_learner != nullptr)

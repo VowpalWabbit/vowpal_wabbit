@@ -72,7 +72,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
     if (_all->weights.sparse)
     {
       A_triplet_constructor w(_all->weights.sparse_weights.mask(), row_index, _triplets, max_non_zero_col);
-      GD::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
+      VW::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
           _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
@@ -83,7 +83,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
     {
       A_triplet_constructor w(_all->weights.dense_weights.mask(), row_index, _triplets, max_non_zero_col);
 
-      GD::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+      VW::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
           _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
@@ -318,7 +318,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }
 

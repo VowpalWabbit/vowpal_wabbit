@@ -204,7 +204,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     }
   }
 
-  exploration::enforce_minimum_probability(
+  VW::explore::enforce_minimum_probability(
       min_prob * num_actions, !_nounif, begin_scores(_action_probs), end_scores(_action_probs));
 
   sort_action_probs(_action_probs, _scores);
@@ -342,6 +342,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
                 .set_print_update(explore_type::print_update)
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

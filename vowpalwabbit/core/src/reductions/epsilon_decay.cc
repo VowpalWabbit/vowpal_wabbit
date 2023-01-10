@@ -385,7 +385,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   // to make sure there are not subtle bugs
   auto* base_learner = stack_builder.setup_base_learner();
 
-  GD::gd& gd = *static_cast<GD::gd*>(
+  VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
       base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
   auto& adf_data =
       *static_cast<VW::reductions::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
@@ -404,10 +404,9 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_input_label_type(VW::label_type_t::CB)
                         .set_output_label_type(VW::label_type_t::CB)
-                        .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                        .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                         .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                         .set_params_per_weight(model_count)
-                        .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_epsilon_decay)
                         .set_finish(::finish)
                         .build();

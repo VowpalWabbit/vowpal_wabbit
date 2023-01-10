@@ -21,7 +21,7 @@ float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
   float sum_features_squared = 0.f;
   for (const VW::features& fs : ec) { sum_features_squared += fs.sum_feat_sq; }
 
-  float calculated_sum_features_squared = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
+  float calculated_sum_features_squared = VW::eval_sum_ft_squared_of_generated_ft(
       permutations, *ec.interactions, *ec.extent_interactions, ec.feature_space);
   sum_features_squared += calculated_sum_features_squared;
   return sum_features_squared;
@@ -122,7 +122,7 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
   else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
-  GD::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
+  VW::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
 
   std::swap(fec.fs, ffs.fs);
 

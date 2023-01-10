@@ -1,5 +1,6 @@
 set(vw_explore_sources
     include/vw/explore/explore_internal.h
+    include/vw/explore/explore_error_codes.h
     include/vw/explore/explore.h
 )
 

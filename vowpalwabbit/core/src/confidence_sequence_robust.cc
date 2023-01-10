@@ -175,7 +175,7 @@ double countable_discrete_base::root_brentq(
 
   if (!(fa * fb < 0))
   {
-    std::cerr << "Signs of f(x_min) and f(x_max) must be opposites" << std::endl;
+    THROW("Signs of f(x_min) and f(x_max) must be opposites");
     return 0;
   }
 

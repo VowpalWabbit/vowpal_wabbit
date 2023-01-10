@@ -124,7 +124,7 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner
     std::push_heap(preds.begin(), preds.end(), std::greater<VW::action_score>());
   }
 
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(_action_probs), end_scores(_action_probs));
 
   std::sort(_action_probs.begin(), _action_probs.end(), std::greater<VW::action_score>());
 
@@ -214,6 +214,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
                 .set_print_update(explore_type::print_update)
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

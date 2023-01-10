@@ -904,7 +904,7 @@ void learn_batch(lda& l, std::vector<example*>& batch)
   for (size_t d = 0; d < batch_size; d++)
   {
     float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), batch[d], l.all->power_t);
-    if (l.all->audit) { GD::print_audit_features(*l.all, *batch[d]); }
+    if (l.all->audit) { VW::details::print_audit_features(*l.all, *batch[d]); }
     // If the doc is empty, give it loss of 0.
     if (l.doc_lengths[d] > 0)
     {
