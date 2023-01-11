@@ -107,7 +107,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
         if (a_s.action == labelled_action)
         {
           float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          if (model_ind == model_count - 1) { assert(std::abs(w - 1) < 1e-6); } // Check w = 1 for champ
+          if (model_ind == model_count - 1) { assert(std::abs(w - 1) < 1e-6); }  // Check w = 1 for champ
           for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
           {
             conf_seq_estimators[model_ind][estimator_ind].update(w, r);
