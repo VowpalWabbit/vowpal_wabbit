@@ -271,7 +271,7 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 
   VW::driver_output_func_t trace_listener = nullptr;
   void* trace_context = nullptr;
-  std::unique_ptr<VW::io::logger> logger = nullptr;
+  std::unique_ptr<VW::io::logger> logger_ptr = nullptr;
 
   if (py_log)
   {
