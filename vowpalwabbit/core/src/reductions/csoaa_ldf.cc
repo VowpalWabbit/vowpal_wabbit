@@ -499,10 +499,61 @@ const VW::example* get_example_with_labelled_class(uint32_t class_to_find, const
   return nullptr;
 }
 
-void output_probabilities_example(VW::workspace& all, const VW::multi_ex& ec_seq)
+void end_pass(ldf&) {}
+
+void update_stats_csoaa_ldf_rank(const VW::workspace& /* all */, VW::shared_data& sd, const ldf& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
+  if (test_ldf_sequence(ec_seq, logger)) { sd.weighted_unlabeled_examples += ec_seq[0]->weight; }
+  else { sd.weighted_labeled_examples += ec_seq[0]->weight; }
+  sd.example_number++;
+  const auto& head_ec = *ec_seq[0];
+
   size_t num_features = cs_count_features(ec_seq);
-  all.sd->total_features += num_features;
+  sd.total_features += num_features;
+
+  const VW::v_array<VW::action_score>& preds = head_ec.pred.a_s;
+
+  const auto* predicted_ec = get_example_with_labelled_class(preds[0].action, ec_seq);
+  if (predicted_ec != nullptr)
+  {
+    const auto loss = predicted_ec->l.cs.costs[0].x;
+    assert(loss >= 0);
+    sd.sum_loss += loss;
+    sd.sum_loss_since_last_dump += loss;
+  }
+}
+
+void output_example_prediction_csoaa_ldf_rank(
+    VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
+{
+  const auto& head_ec = *ec_seq[0];
+  for (auto& sink : all.final_prediction_sink)
+  {
+    VW::details::print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, logger);
+  }
+  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
+  VW::details::global_print_newline(all.final_prediction_sink, logger);
+}
+
+void print_update_csoaa_ldf_rank(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+{
+  const auto& head_ec = *ec_seq[0];
+  const VW::v_array<VW::action_score>& preds = head_ec.pred.a_s;
+  const auto* predicted_ec = get_example_with_labelled_class(preds[0].action, ec_seq);
+  VW::details::print_cs_update_action_scores(all, predicted_ec == nullptr, cs_count_features(ec_seq), preds);
+}
+
+void update_stats_csoaa_ldf_prob(const VW::workspace& all, VW::shared_data& sd, const ldf& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& logger)
+{
+  if (test_ldf_sequence(ec_seq, logger)) { sd.weighted_unlabeled_examples += ec_seq[0]->weight; }
+  else { sd.weighted_labeled_examples += ec_seq[0]->weight; }
+  sd.example_number++;
+
+  size_t num_features = cs_count_features(ec_seq);
+  sd.total_features += num_features;
 
   uint32_t predicted_class = 0;
   // Predicted class is the index of the example with the highest probability.
@@ -519,8 +570,8 @@ void output_probabilities_example(VW::workspace& all, const VW::multi_ex& ec_seq
     const auto loss = predicted_ec->l.cs.costs[0].x;
     // Is this assert correct?
     assert(loss >= 0);
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
+    sd.sum_loss += loss;
+    sd.sum_loss_since_last_dump += loss;
   }
 
   // Multiclass loss calc
@@ -546,26 +597,46 @@ void output_probabilities_example(VW::workspace& all, const VW::multi_ex& ec_seq
   // What should be the "ec"? data.ec_seq[0]?
   // Based on parse_args.cc (where "average multiclass log loss") is printed,
   // I decided to try yet another way: (!all.holdout_set_off).
-  if (!all.holdout_set_off) { all.sd->holdout_multiclass_log_loss += multiclass_log_loss; }
-  else { all.sd->multiclass_log_loss += multiclass_log_loss; }
-
-  for (auto& sink : all.final_prediction_sink)
-  {
-    for (const auto prob : ec_seq[0]->pred.scalars)
-    {
-      all.print_by_ref(sink.get(), prob, 0, ec_seq[0]->tag, all.logger);
-    }
-  }
-
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, all.logger); }
-
-  VW::details::print_cs_update_multiclass(all, predicted_ec == nullptr, num_features, predicted_class);
+  if (!all.holdout_set_off) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
+  else { sd.multiclass_log_loss += multiclass_log_loss; }
 }
 
-void output_example(VW::workspace& all, const VW::multi_ex& ec_seq)
+void output_example_prediction_csoaa_ldf_prob(
+    VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
+  for (auto& sink : all.final_prediction_sink)
+  {
+    for (const auto prob : ec_seq[0]->pred.scalars) { all.print_by_ref(sink.get(), prob, 0, ec_seq[0]->tag, logger); }
+  }
+  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
+  VW::details::global_print_newline(all.final_prediction_sink, logger);
+}
+
+void print_update_csoaa_ldf_prob(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+{
+  uint32_t predicted_class = 0;
+  // Predicted class is the index of the example with the highest probability.
+  const auto& probs = ec_seq[0]->pred.scalars;
+  const auto max_prob_it = std::max_element(probs.begin(), probs.end());
+  auto max_prob_index = std::distance(probs.begin(), max_prob_it);
+  predicted_class = ec_seq[max_prob_index]->l.cs.costs[0].class_index;
+
+  // standard loss calc
+  const auto* predicted_ec = get_example_with_labelled_class(predicted_class, ec_seq);
+
+  VW::details::print_cs_update_multiclass(all, predicted_ec == nullptr, cs_count_features(ec_seq), predicted_class);
+}
+
+void update_stats_csoaa_ldf_multiclass(const VW::workspace& /* all */, VW::shared_data& sd, const ldf& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& logger)
+{
+  if (test_ldf_sequence(ec_seq, logger)) { sd.weighted_unlabeled_examples += ec_seq[0]->weight; }
+  else { sd.weighted_labeled_examples += ec_seq[0]->weight; }
+  sd.example_number++;
+
   size_t num_features = cs_count_features(ec_seq);
-  all.sd->total_features += num_features;
+  sd.total_features += num_features;
 
   const uint32_t predicted_class = ec_seq[0]->pred.multiclass;
 
@@ -576,67 +647,25 @@ void output_example(VW::workspace& all, const VW::multi_ex& ec_seq)
     const auto loss = predicted_ec->l.cs.costs[0].x;
     // Is this assert correct?
     assert(loss >= 0);
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
+    sd.sum_loss += loss;
+    sd.sum_loss_since_last_dump += loss;
   }
-
-  for (auto& sink : all.final_prediction_sink) { csoaa_ldf_multiclass_printline(all, sink.get(), ec_seq, all.logger); }
-
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, all.logger); }
-
-  VW::details::print_cs_update_multiclass(all, predicted_ec == nullptr, num_features, predicted_class);
 }
 
-void output_rank_example(VW::workspace& all, const VW::multi_ex& ec_seq)
+void output_example_prediction_csoaa_ldf_multiclass(
+    VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  const auto& head_ec = *ec_seq[0];
-
-  size_t num_features = cs_count_features(ec_seq);
-  all.sd->total_features += num_features;
-
-  const VW::v_array<VW::action_score>& preds = head_ec.pred.a_s;
-
-  const auto* predicted_ec = get_example_with_labelled_class(preds[0].action, ec_seq);
-  if (predicted_ec != nullptr)
-  {
-    const auto loss = predicted_ec->l.cs.costs[0].x;
-    assert(loss >= 0);
-    all.sd->sum_loss += loss;
-    all.sd->sum_loss_since_last_dump += loss;
-  }
-
-  for (auto& sink : all.final_prediction_sink)
-  {
-    VW::details::print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, all.logger);
-  }
-
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, all.logger); }
-
-  VW::details::print_cs_update_action_scores(all, predicted_ec == nullptr, num_features, preds);
+  for (auto& sink : all.final_prediction_sink) { csoaa_ldf_multiclass_printline(all, sink.get(), ec_seq, logger); }
+  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
+  VW::details::global_print_newline(all.final_prediction_sink, logger);
 }
 
-void output_example_seq(VW::workspace& all, const ldf& data, const VW::multi_ex& ec_seq)
+void print_update_csoaa_ldf_multiclass(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
+    const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
-  if (test_ldf_sequence(ec_seq, all.logger)) { all.sd->weighted_unlabeled_examples += ec_seq[0]->weight; }
-  else { all.sd->weighted_labeled_examples += ec_seq[0]->weight; }
-  all.sd->example_number++;
-
-  if (data.rank) { output_rank_example(all, ec_seq); }
-  else if (data.is_probabilities) { output_probabilities_example(all, ec_seq); }
-  else { output_example(all, ec_seq); }
-}
-
-void end_pass(ldf&) {}
-
-void finish_multiline_example(VW::workspace& all, ldf& data, VW::multi_ex& ec_seq)
-{
-  if (!ec_seq.empty())
-  {
-    output_example_seq(all, data, ec_seq);
-    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
-  }
-
-  VW::finish_example(all, ec_seq);
+  const uint32_t predicted_class = ec_seq[0]->pred.multiclass;
+  const auto* predicted_ec = get_example_with_labelled_class(predicted_class, ec_seq);
+  VW::details::print_cs_update_multiclass(all, predicted_ec == nullptr, cs_count_features(ec_seq), predicted_class);
 }
 }  // namespace
 
@@ -727,6 +756,9 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   ld->label_features.reserve(256);
 
   single_learner* base = as_singleline(stack_builder.setup_base_learner());
+  VW::learner_update_stats_func<ldf, VW::multi_ex>* update_stats_func = nullptr;
+  VW::learner_output_example_prediction_func<ldf, VW::multi_ex>* output_example_prediction_func = nullptr;
+  VW::learner_print_update_func<ldf, VW::multi_ex>* print_update_func = nullptr;
 
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
   std::string name_addition;
@@ -737,27 +769,38 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
     name_addition = "-rank";
     pred_type = VW::prediction_type_t::ACTION_SCORES;
     pred_ptr = predict_csoaa_ldf_rank;
+    update_stats_func = update_stats_csoaa_ldf_rank;
+    output_example_prediction_func = output_example_prediction_csoaa_ldf_rank;
+    print_update_func = print_update_csoaa_ldf_rank;
   }
   else if (ld->is_probabilities)
   {
     name_addition = "-prob";
     pred_type = VW::prediction_type_t::SCALARS;
     pred_ptr = predict_csoaa_ldf_probabilities;
+    update_stats_func = update_stats_csoaa_ldf_prob;
+    output_example_prediction_func = output_example_prediction_csoaa_ldf_prob;
+    print_update_func = print_update_csoaa_ldf_prob;
   }
   else
   {
     name_addition = "";
     pred_type = VW::prediction_type_t::MULTICLASS;
     pred_ptr = predict_csoaa_ldf;
+    update_stats_func = update_stats_csoaa_ldf_multiclass;
+    output_example_prediction_func = output_example_prediction_csoaa_ldf_multiclass;
+    print_update_func = print_update_csoaa_ldf_multiclass;
   }
 
   auto* l = make_reduction_learner(std::move(ld), base, learn_csoaa_ldf, pred_ptr, name + name_addition)
-                .set_finish_example(finish_multiline_example)
                 .set_end_pass(end_pass)
                 .set_input_label_type(VW::label_type_t::CS)
                 .set_output_label_type(VW::label_type_t::SIMPLE)
                 .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(pred_type)
+                .set_update_stats(update_stats_func)
+                .set_output_example_prediction(output_example_prediction_func)
+                .set_print_update(print_update_func)
                 .build();
 
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
