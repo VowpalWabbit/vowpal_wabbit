@@ -170,29 +170,6 @@ void workspace::finish_example(multi_ex& ec)
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void workspace::finish()
-{
-  if (l!= nullptr) { l->finish(); }
-
-  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!quiet && !options->was_supplied("audit_regressor"))
-  {
-    sd->print_summary(*trace_message, *sd, *loss, current_pass, holdout_set_off);
-  }
-
-  details::finalize_regressor(*this, final_regressor_name);
-  if (options->was_supplied("dump_json_weights_experimental"))
-  {
-    auto content = dump_weights_to_json_experimental();
-    auto writer = VW::io::open_file_writer(json_weights_file_name);
-    writer->write(content.c_str(), content.length());
-  }
-  global_metrics.register_metrics_callback(
-      [this](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(*this, sink); });
-  VW::reductions::output_metrics(*this);
-  logger.log_summary();
-}
-
 template <typename WeightsT>
 std::string dump_weights_to_json_weight_typed(const WeightsT& weights,
     const std::map<uint64_t, VW::details::invert_hash_info>& index_name_map, const parameters& parameter_holder,
