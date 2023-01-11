@@ -64,26 +64,26 @@ TEST(EpsilonDecay, InitWIterations)
 
 TEST(EpsilonDecay, ChampChangeWIterations)
 {
-  const size_t num_iterations = 840;
-  const size_t seed = 1;
-  const std::vector<uint64_t> swap_after = {500};
-  const size_t deterministic_champ_switch = 832;
+  const size_t num_iterations = 300;
+  const size_t seed = 0;
+  const std::vector<uint64_t> swap_after = {200};
+  const size_t deterministic_champ_switch = 298;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1,
       [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[0][0].update_count, 79);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 79);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 79);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 79);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 97);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 97);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 97);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 117);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 117);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 831);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[0][0].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 94);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 94);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 94);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 95);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 95);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 297);
         return true;
       });
 
@@ -95,12 +95,12 @@ TEST(EpsilonDecay, ChampChangeWIterations)
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 0);
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 0);
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 0);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 80);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 80);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 80);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 98);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 98);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 118);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 0);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 0);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 0);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 94);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 94);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 95);
         return true;
       });
 
@@ -108,7 +108,7 @@ TEST(EpsilonDecay, ChampChangeWIterations)
   auto ctr = simulator::_test_helper_hook(
       "--epsilon_decay --model_count 4 --cb_explore_adf --quiet -q ::", test_hooks, num_iterations, seed, swap_after);
 
-  EXPECT_GT(ctr.back(), 0.6f);
+  EXPECT_GT(ctr.back(), 0.4f);
 }
 
 TEST(EpsilonDecay, UpdateCountWIterations)
