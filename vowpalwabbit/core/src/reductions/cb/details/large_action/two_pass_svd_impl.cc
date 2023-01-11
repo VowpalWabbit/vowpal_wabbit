@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 
 #include "../large_action_space.h"
+#include "qr_decomposition.h"
 #include "vw/core/cb.h"
 #include "vw/core/label_dictionary.h"
-#include "vw/core/qr_decomposition.h"
 #include "vw/core/reductions/gd.h"
 
 namespace VW
