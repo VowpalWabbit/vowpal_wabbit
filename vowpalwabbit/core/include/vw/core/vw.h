@@ -184,7 +184,7 @@ VW_WARNING_DISABLE_BADLY_FORMED_XML
  */
 VW_DEPRECATED(
     "If needing to cleanup memory, rely on the workspace destructor. Driver finalization is now handled by "
-    "VW::workspace.finish().")
+    "VW::workspace::finish().")
 void finish(VW::workspace& all, bool delete_all = true);
 
 VW_WARNING_STATE_POP
