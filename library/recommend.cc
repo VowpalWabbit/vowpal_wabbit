@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
 
   if (verbose > 0) { progress(); }
 
-  model->finalize_driver();
+  model->finish();
   fclose(fI);
   fclose(fU);
   return 0;

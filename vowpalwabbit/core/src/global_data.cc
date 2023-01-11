@@ -166,8 +166,10 @@ void workspace::finish_example(multi_ex& ec)
   VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
 }
 
-void workspace::finalize_driver()
+void workspace::finish()
 {
+  if (l!= nullptr) { l->finish(); }
+
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!quiet && !options->was_supplied("audit_regressor"))
   {
@@ -445,7 +447,6 @@ workspace::~workspace()
 {
   if (l != nullptr)
   {
-    l->finish();
     delete l;
     l = nullptr;
   }

@@ -104,7 +104,7 @@ extern "C"
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_Finish(VW_HANDLE handle)
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
-    pointer->finalize_driver();
+    pointer->finish();
     delete pointer;
   }
 

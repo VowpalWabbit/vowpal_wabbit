@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
   std::cerr << "p3 = " << vec3->pred.scalar << std::endl;
   // TODO: this does not invoke m_vw->l->finish_example()
   VW::finish_example(*model, *vec3);
-  model->finalize_driver();
+  model->finish();
   model.reset();
 
   auto model2 = VW::initialize(VW::make_unique<VW::config::options_cli>(
@@ -68,6 +68,6 @@ int main(int argc, char* argv[])
   }
 
   VW::finish_example(*model2, *vec2);
-  model2->finalize_driver();
+  model2->finish();
   model2.reset();
 }

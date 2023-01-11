@@ -128,7 +128,7 @@ public:
   /// This is used to perform finalization steps the driver/cli would normally do.
   /// If using VW in library mode, this call is optional.
   /// Some things this function does are: print summary, finalize regressor, output metrics, etc
-  void finalize_driver();
+  void finish();
 
   /**
    * @brief Generate a JSON string with the current model state and invert hash

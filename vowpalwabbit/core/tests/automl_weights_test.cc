@@ -333,8 +333,8 @@ TEST(AutomlWeights, EqualNoAutomlWIterations)
     iter_2 += AUTOML_MODELS;
   }
 
-  vw_qcolcol->finalize_driver();
-  vw_automl->finalize_driver();
+  vw_qcolcol->finish();
+  vw_automl->finish();
 
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
   EXPECT_EQ(qcolcol_weights_vector.size(), 31);

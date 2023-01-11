@@ -11,6 +11,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/learner.h"
+#include "vw/core/memory.h"
 #include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
@@ -270,11 +271,11 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 
   VW::driver_output_func_t trace_listener = nullptr;
   void* trace_context = nullptr;
+  std::unique_ptr<VW::io::logger> logger = nullptr;
 
-  VW::io::logger* logger_ptr = nullptr;
   if (py_log)
   {
-    trace_listener = (py_log_wrapper::trace_listener_py);
+    trace_listener = py_log_wrapper::trace_listener_py;
     trace_context = py_log.get();
 
     const auto log_function = [](void* context, VW::io::log_level level, const std::string& message)
@@ -294,12 +295,11 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
       }
     };
 
-    auto custom_logger = VW::io::create_custom_sink_logger(py_log.get(), log_function);
-    logger_ptr = &custom_logger;
+    logger_ptr = VW::make_unique<VW::io::logger>(VW::io::create_custom_sink_logger(py_log.get(), log_function));
   }
 
   auto options = VW::make_unique<VW::config::options_cli>(args_vec);
-  auto foo = VW::initialize(std::move(options), nullptr, trace_listener, trace_context, logger_ptr);
+  auto foo = VW::initialize(std::move(options), nullptr, trace_listener, trace_context, logger_ptr.get());
   return boost::shared_ptr<VW::workspace>(foo.release());
 }
 
@@ -358,7 +358,7 @@ py::dict get_learner_metrics(vw_ptr all)
 
 void my_finish(vw_ptr all)
 {
-  all->finalize_driver();  // don't delete all because python will do that for us!
+  all->finish();  // don't delete all because python will do that for us!
 }
 
 void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }

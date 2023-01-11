@@ -105,7 +105,7 @@ VW::workspace* initialize_with_builder(const std::string& s, io_buf* model = nul
  * longer needed and the destructor will free the workspace. However,
  * VW::finish() would also do driver finalization steps, such as writing the output
  * model. This is not often needed in library mode but can be run using
- * VW::workspace::finalize_driver().
+ * VW::workspace::finish().
  *
  * @param options The options to initialize the workspace with. Usually an
  * instance of VW::config::options_cli.
@@ -184,7 +184,7 @@ VW_WARNING_DISABLE_BADLY_FORMED_XML
  */
 VW_DEPRECATED(
     "If needing to cleanup memory, rely on the workspace destructor. Driver finalization is now handled by "
-    "VW::workspace.finalize_driver().")
+    "VW::workspace.finish().")
 void finish(VW::workspace& all, bool delete_all = true);
 
 VW_WARNING_STATE_POP

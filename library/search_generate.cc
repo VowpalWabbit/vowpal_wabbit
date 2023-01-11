@@ -537,14 +537,14 @@ void train()
     // run_istream(gen, "phrase-table.te", false, 100000);
     run_easy();
   }
-  vw_obj->finalize_driver();
+  vw_obj->finish();
 }
 
 void predict()
 {
   auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(
       std::vector<std::string>{"--quiet", "-t", "--example_queue_limit", "1024", "-i", "my_model"}));
-  vw_obj->finalize_driver();
+  vw_obj->finish();
 }
 
 int main(int argc, char* argv[])

@@ -212,7 +212,7 @@ std::vector<float> _test_helper(const std::vector<std::string>& vw_arg, size_t n
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg));
   simulator::cb_sim sim(seed);
   auto ctr = sim.run_simulation(vw.get(), num_iterations);
-  vw->finalize_driver();
+  vw->finish();
   return ctr;
 }
 
@@ -235,7 +235,7 @@ std::vector<float> _test_helper_save_load(const std::vector<std::string>& vw_arg
     io_writer.flush();
   }
 
-  first_vw->finalize_driver();
+  first_vw->finish();
   first_vw.reset();
 
   // reload in another instance
@@ -246,7 +246,7 @@ std::vector<float> _test_helper_save_load(const std::vector<std::string>& vw_arg
 
   // continue
   ctr = sim.run_simulation(other_vw.get(), split, true, before_save + 1, swap_after);
-  other_vw->finalize_driver();
+  other_vw->finish();
   return ctr;
 }
 
@@ -256,7 +256,7 @@ std::vector<float> _test_helper_hook(const std::vector<std::string>& vw_arg, cal
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg));
   simulator::cb_sim sim(seed);
   auto ctr = sim.run_simulation_hook(vw.get(), num_iterations, hooks, true, 1, false, 0, swap_after, scale_reward);
-  vw->finalize_driver();
+  vw->finish();
   return ctr;
 }
 }  // namespace simulator

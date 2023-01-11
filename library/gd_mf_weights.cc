@@ -132,6 +132,6 @@ int main(int argc, char* argv[])
   constant << weights[ec->feature_space[VW::details::CONSTANT_NAMESPACE].indices[0]] << std::endl;
 
   // clean up
-  model->finalize_driver();
+  model->finish();
   fclose(file);
 }

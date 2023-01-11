@@ -541,7 +541,7 @@ void VW::finish(VW::workspace& all, bool delete_all)
         if (delete_all) { delete &all; }
       });
 
-  all.finalize_driver();
+  all.finish();
 }
 
 void VW::sync_stats(VW::workspace& all)

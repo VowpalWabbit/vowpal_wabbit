@@ -5,5 +5,5 @@
 int main()
 {
   auto workspace = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--quiet"}));
-  workspace->finalize_driver();
+  workspace->finish();
 }

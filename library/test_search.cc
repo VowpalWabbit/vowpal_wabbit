@@ -101,7 +101,7 @@ void train()
   auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(
       std::vector<std::string>{"--search 4 --quiet --search_task hook --example_queue_limit 1024 -f my_model"}));
   run(*vw_obj);
-  vw_obj->finalize_driver();
+  vw_obj->finish();
 }
 
 void predict()
@@ -110,7 +110,7 @@ void predict()
   auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(
       std::vector<std::string>{"--quiet -t --example_queue_limit 1024 -i my_model"}));
   run(*vw_obj);
-  vw_obj->finalize_driver();
+  vw_obj->finish();
 }
 
 void test_buildin_task()
@@ -144,7 +144,7 @@ void test_buildin_task()
     for (size_t i = 0; i < mult_ex.size(); i++) { VW::finish_example(*vw_obj, *mult_ex[i]); }
   }
 
-  vw_obj->finalize_driver();
+  vw_obj->finish();
 }
 
 int main(int argc, char* argv[])

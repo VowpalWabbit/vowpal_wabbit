@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     if (skip_driver)
     {
       // Leave deletion up to the unique_ptr
-      for (auto& v : alls) { v->finalize_driver(); }
+      for (auto& v : alls) { v->finish(); }
       return 0;
     }
 
@@ -121,7 +121,7 @@ int main(int argc, char* argv[])
 
       VW::sync_stats(*v);
       // Leave deletion up to the unique_ptr
-      v->finalize_driver();
+      v->finish();
     }
   }
   catch (VW::vw_exception& e)
