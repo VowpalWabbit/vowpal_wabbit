@@ -111,11 +111,6 @@ std::unique_ptr<VW::workspace> seed_vw_model(VW::workspace& vw_model, const std:
     driver_output_func_t driver_output_func = nullptr, void* driver_output_func_context = nullptr,
     VW::io::logger* custom_logger = nullptr);
 
-/// This is used to perform finalization steps the driver/cli would normally do.
-/// If using VW in library mode, this call is optional.
-/// Some things this function does are: print summary, finalize regressor, output metrics, etc
-void finalize_driver(VW::workspace& all);
-
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_BADLY_FORMED_XML
 /**
@@ -169,7 +164,7 @@ VW_WARNING_DISABLE_BADLY_FORMED_XML
  */
 // TODO: uncomment when all uses are migrated
 // VW_DEPRECATED("If needing to cleanup memory, rely on the workspace destructor. Driver finalization is now handled by
-// finalize_driver.")
+// VW::workspace::finish().")
 void finish(VW::workspace& all, bool delete_all = true);
 
 VW_WARNING_STATE_POP

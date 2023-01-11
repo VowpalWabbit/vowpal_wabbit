@@ -326,27 +326,6 @@ std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const 
   return new_model;
 }
 
-void VW::finalize_driver(VW::workspace& all)
-{
-  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!all.quiet && !all.options->was_supplied("audit_regressor"))
-  {
-    all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off);
-  }
-
-  details::finalize_regressor(all, all.final_regressor_name);
-  if (all.options->was_supplied("dump_json_weights_experimental"))
-  {
-    auto content = all.dump_weights_to_json_experimental();
-    auto writer = VW::io::open_file_writer(all.json_weights_file_name);
-    writer->write(content.c_str(), content.length());
-  }
-  all.global_metrics.register_metrics_callback(
-      [&all](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(all, sink); });
-  VW::reductions::output_metrics(all);
-  all.logger.log_summary();
-}
-
 VW::workspace* VW::initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
     VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> setup_base)
 {
@@ -551,7 +530,7 @@ void VW::finish(VW::workspace& all, bool delete_all)
         if (delete_all) { delete &all; }
       });
 
-  finalize_driver(all);
+  all.finish();
 }
 
 void VW::sync_stats(VW::workspace& all)

@@ -4,6 +4,10 @@
 
 #include "vw/core/global_data.h"
 
+#include "vw/config/options.h"
+#include "vw/core/parse_regressor.h"
+#include "vw/core/reductions/metrics.h"
+
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "vw/common/future_compat.h"
@@ -417,11 +421,33 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 }
 VW_WARNING_STATE_POP
 
+void workspace::finish()
+{
+  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
+  if (!quiet && !options->was_supplied("audit_regressor"))
+  {
+    sd->print_summary(*trace_message, *sd, *loss, current_pass, holdout_set_off);
+  }
+
+  details::finalize_regressor(*this, final_regressor_name);
+  if (options->was_supplied("dump_json_weights_experimental"))
+  {
+    auto content = dump_weights_to_json_experimental();
+    auto writer = VW::io::open_file_writer(json_weights_file_name);
+    writer->write(content.c_str(), content.length());
+  }
+  global_metrics.register_metrics_callback(
+      [this](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(*this, sink); });
+  VW::reductions::output_metrics(*this);
+  logger.log_summary();
+
+  if (l != nullptr) { l->finish(); }
+}
+
 workspace::~workspace()
 {
   if (l != nullptr)
   {
-    l->finish();
     delete l;
     l = nullptr;
   }
