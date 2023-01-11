@@ -606,11 +606,10 @@ public:
     return this;
   }
 
-  // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
-  BaseState<audit>* NO_SANITIZE_UNDEFINED StartObject(Context<audit>& ctx) override
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
     // allocate new example
-    ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+    ctx.ex = &ctx.example_factory();
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::CCB)
     {
@@ -657,11 +656,10 @@ public:
     return this;
   }
 
-  // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
-  BaseState<audit>* NO_SANITIZE_UNDEFINED StartObject(Context<audit>& ctx) override
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
     // allocate new example
-    ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+    ctx.ex = &ctx.example_factory();
     ctx._label_parser.default_label(ctx.ex->l);
     if (ctx._label_parser.label_type == VW::label_type_t::CCB)
     {
@@ -989,8 +987,7 @@ public:
     return this;
   }
 
-  // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
-  BaseState<audit>* NO_SANITIZE_UNDEFINED EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount) override
+  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType memberCount) override
   {
     BaseState<audit>* return_state = ctx.PopNamespace();
 
@@ -1027,7 +1024,7 @@ public:
             [](VW::example* ex) { return ex->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT; });
         if (num_slots == 0 && ctx.label_object_state.found_cb)
         {
-          ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+          ctx.ex = &ctx.example_factory();
           ctx._label_parser.default_label(ctx.ex->l);
           ctx.ex->l.conditional_contextual_bandit.type = VW::ccb_example_type::SLOT;
           ctx.examples->push_back(ctx.ex);
@@ -1524,7 +1521,6 @@ public:
   const char* stream_end;
 
   VW::example_factory_t example_factory;
-  void* example_factory_context;
 
   // TODO: This shouldn't really exist in the Context. Once the JSON parser
   // gets refactored to separate the VWJson/DSJson concepts, this should
@@ -1636,7 +1632,7 @@ public:
   void init(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
       VW::multi_ex* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
-      VW::example_factory_t example_factory, void* example_factory_context,
+      VW::example_factory_t example_factory,
       std::unordered_map<std::string, std::set<std::string>>* ignore_features,
       std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
   {
@@ -1647,8 +1643,7 @@ public:
 
     ctx.stream = stream;
     ctx.stream_end = stream_end;
-    ctx.example_factory = example_factory;
-    ctx.example_factory_context = example_factory_context;
+    ctx.example_factory = std::move(example_factory);
     ctx.dedup_examples = dedup_examples;
     ctx.ignore_features = ignore_features;
   }
@@ -1697,14 +1692,14 @@ public:
 template <bool audit>
 void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
-    VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory, void* ex_factory_context,
+    VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
     VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   if (lbl_parser.label_type == VW::label_type_t::SLATES)
   {
     VW::parsers::json::details::parse_slates_example_json<audit>(lbl_parser, hash_func, hash_seed, parse_mask,
-        chain_hash, examples, line, length, example_factory, ex_factory_context, dedup_examples);
+        chain_hash, examples, line, length, std::move(example_factory), dedup_examples);
     return;
   }
 
@@ -1716,7 +1711,7 @@ void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_
   VWReaderHandler<audit>& handler = parser.handler;
 
   handler.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, &logger, &examples, &ss,
-      line + length, example_factory, ex_factory_context, ignore_features, dedup_examples);
+      line + length, example_factory, ignore_features, dedup_examples);
 
   ParseResult result =
       parser.reader.template Parse<kParseInsituFlag, InsituStringStream, VWReaderHandler<audit>>(ss, handler);
@@ -1737,12 +1732,12 @@ void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_
 
 template <bool audit>
 void VW::parsers::json::read_line_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    example_factory_t example_factory, void* ex_factory_context,
+    example_factory_t example_factory,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   return read_line_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
-      line, length, example_factory, ex_factory_context, all.logger, &all.ignore_features_dsjson, dedup_examples);
+      line, length, std::move(example_factory), all.logger, &all.ignore_features_dsjson, dedup_examples);
 }
 
 inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
@@ -1772,13 +1767,13 @@ inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, VW::multi_ex& 
 // returns true if succesfully parsed, returns false if not and logs warning
 template <bool audit>
 bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    size_t length, bool copy_line, example_factory_t example_factory,
     VW::parsers::json::decision_service_interaction* data)
 {
   if (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
   {
     VW::parsers::json::details::parse_slates_example_dsjson<audit>(
-        all, examples, line, length, example_factory, ex_factory_context, data);
+        all, examples, line, length, std::move(example_factory), data);
     return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
   }
 
@@ -1795,7 +1790,7 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
       all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples,
-      &ss, line + length, example_factory, ex_factory_context, &all.ignore_features_dsjson);
+      &ss, line + length, example_factory, &all.ignore_features_dsjson);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;
@@ -1840,7 +1835,7 @@ bool VW::parsers::json::details::parse_line_json(
 
     VW::parsers::json::decision_service_interaction interaction;
     bool result = VW::parsers::json::template read_line_decision_service_json<audit>(*all, examples, line, num_chars,
-        false, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all, &interaction);
+        false, std::bind(VW::get_unused_example, all), &interaction);
 
     if (!result)
     {
@@ -1920,7 +1915,7 @@ bool VW::parsers::json::details::parse_line_json(
   else
   {
     VW::parsers::json::template read_line_json<audit>(
-        *all, examples, line, num_chars, reinterpret_cast<VW::example_factory_t>(&VW::get_unused_example), all);
+        *all, examples, line, num_chars, std::bind(VW::get_unused_example, all));
   }
 
   return true;
@@ -1996,28 +1991,28 @@ int VW::parsers::json::read_features_json(VW::workspace* all, io_buf& buf, VW::m
 template void VW::parsers::json::read_line_json<true>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
-    void* ex_factory_context, VW::io::logger& logger,
+    VW::io::logger& logger,
     std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::read_line_json<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
-    void* ex_factory_context, VW::io::logger& logger,
+    VW::io::logger& logger,
     std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void VW::parsers::json::read_line_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, example_factory_t example_factory, void* ex_factory_context,
+    size_t length, example_factory_t example_factory,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::read_line_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, example_factory_t example_factory, void* ex_factory_context,
+    size_t length, example_factory_t example_factory,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template bool VW::parsers::json::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples,
-    char* line, size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    char* line, size_t length, bool copy_line, example_factory_t example_factory,
     VW::parsers::json::decision_service_interaction* data);
 template bool VW::parsers::json::read_line_decision_service_json<false>(VW::workspace& all, VW::multi_ex& examples,
-    char* line, size_t length, bool copy_line, example_factory_t example_factory, void* ex_factory_context,
+    char* line, size_t length, bool copy_line, example_factory_t example_factory,
     VW::parsers::json::decision_service_interaction* data);
 
 template bool VW::parsers::json::details::parse_line_json<true>(

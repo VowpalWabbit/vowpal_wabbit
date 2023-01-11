@@ -49,6 +49,8 @@ float eval_sum_ft_squared_of_generated_ft(bool permutations,
     const std::vector<std::vector<VW::extent_term>>& extent_interactions,
     const std::array<VW::features, VW::NUM_NAMESPACES>& feature_spaces);
 
+// generate_func_t<T> is used as a template parameter, so it must be a raw function pointer instead of std::function
+// this is because C++11 does not allow classes as template parameters
 template <typename T>
 using generate_func_t = std::vector<std::vector<T>>(const std::set<T>& namespaces, size_t num_to_pick);
 

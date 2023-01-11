@@ -6,8 +6,6 @@
 #include <tuple>
 #include <vector>
 
-using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
-
 namespace VW
 {
 class default_reduction_stack_setup : public setup_base_i

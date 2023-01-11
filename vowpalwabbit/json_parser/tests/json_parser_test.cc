@@ -451,7 +451,7 @@ TEST(ParseJson, DedupCb)
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
@@ -459,7 +459,7 @@ TEST(ParseJson, DedupCb)
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
@@ -467,7 +467,7 @@ TEST(ParseJson, DedupCb)
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
+      std::bind(VW::get_unused_example, vw), &dedup_examples);
 
   EXPECT_EQ(examples.size(), 3);                       // shared example + 2 multi examples
   EXPECT_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
@@ -517,7 +517,7 @@ TEST(ParseJson, DedupCbMissingDedupId)
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
@@ -525,7 +525,7 @@ TEST(ParseJson, DedupCbMissingDedupId)
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
@@ -534,7 +534,7 @@ TEST(ParseJson, DedupCbMissingDedupId)
   examples.push_back(&VW::get_unused_example(vw));
   EXPECT_THROW(
       VW::parsers::json::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
-          json_deduped_text.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+          json_deduped_text.length(), std::bind(VW::get_unused_example, vw), &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
@@ -586,7 +586,7 @@ TEST(ParseJson, DedupCcb)
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
@@ -594,7 +594,7 @@ TEST(ParseJson, DedupCcb)
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
@@ -602,7 +602,7 @@ TEST(ParseJson, DedupCcb)
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
+      std::bind(VW::get_unused_example, vw), &dedup_examples);
 
   EXPECT_EQ(examples.size(), 6);                       // shared example + 2 multi examples + 3 slots
   EXPECT_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
@@ -706,7 +706,7 @@ TEST(ParseJson, DedupCcbDedupIdMissing)
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
@@ -714,7 +714,7 @@ TEST(ParseJson, DedupCcbDedupIdMissing)
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
@@ -723,7 +723,7 @@ TEST(ParseJson, DedupCcbDedupIdMissing)
   examples.push_back(&VW::get_unused_example(vw));
   EXPECT_THROW(
       VW::parsers::json::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
-          json_deduped_text.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+          json_deduped_text.length(), std::bind(VW::get_unused_example, vw), &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }
@@ -754,7 +754,7 @@ TEST(ParseJson, DedupSlates)
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
@@ -762,7 +762,7 @@ TEST(ParseJson, DedupSlates)
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
@@ -770,7 +770,7 @@ TEST(ParseJson, DedupSlates)
   // parse json that includes dedup id's and re-use the examples from the dedup map instead of creating new ones
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(), json_deduped_text.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples);
+      std::bind(VW::get_unused_example, vw), &dedup_examples);
 
   EXPECT_EQ(examples.size(), 5);                       // shared example + 2 multi examples + 2 slots
   EXPECT_NE(examples[1], dedup_examples[dedup_id_1]);  // checking pointers
@@ -832,7 +832,7 @@ TEST(ParseJson, DedupSlatesDedupIdMissing)
   // parse first dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_1.c_str(), action_1.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_1, examples[0]);
 
   examples.clear();
@@ -840,7 +840,7 @@ TEST(ParseJson, DedupSlatesDedupIdMissing)
   // parse second dedup example and store it in dedup_examples map
   examples.push_back(&VW::get_unused_example(vw));
   VW::parsers::json::read_line_json<true>(*vw, examples, (char*)action_2.c_str(), action_2.length(),
-      (VW::example_factory_t)&VW::get_unused_example, (void*)vw);
+      std::bind(VW::get_unused_example, vw));
   dedup_examples.emplace(dedup_id_2, examples[0]);
 
   examples.clear();
@@ -850,7 +850,7 @@ TEST(ParseJson, DedupSlatesDedupIdMissing)
 
   EXPECT_THROW(
       VW::parsers::json::read_line_json<true>(*vw, examples, (char*)json_deduped_text.c_str(),
-          json_deduped_text.length(), (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &dedup_examples),
+          json_deduped_text.length(), std::bind(VW::get_unused_example, vw), &dedup_examples),
       VW::vw_exception);
 
   for (auto* example : examples) { VW::finish_example(*vw, *example); }

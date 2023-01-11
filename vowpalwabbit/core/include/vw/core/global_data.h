@@ -13,6 +13,7 @@
 #include "vw/core/interaction_generation_state.h"
 #include "vw/core/metrics_collector.h"
 #include "vw/core/multi_ex.h"
+#include "vw/core/setup_base.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/logger.h"
@@ -21,6 +22,7 @@
 #include <cfloat>
 #include <cinttypes>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -53,8 +55,8 @@ public:
   std::shared_ptr<details::feature_dict> dict;
 };
 }  // namespace details
-using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
-using options_deleter_type = void (*)(VW::config::options_i*);
+
+using options_deleter_type = std::function<void (VW::config::options_i*)>;
 class workspace;
 
 class all_reduce_base;

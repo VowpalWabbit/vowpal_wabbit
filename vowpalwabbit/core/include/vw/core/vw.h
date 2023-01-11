@@ -34,11 +34,12 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_fwd.h"
 
+#include <functional>
 #include <memory>
 
 namespace VW
 {
-using driver_output_func_t = void (*)(void*, const std::string&);
+using driver_output_func_t = std::function<void (void*, const std::string&)>;
 
 /*    Caveats:
     (1) Some commandline parameters do not make sense as a library.

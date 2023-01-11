@@ -12,6 +12,8 @@ namespace VW
 {
 class setup_base_i;
 
+// use raw function pointer here instead of std::function because
+// this type should be hashable to be used in std::unordered_map
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
 
 class setup_base_i

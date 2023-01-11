@@ -8,6 +8,7 @@
 #include "vw/core/rand_state.h"
 
 #include <fstream>
+#include <functional>
 #include <queue>
 
 namespace VW
@@ -98,7 +99,7 @@ public:
       const std::string& interaction_type, const ns_based_config& config, interaction_vec_t& interactions);
 };
 
-using priority_func = float(const ns_based_config&, const std::map<namespace_index, uint64_t>&);
+using priority_func = std::function<float (const ns_based_config&, const std::map<namespace_index, uint64_t>&)>;
 
 template <typename oracle_impl>
 class config_oracle
@@ -113,12 +114,12 @@ public:
   // Stores all configs in consideration
   std::vector<ns_based_config> configs;
 
-  priority_func* calc_priority;
+  priority_func calc_priority;
   const uint64_t default_lease;
   uint64_t valid_config_size = 0;
   oracle_impl _impl;
 
-  config_oracle(uint64_t default_lease, priority_func* calc_priority, const std::string& interaction_type,
+  config_oracle(uint64_t default_lease, priority_func calc_priority, const std::string& interaction_type,
       const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state, config_type conf_type);
 
   void gen_configs(const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
@@ -236,7 +237,7 @@ public:
 
   interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
-      const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
+      const std::string& oracle_type, dense_parameters& weights, priority_func calc_priority,
       double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
       std::string trace_prefix, bool reward_as_cost);
 

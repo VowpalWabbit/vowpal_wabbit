@@ -150,7 +150,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
 {
   using config_manager_type = interaction_config_manager<T, E>;
 
-  priority_func* calc_priority;
+  priority_func calc_priority;
 
   if (priority_type == "none") { calc_priority = &calc_priority_empty; }
   else if (priority_type == "favor_popular_namespaces") { calc_priority = &calc_priority_favor_popular_namespaces; }

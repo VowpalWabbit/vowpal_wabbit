@@ -63,7 +63,7 @@ template <typename config_oracle_impl, typename estimator_impl>
 interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_config_manager(uint64_t default_lease,
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
-    priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
+    priority_func calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
     config_type conf_type, std::string trace_prefix, bool reward_as_cost)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
@@ -74,7 +74,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , wpp(wpp)
     , _ccb_on(ccb_on)
     , _config_oracle(
-          config_oracle_impl(default_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
+          config_oracle_impl(default_lease, std::move(calc_priority), interaction_type, oracle_type, rand_state, conf_type))
     , reward_as_cost(reward_as_cost)
 {
   if (trace_prefix != "")

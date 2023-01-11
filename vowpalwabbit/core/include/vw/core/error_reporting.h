@@ -6,11 +6,12 @@
 
 #include "vw/common/future_compat.h"
 
+#include <functional>
 #include <string>
 
 namespace VW
 {
-using trace_message_t = void (*)(void*, const std::string&);
+using trace_message_t = std::function<void (void*, const std::string&)>;
 }
 
 using trace_message_t VW_DEPRECATED(
