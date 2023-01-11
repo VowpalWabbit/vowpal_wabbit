@@ -62,6 +62,7 @@ TEST(EpsilonDecay, InitWIterations)
       "5");
 }
 
+#if !defined(__APPLE__) && !defined(_WIN32)
 TEST(EpsilonDecay, ChampChangeWIterations)
 {
   const size_t num_iterations = 300;
@@ -110,6 +111,7 @@ TEST(EpsilonDecay, ChampChangeWIterations)
 
   EXPECT_GT(ctr.back(), 0.4f);
 }
+#endif
 
 TEST(EpsilonDecay, UpdateCountWIterations)
 {

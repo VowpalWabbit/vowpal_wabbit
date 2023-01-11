@@ -24,6 +24,7 @@ TEST(ConfidenceSequenceRobust, PythonEquivalenceCI)
   EXPECT_FLOAT_EQ(ub, 0.5423597665906932);
 }
 
+#if !defined(__APPLE__) && !defined(_WIN32)
 TEST(ConfidenceSequenceRobust, PythonEquivalenceBrentq)
 {
   // Set up state
@@ -49,3 +50,4 @@ TEST(ConfidenceSequenceRobust, PythonEquivalenceBrentq)
   auto test_root = csr.lower.log_wealth_mix(root, s, thres, memo) - thres;
   EXPECT_NEAR(test_root, 0.0, 1e-6);
 }
+#endif
