@@ -10,6 +10,13 @@ namespace VW
 {
 namespace details
 {
+
+union int_float_convert
+{
+  int32_t int_value;
+  float float_value;
+};
+
 //
 // NB: the 'ULL' suffix is not part of the constant it is there to
 // prevent truncation of constant to (32-bit long) when compiling
@@ -22,11 +29,10 @@ constexpr int BIAS = 127 << 23;
 
 inline float merand48(uint64_t& initial)
 {
-  static_assert(
-      sizeof(int32_t) == sizeof(float), "Floats and int32_ts are converted between, they must be the same size.");
   initial = CONSTANT_A * initial + CONSTANT_C;
-  int32_t temp = ((initial >> 25) & 0x7FFFFF) | BIAS;
-  return reinterpret_cast<float&>(temp) - 1;
+  int_float_convert temp{};
+  temp.int_value = ((initial >> 25) & 0x7FFFFF) | BIAS;
+  return temp.float_value - 1;
 }
 
 inline float merand48_noadvance(uint64_t v) { return merand48(v); }
