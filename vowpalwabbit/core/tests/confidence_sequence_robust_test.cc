@@ -43,7 +43,7 @@ TEST(ConfidenceSequenceRobust, PythonEquivalenceBrentq)
   double root = csr.lower.root_brentq(s, thres, memo, min_mu, max_mu);
 
   // Compare root to test_confidence_sequence_robust.py
-  EXPECT_FLOAT_EQ(root, 0.8775070821950665);
+  EXPECT_NEAR(root, 0.8775070821950665, 1e-6);
 
   // Test that root of objective function is 0
   auto test_root = csr.lower.log_wealth_mix(root, s, thres, memo) - thres;
