@@ -125,6 +125,11 @@ public:
   void finish_example(example&);
   void finish_example(multi_ex&);
 
+  /// This is used to perform finalization steps the driver/cli would normally do.
+  /// If using VW in library mode, this call is optional.
+  /// Some things this function does are: print summary, finalize regressor, output metrics, etc
+  void finish();
+
   /**
    * @brief Generate a JSON string with the current model state and invert hash
    * lookup table. Base reduction in use must be gd and workspace.hash_inv must
