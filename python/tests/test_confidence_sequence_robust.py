@@ -15,6 +15,7 @@ def test_cs_robust_ci():
     np.testing.assert_almost_equal(lb, 0.4574146652500113, 6)
     np.testing.assert_almost_equal(ub, 0.5423597665906932, 6)
 
+
 def test_cs_robust_brentq():
     csr = confidence_sequence_robust()
     csr.lower.t = 88
