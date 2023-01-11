@@ -213,7 +213,16 @@ double countable_discrete_base::root_brentq(
     }
     else { mflag = false; }
 
+    size_t memo_size = memo.size();
     fs = f(s);
+    while (memo.size() > memo_size)
+    {
+      memo_size = memo.size();
+      fa = f(a);
+      fb = f(b);
+      fc = f(c);
+      fs = f(s);
+    }
     d = c;
     c = b;
     fc = fb;

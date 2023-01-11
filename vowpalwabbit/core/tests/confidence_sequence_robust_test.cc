@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(ConfidenceSequenceRobust, PythonEquivalence)
+TEST(ConfidenceSequenceRobust, PythonEquivalenceCI)
 {
   VW::estimators::confidence_sequence_robust csr;
 
@@ -19,21 +19,33 @@ TEST(ConfidenceSequenceRobust, PythonEquivalence)
   double lb = csr.lower_bound();
   double ub = csr.upper_bound();
 
-  // Compare to confidence_sequence_robust_test.py
+  // Compare to test_confidence_sequence_robust.py
   EXPECT_FLOAT_EQ(lb, 0.4574146652500113);
   EXPECT_FLOAT_EQ(ub, 0.5423597665906932);
+}
 
-  // Test brentq minimizer separately
-  double s = 219.99999999999926;
+TEST(ConfidenceSequenceRobust, PythonEquivalenceBrentq)
+{
+  // Set up state
+  VW::estimators::confidence_sequence_robust csr(0.2 / 16.0);
+  csr.lower.t = 88;
+  csr.lower.gt.t = 88;
+  double s = 139.8326745448;
   double thres = 3.6888794541139363;
   std::map<uint64_t, double> memo;
-  memo[0] = 12.680412758057498;
-  memo[1] = 4.354160995282192;
+  memo[0] = 39.016179559463588;
+  memo[1] = 20.509121588503511;
+  memo[2] = 10.821991705197142;
   double min_mu = 0.0;
   double max_mu = 1.0;
 
-  double root = csr.upper.root_brentq(s, thres, memo, min_mu, max_mu);
+  // Get root
+  double root = csr.lower.root_brentq(s, thres, memo, min_mu, max_mu);
 
-  // Compare to confidence_sequence_robust_test.py
-  EXPECT_FLOAT_EQ(root, 0.4576402334093068);
+  // Compare root to test_confidence_sequence_robust.py
+  EXPECT_FLOAT_EQ(root, 0.8775070821950665);
+
+  // Test that root of objective function is 0
+  auto test_root = csr.lower.log_wealth_mix(root, s, thres, memo) - thres;
+  EXPECT_NEAR(test_root, 0.0, 1e-6);
 }

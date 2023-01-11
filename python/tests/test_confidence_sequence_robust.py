@@ -3,7 +3,7 @@ import numpy as np
 import scipy.optimize as so
 
 
-def test_confidence_sequence_robust():
+def test_cs_robust_ci():
     csr = confidence_sequence_robust()
     for _ in range(200):
         csr.addobs((1.1, 1))
@@ -15,18 +15,22 @@ def test_confidence_sequence_robust():
     np.testing.assert_almost_equal(lb, 0.4574146652500113, 6)
     np.testing.assert_almost_equal(ub, 0.5423597665906932, 6)
 
-    # Test brentq minimizer separately
-    s = 219.99999999999926
+def test_cs_robust_brentq():
+    csr = confidence_sequence_robust()
+    csr.lower.t = 88
+    csr.lower.gtilde.t = 88
+
+    s = 139.8326745448
     thres = 3.6888794541139363
-    memo = {0: 12.680412758057498, 1: 4.354160995282192}
+    memo = {0: 39.016179559463588, 1: 20.509121588503511, 2: 10.821991705197142}
     minmu = 0.0
     maxmu = 1.0
 
     res = so.root_scalar(
-        f=lambda mu: csr.upper.logwealthmix(mu=mu, s=s, thres=thres, memo=memo) - thres,
+        f=lambda mu: csr.lower.logwealthmix(mu=mu, s=s, thres=thres, memo=memo) - thres,
         method="brentq",
         bracket=[minmu, maxmu],
     )
 
     # Compare to brentq in confidence_sequence_robust_test.cc
-    np.testing.assert_almost_equal(res.root, 0.4576402334093068, 6)
+    np.testing.assert_almost_equal(res.root, 0.8775070821950665, 6)
