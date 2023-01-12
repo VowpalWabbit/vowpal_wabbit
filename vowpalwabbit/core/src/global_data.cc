@@ -11,6 +11,7 @@
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "vw/common/future_compat.h"
+#include "vw/common/random.h"
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
@@ -21,7 +22,6 @@
 #include "vw/core/named_labels.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reduction_stack.h"
 #include "vw/core/reductions/metrics.h"
 #include "vw/core/shared_data.h"

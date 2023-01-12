@@ -5,10 +5,9 @@
 #include "qr_decomposition.h"
 #include "reductions/cb/details/large_action_space.h"
 #include "vw/common/future_compat.h"
+#include "vw/common/random.h"
 #include "vw/core/constant.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/vw.h"
@@ -272,7 +271,7 @@ TEST(Las, CheckAtTimesOmegaIsY)
           for (uint64_t col = 0; col < d; col++)
           {
             uint64_t combined_index = action_index + col + seed;
-            auto mm = merand48_boxmuller(combined_index);
+            auto mm = VW::details::merand48_boxmuller(combined_index);
             omega_triplets.push_back(Eigen::Triplet<float>(action_index, col, mm));
           }
         }
@@ -440,7 +439,7 @@ TEST(Las, CheckBTimesPIsZ)
         for (size_t col = 0; col < d; col++)
         {
           auto combined_index = row + col + static_cast<uint64_t>(seed);
-          auto mm = merand48_boxmuller(combined_index);
+          auto mm = VW::details::merand48_boxmuller(combined_index);
           P(row, col) = mm;
         }
       }

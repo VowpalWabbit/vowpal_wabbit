@@ -3,12 +3,11 @@
 // license as described in the file LICENSE.
 
 #pragma once
+#include "vw/common/random.h"
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options.h"
 #include "vw/core/learner.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_fwd.h"
 

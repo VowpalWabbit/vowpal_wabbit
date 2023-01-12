@@ -5,6 +5,7 @@
 #include "vw/core/reductions/cats_tree.h"
 
 #include "vw/common/hash.h"
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/global_data.h"
@@ -12,7 +13,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
 
 #include <algorithm>
@@ -260,7 +260,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
           uint64_t new_random_seed = VW::uniform_hash(
               reinterpret_cast<const char*>(&app_seed), sizeof(app_seed), static_cast<uint32_t>(app_seed));
           // pick a uniform random number between 0.0 - .001f
-          float random_draw = merand48(new_random_seed) * weight_th;
+          float random_draw = VW::details::merand48(new_random_seed) * weight_th;
           if (random_draw < ec.weight) { ec.weight = weight_th; }
           else { filter = true; }
         }
