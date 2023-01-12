@@ -171,12 +171,12 @@ double countable_discrete_base::root_brentq(
   auto f = [this, &s_0, &thres, &memo](double mu) -> double { return log_wealth_mix(mu, s_0, thres, memo) - thres; };
   double fa = f(a);
   double fb = f(b);
-  double fs;
+  double fs = 0.0;
 
-  if (!(fa * fb < 0))
+  if (!(fa * fb < 0.0))
   {
     THROW("Signs of f(x_min) and f(x_max) must be opposites");
-    return 0;
+    return 0.0;
   }
 
   if (std::abs(fa) < std::abs(b))
@@ -188,8 +188,8 @@ double countable_discrete_base::root_brentq(
   double c = a;
   double fc = fa;
   bool mflag = true;
-  double s = 0;
-  double d = 0;
+  double s = 0.0;
+  double d = 0.0;
 
   while (std::abs(fc) > toll_f && std::abs(b - a) > toll_x)
   {
@@ -203,12 +203,12 @@ double countable_discrete_base::root_brentq(
       s = b - fb * (b - a) / (fb - fa);
     }
 
-    if (((s < (3 * a + b) / 4.) || (s > b)) || (mflag && (std::abs(s - b) >= (std::abs(b - c) * 0.5))) ||
+    if (((s < (3.0 * a + b) / 4.0) || (s > b)) || (mflag && (std::abs(s - b) >= (std::abs(b - c) * 0.5))) ||
         (!mflag && (std::abs(s - b) >= (std::abs(c - d) * 0.5))) || (mflag && (std::abs(b - c) < toll_x)) ||
         (!mflag && (std::abs(c - d) < toll_x)))
     {
       // bisection method
-      s = .5 * (a + b);
+      s = 0.5 * (a + b);
       mflag = true;
     }
     else { mflag = false; }
@@ -220,14 +220,13 @@ double countable_discrete_base::root_brentq(
       memo_size = memo.size();
       fa = f(a);
       fb = f(b);
-      fc = f(c);
       fs = f(s);
     }
     d = c;
     c = b;
     fc = fb;
 
-    if (fa * fs < 0)
+    if (fa * fs < 0.0)
     {
       b = s;
       fb = fs;
