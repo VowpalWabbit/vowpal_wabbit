@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 // Notes:
-// Implements importance weighted active learning.  Source: https://arxiv.org/pdf/0812.4952.pdf 
+// Implements importance weighted active learning.  Source: https://arxiv.org/pdf/0812.4952.pdf
 
 #include "vw/core/reductions/active.h"
 
@@ -15,6 +15,7 @@
 #include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_math.h"
 #include "vw/core/vw_versions.h"
@@ -28,7 +29,8 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 using namespace VW::reductions;
-
+namespace
+{
 float get_active_coin_bias(float k, float avg_loss, float g, float c0)
 {
   const float b = c0 * (std::log(k + 1.f) + 0.0001f) / (k + 0.0001f);
@@ -125,59 +127,6 @@ void active_print_result(
   if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-void output_and_account_example(VW::workspace& all, active& a, VW::example& ec)
-{
-  const auto& ld = ec.l.simple;
-
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
-  if (ld.label != FLT_MAX && !ec.test_only)
-  {
-    all.sd->weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight);
-  }
-
-  VW::details::print_update(all, ec);
-}
-
-// Write predictions to file
-template <bool simulation>
-void output_prediction(VW::workspace& all, const active& active, const example& example, VW::io::logger& logger)
-{
-  if (simulation) 
-  { 
-    VW::details::output_example_prediction_simple_label(all, example, logger);
-  }
-  else
-  {
-    const auto& ld = example.l.simple;
-    float ai = -1;
-    // Example was not labeled.  Check if label should be queried.
-    if (ld.label == FLT_MAX)
-    {
-      ai = query_decision(active, example.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
-    }
-    all.print_by_ref(all.raw_prediction.get(), example.partial_prediction, -1, example.tag, all.logger);
-    for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), example.pred.scalar, ai, example.tag, all.logger); }
-  }
-}
-
-template <bool simulation>
-void return_active_example(VW::workspace& all, active& a, VW::example& ec)
-{
-  // Todo: print update
-  // Todo: update stats
-  // Todo: cleanup example
-  if (simulation) { 
-    VW::details::update_stats_simple_label(all, *all.sd, ec, all.logger); 
-  }
-  else { 
-    output_and_account_example(all, a, ec); 
-  }
-  
-  // Todo: REMOVE after refactoring (write predictions to file)
-  output_prediction<simulation>(all, a, ec, all.logger);
-  VW::finish_example(all, ec);
-}
-
 void save_load(active& a, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
@@ -195,6 +144,34 @@ void save_load(active& a, VW::io_buf& io, bool read, bool text)
     }
   }
 }
+
+void update_stats_active(const VW::workspace& /* all */, VW::shared_data& sd, const active& /* unused */,
+    const VW::example& ec, VW::io::logger& /* logger */)
+{
+  const auto& ld = ec.l.simple;
+
+  sd.update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
+  if (ld.label != FLT_MAX && !ec.test_only)
+  {
+    sd.weighted_labels += (static_cast<double>(ld.label)) * static_cast<double>(ec.weight);
+  }
+}
+
+void output_example_prediction_active(
+    VW::workspace& all, const active& data, const VW::example& ec, VW::io::logger& logger)
+{
+  const auto& ld = ec.l.simple;
+
+  float ai = -1;
+  if (ld.label == FLT_MAX)
+  {
+    ai = query_decision(data, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
+  }
+
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
+  for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, all.logger); }
+}
+}  // namespace
 
 base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
 {
@@ -221,8 +198,10 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, VW::example&);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
-  void (*finish_ptr)(VW::workspace&, active&, VW::example&);
-  void (*output_prediction_ptr)(VW::workspace&, const active&, const VW::example&, VW::io::logger&);
+
+  VW::learner_update_stats_func<active, VW::example>* update_stats_func = nullptr;
+  VW::learner_output_example_prediction_func<active, VW::example>* output_example_prediction_func = nullptr;
+  VW::learner_print_update_func<active, VW::example>* print_update_func = nullptr;
 
   bool learn_returns_prediction = true;
   std::string reduction_name = stack_builder.get_setupfn_name(VW::reductions::active_setup);
@@ -230,8 +209,9 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   {
     learn_func = predict_or_learn_simulation<true>;
     pred_func = predict_or_learn_simulation<false>;
-    finish_ptr = return_active_example<true>;
-    output_prediction_ptr = output_prediction<true>;
+    update_stats_func = VW::details::update_stats_simple_label<active>;
+    output_example_prediction_func = VW::details::output_example_prediction_simple_label<active>;
+    print_update_func = VW::details::print_update_simple_label<active>;
     reduction_name.append("-simulation");
   }
   else
@@ -239,8 +219,9 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
     all.active = true;
     learn_func = predict_or_learn_active<true>;
     pred_func = predict_or_learn_active<false>;
-    finish_ptr = return_active_example<false>;
-    output_prediction_ptr = output_prediction<false>;
+    update_stats_func = update_stats_active;
+    output_example_prediction_func = output_example_prediction_active;
+    print_update_func = VW::details::print_update_simple_label<active>;
     learn_returns_prediction = base->learn_returns_prediction;
   }
 
@@ -252,8 +233,9 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_learn_returns_prediction(learn_returns_prediction)
                 .set_save_load(save_load)
-                .set_finish_example(finish_ptr)
-//                .set_output_example_prediction(output_prediction_ptr)
+                .set_update_stats(update_stats_func)
+                .set_output_example_prediction(output_example_prediction_func)
+                .set_print_update(print_update_func)
                 .build();
 
   return make_base(*l);
