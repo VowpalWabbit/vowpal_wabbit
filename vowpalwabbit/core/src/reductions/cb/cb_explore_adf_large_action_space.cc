@@ -5,6 +5,7 @@
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 
 #include "details/large_action_space.h"
+#include "qr_decomposition.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/global_data.h"
@@ -12,7 +13,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parser.h"
-#include "vw/core/qr_decomposition.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
