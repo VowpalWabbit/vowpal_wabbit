@@ -168,8 +168,8 @@ void output_example_prediction_active(
     ai = query_decision(data, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
   }
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
-  for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, all.logger); }
+  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
+  for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, logger); }
 }
 }  // namespace
 
