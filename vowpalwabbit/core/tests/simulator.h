@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "vw/common/random.h"
 #include "vw/core/multi_ex.h"
-#include "vw/core/rand_state.h"
 
 #include <functional>
 #include <map>
