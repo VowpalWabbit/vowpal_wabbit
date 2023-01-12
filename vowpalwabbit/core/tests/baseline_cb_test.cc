@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/common/random_details.h"
 #include "vw/core/learner.h"
 #include "vw/core/metric_sink.h"
-#include "vw/core/rand48.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
 
@@ -53,7 +53,7 @@ TEST(BaselineCB, BaselinePerformsBadly)
   uint64_t state = 37;
   for (int i = 0; i < 50; ++i)
   {
-    float s = merand48(state);
+    float s = VW::details::merand48(state);
     VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p0, s), costs_p0, probs_p0);
@@ -91,7 +91,7 @@ TEST(BaselineCB, BaselineTakesOverPolicy)
   uint64_t state = 37;
   for (int i = 0; i < 500; ++i)
   {
-    float s = merand48(state);
+    float s = VW::details::merand48(state);
     VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p0, s), costs_p0, probs_p0);
@@ -101,7 +101,7 @@ TEST(BaselineCB, BaselineTakesOverPolicy)
 
   for (int i = 0; i < 400; ++i)
   {
-    float s = merand48(state);
+    float s = VW::details::merand48(state);
     VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p1, s), costs_p1, probs_p1);
@@ -140,7 +140,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
 
   for (int i = 0; i < steps; ++i)
   {
-    float s = merand48(state);
+    float s = VW::details::merand48(state);
     VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p0, s), costs_p0, probs_p0);

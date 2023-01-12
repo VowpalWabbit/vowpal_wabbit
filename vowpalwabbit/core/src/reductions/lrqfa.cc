@@ -4,12 +4,12 @@
 
 #include "vw/core/reductions/lrqfa.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/parse_args.h"  // for spoof_hex_encoded_namespaces
-#include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/text_utils.h"
 
@@ -41,7 +41,7 @@ inline float cheesyrand(uint64_t x)
 {
   uint64_t seed = x;
 
-  return merand48(seed);
+  return VW::details::merand48(seed);
 }
 
 constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }

@@ -10,7 +10,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
