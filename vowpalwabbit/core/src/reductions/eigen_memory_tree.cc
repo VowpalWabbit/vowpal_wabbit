@@ -5,6 +5,7 @@
 #include "vw/core/reductions/eigen_memory_tree.h"
 
 #include "vw/common/future_compat.h"
+#include "vw/common/random.h"
 #include "vw/common/string_view.h"
 #include "vw/common/vw_throw.h"
 #include "vw/config/options.h"
@@ -15,8 +16,6 @@
 #include "vw/core/model_utils.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw.h"
