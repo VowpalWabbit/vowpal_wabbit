@@ -48,6 +48,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
         y_allowed_size, nullptr, learner_id);  // TODO: do we really need y_allowed?
     learner_id = (learner_id << 1) + prediction;
     if (prediction == 2) { label += mask; }
+    if (learner_id >= sch.get_num_learners()) { break; }
   }
   label += 1;
   sch.loss(!(label == gold_label));

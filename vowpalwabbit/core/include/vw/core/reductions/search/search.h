@@ -199,6 +199,9 @@ public:  // INTERFACE
   // set the number of learners
   void set_num_learners(size_t num_learners);
 
+  // get the number of learners
+  size_t get_num_learners();
+
   // get the action sequence from the test run (only run if test_only or -t or...)
   void get_test_action_sequence(std::vector<action>&);
 
