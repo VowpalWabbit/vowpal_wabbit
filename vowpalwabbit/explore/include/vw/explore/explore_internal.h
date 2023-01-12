@@ -5,6 +5,8 @@
 #pragma once
 
 #include "vw/common/hash.h"
+#include "vw/common/random.h"
+#include "vw/common/random_details.h"
 #include "vw/explore/explore_error_codes.h"
 
 #include <algorithm>
@@ -22,30 +24,6 @@ namespace explore
 {
 namespace details
 {
-
-constexpr uint64_t CONSTANT_A = 0xeece66d5deece66dULL;
-constexpr uint64_t CONSTANT_C = 2147483647;
-
-constexpr int BIAS = 127 << 23u;
-
-union int_float
-{
-  int32_t i;
-  float f;
-};
-
-// uniform random between 0 and 1
-inline float uniform_random_merand48_advance(uint64_t& initial)
-{
-  initial = CONSTANT_A * initial + CONSTANT_C;
-  int_float temp;
-  temp.i = ((initial >> 25) & 0x7FFFFF) | BIAS;
-  return temp.f - 1;
-}
-
-// uniform random between 0 and 1
-inline float uniform_random_merand48(uint64_t initial) { return uniform_random_merand48_advance(initial); }
-
 template <typename It>
 int generate_epsilon_greedy(
     float epsilon, uint32_t top_action, It pmf_first, It pmf_last, std::random_access_iterator_tag /* pmf_tag */)
@@ -214,8 +192,8 @@ int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last, std::rand
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
-// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
-// be used to inplace mutate it.
+// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in random_details.h)
+// can be used to inplace mutate it.
 template <typename It>
 int sample_after_normalizing(
     uint64_t seed, It pmf_first, It pmf_last, uint32_t& chosen_index, std::input_iterator_tag /* pmf_category */)
@@ -239,7 +217,7 @@ int sample_after_normalizing(
     return S_EXPLORATION_OK;
   }
 
-  float draw = total * uniform_random_merand48(seed);
+  float draw = total * VW::details::merand48_noadvance(seed);
   if (draw > total)
   {  // make very sure that draw can not be greater than total.
     draw = total;
@@ -266,7 +244,7 @@ int sample_after_normalizing(
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
 // will result in a very biased distribution.
-// If unsure how to update seed between calls, merand48 (in rand48.h) can be used to inplace mutate it.
+// If unsure how to update seed between calls, merand48 (in random_details.h) can be used to inplace mutate it.
 template <typename It>
 int sample_after_normalizing(
     const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index, std::random_access_iterator_tag pmf_category)
@@ -321,7 +299,7 @@ int sample_scores(
     return S_EXPLORATION_OK;
   }
 
-  float draw = total * uniform_random_merand48_advance(*p_seed);
+  float draw = total * VW::details::merand48(*p_seed);
   if (draw > total)
   {  // make very sure that draw can not be greater than total.
     draw = total;
@@ -359,7 +337,7 @@ int sample_pdf(
   constexpr float edge_avoid_factor = 1.0001f;
   float draw = 0.f;
   do {
-    draw = edge_avoid_factor * total_pdf_mass * explore::details::uniform_random_merand48_advance(*p_seed);
+    draw = edge_avoid_factor * total_pdf_mass * VW::details::merand48(*p_seed);
   } while (draw >= total_pdf_mass);
 
   float acc_mass = 0.f;
@@ -428,8 +406,8 @@ int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last)
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
-// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
-// be used to inplace mutate it.
+// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in random_details.h)
+// can be used to inplace mutate it.
 template <typename It>
 int sample_after_normalizing(uint64_t seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
 {
@@ -438,8 +416,8 @@ int sample_after_normalizing(uint64_t seed, It pmf_first, It pmf_last, uint32_t&
 }
 
 // Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
-// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
-// be used to inplace mutate it.
+// will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in random_details.h)
+// can be used to inplace mutate it.
 template <typename It>
 int sample_after_normalizing(const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
 {

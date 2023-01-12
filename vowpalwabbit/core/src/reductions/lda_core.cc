@@ -5,6 +5,7 @@
 #include "vw/core/reductions/lda_core.h"
 
 #include "vw/common/future_compat.h"
+#include "vw/common/random.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
@@ -24,7 +25,6 @@ VW_WARNING_STATE_POP
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/reductions/mwt.h"
 #include "vw/core/shared_data.h"
@@ -779,7 +779,7 @@ void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
       {
         for (size_t i = 0; i != lda; ++i, ++index)
         {
-          weights[i] = static_cast<float>(-std::log(merand48(index) + 1e-6) + 1.0f) * initial_random;
+          weights[i] = static_cast<float>(-std::log(VW::details::merand48(index) + 1e-6) + 1.0f) * initial_random;
         }
       }
       weights[lda] = init.initial;

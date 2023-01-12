@@ -4,9 +4,9 @@
 
 #include "vw/core/reductions/eigen_memory_tree.h"
 
+#include "vw/common/random.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
 

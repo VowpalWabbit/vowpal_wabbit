@@ -4,8 +4,7 @@
 
 #include "qr_decomposition.h"
 #include "reductions/cb/details/large_action_space.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
+#include "vw/common/random.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/vw.h"

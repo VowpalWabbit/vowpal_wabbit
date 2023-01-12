@@ -4,6 +4,7 @@
 
 #include "../large_action_space.h"
 #include "qr_decomposition.h"
+#include "vw/common/random.h"
 #include "vw/core/cb.h"
 #include "vw/core/label_dictionary.h"
 #include "vw/core/reductions/gd.h"
@@ -36,7 +37,7 @@ public:
       _non_zero_rows.emplace(index);
       auto combined_index = _row_index + _column_index + _seed;
       // index is the equivalent of going over A's rows which turn out to be A.transpose()'s columns
-      auto calc = feature_value * merand48_boxmuller(combined_index) * _shrink_factors[_row_index];
+      auto calc = feature_value * VW::details::merand48_boxmuller(combined_index) * _shrink_factors[_row_index];
       _triplets.emplace_back(Eigen::Triplet<float>(index & _weights_mask, _column_index, calc));
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
