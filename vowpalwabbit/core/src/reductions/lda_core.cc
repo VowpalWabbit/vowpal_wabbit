@@ -77,17 +77,18 @@ public:
   size_t minibatch = 0;
   lda_math_mode mmode;
 
-  size_t finish_example_count = 0;
-
   VW::v_array<float> Elogtheta;  // NOLINT
   VW::v_array<float> decay_levels;
   VW::v_array<float> total_new;
-  VW::multi_ex examples;
   VW::v_array<float> total_lambda;
   VW::v_array<int> doc_lengths;
   VW::v_array<float> digammas;
   VW::v_array<float> v;
   std::vector<index_feature> sorted_features;
+
+  std::vector<VW::example*> batch_buffer;
+  // If the epoch size is greater than 1, the examples in the batch need to be saved somewhere.
+  std::vector<std::unique_ptr<VW::example>> saved_batch_examples;
 
   bool compute_coherence_metrics = false;
 
@@ -199,7 +200,7 @@ inline bool is_aligned16(void* ptr)
 
 #    define HAVE_SIMD_MATHMODE
 
-typedef __m128 v4sf;
+using v4sf = __m128;
 using v4si = __m128i;
 
 inline v4sf v4si_to_v4sf(v4si x) { return _mm_cvtepi32_ps(x); }
@@ -832,28 +833,9 @@ void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
   }
 }
 
-void return_example(VW::workspace& all, VW::example& ec)
-{
-  all.sd->update(ec.test_only, true, ec.loss, ec.weight, ec.get_num_features());
-  for (auto& sink : all.final_prediction_sink)
-  {
-    VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
-  }
-
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet)
-  {
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0, ec.get_num_features(),
-        all.progress_add, all.progress_arg);
-  }
-  VW::finish_example(all, ec);
-}
-
-void learn_batch(lda& l)
+void learn_batch(lda& l, std::vector<example*>& batch)
 {
   parameters& weights = l.all->weights;
-
-  assert(l.finish_example_count == (l.examples.size() - 1));
-
   if (l.sorted_features.empty())  // FAST-PASS for real "true"
   {
     // This can happen when the socket connection is dropped by the client.
@@ -861,21 +843,7 @@ void learn_batch(lda& l)
     // exist, so we should not try to take its address in the beginning of
     // the for loops down there. Since it seems that there's not much to
     // do in this case, we just return.
-    for (size_t d = 0; d < l.examples.size(); d++)
-    {
-      l.examples[d]->pred.scalars.clear();
-      l.examples[d]->pred.scalars.resize(l.topics);
-      memset(l.examples[d]->pred.scalars.begin(), 0, l.topics * sizeof(float));
-
-      l.examples[d]->pred.scalars.clear();
-
-      if (l.finish_example_count > 0)
-      {
-        return_example(*l.all, *l.examples[d]);
-        l.finish_example_count--;
-      }
-    }
-    l.examples.clear();
+    for (auto& d : batch) { d->pred.scalars.clear(); }
     return;
   }
 
@@ -898,7 +866,7 @@ void learn_batch(lda& l)
   l.total_new.clear();
   for (size_t k = 0; k < l.all->lda; k++) { l.total_new.push_back(0.f); }
 
-  size_t batch_size = l.examples.size();
+  size_t batch_size = batch.size();
 
   sort(l.sorted_features.begin(), l.sorted_features.end());
 
@@ -935,19 +903,13 @@ void learn_batch(lda& l)
 
   for (size_t d = 0; d < batch_size; d++)
   {
-    float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), l.examples[d], l.all->power_t);
-    if (l.all->audit) { VW::details::print_audit_features(*l.all, *l.examples[d]); }
+    float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->lda]), batch[d], l.all->power_t);
+    if (l.all->audit) { VW::details::print_audit_features(*l.all, *batch[d]); }
     // If the doc is empty, give it loss of 0.
     if (l.doc_lengths[d] > 0)
     {
       l.all->sd->sum_loss -= score;
       l.all->sd->sum_loss_since_last_dump -= score;
-    }
-
-    if (l.finish_example_count > 0)
-    {
-      return_example(*l.all, *l.examples[d]);
-      l.finish_example_count--;
     }
   }
 
@@ -988,26 +950,39 @@ void learn_batch(lda& l)
     }
   }
   l.sorted_features.resize(0);
-
-  l.examples.clear();
   l.doc_lengths.clear();
 }
 
 void learn(lda& l, base_learner&, VW::example& ec)
 {
-  uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
-  l.examples.push_back(&ec);
-  l.doc_lengths.push_back(0);
-  for (VW::features& fs : ec)
+  // Test if there was a completed batch that now needs to be cleared before we start the next one.
+  if (l.batch_buffer.size() == l.minibatch) { l.batch_buffer.clear(); }
+
+  VW::example* next_in_batch = nullptr;
+  // If the size is 1, we can just use the example directly.
+  if (l.minibatch == 1) { next_in_batch = &ec; }
+  else
   {
-    for (VW::features::iterator& f : fs)
+    // If the batch size is greater than 1, we must make a copy of the example as its lifetime doesn't go beyond this
+    // function.
+    next_in_batch = l.saved_batch_examples[l.batch_buffer.size()].get();
+    VW::copy_example_data_with_label(next_in_batch, &ec);
+  }
+  assert(next_in_batch != nullptr);
+  l.batch_buffer.push_back(next_in_batch);
+
+  const auto new_example_batch_index = static_cast<uint32_t>(l.batch_buffer.size()) - 1;
+  l.doc_lengths.push_back(0);
+  for (const auto& fs : ec)
+  {
+    for (const auto& f : fs)
     {
-      index_feature temp = {num_ex, VW::feature(f.value(), f.index())};
+      index_feature temp = {new_example_batch_index, VW::feature(f.value(), f.index())};
       l.sorted_features.push_back(temp);
-      l.doc_lengths[num_ex] += static_cast<int>(f.value());
+      l.doc_lengths[new_example_batch_index] += static_cast<int>(f.value());
     }
   }
-  if (++num_ex == l.minibatch) { learn_batch(l); }
+  if ((new_example_batch_index + 1) == l.minibatch) { learn_batch(l, l.batch_buffer); }
 }
 
 void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
@@ -1239,19 +1214,15 @@ void compute_coherence_metrics(lda& l)
 
 void end_pass(lda& l)
 {
-  if (!l.examples.empty()) { learn_batch(l); }
+  if (!l.batch_buffer.empty()) { learn_batch(l, l.batch_buffer); }
 
-  if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses)
-  {
-    compute_coherence_metrics(l);
-    // FASTPASS return;
-  }
+  if (l.compute_coherence_metrics && l.all->passes_complete == l.all->numpasses) { compute_coherence_metrics(l); }
 }
 
 template <class T>
 void end_examples(lda& l, T& weights)
 {
-  for (typename T::iterator iter = weights.begin(); iter != weights.end(); ++iter)
+  for (auto iter = weights.begin(); iter != weights.end(); ++iter)
   {
     float decay_component =
         l.decay_levels.back() - l.decay_levels.end()[(int)(-1 - l.example_t + (&(*iter))[l.all->lda])];
@@ -1268,22 +1239,41 @@ void end_examples(lda& l)
   else { end_examples(l, l.all->weights.dense_weights); }
 }
 
-void finish_example(VW::workspace& all, lda& l, VW::example& e)
+void update_stats_lda(const VW::workspace& /* all */, VW::shared_data& sd, const lda& data,
+    const VW::example& /* unused_example */, VW::io::logger& /* logger */)
 {
-  if (l.minibatch <= 1) { return return_example(all, e); }
-
-  if (l.examples.size() > 0)
+  if (data.minibatch == data.batch_buffer.size())
   {
-    // if there's still examples to be queued, inc only to finish later
-    l.finish_example_count++;
+    for (auto* ex : data.batch_buffer) { sd.update(ex->test_only, true, ex->loss, ex->weight, ex->get_num_features()); }
   }
-  else
-  {
-    // return now since it has been processed (example size = 0)
-    return_example(all, e);
-  }
+}
 
-  assert(l.finish_example_count <= l.minibatch);
+void output_example_prediction_lda(
+    VW::workspace& all, const lda& data, const VW::example& /* unused_example */, VW::io::logger& logger)
+{
+  if (data.minibatch == data.batch_buffer.size())
+  {
+    for (auto* ex : data.batch_buffer)
+    {
+      for (auto& sink : all.final_prediction_sink)
+      {
+        VW::details::print_scalars(sink.get(), ex->pred.scalars, ex->tag, logger);
+      }
+    }
+  }
+}
+
+void print_update_lda(VW::workspace& all, VW::shared_data& sd, const lda& data, const VW::example& /* unused_example */,
+    VW::io::logger& /* unused */)
+{
+  if (data.minibatch == data.batch_buffer.size())
+  {
+    if (sd.weighted_examples() >= sd.dump_interval && !all.quiet)
+    {
+      sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0,
+          data.batch_buffer.at(0)->get_num_features(), all.progress_add, all.progress_arg);
+    }
+  }
 }
 }  // namespace
 
@@ -1329,8 +1319,6 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   ld->topics = VW::cast_to_smaller_type<size_t>(topics);
   ld->minibatch = VW::cast_to_smaller_type<size_t>(minibatch);
 
-  ld->finish_example_count = 0;
-
   all.lda = static_cast<uint32_t>(ld->topics);
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
@@ -1361,21 +1349,36 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
     all.example_parser = VW::make_unique<VW::parser>(minibatch2, previous_strict_parse);
   }
 
+  if (ld->minibatch > 1)
+  {
+    ld->saved_batch_examples.reserve(ld->minibatch);
+    for (uint64_t i = 0; i < ld->minibatch; i++)
+    {
+      ld->saved_batch_examples.emplace_back(VW::make_unique<VW::example>());
+    }
+  }
+
   ld->v.resize(all.lda * ld->minibatch);
 
   ld->decay_levels.push_back(0.f);
 
   all.example_parser->lbl_parser = VW::no_label_parser_global;
 
+  // If minibatch is > 1, then the predict function does not actually produce predictions.
+  const auto pred_type = ld->minibatch > 1 ? VW::prediction_type_t::NOPRED : VW::prediction_type_t::SCALARS;
+
+  // FIXME: lda with batch size > 1 doesnt produce predictions.
   auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
-      VW::prediction_type_t::SCALARS, VW::label_type_t::NOLABEL)
+      pred_type, VW::label_type_t::NOLABEL)
                 .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)
-                .set_finish_example(::finish_example)
                 .set_end_examples(end_examples)
                 .set_end_pass(end_pass)
+                .set_output_example_prediction(output_example_prediction_lda)
+                .set_print_update(print_update_lda)
+                .set_update_stats(update_stats_lda)
                 .build();
 
   return make_base(*l);

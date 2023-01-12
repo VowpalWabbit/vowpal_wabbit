@@ -7,22 +7,15 @@ initial_t = 0
 power_t = 0.5
 Enabled reductions: lda
 Input label = NOLABEL
-Output pred = SCALARS
+Output pred = NOPRED
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-10.14877 10.14877            1            1.0           none              0      732
-10.22653 10.30429            2            2.0           none              0       27
-10.22706 10.22759            4            4.0           none              0       53
-10.30767 10.38829            8            8.0           none              0       60
-10.33166 10.35565           16           16.0           none              0       26
-10.45805 10.58444           32           32.0           none              0      125
-10.47453 10.49101           64           64.0           none              0      313
-10.40360 10.33267          128          128.0           none              0       50
-9.956974 9.510342          256          256.0           none              0       33
+10.40360 10.40360          128          128.0           none              0      732
+9.956976 9.510344          256          256.0           none              0      102
 
 finished run
 number of examples = 256
 weighted example sum = 256.000000
 weighted label sum = 0.000000
-average loss = 9.956974
+average loss = 9.956976
 total feature number = 22158
