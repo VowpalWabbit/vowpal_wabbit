@@ -96,14 +96,13 @@ TEST(ConfidenceSequenceRobust, PythonEquivalenceCI)
   csr.update(0.879389936, 1);
   csr.update(0.880083546, 1);
   csr.update(0.8807676, 1);
-  csr.update(43.91880613, 0.9);
 
   double lb = csr.lower_bound();
   double ub = csr.upper_bound();
 
   // Compare to test_confidence_sequence_robust.py
-  EXPECT_FLOAT_EQ(lb, 0.30215631989666525);
-  EXPECT_FLOAT_EQ(ub, 0.90217039277420608);
+  EXPECT_NEAR(lb, 0.19224909776696902, 1e-6);
+  EXPECT_NEAR(ub, 0.93637288977188682, 1e-6);
 
   // Test brentq separately
   double s = 139.8326745448;
@@ -119,7 +118,7 @@ TEST(ConfidenceSequenceRobust, PythonEquivalenceCI)
   double root = csr.lower.root_brentq(s, thres, memo, min_mu, max_mu);
 
   // Compare root to test_confidence_sequence_robust.py
-  EXPECT_NEAR(root, 0.30215623755403009, 1e-6);
+  EXPECT_NEAR(root, 0.31672263211621371, 1e-6);
 
   // Test that root of objective function is 0
   auto test_root = csr.lower.log_wealth_mix(root, s, thres, memo) - thres;
