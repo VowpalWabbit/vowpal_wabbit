@@ -66,7 +66,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
 void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   auto model_count = static_cast<int64_t>(conf_seq_estimators.size());
-  CB::cb_class logged{};
+  VW::cb_class logged{};
   uint64_t labelled_action = 0;
   const auto it =
       std::find_if(examples.begin(), examples.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
@@ -385,10 +385,11 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   // to make sure there are not subtle bugs
   auto* base_learner = stack_builder.setup_base_learner();
 
-  GD::gd& gd = *static_cast<GD::gd*>(
+  VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
       base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
-  auto& adf_data = *static_cast<CB_ADF::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
-                                                     ->get_internal_type_erased_data_pointer_test_use_only());
+  auto& adf_data =
+      *static_cast<VW::reductions::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
+                                                ->get_internal_type_erased_data_pointer_test_use_only());
   data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
   data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
@@ -403,10 +404,9 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_input_label_type(VW::label_type_t::CB)
                         .set_output_label_type(VW::label_type_t::CB)
-                        .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                        .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                         .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                         .set_params_per_weight(model_count)
-                        .set_output_prediction_type(base_learner->get_output_prediction_type())
                         .set_save_load(save_load_epsilon_decay)
                         .set_finish(::finish)
                         .build();

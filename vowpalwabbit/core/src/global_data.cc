@@ -4,6 +4,10 @@
 
 #include "vw/core/global_data.h"
 
+#include "vw/config/options.h"
+#include "vw/core/parse_regressor.h"
+#include "vw/core/reductions/metrics.h"
+
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "vw/common/future_compat.h"
@@ -55,7 +59,8 @@ void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, redu
 }
 }  // namespace VW
 
-void print_result_by_ref(VW::io::writer* f, float res, float, const VW::v_array<char>& tag, VW::io::logger& logger)
+void VW::details::print_result_by_ref(
+    VW::io::writer* f, float res, float, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -91,7 +96,7 @@ void set_mm(VW::shared_data* sd, float label)
   if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
 }
 
-void noop_mm(VW::shared_data*, float) {}
+void VW::details::noop_mm(VW::shared_data*, float) {}
 
 namespace VW
 {
@@ -294,8 +299,8 @@ std::string workspace::dump_weights_to_json_experimental()
 }
 }  // namespace VW
 
-void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool /*quiet*/,
-    VW::io::logger& logger)
+void VW::details::compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest,
+    bool /*quiet*/, VW::io::logger& logger)
 {
   for (size_t i = 0; i < limits.size(); i++)
   {
@@ -355,7 +360,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
                // updates (see parse_args.cc)
   numpasses = 1;
 
-  print_by_ref = print_result_by_ref;
+  print_by_ref = VW::details::print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
   random_weights = false;
@@ -416,11 +421,33 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 }
 VW_WARNING_STATE_POP
 
+void workspace::finish()
+{
+  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
+  if (!quiet && !options->was_supplied("audit_regressor"))
+  {
+    sd->print_summary(*trace_message, *sd, *loss, current_pass, holdout_set_off);
+  }
+
+  details::finalize_regressor(*this, final_regressor_name);
+  if (options->was_supplied("dump_json_weights_experimental"))
+  {
+    auto content = dump_weights_to_json_experimental();
+    auto writer = VW::io::open_file_writer(json_weights_file_name);
+    writer->write(content.c_str(), content.length());
+  }
+  global_metrics.register_metrics_callback(
+      [this](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(*this, sink); });
+  VW::reductions::output_metrics(*this);
+  logger.log_summary();
+
+  if (l != nullptr) { l->finish(); }
+}
+
 workspace::~workspace()
 {
   if (l != nullptr)
   {
-    l->finish();
     delete l;
     l = nullptr;
   }

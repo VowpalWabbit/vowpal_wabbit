@@ -11,6 +11,7 @@ set(vw_core_headers
   include/vw/core/cache.h
   include/vw/core/cached_learner.h
   include/vw/core/cb_continuous_label.h
+  include/vw/core/cb_graph_feedback_reduction_features.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
   include/vw/core/daemon_utils.h
@@ -56,6 +57,7 @@ set(vw_core_headers
   include/vw/core/loss_functions.h
   include/vw/core/memory.h
   include/vw/core/merge.h
+  include/vw/core/metrics_collector.h
   include/vw/core/metric_sink.h
   include/vw/core/model_utils.h
   include/vw/core/multi_model_utils.h
@@ -77,7 +79,6 @@ set(vw_core_headers
   include/vw/core/prediction_type.h
   include/vw/core/print_utils.h
   include/vw/core/prob_dist_cont.h
-  include/vw/core/qr_decomposition.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
   include/vw/core/rand48.h
@@ -190,6 +191,7 @@ set(vw_core_headers
   include/vw/core/vw_validate.h
   include/vw/core/vw_versions.h
   include/vw/core/vw.h
+  src/qr_decomposition.h
 )
 
 set(vw_core_sources
@@ -228,6 +230,7 @@ set(vw_core_sources
   src/learner.cc
   src/loss_functions.cc
   src/merge.cc
+  src/metrics_collector.cc
   src/metric_sink.cc
   src/multiclass.cc
   src/multilabel.cc
@@ -430,6 +433,7 @@ vw_add_test_executable(
       tests/cats_tree_test.cc
       tests/cats_user_provided_pdf.cc
       tests/cb_explore_adf_test.cc
+      tests/cb_graph_feedback_label_text_parse_test.cc
       tests/cb_large_actions_test.cc
       tests/cb_las_one_pass_svd_test.cc
       tests/cb_las_spanner_test.cc

@@ -80,7 +80,7 @@ float get_adanormalhedge_weights(float r, float c)
 {
   float r_pos = r > 0.f ? r : 0.f;
   if (c == 0.f || r_pos == 0.f) { return 0.f; }
-  return 2.f * r_pos * correctedExp(r_pos * r_pos / (3.f * c)) / (3.f * c);
+  return 2.f * r_pos * VW::details::correctedExp(r_pos * r_pos / (3.f * c)) / (3.f * c);
 }
 
 template <bool is_learn>
@@ -419,6 +419,8 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
   auto* l = VW::LEARNER::make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
                 .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_learn_returns_prediction(true)
                 .set_save_load(save_load)

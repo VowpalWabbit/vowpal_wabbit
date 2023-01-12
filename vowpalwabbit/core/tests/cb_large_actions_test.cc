@@ -2,11 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "qr_decomposition.h"
 #include "reductions/cb/details/large_action_space.h"
 #include "vw/common/future_compat.h"
 #include "vw/core/constant.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
@@ -24,7 +24,7 @@ using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
         VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
-TEST(las_tests, creation_of_the_og_A_matrix)
+TEST(Las, CreationOfTheOgAMatrix)
 {
   uint32_t d = 2;
   auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
@@ -64,7 +64,7 @@ TEST(las_tests, creation_of_the_og_A_matrix)
     uint64_t action_index = 0;
     auto* ex = examples[action_index];
     // test sanity - test assumes no shared features
-    EXPECT_EQ(!CB::ec_is_example_header(*ex), true);
+    EXPECT_EQ(!VW::ec_is_example_header_cb(*ex), true);
     for (auto ns : ex->indices)
     {
       for (size_t i = 0; i < ex->feature_space[ns].indices.size(); i++)
@@ -85,7 +85,7 @@ TEST(las_tests, creation_of_the_og_A_matrix)
   VW::finish(vw);
 }
 
-TEST(las_tests, check_interactions_on_Y)
+TEST(Las, CheckInteractionsOnY)
 {
   uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
@@ -151,7 +151,7 @@ TEST(las_tests, check_interactions_on_Y)
   EXPECT_GT(interactions_rows, non_interactions_rows);
 }
 
-TEST(las_tests, check_interactions_on_B)
+TEST(Las, CheckInteractionsOnB)
 {
   uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
@@ -208,7 +208,7 @@ TEST(las_tests, check_interactions_on_B)
   EXPECT_EQ(B_interactions.isApprox(B_non_interactions), false);
 }
 
-TEST(las_tests, check_At_times_Omega_is_Y)
+TEST(Las, CheckAtTimesOmegaIsY)
 {
   uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
@@ -275,7 +275,7 @@ TEST(las_tests, check_At_times_Omega_is_Y)
       {
         auto* ex = examples[action_index];
         // test sanity - test assumes no shared features
-        EXPECT_EQ(!CB::ec_is_example_header(*ex), true);
+        EXPECT_EQ(!VW::ec_is_example_header_cb(*ex), true);
         for (auto ns : ex->indices)
         {
           _UNUSED(ns);
@@ -323,7 +323,7 @@ TEST(las_tests, check_At_times_Omega_is_Y)
   }
 }
 
-TEST(las_tests, check_A_times_Y_is_B)
+TEST(Las, CheckATimesYIsB)
 {
   uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;
@@ -396,7 +396,7 @@ TEST(las_tests, check_A_times_Y_is_B)
   }
 }
 
-TEST(las_tests, check_B_times_P_is_Z)
+TEST(Las, CheckBTimesPIsZ)
 {
   uint32_t d = 2;
 
@@ -568,7 +568,7 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
   }
 }
 
-TEST(las_tests, check_final_truncated_SVD_validity)
+TEST(Las, CheckFinalTruncatedSVDValidity)
 {
   uint32_t d = 3;
 
@@ -616,7 +616,7 @@ TEST(las_tests, check_final_truncated_SVD_validity)
   }
 }
 
-TEST(las_tests, check_shrink_factor)
+TEST(Las, CheckShrinkFactor)
 {
   uint32_t d = 2;
   std::vector<std::pair<VW::workspace*, bool>> vws;

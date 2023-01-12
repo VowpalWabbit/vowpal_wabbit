@@ -9,10 +9,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(rand_tests, reproduce_max_boundary_issue)
+TEST(Rand, ReproduceMaxBoundaryIssue)
 {
   uint64_t seed = 58587211;
-  const uint64_t new_random_seed = VW::uniform_hash(&seed, sizeof(seed), seed);
+  const uint64_t new_random_seed =
+      VW::uniform_hash(reinterpret_cast<const char*>(&seed), sizeof(seed), static_cast<uint32_t>(seed));
   EXPECT_EQ(new_random_seed, 2244123448);
 
   float random_draw = merand48_noadvance(new_random_seed);
@@ -25,7 +26,7 @@ TEST(rand_tests, reproduce_max_boundary_issue)
   EXPECT_FLOAT_EQ(chosen_value, range_max);
 }
 
-TEST(rand_tests, check_rand_state_cross_platform)
+TEST(Rand, CheckRandStateCrossPlatform)
 {
   VW::rand_state random_state;
   random_state.set_random_state(10);

@@ -7,6 +7,7 @@
 #include "vw/common/hash.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/core/cost_sensitive.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
@@ -21,7 +22,6 @@
 #include <vector>
 
 using namespace VW::LEARNER;
-using namespace exploration;
 using namespace VW::config;
 
 #define WARM_START 1
@@ -45,7 +45,7 @@ namespace
 class warm_cb
 {
 public:
-  CB::label cb_label;
+  VW::cb_label cb_label;
   uint64_t app_seed = 0;
   VW::action_scores a_s;
   // used as the seed
@@ -77,7 +77,7 @@ public:
   std::vector<float> lambdas;
   VW::action_scores a_s_adf;
   std::vector<float> cumulative_costs;
-  CB::cb_class cl_adf;
+  VW::cb_class cl_adf;
   uint32_t ws_train_size = 0;
   uint32_t ws_vali_size = 0;
   VW::multi_ex ws_vali;
@@ -87,7 +87,7 @@ public:
   VW::multiclass_label mc_label;
   VW::cs_label cs_label;
   std::vector<VW::cs_label> csls;
-  std::vector<CB::label> cbls;
+  std::vector<VW::cb_label> cbls;
   bool use_cs = 0;
 
   ~warm_cb()
@@ -171,7 +171,7 @@ void copy_example_to_adf(warm_cb& data, VW::example& ec)
     }
 
     // avoid empty example by adding a tag (hacky)
-    if (CB_ALGS::example_is_newline_not_header(eca) && eca.l.cb.is_test_label()) { eca.tag.push_back('n'); }
+    if (VW::example_is_newline_not_header_cb(eca) && eca.l.cb.is_test_label()) { eca.tag.push_back('n'); }
   }
 }
 
@@ -282,7 +282,7 @@ uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, VW::example&
 
 void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 {
-  CB::cb_class& cl = data.cl_adf;
+  VW::cb_class& cl = data.cl_adf;
   // IPS for approximating the cumulative costs for all lambdas
   for (uint32_t i = 0; i < data.choices_lambda; i++)
   {
@@ -361,7 +361,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 
   auto& out_ec = *data.ecs[0];
   uint32_t chosen_action;
-  if (sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
+  if (VW::explore::sample_after_normalizing(data.app_seed + data.example_counter++, begin_scores(out_ec.pred.a_s),
           end_scores(out_ec.pred.a_s), chosen_action))
     THROW("Failed to sample from pdf");
 
@@ -603,14 +603,18 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
   void (*learn_pred_ptr)(warm_cb&, multi_learner&, VW::example&);
   size_t ws = data->choices_lambda;
   std::string name_addition;
-  void (*finish_ptr)(VW::workspace&, warm_cb&, VW::example&);
   VW::label_type_t label_type;
+  VW::learner_update_stats_func<warm_cb, VW::example>* update_stats_func = nullptr;
+  VW::learner_output_example_prediction_func<warm_cb, VW::example>* output_example_prediction_func = nullptr;
+  VW::learner_print_update_func<warm_cb, VW::example>* print_update_func = nullptr;
 
   if (use_cs)
   {
     learn_pred_ptr = predict_and_learn_adf<true>;
     name_addition = "-cs";
-    finish_ptr = VW::details::finish_cs_example;
+    update_stats_func = VW::details::update_stats_cs_label<warm_cb>;
+    output_example_prediction_func = VW::details::output_example_prediction_cs_label<warm_cb>;
+    print_update_func = VW::details::print_update_cs_label<warm_cb>;
     all.example_parser->lbl_parser = VW::cs_label_parser_global;
     label_type = VW::label_type_t::CS;
   }
@@ -618,7 +622,9 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
   {
     learn_pred_ptr = predict_and_learn_adf<false>;
     name_addition = "-multi";
-    finish_ptr = VW::details::finish_multiclass_example;
+    update_stats_func = VW::details::update_stats_multiclass_label<warm_cb>;
+    output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<warm_cb>;
+    print_update_func = VW::details::print_update_multiclass_label<warm_cb>;
     all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     label_type = VW::label_type_t::MULTICLASS;
   }
@@ -631,9 +637,11 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
-                .set_finish_example(finish_ptr)
+                .set_update_stats(update_stats_func)
+                .set_output_example_prediction(output_example_prediction_func)
+                .set_print_update(print_update_func)
                 .set_finish(::finish)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

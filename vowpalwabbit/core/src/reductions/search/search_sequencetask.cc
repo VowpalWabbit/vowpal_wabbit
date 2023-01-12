@@ -299,7 +299,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 void run(Search::search& sch, VW::multi_ex& ec)
 {
   size_t K = *sch.get_task_data<size_t>();  // NOLINT
-  float* costs = calloc_or_throw<float>(K);
+  float* costs = VW::details::calloc_or_throw<float>(K);
   Search::predictor search_predictor(sch, static_cast<ptag>(0));
   for (size_t i = 0; i < ec.size(); i++)
   {

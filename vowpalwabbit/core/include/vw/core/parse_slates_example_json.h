@@ -5,7 +5,7 @@
 
 template <bool audit>
 VW_DEPRECATED("parse_slates_example_json moved to VW::parsers::json::details::parse_slates_example_json")
-void parse_slates_example_json(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
+void parse_slates_example_json(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line, size_t length,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
@@ -36,11 +36,11 @@ void parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, cha
 }
 
 // Define extern template specializations so they don't get initialized when this file is included
-extern template void parse_slates_example_json<true>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
+extern template void parse_slates_example_json<true>(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line, size_t length,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
-extern template void parse_slates_example_json<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
+extern template void parse_slates_example_json<false>(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line, size_t length,
     VW::example_factory_t example_factory, void* ex_factory_context,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);

@@ -69,7 +69,7 @@ private:
 
   // for backing up cb example data when computing sensitivities
   std::vector<VW::action_scores> _ex_as;
-  std::vector<std::vector<CB::cb_class>> _ex_costs;
+  std::vector<std::vector<VW::cb_class>> _ex_costs;
 };
 
 cb_explore_adf_regcb::cb_explore_adf_regcb(bool regcbopt, float c0, bool first_only, float min_cb_cost,
@@ -208,7 +208,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
       if (_min_costs[preds[i].action] <= min_max_cost) { preds[i].score = 1; }
       else { preds[i].score = 0; }
       // explore uniformly on support
-      exploration::enforce_minimum_probability(
+      VW::explore::enforce_minimum_probability(
           1.0, /*update_zero_elements=*/false, begin_scores(preds), end_scores(preds));
     }
   }
@@ -219,7 +219,7 @@ void cb_explore_adf_regcb::learn_impl(multi_learner& base, VW::multi_ex& example
   VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
   {
-    CB::label& ld = examples[i]->l.cb;
+    VW::cb_label& ld = examples[i]->l.cb;
     if (ld.costs.size() == 1)
     {
       ld.costs[0].probability = 1.f;  // no importance weighting
@@ -301,13 +301,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
   size_t problem_multiplier = 1;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
-
-  bool with_metrics = options.was_supplied("extra_metrics");
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
   auto data = VW::make_unique<explore_type>(
-      with_metrics, regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
+      all.global_metrics.are_metrics_enabled(), regcbopt, c0, first_only, min_cb_cost, max_cb_cost, all.model_file_ver);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_regcb_setup))
                 .set_input_label_type(VW::label_type_t::CB)
@@ -315,12 +313,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_print_example(explore_type::print_example)
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

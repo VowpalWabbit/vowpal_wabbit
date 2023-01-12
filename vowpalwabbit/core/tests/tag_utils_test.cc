@@ -15,11 +15,11 @@
 
 #include <vector>
 
-TEST(tag_utils_tests, tag_with_seed__seed_extraction)
+TEST(TagUtils, TagWithSeedSeedExtraction)
 {
   auto opts = VW::make_unique<VW::config::options_cli>(
       std::vector<std::string>{"--json", "--chain_hash", "--no_stdin", "--quiet"});
-  auto vw = VW::initialize_experimental(std::move(opts));
+  auto vw = VW::initialize(std::move(opts));
   std::string json = R"(
   {
     "_label": 1,
@@ -42,7 +42,7 @@ TEST(tag_utils_tests, tag_with_seed__seed_extraction)
   VW::finish_example(*vw, examples);
 }
 
-TEST(tag_utils_tests, tag_without_seed__seed_extraction)
+TEST(TagUtils, TagWithoutSeedSeedExtraction)
 {
   auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   std::string json = R"(
@@ -66,7 +66,7 @@ TEST(tag_utils_tests, tag_without_seed__seed_extraction)
   VW::finish(*vw);
 }
 
-TEST(tag_utils_tests, no_tag__seed_extraction)
+TEST(TagUtils, NoTagSeedExtraction)
 {
   auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   std::string json = R"(

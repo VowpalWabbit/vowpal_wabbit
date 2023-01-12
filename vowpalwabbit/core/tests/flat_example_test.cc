@@ -11,9 +11,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-TEST(flat_example_tests, sans_interaction_test)
+TEST(FlatExample, SansInteractionTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--noconstant"));
 
   auto* ex = VW::read_example(*vw, "1 |x a:2 |y b:3");
   auto& flat = *VW::flatten_sort_example(*vw, ex);
@@ -25,9 +25,9 @@ TEST(flat_example_tests, sans_interaction_test)
   VW::finish_example(*vw, *ex);
 }
 
-TEST(flat_example_tests, with_interaction_test)
+TEST(FlatExample, WithInteractionTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--interactions", "xy", "--quiet", "--noconstant"));
+  auto vw = VW::initialize(vwtest::make_args("--interactions", "xy", "--quiet", "--noconstant"));
 
   auto* ex = VW::read_example(*vw, "1 |x a:2 |y b:3");
   auto& flat = *VW::flatten_sort_example(*vw, ex);
@@ -39,9 +39,9 @@ TEST(flat_example_tests, with_interaction_test)
   VW::finish_example(*vw, *ex);
 }
 
-TEST(flat_example_tests, empty_example_test)
+TEST(FlatExample, EmptyExampleTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--noconstant"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--noconstant"));
 
   auto* ex = VW::read_example(*vw, "1 |x a:0");
   auto& flat = *VW::flatten_sort_example(*vw, ex);

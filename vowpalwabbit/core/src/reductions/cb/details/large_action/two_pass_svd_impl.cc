@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 
 #include "../large_action_space.h"
+#include "qr_decomposition.h"
 #include "vw/core/cb.h"
 #include "vw/core/label_dictionary.h"
-#include "vw/core/qr_decomposition.h"
 #include "vw/core/reductions/gd.h"
 
 namespace VW
@@ -84,7 +84,7 @@ bool two_pass_svd_impl::generate_Y(const multi_ex& examples, const std::vector<f
 
   for (auto* ex : examples)
   {
-    assert(!CB::ec_is_example_header(*ex));
+    assert(!VW::ec_is_example_header_cb(*ex));
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
@@ -96,7 +96,7 @@ bool two_pass_svd_impl::generate_Y(const multi_ex& examples, const std::vector<f
       {
         Y_triplet_constructor tc(_all->weights.sparse_weights.mask(), row_index, col, _seed, _triplets,
             max_non_zero_col, non_zero_rows, shrink_factors);
-        GD::foreach_feature<Y_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
+        VW::foreach_feature<Y_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
             _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
@@ -107,7 +107,7 @@ bool two_pass_svd_impl::generate_Y(const multi_ex& examples, const std::vector<f
       {
         Y_triplet_constructor tc(_all->weights.dense_weights.mask(), row_index, col, _seed, _triplets, max_non_zero_col,
             non_zero_rows, shrink_factors);
-        GD::foreach_feature<Y_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+        VW::foreach_feature<Y_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
             _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
@@ -140,7 +140,7 @@ void two_pass_svd_impl::generate_B(const multi_ex& examples, const std::vector<f
   uint64_t row_index = 0;
   for (auto* ex : examples)
   {
-    assert(!CB::ec_is_example_header(*ex));
+    assert(!VW::ec_is_example_header_cb(*ex));
 
     auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     auto* shared_example = red_features.shared_example;
@@ -152,7 +152,7 @@ void two_pass_svd_impl::generate_B(const multi_ex& examples, const std::vector<f
       if (_all->weights.sparse)
       {
         B_triplet_constructor tc(_all->weights.sparse_weights.mask(), col, Y, final_dot_prod);
-        GD::foreach_feature<B_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
+        VW::foreach_feature<B_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
             _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
@@ -162,7 +162,7 @@ void two_pass_svd_impl::generate_B(const multi_ex& examples, const std::vector<f
       else
       {
         B_triplet_constructor tc(_all->weights.dense_weights.mask(), col, Y, final_dot_prod);
-        GD::foreach_feature<B_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+        VW::foreach_feature<B_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
             _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
             (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
             (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions

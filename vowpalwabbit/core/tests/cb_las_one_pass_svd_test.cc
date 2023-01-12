@@ -2,10 +2,10 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "qr_decomposition.h"
 #include "reductions/cb/details/large_action/compute_dot_prod_scalar.h"
 #include "reductions/cb/details/large_action/compute_dot_prod_simd.h"
 #include "reductions/cb/details/large_action_space.h"
-#include "vw/core/qr_decomposition.h"
 #include "vw/core/rand48.h"
 #include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
@@ -20,7 +20,7 @@ using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
         VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
-TEST(las_tests, check_AO_same_actions_same_representation)
+TEST(Las, CheckAOSameActionsSameRepresentation)
 {
   auto d = 3;
   std::vector<VW::workspace*> vws;
@@ -81,7 +81,7 @@ TEST(las_tests, check_AO_same_actions_same_representation)
   }
 }
 
-TEST(las_tests, check_AO_linear_combination_of_actions)
+TEST(Las, CheckAOLinearCombinationOfActions)
 {
   auto d = 3;
   std::vector<VW::workspace*> vws;
@@ -177,7 +177,7 @@ TEST(las_tests, check_AO_linear_combination_of_actions)
 }
 
 #ifdef BUILD_LAS_WITH_SIMD
-TEST(las_tests, compute_dot_prod_scalar_and_simd_have_same_results)
+TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
 {
   float (*compute_dot_prod_simd)(uint64_t, VW::workspace*, uint64_t, VW::example*);
   if (VW::cb_explore_adf::cpu_supports_avx512())
@@ -218,7 +218,7 @@ TEST(las_tests, compute_dot_prod_scalar_and_simd_have_same_results)
     examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/5)));
     auto* ex = examples[0];
     auto interactions =
-        INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+        VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
             vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 0);
@@ -236,7 +236,7 @@ TEST(las_tests, compute_dot_prod_scalar_and_simd_have_same_results)
     examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/50)));
     auto* ex = examples[0];
     auto interactions =
-        INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+        VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
             vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 0);
@@ -254,7 +254,7 @@ TEST(las_tests, compute_dot_prod_scalar_and_simd_have_same_results)
     examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/5)));
     auto* ex = examples[0];
     auto interactions =
-        INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+        VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
             vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 6);
@@ -272,7 +272,7 @@ TEST(las_tests, compute_dot_prod_scalar_and_simd_have_same_results)
     examples.push_back(VW::read_example(*vw, generate_example(/*num_namespaces=*/2, /*num_features=*/50)));
     auto* ex = examples[0];
     auto interactions =
-        INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+        VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
             vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 6);
@@ -285,7 +285,7 @@ TEST(las_tests, compute_dot_prod_scalar_and_simd_have_same_results)
   }
 }
 
-TEST(las_tests, scalar_and_simd_generate_same_predictions)
+TEST(Las, ScalarAndSimdGenerateSamePredictions)
 {
   auto generate_example = [](int num_namespaces, int num_features)
   {
