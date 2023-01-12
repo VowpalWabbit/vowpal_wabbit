@@ -5,10 +5,10 @@
 #include "vw/core/reductions/cb/warm_cb.h"
 
 #include "vw/common/hash.h"
+#include "vw/common/random.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/cost_sensitive.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
