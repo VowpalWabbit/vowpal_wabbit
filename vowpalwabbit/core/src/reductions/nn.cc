@@ -4,14 +4,13 @@
 
 #include "vw/core/reductions/nn.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/constant.h"
 #include "vw/core/guard.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -204,7 +203,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
       base.multipredict(ec, 0, n.k, hidden_units, true);
 
-      for (unsigned int i = 0; i < n.k; ++i) { dropped_out[i] = (n.dropout && merand48(n.xsubi) < 0.5); }
+      for (unsigned int i = 0; i < n.k; ++i) { dropped_out[i] = (n.dropout && VW::details::merand48(n.xsubi) < 0.5); }
 
       if (ec.passthrough)
       {

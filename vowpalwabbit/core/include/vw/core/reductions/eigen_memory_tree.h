@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include "vw/common/random.h"
 #include "vw/common/string_view.h"
 #include "vw/core/feature_group.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/vw_fwd.h"
 
 #include <list>

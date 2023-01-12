@@ -4,6 +4,7 @@
 
 #include "vw/core/parse_args.h"
 
+#include "vw/common/random.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/cli_help_formatter.h"
@@ -27,8 +28,6 @@
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reduction_stack.h"
 #include "vw/core/reductions/metrics.h"
 #include "vw/core/scope_exit.h"

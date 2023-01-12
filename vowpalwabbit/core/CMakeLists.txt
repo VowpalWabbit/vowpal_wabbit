@@ -81,7 +81,6 @@ set(vw_core_headers
   include/vw/core/prob_dist_cont.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
-  include/vw/core/rand48.h
   include/vw/core/reduction_features.h
   include/vw/core/reduction_stack.h
   include/vw/core/reductions/active_cover.h
@@ -247,7 +246,6 @@ set(vw_core_sources
   src/print_utils.cc
   src/prob_dist_cont.cc
   src/qr_decomposition.cc
-  src/rand48.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
   src/reductions/active.cc

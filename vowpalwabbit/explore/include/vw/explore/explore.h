@@ -132,8 +132,8 @@ int swap_chosen(ActionIt action_first, ActionIt action_last, uint32_t chosen_ind
  * @brief Sample a continuous value from the provided pdf.
  *
  * Warning: `seed` must be sufficiently random for the PRNG to produce uniform random values. Using sequential seeds
- * will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in rand48.h) can
- * be used to inplace mutate it.
+ * will result in a very biased distribution. If unsure how to update seed between calls, merand48 (in random_details.h)
+ * can be used to inplace mutate it.
  *
  * @tparam It Iterator type of the pmf. Must be a RandomAccessIterator.
  * @param p_seed The seed for the pseudo-random generator. Will be hashed using MURMUR hash. The seed state will be
