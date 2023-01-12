@@ -9,7 +9,10 @@ if __name__ == "__main__":
         "--vw", help="Path to VW binary to use", type=str, required=True
     )
     parser.add_argument(
-        "--active_interactor", help="Path to python file to use", type=str, required=True
+        "--active_interactor",
+        help="Path to python file to use",
+        type=str,
+        required=True,
     )
     parser.add_argument(
         "--unlabeled_data",
@@ -52,10 +55,14 @@ if __name__ == "__main__":
         args.unlabeled_data,
     ]
 
-    active_interactor_proc = subprocess.Popen(cmd_args, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-    with open(args.labels, 'r') as f:
+    active_interactor_proc = subprocess.Popen(
+        cmd_args, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    with open(args.labels, "r") as f:
         labels = f.read()
-        stdout_data, stderr_data = active_interactor_proc.communicate(input=labels.encode("utf-8"))
+        stdout_data, stderr_data = active_interactor_proc.communicate(
+            input=labels.encode("utf-8")
+        )
         print("active_interactor stdout: \n" + stdout_data.decode("utf-8"))
         print("active_interactor stderr: \n" + stderr_data.decode("utf-8"))
 
