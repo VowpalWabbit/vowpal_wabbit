@@ -4,6 +4,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/setup_base.h"
+#include "vw/test_common/test_common.h"
 
 #include <gtest/gtest.h>
 
@@ -36,10 +37,9 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
 {
   EXPECT_THROW(
       {
-        VW::workspace* vw = nullptr;
         try
         {
-          vw = VW::initialize("--epsilon_decay --cb_adf");
+          auto result = VW::initialize(vwtest::make_args("--epsilon_decay", "--cb_adf"));
         }
         catch (const VW::vw_exception& e)
         {
@@ -49,7 +49,6 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
               e.what());
           throw;
         }
-        VW::finish(*vw);
       },
       VW::vw_exception);
 }
@@ -57,9 +56,8 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
 TEST(EpsilonDecay, InitWIterations)
 {
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
-  auto ctr = simulator::_test_helper(
-      "--epsilon_decay --model_count 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed "
-      "5");
+  auto ctr = simulator::_test_helper(std::vector<std::string>{
+      "--epsilon_decay", "--model_count=3", "--cb_explore_adf", "--quiet", "--epsilon=0.2", "--random_seed=5"});
 }
 
 #if !defined(__APPLE__) && !defined(_WIN32)
@@ -107,7 +105,8 @@ TEST(EpsilonDecay, ChampChangeWIterations)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet -q ::", test_hooks, num_iterations, seed, swap_after);
+      std::vector<std::string>{"--epsilon_decay", "--model_count", "4", "--cb_explore_adf", "--quiet", "-q", "::"},
+      test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.4f);
 }
@@ -226,7 +225,8 @@ TEST(EpsilonDecay, UpdateCountWIterations)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed);
+      std::vector<std::string>{"--epsilon_decay", "--model_count", "4", "--cb_explore_adf", "--quiet", "-q", "::"},
+      test_hooks, num_iterations, seed);
 
   EXPECT_GT(ctr.back(), 0.5f);
 }
@@ -234,18 +234,15 @@ TEST(EpsilonDecay, UpdateCountWIterations)
 TEST(EpsilonDecay, SaveLoadWIterations)
 {
   callback_map empty_hooks;
-  auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  "
-      "-q "
-      "::",
-      empty_hooks);
+  auto ctr =
+      simulator::_test_helper_hook(std::vector<std::string>{"--epsilon_decay", "--model_count", "5", "--cb_explore_adf",
+                                       "--epsilon_decay_significance_level", ".01", "--quiet", "-q", "::"},
+          empty_hooks);
   float without_save = ctr.back();
   EXPECT_GT(without_save, 0.9f);
 
-  ctr = simulator::_test_helper_save_load(
-      "--epsilon_decay --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  "
-      "-q "
-      "::");
+  ctr = simulator::_test_helper_save_load(std::vector<std::string>{"--epsilon_decay", "--model_count", "5",
+      "--cb_explore_adf", "--epsilon_decay_significance_level", ".01", "--quiet", "-q", "::"});
 
   float with_save = ctr.back();
   EXPECT_GT(with_save, 0.9f);

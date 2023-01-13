@@ -12,6 +12,7 @@
 #include "vw/core/slates_label.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/matchers.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -58,14 +59,14 @@ VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, VW::multi_ex>* make_test
 
 TEST(Slates, ReductionMockTest)
 {
-  auto& vw = *VW::initialize("--slates --quiet");
+  auto vw = VW::initialize(vwtest::make_args("--slates", "--quiet"));
   VW::multi_ex examples;
-  examples.push_back(VW::read_example(vw, "slates shared 0.8 | ignore_me"));
-  examples.push_back(VW::read_example(vw, "slates action 0 | ignore_me"));
-  examples.push_back(VW::read_example(vw, "slates action 1 | ignore_me"));
-  examples.push_back(VW::read_example(vw, "slates action 1 | ignore_me"));
-  examples.push_back(VW::read_example(vw, "slates slot 0:0.8 | ignore_me"));
-  examples.push_back(VW::read_example(vw, "slates slot 1:0.6 | ignore_me"));
+  examples.push_back(VW::read_example(*vw, "slates shared 0.8 | ignore_me"));
+  examples.push_back(VW::read_example(*vw, "slates action 0 | ignore_me"));
+  examples.push_back(VW::read_example(*vw, "slates action 1 | ignore_me"));
+  examples.push_back(VW::read_example(*vw, "slates action 1 | ignore_me"));
+  examples.push_back(VW::read_example(*vw, "slates slot 0:0.8 | ignore_me"));
+  examples.push_back(VW::read_example(*vw, "slates slot 1:0.6 | ignore_me"));
 
   auto mock_learn_or_pred = [](VW::multi_ex& examples)
   {
@@ -110,8 +111,7 @@ TEST(Slates, ReductionMockTest)
   EXPECT_THAT(examples[0]->pred.decision_scores[1],
       Pointwise(ActionScoreEqual(), std::vector<VW::action_score>{{0, 0.5f}, {1, 0.5f}}));
 
-  vw.finish_example(examples);
-  VW::finish(vw);
+  vw->finish_example(examples);
   test_base_learner->finish();
   delete test_base_learner;
 }

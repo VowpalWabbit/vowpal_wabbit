@@ -44,7 +44,7 @@ TEST(TagUtils, TagWithSeedSeedExtraction)
 
 TEST(TagUtils, TagWithoutSeedSeedExtraction)
 {
-  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--json", "--chain_hash", "--no_stdin", "--quiet"));
   std::string json = R"(
   {
     "_label": 1,
@@ -63,12 +63,11 @@ TEST(TagUtils, TagWithoutSeedSeedExtraction)
   EXPECT_EQ(false, extracted);
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(TagUtils, NoTagSeedExtraction)
 {
-  auto vw = VW::initialize("--json --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--json", "--chain_hash", "--no_stdin", "--quiet"));
   std::string json = R"(
   {
     "_label": 1,
@@ -86,5 +85,4 @@ TEST(TagUtils, NoTagSeedExtraction)
   EXPECT_EQ(false, extracted);
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
