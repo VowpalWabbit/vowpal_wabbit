@@ -398,8 +398,6 @@ public:
   // Autorecursive
   inline void NO_SANITIZE_UNDEFINED finish()
   {
-    // TODO: ensure that finish does not actually manage memory but just does driver finalization.
-    // Then move the call to finish from the destructor of workspace to driver_finalize
     if (_finisher_fd.data) { _finisher_fd.func(_finisher_fd.data); }
     if (_finisher_fd.base) { _finisher_fd.base->finish(); }
   }

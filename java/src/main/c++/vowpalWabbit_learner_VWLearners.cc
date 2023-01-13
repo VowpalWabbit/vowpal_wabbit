@@ -45,7 +45,8 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_closeInstance(JNIEnv
   try
   {
     VW::workspace* vwInstance = (VW::workspace*)vwPtr;
-    VW::finish(*vwInstance);
+    vwInstance->finish();
+    delete vwInstance;
   }
   catch (...)
   {
