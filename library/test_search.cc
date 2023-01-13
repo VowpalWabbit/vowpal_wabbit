@@ -98,8 +98,8 @@ void train()
 {
   // initialize VW as usual, but use 'hook' as the search_task
   cerr << endl << endl << "##### train() #####" << endl << endl;
-  auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(
-      std::vector<std::string>{"--search 4 --quiet --search_task hook --example_queue_limit 1024 -f my_model"}));
+  auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
+      "--search", "4", "--quiet", "--search_task", "hook", "--example_queue_limit", "1024", "-f", "my_model"}));
   run(*vw_obj);
   vw_obj->finish();
 }
@@ -108,7 +108,7 @@ void predict()
 {
   cerr << endl << endl << "##### predict() #####" << endl << endl;
   auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(
-      std::vector<std::string>{"--quiet -t --example_queue_limit 1024 -i my_model"}));
+      std::vector<std::string>{"--quiet", "-t", "--example_queue_limit", "1024", "-i", "my_model"}));
   run(*vw_obj);
   vw_obj->finish();
 }
