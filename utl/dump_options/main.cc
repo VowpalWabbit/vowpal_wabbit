@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/config/options_cli.h"
+#include "vw/core/memory.h"
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "vw/config/help_formatter.h"
@@ -180,7 +182,8 @@ struct json_help_formatter : VW::config::help_formatter
 
 int main(int argc, char* argv[])
 {
-  auto* vw = VW::initialize("--quiet");
+  std::vector<std::string> args{"--quiet"};
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   rapidjson::Document doc;
   auto& allocator = doc.GetAllocator();
@@ -199,8 +202,6 @@ int main(int argc, char* argv[])
 
   json_help_formatter formatter(std::move(doc));
   std::cout << formatter.format_help(vw->options->get_all_option_group_definitions()) << std::endl;
-
-  delete vw;
 
   return 0;
 }
