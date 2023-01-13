@@ -7,16 +7,17 @@
 #include "vw/core/named_labels.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 TEST(LossFunctions, SquaredLossTest)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("squared");
 
-  auto loss = get_loss_function(vw, loss_type);
+  auto loss = get_loss_function(*vw, loss_type);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -38,17 +39,15 @@ TEST(LossFunctions, SquaredLossTest)
   EXPECT_FLOAT_EQ(0.04f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(-0.2f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(2.0f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest1)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.4f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -70,17 +69,15 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest1)
   EXPECT_FLOAT_EQ(0.0144f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(-0.12f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(1.2f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest2)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.25f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -102,17 +99,15 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest2)
   EXPECT_FLOAT_EQ(0.7056f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(-0.84f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(1.5f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest3)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.2f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -134,17 +129,15 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest3)
   EXPECT_FLOAT_EQ(0.331776f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(-0.576f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(1.6f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest4)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.3f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -166,17 +159,15 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest4)
   EXPECT_FLOAT_EQ(0.103684f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(-0.322f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(1.4f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest5)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.25f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -198,17 +189,15 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest5)
   EXPECT_FLOAT_EQ(0.378225f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(-0.615f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(1.5f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest1)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.4f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -230,17 +219,15 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest1)
   EXPECT_FLOAT_EQ(0.0064f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(0.08f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(0.8f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest2)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.25f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -262,17 +249,15 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest2)
   EXPECT_FLOAT_EQ(0.001225f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(0.035f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(0.5f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest3)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.2f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -294,17 +279,15 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest3)
   EXPECT_FLOAT_EQ(0.002304f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(0.048f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(0.4f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest4)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.2f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -326,17 +309,15 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest4)
   EXPECT_FLOAT_EQ(0.011664f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(0.108f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(0.4f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest5)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.4f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -358,16 +339,14 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest5)
   EXPECT_FLOAT_EQ(0.0256f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(0.16f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(0.8f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 TEST(LossFunctions, ExpectileLossParameterEqualsZeroTest)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(0.0f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -389,17 +368,15 @@ TEST(LossFunctions, ExpectileLossParameterEqualsZeroTest)
   EXPECT_FLOAT_EQ(0.04f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(-0.2f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(2.0f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, ExpectileLossParameterEqualsOneTest)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type("expectile");
   constexpr float parameter(1.0f);
 
-  auto loss = get_loss_function(vw, loss_type, parameter);
+  auto loss = get_loss_function(*vw, loss_type, parameter);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -421,19 +398,17 @@ TEST(LossFunctions, ExpectileLossParameterEqualsOneTest)
   EXPECT_FLOAT_EQ(0.0f, loss->get_square_grad(prediction, label));
   EXPECT_FLOAT_EQ(0.0f, loss->first_derivative(&sd, prediction, label));
   EXPECT_FLOAT_EQ(0.0f, loss->second_derivative(&sd, prediction, label));
-
-  VW::finish(vw);
 }
 
 TEST(LossFunctions, CompareExpectileLossWithSquaredLossTest)
 {
-  auto& vw = *VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   const std::string loss_type_expectile("expectile");
   const std::string loss_type_squared("squared");
   constexpr float parameter(0.3f);
 
-  auto loss_expectile = get_loss_function(vw, loss_type_expectile, parameter);
-  auto loss_squared = get_loss_function(vw, loss_type_squared);
+  auto loss_expectile = get_loss_function(*vw, loss_type_expectile, parameter);
+  auto loss_squared = get_loss_function(*vw, loss_type_squared);
   VW::shared_data sd;
   sd.min_label = 0.0f;
   sd.max_label = 1.0f;
@@ -458,6 +433,4 @@ TEST(LossFunctions, CompareExpectileLossWithSquaredLossTest)
       loss_squared->first_derivative(&sd, prediction, label) * parameter);
   EXPECT_FLOAT_EQ(loss_expectile->second_derivative(&sd, prediction, label),
       loss_squared->second_derivative(&sd, prediction, label) * parameter);
-
-  VW::finish(vw);
 }
