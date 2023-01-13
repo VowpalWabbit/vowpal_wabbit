@@ -44,21 +44,6 @@
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
-namespace VW
-{
-std::string workspace::get_setupfn_name(reduction_setup_fn setup_fn)
-{
-  const auto loc = _setup_name_map.find(setup_fn);
-  if (loc != _setup_name_map.end()) { return loc->second; }
-  return "NA";
-}
-
-void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
-{
-  for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
-}
-}  // namespace VW
-
 void VW::details::print_result_by_ref(
     VW::io::writer* f, float res, float, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
