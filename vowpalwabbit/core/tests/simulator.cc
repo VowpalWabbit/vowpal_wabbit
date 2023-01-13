@@ -91,15 +91,12 @@ std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, const std::m
   for (const std::string& ex : multi_ex_str) { examples.push_back(VW::read_example(*vw, ex)); }
   vw->predict(examples);
 
-  std::vector<float> pmf;
   auto const& scores = examples[0]->pred.a_s;
   std::vector<float> ordered_scores(scores.size());
   for (auto const& action_score : scores) { ordered_scores[action_score.action] = action_score.score; }
-  pmf.reserve(ordered_scores.size());
-  for (auto action_score : ordered_scores) { pmf.push_back(action_score); }
   vw->finish_example(examples);
 
-  std::pair<int, float> pmf_sample = sample_custom_pmf(pmf);
+  std::pair<int, float> pmf_sample = sample_custom_pmf(ordered_scores);
   return std::make_pair(actions[pmf_sample.first], pmf_sample.second);
 }
 
