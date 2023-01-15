@@ -2158,7 +2158,6 @@ template <bool is_learn>
 void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::multi_ex& ec_seq)
 {
   search_private& priv = *sch.priv;
-  if (priv.learn_learner_id >= priv.num_learners) { return; }
   VW::workspace& all = *priv.all;
   bool ran_test = false;  // we must keep track so that even if we skip test, we still update # of examples seen
 
@@ -2791,7 +2790,6 @@ void search::get_test_action_sequence(std::vector<action>& V)
 }
 
 void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
-size_t search::get_num_learners() { return this->priv->num_learners; }
 
 uint64_t search::get_mask() { return this->priv->all->weights.mask(); }
 size_t search::get_stride_shift() { return this->priv->all->weights.stride_shift(); }
