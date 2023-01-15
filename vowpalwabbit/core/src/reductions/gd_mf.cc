@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/gd_mf.h"
 
+#include "vw/common/random_details.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/crossplat_compat.h"
@@ -11,7 +12,6 @@
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -124,7 +124,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
   float linear_prediction = 0.;
   // linear terms
 
-  for (VW::features& fs : ec) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction); }
+  for (VW::features& fs : ec) { VW::foreach_feature<float, VW::details::vec_add, T>(weights, fs, linear_prediction); }
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -144,13 +144,13 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
         // l^k is from index+1 to index+d.rank
         // float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         pred_offset x_dot_l = {0., k};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
+        VW::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         // float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(),
         // k+d.rank);
         pred_offset x_dot_r = {0., k + d.rank};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
+        VW::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
 
         prediction += x_dot_l.p * x_dot_r.p;
 
@@ -167,7 +167,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   all.set_minmax(all.sd, ec.l.simple.label);
 
-  ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 
   if (ec.l.simple.label != FLT_MAX)
   {
@@ -249,7 +249,7 @@ void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
 {
   for (size_t i = 0; i != stride; ++i, ++index)
   {
-    float initial_value = 0.1f * merand48(index);
+    float initial_value = 0.1f * VW::details::merand48(index);
     weights[i] = initial_value;
   }
 }

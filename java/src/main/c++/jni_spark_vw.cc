@@ -378,7 +378,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_finish(JNI
   try
   {
     VW::sync_stats(*all);
-    VW::finish(*all);
+    all->finish();
+    delete all;
   }
   catch (...)
   {
@@ -644,7 +645,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiL
 
   try
   {
-    MULTILABEL::labels* ld = &ex->l.multilabels;
+    auto* ld = &ex->l.multilabels;
 
     CriticalArrayGuard classesGuard(env, classes);
     int* classes0 = (int*)classesGuard.data();

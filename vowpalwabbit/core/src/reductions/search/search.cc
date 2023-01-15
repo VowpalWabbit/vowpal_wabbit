@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/search/search.h"
 
+#include "vw/common/random.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/crossplat_compat.h"
@@ -12,11 +13,9 @@
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/active.h"
 #include "vw/core/reductions/csoaa.h"
-#include "vw/core/reductions/gd.h"  // for GD::foreach_feature
+#include "vw/core/reductions/gd.h"  // for VW::foreach_feature
 #include "vw/core/reductions/search/search_dep_parser.h"
 #include "vw/core/reductions/search/search_entityrelationtask.h"
 #include "vw/core/reductions/search/search_graph.h"
@@ -651,7 +650,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
       else  // this is actually a neighbor
       {
         VW::example& other = *ec_seq[n + offset];
-        GD::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
+        VW::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 
@@ -819,7 +818,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
       // add the quadratic features
       if (n < priv.acset.max_quad_ngram_length)
       {
-        GD::foreach_feature<search_private, uint64_t, add_new_feature>(*priv.all, ec, priv);
+        VW::foreach_feature<search_private, uint64_t, add_new_feature>(*priv.all, ec, priv);
       }
     }
   }

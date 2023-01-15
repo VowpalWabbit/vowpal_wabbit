@@ -5,6 +5,8 @@
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 
 #include "details/large_action_space.h"
+#include "qr_decomposition.h"
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/global_data.h"
@@ -12,8 +14,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parser.h"
-#include "vw/core/qr_decomposition.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
@@ -72,7 +72,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
     if (_all->weights.sparse)
     {
       A_triplet_constructor w(_all->weights.sparse_weights.mask(), row_index, _triplets, max_non_zero_col);
-      GD::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
+      VW::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
           _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
@@ -83,7 +83,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
     {
       A_triplet_constructor w(_all->weights.dense_weights.mask(), row_index, _triplets, max_non_zero_col);
 
-      GD::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
+      VW::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
           _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
@@ -241,7 +241,7 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
       for (uint64_t inner_index = 0; inner_index < d; inner_index++)
       {
         auto combined_index = inner_index + col + seed;
-        auto dot_prod_prod = B(row, inner_index) * merand48_boxmuller(combined_index);
+        auto dot_prod_prod = B(row, inner_index) * VW::details::merand48_boxmuller(combined_index);
         Z(row, col) += dot_prod_prod;
       }
     }

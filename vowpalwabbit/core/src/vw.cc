@@ -11,6 +11,7 @@
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/learner.h"
+#include "vw/core/memory.h"
 #include "vw/core/parse_args.h"
 #include "vw/core/parse_dispatch_loop.h"
 #include "vw/core/parse_primitives.h"
@@ -155,8 +156,11 @@ VW::workspace* initialize_with_builder(int argc, char* argv[], VW::io_buf* model
   std::unique_ptr<VW::config::options_i, VW::options_deleter_type> options(
       new VW::config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
       [](VW::config::options_i* ptr) { delete ptr; });
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize_with_builder(
       std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(setup_base));
+  VW_WARNING_STATE_POP
 }
 }  // namespace
 
@@ -170,13 +174,18 @@ VW::workspace* VW::initialize(config::options_i& options, io_buf* model, bool sk
     VW::trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<config::options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
-
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize(std::move(opts), model, skip_model_load, trace_listener, trace_context);
+  VW_WARNING_STATE_POP
 }
 VW::workspace* VW::initialize(
     const std::string& s, io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context)
 {
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
+  VW_WARNING_STATE_POP
 }
 VW::workspace* VW::initialize(int argc, char* argv[], io_buf* model, bool skip_model_load,
     VW::trace_message_t trace_listener, void* trace_context)
@@ -205,8 +214,11 @@ VW::workspace* VW::seed_vw_model(
   auto serialized_options = serializer.str();
   serialized_options = serialized_options + " " + extra_args;
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   VW::workspace* new_model =
       VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
+  VW_WARNING_STATE_POP
   delete new_model->sd;
 
   // reference model states stored in the specified VW instance
@@ -229,7 +241,10 @@ VW::workspace* VW::initialize_escaped(
 
   try
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     ret = initialize(argc, argv, model, skip_model_load, trace_listener, trace_context);
+    VW_WARNING_STATE_POP
   }
   catch (...)
   {
@@ -266,6 +281,60 @@ std::unique_ptr<VW::workspace> VW::initialize_experimental(std::unique_ptr<confi
   }
   return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
       driver_output_func, driver_output_func_context, custom_logger, std::move(setup_base));
+}
+
+std::unique_ptr<VW::workspace> VW::initialize(std::unique_ptr<config::options_i> options,
+    std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
+    void* driver_output_func_context, VW::io::logger* custom_logger)
+{
+  auto* released_options = options.release();
+  std::unique_ptr<config::options_i, options_deleter_type> options_custom_deleter(
+      released_options, [](VW::config::options_i* ptr) { delete ptr; });
+
+  // Skip model load should be implemented by a caller not passing model loading args.
+  std::unique_ptr<io_buf> model(nullptr);
+  if (model_override_reader != nullptr)
+  {
+    model = VW::make_unique<io_buf>();
+    model->add_file(std::move(model_override_reader));
+  }
+  return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
+      driver_output_func, driver_output_func_context, custom_logger, nullptr);
+}
+
+std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const std::vector<std::string>& extra_args,
+    driver_output_func_t driver_output_func, void* driver_output_func_context, VW::io::logger* custom_logger)
+{
+  config::cli_options_serializer serializer;
+  for (auto const& option : vw_model.options->get_all_options())
+  {
+    if (vw_model.options->was_supplied(option->m_name))
+    {
+      // ignore no_stdin since it will be added by vw::initialize, and ignore -i since we don't want to reload the
+      // model.
+      if (option->m_name == "no_stdin" || option->m_name == "initial_regressor") { continue; }
+
+      serializer.add(*option);
+    }
+  }
+
+  auto serialized_options = VW::split_command_line(serializer.str());
+  serialized_options.insert(serialized_options.end(), extra_args.begin(), extra_args.end());
+
+  auto options = VW::make_unique<config::options_cli>(serialized_options);
+
+  std::unique_ptr<config::options_i, options_deleter_type> options_custom_deleter(
+      new VW::config::options_cli(serialized_options), [](VW::config::options_i* ptr) { delete ptr; });
+
+  auto new_model = initialize_internal(std::move(options_custom_deleter), nullptr, false /* skip model load */,
+      driver_output_func, driver_output_func_context, custom_logger, nullptr);
+  delete new_model->sd;
+
+  // reference model states stored in the specified VW instance
+  new_model->weights.shallow_copy(vw_model.weights);  // regressor
+  new_model->sd = vw_model.sd;                        // shared data
+
+  return new_model;
 }
 
 VW::workspace* VW::initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
@@ -472,23 +541,7 @@ void VW::finish(VW::workspace& all, bool delete_all)
         if (delete_all) { delete &all; }
       });
 
-  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!all.quiet && !all.options->was_supplied("audit_regressor"))
-  {
-    all.sd->print_summary(*all.trace_message, *all.sd, *all.loss, all.current_pass, all.holdout_set_off);
-  }
-
-  details::finalize_regressor(all, all.final_regressor_name);
-  if (all.options->was_supplied("dump_json_weights_experimental"))
-  {
-    auto content = all.dump_weights_to_json_experimental();
-    auto writer = VW::io::open_file_writer(all.json_weights_file_name);
-    writer->write(content.c_str(), content.length());
-  }
-  all.global_metrics.register_metrics_callback(
-      [&all](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(all, sink); });
-  VW::reductions::output_metrics(all);
-  all.logger.log_summary();
+  all.finish();
 }
 
 void VW::sync_stats(VW::workspace& all)
@@ -736,7 +789,7 @@ VW::v_array<float>& VW::get_cost_sensitive_prediction_confidence_scores(example*
 
 uint32_t* VW::get_multilabel_predictions(example* ec, size_t& len)
 {
-  MULTILABEL::labels labels = ec->pred.multilabels;
+  auto& labels = ec->pred.multilabels;
   len = labels.label_v.size();
   return labels.label_v.begin();
 }
@@ -781,7 +834,7 @@ VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_n
   features_and_source fs;
   fs.stride_shift = all.weights.stride_shift();
   fs.mask = all.weights.mask() >> all.weights.stride_shift();
-  GD::foreach_feature<::features_and_source, uint64_t, vec_store>(all, *ec, fs);
+  VW::foreach_feature<::features_and_source, uint64_t, vec_store>(all, *ec, fs);
 
   auto* features_array = new feature[fs.feature_map.size()];
   std::memcpy(features_array, fs.feature_map.data(), fs.feature_map.size() * sizeof(feature));

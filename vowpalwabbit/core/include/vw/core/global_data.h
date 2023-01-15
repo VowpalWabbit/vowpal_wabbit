@@ -125,6 +125,11 @@ public:
   void finish_example(example&);
   void finish_example(multi_ex&);
 
+  /// This is used to perform finalization steps the driver/cli would normally do.
+  /// If using VW in library mode, this call is optional.
+  /// Some things this function does are: print summary, finalize regressor, output metrics, etc
+  void finish();
+
   /**
    * @brief Generate a JSON string with the current model state and invert hash
    * lookup table. Base reduction in use must be gd and workspace.hash_inv must
@@ -314,11 +319,7 @@ public:
   workspace(const VW::workspace&&) = delete;
   VW::workspace& operator=(const VW::workspace&&) = delete;
 
-  std::string get_setupfn_name(reduction_setup_fn setup);
-  void build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>&);
-
 private:
-  std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
   std::shared_ptr<VW::rand_state> _random_state_sp;  // per instance random_state
 };
 

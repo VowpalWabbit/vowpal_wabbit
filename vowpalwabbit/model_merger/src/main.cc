@@ -159,8 +159,8 @@ int main(int argc, char* argv[])
       logger_contexts.push_back(logger_context{logger, model_file});
 
       auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), logger_output_func);
-      auto model = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-                                                   "--driver_output_off", "--preserve_performance_counters"}),
+      auto model = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
+                                      "--driver_output_off", "--preserve_performance_counters"}),
           VW::io::open_file_reader(model_file), nullptr, nullptr, &custom_logger);
       models.push_back(std::move(model));
     }
@@ -177,8 +177,8 @@ int main(int argc, char* argv[])
       logger.info("Loading base model: {}", options.base_file);
       logger_contexts.push_back(logger_context{logger, "base: " + options.base_file});
       auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), logger_output_func);
-      base_model = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-                                                   "--driver_output_off", "--preserve_performance_counters"}),
+      base_model = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
+                                      "--driver_output_off", "--preserve_performance_counters"}),
           VW::io::open_file_reader(options.base_file), nullptr, nullptr, &custom_logger);
     }
 

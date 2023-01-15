@@ -4,19 +4,26 @@
 
 #include "vw/core/global_data.h"
 
+#include "vw/config/options.h"
+#include "vw/core/parse_regressor.h"
+#include "vw/core/reductions/metrics.h"
+
 #define RAPIDJSON_HAS_STDSTRING 1
 
 #include "vw/common/future_compat.h"
+#include "vw/common/random.h"
 #include "vw/common/string_view.h"
 #include "vw/common/vw_exception.h"
+#include "vw/config/options.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
+#include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reduction_stack.h"
+#include "vw/core/reductions/metrics.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw_allreduce.h"
 #include "vw/io/logger.h"
@@ -39,21 +46,6 @@
 #ifdef BUILD_FLATBUFFERS
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
-
-namespace VW
-{
-std::string workspace::get_setupfn_name(reduction_setup_fn setup_fn)
-{
-  const auto loc = _setup_name_map.find(setup_fn);
-  if (loc != _setup_name_map.end()) { return loc->second; }
-  return "NA";
-}
-
-void workspace::build_setupfn_name_dict(std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
-{
-  for (auto&& setup_tuple : reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
-}
-}  // namespace VW
 
 void VW::details::print_result_by_ref(
     VW::io::writer* f, float res, float, const VW::v_array<char>& tag, VW::io::logger& logger)
@@ -417,11 +409,33 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 }
 VW_WARNING_STATE_POP
 
+void workspace::finish()
+{
+  // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
+  if (!quiet && !options->was_supplied("audit_regressor"))
+  {
+    sd->print_summary(*trace_message, *sd, *loss, current_pass, holdout_set_off);
+  }
+
+  details::finalize_regressor(*this, final_regressor_name);
+  if (options->was_supplied("dump_json_weights_experimental"))
+  {
+    auto content = dump_weights_to_json_experimental();
+    auto writer = VW::io::open_file_writer(json_weights_file_name);
+    writer->write(content.c_str(), content.length());
+  }
+  global_metrics.register_metrics_callback(
+      [this](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(*this, sink); });
+  VW::reductions::output_metrics(*this);
+  logger.log_summary();
+
+  if (l != nullptr) { l->finish(); }
+}
+
 workspace::~workspace()
 {
   if (l != nullptr)
   {
-    l->finish();
     delete l;
     l = nullptr;
   }

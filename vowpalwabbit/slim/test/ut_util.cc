@@ -1,6 +1,7 @@
 #include "data.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "vw/common/random_details.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/array_parameters_sparse.h"
 #include "vw/slim/example_predict_builder.h"
@@ -759,10 +760,10 @@ TYPED_TEST_P(vw_slim_tests, model_corrupted)
     std::vector<char> model_copy(td.model, td.model + td.model_len);
     for (size_t j = 0; j < num_bytes_to_corrupt; j++)
     {
-      rand = VW::explore::details::uniform_random_merand48((uint64_t)rand);
+      rand = VW::details::merand48_noadvance((uint64_t)rand);
       size_t random_idx = (size_t)(rand * model_copy.size());
 
-      rand = VW::explore::details::uniform_random_merand48((uint64_t)rand);
+      rand = VW::details::merand48_noadvance((uint64_t)rand);
 
       model_copy[random_idx] = (char)rand;
 
