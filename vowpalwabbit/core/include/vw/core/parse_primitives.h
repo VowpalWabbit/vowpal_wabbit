@@ -123,10 +123,36 @@ inline int int_of_string(VW::string_view s, VW::io::logger& logger)
 }
 }  // namespace details
 
+/**
+ * @brief Trim whitespace from the beginning and end of a string
+ *
+ * @param s The string to trim
+ * @return std::string The trimmed string
+ */
 std::string trim_whitespace(const std::string& s);
+
+/**
+ * @brief Trim whitespace from the beginning and end of a string
+ *
+ * @param s The string to trim
+ * @return std::string The trimmed string
+ */
 VW::string_view trim_whitespace(VW::string_view str);
 
+/**
+ * @brief Split a string like a shell splits a command line. This function handles quotes and escapes.
+ *
+ * @param cmd_line The command line to split
+ * @return std::vector<std::string> A vector of strings representing the split command line
+ */
 std::vector<std::string> split_command_line(const std::string& cmd_line);
+
+/**
+ * @brief Split a string like a shell splits a command line. This function handles quotes and escapes.
+ *
+ * @param cmd_line The command line to split
+ * @return std::vector<std::string> A vector of strings representing the split command line
+ */
 std::vector<std::string> split_command_line(VW::string_view cmd_line);
 
 std::vector<VW::string_view> split_by_limit(const VW::string_view& s, size_t limit);

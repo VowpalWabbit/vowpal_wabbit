@@ -15,18 +15,18 @@
 
 TEST(Ccb, ExplicitIncludedActionsNoOverlap)
 {
-  auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
+  auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet"));
   VW::multi_ex examples;
-  examples.push_back(VW::read_example(vw, "ccb shared |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 3 |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 1 |"));
+  examples.push_back(VW::read_example(*vw, "ccb shared |"));
+  examples.push_back(VW::read_example(*vw, "ccb action |"));
+  examples.push_back(VW::read_example(*vw, "ccb action |"));
+  examples.push_back(VW::read_example(*vw, "ccb action |"));
+  examples.push_back(VW::read_example(*vw, "ccb action |"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 0 |"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 3 |"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 1 |"));
 
-  vw.predict(examples);
+  vw->predict(examples);
 
   auto& decision_scores = examples[0]->pred.decision_scores;
   EXPECT_EQ(decision_scores.size(), 3);
@@ -43,14 +43,13 @@ TEST(Ccb, ExplicitIncludedActionsNoOverlap)
   EXPECT_EQ(decision_scores[2][0].action, 1);
   EXPECT_FLOAT_EQ(decision_scores[2][0].score, 1.f);
 
-  vw.finish_example(examples);
-  VW::finish(vw);
+  vw->finish_example(examples);
 }
 
 TEST(Ccb, ExplorationReproducibilityTest)
 {
   auto vw = VW::initialize(
-      "--ccb_explore_adf --epsilon 0.2 --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+      vwtest::make_args("--ccb_explore_adf", "--epsilon", "0.2", "--dsjson", "--chain_hash", "--no_stdin", "--quiet"));
 
   std::vector<uint32_t> previous;
   const size_t iterations = 10;
@@ -84,26 +83,24 @@ TEST(Ccb, ExplorationReproducibilityTest)
     previous = current;
     vw->finish_example(examples);
   }
-  VW::finish(*vw);
 }
 
 TEST(Ccb, InvalidExampleChecks)
 {
-  auto& vw = *VW::initialize("--ccb_explore_adf --quiet");
+  auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet"));
   VW::multi_ex examples;
-  examples.push_back(VW::read_example(vw, "ccb shared |"));
-  examples.push_back(VW::read_example(vw, "ccb action |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 0 |"));
-  examples.push_back(VW::read_example(vw, "ccb slot 3 |"));
+  examples.push_back(VW::read_example(*vw, "ccb shared |"));
+  examples.push_back(VW::read_example(*vw, "ccb action |"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 0 |"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 3 |"));
 
-  for (auto* example : examples) { VW::setup_example(vw, example); }
+  for (auto* example : examples) { VW::setup_example(*vw, example); }
 
   // Check that number of actions is greater than slots
-  EXPECT_THROW(vw.predict(examples), VW::vw_exception);
-  EXPECT_THROW(vw.learn(examples), VW::vw_exception);
+  EXPECT_THROW(vw->predict(examples), VW::vw_exception);
+  EXPECT_THROW(vw->learn(examples), VW::vw_exception);
 
-  vw.finish_example(examples);
-  VW::finish(vw);
+  vw->finish_example(examples);
 }
 
 std::string ns_to_str(unsigned char ns)
@@ -132,19 +129,18 @@ std::set<std::string> interaction_vec_t_to_set(const std::vector<std::vector<VW:
 
 TEST(Ccb, InsertInteractionsImplTest)
 {
-  auto& vw = *VW::initialize("--ccb_explore_adf --quiet -q AA -q BB -q AB -q ::");
+  auto vw =
+      VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet", "-q", "AA", "-q", "BB", "-q", "AB", "-q", "::"));
 
   std::set<std::string> expected_before{"AA", "AB", "BB", "[wild][wild]"};
   std::set<std::string> expected_after{
       "AA", "AA[ccbid]", "AB", "AB[ccbid]", "BB", "BB[ccbid]", "[wild][ccbid]", "[wild][wild]", "[wild][wild][ccbid]"};
 
-  auto pre_result = interaction_vec_t_to_set(vw.interactions);
+  auto pre_result = interaction_vec_t_to_set(vw->interactions);
   EXPECT_THAT(pre_result, testing::ContainerEq(expected_before));
 
-  VW::reductions::ccb::insert_ccb_interactions(vw.interactions, vw.extent_interactions);
-  auto result = interaction_vec_t_to_set(vw.interactions);
+  VW::reductions::ccb::insert_ccb_interactions(vw->interactions, vw->extent_interactions);
+  auto result = interaction_vec_t_to_set(vw->interactions);
 
   EXPECT_THAT(result, testing::ContainerEq(expected_after));
-
-  VW::finish(vw);
 }

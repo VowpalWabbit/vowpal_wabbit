@@ -6,6 +6,7 @@
 #include "vw/core/parse_example.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -22,7 +23,7 @@ TEST(Parser, DecodeInlineHexTest)
 
 TEST(Parser, ParseTextWithExtents)
 {
-  auto* vw = VW::initialize("--no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet"));
   auto* ex = VW::read_example(*vw, "|features a b |new_features a b |features2 c d |empty |features c d");
 
   EXPECT_EQ(ex->feature_space['f'].size(), 6);
@@ -38,7 +39,6 @@ TEST(Parser, ParseTextWithExtents)
   EXPECT_EQ(ex->feature_space['f'].namespace_extents[2], (VW::namespace_extent{4, 6, VW::hash_space(*vw, "features")}));
 
   VW::finish_example(*vw, *ex);
-  VW::finish(*vw);
 }
 
 TEST(Parser, TrimWhitespaceTest)

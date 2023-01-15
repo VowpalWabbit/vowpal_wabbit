@@ -6,6 +6,7 @@
 
 #include "details/large_action_space.h"
 #include "qr_decomposition.h"
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/global_data.h"
@@ -13,7 +14,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
@@ -241,7 +241,7 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
       for (uint64_t inner_index = 0; inner_index < d; inner_index++)
       {
         auto combined_index = inner_index + col + seed;
-        auto dot_prod_prod = B(row, inner_index) * merand48_boxmuller(combined_index);
+        auto dot_prod_prod = B(row, inner_index) * VW::details::merand48_boxmuller(combined_index);
         Z(row, col) += dot_prod_prod;
       }
     }
