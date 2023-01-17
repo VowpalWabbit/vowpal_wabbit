@@ -9,24 +9,6 @@
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label.h"
 
-#include <iostream>
-#include <memory>
-
-#ifdef _WIN32
-#  pragma warning(push)
-#  pragma warning(disable : 4635)
-// Warnings emitted from this header are unrelated to this project.
-//     format.h(3525): warning C4635: XML document comment applied to
-//     'fmt.v7.format_system_error(fmt.v7.detail.buffer<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>*!System.Runtime.CompilerServices.IsImplicitlyDereferenced,System.Int32,fmt.v7.basic_string_view<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>)':
-//     badly-formed XML: Invalid at the top level of the document.
-#endif
-#include "fmt/core.h"
-#ifdef _WIN32
-#  pragma warning(pop)
-#endif
-
-#include "vw/core/vw_string_view_fmt.h"
-
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/debug_log.h"
@@ -40,6 +22,8 @@
 #include "vw/core/vw.h"
 
 #include <functional>
+#include <iostream>
+#include <memory>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::LEARNER
@@ -69,6 +53,8 @@ void generic_driver(VW::workspace& all);
 void generic_driver(const std::vector<VW::workspace*>& alls);
 void generic_driver_onethread(VW::workspace& all);
 bool ec_is_example_header(example const& ec, label_type_t label_type);
+learner* as_multiline(learner* l);
+learner* as_singleline(learner* l);
 
 namespace details
 {
@@ -140,23 +126,9 @@ void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_na
 class learner
 {
   /// \private
-  void debug_log_message(polymorphic_ex ex, const std::string& msg)
-  {
-    if (ex.is_multiline()) {
-      VW_DBG(*static_cast<VW::multi_ex&>(ex)[0]) << "[" << _name << "." << msg << "]" << std::endl;
-    } else {
-      VW_DBG(static_cast<VW::example&>(ex)) << "[" << _name << "." << msg << "]" << std::endl;
-    }
-  }
-
+  void debug_log_message(polymorphic_ex ex, const std::string& msg);
   // Used as a hook to intercept incorrect calls to the base learner.
-  void debug_log_message(const char& /* ec */, const std::string& msg)
-  {
-    auto message =
-        fmt::format("Learner: '{}', function: '{}' was called without first being cast to singleline or multiline.",
-            get_name(), msg);
-    THROW(message);
-  }
+  void debug_log_message(const char& /* ec */, const std::string& msg);
 
 public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
@@ -182,14 +154,7 @@ public:
   /// multiple regressors/learners you can increment this value for each call.
   /// \returns While some reductions may fill the example::pred, this is not
   /// guaranteed and is undefined behavior if accessed.
-  inline void learn(polymorphic_ex ec, size_t i = 0)
-  {
-    assert(is_multiline() == ec.is_multiline());
-    details::increment_offset(ec, increment, i);
-    debug_log_message(ec, "learn");
-    _learn_f(*_base_learner, ec);
-    details::decrement_offset(ec, increment, i);
-  }
+  void learn(polymorphic_ex ec, size_t i = 0);
 
   /// \brief Make a prediction for the given example.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
@@ -200,296 +165,61 @@ public:
   /// \returns The prediction calculated by this reduction be set on
   /// example::pred. If <code>E</code> is ::multi_ex then the prediction is set
   /// on the 0th item in the list.
-  inline void predict(polymorphic_ex ec, size_t i = 0)
-  {
-    assert(is_multiline() == ec.is_multiline());
-    details::increment_offset(ec, increment, i);
-    debug_log_message(ec, "predict");
-    _predict_f(*_base_learner, ec);
-    details::decrement_offset(ec, increment, i);
-  }
+  void predict(polymorphic_ex ec, size_t i = 0);
 
-  inline void multipredict(
-      polymorphic_ex ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
-  {
-    assert(is_multiline() == ec.is_multiline());
-    if (_multipredict_f == nullptr)
-    {
-      details::increment_offset(ec, increment, lo);
-      debug_log_message(ec, "multipredict");
-      for (size_t c = 0; c < count; c++)
-      {
-        _predict_f(*_base_learner, ec);
-        if (finalize_predictions)
-        {
-          pred[c] = std::move(static_cast<VW::example&>(ec).pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
-                                         // "fix" this by moving)
-        }
-        else { pred[c].scalar = static_cast<VW::example&>(ec).partial_prediction; }
-        // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
-        // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
-        details::increment_offset(ec, increment, 1);
-      }
-      details::decrement_offset(ec, increment, lo + count);
-    }
-    else
-    {
-      details::increment_offset(ec, increment, lo);
-      debug_log_message(ec, "multipredict");
-      _multipredict_f(*_base_learner, ec, count, increment, pred, finalize_predictions);
-      details::decrement_offset(ec, increment, lo);
-    }
-  }
+  void multipredict(polymorphic_ex ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions);
 
-  inline void update(polymorphic_ex ec, size_t i = 0)
-  {
-    assert(is_multiline() == ec.is_multiline());
-    details::increment_offset(ec, increment, i);
-    debug_log_message(ec, "update");
-    _update_f(*_base_learner, ec);
-    details::decrement_offset(ec, increment, i);
-  }
+  void update(polymorphic_ex ec, size_t i = 0);
 
-  inline float sensitivity(example& ec, size_t i = 0)
-  {
-    details::increment_offset(ec, increment, i);
-    debug_log_message(ec, "sensitivity");
-    const float ret = _sensitivity_f(*_base_learner, ec);
-    details::decrement_offset(ec, increment, i);
-    return ret;
-  }
+  float sensitivity(example& ec, size_t i = 0);
 
   // called anytime saving or loading needs to happen. Autorecursive.
-  inline void save_load(io_buf& io, const bool read, const bool text)
-  {
-    if (_save_load_f)
-    {
-      try
-      {
-        _save_load_f(io, read, text);
-      }
-      catch (VW::vw_exception& vwex)
-      {
-        std::stringstream better_msg;
-        better_msg << "model " << std::string(read ? "load" : "save") << " failed. Error Details: " << vwex.what();
-        throw VW::save_load_model_exception(vwex.filename(), vwex.line_number(), better_msg.str());
-      }
-    }
-    if (_base_learner) { _base_learner->save_load(io, read, text); }
-  }
+  void save_load(io_buf& io, const bool read, const bool text);
 
   // called to edit the command-line from a reduction. Autorecursive
-  inline void pre_save_load(VW::workspace& all)
-  {
-    if (_pre_save_load_f)
-    {
-      _pre_save_load_f(all);
-    }
-    if (_base_learner) { _base_learner->pre_save_load(all); }
-  }
+  void pre_save_load(VW::workspace& all);
 
   // called when metrics is enabled.  Autorecursive.
-  void persist_metrics(metric_sink& metrics)
-  {
-    if (_persist_metrics_f) { _persist_metrics_f(metrics); }
-    if (_base_learner) { _base_learner->persist_metrics(metrics); }
-  }
+  void persist_metrics(metric_sink& metrics);
 
   // Autorecursive
-  inline void finish()
-  {
-    // TODO: ensure that finish does not actually manage memory but just does driver finalization.
-    // Then move the call to finish from the destructor of workspace to driver_finalize
-    if (_finisher_f) { _finisher_f(); }
-    if (_base_learner) { _base_learner->finish(); }
-  }
+  void finish();
 
   // Autorecursive
-  void end_pass()
-  {
-    if (_end_pass_f) { _end_pass_f(); }
-    if (_base_learner) { _base_learner->end_pass(); }
-  }
+  void end_pass();
 
   // called after parsing of examples is complete.  Autorecursive.
-  void end_examples()
-  {
-    if (_end_examples_f) { _end_examples_f(); }
-    if (_base_learner) { _base_learner->end_examples(); }
-  }
+  void end_examples();
 
   // Called at the beginning by the driver.  Explicitly not recursive.
-  void init_driver() { if (_init_f) { _init_f(); } }
+  void init_driver();
 
   // called after learn example for each example.  Explicitly not recursive.
-  inline void finish_example(VW::workspace& all, polymorphic_ex ec)
-  {
-    debug_log_message(ec, "finish_example");
-    // If the current learner implements finish - that takes priority.
-    // Else, we call the new style functions.
-    // Else, we forward to the base if a base exists.
+  void finish_example(VW::workspace& all, polymorphic_ex ec);
 
-    if (has_legacy_finish())
-    {
-      _finish_example_f(all, ec);
-      return;
-    }
+  void update_stats(const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ec, VW::io::logger& logger);
+  void update_stats(VW::workspace& all, const polymorphic_ex ec);
 
-    if (has_update_stats()) { update_stats(all, ec); }
+  void output_example_prediction(VW::workspace& all, const polymorphic_ex ec, VW::io::logger& logger);
+  void output_example_prediction(VW::workspace& all, const polymorphic_ex ec);
 
-    if (has_output_example_prediction()) { output_example_prediction(all, ec); }
+  void print_update(VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ec, VW::io::logger& logger);
+  void print_update(VW::workspace& all, const polymorphic_ex ec);
 
-    if (has_print_update()) { print_update(all, ec); }
+  void cleanup_example(polymorphic_ex ec);
 
-    if (has_cleanup_example()) { cleanup_example(ec); }
+  void get_enabled_reductions(std::vector<std::string>& enabled_reductions) const;
+  learner* get_learner_by_name_prefix(const std::string& reduction_name);
 
-    const auto has_at_least_one_new_style_func =
-        has_update_stats() || has_output_example_prediction() || has_print_update() || has_cleanup_example();
-    if (has_at_least_one_new_style_func)
-    {
-      if (ec.is_multiline()) {
-        VW::finish_example(all, static_cast<VW::multi_ex&>(ec));
-      } else {
-        VW::finish_example(all, static_cast<VW::example&>(ec));
-      }
-      return;
-    }
-
-    // Finish example used to utilize the copy forwarding semantics.
-    // Traverse until first hit to mimic this but with greater type safety.
-    if (_base_learner)
-    {
-      if (is_multiline() != _base_learner->is_multiline())
-      {
-        THROW("Cannot forward finish_example call across multiline/singleline boundary.");
-      }
-      _base_learner->finish_example(all, ec);
-    }
-    else { THROW("No finish functions were registered in the stack."); }
-  }
-
-  inline void update_stats(
-      const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ec, VW::io::logger& logger)
-  {
-    debug_log_message(ec, "update_stats");
-    if (!has_update_stats()) { THROW("fatal: learner did not register update_stats fn: " + _name); }
-    _update_stats_f(all, sd, ec, logger);
-  }
-  inline void update_stats(VW::workspace& all, const polymorphic_ex ec)
-  {
-    update_stats(all, *all.sd, ec, all.logger);
-  }
-
-  inline void output_example_prediction(VW::workspace& all, const polymorphic_ex ec, VW::io::logger& logger)
-  {
-    debug_log_message(ec, "output_example_prediction");
-    if (!has_output_example_prediction()) { THROW("fatal: learner did not register output_example fn: " + _name); }
-    _output_example_prediction_f(all, ec, logger);
-  }
-  inline void output_example_prediction(VW::workspace& all, const polymorphic_ex ec)
-  {
-    output_example_prediction(all, ec, all.logger);
-  }
-
-  inline void print_update(
-      VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ec, VW::io::logger& logger)
-  {
-    debug_log_message(ec, "print_update");
-    if (!has_print_update()) { THROW("fatal: learner did not register print_update fn: " + _name); }
-    _print_update_f(all, sd, ec, logger);
-  }
-  inline void print_update(VW::workspace& all, const polymorphic_ex ec)
-  {
-    print_update(all, *all.sd, ec, all.logger);
-  }
-
-  inline void cleanup_example(polymorphic_ex ec)
-  {
-    debug_log_message(ec, "cleanup_example");
-    if (!has_cleanup_example()) { THROW("fatal: learner did not register cleanup_example fn: " + _name); }
-    _cleanup_example_f(ec);
-  }
-
-  void get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
-  {
-    if (_base_learner) { _base_learner->get_enabled_reductions(enabled_reductions); }
-    enabled_reductions.push_back(_name);
-  }
-
-  learner* get_learner_by_name_prefix(const std::string& reduction_name)
-  {
-    if (_name.find(reduction_name) != std::string::npos) { return this; }
-    else
-    {
-      if (_base_learner) { return _base_learner->get_learner_by_name_prefix(reduction_name); }
-      else { THROW("fatal: could not find in learner chain: " << reduction_name); }
-    }
-  }
-
-  // This is effectively static implementing a trait for this learner type.
-  // NOT auto recursive
+  // The functions merge/add/subtract are NOT auto recursive
+  // They are effectively static implementing a trait for this learner type.
   void merge(const std::vector<float>& per_model_weighting,
       const std::vector<const VW::workspace*>& all_workspaces, const std::vector<const learner*>& all_learners,
-      VW::workspace& output_workspace, learner& output_learner)
-  {
-    assert(per_model_weighting.size() == all_workspaces.size());
-    assert(per_model_weighting.size() == all_learners.size());
-
-#ifndef NDEBUG
-    // All learners should refer to the same learner 'type'
-    assert(!all_learners.empty());
-    const auto& name = all_learners[0]->get_name();
-    for (const auto& learner : all_learners) { assert(learner->get_name() == name); }
-#endif
-
-    std::vector<const void*> all_data;
-    all_data.reserve(all_learners.size());
-    for (const auto& learner : all_learners) { all_data.push_back(learner->_learner_data.get()); }
-
-    if (_merge_with_all_f)
-    {
-      _merge_with_all_f(
-          per_model_weighting, all_workspaces, all_data, output_workspace, output_learner._learner_data.get());
-    }
-    else if (_merge_f) { _merge_f(per_model_weighting, all_data, output_learner._learner_data.get()); }
-    else { THROW("learner " << _name << " does not support merging."); }
-  }
-
+      VW::workspace& output_workspace, learner& output_learner);
   void add(const VW::workspace& base_ws, const VW::workspace& delta_ws,
-      const learner* base_l, const learner* delta_l, VW::workspace& output_ws, learner* output_l)
-  {
-    auto name = output_l->get_name();
-    assert(name == base_l->get_name());
-    assert(name == delta_l->get_name());
-    if (_add_with_all_f)
-    {
-      _add_with_all_f(base_ws, base_l->_learner_data.get(), delta_ws, delta_l->_learner_data.get(), output_ws,
-          output_l->_learner_data.get());
-    }
-    else if (_add_f)
-    {
-      _add_f(base_l->_learner_data.get(), delta_l->_learner_data.get(), output_l->_learner_data.get());
-    }
-    else { THROW("learner " << name << " does not support adding a delta."); }
-  }
-
+      const learner* base_l, const learner* delta_l, VW::workspace& output_ws, learner* output_l);
   void subtract(const VW::workspace& ws1, const VW::workspace& ws2, const learner* l1,
-      const learner* l2, VW::workspace& output_ws, learner* output_l)
-  {
-    auto name = output_l->get_name();
-    assert(name == l1->get_name());
-    assert(name == l2->get_name());
-    if (_subtract_with_all_f)
-    {
-      _subtract_with_all_f(
-          ws1, l1->_learner_data.get(), ws2, l2->_learner_data.get(), output_ws, output_l->_learner_data.get());
-    }
-    else if (_subtract_f)
-    {
-      _subtract_f(l1->_learner_data.get(), l2->_learner_data.get(), output_l->_learner_data.get());
-    }
-    else { THROW("learner " << name << " does not support subtraction to generate a delta."); }
-  }
+      const learner* l2, VW::workspace& output_ws, learner* output_l);
 
   VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_update_stats() const { return _update_stats_f != nullptr; }
@@ -567,20 +297,6 @@ private:
 
   learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
 };
-
-inline learner* as_multiline(learner* l)
-{
-  if (l->is_multiline()) { return l; }
-  auto message = fmt::format("Tried to use a singleline reduction as a multiline reduction Name: {}", l->get_name());
-  THROW(message);
-}
-
-inline learner* as_singleline(learner* l)
-{
-  if (!l->is_multiline()) { return l; }
-  auto message = fmt::format("Tried to use a multiline reduction as a singleline reduction. Name: {}", l->get_name());
-  THROW(message);
-}
 
 template <bool is_learn>
 void multiline_learn_or_predict(learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)

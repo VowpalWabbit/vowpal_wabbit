@@ -12,6 +12,7 @@
 #include "vw/core/v_array.h"
 
 #include <fmt/format.h>
+#include "vw/core/vw_string_view_fmt.h"
 
 #include <cstdint>
 #include <string>
