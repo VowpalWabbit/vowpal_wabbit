@@ -5686,7 +5686,7 @@
       "train-sets/wiki256.dat"
     ]
   },
-  { 
+  {
     "id": 440,
     "desc": "Interactive active test",
     "bash_command": "python3 active_test.py --vw {VW} --active_interactor ../utl/active_interactor.py --unlabeled_data train-sets/0001_active.dat --labels train-sets/0001_active_input.dat --port 12353",
