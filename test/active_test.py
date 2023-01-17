@@ -67,5 +67,7 @@ if __name__ == "__main__":
         print("active_interactor stderr: \n" + stderr_data.decode("utf-8"))
 
     active_vw_proc.wait()
-    print("vw active stdout: \n" + active_vw_proc.stdout.read().decode("utf-8"))
-    print("vw active stderr: \n" + active_vw_proc.stderr.read().decode("utf-8"))
+    if active_vw_proc.stdout != None:
+        print("vw active stdout: \n" + active_vw_proc.stdout.read().decode("utf-8"))
+    if active_vw_proc.stderr != None:
+        print("vw active stderr: \n" + active_vw_proc.stderr.read().decode("utf-8"))
