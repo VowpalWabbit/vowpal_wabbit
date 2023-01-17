@@ -5716,7 +5716,7 @@
   {
     "id": 442,
     "desc": "Generate similar model to spun off epsilon decay using standard cb_explore_adf",
-    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/ep_dec_spin_off_cb.m -b 17 --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/cb_similar_ep_decay_spinoff_save.stderr"
     },

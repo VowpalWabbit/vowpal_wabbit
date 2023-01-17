@@ -1,4 +1,4 @@
-final_regressor = models/aml_spin_off_cb.m
+final_regressor = models/ep_dec_spin_off_cb.m
 using no cache
 Reading datafile = train-sets/automl_spin_off.txt
 num sources = 1
