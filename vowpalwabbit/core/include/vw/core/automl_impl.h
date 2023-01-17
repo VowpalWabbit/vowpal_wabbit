@@ -241,7 +241,7 @@ public:
       double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
       std::string trace_prefix, bool reward_as_cost);
 
-  void do_learning(VW::LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot);
+  void do_learning(VW::LEARNER::learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
 
   // Public Chacha functions
@@ -280,7 +280,7 @@ public:
   automl_state current_state = automl_state::Experimenting;
   std::unique_ptr<CMType> cm;
   VW::io::logger* logger;
-  LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
+  LEARNER::learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   bool debug_reverse_learning_order = false;
   const bool should_save_predict_only_model;
   std::unique_ptr<std::ofstream> log_file;
@@ -297,8 +297,8 @@ public:
     }
   }
   // This fn gets called before learning any example
-  void one_step(VW::LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
-  void offset_learn(VW::LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
+  void one_step(VW::LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
+  void offset_learn(VW::LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
 };
 }  // namespace automl
 

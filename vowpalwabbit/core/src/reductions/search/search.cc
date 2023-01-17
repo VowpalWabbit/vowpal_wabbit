@@ -3370,7 +3370,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   // though. TODO: either let search return a prediction or add a NO_PRED type.
 
   // base is multiline
-  learner<search, VW::multi_ex>* l =
+  auto* l =
       VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>, do_actual_learning<false>,
           stack_builder.get_setupfn_name(search_setup))
           .set_learn_returns_prediction(true)
@@ -3384,5 +3384,5 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
           // .set_input_prediction(priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass)
           .build();
 
-  return make_base(*l);
+  return l;
 }

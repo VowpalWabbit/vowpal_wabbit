@@ -73,19 +73,18 @@ public:
   int curr_idx;
 };
 
-using test_learner_t = learner<reduction_test_harness, VW::example>;
 using predictions_t = vector<float>;
 using scores_t = int;
 
 template <typename T = reduction_test_harness>
-learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+learner* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   T* pharness = nullptr;
   return get_test_harness_reduction(base_reduction_predictions, pharness);
 }
 
 template <typename T = reduction_test_harness>
-learner<T, VW::example>* get_test_harness_reduction(const predictions_t& base_reduction_predictions, T*& pharness)
+learner* get_test_harness_reduction(const predictions_t& base_reduction_predictions, T*& pharness)
 {
   // Setup a test harness base reduction
   auto test_harness = VW::make_unique<T>();

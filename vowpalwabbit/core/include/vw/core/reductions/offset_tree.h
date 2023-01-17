@@ -56,8 +56,8 @@ public:
   offset_tree(uint32_t num_actions);
   void init();
   int32_t learner_count() const;
-  const scores_t& predict(LEARNER::single_learner& base, example& ec);
-  void learn(LEARNER::single_learner& base, example& ec);
+  const scores_t& predict(LEARNER::learner& base, example& ec);
+  void learn(LEARNER::learner& base, example& ec);
 
 private:
   min_depth_binary_tree binary_tree;

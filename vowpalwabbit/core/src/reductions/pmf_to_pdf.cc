@@ -180,8 +180,8 @@ void pmf_to_pdf_reduction::learn(example& ec)
 
 namespace
 {
-void predict(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, VW::example& ec) { data.predict(ec); }
-void learn(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, VW::example& ec) { data.learn(ec); }
+void predict(VW::reductions::pmf_to_pdf_reduction& data, learner&, VW::example& ec) { data.predict(ec); }
+void learn(VW::reductions::pmf_to_pdf_reduction& data, learner&, VW::example& ec) { data.learn(ec); }
 }  // namespace
 
 base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
@@ -255,5 +255,5 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .build();
-  return make_base(*l);
+  return l;
 }

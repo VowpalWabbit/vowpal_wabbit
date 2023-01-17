@@ -20,7 +20,7 @@ using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
-using VW::LEARNER::single_learner;
+using VW::LEARNER::learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
@@ -36,10 +36,10 @@ public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 
-  void init(single_learner* p_base, float epsilon);
+  void init(learner* p_base, float epsilon);
 
 private:
-  single_learner* _base = nullptr;
+  learner* _base = nullptr;
   float _epsilon = 0.f;
 };
 
@@ -66,7 +66,7 @@ int get_pmf::predict(VW::example& ec, VW::experimental::api_status* /*unused*/)
   return VW::experimental::error_code::success;
 }
 
-void get_pmf::init(single_learner* p_base, float epsilon)
+void get_pmf::init(learner* p_base, float epsilon)
 {
   _base = p_base;
   _epsilon = epsilon;
@@ -74,7 +74,7 @@ void get_pmf::init(single_learner* p_base, float epsilon)
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::example& ec)
+void predict_or_learn(get_pmf& reduction, learner& /*unused*/, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
@@ -116,5 +116,5 @@ VW::LEARNER::base_learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

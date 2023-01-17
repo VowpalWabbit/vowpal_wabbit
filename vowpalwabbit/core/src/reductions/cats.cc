@@ -24,7 +24,7 @@ using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
-using VW::LEARNER::single_learner;
+using VW::LEARNER::learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
@@ -82,7 +82,7 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
   return loss;
 }
 
-cats::cats(single_learner* p_base) : _base(p_base) {}
+cats::cats(learner* p_base) : _base(p_base) {}
 }  // namespace cats
 }  // namespace reductions
 }  // namespace VW
@@ -91,7 +91,7 @@ namespace
 {
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(VW::reductions::cats::cats& reduction, single_learner&, VW::example& ec)
+void predict_or_learn(VW::reductions::cats::cats& reduction, learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
@@ -207,5 +207,5 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
                 .set_update_stats(update_stats_cats)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

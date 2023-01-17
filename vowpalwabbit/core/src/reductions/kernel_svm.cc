@@ -809,5 +809,5 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
                 .set_print_update(VW::details::print_update_simple_label<svm_params>)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

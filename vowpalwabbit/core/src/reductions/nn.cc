@@ -152,7 +152,7 @@ void end_pass(nn& n)
 }
 
 template <bool is_learn, bool recompute_hidden>
-void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
+void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
 {
   bool should_output = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) { finish_setup(n, *(n.all)); }
@@ -396,7 +396,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
   n.all->set_minmax(n.all->sd, sd.max_label);
 }
 
-void multipredict(nn& n, single_learner& base, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+void multipredict(nn& n, learner& base, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
     bool finalize_predictions)
 {
   for (size_t c = 0; c < count; c++)
@@ -498,7 +498,7 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
                 .set_end_pass(end_pass)
                 .build();
 
-  return make_base(*l);
+  return l;
 }
 
 /*

@@ -45,7 +45,7 @@ public:
   }
 };
 
-bool dis_test(VW::workspace& all, VW::example& ec, single_learner& base, float /* prediction */, float threshold)
+bool dis_test(VW::workspace& all, VW::example& ec, learner& base, float /* prediction */, float threshold)
 {
   if (all.sd->t + ec.weight <= 3) { return true; }
 
@@ -82,7 +82,7 @@ float get_pmin(float sum_loss, float t)
   return pmin;  // treating n*eps_n = 1
 }
 
-float query_decision(active_cover& a, single_learner& l, VW::example& ec, float prediction, float pmin, bool in_dis)
+float query_decision(active_cover& a, learner& l, VW::example& ec, float prediction, float pmin, bool in_dis)
 {
   if (a.all->sd->t + ec.weight <= 3) { return 1.f; }
 
@@ -108,7 +108,7 @@ float query_decision(active_cover& a, single_learner& l, VW::example& ec, float 
 }
 
 template <bool is_learn>
-void predict_or_learn_active_cover(active_cover& a, single_learner& base, VW::example& ec)
+void predict_or_learn_active_cover(active_cover& a, learner& base, VW::example& ec)
 {
   base.predict(ec, 0);
 
@@ -269,5 +269,5 @@ base_learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder
                 .set_input_label_type(VW::label_type_t::SIMPLE)
                 .set_output_label_type(VW::label_type_t::SIMPLE)
                 .build();
-  return make_base(*l);
+  return l;
 }

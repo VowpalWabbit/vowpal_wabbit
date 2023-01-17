@@ -83,7 +83,7 @@ public:
   }
 };
 
-inline float learn_node(plt& p, uint32_t n, single_learner& base, VW::example& ec)
+inline float learn_node(plt& p, uint32_t n, learner& base, VW::example& ec)
 {
   p.all->sd->t = p.nodes_time[n];
   p.nodes_time[n] += ec.weight;
@@ -91,7 +91,7 @@ inline float learn_node(plt& p, uint32_t n, single_learner& base, VW::example& e
   return ec.loss;
 }
 
-void learn(plt& p, single_learner& base, VW::example& ec)
+void learn(plt& p, learner& base, VW::example& ec)
 {
   auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
@@ -159,7 +159,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
 
 inline float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-x)); }
 
-inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
+inline float predict_node(uint32_t n, learner& base, VW::example& ec)
 {
   ec.l.simple = {FLT_MAX};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
@@ -168,7 +168,7 @@ inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
 }
 
 template <bool threshold>
-void predict(plt& p, single_learner& base, VW::example& ec)
+void predict(plt& p, learner& base, VW::example& ec)
 {
   auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
@@ -456,7 +456,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   size_t ws = tree->t;
   std::string name_addition = "";
   VW::prediction_type_t pred_type;
-  void (*pred_ptr)(plt&, single_learner&, VW::example&);
+  void (*pred_ptr)(plt&, learner&, VW::example&);
 
   if (tree->top_k > 0)
   {
@@ -490,5 +490,5 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 
   all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
 
-  return make_base(*l);
+  return l;
 }

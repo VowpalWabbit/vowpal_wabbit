@@ -39,8 +39,8 @@ public:
       float epsilon, size_t bag_size, bool greedify, bool first_only, std::shared_ptr<VW::rand_state> random_state);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples);
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& examples);
 
   // TODO: This is an awful hack, we'll need to get rid of it at some point
   const PredictionT& get_cached_prediction() const { return _action_probs; };
@@ -76,7 +76,7 @@ uint32_t cb_explore_adf_bag::get_bag_learner_update_count(uint32_t learner_index
   else { return VW::reductions::bs::weight_gen(*_random_state); }
 }
 
-void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_bag::predict(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   // Randomize over predictions from a base set of predictors
   VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
@@ -117,7 +117,7 @@ void cb_explore_adf_bag::predict(VW::LEARNER::multi_learner& base, VW::multi_ex&
   std::copy(std::begin(_action_probs), std::end(_action_probs), std::begin(preds));
 }
 
-void cb_explore_adf_bag::learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_bag::learn(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   for (uint32_t i = 0; i < _bag_size; i++)
   {
@@ -195,7 +195,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
   if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
 
   size_t problem_multiplier = VW::cast_to_smaller_type<size_t>(bag_size);
-  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
@@ -213,5 +213,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_bag_setup(VW::setup_ba
                 .set_print_update(::print_update_bag)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
-  return make_base(*l);
+  return l;
 }

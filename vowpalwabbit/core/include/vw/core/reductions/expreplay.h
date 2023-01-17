@@ -33,7 +33,7 @@ public:
   std::vector<bool> filled;       // which of buf[] is filleds
   size_t replay_count = 0;  // each time er.learn() is called, how many times do we call base.learn()? default=1 (in
                             // which case we're just permuting)
-  VW::LEARNER::single_learner* base = nullptr;
+  VW::LEARNER::learner* base = nullptr;
 
   ~expreplay()
   {
@@ -42,7 +42,7 @@ public:
 };
 
 template <VW::label_parser& lp>
-void learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, VW::example& ec)
+void learn(expreplay<lp>& er, VW::LEARNER::learner& base, VW::example& ec)
 {
   // Cannot learn if the example weight is 0.
   if (lp.get_weight(ec.l, ec.ex_reduction_features) == 0.) { return; }
@@ -61,13 +61,13 @@ void learn(expreplay<lp>& er, VW::LEARNER::single_learner& base, VW::example& ec
 }
 
 template <VW::label_parser& lp>
-void predict(expreplay<lp>&, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict(expreplay<lp>&, VW::LEARNER::learner& base, VW::example& ec)
 {
   base.predict(ec);
 }
 
 template <VW::label_parser& lp>
-void multipredict(expreplay<lp>&, VW::LEARNER::single_learner& base, VW::example& ec, size_t count, size_t step,
+void multipredict(expreplay<lp>&, VW::LEARNER::learner& base, VW::example& ec, size_t count, size_t step,
     VW::polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, count, step, pred, finalize_predictions);
@@ -138,7 +138,7 @@ VW::LEARNER::base_learner* expreplay_setup(VW::setup_base_i& stack_builder)
                 .set_end_pass(expreplay::end_pass<lp>)
                 .build();
 
-  return VW::LEARNER::make_base(*l);
+  return l;
 }
 }  // namespace reductions
 }  // namespace VW

@@ -63,7 +63,7 @@ void init_global(baseline_data& data)
 }
 
 template <bool is_learn>
-void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec)
+void predict_or_learn(baseline_data& data, learner& base, VW::example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec))
@@ -198,5 +198,5 @@ base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
                 .set_sensitivity(sensitivity)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

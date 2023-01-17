@@ -29,7 +29,7 @@ public:
 };  // for set_minmax, loss
 
 template <bool is_learn, float (*link)(float in)>
-void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(scorer& s, VW::LEARNER::learner& base, VW::example& ec)
 {
   // Predict does not need set_minmax
   if (is_learn) { s.all->set_minmax(s.all->sd, ec.l.simple.label); }
@@ -50,14 +50,14 @@ void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, VW::example&
 }
 
 template <float (*link)(float in)>
-inline void multipredict(scorer& /*unused*/, VW::LEARNER::single_learner& base, VW::example& ec, size_t count,
+inline void multipredict(scorer& /*unused*/, VW::LEARNER::learner& base, VW::example& ec, size_t count,
     size_t /*unused*/, VW::polyprediction* pred, bool finalize_predictions)
 {
   base.multipredict(ec, 0, count, pred, finalize_predictions);  // TODO: need to thread step through???
   for (size_t c = 0; c < count; c++) { pred[c].scalar = link(pred[c].scalar); }
 }
 
-void update(scorer& s, VW::LEARNER::single_learner& base, VW::example& ec)
+void update(scorer& s, VW::LEARNER::learner& base, VW::example& ec)
 {
   s.all->set_minmax(s.all->sd, ec.l.simple.label);
   base.update(ec);
@@ -91,9 +91,9 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
                       .help("Specify the link function"));
   options.add_and_parse(new_options);
 
-  using predict_or_learn_fn_t = void (*)(scorer&, VW::LEARNER::single_learner&, VW::example&);
+  using predict_or_learn_fn_t = void (*)(scorer&, VW::LEARNER::learner&, VW::example&);
   using multipredict_fn_t =
-      void (*)(scorer&, VW::LEARNER::single_learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool);
+      void (*)(scorer&, VW::LEARNER::learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool);
   multipredict_fn_t multipredict_f = multipredict<id>;
   predict_or_learn_fn_t learn_fn;
   predict_or_learn_fn_t predict_fn;
@@ -141,5 +141,5 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
                 .set_update(update)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

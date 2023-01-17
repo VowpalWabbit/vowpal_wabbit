@@ -19,7 +19,7 @@ public:
   VW::cb_type_t cb_type = VW::cb_type_t::DM;
   uint32_t num_actions = 0;
   VW::cs_label pred_scores;
-  VW::LEARNER::single_learner* scorer = nullptr;
+  VW::LEARNER::learner* scorer = nullptr;
   float avg_loss_regressors = 0.f;
   size_t nb_ex_regressors = 0;
   float last_pred_reg = 0.f;
@@ -42,7 +42,7 @@ public:
   // for DR
   VW::cs_label pred_scores;
   VW::cb_class known_cost;
-  VW::LEARNER::single_learner* scorer = nullptr;
+  VW::LEARNER::learner* scorer = nullptr;
 };
 
 float safe_probability(float prob, VW::io::logger& logger);
@@ -263,7 +263,7 @@ void cs_prep_labels(VW::multi_ex& examples, std::vector<VW::cb_label>& cb_labels
     std::vector<VW::cs_label>& prepped_cs_labels, uint64_t offset);
 
 template <bool is_learn>
-void cs_ldf_learn_or_predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples,
+void cs_ldf_learn_or_predict(VW::LEARNER::learner& base, VW::multi_ex& examples,
     std::vector<VW::cb_label>& cb_labels, VW::cs_label& cs_labels, std::vector<VW::cs_label>& prepped_cs_labels,
     bool predict_first, uint64_t offset, size_t id = 0)
 {

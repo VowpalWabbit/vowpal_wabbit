@@ -18,7 +18,7 @@ using std::endl;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
-using VW::LEARNER::single_learner;
+using VW::LEARNER::learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
@@ -34,7 +34,7 @@ public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 
-  void init(single_learner* p_base);
+  void init(learner* p_base);
 
   float epsilon;
   float min_value;
@@ -42,7 +42,7 @@ public:
   bool first_only;
 
 private:
-  single_learner* _base = nullptr;
+  learner* _base = nullptr;
 };
 
 int cb_explore_pdf::learn(VW::example& ec, VW::experimental::api_status*)
@@ -78,11 +78,11 @@ int cb_explore_pdf::predict(VW::example& ec, VW::experimental::api_status*)
   return VW::experimental::error_code::success;
 }
 
-void cb_explore_pdf::init(single_learner* p_base) { _base = p_base; }
+void cb_explore_pdf::init(learner* p_base) { _base = p_base; }
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(cb_explore_pdf& reduction, single_learner&, VW::example& ec)
+void predict_or_learn(cb_explore_pdf& reduction, learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
@@ -146,5 +146,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i
                 .set_input_prediction_type(VW::prediction_type_t::PDF)
                 .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .build();
-  return make_base(*l);
+  return l;
 }

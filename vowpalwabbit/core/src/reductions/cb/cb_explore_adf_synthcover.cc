@@ -38,11 +38,11 @@ public:
       std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples)
   {
     predict_or_learn_impl<false>(base, examples);
   }
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(VW::io_buf& model_file, bool read, bool text);
 
 private:
@@ -57,7 +57,7 @@ private:
   float _min_cost;
   float _max_cost;
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
@@ -73,7 +73,7 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
 }
 
 template <bool is_learn>
-void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
@@ -196,7 +196,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
   }
 
   size_t problem_multiplier = 1;
-  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
@@ -215,5 +215,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
-  return make_base(*l);
+  return l;
 }

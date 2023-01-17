@@ -47,7 +47,7 @@ inline float cheesyrand(uint64_t x)
 constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrqfa_state& lrq, learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -174,5 +174,5 @@ VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_b
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

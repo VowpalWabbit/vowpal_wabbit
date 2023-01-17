@@ -110,7 +110,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
   ec->indices.pop_back();
 }
 
-void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
+void make_single_prediction(ldf& data, learner& base, VW::example& ec)
 {
   uint64_t old_offset = ec.ft_offset;
 
@@ -154,7 +154,7 @@ bool test_ldf_sequence(const VW::multi_ex& ec_seq, VW::io::logger& logger)
   return is_test;
 }
 
-void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_seq)
+void do_actual_learning_wap(ldf& data, learner& base, VW::multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
 
@@ -226,7 +226,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
   }
 }
 
-void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_seq)
+void do_actual_learning_oaa(ldf& data, learner& base, VW::multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_oaa()" << std::endl;
 
@@ -297,7 +297,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void learn_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
+void learn_csoaa_ldf(ldf& data, learner& base, VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty())
   {
@@ -340,7 +340,7 @@ void convert_to_probabilities(const VW::multi_ex& ec_seq, VW::v_array<float>& pr
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
+void predict_csoaa_ldf(ldf& data, learner& base, VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty())
   {
@@ -370,7 +370,7 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
   }
 }
 
-void predict_csoaa_ldf_probabilities(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
+void predict_csoaa_ldf_probabilities(ldf& data, learner& base, VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty())
   {
@@ -390,7 +390,7 @@ void predict_csoaa_ldf_probabilities(ldf& data, single_learner& base, VW::multi_
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
+void predict_csoaa_ldf_rank(ldf& data, learner& base, VW::multi_ex& ec_seq_all)
 {
   data.ft_offset = ec_seq_all[0]->ft_offset;
   if (ec_seq_all.empty())
@@ -726,12 +726,12 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
 
-  single_learner* base = as_singleline(stack_builder.setup_base_learner());
+  learner* base = as_singleline(stack_builder.setup_base_learner());
 
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  void (*pred_ptr)(ldf&, single_learner&, VW::multi_ex&);
+  void (*pred_ptr)(ldf&, learner&, VW::multi_ex&);
   if (ld->rank)
   {
     name_addition = "-rank";
@@ -761,6 +761,6 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
                 .build();
 
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
-  all.cost_sensitive = make_base(*l);
+  all.cost_sensitive = l;
   return all.cost_sensitive;
 }

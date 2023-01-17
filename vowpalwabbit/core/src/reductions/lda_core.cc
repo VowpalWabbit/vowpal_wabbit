@@ -1378,5 +1378,5 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
                 .set_end_pass(end_pass)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

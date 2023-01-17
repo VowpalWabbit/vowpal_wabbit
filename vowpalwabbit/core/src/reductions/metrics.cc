@@ -177,23 +177,23 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
   if (base_learner->is_multiline())
   {
     auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-        predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>,
+        predict_or_learn<true, learner, multi_ex>, predict_or_learn<false, learner, multi_ex>,
         stack_builder.get_setupfn_name(metrics_setup))
                   .set_output_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(base_learner->learn_returns_prediction)
                   .set_persist_metrics(persist)
                   .build();
-    return make_base(*l);
+    return l;
   }
   else
   {
     auto* l = make_reduction_learner(std::move(data), as_singleline(base_learner),
-        predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>,
+        predict_or_learn<true, learner, example>, predict_or_learn<false, learner, example>,
         stack_builder.get_setupfn_name(metrics_setup))
                   .set_output_prediction_type(base_learner->get_output_prediction_type())
                   .set_learn_returns_prediction(base_learner->learn_returns_prediction)
                   .set_persist_metrics(persist)
                   .build();
-    return make_base(*l);
+    return l;
   }
 }

@@ -162,8 +162,8 @@ public:
 
   void save_load(io_buf& io, bool read, bool text);
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
 
@@ -185,7 +185,7 @@ public:
 
 private:
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::learner& base, multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
 };
 

@@ -101,7 +101,7 @@ float binary_search(float fhat, float delta, float sens, float tol)
 }
 
 template <bool is_learn, bool is_simulation>
-inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float cost,
+inline void inner_loop(cs_active& cs_a, learner& base, VW::example& ec, uint32_t i, float cost,
     uint32_t& prediction, float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
@@ -153,7 +153,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
   VW_ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
 }
 
-inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float delta, float eta,
+inline void find_cost_range(cs_active& cs_a, learner& base, VW::example& ec, uint32_t i, float delta, float eta,
     float& min_pred, float& max_pred, bool& is_range_large)
 {
   float tol = 1e-6f;
@@ -189,7 +189,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& 
 }
 
 template <bool is_learn, bool is_simulation>
-void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
+void predict_or_learn(cs_active& cs_a, learner& base, VW::example& ec)
 {
   VW::cs_label ld = ec.l.cs;
 
@@ -439,8 +439,8 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
   all.set_minmax(all.sd, data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) { data->examples_by_queries.push_back(0); }
 
-  void (*learn_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
-  void (*predict_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
+  void (*learn_ptr)(cs_active & cs_a, learner & base, VW::example & ec);
+  void (*predict_ptr)(cs_active & cs_a, learner & base, VW::example & ec);
   std::string name_addition;
 
   if (simulation)
@@ -472,7 +472,7 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 
   // Label parser set to cost sensitive label parser
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
-  base_learner* b = make_base(*l);
+  base_learner* b = l;
   all.cost_sensitive = b;
   return b;
 }

@@ -88,7 +88,7 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 }
 
 template <bool learn, bool exclude, bool is_learn>
-void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
+void predict_or_learn(mwt& c, learner& base, VW::example& ec)
 {
   c.optional_observation = get_observed_cost_cb(ec.l.cb);
 
@@ -292,8 +292,8 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
   }
 
   std::string name_addition;
-  void (*learn_ptr)(mwt&, single_learner&, VW::example&) = nullptr;
-  void (*pred_ptr)(mwt&, single_learner&, VW::example&) = nullptr;
+  void (*learn_ptr)(mwt&, learner&, VW::example&) = nullptr;
+  void (*pred_ptr)(mwt&, learner&, VW::example&) = nullptr;
 
   if (c->learn)
   {
@@ -333,5 +333,5 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
                 .build();
 
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
-  return make_base(*l);
+  return l;
 }

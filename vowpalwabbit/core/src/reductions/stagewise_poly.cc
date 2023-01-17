@@ -501,7 +501,7 @@ void synthetic_create(stagewise_poly& poly, VW::example& ec, bool training)
   }
 }
 
-void predict(stagewise_poly& poly, single_learner& base, VW::example& ec)
+void predict(stagewise_poly& poly, learner& base, VW::example& ec)
 {
   poly.original_ec = &ec;
   synthetic_create(poly, ec, false);
@@ -511,7 +511,7 @@ void predict(stagewise_poly& poly, single_learner& base, VW::example& ec)
   ec.pred.scalar = poly.synth_ec.pred.scalar;
 }
 
-void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
+void learn(stagewise_poly& poly, learner& base, VW::example& ec)
 {
   bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
@@ -724,5 +724,5 @@ base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_build
           .set_end_pass(end_pass)
           .build();
 
-  return make_base(*l);
+  return l;
 }

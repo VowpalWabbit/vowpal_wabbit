@@ -102,7 +102,7 @@ get_automl_data(VW::workspace& all)
   all.l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "automl") == e_r.end()) { THROW("automl not found in enabled reductions"); }
 
-  VW::LEARNER::multi_learner* automl_learner = as_multiline(all.l->get_learner_by_name_prefix("automl"));
+  VW::LEARNER::learner* automl_learner = as_multiline(all.l->get_learner_by_name_prefix("automl"));
 
   return (VW::reductions::automl::automl<interaction_config_manager<VW::reductions::automl::config_oracle<T>,
           VW::estimators::confidence_sequence_robust>>*)

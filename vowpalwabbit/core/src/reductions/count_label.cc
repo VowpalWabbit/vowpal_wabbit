@@ -27,7 +27,7 @@ public:
 };
 
 template <bool is_learn>
-void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
+void count_label_single(reduction_data& data, VW::LEARNER::learner& base, VW::example& ec)
 {
   VW::shared_data* sd = data.all->sd;
   VW::count_label(*sd, ec.l.simple.label);
@@ -37,7 +37,7 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
 }
 
 template <bool is_learn>
-void count_label_multi(reduction_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq)
+void count_label_multi(reduction_data& data, VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
   VW::shared_data* sd = data.all->sd;
   for (const auto* ex : ec_seq) { VW::count_label(*sd, ex->l.simple.label); }
@@ -89,7 +89,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
                         .set_output_prediction_type(base->get_output_prediction_type())
                         .set_input_label_type(label_type_t::SIMPLE)
                         .build();
-    return VW::LEARNER::make_base(*learner);
+    return learner;
   }
 
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
@@ -100,5 +100,5 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
                       .set_input_label_type(label_type_t::SIMPLE)
                       .set_output_label_type(label_type_t::SIMPLE)
                       .build();
-  return VW::LEARNER::make_base(*learner);
+  return learner;
 }

@@ -52,10 +52,9 @@ private:
   vector<pair<uint32_t, float>> _predictions;
 };
 
-using test_learner_t = learner<reduction_test_harness, VW::example>;
 using predictions_t = vector<pair<uint32_t, float>>;
 
-test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+learner* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   // Setup a test harness base reduction
   auto test_harness = VW::make_unique<reduction_test_harness>();

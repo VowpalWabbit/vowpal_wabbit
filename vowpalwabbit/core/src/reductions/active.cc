@@ -55,7 +55,7 @@ float query_decision(active& a, float ec_revert_weight, float k)
 }
 
 template <bool is_learn>
-void predict_or_learn_simulation(active& a, single_learner& base, VW::example& ec)
+void predict_or_learn_simulation(active& a, learner& base, VW::example& ec)
 {
   base.predict(ec);
 
@@ -82,7 +82,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, VW::example& e
 }
 
 template <bool is_learn>
-void predict_or_learn_active(active& a, single_learner& base, VW::example& ec)
+void predict_or_learn_active(active& a, learner& base, VW::example& ec)
 {
   if (is_learn) { base.learn(ec); }
   else { base.predict(ec); }
@@ -192,7 +192,7 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<active>(active_c0, &all);
   auto base = as_singleline(stack_builder.setup_base_learner());
 
-  using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, VW::example&);
+  using learn_pred_func_t = void (*)(active&, VW::LEARNER::learner&, VW::example&);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
   void (*finish_ptr)(VW::workspace&, active&, VW::example&);
@@ -225,5 +225,5 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
                 .set_finish_example(finish_ptr)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

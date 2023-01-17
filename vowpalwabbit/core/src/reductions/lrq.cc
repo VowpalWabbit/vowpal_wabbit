@@ -68,7 +68,7 @@ void reset_seed(lrq_state& lrq)
 }
 
 template <bool is_learn>
-void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrq_state& lrq, learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -236,5 +236,5 @@ base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
                 .build();
 
   // TODO: leaks memory ?
-  return make_base(*l);
+  return l;
 }

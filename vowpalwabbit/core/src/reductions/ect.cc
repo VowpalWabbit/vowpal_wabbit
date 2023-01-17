@@ -166,7 +166,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
   return e.last_pair + (eliminations - 1);
 }
 
-uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
+uint32_t ect_predict(ect& e, learner& base, VW::example& ec)
 {
   if (e.k == static_cast<size_t>(1)) { return 1; }
 
@@ -201,7 +201,7 @@ uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
   return id + 1;
 }
 
-void ect_train(ect& e, single_learner& base, VW::example& ec)
+void ect_train(ect& e, learner& base, VW::example& ec)
 {
   if (e.k == 1)
   {  // nothing to do
@@ -287,9 +287,9 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
   }
 }
 
-void predict(ect& e, single_learner& base, VW::example& ec) { ec.pred.multiclass = ect_predict(e, base, ec); }
+void predict(ect& e, learner& base, VW::example& ec) { ec.pred.multiclass = ect_predict(e, base, ec); }
 
-void learn(ect& e, single_learner& base, VW::example& ec)
+void learn(ect& e, learner& base, VW::example& ec)
 {
   VW::multiclass_label mc = ec.l.multi;
   uint32_t pred = ec.pred.multiclass;
@@ -340,5 +340,5 @@ base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
 
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
-  return make_base(*l);
+  return l;
 }

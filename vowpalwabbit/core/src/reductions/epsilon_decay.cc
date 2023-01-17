@@ -63,7 +63,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
   }
 }
 
-void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   auto model_count = static_cast<int64_t>(conf_seq_estimators.size());
   VW::cb_class logged{};
@@ -248,7 +248,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
 namespace
 {
 void predict(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   uint64_t final_model_idx = static_cast<uint64_t>(data.conf_seq_estimators.size()) - 1;
   if (!data._constant_epsilon)
@@ -262,7 +262,7 @@ void predict(
 }
 
 void learn(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   data.update_weights(data._initial_epsilon, base, examples);
   data.check_estimator_bounds();
@@ -411,7 +411,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                         .set_finish(::finish)
                         .build();
 
-    return VW::LEARNER::make_base(*learner);
+    return learner;
   }
   else
   {

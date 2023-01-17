@@ -317,7 +317,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::do_learning(
-    LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot)
+    LEARNER::learner& base, multi_ex& ec, uint64_t live_slot)
 {
   assert(live_slot < max_live_configs);
   // TODO: what to do if that slot is switched with a new config?
@@ -368,7 +368,7 @@ template class interaction_config_manager<config_oracle<qbase_cubic>, VW::estima
 
 template <typename CMType>
 void automl<CMType>::one_step(
-    LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
+    LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;
   cm->process_example(ec);
@@ -379,7 +379,7 @@ void automl<CMType>::one_step(
 
 template <typename CMType>
 void automl<CMType>::offset_learn(
-    LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
+    LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   interaction_vec_t* incoming_interactions = ec[0]->interactions;
   for (VW::example* ex : ec)

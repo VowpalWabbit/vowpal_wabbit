@@ -170,7 +170,7 @@ void output_example_prediction_bs(
 }
 
 template <bool is_learn>
-void predict_or_learn(bs_data& d, single_learner& base, VW::example& ec)
+void predict_or_learn(bs_data& d, learner& base, VW::example& ec)
 {
   VW::workspace& all = *d.all;
   bool should_output = all.raw_prediction != nullptr;
@@ -268,5 +268,5 @@ base_learner* VW::reductions::bs_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

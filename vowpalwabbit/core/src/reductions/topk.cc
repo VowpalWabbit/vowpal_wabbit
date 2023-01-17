@@ -32,8 +32,8 @@ public:
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 
-  void predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq);
-  void learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq);
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& ec_seq);
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& ec_seq);
   std::pair<const_iterator_t, const_iterator_t> get_container_view() const;
 
 private:
@@ -46,7 +46,7 @@ private:
 
 topk::topk(uint32_t k_num) : _k_num(k_num) {}
 
-void topk::predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void topk::predict(VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
   clear_container();
   ec_seq[0]->pred.scalars.clear();
@@ -62,7 +62,7 @@ void topk::predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
   }
 }
 
-void topk::learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void topk::learn(VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
   clear_container();
   ec_seq[0]->pred.scalars.clear();
@@ -168,7 +168,7 @@ void print_update_topk(VW::workspace& all, VW::shared_data& sd, const topk& /* d
 }
 
 template <bool is_learn>
-void predict_or_learn(topk& d, VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void predict_or_learn(topk& d, VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
   if (is_learn) { d.learn(base, ec_seq); }
   else { d.predict(base, ec_seq); }
@@ -196,5 +196,5 @@ VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_bu
                 .set_print_update(print_update_topk)
                 .set_update_stats(update_stats_topk)
                 .build();
-  return make_base(*l);
+  return l;
 }

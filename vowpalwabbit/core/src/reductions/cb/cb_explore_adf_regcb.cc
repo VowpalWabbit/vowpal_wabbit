@@ -43,15 +43,15 @@ public:
   ~cb_explore_adf_regcb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples) { predict_impl(base, examples); }
-  void learn(multi_learner& base, VW::multi_ex& examples) { learn_impl(base, examples); }
+  void predict(learner& base, VW::multi_ex& examples) { predict_impl(base, examples); }
+  void learn(learner& base, VW::multi_ex& examples) { learn_impl(base, examples); }
   void save_load(VW::io_buf& io, bool read, bool text);
 
 private:
-  void predict_impl(multi_learner& base, VW::multi_ex& examples);
-  void learn_impl(multi_learner& base, VW::multi_ex& examples);
+  void predict_impl(learner& base, VW::multi_ex& examples);
+  void learn_impl(learner& base, VW::multi_ex& examples);
 
-  void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
+  void get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only);
   float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 
 private:
@@ -107,7 +107,7 @@ float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, f
   return l;
 }
 
-void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only)
+void cb_explore_adf_regcb::get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   _min_costs.resize(num_actions);
@@ -166,7 +166,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, multi_learner& base, VW:
   }
 }
 
-void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_regcb::predict_impl(learner& base, VW::multi_ex& examples)
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
@@ -214,7 +214,7 @@ void cb_explore_adf_regcb::predict_impl(multi_learner& base, VW::multi_ex& examp
   }
 }
 
-void cb_explore_adf_regcb::learn_impl(multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_regcb::learn_impl(learner& base, VW::multi_ex& examples)
 {
   VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   for (size_t i = 0; i < examples.size() - 1; ++i)
@@ -300,7 +300,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
   // Set explore_type
   size_t problem_multiplier = 1;
 
-  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
@@ -319,5 +319,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_regcb_setup(VW::setup_
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
                 .build();
-  return make_base(*l);
+  return l;
 }

@@ -233,7 +233,7 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
 }
 
 void train_node(
-    log_multi& b, single_learner& base, VW::example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
+    log_multi& b, learner& base, VW::example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
   if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk) { ec.l.simple.label = -1.f; }
   else { ec.l.simple.label = 1.f; }
@@ -259,7 +259,7 @@ inline uint32_t descend(node& n, float prediction)
   else { return n.right; }
 }
 
-void predict(log_multi& b, single_learner& base, VW::example& ec)
+void predict(log_multi& b, learner& base, VW::example& ec)
 {
   VW::multiclass_label mc = ec.l.multi;
 
@@ -276,7 +276,7 @@ void predict(log_multi& b, single_learner& base, VW::example& ec)
   ec.l.multi = mc;
 }
 
-void learn(log_multi& b, single_learner& base, VW::example& ec)
+void learn(log_multi& b, learner& base, VW::example& ec)
 {
   if (ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {
@@ -465,5 +465,5 @@ base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  
 
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
-  return make_base(*l);
+  return l;
 }

@@ -27,7 +27,7 @@ using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
-using VW::LEARNER::single_learner;
+using VW::LEARNER::learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
@@ -40,13 +40,13 @@ namespace
 class cats_pdf
 {
 public:
-  cats_pdf(single_learner* p_base, bool always_predict = false);
+  cats_pdf(learner* p_base, bool always_predict = false);
 
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 
 private:
-  single_learner* _base = nullptr;
+  learner* _base = nullptr;
   bool _always_predict = false;
 };
 
@@ -70,11 +70,11 @@ int cats_pdf::learn(VW::example& ec, VW::experimental::api_status*)
   return VW::experimental::error_code::success;
 }
 
-cats_pdf::cats_pdf(single_learner* p_base, bool always_predict) : _base(p_base), _always_predict(always_predict) {}
+cats_pdf::cats_pdf(learner* p_base, bool always_predict) : _base(p_base), _always_predict(always_predict) {}
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(cats_pdf& reduction, single_learner&, VW::example& ec)
+void predict_or_learn(cats_pdf& reduction, learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
@@ -174,5 +174,5 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
 
   all.example_parser->lbl_parser = cb_continuous::the_label_parser;
 
-  return make_base(*l);
+  return l;
 }

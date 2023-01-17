@@ -30,7 +30,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn(binary_data& data, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(binary_data& data, VW::LEARNER::learner& base, VW::example& ec)
 {
   if (is_learn) { base.learn(ec); }
   else { base.predict(ec); }
@@ -73,5 +73,5 @@ VW::LEARNER::base_learner* VW::reductions::binary_setup(setup_base_i& stack_buil
                  .set_learn_returns_prediction(true)
                  .build();
 
-  return make_base(*ret);
+  return ret;
 }

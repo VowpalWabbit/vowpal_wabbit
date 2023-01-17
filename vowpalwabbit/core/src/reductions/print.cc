@@ -71,5 +71,5 @@ VW::LEARNER::base_learner* VW::reductions::print_setup(VW::setup_base_i& stack_b
                       .set_update_stats(VW::details::update_stats_simple_label<print>)
                       .set_print_update(VW::details::print_update_simple_label<print>)
                       .build();
-  return VW::LEARNER::make_base(*learner);
+  return learner;
 }

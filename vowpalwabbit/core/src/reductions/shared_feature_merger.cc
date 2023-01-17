@@ -33,7 +33,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq)
+void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
   if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
@@ -134,5 +134,5 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.
 
-  return VW::LEARNER::make_base(*learner);
+  return learner;
 }

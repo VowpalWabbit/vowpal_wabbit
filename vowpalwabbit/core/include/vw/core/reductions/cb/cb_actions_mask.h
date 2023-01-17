@@ -22,7 +22,7 @@ public:
 
 private:
   template <bool is_learn>
-  void learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn_or_predict(VW::LEARNER::learner& base, multi_ex& examples);
 };
 
 VW::LEARNER::base_learner* cb_actions_mask_setup(VW::setup_base_i&);

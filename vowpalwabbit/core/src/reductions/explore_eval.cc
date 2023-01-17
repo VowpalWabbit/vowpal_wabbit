@@ -191,7 +191,7 @@ void output_example_prediction_explore_eval(
 }
 
 template <bool is_learn>
-void do_actual_learning(explore_eval& data, multi_learner& base, VW::multi_ex& ec_seq)
+void do_actual_learning(explore_eval& data, learner& base, VW::multi_ex& ec_seq)
 {
   VW::example* label_example = VW::test_cb_adf_sequence(ec_seq);
 
@@ -311,7 +311,7 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
 
   if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 
-  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
@@ -327,5 +327,5 @@ base_learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder
                 .set_finish(::finish)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

@@ -400,5 +400,5 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
                 .set_print_update(VW::details::print_update_simple_label<gdmf>)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

@@ -19,8 +19,8 @@ namespace reductions
 class slates_data
 {
 public:
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::learner& base, multi_ex& examples);
 
 private:
   std::vector<slates::label> _stashed_labels;
@@ -49,7 +49,7 @@ private:
     ccb slot 3:0.8:0.6 3,4
   */
   template <bool is_learn>
-  void learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn_or_predict(VW::LEARNER::learner& base, multi_ex& examples);
 };
 
 VW::LEARNER::base_learner* slates_setup(VW::setup_base_i&);

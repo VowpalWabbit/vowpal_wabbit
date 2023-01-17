@@ -24,7 +24,7 @@
 using namespace VW::config;
 
 template <bool is_learn>
-void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::learner& base, multi_ex& examples)
 {
   _stashed_labels.clear();
   _stashed_labels.reserve(examples.size());
@@ -101,12 +101,12 @@ void VW::reductions::slates_data::learn_or_predict(VW::LEARNER::multi_learner& b
   _stashed_labels.clear();
 }
 
-void VW::reductions::slates_data::learn(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::slates_data::learn(VW::LEARNER::learner& base, multi_ex& examples)
 {
   learn_or_predict<true>(base, examples);
 }
 
-void VW::reductions::slates_data::predict(VW::LEARNER::multi_learner& base, multi_ex& examples)
+void VW::reductions::slates_data::predict(VW::LEARNER::learner& base, multi_ex& examples)
 {
   learn_or_predict<false>(base, examples);
 }
@@ -237,7 +237,7 @@ void cleanup_example_slates(VW::reductions::slates_data& /* data */, VW::multi_e
 }
 
 template <bool is_learn>
-void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   if (is_learn) { data.learn(base, examples); }
   else { data.predict(base, examples); }
@@ -275,5 +275,5 @@ VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_
                 .set_update_stats(update_stats_slates)
                 .set_cleanup_example(cleanup_example_slates)
                 .build();
-  return VW::LEARNER::make_base(*l);
+  return l;
 }

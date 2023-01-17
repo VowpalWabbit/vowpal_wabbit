@@ -40,7 +40,7 @@ public:
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, single_learner& base, VW::example& ec)
+void predict(mf& data, learner& base, VW::example& ec)
 {
   float prediction = 0;
   if (cache_sub_predictions) { data.sub_predictions.resize(2 * data.rank + 1); }
@@ -103,7 +103,7 @@ void predict(mf& data, single_learner& base, VW::example& ec)
   ec.pred.scalar = VW::details::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
 }
 
-void learn(mf& data, single_learner& base, VW::example& ec)
+void learn(mf& data, learner& base, VW::example& ec)
 {
   // predict with current weights
   predict<true>(data, base, ec);
@@ -216,5 +216,5 @@ base_learner* VW::reductions::mf_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

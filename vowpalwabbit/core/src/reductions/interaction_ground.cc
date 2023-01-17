@@ -42,7 +42,7 @@ void negate_cost(VW::multi_ex& ec_seq)
   }
 }
 
-void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
+void learn(interaction_ground& ig, learner& base, VW::multi_ex& ec_seq)
 {
   // find reward of sequence
   VW::cb_class label = VW::get_observed_cost_or_default_cb_adf(ec_seq);
@@ -65,7 +65,7 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   negate_cost(ec_seq);
 }
 
-void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
+void predict(interaction_ground& ig, learner& base, VW::multi_ex& ec_seq)
 {
   // figure out which is better by our current estimate.
   if (ig.total_uniform_cost - ig.total_importance_weighted_cost >
@@ -108,5 +108,5 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
                 .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

@@ -35,7 +35,7 @@ public:
 };
 
 template <bool is_learn>
-inline void inner_loop(single_learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
+inline void inner_loop(learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
     float& score, float& partial_prediction, uint32_t& indexing)
 {
   if (is_learn)
@@ -63,7 +63,7 @@ inline void inner_loop(single_learner& base, VW::example& ec, uint32_t i, float 
 #define DO_MULTIPREDICT true
 
 template <bool is_learn>
-void predict_or_learn(csoaa& c, single_learner& base, VW::example& ec)
+void predict_or_learn(csoaa& c, learner& base, VW::example& ec)
 {
   if (!c.search)
   {
@@ -213,6 +213,6 @@ base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
                 .build();
 
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
-  all.cost_sensitive = make_base(*l);
+  all.cost_sensitive = l;
   return all.cost_sensitive;
 }

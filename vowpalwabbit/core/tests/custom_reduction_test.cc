@@ -30,7 +30,7 @@ bool called_learn_predict = false;
 
 // minimal predict/learn fn for test_reduction_setup
 template <bool is_learn>
-void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(char&, VW::LEARNER::learner& base, VW::example& ec)
 {
   EXPECT_TRUE(added_to_learner);
   called_learn_predict = true;
@@ -83,7 +83,7 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
   }
   else { EXPECT_TRUE(false); }
 
-  return make_base(*ret);
+  return ret;
 }
 
 void reset_test_state()

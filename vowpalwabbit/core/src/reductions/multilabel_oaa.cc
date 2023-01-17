@@ -33,7 +33,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(multi_oaa& o, VW::LEARNER::learner& base, VW::example& ec)
 {
   auto multilabels = ec.l.multilabels;
   auto preds = ec.pred.multilabels;
@@ -174,5 +174,5 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
 
   all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
 
-  return make_base(*l);
+  return l;
 }

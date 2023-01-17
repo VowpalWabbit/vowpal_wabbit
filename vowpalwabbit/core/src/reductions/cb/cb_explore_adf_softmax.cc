@@ -30,23 +30,23 @@ public:
   ~cb_explore_adf_softmax() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples)
   {
     predict_or_learn_impl<false>(base, examples);
   }
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
   float _epsilon;
   float _lambda;
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_softmax::cb_explore_adf_softmax(float epsilon, float lambda) : _epsilon(epsilon), _lambda(lambda) {}
 
 template <bool is_learn>
-void cb_explore_adf_softmax::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_softmax::predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
@@ -90,7 +90,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_softmax_setup(VW::setu
   // Set explore_type
   size_t problem_multiplier = 1;
 
-  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_softmax>;
@@ -109,5 +109,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_softmax_setup(VW::setu
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
-  return make_base(*l);
+  return l;
 }

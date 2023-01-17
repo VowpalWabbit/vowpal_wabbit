@@ -46,7 +46,7 @@ TEST(Las, CheckAOSameActionsSameRepresentation)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::multi_learner* learner =
+    VW::LEARNER::learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
@@ -108,7 +108,7 @@ TEST(Las, CheckAOLinearCombinationOfActions)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::multi_learner* learner =
+    VW::LEARNER::learner* learner =
         as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();

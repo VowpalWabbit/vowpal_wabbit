@@ -94,7 +94,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, VW::example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::learner& /* base */, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -123,7 +123,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 // This is a learner which does nothing with examples.
 // void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, VW::example& ec)
+void audit_regressor(audit_regressor_data& rd, VW::LEARNER::learner& base, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -301,5 +301,5 @@ VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_
                   .set_init_driver(init_driver)
                   .build();
 
-  return make_base(*ret);
+  return ret;
 }

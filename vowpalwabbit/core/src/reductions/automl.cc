@@ -27,7 +27,7 @@ using namespace VW::reductions::automl;
 namespace
 {
 template <typename CMType, bool is_explore>
-void predict_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
+void predict_automl(automl<CMType>& data, learner& base, VW::multi_ex& ec)
 {
   data.cm->process_example(ec);
 
@@ -52,7 +52,7 @@ void predict_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
 // this is the registered learn function for this reduction
 // mostly uses config_manager and actual_learn(..)
 template <typename CMType, bool is_explore>
-void learn_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
+void learn_automl(automl<CMType>& data, learner& base, VW::multi_ex& ec)
 {
   VW::cb_class logged{};
   uint64_t labelled_action = 0;
@@ -207,7 +207,7 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
                 .set_learn_returns_prediction(true)
                 .set_pre_save_load(pre_save_load_automl)
                 .build();
-  return make_base(*l);
+  return l;
 }
 
 VW::LEARNER::base_learner* VW::reductions::automl_setup(VW::setup_base_i& stack_builder)

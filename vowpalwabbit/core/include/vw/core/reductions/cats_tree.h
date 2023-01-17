@@ -72,11 +72,11 @@ class cats_tree
 public:
   void init(uint32_t num_actions, uint32_t bandwidth);
   int32_t learner_count() const;
-  uint32_t predict(LEARNER::single_learner& base, example& ec);
+  uint32_t predict(LEARNER::learner& base, example& ec);
   void init_node_costs(std::vector<VW::cb_class>& ac);
   const tree_node& get_sibling(const tree_node& tree_node);
   float return_cost(const tree_node& w);
-  void learn(LEARNER::single_learner& base, example& ec);
+  void learn(LEARNER::learner& base, example& ec);
   void set_trace_message(std::ostream* ostrm, bool quiet);
   ~cats_tree();
 

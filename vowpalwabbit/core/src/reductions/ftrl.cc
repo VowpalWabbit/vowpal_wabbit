@@ -492,5 +492,5 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
                .set_update_stats(VW::details::update_stats_simple_label<ftrl>)
                .set_print_update(VW::details::print_update_simple_label<ftrl>)
                .build();
-  return make_base(*l);
+  return l;
 }

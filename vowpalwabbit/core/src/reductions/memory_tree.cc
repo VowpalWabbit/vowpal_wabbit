@@ -364,7 +364,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
 
 // train the node with id cn, using the statistics stored in the node to
 // formulate a binary classificaiton example.
-float train_node(memory_tree& b, single_learner& base, VW::example& ec, const uint64_t cn)
+float train_node(memory_tree& b, learner& base, VW::example& ec, const uint64_t cn)
 {
   // predict, learn and predict
   // note: here we first train the router and then predict.
@@ -422,7 +422,7 @@ float train_node(memory_tree& b, single_learner& base, VW::example& ec, const ui
 
 // turn a leaf into an internal node, and create two children
 // when the number of examples is too big
-void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
+void split_leaf(memory_tree& b, learner& base, const uint64_t cn)
 {
   // create two children
   b.nodes[cn].internal = 1;  // swith to internal node.
@@ -559,7 +559,7 @@ void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, VW::v_array<uin
   }
 }
 
-inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec)
+inline void train_one_against_some_at_leaf(memory_tree& b, learner& base, const uint64_t cn, VW::example& ec)
 {
   VW::v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels from the leaf.
@@ -581,7 +581,7 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
 }
 
 inline uint32_t compute_hamming_loss_via_oas(
-    memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec, VW::v_array<uint32_t>& selected_labs)
+    memory_tree& b, learner& base, const uint64_t cn, VW::example& ec, VW::v_array<uint32_t>& selected_labs)
 {
   selected_labs.clear();
   VW::v_array<uint32_t> leaf_labs;
@@ -603,7 +603,7 @@ inline uint32_t compute_hamming_loss_via_oas(
 }
 
 // pick up the "closest" example in the leaf using the score function.
-int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec)
+int64_t pick_nearest(memory_tree& b, learner& base, const uint64_t cn, VW::example& ec)
 {
   if (b.nodes[cn].examples_index.size() > 0)
   {
@@ -659,7 +659,7 @@ float f1_score_for_two_examples(VW::example& ec1, VW::example& ec2)
     return 2.f * (v1 * v2 / (v1 + v2));
   }
 }
-void predict(memory_tree& b, single_learner& base, VW::example& ec)
+void predict(memory_tree& b, learner& base, VW::example& ec)
 {
   VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
@@ -725,7 +725,7 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
   }
 }
 
-float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, VW::example& ec, float weight = 1.f)
+float return_reward_from_node(memory_tree& b, learner& base, uint64_t cn, VW::example& ec, float weight = 1.f)
 {
   VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
@@ -795,7 +795,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
 }
 
 void learn_at_leaf_random(
-    memory_tree& b, single_learner& base, const uint64_t& leaf_id, VW::example& ec, const float& weight)
+    memory_tree& b, learner& base, const uint64_t& leaf_id, VW::example& ec, const float& weight)
 {
   b.total_num_queries++;
   int32_t ec_id = -1;
@@ -820,7 +820,7 @@ void learn_at_leaf_random(
   return;
 }
 
-void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, uint64_t cn,
+void route_to_leaf(memory_tree& b, learner& base, const uint32_t& ec_array_index, uint64_t cn,
     VW::v_array<uint64_t>& path, bool insertion)
 {
   VW::example& ec = *b.examples[ec_array_index];
@@ -875,7 +875,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 }
 
 // we roll in, then stop at a random step, do exploration. //no real insertion happens in the function.
-void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, VW::example& ec)
+void single_query_and_learn(memory_tree& b, learner& base, const uint32_t& ec_array_index, VW::example& ec)
 {
   VW::v_array<uint64_t> path_to_leaf;
   route_to_leaf(b, base, ec_array_index, 0, path_to_leaf, false);  // no insertion happens here.
@@ -951,14 +951,14 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
 }
 
 // using reward signals
-void update_rew(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, VW::example& ec)
+void update_rew(memory_tree& b, learner& base, const uint32_t& ec_array_index, VW::example& ec)
 {
   single_query_and_learn(b, base, ec_array_index, ec);
 }
 
 // node here the ec is already stored in the b.examples, the task here is to rout it to the leaf,
 // and insert the ec_array_index to the leaf.
-void insert_example(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, bool fake_insert = false)
+void insert_example(memory_tree& b, learner& base, const uint32_t& ec_array_index, bool fake_insert = false)
 {
   uint64_t cn = 0;                   // start from the root.
   while (b.nodes[cn].internal == 1)  // if it's internal node:
@@ -990,7 +990,7 @@ void insert_example(memory_tree& b, single_learner& base, const uint32_t& ec_arr
   }
 }
 
-void experience_replay(memory_tree& b, single_learner& base)
+void experience_replay(memory_tree& b, learner& base)
 {
   uint64_t cn = 0;  // start from root, randomly descent down!
   int ec_id = random_sample_example_pop(b, cn);
@@ -1014,7 +1014,7 @@ void experience_replay(memory_tree& b, single_learner& base)
 
 // learn: descent the example from the root while generating binary training
 // example for each node, including the leaf, and store the example at the leaf.
-void learn(memory_tree& b, single_learner& base, VW::example& ec)
+void learn(memory_tree& b, learner& base, VW::example& ec)
 {
   // Assume predict is called before learn is called
   if (b.test_mode == false)
@@ -1311,5 +1311,5 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
     l.set_print_update(VW::details::print_update_multiclass_label<memory_tree>);
   }
 
-  return make_base(*l.build());
+  return l.build();
 }

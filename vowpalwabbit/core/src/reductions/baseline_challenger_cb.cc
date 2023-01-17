@@ -70,7 +70,7 @@ public:
   static int get_chosen_action(const VW::action_scores& action_scores) { return action_scores[0].action; }
 
   template <bool is_learn>
-  inline void learn_or_predict(multi_learner& base, multi_ex& examples)
+  inline void learn_or_predict(learner& base, multi_ex& examples)
   {
     multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
@@ -158,7 +158,7 @@ size_t write_model_field(
 }  // namespace VW
 
 template <bool is_learn>
-void learn_or_predict(baseline_challenger_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(baseline_challenger_data& data, learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }
@@ -222,5 +222,5 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
                 .set_save_load(save_load)
                 .set_persist_metrics(persist_metrics)
                 .build();
-  return make_base(*l);
+  return l;
 }

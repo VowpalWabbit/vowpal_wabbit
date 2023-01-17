@@ -55,8 +55,8 @@ public:
   ~cb_explore_adf_rnd() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
   float _epsilon;
@@ -73,7 +73,7 @@ private:
   VW::cb_class _save_class;
 
   template <bool is_learn>
-  void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(learner& base, VW::multi_ex& examples);
 
   float get_initial_prediction(VW::example*);
   void get_initial_predictions(VW::multi_ex&, uint32_t);
@@ -89,7 +89,7 @@ private:
   template <bool>
   void restore_labels(VW::multi_ex&);
   template <bool>
-  void base_learn_or_predict(multi_learner&, VW::multi_ex&, uint32_t);
+  void base_learn_or_predict(learner&, VW::multi_ex&, uint32_t);
 };
 
 void cb_explore_adf_rnd::zero_bonuses(VW::multi_ex& examples) { _bonuses.assign(examples.size(), 0.f); }
@@ -218,14 +218,14 @@ void cb_explore_adf_rnd::restore_labels(VW::multi_ex& examples)
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::base_learn_or_predict(multi_learner& base, VW::multi_ex& examples, uint32_t id)
+void cb_explore_adf_rnd::base_learn_or_predict(learner& base, VW::multi_ex& examples, uint32_t id)
 {
   if (is_learn) { base.learn(examples, id); }
   else { base.predict(examples, id); }
 }
 
 template <bool is_learn>
-void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_rnd::predict_or_learn_impl(learner& base, VW::multi_ex& examples)
 {
   save_labels<is_learn>(examples);
 
@@ -301,7 +301,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
 
   size_t problem_multiplier = 1 + numrnd;
 
-  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
@@ -321,5 +321,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
-  return make_base(*l);
+  return l;
 }

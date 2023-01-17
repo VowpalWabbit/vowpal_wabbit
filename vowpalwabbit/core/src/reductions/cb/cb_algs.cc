@@ -30,7 +30,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
+void predict_or_learn(cb& data, learner& base, VW::example& ec)
 {
   VW::details::cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
@@ -59,9 +59,9 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   }
 }
 
-void predict_eval(cb&, single_learner&, VW::example&) { THROW("can not use a test label for evaluation"); }
+void predict_eval(cb&, learner&, VW::example&) { THROW("can not use a test label for evaluation"); }
 
-void learn_eval(cb& data, single_learner&, VW::example& ec)
+void learn_eval(cb& data, learner&, VW::example& ec)
 {
   VW::details::cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
@@ -223,5 +223,5 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
                 .set_print_update(print_update_func)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

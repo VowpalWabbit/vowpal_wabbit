@@ -22,11 +22,11 @@ public:
   VW::parameters* weights = nullptr;
   VW::reductions::cbify_adf_data adf_data;
   bool explore_mode = false;
-  multi_learner* adf_learner = nullptr;
+  learner* adf_learner = nullptr;
 };
 
 template <bool is_learn>
-void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
+void predict_or_learn(cb_to_cb_adf& data, learner& base, VW::example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
@@ -213,7 +213,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
   data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
 
-  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  learner* base = as_multiline(stack_builder.setup_base_learner());
 
   if (num_actions <= 0) { THROW("cb num actions must be positive"); }
 
@@ -249,5 +249,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
                 .set_print_update(::print_update_cb_to_cb_adf)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

@@ -373,7 +373,7 @@ VW_WARNING_STATE_POP
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.
 template <bool is_learn>
-void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(ccb_data& data, learner& base, VW::multi_ex& examples)
 {
   clear_all(data);
   // split shared, actions and slots
@@ -713,7 +713,7 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
                 .set_cleanup_example(cleanup_example_ccb)
                 .set_save_load(save_load)
                 .build();
-  return make_base(*l);
+  return l;
 }
 
 // CCB adds the following interactions:

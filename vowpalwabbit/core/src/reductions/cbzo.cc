@@ -379,5 +379,5 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
                 .set_update_stats(update_stats_cbzo)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

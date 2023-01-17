@@ -60,7 +60,7 @@ public:
 // Online Boost-by-Majority (BBM)
 // --------------------------------------------------
 template <bool is_learn>
-void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(boosting& o, VW::LEARNER::learner& base, VW::example& ec)
 {
   auto& ld = ec.l.simple;
 
@@ -121,7 +121,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::single_learner& base, VW::exampl
 // Logistic boost
 //-----------------------------------------------------------------
 template <bool is_learn>
-void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn_logistic(boosting& o, VW::LEARNER::learner& base, VW::example& ec)
 {
   auto& ld = ec.l.simple;
 
@@ -174,7 +174,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
 }
 
 template <bool is_learn>
-void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn_adaptive(boosting& o, VW::LEARNER::learner& base, VW::example& ec)
 {
   auto& ld = ec.l.simple;
 
@@ -393,8 +393,8 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
 
   size_t ws = data->N;
   std::string name_addition;
-  void (*learn_ptr)(boosting&, VW::LEARNER::single_learner&, VW::example&);
-  void (*pred_ptr)(boosting&, VW::LEARNER::single_learner&, VW::example&);
+  void (*learn_ptr)(boosting&, VW::LEARNER::learner&, VW::example&);
+  void (*pred_ptr)(boosting&, VW::LEARNER::learner&, VW::example&);
   void (*save_load_fn)(boosting&, io_buf&, bool, bool);
 
   if (data->alg == "BBM")
@@ -433,5 +433,5 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
                 .set_print_update(VW::details::print_update_simple_label<boosting>)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

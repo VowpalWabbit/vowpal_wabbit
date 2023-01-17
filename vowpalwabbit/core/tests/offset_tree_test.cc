@@ -64,11 +64,10 @@ private:
   int _curr_idx;
 };
 
-using test_learner_t = learner<reduction_test_harness, VW::example>;
 using predictions_t = vector<pair<float, float>>;
 using scores_t = std::vector<float>;
 
-test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+learner* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   // Setup a test harness base reduction
   auto test_harness = VW::make_unique<reduction_test_harness>();

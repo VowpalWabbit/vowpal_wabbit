@@ -46,7 +46,7 @@ public:
   VW::cs_label cs_label;
   VW::cs_label second_cs_label;
 
-  learner<cb_explore, VW::example>* cs = nullptr;
+  learner* cs = nullptr;
 
   uint64_t tau = 0;
   float epsilon = 0.f;
@@ -64,7 +64,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn_first(cb_explore& data, single_learner& base, VW::example& ec)
+void predict_or_learn_first(cb_explore& data, learner& base, VW::example& ec)
 {
   // Explore tau times, then act according to optimal.
   bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
@@ -88,7 +88,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, VW::example&
 }
 
 template <bool is_learn>
-void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example& ec)
+void predict_or_learn_greedy(cb_explore& data, learner& base, VW::example& ec)
 {
   // Explore uniform random an epsilon fraction of the time.
   // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
@@ -111,7 +111,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example
 }
 
 template <bool is_learn>
-void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& ec)
+void predict_or_learn_bag(cb_explore& data, learner& base, VW::example& ec)
 {
   // Randomize over predictions from a base set of predictors
   auto& probs = ec.pred.a_s;
@@ -135,7 +135,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
 }
 
 void get_cover_probabilities(
-    cb_explore& data, single_learner& /* base */, VW::example& ec, VW::action_scores& probs, float min_prob)
+    cb_explore& data, learner& /* base */, VW::example& ec, VW::action_scores& probs, float min_prob)
 {
   float additive_probability = 1.f / static_cast<float>(data.cover_size);
   data.preds.clear();
@@ -158,7 +158,7 @@ void get_cover_probabilities(
 }
 
 template <bool is_learn>
-void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example& ec)
+void predict_or_learn_cover(cb_explore& data, learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "predict_or_learn_cover:" << is_learn << " start" << endl;
   // Randomize over predictions from a base set of predictors
@@ -372,11 +372,11 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   data->cbcs.cb_type = VW::cb_type_t::DR;
   data->model_file_version = all.model_file_ver;
 
-  single_learner* base = as_singleline(stack_builder.setup_base_learner());
+  learner* base = as_singleline(stack_builder.setup_base_learner());
   data->cbcs.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
 
-  void (*learn_ptr)(cb_explore&, single_learner&, VW::example&);
-  void (*predict_ptr)(cb_explore&, single_learner&, VW::example&);
+  void (*learn_ptr)(cb_explore&, learner&, VW::example&);
+  void (*predict_ptr)(cb_explore&, learner&, VW::example&);
   size_t params_per_weight;
   std::string name_addition;
 
@@ -392,7 +392,7 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
       data->epsilon = 1.f;
       data->epsilon_decay = true;
     }
-    data->cs = reinterpret_cast<learner<cb_explore, VW::example>*>(as_singleline(all.cost_sensitive));
+    data->cs = all.cost_sensitive;
     for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(VW::cs_class{}); }
     data->cover_probs.resize(num_actions);
     data->preds.reserve(data->cover_size);
@@ -435,5 +435,5 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
                 .set_save_load(save_load)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

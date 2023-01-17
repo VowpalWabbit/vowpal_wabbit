@@ -36,8 +36,8 @@ public:
   ~cb_explore_adf_first() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
-  void learn(multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(VW::io_buf& io, bool read, bool text);
 
 private:
@@ -46,7 +46,7 @@ private:
 
   VW::version_struct _model_file_version;
   template <bool is_learn>
-  void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
@@ -55,7 +55,7 @@ cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::versio
 }
 
 template <bool is_learn>
-void cb_explore_adf_first::predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_first::predict_or_learn_impl(learner& base, VW::multi_ex& examples)
 {
   // Explore tau times, then act according to optimal.
   if (is_learn) { multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset); }
@@ -119,7 +119,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
 
   size_t problem_multiplier = 1;
 
-  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
@@ -140,5 +140,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_first_setup(VW::setup_
                 .set_persist_metrics(explore_type::persist_metrics)
                 .set_save_load(explore_type::save_load)
                 .build();
-  return make_base(*l);
+  return l;
 }

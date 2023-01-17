@@ -232,7 +232,7 @@ void update_marginal(data& sm, VW::example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(data& sm, VW::LEARNER::learner& base, VW::example& ec)
 {
   make_marginal<is_learn>(sm, ec);
   if VW_STD17_CONSTEXPR (is_learn)
@@ -426,5 +426,5 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
                 .set_save_load(save_load)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

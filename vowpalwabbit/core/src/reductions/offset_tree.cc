@@ -130,7 +130,7 @@ private:
   T& _collection;
 };
 
-const offset_tree::scores_t& offset_tree::predict(LEARNER::single_learner& base, example& ec)
+const offset_tree::scores_t& offset_tree::predict(LEARNER::learner& base, example& ec)
 {
   // - pair<float,float> stores the scores for left and right nodes
   // - prediction_buffer stores predictions for all the nodes in the tree for the duration
@@ -198,7 +198,7 @@ const offset_tree::scores_t& offset_tree::predict(LEARNER::single_learner& base,
   return _scores;
 }
 
-void offset_tree::learn(LEARNER::single_learner& base, example& ec)
+void offset_tree::learn(LEARNER::learner& base, example& ec)
 {
   const auto global_action = ec.l.cb.costs[0].action;
   const auto global_weight = ec.weight;
@@ -238,7 +238,7 @@ inline void copy_to_action_scores(
   for (uint32_t idx = 0; idx < scores.size(); ++idx) { a_s.push_back({idx, scores[idx]}); }
 }
 
-void predict(VW::reductions::offset_tree::offset_tree& tree, single_learner& base, VW::example& ec)
+void predict(VW::reductions::offset_tree::offset_tree& tree, learner& base, VW::example& ec)
 {
   // get predictions for all internal nodes in binary tree.
   ec.pred.a_s.clear();
@@ -246,7 +246,7 @@ void predict(VW::reductions::offset_tree::offset_tree& tree, single_learner& bas
   copy_to_action_scores(scores, ec.pred.a_s);
 }
 
-void learn(VW::reductions::offset_tree::offset_tree& tree, single_learner& base, VW::example& ec)
+void learn(VW::reductions::offset_tree::offset_tree& tree, learner& base, VW::example& ec)
 {
   ec.pred.a_s.clear();
 
@@ -291,5 +291,5 @@ VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& s
                 .set_output_label_type(label_type_t::CB)
                 .build();
 
-  return make_base(*l);
+  return l;
 }

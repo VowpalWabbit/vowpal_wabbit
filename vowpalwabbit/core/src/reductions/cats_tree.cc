@@ -156,7 +156,7 @@ void cats_tree::init(uint32_t num_actions, uint32_t bandwidth) { _binary_tree.bu
 
 int32_t cats_tree::learner_count() const { return _binary_tree.internal_node_count(); }
 
-uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
+uint32_t cats_tree::predict(LEARNER::learner& base, example& ec)
 {
   const vector<tree_node>& nodes = _binary_tree.nodes;
 
@@ -215,7 +215,7 @@ float cats_tree::return_cost(const tree_node& w)
   else { return 0; }
 }
 
-void cats_tree::learn(LEARNER::single_learner& base, example& ec)
+void cats_tree::learn(LEARNER::learner& base, example& ec)
 {
   const float saved_weight = ec.weight;
   auto saved_pred = stash_guard(ec.pred);
@@ -315,7 +315,7 @@ std::string cats_tree::tree_stats_to_string() { return _binary_tree.tree_stats_t
 }  // namespace VW
 namespace
 {
-void predict(VW::reductions::cats::cats_tree& ot, single_learner& base, VW::example& ec)
+void predict(VW::reductions::cats::cats_tree& ot, learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "tree_c: before tree.predict() " << VW::debug::multiclass_pred_to_string(ec)
              << VW::debug::features_to_string(ec) << std::endl;
@@ -324,7 +324,7 @@ void predict(VW::reductions::cats::cats_tree& ot, single_learner& base, VW::exam
              << VW::debug::features_to_string(ec) << std::endl;
 }
 
-void learn(VW::reductions::cats::cats_tree& tree, single_learner& base, VW::example& ec)
+void learn(VW::reductions::cats::cats_tree& tree, learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "tree_c: before tree.learn() " << VW::debug::cb_label_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
@@ -373,5 +373,5 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .build();
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
-  return make_base(*l);
+  return l;
 }

@@ -27,7 +27,7 @@ public:
   float min_value = 0.f;
   float max_value = 0.f;
   bool first_only = false;
-  LEARNER::single_learner* _p_base = nullptr;
+  LEARNER::learner* _p_base = nullptr;
 
 private:
   void transform_prediction(example& ec);

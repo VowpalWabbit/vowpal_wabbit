@@ -114,14 +114,14 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
 
 template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::predict(
-    VW::LEARNER::multi_learner& base, multi_ex& examples)
+    VW::LEARNER::learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<false>(base, examples);
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::learn(
-    VW::LEARNER::multi_learner& base, multi_ex& examples)
+    VW::LEARNER::learner& base, multi_ex& examples)
 {
   predict_or_learn_impl<true>(base, examples);
 }
@@ -210,7 +210,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
 template <typename randomized_svd_impl, typename spanner_impl>
 template <bool is_learn>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::predict_or_learn_impl(
-    VW::LEARNER::multi_learner& base, multi_ex& examples)
+    VW::LEARNER::learner& base, multi_ex& examples)
 {
   if (is_learn)
   {
@@ -291,7 +291,7 @@ template class cb_explore_adf_large_action_space<two_pass_svd_impl, one_rank_spa
 }  // namespace VW
 
 template <typename T, typename S>
-VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::multi_learner* base,
+VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::learner* base,
     implementation_type& impl_type, VW::workspace& all, bool with_metrics, uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size, size_t block_size,
     bool use_explicit_simd)
@@ -319,7 +319,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_save_load(explore_type::save_load)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .build();
-  return make_base(*l);
+  return l;
 }
 
 VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
@@ -402,7 +402,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     }
   }
 
-  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   if (use_two_pass_svd_impl)

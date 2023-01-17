@@ -32,7 +32,7 @@ public:
   explicit cb_sample_data(std::shared_ptr<VW::rand_state>&& random_state) : _random_state(random_state) {}
 
   template <bool is_learn>
-  inline void learn_or_predict(multi_learner& base, VW::multi_ex& examples)
+  inline void learn_or_predict(learner& base, VW::multi_ex& examples)
   {
     // If base.learn() does not return prediction then we need to predict first
     // so that there is something to sample from
@@ -112,7 +112,7 @@ private:
   std::shared_ptr<VW::rand_state> _random_state;
 };
 template <bool is_learn>
-void learn_or_predict(cb_sample_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(cb_sample_data& data, learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }
@@ -140,5 +140,5 @@ base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_learn_returns_prediction(true)
                 .build();
-  return make_base(*l);
+  return l;
 }

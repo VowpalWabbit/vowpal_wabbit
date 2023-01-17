@@ -442,7 +442,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
   }
 }
 
-float scorer_predict(emt_tree& b, single_learner& base, const emt_example& pred_ex, const emt_example& leaf_ex)
+float scorer_predict(emt_tree& b, learner& base, const emt_example& pred_ex, const emt_example& leaf_ex)
 {
   if (b.scorer_type == emt_scorer_type::RANDOM)  // random scorer
   {
@@ -464,7 +464,7 @@ float scorer_predict(emt_tree& b, single_learner& base, const emt_example& pred_
   return b.ex->pred.scalar;
 }
 
-void scorer_learn(single_learner& base, VW::example& ex, float label, float weight)
+void scorer_learn(learner& base, VW::example& ex, float label, float weight)
 {
   if (ex.total_sum_feat_sq != 0)
   {
@@ -475,7 +475,7 @@ void scorer_learn(single_learner& base, VW::example& ex, float label, float weig
   }
 }
 
-void scorer_learn(emt_tree& b, single_learner& base, emt_node& cn, const emt_example& ex, float weight)
+void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& ex, float weight)
 {
   // random and dist scorer has nothing to learsn
   if (b.scorer_type == emt_scorer_type::RANDOM || b.scorer_type == emt_scorer_type::DISTANCE) { return; }
@@ -589,7 +589,7 @@ void node_insert(emt_node& cn, std::unique_ptr<emt_example> ex)
   cn.examples.push_back(std::move(ex));
 }
 
-emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, const emt_example& ex)
+emt_example* node_pick(emt_tree& b, learner& base, emt_node& cn, const emt_example& ex)
 {
   if (cn.examples.empty()) { return nullptr; }
 
@@ -613,14 +613,14 @@ emt_example* node_pick(emt_tree& b, single_learner& base, emt_node& cn, const em
   return best_example;
 }
 
-void node_predict(emt_tree& b, single_learner& base, emt_node& cn, emt_example& ex, VW::example& ec)
+void node_predict(emt_tree& b, learner& base, emt_node& cn, emt_example& ex, VW::example& ec)
 {
   auto* closest_ex = node_pick(b, base, cn, ex);
   ec.pred.multiclass = (closest_ex != nullptr) ? closest_ex->label : 0;
   ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
 }
 
-void emt_predict(emt_tree& b, single_learner& base, VW::example& ec)
+void emt_predict(emt_tree& b, learner& base, VW::example& ec)
 {
   b.all->ignore_some_linear = false;
   emt_example ex(*b.all, &ec);
@@ -630,7 +630,7 @@ void emt_predict(emt_tree& b, single_learner& base, VW::example& ec)
   tree_bound(b, &ex);
 }
 
-void emt_learn(emt_tree& b, single_learner& base, VW::example& ec)
+void emt_learn(emt_tree& b, learner& base, VW::example& ec)
 {
   b.all->ignore_some_linear = false;
   auto ex = VW::make_unique<emt_example>(*b.all, &ec);
@@ -811,5 +811,5 @@ base_learner* VW::reductions::eigen_memory_tree_setup(VW::setup_base_i& stack_bu
           .set_output_example_prediction(
               VW::details::output_example_prediction_multiclass_label<VW::reductions::eigen_memory_tree::emt_tree>)
           .set_print_update(VW::details::print_update_multiclass_label<VW::reductions::eigen_memory_tree::emt_tree>);
-  return make_base(*l.build());
+  return l.build();
 }

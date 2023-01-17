@@ -25,7 +25,7 @@ void VW::reductions::cb_actions_mask::update_predictions(multi_ex& examples, siz
 }
 
 template <bool is_learn>
-void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   auto initial_action_size = examples.size();
   if (is_learn)
@@ -63,5 +63,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_actions_mask_setup(VW::setup_base_
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .build();
-  return VW::LEARNER::make_base(*l);
+  return l;
 }

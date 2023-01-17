@@ -202,5 +202,5 @@ base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
                 .set_print_update(VW::details::print_update_simple_label<svrg>)
                 .set_save_load(save_load)
                 .build();
-  return make_base(*l);
+  return l;
 }

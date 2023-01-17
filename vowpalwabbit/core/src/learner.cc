@@ -303,7 +303,6 @@ void generic_driver_onethread(VW::workspace& all)
   else { generic_driver_onethread<single_example_handler<single_instance_context>>(all); }
 }
 
-float VW::LEARNER::details::recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
   if (label_type == VW::label_type_t::CB) { return VW::ec_is_example_header_cb(ec); }
@@ -317,7 +316,7 @@ bool ec_is_example_header(const example& ec, label_type_t label_type)
 
 void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name,
     prediction_type_t in_pred_type, prediction_type_t base_out_pred_type, label_type_t out_label_type,
-    label_type_t base_in_label_type, details::merge_fn merge_fn_ptr, details::merge_with_all_fn merge_with_all_fn_ptr)
+    label_type_t base_in_label_type, details::merge_func merge_f, details::merge_with_all_func merge_with_all_f)
 {
   if (in_pred_type != base_out_pred_type)
   {
@@ -334,55 +333,58 @@ void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, V
     THROW(message);
   }
 
-  if (merge_fn_ptr != nullptr && merge_with_all_fn_ptr != nullptr)
+  if (merge_f && merge_with_all_f)
   {
-    THROW("cannot set both merge_with_all and merge_with_all_fn");
+    THROW("cannot set both merge and merge_with_all");
   }
 }
-void VW::LEARNER::details::debug_increment_depth(example& ex)
+
+void VW::LEARNER::details::debug_increment_depth(polymorphic_ex ex)
 {
-  if (vw_dbg::TRACK_STACK) { ++ex.debug_current_reduction_depth; }
-}
-void VW::LEARNER::details::debug_increment_depth(multi_ex& ec_seq)
-{
-  if (vw_dbg::TRACK_STACK)
-  {
-    for (auto& ec : ec_seq) { ++ec->debug_current_reduction_depth; }
+  if (ex.is_multiline()) {
+    if (vw_dbg::TRACK_STACK)
+    {
+      for (auto& ec : static_cast<VW::multi_ex&>(ex)) { ++ec->debug_current_reduction_depth; }
+    }
+  } else {
+    if (vw_dbg::TRACK_STACK) { ++static_cast<VW::example&>(ex).debug_current_reduction_depth; }
   }
 }
-void VW::LEARNER::details::debug_decrement_depth(example& ex)
+
+void VW::LEARNER::details::debug_decrement_depth(polymorphic_ex ex)
 {
-  if (vw_dbg::TRACK_STACK) { --ex.debug_current_reduction_depth; }
-}
-void VW::LEARNER::details::debug_decrement_depth(multi_ex& ec_seq)
-{
-  if (vw_dbg::TRACK_STACK)
-  {
-    for (auto& ec : ec_seq) { --ec->debug_current_reduction_depth; }
+  if (ex.is_multiline()) {
+    if (vw_dbg::TRACK_STACK)
+    {
+      for (auto& ec : static_cast<VW::multi_ex&>(ex)) { --ec->debug_current_reduction_depth; }
+    }
+  } else {
+    if (vw_dbg::TRACK_STACK) { --static_cast<VW::example&>(ex).debug_current_reduction_depth; }
   }
 }
-void VW::LEARNER::details::increment_offset(example& ex, const size_t increment, const size_t i)
+
+void VW::LEARNER::details::increment_offset(polymorphic_ex ex, const size_t increment, const size_t i)
 {
-  ex.ft_offset += static_cast<uint32_t>(increment * i);
+  if (ex.is_multiline()) {
+    for (auto& ec : static_cast<VW::multi_ex&>(ex)) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
+  } else {
+    static_cast<VW::example&>(ex).ft_offset += static_cast<uint32_t>(increment * i);
+  }
   debug_increment_depth(ex);
 }
-void VW::LEARNER::details::increment_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
+
+void VW::LEARNER::details::decrement_offset(polymorphic_ex ex, const size_t increment, const size_t i)
 {
-  for (auto& ec : ec_seq) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
-  debug_increment_depth(ec_seq);
-}
-void VW::LEARNER::details::decrement_offset(example& ex, const size_t increment, const size_t i)
-{
-  assert(ex.ft_offset >= increment * i);
-  ex.ft_offset -= static_cast<uint32_t>(increment * i);
-  debug_decrement_depth(ex);
-}
-void VW::LEARNER::details::decrement_offset(multi_ex& ec_seq, const size_t increment, const size_t i)
-{
-  for (auto ec : ec_seq)
-  {
-    assert(ec->ft_offset >= increment * i);
-    ec->ft_offset -= static_cast<uint32_t>(increment * i);
+  if (ex.is_multiline()) {
+    for (auto ec : static_cast<VW::multi_ex&>(ex))
+    {
+      assert(ec->ft_offset >= increment * i);
+      ec->ft_offset -= static_cast<uint32_t>(increment * i);
+    }
   }
-  debug_decrement_depth(ec_seq);
+  else {
+    assert(static_cast<VW::example&>(ex).ft_offset >= increment * i);
+    static_cast<VW::example&>(ex).ft_offset -= static_cast<uint32_t>(increment * i);
+  }
+  debug_decrement_depth(ex);
 }

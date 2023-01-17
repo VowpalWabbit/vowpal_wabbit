@@ -152,5 +152,5 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
                     [](const VW::workspace&, VW::shared_data&, const sender&, const VW::example&, VW::io::logger&) {})
                 .set_end_examples(end_examples)
                 .build();
-  return make_base(*l);
+  return l;
 }

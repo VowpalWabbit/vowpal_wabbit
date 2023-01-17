@@ -31,17 +31,17 @@ public:
   ~cb_explore_adf_greedy() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples)
   {
     predict_or_learn_impl<false>(base, examples);
   }
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
   float _epsilon;
   bool _first_only;
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
 };
 
@@ -70,7 +70,7 @@ void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
 }
 
 template <bool is_learn>
-void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   // Explore uniform random an epsilon fraction of the time.
   if (is_learn)
@@ -130,7 +130,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
 
   size_t problem_multiplier = 1;
 
-  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
@@ -150,5 +150,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
-  return make_base(*l);
+  return l;
 }

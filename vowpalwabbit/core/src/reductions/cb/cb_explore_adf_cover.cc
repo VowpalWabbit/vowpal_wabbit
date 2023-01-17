@@ -36,15 +36,15 @@ class cb_explore_adf_cover
 {
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
-      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, VW::cb_type_t cb_type,
+      VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
       VW::version_struct model_file_version, VW::io::logger logger);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples)
   {
     predict_or_learn_impl<false>(base, examples);
   }
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(VW::io_buf& io, bool read, bool text);
 
 private:
@@ -56,7 +56,7 @@ private:
   bool _first_only;
   size_t _counter;
 
-  VW::LEARNER::multi_learner* _cs_ldf_learner;
+  VW::LEARNER::learner* _cs_ldf_learner;
   VW::details::cb_to_cs_adf gen_cs;
 
   VW::version_struct _model_file_version;
@@ -69,11 +69,11 @@ private:
   std::vector<VW::cs_label> _prepped_cs_labels;
   std::vector<VW::cb_label> _cb_labels;
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
-    bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer,
+    bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer,
     VW::cb_type_t cb_type, VW::version_struct model_file_version, VW::io::logger logger)
     : _cover_size(cover_size)
     , _psi(psi)
@@ -91,7 +91,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
 }
 
 template <bool is_learn>
-void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
   gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
@@ -308,7 +308,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   // Cover is using doubly robust without the cooperation of the base reduction
   if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
 
-  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool epsilon_decay;
@@ -343,5 +343,5 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
                 .build();
-  return make_base(*l);
+  return l;
 }
