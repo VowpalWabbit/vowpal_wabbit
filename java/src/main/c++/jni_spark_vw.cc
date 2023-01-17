@@ -378,7 +378,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_finish(JNI
   try
   {
     VW::sync_stats(*all);
-    VW::finish(*all);
+    all->finish();
+    delete all;
   }
   catch (...)
   {
