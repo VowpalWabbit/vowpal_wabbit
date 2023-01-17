@@ -145,10 +145,10 @@ namespace cs_unittest
                     driver.ForEachMultiline(rawvw.Learn);
 
                     rawvw.EndOfPass();
-                    driver.Reset();
+                    //driver.Reset(); -- Throws if search is called on out of bound learner
                 } while (remainingPasses-- > 0);
 
-                driver.Reset();
+                //driver.Reset(); -- Throws if search is called on out of bound learner
 
                 driver.ForEachMultiline(RunSearchPredict);
             }
