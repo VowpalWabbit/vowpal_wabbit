@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1673969327322,
+  "lastUpdate": 1673989204385,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -90348,6 +90348,270 @@ window.BENCHMARK_DATA = {
             "value": 241583.56282552084,
             "unit": "ns",
             "range": "± 639.3617500614192"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rajan.chari@yahoo.com",
+            "name": "Rajan",
+            "username": "rajan-chari"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ae4387fc10687f06b761d0d9a4cac6551c2ddcbb",
+          "message": "refactor: refactor finish_example for active (#4353)\n\n* Seperate writing predictions to file.\r\n\r\n* Seperate writing predictions to file.\r\n\r\n* Comments\r\n\r\n* fix linux build failure\r\n\r\n* update active reduction\r\n\r\n* unused param\r\n\r\n* check for none\r\n\r\n* skip active test on macos\r\n\r\nCo-authored-by: Jack Gerrits <jackgerrits95@gmail.com>\r\nCo-authored-by: Jack Gerrits <jackgerrits@users.noreply.github.com>",
+          "timestamp": "2023-01-17T15:41:29-05:00",
+          "tree_id": "2e8894ae4fa6055e118b7281ff37e002f8485c1b",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/ae4387fc10687f06b761d0d9a4cac6551c2ddcbb"
+        },
+        "date": 1673989155759,
+        "tool": "googlecpp",
+        "benches": [
+          {
+            "name": "bench_text/120_string_fts",
+            "value": 6902.435034259107,
+            "unit": "ns/iter",
+            "extra": "iterations: 608159\ncpu: 6901.847872020312 ns\nthreads: 1"
+          },
+          {
+            "name": "bench_text/120_num_fts",
+            "value": 4813.184248320542,
+            "unit": "ns/iter",
+            "extra": "iterations: 872453\ncpu: 4812.802752698426 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_learn_simple/8_features",
+            "value": 87.32417028007292,
+            "unit": "ns/iter",
+            "extra": "iterations: 50823234\ncpu: 87.31871332705825 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_learn_simple/1_feature",
+            "value": 172.1456592196095,
+            "unit": "ns/iter",
+            "extra": "iterations: 24528389\ncpu: 172.12216016306647 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_ccb_adf_learn/few_features",
+            "value": 6955.034005125489,
+            "unit": "ns/iter",
+            "extra": "iterations: 588823\ncpu: 6954.37898995114 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_ccb_adf_learn/many_features",
+            "value": 12531.826913731498,
+            "unit": "ns/iter",
+            "extra": "iterations: 331303\ncpu: 12529.950528670133 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_ccb_adf_learn/few_features_no_predict",
+            "value": 3412.7042595254748,
+            "unit": "ns/iter",
+            "extra": "iterations: 1230677\ncpu: 3412.4767912295415 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_ccb_adf_learn/many_features_no_predic",
+            "value": 5074.066439516763,
+            "unit": "ns/iter",
+            "extra": "iterations: 820310\ncpu: 5073.645938730481 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_cb_adf_learn/few_features",
+            "value": 1233.9113881020564,
+            "unit": "ns/iter",
+            "extra": "iterations: 3368261\ncpu: 1233.1544081649242 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_cb_adf_learn/many_features/min_time:15.000",
+            "value": 58097.47262384256,
+            "unit": "ns/iter",
+            "extra": "iterations: 361245\ncpu: 58092.40986034408 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/cb_adf_no_namespaces/min_time:15.000",
+            "value": 222952.7912624475,
+            "unit": "ns/iter",
+            "extra": "iterations: 93596\ncpu: 222935.18205906235 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/cb_adf_diff_char_no_interactions/min_time:15.000",
+            "value": 248005.1218266843,
+            "unit": "ns/iter",
+            "extra": "iterations: 83824\ncpu: 247983.89602023282 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/cb_adf_diff_char_interactions/min_time:15.000",
+            "value": 496281.1761972491,
+            "unit": "ns/iter",
+            "extra": "iterations: 42180\ncpu: 496239.14177335246 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/cb_adf_same_char_no_interactions/min_time:15.000",
+            "value": 222883.74265706024,
+            "unit": "ns/iter",
+            "extra": "iterations: 94104\ncpu: 222865.68371163838 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/cb_adf_same_char_interactions/min_time:15.000",
+            "value": 376896.64678940317,
+            "unit": "ns/iter",
+            "extra": "iterations: 55675\ncpu: 376864.2837898519 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/ccb_adf_no_namespaces/min_time:15.000",
+            "value": 618504.8466460198,
+            "unit": "ns/iter",
+            "extra": "iterations: 34228\ncpu: 618442.1847610141 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/ccb_adf_diff_char_no_interactions/min_time:15.000",
+            "value": 798623.0596136458,
+            "unit": "ns/iter",
+            "extra": "iterations: 26504\ncpu: 798552.1506187754 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/ccb_adf_diff_char_interactions/min_time:15.000",
+            "value": 2496452.9846006953,
+            "unit": "ns/iter",
+            "extra": "iterations: 8377\ncpu: 2496246.961919538 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/ccb_adf_diff_char_interactions_predict/min_time:15.000",
+            "value": 5823139.328911021,
+            "unit": "ns/iter",
+            "extra": "iterations: 3618\ncpu: 5822641.155334428 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/ccb_adf_same_char_no_interactions/min_time:15.000",
+            "value": 643543.9673922928,
+            "unit": "ns/iter",
+            "extra": "iterations: 33029\ncpu: 643490.9897362924 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi/ccb_adf_same_char_interactions/min_time:15.000",
+            "value": 1876981.0138764523,
+            "unit": "ns/iter",
+            "extra": "iterations: 11170\ncpu: 1876831.6651745772 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_300actions/min_time:15.000/real_time",
+            "value": 40.219863243762134,
+            "unit": "ms/iter",
+            "extra": "iterations: 521\ncpu: 40.2166431861805 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_300actions_max_threads/min_time:15.000/real_time",
+            "value": 22.40882677415966,
+            "unit": "ms/iter",
+            "extra": "iterations: 952\ncpu: 1.8891785714285663 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_300actions_plaincb/min_time:15.000/real_time",
+            "value": 1.1945306596142986,
+            "unit": "ms/iter",
+            "extra": "iterations: 17630\ncpu: 1.1943291718661369 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_500actions/min_time:15.000/real_time",
+            "value": 67.2169435495205,
+            "unit": "ms/iter",
+            "extra": "iterations: 313\ncpu: 67.20360447284351 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_500actions_max_threads/min_time:15.000/real_time",
+            "value": 35.95915012886599,
+            "unit": "ms/iter",
+            "extra": "iterations: 582\ncpu: 3.0519747422680714 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_500actions_plaincb/min_time:15.000/real_time",
+            "value": 2.011007414344538,
+            "unit": "ms/iter",
+            "extra": "iterations: 10443\ncpu: 2.0107273963420496 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_300actions_10features_1thread/min_time:15.000/real_time",
+            "value": 42.27377075757559,
+            "unit": "ms/iter",
+            "extra": "iterations: 495\ncpu: 42.26971616161621 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_300actions_10features_1thread_simd/min_time:15.000/real_time",
+            "value": 22.688334414239513,
+            "unit": "ms/iter",
+            "extra": "iterations: 927\ncpu: 22.684506040992442 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_300actions_20features_1thread/min_time:15.000/real_time",
+            "value": 151.61264374637705,
+            "unit": "ms/iter",
+            "extra": "iterations: 138\ncpu: 151.59928478260883 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_multi_predict/cb_las_300actions_20features_1thread_simd/min_time:15.000/real_time",
+            "value": 64.50619016871167,
+            "unit": "ms/iter",
+            "extra": "iterations: 326\ncpu: 64.49186625766875 ms\nthreads: 1"
+          },
+          {
+            "name": "benchmark_rcv1_dataset/simple/min_time:15.000",
+            "value": 53594.49409817344,
+            "unit": "ns/iter",
+            "extra": "iterations: 383017\ncpu: 53584.83226593078 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_rcv1_dataset/quadratic/min_time:15.000",
+            "value": 2722217.0146827507,
+            "unit": "ns/iter",
+            "extra": "iterations: 7628\ncpu: 2721757.944415301 ns\nthreads: 1"
+          },
+          {
+            "name": "bench_cache_io_buf/120_string_fts",
+            "value": 977.136695032059,
+            "unit": "ns/iter",
+            "extra": "iterations: 4297252\ncpu: 977.072231277102 ns\nthreads: 1"
+          },
+          {
+            "name": "bench_text_io_buf/120_string_fts",
+            "value": 8551.233769141778,
+            "unit": "ns/iter",
+            "extra": "iterations: 491271\ncpu: 8550.672032340675 ns\nthreads: 1"
+          },
+          {
+            "name": "bench_cache_io_buf/120_num_fts",
+            "value": 813.5640756119348,
+            "unit": "ns/iter",
+            "extra": "iterations: 5158234\ncpu: 813.5117367688293 ns\nthreads: 1"
+          },
+          {
+            "name": "bench_text_io_buf/120_num_fts",
+            "value": 5733.940715961593,
+            "unit": "ns/iter",
+            "extra": "iterations: 732693\ncpu: 5733.542288516462 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_example_reuse",
+            "value": 788.6524759318875,
+            "unit": "ns/iter",
+            "extra": "iterations: 5331225\ncpu: 788.5959043184242 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_sum_ft_squared_char",
+            "value": 51.249792162001334,
+            "unit": "ns/iter",
+            "extra": "iterations: 82009787\ncpu: 51.24604823080367 ns\nthreads: 1"
+          },
+          {
+            "name": "benchmark_sum_ft_squared_extent",
+            "value": 80.65761372044139,
+            "unit": "ns/iter",
+            "extra": "iterations: 52312362\ncpu: 80.65201108678603 ns\nthreads: 1"
           }
         ]
       }
