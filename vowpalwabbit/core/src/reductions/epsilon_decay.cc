@@ -306,7 +306,8 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
   std::swap(*data._cb_adf_action_sum, data.per_live_model_state_uint64[1]);
 
   // Adjust champ weights to new single-model space
-  VW::reductions::multi_model::adjust_weights_single_model(data._weights, 0, data._wpp);
+  VW::reductions::multi_model::adjust_weights_single_model(
+      data._weights, data._weight_indices[data.conf_seq_estimators.size() - 1], data._wpp);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
