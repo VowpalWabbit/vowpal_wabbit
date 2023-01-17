@@ -875,6 +875,7 @@ def convert_to_test_data(
                 "daemon" in test["bash_command"]
                 or "spanning_tree" in test["bash_command"]
                 or "sender_test.py" in test["bash_command"]
+                or "active_test.py" in test["bash_command"]
             ):
                 skip = True
                 skip_reason = "daemon not currently supported in MacOS"
