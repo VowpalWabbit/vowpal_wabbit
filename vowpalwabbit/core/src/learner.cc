@@ -649,6 +649,43 @@ void learner::subtract(const VW::workspace& ws1, const VW::workspace& ws2, const
   else { THROW("learner " << name << " does not support subtraction to generate a delta."); }
 }
 
+std::unique_ptr<learner> learner::make_derived_learner()
+{
+  if (_derived_learner_created_already) { THROW("Cannot create more than one derived learner of base learner: " + _name); }
+
+  // Copy this learner and assign this as the new learner's base
+  std::unique_ptr<learner> l(new learner(*this));
+  l->_base_learner = std::shared_ptr<learner>(this);
+
+  // We explicitly overwrite the copy of the base's finish_example functions.
+  // This is to allow us to determine if the current reduction implements finish
+  // and in what way.
+  l->_finish_example_f = nullptr;
+  l->_update_stats_f = nullptr;
+  l->_output_example_prediction_f = nullptr;
+  l->_print_update_f = nullptr;
+  l->_cleanup_example_f = nullptr;
+
+  // Don't propagate these functions
+  l->_multipredict_f = nullptr;
+  l->_save_load_f = nullptr;
+  l->_pre_save_load_f = nullptr;
+  l->_end_pass_f = nullptr;
+  l->_end_examples_f = nullptr;
+  l->_persist_metrics_f = nullptr;
+  l->_finisher_f = nullptr;
+
+  // Don't propagate any of the merge functions
+  l->_merge_f = nullptr;
+  l->_merge_with_all_f = nullptr;
+  l->_add_f = nullptr;
+  l->_add_with_all_f = nullptr;
+  l->_subtract_f = nullptr;
+  l->_subtract_with_all_f = nullptr;
+
+  _derived_learner_created_already = true;
+  return l;
+}
 
 }  // namespace LEARNER
 }  // namespace VW

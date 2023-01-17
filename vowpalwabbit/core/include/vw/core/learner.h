@@ -213,12 +213,12 @@ public:
 
   // The functions merge/add/subtract are NOT auto recursive
   // They are effectively static implementing a trait for this learner type.
-  void merge(const std::vector<float>& per_model_weighting,
+  void NO_SANITIZE_UNDEFINED merge(const std::vector<float>& per_model_weighting,
       const std::vector<const VW::workspace*>& all_workspaces, const std::vector<const learner*>& all_learners,
       VW::workspace& output_workspace, learner& output_learner);
-  void add(const VW::workspace& base_ws, const VW::workspace& delta_ws,
+  void NO_SANITIZE_UNDEFINED add(const VW::workspace& base_ws, const VW::workspace& delta_ws,
       const learner* base_l, const learner* delta_l, VW::workspace& output_ws, learner* output_l);
-  void subtract(const VW::workspace& ws1, const VW::workspace& ws2, const learner* l1,
+  void NO_SANITIZE_UNDEFINED subtract(const VW::workspace& ws1, const VW::workspace& ws2, const learner* l1,
       const learner* l2, VW::workspace& output_ws, learner* output_l);
 
   VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_f != nullptr; }
@@ -296,6 +296,11 @@ private:
   std::shared_ptr<learner> _base_learner;
 
   learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
+
+  // Create a copy of this learner having this learner as its base
+  // This can only be called once to maintain unique ownership of each _base_learner
+  std::unique_ptr<learner> make_derived_learner();
+  bool _derived_learner_created_already = false;
 };
 
 template <bool is_learn>
@@ -348,11 +353,6 @@ public:
     learner_ptr->_name = name;
     learner_ptr->_is_multiline = std::is_same<multi_ex, ExampleT>::value;
     learner_ptr->_learner_data = learner_data;
-  }
-
-  common_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name)
-      : common_learner_builder(std::unique_ptr<learner>(new learner()), std::move(data), name)
-  {
   }
 
   // delete copy constructors
@@ -699,34 +699,10 @@ public:
       // save_load then calling save_load on this object will essentially result in forwarding the
       // call the next reduction that actually implements it.
       : common_learner_builder<reduction_learner_builder<DataT, ExampleT, BaseLearnerT>, DataT, ExampleT, BaseLearnerT>(
-            std::unique_ptr<learner>(new learner(*base)), std::move(data), name)
+            base->make_derived_learner(), std::move(data), name)
   {
-    // Give ownership of base to this learner
-    this->learner_ptr->_base_learner.reset(base);
-
-    // We explicitly overwrite the copy of the base's finish_example functions.
-    // This is to allow us to determine if the current reduction implements finish
-    // and in what way.
-    this->learner_ptr->_finish_example_f = nullptr;
-    this->learner_ptr->_update_stats_f = nullptr;
-    this->learner_ptr->_output_example_prediction_f = nullptr;
-    this->learner_ptr->_print_update_f = nullptr;
-    this->learner_ptr->_cleanup_example_f = nullptr;
-
     // Default sensitivity calls base's sensitivity recursively
     super::set_sensitivity(details::recur_sensitivity<DataT>);
-
-    // Defaults here are undefined
-    this->learner_ptr->_finisher_f = nullptr;
-    this->learner_ptr->_multipredict_f = nullptr;
-
-    // Don't propagate merge functions
-    this->learner_ptr->_merge_f = nullptr;
-    this->learner_ptr->_merge_with_all_f = nullptr;
-    this->learner_ptr->_add_f = nullptr;
-    this->learner_ptr->_add_with_all_f = nullptr;
-    this->learner_ptr->_subtract_f = nullptr;
-    this->learner_ptr->_subtract_with_all_f = nullptr;
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
@@ -825,34 +801,10 @@ public:
       // save_load then calling save_load on this object will essentially result in forwarding the
       // call the next reduction that actually implements it.
       : common_learner_builder<reduction_learner_builder<char, ExampleT, BaseLearnerT>, char, ExampleT, BaseLearnerT>(
-            std::unique_ptr<learner>(new learner(*base)), nullptr, name)
+            base->make_derived_learner(), nullptr, name)
   {
-    // Give ownership of base to this learner
-    this->learner_ptr->_base_learner.reset(base);
-
-    // We explicitly overwrite the copy of the base's finish_example functions.
-    // This is to allow us to determine if the current reduction implements finish
-    // and in what way.
-    this->learner_ptr->_finish_example_f = nullptr;
-    this->learner_ptr->_update_stats_f = nullptr;
-    this->learner_ptr->_output_example_prediction_f = nullptr;
-    this->learner_ptr->_print_update_f = nullptr;
-    this->learner_ptr->_cleanup_example_f = nullptr;
-
     // Default sensitivity calls base's sensitivity recursively
     super::set_sensitivity(details::recur_sensitivity);
-
-    // Defaults here are undefined
-    this->learner_ptr->_finisher_f = nullptr;
-    this->learner_ptr->_multipredict_f = nullptr;
-
-    // Don't propagate merge functions
-    this->learner_ptr->_merge_f = nullptr;
-    this->learner_ptr->_merge_with_all_f = nullptr;
-    this->learner_ptr->_add_f = nullptr;
-    this->learner_ptr->_add_with_all_f = nullptr;
-    this->learner_ptr->_subtract_f = nullptr;
-    this->learner_ptr->_subtract_with_all_f = nullptr;
 
     set_params_per_weight(1);
     // By default, will produce what the base expects
@@ -891,14 +843,9 @@ public:
   base_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
       label_type_t in_label_type)
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT, learner>(
-            std::move(data), name)
+            std::unique_ptr<learner>(new learner()), std::move(data), name)
   {
-    this->learner_ptr->_persist_metrics_f = nullptr;
-    this->learner_ptr->_end_pass_f = nullptr;
-    this->learner_ptr->_end_examples_f = nullptr;
-    this->learner_ptr->_init_f = nullptr;
-    this->learner_ptr->_save_load_f = nullptr;
-    this->learner_ptr->_finisher_f = nullptr;
+    // Default sensitivity function returns zero
     this->learner_ptr->_sensitivity_f = [](learner&, example&) { return 0.f; };
 
     super::set_input_label_type(in_label_type);
