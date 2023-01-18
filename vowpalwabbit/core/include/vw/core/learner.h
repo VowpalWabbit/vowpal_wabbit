@@ -371,6 +371,7 @@ public:
 
   FluentBuilderT& set_predict(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_predict_f = [fn_ptr, data](learner& base, polymorphic_ex ex) { fn_ptr(*data, base, ex); };
     return *static_cast<FluentBuilderT*>(this);
@@ -378,6 +379,7 @@ public:
 
   FluentBuilderT&& set_predict(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_predict_f = [fn_ptr, data](learner& base, polymorphic_ex ex) { fn_ptr(*data, base, ex); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -385,6 +387,7 @@ public:
 
   FluentBuilderT& set_learn(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_learn_f = [fn_ptr, data](learner& base, polymorphic_ex ex) { fn_ptr(*data, base, ex); };
     return *static_cast<FluentBuilderT*>(this);
@@ -392,6 +395,7 @@ public:
 
   FluentBuilderT&& set_learn(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_learn_f = [fn_ptr, data](learner& base, polymorphic_ex ex) { fn_ptr(*data, base, ex); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -399,6 +403,7 @@ public:
 
   FluentBuilderT& set_multipredict(void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_multipredict_f = [fn_ptr, data](learner& base, polymorphic_ex ex, size_t count, size_t step,
                                              polyprediction* pred, bool finalize_predictions)
@@ -409,6 +414,7 @@ public:
   FluentBuilderT&& set_multipredict(
       void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_multipredict_f = [fn_ptr, data](learner& base, polymorphic_ex ex, size_t count, size_t step,
                                              polyprediction* pred, bool finalize_predictions)
@@ -418,6 +424,7 @@ public:
 
   FluentBuilderT& set_update(void (*fn_ptr)(DataT& data, learner& base, ExampleT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_update_f = [fn_ptr, data](learner& base, polymorphic_ex ex) { fn_ptr(*data, base, ex); };
     return *static_cast<FluentBuilderT*>(this);
@@ -425,6 +432,7 @@ public:
 
   FluentBuilderT&& set_update(void (*fn_ptr)(DataT& data, learner& base, ExampleT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_update_f = [fn_ptr, data](learner& base, polymorphic_ex ex) { fn_ptr(*data, base, ex); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -433,6 +441,7 @@ public:
   // used for active learning and confidence to determine how easily predictions are changed
   FluentBuilderT& set_sensitivity(float (*fn_ptr)(DataT& data, learner& base, example&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_sensitivity_f = [fn_ptr, data](learner& base, example& ex) { return fn_ptr(*data, base, ex); };
     return *static_cast<FluentBuilderT*>(this);
@@ -441,6 +450,7 @@ public:
   // used for active learning and confidence to determine how easily predictions are changed
   FluentBuilderT&& set_sensitivity(float (*fn_ptr)(DataT& data, learner& base, example&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_sensitivity_f = [fn_ptr, data](learner& base, example& ex) { return fn_ptr(*data, base, ex); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -460,6 +470,7 @@ public:
 
   FluentBuilderT& set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_save_load_f = [fn_ptr, data](io_buf& buf, bool read, bool text)
     { fn_ptr(*data, buf, read, text); };
@@ -468,6 +479,7 @@ public:
 
   FluentBuilderT&& set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_save_load_f = [fn_ptr, data](io_buf& buf, bool read, bool text)
     { fn_ptr(*data, buf, read, text); };
@@ -476,6 +488,7 @@ public:
 
   FluentBuilderT& set_finish(void (*fn_ptr)(DataT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_finisher_f = [fn_ptr, data]() { fn_ptr(*data); };
     return *static_cast<FluentBuilderT*>(this);
@@ -483,6 +496,7 @@ public:
 
   FluentBuilderT&& set_finish(void (*fn_ptr)(DataT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_finisher_f = [fn_ptr, data]() { fn_ptr(*data); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -490,6 +504,7 @@ public:
 
   FluentBuilderT& set_end_pass(void (*fn_ptr)(DataT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_end_pass_f = [fn_ptr, data]() { fn_ptr(*data); };
     return *static_cast<FluentBuilderT*>(this);
@@ -497,6 +512,7 @@ public:
 
   FluentBuilderT&& set_end_pass(void (*fn_ptr)(DataT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_end_pass_f = [fn_ptr, data]() { fn_ptr(*data); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -504,6 +520,7 @@ public:
 
   FluentBuilderT& set_end_examples(void (*fn_ptr)(DataT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_end_examples_f = [fn_ptr, data]() { fn_ptr(*data); };
     return *static_cast<FluentBuilderT*>(this);
@@ -511,6 +528,7 @@ public:
 
   FluentBuilderT&& set_end_examples(void (*fn_ptr)(DataT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_end_examples_f = [fn_ptr, data]() { fn_ptr(*data); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -518,6 +536,7 @@ public:
 
   FluentBuilderT& set_init_driver(void (*fn_ptr)(DataT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_init_f = [fn_ptr, data]() { fn_ptr(*data); };
     return *static_cast<FluentBuilderT*>(this);
@@ -525,6 +544,7 @@ public:
 
   FluentBuilderT&& set_init_driver(void (*fn_ptr)(DataT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_init_f = [fn_ptr, data]() { fn_ptr(*data); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -532,6 +552,7 @@ public:
 
   FluentBuilderT& set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_finish_example_f = [fn_ptr, data](VW::workspace& all, polymorphic_ex ex)
     { fn_ptr(all, *data, ex); };
@@ -540,6 +561,7 @@ public:
 
   FluentBuilderT&& set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_finish_example_f = [fn_ptr, data](VW::workspace& all, polymorphic_ex ex)
     { fn_ptr(all, *data, ex); };
@@ -550,6 +572,7 @@ public:
   // - Call shared_data::update
   FluentBuilderT& set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_update_stats_f =
         [fn_ptr, data](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
@@ -559,6 +582,7 @@ public:
 
   FluentBuilderT&& set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_update_stats_f =
         [fn_ptr, data](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
@@ -570,6 +594,7 @@ public:
   // - Output predictions
   FluentBuilderT& set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_output_example_prediction_f = [fn_ptr, data](VW::workspace& all, const polymorphic_ex ex,
                                                           VW::io::logger& logger) { fn_ptr(all, *data, ex, logger); };
@@ -578,6 +603,7 @@ public:
 
   FluentBuilderT&& set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_output_example_prediction_f = [fn_ptr, data](VW::workspace& all, const polymorphic_ex ex,
                                                           VW::io::logger& logger) { fn_ptr(all, *data, ex, logger); };
@@ -589,6 +615,7 @@ public:
   // Note this is only called when required based on the user specified backoff and logging settings.
   FluentBuilderT& set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_print_update_f =
         [fn_ptr, data](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
@@ -598,6 +625,7 @@ public:
 
   FluentBuilderT&& set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_print_update_f =
         [fn_ptr, data](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
@@ -609,6 +637,7 @@ public:
   // However, it can be used to optimistically reuse memory.
   FluentBuilderT& set_cleanup_example(learner_cleanup_example_func<DataT, ExampleT>* fn_ptr) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_cleanup_example_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
     return *static_cast<FluentBuilderT*>(this);
@@ -616,6 +645,7 @@ public:
 
   FluentBuilderT&& set_cleanup_example(learner_cleanup_example_func<DataT, ExampleT>* fn_ptr) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_cleanup_example_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -623,6 +653,7 @@ public:
 
   FluentBuilderT& set_persist_metrics(void (*fn_ptr)(DataT&, metric_sink&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_persist_metrics_f = [fn_ptr, data](metric_sink& metrics) { fn_ptr(*data, metrics); };
     return *static_cast<FluentBuilderT*>(this);
@@ -630,6 +661,7 @@ public:
 
   FluentBuilderT&& set_persist_metrics(void (*fn_ptr)(DataT&, metric_sink&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_persist_metrics_f = [fn_ptr, data](metric_sink& metrics) { fn_ptr(*data, metrics); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -637,6 +669,7 @@ public:
 
   FluentBuilderT& set_pre_save_load(void (*fn_ptr)(VW::workspace& all, DataT&)) &
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_pre_save_load_f = [fn_ptr, data](VW::workspace& all) { fn_ptr(all, *data); };
     return *static_cast<FluentBuilderT*>(this);
@@ -644,6 +677,7 @@ public:
 
   FluentBuilderT&& set_pre_save_load(void (*fn_ptr)(VW::workspace& all, DataT&)) &&
   {
+    assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_pre_save_load_f = [fn_ptr, data](VW::workspace& all) { fn_ptr(all, *data); };
     return std::move(*static_cast<FluentBuilderT*>(this));
@@ -755,6 +789,7 @@ public:
   reduction_learner_builder<DataT, ExampleT>& set_merge(void (*merge_fn)(
       const std::vector<float>& per_model_weighting, const std::vector<const DataT*>& all_data, DataT& output_data)) &
   {
+    assert(merge_fn != nullptr);
     this->learner_ptr->_merge_f = reinterpret_cast<details::merge_fptr>(merge_fn);
     return *this;
   }
@@ -762,6 +797,7 @@ public:
   reduction_learner_builder<DataT, ExampleT>&& set_merge(void (*merge_fn)(
       const std::vector<float>& per_model_weighting, const std::vector<const DataT*>& all_data, DataT& output_data)) &&
   {
+    assert(merge_fn != nullptr);
     this->learner_ptr->_merge_f = reinterpret_cast<details::merge_fptr>(merge_fn);
     return std::move(*this);
   }
@@ -769,6 +805,7 @@ public:
   reduction_learner_builder<DataT, ExampleT>& set_add(
       void (*add_fn)(const DataT& data1, const DataT& data2, DataT& data_out)) &
   {
+    assert(add_fn != nullptr);
     this->learner_ptr->_add_f = reinterpret_cast<details::add_subtract_fptr>(add_fn);
     return *this;
   }
@@ -776,6 +813,7 @@ public:
   reduction_learner_builder<DataT, ExampleT>&& set_add(
       void (*add_fn)(const DataT& data1, const DataT& data2, DataT& data_out)) &&
   {
+    assert(add_fn != nullptr);
     this->learner_ptr->_add_f = reinterpret_cast<details::add_subtract_fptr>(add_fn);
     return std::move(*this);
   }
@@ -783,6 +821,7 @@ public:
   reduction_learner_builder<DataT, ExampleT>& set_subtract(
       void (*subtract_fn)(const DataT& data1, const DataT& data2, DataT& data_out)) &
   {
+    assert(subtract_fn != nullptr);
     this->learner_ptr->_subtract_f = reinterpret_cast<details::add_subtract_fptr>(subtract_fn);
     return *this;
   }
@@ -790,6 +829,7 @@ public:
   reduction_learner_builder<DataT, ExampleT>&& set_subtract(
       void (*subtract_fn)(const DataT& data1, const DataT& data2, DataT& data_out)) &&
   {
+    assert(subtract_fn != nullptr);
     this->learner_ptr->_subtract_f = reinterpret_cast<details::add_subtract_fptr>(subtract_fn);
     return std::move(*this);
   }
@@ -894,6 +934,7 @@ public:
       const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
       const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data)) &
   {
+    assert(merge_with_all_fn != nullptr);
     this->learner_ptr->_merge_with_all_f = reinterpret_cast<details::merge_with_all_fptr>(merge_with_all_fn);
     return *this;
   }
@@ -902,6 +943,7 @@ public:
       const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
       const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data)) &&
   {
+    assert(merge_with_all_fn != nullptr);
     this->learner_ptr->_merge_with_all_f = reinterpret_cast<details::merge_with_all_fptr>(merge_with_all_fn);
     return std::move(*this);
   }
@@ -909,12 +951,14 @@ public:
   base_learner_builder<DataT, ExampleT>& set_add_with_all(void (*add_with_all_fn)(const VW::workspace& ws1,
       const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out)) &
   {
+    assert(add_with_all_fn != nullptr);
     this->learner_ptr->_add_with_all_f = reinterpret_cast<details::add_subtract_with_all_fptr>(add_with_all_fn);
     return *this;
   }
   base_learner_builder<DataT, ExampleT>&& set_add_with_all(void (*add_with_all_fn)(const VW::workspace& ws1,
       const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out)) &&
   {
+    assert(add_with_all_fn != nullptr);
     this->learner_ptr->_add_with_all_f = reinterpret_cast<details::add_subtract_with_all_fptr>(add_with_all_fn);
     return std::move(*this);
   }
@@ -922,6 +966,7 @@ public:
   base_learner_builder<DataT, ExampleT>& set_subtract_with_all(void (*subtract_with_all_fn)(const VW::workspace& ws1,
       const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out)) &
   {
+    assert(subtract_with_all_fn != nullptr);
     this->learner_ptr->_subtract_with_all_f =
         reinterpret_cast<details::add_subtract_with_all_fptr>(subtract_with_all_fn);
     return *this;
@@ -930,6 +975,7 @@ public:
   base_learner_builder<DataT, ExampleT>&& set_subtract_with_all(void (*subtract_with_all_fn)(const VW::workspace& ws1,
       const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out)) &&
   {
+    assert(subtract_with_all_fn != nullptr);
     this->learner_ptr->_subtract_with_all_f =
         reinterpret_cast<details::add_subtract_with_all_fptr>(subtract_with_all_fn);
     return std::move(*this);

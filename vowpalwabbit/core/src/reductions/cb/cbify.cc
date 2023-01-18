@@ -879,17 +879,22 @@ VW::LEARNER::learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_builde
       name_addition = "";
       all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
-    l = make_reduction_learner(
+    auto builder = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
-            .set_input_label_type(in_label_type)
-            .set_output_label_type(out_label_type)
-            .set_input_prediction_type(in_pred_type)
-            .set_output_prediction_type(out_pred_type)
-            .set_learn_returns_prediction(true)
-            .set_update_stats(update_stats_func)
-            .set_output_example_prediction(output_example_prediction_func)
-            .set_print_update(print_update_func)
-            .build();
+                       .set_input_label_type(in_label_type)
+                       .set_output_label_type(out_label_type)
+                       .set_input_prediction_type(in_pred_type)
+                       .set_output_prediction_type(out_pred_type)
+                       .set_learn_returns_prediction(true)
+                       .set_update_stats(update_stats_func)
+                       .set_print_update(print_update_func);
+
+    // output_example_prediction_func is not used in the case of use_discrete
+    if (output_example_prediction_func != nullptr)
+    {
+      builder.set_output_example_prediction(output_example_prediction_func);
+    }
+    l = builder.build();
   }
 
   return l;

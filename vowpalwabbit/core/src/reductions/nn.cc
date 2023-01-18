@@ -480,24 +480,23 @@ learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
   nn& nv = *n.get();
 
   size_t ws = n->k + 1;
-  auto* multipredict_f = (nv.multitask) ? multipredict : nullptr;
 
-  auto* l = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
+  auto builder = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
       predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(true)
-                .set_multipredict(multipredict_f)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_output_example_prediction(output_example_prediction_nn)
-                .set_print_update(VW::details::print_update_simple_label<nn>)
-                .set_update_stats(VW::details::update_stats_simple_label<nn>)
-                .set_end_pass(end_pass)
-                .build();
+                     .set_params_per_weight(ws)
+                     .set_learn_returns_prediction(true)
+                     .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+                     .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+                     .set_input_label_type(VW::label_type_t::SIMPLE)
+                     .set_output_label_type(VW::label_type_t::SIMPLE)
+                     .set_output_example_prediction(output_example_prediction_nn)
+                     .set_print_update(VW::details::print_update_simple_label<nn>)
+                     .set_update_stats(VW::details::update_stats_simple_label<nn>)
+                     .set_end_pass(end_pass);
 
-  return l;
+  if (nv.multitask) { builder.set_multipredict(multipredict); }
+
+  return builder.build();
 }
 
 /*
