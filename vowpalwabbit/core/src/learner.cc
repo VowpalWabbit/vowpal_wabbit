@@ -340,22 +340,20 @@ learner* as_singleline(learner* l)
   THROW(message);
 }
 
-
 void learner::debug_log_message(polymorphic_ex ex, const std::string& msg)
 {
-  if (ex.is_multiline()) {
+  if (ex.is_multiline())
+  {
     VW_DBG(*static_cast<VW::multi_ex&>(ex)[0]) << "[" << _name << "." << msg << "]" << std::endl;
-  } else {
-    VW_DBG(static_cast<VW::example&>(ex)) << "[" << _name << "." << msg << "]" << std::endl;
   }
+  else { VW_DBG(static_cast<VW::example&>(ex)) << "[" << _name << "." << msg << "]" << std::endl; }
 }
 
 // Used as a hook to intercept incorrect calls to the base learner.
 void learner::debug_log_message(const char& /* ec */, const std::string& msg)
 {
-  auto message =
-      fmt::format("Learner: '{}', function: '{}' was called without first being cast to singleline or multiline.",
-          get_name(), msg);
+  auto message = fmt::format(
+      "Learner: '{}', function: '{}' was called without first being cast to singleline or multiline.", get_name(), msg);
   THROW(message);
 }
 
@@ -389,8 +387,8 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
       _predict_f(*_base_learner, ec);
       if (finalize_predictions)
       {
-        pred[c] = std::move(static_cast<VW::example&>(ec).pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
-                                        // "fix" this by moving)
+        pred[c] = std::move(static_cast<VW::example&>(ec).pred);  // TODO: this breaks for complex labels because =
+                                                                  // doesn't do deep copy! (XXX we "fix" this by moving)
       }
       else { pred[c].scalar = static_cast<VW::example&>(ec).partial_prediction; }
       // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
@@ -446,10 +444,7 @@ void learner::save_load(io_buf& io, const bool read, const bool text)
 
 void learner::pre_save_load(VW::workspace& all)
 {
-  if (_pre_save_load_f)
-  {
-    _pre_save_load_f(all);
-  }
+  if (_pre_save_load_f) { _pre_save_load_f(all); }
   if (_base_learner) { _base_learner->pre_save_load(all); }
 }
 
@@ -509,11 +504,8 @@ void learner::finish_example(VW::workspace& all, polymorphic_ex ec)
       has_update_stats() || has_output_example_prediction() || has_print_update() || has_cleanup_example();
   if (has_at_least_one_new_style_func)
   {
-    if (ec.is_multiline()) {
-      VW::finish_example(all, static_cast<VW::multi_ex&>(ec));
-    } else {
-      VW::finish_example(all, static_cast<VW::example&>(ec));
-    }
+    if (ec.is_multiline()) { VW::finish_example(all, static_cast<VW::multi_ex&>(ec)); }
+    else { VW::finish_example(all, static_cast<VW::example&>(ec)); }
     return;
   }
 
@@ -530,16 +522,14 @@ void learner::finish_example(VW::workspace& all, polymorphic_ex ec)
   else { THROW("No finish functions were registered in the stack."); }
 }
 
-void learner::update_stats(const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ec, VW::io::logger& logger)
+void learner::update_stats(
+    const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ec, VW::io::logger& logger)
 {
   debug_log_message(ec, "update_stats");
   if (!has_update_stats()) { THROW("fatal: learner did not register update_stats fn: " + _name); }
   _update_stats_f(all, sd, ec, logger);
 }
-void learner::update_stats(VW::workspace& all, const polymorphic_ex ec)
-{
-  update_stats(all, *all.sd, ec, all.logger);
-}
+void learner::update_stats(VW::workspace& all, const polymorphic_ex ec) { update_stats(all, *all.sd, ec, all.logger); }
 
 void learner::output_example_prediction(VW::workspace& all, const polymorphic_ex ec, VW::io::logger& logger)
 {
@@ -558,10 +548,7 @@ void learner::print_update(VW::workspace& all, VW::shared_data& sd, const polymo
   if (!has_print_update()) { THROW("fatal: learner did not register print_update fn: " + _name); }
   _print_update_f(all, sd, ec, logger);
 }
-void learner::print_update(VW::workspace& all, const polymorphic_ex ec)
-{
-  print_update(all, *all.sd, ec, all.logger);
-}
+void learner::print_update(VW::workspace& all, const polymorphic_ex ec) { print_update(all, *all.sd, ec, all.logger); }
 
 void learner::cleanup_example(polymorphic_ex ec)
 {
@@ -613,8 +600,8 @@ void learner::merge(const std::vector<float>& per_model_weighting,
   else { THROW("learner " << _name << " does not support merging."); }
 }
 
-void learner::add(const VW::workspace& base_ws, const VW::workspace& delta_ws,
-    const learner* base_l, const learner* delta_l, VW::workspace& output_ws, learner* output_l)
+void learner::add(const VW::workspace& base_ws, const VW::workspace& delta_ws, const learner* base_l,
+    const learner* delta_l, VW::workspace& output_ws, learner* output_l)
 {
   auto name = output_l->get_name();
   assert(name == base_l->get_name());
@@ -624,15 +611,12 @@ void learner::add(const VW::workspace& base_ws, const VW::workspace& delta_ws,
     _add_with_all_f(base_ws, base_l->_learner_data.get(), delta_ws, delta_l->_learner_data.get(), output_ws,
         output_l->_learner_data.get());
   }
-  else if (_add_f)
-  {
-    _add_f(base_l->_learner_data.get(), delta_l->_learner_data.get(), output_l->_learner_data.get());
-  }
+  else if (_add_f) { _add_f(base_l->_learner_data.get(), delta_l->_learner_data.get(), output_l->_learner_data.get()); }
   else { THROW("learner " << name << " does not support adding a delta."); }
 }
 
-void learner::subtract(const VW::workspace& ws1, const VW::workspace& ws2, const learner* l1,
-    const learner* l2, VW::workspace& output_ws, learner* output_l)
+void learner::subtract(const VW::workspace& ws1, const VW::workspace& ws2, const learner* l1, const learner* l2,
+    VW::workspace& output_ws, learner* output_l)
 {
   auto name = output_l->get_name();
   assert(name == l1->get_name());
@@ -651,7 +635,10 @@ void learner::subtract(const VW::workspace& ws1, const VW::workspace& ws2, const
 
 std::unique_ptr<learner> learner::make_derived_learner()
 {
-  if (_derived_learner_created_already) { THROW("Cannot create more than one derived learner of base learner: " + _name); }
+  if (_derived_learner_created_already)
+  {
+    THROW("Cannot create more than one derived learner of base learner: " + _name);
+  }
 
   // Copy this learner and assign this as the new learner's base
   std::unique_ptr<learner> l(new learner(*this));
@@ -709,56 +696,61 @@ void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, V
     THROW(message);
   }
 
-  if (merge_f && merge_with_all_f)
-  {
-    THROW("cannot set both merge and merge_with_all");
-  }
+  if (merge_f && merge_with_all_f) { THROW("cannot set both merge and merge_with_all"); }
 }
 
 void VW::LEARNER::details::debug_increment_depth(polymorphic_ex ex)
 {
-  if (ex.is_multiline()) {
+  if (ex.is_multiline())
+  {
     if (vw_dbg::TRACK_STACK)
     {
       for (auto& ec : static_cast<VW::multi_ex&>(ex)) { ++ec->debug_current_reduction_depth; }
     }
-  } else {
+  }
+  else
+  {
     if (vw_dbg::TRACK_STACK) { ++static_cast<VW::example&>(ex).debug_current_reduction_depth; }
   }
 }
 
 void VW::LEARNER::details::debug_decrement_depth(polymorphic_ex ex)
 {
-  if (ex.is_multiline()) {
+  if (ex.is_multiline())
+  {
     if (vw_dbg::TRACK_STACK)
     {
       for (auto& ec : static_cast<VW::multi_ex&>(ex)) { --ec->debug_current_reduction_depth; }
     }
-  } else {
+  }
+  else
+  {
     if (vw_dbg::TRACK_STACK) { --static_cast<VW::example&>(ex).debug_current_reduction_depth; }
   }
 }
 
 void VW::LEARNER::details::increment_offset(polymorphic_ex ex, const size_t increment, const size_t i)
 {
-  if (ex.is_multiline()) {
+  if (ex.is_multiline())
+  {
     for (auto& ec : static_cast<VW::multi_ex&>(ex)) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
-  } else {
-    static_cast<VW::example&>(ex).ft_offset += static_cast<uint32_t>(increment * i);
   }
+  else { static_cast<VW::example&>(ex).ft_offset += static_cast<uint32_t>(increment * i); }
   debug_increment_depth(ex);
 }
 
 void VW::LEARNER::details::decrement_offset(polymorphic_ex ex, const size_t increment, const size_t i)
 {
-  if (ex.is_multiline()) {
+  if (ex.is_multiline())
+  {
     for (auto ec : static_cast<VW::multi_ex&>(ex))
     {
       assert(ec->ft_offset >= increment * i);
       ec->ft_offset -= static_cast<uint32_t>(increment * i);
     }
   }
-  else {
+  else
+  {
     assert(static_cast<VW::example&>(ex).ft_offset >= increment * i);
     static_cast<VW::example&>(ex).ft_offset -= static_cast<uint32_t>(increment * i);
   }

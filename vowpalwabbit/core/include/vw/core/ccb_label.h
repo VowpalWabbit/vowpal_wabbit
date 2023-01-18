@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "vw/core/vw_string_view_fmt.h"
+
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/action_score.h"
@@ -12,7 +14,6 @@
 #include "vw/core/v_array.h"
 
 #include <fmt/format.h>
-#include "vw/core/vw_string_view_fmt.h"
 
 #include <cstdint>
 #include <string>

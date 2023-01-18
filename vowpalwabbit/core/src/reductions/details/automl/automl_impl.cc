@@ -73,8 +73,8 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , logger(logger)
     , wpp(wpp)
     , _ccb_on(ccb_on)
-    , _config_oracle(
-          config_oracle_impl(default_lease, std::move(calc_priority), interaction_type, oracle_type, rand_state, conf_type))
+    , _config_oracle(config_oracle_impl(
+          default_lease, std::move(calc_priority), interaction_type, oracle_type, rand_state, conf_type))
     , reward_as_cost(reward_as_cost)
 {
   if (trace_prefix != "")
@@ -367,8 +367,7 @@ template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>
 template class interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>;
 
 template <typename CMType>
-void automl<CMType>::one_step(
-    LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
+void automl<CMType>::one_step(LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;
   cm->process_example(ec);
@@ -378,8 +377,7 @@ void automl<CMType>::one_step(
 }
 
 template <typename CMType>
-void automl<CMType>::offset_learn(
-    LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
+void automl<CMType>::offset_learn(LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   interaction_vec_t* incoming_interactions = ec[0]->interactions;
   for (VW::example* ex : ec)

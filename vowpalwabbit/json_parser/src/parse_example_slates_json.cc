@@ -150,8 +150,8 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
 }
 
 template <bool audit>
-void parse_context(const Value& context, const VW::label_parser& lbl_parser,
-    VW::hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples,
+void parse_context(const Value& context, const VW::label_parser& lbl_parser, VW::hash_func_t hash_func,
+    uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples,
     VW::example_factory_t example_factory, VW::multi_ex& slot_examples,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
 {
@@ -220,8 +220,7 @@ void parse_context(const Value& context, const VW::label_parser& lbl_parser,
 template <bool audit>
 void VW::parsers::json::details::parse_slates_example_json(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line, size_t /*length*/,
-    VW::example_factory_t example_factory,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    VW::example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   Document document;
   document.ParseInsitu(line);
@@ -229,14 +228,13 @@ void VW::parsers::json::details::parse_slates_example_json(const VW::label_parse
   // Build shared example
   const Value& context = document.GetObject();
   VW::multi_ex slot_examples;
-  parse_context<audit>(context, lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, examples, std::move(example_factory),
-      slot_examples, dedup_examples);
+  parse_context<audit>(context, lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, examples,
+      std::move(example_factory), slot_examples, dedup_examples);
 }
 
 template <bool audit>
 void VW::parsers::json::details::parse_slates_example_json(const VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, VW::example_factory_t example_factory,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    size_t length, VW::example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   parse_slates_example_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, examples, line, length, std::move(example_factory), dedup_examples);
@@ -244,8 +242,8 @@ void VW::parsers::json::details::parse_slates_example_json(const VW::workspace& 
 
 template <bool audit>
 void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t /*length*/, VW::example_factory_t example_factory,
-    VW::parsers::json::decision_service_interaction* data, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    size_t /*length*/, VW::example_factory_t example_factory, VW::parsers::json::decision_service_interaction* data,
+    std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   Document document;
   document.ParseInsitu(line);
@@ -253,8 +251,7 @@ void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all,
   const Value& context = document["c"].GetObject();
   VW::multi_ex slot_examples;
   parse_context<audit>(context, all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
-      all.parse_mask, all.chain_hash_json, examples, std::move(example_factory), slot_examples,
-      dedup_examples);
+      all.parse_mask, all.chain_hash_json, examples, std::move(example_factory), slot_examples, dedup_examples);
 
   if (document.HasMember("_label_cost"))
   {
@@ -326,12 +323,10 @@ void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all,
 // Explicitly instantiate templates only in this source file
 template void VW::parsers::json::details::parse_slates_example_json<true>(const VW::label_parser& lbl_parser,
     hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line,
-    size_t length, VW::example_factory_t example_factory,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, VW::example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::details::parse_slates_example_json<false>(const VW::label_parser& lbl_parser,
     hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::multi_ex& examples, char* line,
-    size_t length, VW::example_factory_t example_factory,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, VW::example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void VW::parsers::json::details::parse_slates_example_json<true>(const VW::workspace& all,
     VW::multi_ex& examples, char* line, size_t length, VW::example_factory_t example_factory,

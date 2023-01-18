@@ -1632,8 +1632,7 @@ public:
   void init(const VW::label_parser& lbl_parser, VW::hash_func_t hash_func, uint64_t hash_seed, uint64_t parse_mask,
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
       VW::multi_ex* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
-      VW::example_factory_t example_factory,
-      std::unordered_map<std::string, std::set<std::string>>* ignore_features,
+      VW::example_factory_t example_factory, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
       std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
   {
     ctx.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, logger);
@@ -1692,8 +1691,8 @@ public:
 template <bool audit>
 void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_func_t hash_func, uint64_t hash_seed,
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
-    VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
-    VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
+    VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory, VW::io::logger& logger,
+    std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   if (lbl_parser.label_type == VW::label_type_t::SLATES)
@@ -1732,8 +1731,7 @@ void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_
 
 template <bool audit>
 void VW::parsers::json::read_line_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    example_factory_t example_factory,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   return read_line_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
@@ -1834,8 +1832,8 @@ bool VW::parsers::json::details::parse_line_json(
     if (line[0] != '{') { return false; }
 
     VW::parsers::json::decision_service_interaction interaction;
-    bool result = VW::parsers::json::template read_line_decision_service_json<audit>(*all, examples, line, num_chars,
-        false, std::bind(VW::get_unused_example, all), &interaction);
+    bool result = VW::parsers::json::template read_line_decision_service_json<audit>(
+        *all, examples, line, num_chars, false, std::bind(VW::get_unused_example, all), &interaction);
 
     if (!result)
     {
@@ -1991,22 +1989,18 @@ int VW::parsers::json::read_features_json(VW::workspace* all, io_buf& buf, VW::m
 template void VW::parsers::json::read_line_json<true>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
-    VW::io::logger& logger,
-    std::unordered_map<std::string, std::set<std::string>>* ignore_features,
+    VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::read_line_json<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
-    VW::io::logger& logger,
-    std::unordered_map<std::string, std::set<std::string>>* ignore_features,
+    VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
     std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void VW::parsers::json::read_line_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, example_factory_t example_factory,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::read_line_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, example_factory_t example_factory,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template bool VW::parsers::json::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples,
     char* line, size_t length, bool copy_line, example_factory_t example_factory,

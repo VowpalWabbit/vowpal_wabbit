@@ -99,7 +99,7 @@ public:
       const std::string& interaction_type, const ns_based_config& config, interaction_vec_t& interactions);
 };
 
-using priority_func = std::function<float (const ns_based_config&, const std::map<namespace_index, uint64_t>&)>;
+using priority_func = std::function<float(const ns_based_config&, const std::map<namespace_index, uint64_t>&)>;
 
 template <typename oracle_impl>
 class config_oracle

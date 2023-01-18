@@ -41,8 +41,7 @@ public:
 };
 
 template <typename LearnFunc, typename PredictFunc>
-VW::LEARNER::learner* make_test_learner(
-    const LearnFunc& learn, const PredictFunc& predict)
+VW::LEARNER::learner* make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
 {
   auto test_base_data = VW::make_unique<test_base<LearnFunc, PredictFunc>>(learn, predict);
   using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::learner&, VW::multi_ex&);

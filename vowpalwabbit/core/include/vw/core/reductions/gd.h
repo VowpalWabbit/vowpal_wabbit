@@ -47,8 +47,7 @@ public:
   void (*learn)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
   void (*update)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
   float (*sensitivity)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
-  void (*multipredict)(
-      gd&, VW::LEARNER::learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
+  void (*multipredict)(gd&, VW::LEARNER::learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
   bool adaptive_input = false;
   bool normalized_input = false;
   bool adax = false;

@@ -38,10 +38,7 @@ public:
       std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples)
-  {
-    predict_or_learn_impl<false>(base, examples);
-  }
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(VW::io_buf& model_file, bool read, bool text);
 

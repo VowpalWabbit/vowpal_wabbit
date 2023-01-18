@@ -517,8 +517,8 @@ inline void vec_add_trunc_multipredict(VW::details::multipredict_info<T>& mp, co
 }
 
 template <bool l1, bool audit>
-void multipredict(VW::reductions::gd& g, learner&, VW::example& ec, size_t count, size_t step,
-    VW::polyprediction* pred, bool finalize_predictions)
+void multipredict(VW::reductions::gd& g, learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+    bool finalize_predictions)
 {
   VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
@@ -1500,22 +1500,21 @@ learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
   auto* bare = g.get();
-  auto* l =
-      make_base_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
-          VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-          .set_learn_returns_prediction(true)
-          .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
-          .set_sensitivity(bare->sensitivity)
-          .set_multipredict(bare->multipredict)
-          .set_update(bare->update)
-          .set_save_load(::save_load)
-          .set_end_pass(::end_pass)
-          .set_merge_with_all(::merge)
-          .set_add_with_all(::add)
-          .set_subtract_with_all(::subtract)
-          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<VW::reductions::gd>)
-          .set_update_stats(VW::details::update_stats_simple_label<VW::reductions::gd>)
-          .set_print_update(VW::details::print_update_simple_label<VW::reductions::gd>)
-          .build();
+  auto* l = make_base_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+                .set_learn_returns_prediction(true)
+                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
+                .set_sensitivity(bare->sensitivity)
+                .set_multipredict(bare->multipredict)
+                .set_update(bare->update)
+                .set_save_load(::save_load)
+                .set_end_pass(::end_pass)
+                .set_merge_with_all(::merge)
+                .set_add_with_all(::add)
+                .set_subtract_with_all(::subtract)
+                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<VW::reductions::gd>)
+                .set_update_stats(VW::details::update_stats_simple_label<VW::reductions::gd>)
+                .set_print_update(VW::details::print_update_simple_label<VW::reductions::gd>)
+                .build();
   return l;
 }

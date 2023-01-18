@@ -29,8 +29,8 @@ VW::multi_ex vwtest::parse_dsjson(
   VW::parsers::json::decision_service_interaction local_interaction;
   if (interaction == nullptr) { interaction = &local_interaction; }
 
-  VW::parsers::json::read_line_decision_service_json<true>(all, examples, (char*)line.c_str(), line.size(), false,
-      std::bind(VW::get_unused_example, &all), interaction);
+  VW::parsers::json::read_line_decision_service_json<true>(
+      all, examples, (char*)line.c_str(), line.size(), false, std::bind(VW::get_unused_example, &all), interaction);
 
   VW::multi_ex result;
   for (const auto& ex : examples) { result.push_back(ex); }

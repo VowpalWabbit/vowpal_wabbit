@@ -263,9 +263,9 @@ void cs_prep_labels(VW::multi_ex& examples, std::vector<VW::cb_label>& cb_labels
     std::vector<VW::cs_label>& prepped_cs_labels, uint64_t offset);
 
 template <bool is_learn>
-void cs_ldf_learn_or_predict(VW::LEARNER::learner& base, VW::multi_ex& examples,
-    std::vector<VW::cb_label>& cb_labels, VW::cs_label& cs_labels, std::vector<VW::cs_label>& prepped_cs_labels,
-    bool predict_first, uint64_t offset, size_t id = 0)
+void cs_ldf_learn_or_predict(VW::LEARNER::learner& base, VW::multi_ex& examples, std::vector<VW::cb_label>& cb_labels,
+    VW::cs_label& cs_labels, std::vector<VW::cs_label>& prepped_cs_labels, bool predict_first, uint64_t offset,
+    size_t id = 0)
 {
   VW_DBG(*examples[0]) << "cs_ldf_" << (is_learn ? "<learn>" : "<predict>") << ": ex=" << examples[0]->example_counter
                        << ", offset=" << offset << ", id=" << id << std::endl;

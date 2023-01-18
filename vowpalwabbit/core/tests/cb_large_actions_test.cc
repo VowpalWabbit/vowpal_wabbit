@@ -38,8 +38,7 @@ TEST(Las, CreationOfTheOgAMatrix)
     FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
   }
 
-  VW::LEARNER::learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+  VW::LEARNER::learner* learner = as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
   auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -116,8 +115,7 @@ TEST(Las, CheckInteractionsOnY)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner = as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -182,8 +180,7 @@ TEST(Las, CheckInteractionsOnB)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner = as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -236,8 +233,7 @@ TEST(Las, CheckAtTimesOmegaIsY)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner = as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -352,8 +348,7 @@ TEST(Las, CheckATimesYIsB)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner = as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -425,8 +420,7 @@ TEST(Las, CheckBTimesPIsZ)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner = as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -601,8 +595,7 @@ TEST(Las, CheckFinalTruncatedSVDValidity)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner = as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     if (impl_type == VW::cb_explore_adf::implementation_type::two_pass_svd)
     {
@@ -644,8 +637,7 @@ TEST(Las, CheckShrinkFactor)
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
     }
 
-    VW::LEARNER::learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner = as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 

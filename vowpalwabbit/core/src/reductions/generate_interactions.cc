@@ -123,8 +123,8 @@ void update(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::ex
 }
 
 template <VW::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
-inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec,
-    size_t count, size_t, VW::polyprediction* pred, bool finalize_predictions)
+inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec, size_t count,
+    size_t, VW::polyprediction* pred, bool finalize_predictions)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -145,8 +145,8 @@ inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner&
 
 template <VW::generate_func_t<VW::namespace_index> generate_func,
     VW::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
-inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec,
-    size_t count, size_t, VW::polyprediction* pred, bool finalize_predictions)
+inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec, size_t count,
+    size_t, VW::polyprediction* pred, bool finalize_predictions)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -217,8 +217,8 @@ VW::LEARNER::learner* VW::reductions::generate_interactions_setup(VW::setup_base
   if (options.was_supplied("large_action_space")) { store_in_reduction_features = true; }
 
   using learn_pred_func_t = void (*)(VW::interactions_generator&, VW::LEARNER::learner&, VW::example&);
-  using multipredict_func_t = void (*)(VW::interactions_generator&, VW::LEARNER::learner&, VW::example&, size_t,
-      size_t, VW::polyprediction*, bool);
+  using multipredict_func_t = void (*)(
+      VW::interactions_generator&, VW::LEARNER::learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
   learn_pred_func_t update_func;

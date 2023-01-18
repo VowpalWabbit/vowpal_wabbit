@@ -261,8 +261,7 @@ void predict(
   base.predict(examples, data._weight_indices[final_model_idx]);
 }
 
-void learn(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
+void learn(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   data.update_weights(data._initial_epsilon, base, examples);
   data.check_estimator_bounds();
@@ -387,9 +386,8 @@ VW::LEARNER::learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stac
 
   VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
       base->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
-  auto& adf_data =
-      *static_cast<VW::reductions::cb_adf*>(as_multiline(base->get_learner_by_name_prefix("cb_adf"))
-                                                ->get_internal_type_erased_data_pointer_test_use_only());
+  auto& adf_data = *static_cast<VW::reductions::cb_adf*>(
+      as_multiline(base->get_learner_by_name_prefix("cb_adf"))->get_internal_type_erased_data_pointer_test_use_only());
   data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
   data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
@@ -400,16 +398,16 @@ VW::LEARNER::learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stac
 
   if (base->is_multiline())
   {
-    auto* l = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base), learn,
-        predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
-                        .set_input_label_type(VW::label_type_t::CB)
-                        .set_output_label_type(VW::label_type_t::CB)
-                        .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                        .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                        .set_params_per_weight(model_count)
-                        .set_save_load(save_load_epsilon_decay)
-                        .set_finish(::finish)
-                        .build();
+    auto* l = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base), learn, predict,
+        stack_builder.get_setupfn_name(epsilon_decay_setup))
+                  .set_input_label_type(VW::label_type_t::CB)
+                  .set_output_label_type(VW::label_type_t::CB)
+                  .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+                  .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                  .set_params_per_weight(model_count)
+                  .set_save_load(save_load_epsilon_decay)
+                  .set_finish(::finish)
+                  .build();
 
     return l;
   }

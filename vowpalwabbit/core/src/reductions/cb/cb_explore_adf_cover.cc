@@ -40,10 +40,7 @@ public:
       VW::version_struct model_file_version, VW::io::logger logger);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples)
-  {
-    predict_or_learn_impl<false>(base, examples);
-  }
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(VW::io_buf& io, bool read, bool text);
 
@@ -73,8 +70,8 @@ private:
 };
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
-    bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer,
-    VW::cb_type_t cb_type, VW::version_struct model_file_version, VW::io::logger logger)
+    bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
+    VW::version_struct model_file_version, VW::io::logger logger)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)

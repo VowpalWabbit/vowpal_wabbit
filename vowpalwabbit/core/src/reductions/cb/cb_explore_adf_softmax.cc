@@ -30,10 +30,7 @@ public:
   ~cb_explore_adf_softmax() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples)
-  {
-    predict_or_learn_impl<false>(base, examples);
-  }
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:

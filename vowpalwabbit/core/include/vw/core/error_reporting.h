@@ -11,7 +11,7 @@
 
 namespace VW
 {
-using trace_message_t = std::function<void (void*, const std::string&)>;
+using trace_message_t = std::function<void(void*, const std::string&)>;
 }
 
 using trace_message_t VW_DEPRECATED(

@@ -794,8 +794,7 @@ float return_reward_from_node(memory_tree& b, learner& base, uint64_t cn, VW::ex
   return reward;
 }
 
-void learn_at_leaf_random(
-    memory_tree& b, learner& base, const uint64_t& leaf_id, VW::example& ec, const float& weight)
+void learn_at_leaf_random(memory_tree& b, learner& base, const uint64_t& leaf_id, VW::example& ec, const float& weight)
 {
   b.total_num_queries++;
   int32_t ec_id = -1;

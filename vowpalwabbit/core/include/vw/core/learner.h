@@ -4,21 +4,20 @@
 #pragma once
 // This is the interface for a learning algorithm
 
-#include "vw/core/learner_fwd.h"
-#include "vw/core/polymorphic_ex.h"
-#include "vw/core/shared_data.h"
-#include "vw/core/simple_label.h"
-
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
+#include "vw/core/learner_fwd.h"
 #include "vw/core/memory.h"
 #include "vw/core/metric_sink.h"
+#include "vw/core/polymorphic_ex.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/scope_exit.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 #include "vw/core/vw.h"
 
 #include <functional>
@@ -58,37 +57,42 @@ learner* as_singleline(learner* l);
 
 namespace details
 {
-using void_func = std::function<void (void)>;
-using base_example_func = std::function<void (learner& base, polymorphic_ex ex)>;
-using multipredict_func = std::function<void (learner& base, polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)>;
+using void_func = std::function<void(void)>;
+using base_example_func = std::function<void(learner& base, polymorphic_ex ex)>;
+using multipredict_func = std::function<void(
+    learner& base, polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)>;
 
-using sensitivity_func = std::function<float (learner& base, example& ex)>;
-using save_load_func = std::function<void (io_buf&, bool read, bool text)>;
-using pre_save_load_func = std::function<void (VW::workspace& all)>;
-using save_metric_func = std::function<void (metric_sink& metrics)>;
+using sensitivity_func = std::function<float(learner& base, example& ex)>;
+using save_load_func = std::function<void(io_buf&, bool read, bool text)>;
+using pre_save_load_func = std::function<void(VW::workspace& all)>;
+using save_metric_func = std::function<void(metric_sink& metrics)>;
 
-using finish_example_func = std::function<void (VW::workspace&, polymorphic_ex ex)>;
-using update_stats_func = std::function<void (const VW::workspace&, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)>;
-using output_example_prediction_func = std::function<void (VW::workspace&, const polymorphic_ex ex, VW::io::logger& logger)>;
-using print_update_func = std::function<void (VW::workspace&, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)>;
-using cleanup_example_func = std::function<void (polymorphic_ex ex)>;
+using finish_example_func = std::function<void(VW::workspace&, polymorphic_ex ex)>;
+using update_stats_func =
+    std::function<void(const VW::workspace&, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)>;
+using output_example_prediction_func =
+    std::function<void(VW::workspace&, const polymorphic_ex ex, VW::io::logger& logger)>;
+using print_update_func =
+    std::function<void(VW::workspace&, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)>;
+using cleanup_example_func = std::function<void(polymorphic_ex ex)>;
 
-using merge_with_all_func = std::function<void (const std::vector<float>& per_model_weighting,
+using merge_with_all_func = std::function<void(const std::vector<float>& per_model_weighting,
     const std::vector<const VW::workspace*>& all_workspaces, const std::vector<const void*>& all_data,
     VW::workspace& output_workspace, void* output_data)>;
-using merge_with_all_fptr = void(*)(const std::vector<float>& per_model_weighting,
+using merge_with_all_fptr = void (*)(const std::vector<float>& per_model_weighting,
     const std::vector<const VW::workspace*>& all_workspaces, const std::vector<const void*>& all_data,
     VW::workspace& output_workspace, void* output_data);
 // When the workspace reference is not needed this signature should definitely be used.
-using merge_func = std::function<void (
+using merge_func = std::function<void(
     const std::vector<float>& per_model_weighting, const std::vector<const void*>& all_data, void* output_data)>;
-using merge_fptr = void(*)(const std::vector<float>& per_model_weighting, const std::vector<const void*>& all_data, void* output_data);
+using merge_fptr = void (*)(
+    const std::vector<float>& per_model_weighting, const std::vector<const void*>& all_data, void* output_data);
 
-using add_subtract_func = std::function<void (const void* data_1, const void* data_2, void* data_out)>;
-using add_subtract_fptr = void(*)(const void* data_1, const void* data_2, void* data_out);
-using add_subtract_with_all_func = std::function<void (const VW::workspace& ws1, const void* data1, const VW::workspace& ws2,
-    const void* data2, VW::workspace& ws_out, void* data_out)>;
-using add_subtract_with_all_fptr = void(*)(const VW::workspace& ws1, const void* data1, const VW::workspace& ws2,
+using add_subtract_func = std::function<void(const void* data_1, const void* data_2, void* data_out)>;
+using add_subtract_fptr = void (*)(const void* data_1, const void* data_2, void* data_out);
+using add_subtract_with_all_func = std::function<void(const VW::workspace& ws1, const void* data1,
+    const VW::workspace& ws2, const void* data2, VW::workspace& ws_out, void* data_out)>;
+using add_subtract_with_all_fptr = void (*)(const VW::workspace& ws1, const void* data1, const VW::workspace& ws2,
     const void* data2, VW::workspace& ws_out, void* data_out);
 
 void debug_increment_depth(polymorphic_ex ex);
@@ -216,25 +220,19 @@ public:
   void NO_SANITIZE_UNDEFINED merge(const std::vector<float>& per_model_weighting,
       const std::vector<const VW::workspace*>& all_workspaces, const std::vector<const learner*>& all_learners,
       VW::workspace& output_workspace, learner& output_learner);
-  void NO_SANITIZE_UNDEFINED add(const VW::workspace& base_ws, const VW::workspace& delta_ws,
-      const learner* base_l, const learner* delta_l, VW::workspace& output_ws, learner* output_l);
+  void NO_SANITIZE_UNDEFINED add(const VW::workspace& base_ws, const VW::workspace& delta_ws, const learner* base_l,
+      const learner* delta_l, VW::workspace& output_ws, learner* output_l);
   void NO_SANITIZE_UNDEFINED subtract(const VW::workspace& ws1, const VW::workspace& ws2, const learner* l1,
       const learner* l2, VW::workspace& output_ws, learner* output_l);
 
   VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_update_stats() const { return _update_stats_f != nullptr; }
   VW_ATTR(nodiscard) bool has_print_update() const { return _print_update_f != nullptr; }
-  VW_ATTR(nodiscard) bool has_output_example_prediction() const
-  {
-    return _output_example_prediction_f != nullptr;
-  }
+  VW_ATTR(nodiscard) bool has_output_example_prediction() const { return _output_example_prediction_f != nullptr; }
   VW_ATTR(nodiscard) bool has_cleanup_example() const { return _cleanup_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_merge() const { return (_merge_with_all_f != nullptr) || (_merge_f != nullptr); }
   VW_ATTR(nodiscard) bool has_add() const { return (_add_with_all_f != nullptr) || (_add_f != nullptr); }
-  VW_ATTR(nodiscard) bool has_subtract() const
-  {
-    return (_subtract_with_all_f != nullptr) || (_subtract_f != nullptr);
-  }
+  VW_ATTR(nodiscard) bool has_subtract() const { return (_subtract_with_all_f != nullptr) || (_subtract_f != nullptr); }
   VW_ATTR(nodiscard) prediction_type_t get_output_prediction_type() const { return _output_pred_type; }
   VW_ATTR(nodiscard) prediction_type_t get_input_prediction_type() const { return _input_pred_type; }
   VW_ATTR(nodiscard) label_type_t get_output_label_type() const { return _output_label_type; }
@@ -332,7 +330,7 @@ float recur_sensitivity(DataT&, learner& base, example& ec)
 {
   return base.sensitivity(ec);
 }
-}
+}  // namespace details
 
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_CAST_FUNC_TYPE
@@ -391,11 +389,12 @@ public:
     return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
-  FluentBuilderT& set_multipredict(
-      void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &
+  FluentBuilderT& set_multipredict(void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_multipredict_f = [fn_ptr, data](learner& base, polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions) { fn_ptr(*data, base, ex, count, step, pred, finalize_predictions); };
+    this->learner_ptr->_multipredict_f = [fn_ptr, data](learner& base, polymorphic_ex ex, size_t count, size_t step,
+                                             polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*data, base, ex, count, step, pred, finalize_predictions); };
     return *static_cast<FluentBuilderT*>(this);
   }
 
@@ -403,7 +402,9 @@ public:
       void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &&
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_multipredict_f = [fn_ptr, data](learner& base, polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions) { fn_ptr(*data, base, ex, count, step, pred, finalize_predictions); };
+    this->learner_ptr->_multipredict_f = [fn_ptr, data](learner& base, polymorphic_ex ex, size_t count, size_t step,
+                                             polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*data, base, ex, count, step, pred, finalize_predictions); };
     return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
@@ -452,14 +453,16 @@ public:
   FluentBuilderT& set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool)) &
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_save_load_f = [fn_ptr, data](io_buf& buf, bool read, bool text) { fn_ptr(*data, buf, read, text); };
+    this->learner_ptr->_save_load_f = [fn_ptr, data](io_buf& buf, bool read, bool text)
+    { fn_ptr(*data, buf, read, text); };
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT&& set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool)) &&
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_save_load_f = [fn_ptr, data](io_buf& buf, bool read, bool text) { fn_ptr(*data, buf, read, text); };
+    this->learner_ptr->_save_load_f = [fn_ptr, data](io_buf& buf, bool read, bool text)
+    { fn_ptr(*data, buf, read, text); };
     return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
@@ -522,14 +525,16 @@ public:
   FluentBuilderT& set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&)) &
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_finish_example_f = [fn_ptr, data](VW::workspace& all, polymorphic_ex ex) { fn_ptr(all, *data, ex); };
+    this->learner_ptr->_finish_example_f = [fn_ptr, data](VW::workspace& all, polymorphic_ex ex)
+    { fn_ptr(all, *data, ex); };
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT&& set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&)) &&
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_finish_example_f = [fn_ptr, data](VW::workspace& all, polymorphic_ex ex) { fn_ptr(all, *data, ex); };
+    this->learner_ptr->_finish_example_f = [fn_ptr, data](VW::workspace& all, polymorphic_ex ex)
+    { fn_ptr(all, *data, ex); };
     return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
@@ -538,14 +543,18 @@ public:
   FluentBuilderT& set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr) &
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_update_stats_f = [fn_ptr, data](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger) { fn_ptr(all, sd, *data, ex, logger); };
+    this->learner_ptr->_update_stats_f =
+        [fn_ptr, data](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
+    { fn_ptr(all, sd, *data, ex, logger); };
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT&& set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr) &&
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_update_stats_f = [fn_ptr, data](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger) { fn_ptr(all, sd, *data, ex, logger); };
+    this->learner_ptr->_update_stats_f =
+        [fn_ptr, data](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
+    { fn_ptr(all, sd, *data, ex, logger); };
     return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
@@ -554,14 +563,16 @@ public:
   FluentBuilderT& set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr) &
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_output_example_prediction_f = [fn_ptr, data](VW::workspace& all, const polymorphic_ex ex, VW::io::logger& logger) { fn_ptr(all, *data, ex, logger); };
+    this->learner_ptr->_output_example_prediction_f = [fn_ptr, data](VW::workspace& all, const polymorphic_ex ex,
+                                                          VW::io::logger& logger) { fn_ptr(all, *data, ex, logger); };
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT&& set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr) &&
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_output_example_prediction_f = [fn_ptr, data](VW::workspace& all, const polymorphic_ex ex, VW::io::logger& logger) { fn_ptr(all, *data, ex, logger); };
+    this->learner_ptr->_output_example_prediction_f = [fn_ptr, data](VW::workspace& all, const polymorphic_ex ex,
+                                                          VW::io::logger& logger) { fn_ptr(all, *data, ex, logger); };
     return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
@@ -571,14 +582,18 @@ public:
   FluentBuilderT& set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr) &
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_print_update_f = [fn_ptr, data](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger) { fn_ptr(all, sd, *data, ex, logger); };
+    this->learner_ptr->_print_update_f =
+        [fn_ptr, data](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
+    { fn_ptr(all, sd, *data, ex, logger); };
     return *static_cast<FluentBuilderT*>(this);
   }
 
   FluentBuilderT&& set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr) &&
   {
     DataT* data = this->learner_data.get();
-    this->learner_ptr->_print_update_f = [fn_ptr, data](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger) { fn_ptr(all, sd, *data, ex, logger); };
+    this->learner_ptr->_print_update_f =
+        [fn_ptr, data](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
+    { fn_ptr(all, sd, *data, ex, logger); };
     return std::move(*static_cast<FluentBuilderT*>(this));
   }
 
@@ -690,8 +705,7 @@ class reduction_learner_builder
     : public common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>
 {
 public:
-  using super =
-      common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
+  using super = common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
   reduction_learner_builder(std::unique_ptr<DataT>&& data, learner* base, const std::string& name)
       // NOTE: This is a copy of the base! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
@@ -791,8 +805,7 @@ class reduction_no_data_learner_builder
     : public common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>
 {
 public:
-  using super =
-      common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>;
+  using super = common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>;
   reduction_no_data_learner_builder(learner* base, const std::string& name)
       // NOTE: This is a copy of the base! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
@@ -833,8 +846,7 @@ public:
 };
 
 template <class DataT, class ExampleT>
-class base_learner_builder
-    : public common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT>
+class base_learner_builder : public common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT>
 {
 public:
   using super = common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
@@ -925,9 +937,9 @@ public:
 VW_WARNING_STATE_POP
 
 template <class DataT, class ExampleT>
-reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_ptr<DataT>&& data,
-    learner* base, void (*learn_fn)(DataT&, learner&, ExampleT&),
-    void (*predict_fn)(DataT&, learner&, ExampleT&), const std::string& name)
+reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_ptr<DataT>&& data, learner* base,
+    void (*learn_fn)(DataT&, learner&, ExampleT&), void (*predict_fn)(DataT&, learner&, ExampleT&),
+    const std::string& name)
 {
   auto builder = reduction_learner_builder<DataT, ExampleT>(std::move(data), base, name);
   builder.set_learn(learn_fn);

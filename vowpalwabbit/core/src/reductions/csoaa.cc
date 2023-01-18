@@ -35,8 +35,8 @@ public:
 };
 
 template <bool is_learn>
-inline void inner_loop(learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
-    float& score, float& partial_prediction, uint32_t& indexing)
+inline void inner_loop(learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction, float& score,
+    float& partial_prediction, uint32_t& indexing)
 {
   if (is_learn)
   {

@@ -56,7 +56,7 @@ public:
 };
 }  // namespace details
 
-using options_deleter_type = std::function<void (VW::config::options_i*)>;
+using options_deleter_type = std::function<void(VW::config::options_i*)>;
 class workspace;
 
 class all_reduce_base;
@@ -116,9 +116,8 @@ public:
 
   bool chain_hash_json = false;
 
-  VW::LEARNER::learner* l;  // the top level learner
-  VW::LEARNER::learner*
-      cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  VW::LEARNER::learner* l;               // the top level learner
+  VW::LEARNER::learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);

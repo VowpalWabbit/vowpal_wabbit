@@ -1195,12 +1195,12 @@ learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
 
   return make_base_learner(
       std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                        .set_params_per_weight(all.weights.stride())
-                        .set_save_load(save_load)
-                        .set_init_driver(init_driver)
-                        .set_end_pass(end_pass)
-                        .set_output_example_prediction(VW::details::output_example_prediction_simple_label<bfgs>)
-                        .set_update_stats(VW::details::update_stats_simple_label<bfgs>)
-                        .set_print_update(VW::details::print_update_simple_label<bfgs>)
-                        .build();
+      .set_params_per_weight(all.weights.stride())
+      .set_save_load(save_load)
+      .set_init_driver(init_driver)
+      .set_end_pass(end_pass)
+      .set_output_example_prediction(VW::details::output_example_prediction_simple_label<bfgs>)
+      .set_update_stats(VW::details::update_stats_simple_label<bfgs>)
+      .set_print_update(VW::details::print_update_simple_label<bfgs>)
+      .build();
 }
