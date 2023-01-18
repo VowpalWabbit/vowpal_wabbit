@@ -15,15 +15,15 @@ namespace reductions
 {
 namespace multi_model
 {
-// ***** NOTE: params_per_problem must be of form 2^n *****
-inline void clear_offset(dense_parameters& weights, const size_t offset, const size_t params_per_problem)
+// ***** NOTE: ppw must be of form 2^n *****
+inline void clear_offset(dense_parameters& weights, const size_t offset, const size_t ppw)
 {
-  assert(offset < params_per_problem);
+  assert(offset < ppw);
 
   for (auto iterator_clear = weights.begin() + offset; iterator_clear < weights.end();
-       iterator_clear += params_per_problem)
+       iterator_clear += ppw)
   {
-    assert((iterator_clear.index_without_stride() & (params_per_problem - 1)) == offset);
+    assert((iterator_clear.index_without_stride() & (ppw - 1)) == offset);
     for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
     {
       *iterator_clear[stride_offset] = 0.0f;
@@ -31,25 +31,33 @@ inline void clear_offset(dense_parameters& weights, const size_t offset, const s
   }
 }
 
-// ***** NOTE: params_per_problem must be of form 2^n *****
-inline void adjust_weights_single_model(dense_parameters& weights, const size_t offset, const size_t params_per_problem)
+// ***** NOTE: ppw must be of form 2^n *****
+inline void resize_model_weights(dense_parameters& weights, const size_t offset, const size_t ppw, const size_t new_ppw_size)
 {
-  for (size_t i = 0; i < params_per_problem; ++i)
+  VW::weight* weights_arr = weights.first();
+  const size_t new_ppw_count = ppw / new_ppw_size;
+  for (auto sub_model = 0; sub_model < new_ppw_count; ++sub_model)
   {
-    if (i != offset) { clear_offset(weights, i, params_per_problem); }
+    for (auto inner_ppw = 0; inner_ppw < new_ppw_size; ++inner_ppw)
+    {
+      if (sub_model != offset) { clear_offset(weights, sub_model * new_ppw_size + inner_ppw, ppw); }
+    }
   }
-  for (auto weights_it = weights.begin() + offset; weights_it < weights.end(); weights_it += params_per_problem)
+  for (auto weights_it = weights.begin() + new_ppw_size * offset; weights_it < weights.end(); weights_it += ppw)
   {
     if (weights_it.index() == 0) { continue; }  // Index is same for 0
-    uint32_t cb_ind = weights_it.index() / params_per_problem;
-    for (uint64_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
+    uint32_t cb_ind = (weights_it.index() - new_ppw_size * offset * weights.stride()) / new_ppw_count;
+    for (auto ppw_offset = 0; ppw_offset < new_ppw_size; ++ppw_offset)
     {
-      if (*weights_it[stride_offset] != 0.0f)
+      for (auto stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
       {
-        // Move all strided weights of selected model to smaller weights array. Zero out
-        // previous weights.
-        weights.first()[cb_ind + stride_offset] = *weights_it[stride_offset];
-        *weights_it[stride_offset] = 0.f;
+        if (weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset] != 0.0f)
+        {
+          // Move all strided weights of selected model to smaller weights array. Zero out
+          // previous weights.
+          weights_arr[cb_ind + ppw_offset * weights.stride() + stride_offset] = weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset];
+          weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset] = 0.f;
+        }
       }
     }
   }
