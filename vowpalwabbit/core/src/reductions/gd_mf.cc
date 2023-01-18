@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/gd_mf.h"
 
+#include "vw/common/random_details.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/crossplat_compat.h"
@@ -11,7 +12,6 @@
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -249,7 +249,7 @@ void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
 {
   for (size_t i = 0; i != stride; ++i, ++index)
   {
-    float initial_value = 0.1f * merand48(index);
+    float initial_value = 0.1f * VW::details::merand48(index);
     weights[i] = initial_value;
   }
 }

@@ -252,7 +252,15 @@ void default_reduction_stack_setup::delayed_state_attach(VW::workspace& all, VW:
   _all_ptr = &all;
   _options_impl = &options;
   // populate setup_fn -> name map to be used to lookup names in setup_base
-  all.build_setupfn_name_dict(_reduction_stack);
+
+  for (auto&& setup_tuple : _reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
+}
+
+std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn setup_fn)
+{
+  const auto loc = _setup_name_map.find(setup_fn);
+  if (loc != _setup_name_map.end()) { return loc->second; }
+  return "NA";
 }
 
 // this function consumes all the _reduction_stack until it's able to construct a learner
@@ -283,10 +291,5 @@ VW::LEARNER::learner* default_reduction_stack_setup::setup_base_learner()
   }
 
   return nullptr;
-}
-
-std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn setup)
-{
-  return _all_ptr->get_setupfn_name(setup);
 }
 }  // namespace VW

@@ -8,6 +8,7 @@
 #include "vw/core/scope_exit.h"
 #include "vw/core/unique_sort.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -126,14 +127,9 @@ TEST(FeatureGroup, SortFeatureGroupTest)
 
 TEST(FeatureGroup, IterateExtentsTest)
 {
-  auto* vw = VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   auto* ex = VW::read_example(*vw, "|user_info a b c |user_geo a b c d |other a b c d e |user_info a b");
-  auto cleanup = VW::scope_exit(
-      [&]()
-      {
-        VW::finish_example(*vw, *ex);
-        VW::finish(*vw);
-      });
+  auto cleanup = VW::scope_exit([&]() { VW::finish_example(*vw, *ex); });
 
   {
     auto begin = ex->feature_space['u'].hash_extents_begin(VW::hash_space(*vw, "user_info"));

@@ -11,7 +11,6 @@
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/csoaa.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"

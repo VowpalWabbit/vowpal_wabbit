@@ -4,10 +4,10 @@
 
 #include "vw/core/reductions/explore_eval.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/global_data.h"
 #include "vw/core/print_utils.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/setup_base.h"

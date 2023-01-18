@@ -3,13 +3,12 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/oja_newton.h"
 
+#include "vw/common/random.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"

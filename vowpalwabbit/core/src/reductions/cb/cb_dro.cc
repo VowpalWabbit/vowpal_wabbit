@@ -7,7 +7,6 @@
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
 #include "vw/io/logger.h"

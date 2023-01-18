@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/lrq.h"
 
+#include "vw/common/random.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
@@ -10,8 +11,6 @@
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_args.h"  // for spoof_hex_encoded_namespaces
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/text_utils.h"
 
@@ -51,13 +50,13 @@ bool valid_int(const char* s)
   return (*s != '\0' && *endptr == '\0');
 }
 
-inline bool cheesyrbit(uint64_t& seed) { return merand48(seed) > 0.5; }
+inline bool cheesyrbit(uint64_t& seed) { return VW::details::merand48(seed) > 0.5; }
 
 inline float cheesyrand(uint64_t x)
 {
   uint64_t seed = x;
 
-  return merand48(seed);
+  return VW::details::merand48(seed);
 }
 
 constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }

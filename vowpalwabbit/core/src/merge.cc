@@ -103,7 +103,7 @@ std::unique_ptr<VW::workspace> copy_workspace(const VW::workspace* ws, VW::io::l
   temp_buffer.add_file(VW::io::create_vector_writer(backing_vector));
   VW::save_predictor(*const_cast<VW::workspace*>(ws), temp_buffer);
   return VW::initialize(VW::make_unique<VW::config::options_cli>(command_line),
-      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()), false, nullptr, nullptr, logger);
+      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()), nullptr, nullptr, logger);
 }
 
 std::vector<float> calc_per_model_weighting(const std::vector<float>& example_counts)
@@ -174,7 +174,7 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   else { command_line.emplace_back("--driver_output_off"); }
   command_line.emplace_back("--preserve_performance_counters");
   auto dest_workspace =
-      VW::initialize(VW::make_unique<VW::config::options_cli>(command_line), nullptr, false, nullptr, nullptr, logger);
+      VW::initialize(VW::make_unique<VW::config::options_cli>(command_line), nullptr, nullptr, nullptr, logger);
 
   // Get example counts and compute weighting of models
   std::vector<float> example_counts;
@@ -270,8 +270,8 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
   dest_command_line.emplace_back("--quiet");
   dest_command_line.emplace_back("--preserve_performance_counters");
 
-  auto destination_workspace = VW::initialize(
-      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, false, nullptr, nullptr, nullptr);
+  auto destination_workspace =
+      VW::initialize(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
 
   auto* target_learner = destination_workspace->l;
   while (target_learner != nullptr)
@@ -316,8 +316,8 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
   dest_command_line.emplace_back("--quiet");
   dest_command_line.emplace_back("--preserve_performance_counters");
 
-  auto destination_workspace = VW::initialize(
-      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, false, nullptr, nullptr, nullptr);
+  auto destination_workspace =
+      VW::initialize(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
 
   auto* target_learner = destination_workspace->l;
   while (target_learner != nullptr)

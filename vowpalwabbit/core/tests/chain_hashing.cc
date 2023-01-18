@@ -23,10 +23,10 @@ TEST(ChainHashing, BetweenFormats)
       }
     })";
 
-  auto vw = VW::initialize("--quiet --chain_hash", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--chain_hash"));
   {
     VW::multi_ex examples;
-    examples.push_back(&VW::get_unused_example(vw));
+    examples.push_back(&VW::get_unused_example(vw.get()));
     auto example = examples[0];
 
     VW::parsers::text::read_line(*vw, example, text.c_str());
@@ -45,5 +45,4 @@ TEST(ChainHashing, BetweenFormats)
     VW::finish_example(*vw, examples);
   }
   EXPECT_EQ(txt_idx, json_idx);
-  VW::finish(*vw);
 }

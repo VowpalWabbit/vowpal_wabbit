@@ -8,7 +8,6 @@
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
-#include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"

@@ -7,7 +7,6 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/learner_fwd.h"
 #include "vw/core/multi_ex.h"
-#include "vw/core/rand48.h"
 #include "vw/core/thread_pool.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"

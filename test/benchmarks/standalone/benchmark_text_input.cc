@@ -1,4 +1,6 @@
 #include "../benchmarks_common.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 #include "vw/text_parser/parse_example_text.h"
 
@@ -21,21 +23,20 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
   auto example_string = res[0];
 
   auto es = const_cast<char*>(example_string.c_str());
-  auto vw = VW::initialize("--cb 2 --quiet");
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--cb", "2", "--quiet"}));
   VW::multi_ex examples;
-  examples.push_back(&VW::get_unused_example(vw));
+  examples.push_back(&VW::get_unused_example(vw.get()));
   for (auto _ : state)
   {
     VW::parsers::text::read_line(*vw, examples[0], es);
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
-  VW::finish(*vw);
 }
 
 static void benchmark_learn_simple(benchmark::State& state, std::string example_string)
 {
-  auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--quiet"}));
 
   auto* example = VW::read_example(*vw, example_string);
 
@@ -45,12 +46,12 @@ static void benchmark_learn_simple(benchmark::State& state, std::string example_
     benchmark::ClobberMemory();
   }
   vw->finish_example(*example);
-  VW::finish(*vw);
 }
 
 static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
 {
-  auto vw = VW::initialize("--cb_explore_adf --epsilon 0.1 --quiet -q ::", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(
+      std::vector<std::string>{"--cb_explore_adf", "--epsilon", "0.1", "--quiet", "-q", "::"}));
   multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("shared tag1| s_1 s_2")));
   examples.push_back(VW::read_example(*vw, get_x_string_fts(feature_count)));
@@ -63,12 +64,12 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
     benchmark::ClobberMemory();
   }
   vw->finish_example(examples);
-  VW::finish(*vw);
 }
 
 static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature_string, std::string cmd = "")
 {
-  auto vw = VW::initialize("--ccb_explore_adf --quiet" + cmd, nullptr, false, nullptr, nullptr);
+  auto args = VW::split_command_line("--ccb_explore_adf --quiet" + cmd);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("ccb shared |User " + feature_string)));
@@ -87,7 +88,6 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
     benchmark::ClobberMemory();
   }
   vw->finish_example(examples);
-  VW::finish(*vw);
 }
 
 static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples,  // Total number of multi_ex examples
@@ -211,8 +211,9 @@ static std::vector<multi_ex> load_examples(VW::workspace* vw, const std::vector<
 static void benchmark_multi(
     benchmark::State& state, const std::vector<std::vector<std::string>>& examples_str, const std::string& cmd)
 {
-  auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
-  std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+  auto args = VW::split_command_line(cmd);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+  std::vector<multi_ex> examples_vec = load_examples(vw.get(), examples_str);
 
   for (auto _ : state)
   {
@@ -220,14 +221,14 @@ static void benchmark_multi(
     benchmark::ClobberMemory();
   }
   for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
-  VW::finish(*vw);
 }
 
 static void benchmark_multi_predict(
     benchmark::State& state, const std::vector<std::vector<std::string>>& examples_str, const std::string& cmd)
 {
-  auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
-  std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+  auto args = VW::split_command_line(cmd);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+  std::vector<multi_ex> examples_vec = load_examples(vw.get(), examples_str);
 
   for (multi_ex examples : examples_vec) { vw->learn(examples); }
 
@@ -237,7 +238,6 @@ static void benchmark_multi_predict(
     benchmark::ClobberMemory();
   }
   for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
-  VW::finish(*vw);
 }
 
 BENCHMARK_CAPTURE(bench_text, 120_string_fts, get_x_string_fts(120));

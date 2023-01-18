@@ -5673,5 +5673,32 @@
     "input_files": [
       "train-sets/decisionservice.json"
     ]
+  },
+  {
+    "id": 439,
+    "desc": "Run LDA with 100 topics on 1000 Wikipedia articles without minibatching",
+    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 -d train-sets/wiki256.dat --math-mode 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/wiki1K_no_minibatch.stderr",
+      "stdout": "train-sets/ref/wiki1K_no_minibatch.stdout"
+    },
+    "input_files": [
+      "train-sets/wiki256.dat"
+    ]
+  },
+  {
+    "id": 440,
+    "desc": "Interactive active test",
+    "bash_command": "python3 active_test.py --vw {VW} --active_interactor ../utl/active_interactor.py --unlabeled_data train-sets/0001_active.dat --labels train-sets/0001_active_input.dat --port 12353",
+    "diff_files": {
+      "stderr": "train-sets/ref/active_interactive.stderr",
+      "stdout": "train-sets/ref/active_interactive.stdout"
+    },
+    "input_files": [
+      "active_test.py",
+      "../utl/active_interactor.py",
+      "train-sets/0001_active.dat",
+      "train-sets/0001_active_input.dat"
+    ]
   }
 ]

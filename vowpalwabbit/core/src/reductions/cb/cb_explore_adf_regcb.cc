@@ -10,7 +10,6 @@
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"

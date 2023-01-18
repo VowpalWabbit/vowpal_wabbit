@@ -153,16 +153,14 @@ TEST(Automl, SaveLoadWIterations)
   const std::vector<uint64_t> swap_after = {500};
   callback_map empty_hooks;
   auto ctr_no_save = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--default_lease", "10"},
       empty_hooks, num_iterations, seed, swap_after);
   EXPECT_GT(ctr_no_save.back(), 0.6f);
 
   auto ctr_with_save = simulator::_test_helper_save_load(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--default_lease", "10"},
       num_iterations, seed, swap_after, split);
   EXPECT_GT(ctr_with_save.back(), 0.6f);
 
@@ -196,9 +194,8 @@ TEST(Automl, Assert0thEventAutomlWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--oracle_type rand --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--oracle_type", "rand", "--default_lease", "10"},
       test_hooks, num_iterations);
 
   EXPECT_GT(ctr.back(), 0.1f);
@@ -231,9 +228,10 @@ TEST(Automl, Assert0thEventMetricsWIterations)
         return true;
       });
 
-  auto ctr = simulator::_test_helper_hook(
-      "--extra_metrics ut_metrics.json --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --default_lease 10",
-      test_hooks, num_iterations);
+  auto ctr =
+      simulator::_test_helper_hook(std::vector<std::string>{"--extra_metrics", "ut_metrics.json", "--cb_explore_adf",
+                                       "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "10"},
+          test_hooks, num_iterations);
 
   EXPECT_GT(ctr.back(), 0.1f);
 }
@@ -273,12 +271,11 @@ TEST(Automl, AssertLiveConfigsAndLeaseWIterations)
         return true;
       });
 
-  auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 "
-      "--oracle_type rand --default_lease 10",
-      test_hooks, num_iterations);
+  auto ctr =
+      simulator::_test_helper_hook(std::vector<std::string>{"--automl=3", "--priority_type", "favor_popular_namespaces",
+                                       "--cb_explore_adf", "--quiet", "--epsilon", "0.2", "--fixed_significance_level",
+                                       "--random_seed", "5", "--oracle_type", "rand", "--default_lease", "10"},
+          test_hooks, num_iterations);
 
   EXPECT_GT(ctr.back(), 0.1f);
 }
@@ -287,8 +284,8 @@ TEST(Automl, AssertLiveConfigsAndLeaseWIterations)
 TEST(Automl, CppSimulatorAutomlWIterations)
 {
   auto ctr = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
-      "favor_popular_namespaces --oracle_type rand --default_lease 10");
+      std::vector<std::string>{"--cb_explore_adf", "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--automl", "3",
+          "--priority_type", "favor_popular_namespaces", "--oracle_type", "rand", "--default_lease", "10"});
   EXPECT_GT(ctr.back(), 0.6f);
 }
 
@@ -340,9 +337,9 @@ TEST(Automl, NamespaceSwitchWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--default_lease 500 --oracle_type one_diff --noconstant ",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "500", "--oracle_type", "one_diff",
+          "--noconstant"},
       test_hooks, num_iterations, seed, swap_after);
   EXPECT_GT(ctr.back(), 0.65f);
 }
@@ -389,9 +386,9 @@ TEST(Automl, ClearConfigsWIterations)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --oracle_type rand --default_lease 500 --noconstant ",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--oracle_type", "rand",
+          "--default_lease", "500", "--noconstant"},
       test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.4f);
@@ -445,9 +442,9 @@ TEST(Automl, ClearConfigsOneDiffWIterations)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --noconstant --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--noconstant",
+          "--default_lease", "10"},
       test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.65f);
@@ -458,10 +455,12 @@ TEST(Automl, QColConsistencyWIterations)
   const size_t seed = 88;
   const size_t num_iterations = 1000;
 
-  auto ctr_q_col = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q :: --default_lease 10", num_iterations, seed);
-  auto ctr_aml = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 1 --default_lease 10", num_iterations, seed);
+  auto ctr_q_col = simulator::_test_helper(std::vector<std::string>{"--cb_explore_adf", "--quiet", "--epsilon", "0.2",
+                                               "--random_seed", "5", "-q", "::", "--default_lease", "10"},
+      num_iterations, seed);
+  auto ctr_aml = simulator::_test_helper(std::vector<std::string>{"--cb_explore_adf", "--quiet", "--epsilon", "0.2",
+                                             "--random_seed", "5", "--automl", "1", "--default_lease", "10"},
+      num_iterations, seed);
 
   EXPECT_FLOAT_EQ(ctr_q_col.back(), ctr_aml.back());
 }
@@ -599,9 +598,9 @@ TEST(Automl, OneDiffImplUnittestWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--default_lease 500 --oracle_type one_diff --noconstant ",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "500", "--oracle_type", "one_diff",
+          "--noconstant"},
       test_hooks, num_iterations, seed);
 }
 
@@ -755,9 +754,9 @@ TEST(Automl, QbaseUnittestWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--default_lease 500 --oracle_type qbase_cubic --noconstant ",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "500", "--oracle_type", "qbase_cubic",
+          "--noconstant"},
       test_hooks, num_iterations, seed);
 }
 
@@ -866,9 +865,9 @@ TEST(Automl, InsertionChampChangeWIterations)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --oracle_type one_diff_inclusion --default_lease 500 --noconstant",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--oracle_type",
+          "one_diff_inclusion", "--default_lease", "500", "--noconstant"},
       test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.4f);

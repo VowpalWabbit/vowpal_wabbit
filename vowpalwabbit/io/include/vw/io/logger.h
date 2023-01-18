@@ -155,6 +155,11 @@ public:
 class logger
 {
 public:
+  logger(const logger&) = default;
+  logger& operator=(const logger&) = default;
+  logger(logger&&) noexcept = default;
+  logger& operator=(logger&&) noexcept = default;
+
 #if FMT_VERSION >= 80000
   template <typename... Args>
   void err_info(fmt::format_string<Args...> fmt, Args&&... args)

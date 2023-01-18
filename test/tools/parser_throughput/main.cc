@@ -4,6 +4,7 @@
 #include "vw/config/options_cli.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/learner.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
 #include "vw/json_parser/parse_example_json.h"
@@ -77,7 +78,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  std::string args = "--no_stdin --quiet ";
+  std::vector<std::string> args{"--no_stdin", "--quiet"};
   if (opts.was_supplied("args"))
   {
     const auto& illegal_options = {"--dsjson", "--json", "--data", "-d", "--csv"};
@@ -89,7 +90,8 @@ int main(int argc, char** argv)
         return 1;
       }
     }
-    args += extra_args;
+    auto split_args = VW::split_command_line(extra_args);
+    args.insert(args.end(), split_args.begin(), split_args.end());
   }
 
   size_t bytes = 0;
@@ -115,17 +117,17 @@ int main(int argc, char** argv)
   file_contents_as_io_buf.add_file(VW::io::create_buffer_view(file_contents.data(), file_contents.size()));
 
   const auto type = to_parser_type(type_str);
-  if (type == parser_type::DSJSON) { args += " --dsjson"; }
+  if (type == parser_type::DSJSON) { args.push_back("--dsjson"); }
   else if (type == parser_type::CSV)
   {
 #ifndef VW_BUILD_CSV
     THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_BUILD_CSV=ON");
 #endif
 
-    args += " --csv";
+    args.push_back("--csv");
   }
 
-  auto vw = VW::initialize(args, nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
   const auto is_multiline = vw->l->is_multiline();
 
   const auto start = std::chrono::high_resolution_clock::now();
@@ -142,9 +144,9 @@ int main(int argc, char** argv)
           exs.clear();
         }
 
-        auto* ae = &VW::get_unused_example(vw);
+        auto* ae = &VW::get_unused_example(vw.get());
         VW::string_view example(line.c_str(), line.size());
-        VW::parsers::text::details::substring_to_example(vw, ae, example);
+        VW::parsers::text::details::substring_to_example(vw.get(), ae, example);
         exs.push_back(ae);
       }
 
@@ -158,9 +160,9 @@ int main(int argc, char** argv)
     {
       for (const auto& line : file_contents_as_lines)
       {
-        VW::example& ae = VW::get_unused_example(vw);
+        VW::example& ae = VW::get_unused_example(vw.get());
         VW::string_view example(line.c_str(), line.size());
-        VW::parsers::text::details::substring_to_example(vw, &ae, example);
+        VW::parsers::text::details::substring_to_example(vw.get(), &ae, example);
         VW::finish_example(*vw, ae);
       }
     }
@@ -171,9 +173,9 @@ int main(int argc, char** argv)
     for (const auto& line : file_contents_as_lines)
     {
       VW::multi_ex examples;
-      examples.push_back(&VW::get_unused_example(vw));
+      examples.push_back(&VW::get_unused_example(vw.get()));
       VW::parsers::json::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()),
-          line.length(), false, std::bind(VW::get_unused_example, vw), &interaction);
+          line.length(), false, std::bind(VW::get_unused_example, vw.get()), &interaction);
       VW::finish_example(*vw, examples);
     }
   }
@@ -181,12 +183,12 @@ int main(int argc, char** argv)
   {
 #ifdef VW_BUILD_CSV
     VW::multi_ex examples;
-    examples.push_back(&VW::get_unused_example(vw));
-    while (VW::parsers::csv::parse_csv_examples(vw, file_contents_as_io_buf, examples) != 0)
+    examples.push_back(&VW::get_unused_example(vw.get()));
+    while (VW::parsers::csv::parse_csv_examples(vw.get(), file_contents_as_io_buf, examples) != 0)
     {
       VW::finish_example(*vw, *examples[0]);
       examples.clear();
-      examples.push_back(&VW::get_unused_example(vw));
+      examples.push_back(&VW::get_unused_example(vw.get()));
     }
     VW::finish_example(*vw, *examples[0]);
 #else
@@ -200,8 +202,6 @@ int main(int argc, char** argv)
   const auto megabytes_per_second = bytes_per_second / 1e6;
   std::cout << bytes << " bytes parsed in " << time_in_microseconds << "μs" << std::endl;
   std::cout << megabytes_per_second << "MB/s" << std::endl;
-
-  VW::finish(*vw);
 
   return 0;
 }

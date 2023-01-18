@@ -4,8 +4,8 @@
 
 #pragma once
 
+#include "vw/common/random.h"
 #include "vw/core/multi_ex.h"
-#include "vw/core/rand_state.h"
 
 #include <functional>
 #include <map>
@@ -59,9 +59,10 @@ private:
   void call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_map& callbacks, const size_t event);
 };
 
-std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations = 3000, int seed = 10);
-std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations = 3000, int seed = 10,
-    const std::vector<uint64_t>& swap_after = std::vector<uint64_t>(), const size_t split = 1500);
-std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations = 3000,
-    int seed = 10, const std::vector<uint64_t>& swap_after = std::vector<uint64_t>(), float scale_reward = 1.f);
+std::vector<float> _test_helper(const std::vector<std::string>& vw_arg, size_t num_iterations = 3000, int seed = 10);
+std::vector<float> _test_helper_save_load(const std::vector<std::string>& vw_arg, size_t num_iterations = 3000,
+    int seed = 10, const std::vector<uint64_t>& swap_after = std::vector<uint64_t>(), const size_t split = 1500);
+std::vector<float> _test_helper_hook(const std::vector<std::string>& vw_arg, callback_map& hooks,
+    size_t num_iterations = 3000, int seed = 10, const std::vector<uint64_t>& swap_after = std::vector<uint64_t>(),
+    float scale_reward = 1.f);
 }  // namespace simulator

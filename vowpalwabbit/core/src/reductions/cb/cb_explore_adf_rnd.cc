@@ -11,7 +11,6 @@
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
@@ -145,7 +144,7 @@ namespace
 class lazy_gaussian
 {
 public:
-  inline float operator[](uint64_t index) const { return merand48_boxmuller(index); }
+  inline float operator[](uint64_t index) const { return VW::details::merand48_boxmuller(index); }
 };
 
 inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)

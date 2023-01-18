@@ -251,8 +251,8 @@ def create_file_diff(
 def is_line_different(
     output_line: str, ref_line: str, epsilon: float
 ) -> Tuple[bool, str, bool]:
-    output_tokens = re.split("[ \t:,@]+", output_line)
-    ref_tokens = re.split("[ \t:,@]+", ref_line)
+    output_tokens = re.split("[ \t:,@=]+", output_line)
+    ref_tokens = re.split("[ \t:,@=]+", ref_line)
 
     # some compile flags cause VW to report different code line number for the same exception
     # if this is the case we want to ignore that from the diff
@@ -875,6 +875,7 @@ def convert_to_test_data(
                 "daemon" in test["bash_command"]
                 or "spanning_tree" in test["bash_command"]
                 or "sender_test.py" in test["bash_command"]
+                or "active_test.py" in test["bash_command"]
             ):
                 skip = True
                 skip_reason = "daemon not currently supported in MacOS"

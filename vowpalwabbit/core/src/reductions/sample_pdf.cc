@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/sample_pdf.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/api_status.h"
 #include "vw/core/cb_continuous_label.h"
@@ -12,7 +13,6 @@
 #include "vw/core/global_data.h"
 #include "vw/core/guard.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
 

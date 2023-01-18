@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/common/random.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand_state.h"
 
 #include <fstream>
 #include <functional>
