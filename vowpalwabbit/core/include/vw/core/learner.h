@@ -122,11 +122,6 @@ void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_na
 /// make_reduction_learner or make_base_learner and assembled before it is
 /// transformed into a VW::LEARNER::learner with VW::LEARNER::make_base then
 /// the usage of the templated functions should ensure types are correct.
-///
-/// \tparam T Type of the reduction data object stored. This allows this
-/// specific reduction to have it's own state.
-/// \tparam E Example type this reduction supports. Must be one of ::example or
-/// ::multi_ex
 class learner
 {
   /// \private
@@ -167,8 +162,8 @@ public:
   /// \param i This is the offset used for the weights in this call. If using
   /// multiple regressors/learners you can increment this value for each call.
   /// \returns The prediction calculated by this reduction be set on
-  /// example::pred. If <code>E</code> is ::multi_ex then the prediction is set
-  /// on the 0th item in the list.
+  /// example::pred. If the polymorphic_ex is ::multi_ex then the prediction is
+  /// set on the 0th item in the list.
   void predict(polymorphic_ex ec, size_t i = 0);
 
   void multipredict(polymorphic_ex ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions);
