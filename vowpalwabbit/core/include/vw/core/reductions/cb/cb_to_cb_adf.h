@@ -9,6 +9,5 @@ namespace VW
 namespace reductions
 {
 VW::LEARNER::learner* cb_to_cb_adf_setup(VW::setup_base_i& stack_builder);
-
 }
 }  // namespace VW

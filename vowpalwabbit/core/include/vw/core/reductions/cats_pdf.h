@@ -10,6 +10,5 @@ namespace VW
 namespace reductions
 {
 LEARNER::learner* cats_pdf_setup(setup_base_i& stack_builder);
-
 }
 }  // namespace VW
