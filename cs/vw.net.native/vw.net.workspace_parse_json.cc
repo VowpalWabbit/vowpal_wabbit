@@ -50,13 +50,13 @@ API vw_net_native::ERROR_CODE WorkspaceParseDecisionServiceJson(vw_net_native::w
   {
     if (workspace->vw->audit)
     {
-      VW::parsers::json::read_line_decision_service_json<true>(
-          *workspace->vw, examples, actual_json, length, copy_json, std::bind(get_example, example_pool_context), interaction);
+      VW::parsers::json::read_line_decision_service_json<true>(*workspace->vw, examples, actual_json, length, copy_json,
+          std::bind(get_example, example_pool_context), interaction);
     }
     else
     {
-      VW::parsers::json::read_line_decision_service_json<false>(
-          *workspace->vw, examples, actual_json, length, copy_json, std::bind(get_example, example_pool_context), interaction);
+      VW::parsers::json::read_line_decision_service_json<false>(*workspace->vw, examples, actual_json, length,
+          copy_json, std::bind(get_example, example_pool_context), interaction);
     }
 
     VW::setup_examples(*workspace->vw, examples);

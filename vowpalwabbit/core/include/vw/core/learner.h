@@ -124,7 +124,7 @@ void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_na
 /// the usage of the templated functions should ensure types are correct.
 class learner
 {
-  /// \private
+private:
   void debug_log_message(polymorphic_ex ex, const std::string& msg);
   // Used as a hook to intercept incorrect calls to the base learner.
   void debug_log_message(const char& /* ec */, const std::string& msg);
@@ -133,7 +133,7 @@ public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
 
-  // learn will return a prediction.  The framework should
+  // If true, learn will return a prediction. The framework should
   // not call predict before learn
   bool learn_returns_prediction = false;
 
@@ -172,13 +172,13 @@ public:
 
   float sensitivity(example& ec, size_t i = 0);
 
-  // called anytime saving or loading needs to happen. Autorecursive.
+  // Called anytime saving or loading needs to happen. Autorecursive.
   void save_load(io_buf& io, const bool read, const bool text);
 
-  // called to edit the command-line from a reduction. Autorecursive
+  // Called to edit the command-line from a reduction. Autorecursive
   void pre_save_load(VW::workspace& all);
 
-  // called when metrics is enabled.  Autorecursive.
+  // Called when metrics is enabled.  Autorecursive.
   void persist_metrics(metric_sink& metrics);
 
   // Autorecursive
@@ -187,13 +187,13 @@ public:
   // Autorecursive
   void end_pass();
 
-  // called after parsing of examples is complete.  Autorecursive.
+  // Called after parsing of examples is complete.  Autorecursive.
   void end_examples();
 
   // Called at the beginning by the driver.  Explicitly not recursive.
   void init_driver();
 
-  // called after learn example for each example.  Explicitly not recursive.
+  // Called after learn example for each example.  Explicitly not recursive.
   void finish_example(VW::workspace& all, polymorphic_ex ec);
 
   void update_stats(const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ec, VW::io::logger& logger);
@@ -236,8 +236,8 @@ public:
   VW_ATTR(nodiscard) const std::string& get_name() const { return _name; }
   VW_ATTR(nodiscard) const learner* get_learn_base() const { return _base_learner.get(); }
   VW_ATTR(nodiscard) learner* get_learn_base() { return _base_learner.get(); }
-  /// If true, this specific learner defines a save load function. If false, it simply forwards to a base
-  /// implementation.
+  // If true, this specific learner defines a save load function.
+  // If false, it simply forwards to a base implementation.
   VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return _save_load_f != nullptr; }
 
 private:
@@ -270,14 +270,15 @@ private:
   details::save_metric_func _persist_metrics_f;
   details::void_func _finisher_f;
 
-  std::string _name;  // Name of the reduction.  Used in VW_DBG to trace nested learn() and predict() calls
+  std::string _name;  // Name of the reduction. Used in VW_DBG to trace nested learn() and predict() calls.
   prediction_type_t _output_pred_type;
   prediction_type_t _input_pred_type;
   label_type_t _output_label_type;
   label_type_t _input_label_type;
   bool _is_multiline;  // Is this a single-line or multi-line reduction?
 
-  // There should only only ever be either none, or one of these two set. Never both.
+  // Functions for model merging. Each comes in two variants, with or without the VW::workspace* all pointer.
+  // There should only ever be either none or one of these two variants set. Never both.
   details::merge_with_all_func _merge_with_all_f;
   details::merge_func _merge_f;
   details::add_subtract_func _add_f;
@@ -285,13 +286,21 @@ private:
   details::add_subtract_func _subtract_f;
   details::add_subtract_with_all_func _subtract_with_all_f;
 
+  // This holds ownership of learner data as a type-erased void pointer.
+  // Functions needing access to data should bind a raw pointer when the learner is created, before type erasure.
   std::shared_ptr<void> _learner_data;
+
+  // This holds ownership of the previous learner in the reduction stack.
   std::shared_ptr<learner> _base_learner;
 
-  learner() = default;  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
+  // Private constructor
+  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
+  learner() = default;
 
-  // Create a copy of this learner having this learner as its base
-  // This can only be called once to maintain unique ownership of each _base_learner
+  // Create a copy of this learner. The implementation of this functions determines which of the
+  // functions inside the learner are propagated to the next learner, and which are reset to nullptr.
+  // The new learner will take over ownership of this learner in its _base_learner shared pointer.
+  // This can only be called once to maintain unique ownership of each _base_learner.
   std::unique_ptr<learner> make_derived_learner();
   bool _derived_learner_created_already = false;
 };
