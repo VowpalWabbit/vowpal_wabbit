@@ -175,7 +175,7 @@ void predict_or_learn(topk& d, VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   uint32_t k{};

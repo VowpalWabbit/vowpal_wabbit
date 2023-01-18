@@ -255,9 +255,9 @@ void default_reduction_stack_setup::delayed_state_attach(VW::workspace& all, VW:
   all.build_setupfn_name_dict(_reduction_stack);
 }
 
-// this function consumes all the _reduction_stack until it's able to construct a base_learner
+// this function consumes all the _reduction_stack until it's able to construct a learner
 // same signature/code as the old setup_base(...) from parse_args.cc
-VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
+VW::LEARNER::learner* default_reduction_stack_setup::setup_base_learner()
 {
   if (!_reduction_stack.empty())
   {

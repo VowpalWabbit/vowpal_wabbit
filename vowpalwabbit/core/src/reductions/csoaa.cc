@@ -180,7 +180,7 @@ void predict_or_learn(csoaa& c, learner& base, VW::example& ec)
 void finish_example(VW::workspace& all, csoaa&, VW::example& ec) { VW::details::finish_cs_example(all, ec); }
 }  // namespace
 
-base_learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::csoaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

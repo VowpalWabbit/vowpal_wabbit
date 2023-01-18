@@ -978,7 +978,7 @@ void end_pass(bfgs& b)
 
 // placeholder
 template <bool audit>
-void predict(bfgs& b, base_learner&, VW::example& ec)
+void predict(bfgs& b, learner&, VW::example& ec)
 {
   VW::workspace* all = b.all;
   ec.pred.scalar = bfgs_predict(*all, ec);
@@ -986,7 +986,7 @@ void predict(bfgs& b, base_learner&, VW::example& ec)
 }
 
 template <bool audit>
-void learn(bfgs& b, base_learner& base, VW::example& ec)
+void learn(bfgs& b, learner& base, VW::example& ec)
 {
   VW::workspace* all = b.all;
 
@@ -1109,7 +1109,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 
 void init_driver(bfgs& b) { b.backstep_on = true; }
 
-base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -1177,8 +1177,8 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
   all.bfgs = true;
   all.weights.stride_shift(2);
 
-  void (*learn_ptr)(bfgs&, base_learner&, VW::example&) = nullptr;
-  void (*predict_ptr)(bfgs&, base_learner&, VW::example&) = nullptr;
+  void (*learn_ptr)(bfgs&, learner&, VW::example&) = nullptr;
+  void (*predict_ptr)(bfgs&, learner&, VW::example&) = nullptr;
   std::string learner_name;
   if (all.audit || all.hash_inv)
   {

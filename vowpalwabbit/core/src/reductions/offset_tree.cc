@@ -261,7 +261,7 @@ void learn(VW::reductions::offset_tree::offset_tree& tree, learner& base, VW::ex
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::offset_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Offset Tree");
@@ -279,7 +279,7 @@ VW::LEARNER::base_learner* VW::reductions::offset_tree_setup(VW::setup_base_i& s
   auto otree = VW::make_unique<VW::reductions::offset_tree::offset_tree>(num_actions);
   otree->init();
 
-  base_learner* base = stack_builder.setup_base_learner();
+  learner* base = stack_builder.setup_base_learner();
   size_t ws = otree->learner_count();
 
   auto* l = make_reduction_learner(

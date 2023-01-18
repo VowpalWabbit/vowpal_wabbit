@@ -69,7 +69,7 @@ float predict_stable(const svrg& s, VW::example& ec)
   return VW::details::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
-void predict(svrg& s, base_learner&, VW::example& ec)
+void predict(svrg& s, learner&, VW::example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
   ec.pred.scalar = VW::details::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
@@ -120,7 +120,7 @@ void update_stable(const svrg& s, VW::example& ec)
   VW::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
 }
 
-void learn(svrg& s, base_learner& base, VW::example& ec)
+void learn(svrg& s, learner& base, VW::example& ec)
 {
   predict(s, base, ec);
 
@@ -178,7 +178,7 @@ void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 }
 }  // namespace
 
-base_learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

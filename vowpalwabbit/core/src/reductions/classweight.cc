@@ -78,7 +78,7 @@ void predict_or_learn(classweights& cweights, VW::LEARNER::learner& base, VW::ex
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::classweight_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

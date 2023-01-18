@@ -13,7 +13,7 @@ namespace VW
 {
 namespace reductions
 {
-LEARNER::base_learner* offset_tree_setup(VW::setup_base_i& stack_builder);
+LEARNER::learner* offset_tree_setup(VW::setup_base_i& stack_builder);
 
 namespace offset_tree
 {

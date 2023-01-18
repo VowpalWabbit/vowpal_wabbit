@@ -154,7 +154,7 @@ void VW::reductions::output_metrics(VW::workspace& all)
   }
 }
 
-VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -172,26 +172,26 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
   all.global_metrics = VW::metrics_collector(true);
 
-  auto* base_learner = stack_builder.setup_base_learner();
+  auto* base = stack_builder.setup_base_learner();
 
-  if (base_learner->is_multiline())
+  if (base->is_multiline())
   {
-    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
+    auto* l = make_reduction_learner(std::move(data), as_multiline(base),
         predict_or_learn<true, learner, multi_ex>, predict_or_learn<false, learner, multi_ex>,
         stack_builder.get_setupfn_name(metrics_setup))
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(base_learner->learn_returns_prediction)
+                  .set_output_prediction_type(base->get_output_prediction_type())
+                  .set_learn_returns_prediction(base->learn_returns_prediction)
                   .set_persist_metrics(persist)
                   .build();
     return l;
   }
   else
   {
-    auto* l = make_reduction_learner(std::move(data), as_singleline(base_learner),
+    auto* l = make_reduction_learner(std::move(data), as_singleline(base),
         predict_or_learn<true, learner, example>, predict_or_learn<false, learner, example>,
         stack_builder.get_setupfn_name(metrics_setup))
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(base_learner->learn_returns_prediction)
+                  .set_output_prediction_type(base->get_output_prediction_type())
+                  .set_learn_returns_prediction(base->learn_returns_prediction)
                   .set_persist_metrics(persist)
                   .build();
     return l;

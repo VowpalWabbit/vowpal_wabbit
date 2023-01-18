@@ -13,7 +13,7 @@ namespace VW
 {
 namespace reductions
 {
-LEARNER::base_learner* pmf_to_pdf_setup(VW::setup_base_i& stack_builder);
+LEARNER::learner* pmf_to_pdf_setup(VW::setup_base_i& stack_builder);
 class pmf_to_pdf_reduction
 {
 public:

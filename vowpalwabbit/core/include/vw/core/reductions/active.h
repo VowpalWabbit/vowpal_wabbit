@@ -24,6 +24,6 @@ public:
   VW::version_struct _model_version;
 };
 
-VW::LEARNER::base_learner* active_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::learner* active_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

@@ -128,7 +128,7 @@ void print_update_cb_algs(
 }
 }  // namespace
 
-base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

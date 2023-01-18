@@ -299,7 +299,7 @@ public:
   bool active_csoaa = false;
   float active_csoaa_verify = 0.f;
 
-  VW::LEARNER::base_learner* base_learner;
+  VW::LEARNER::learner* learner;
   clock_t start_clock_time;
 
   VW::cs_label empty_cs_label;
@@ -1174,7 +1174,7 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
   }
   cdbg << " ]" << endl;
 
-  as_singleline(priv.base_learner)->predict(ec, policy);
+  as_singleline(priv.learner)->predict(ec, policy);
 
   uint32_t act = priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass;
   cdbg << "a=" << act << " from";
@@ -1329,7 +1329,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
 
-    as_multiline(priv.base_learner)->predict(tmp, policy);
+    as_multiline(priv.learner)->predict(tmp, policy);
 
     ecs[a].ft_offset = old_offset;
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
@@ -1520,9 +1520,9 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
     for (size_t is_local = 0; is_local <= static_cast<size_t>(priv.xv); is_local++)
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
-      cdbg << "BEGIN base_learner->learn(ec, " << learner << ")" << endl;
-      as_singleline(priv.base_learner)->learn(ec, learner);
-      cdbg << "END   base_learner->learn(ec, " << learner << ")" << endl;
+      cdbg << "BEGIN learner->learn(ec, " << learner << ")" << endl;
+      as_singleline(priv.learner)->learn(ec, learner);
+      cdbg << "END   learner->learn(ec, " << learner << ")" << endl;
     }
     if (add_conditioning) { del_example_conditioning(priv, ec); }
     ec.l = old_label;
@@ -1573,7 +1573,7 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
       }
 
       // learn with the multiline example
-      as_multiline(priv.base_learner)->learn(tmp, learner);
+      as_multiline(priv.learner)->learn(tmp, learner);
 
       // restore the offsets in examples
       int i = 0;
@@ -2363,7 +2363,7 @@ void inline adjust_auto_condition(search_private& priv)
 }
 
 template <bool is_learn>
-void do_actual_learning(search& sch, base_learner& base, VW::multi_ex& ec_seq)
+void do_actual_learning(search& sch, learner& base, VW::multi_ex& ec_seq)
 {
   if (ec_seq.size() == 0)
   {
@@ -2375,7 +2375,7 @@ void do_actual_learning(search& sch, base_learner& base, VW::multi_ex& ec_seq)
 
   search_private& priv = *sch.priv;
   priv.offset = ec_seq[0]->ft_offset;
-  priv.base_learner = &base;
+  priv.learner = &base;
 
   adjust_auto_condition(priv);
   priv.read_example_last_id = ec_seq[ec_seq.size() - 1]->example_counter;
@@ -3075,7 +3075,7 @@ action predictor::predict()
 
 // TODO: valgrind --leak-check=full ./vw --search 2 -k -c --passes 1 --search_task sequence -d test_beam --holdout_off
 // --search_rollin policy --search_metatask selective_branching 2>&1 | less
-base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
 {
   using namespace Search;
 

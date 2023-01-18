@@ -150,7 +150,7 @@ void print_update_cats(VW::workspace& all, VW::shared_data& sd, const VW::reduct
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -189,7 +189,7 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
         "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", bandwidth);
   }
 
-  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  LEARNER::learner* p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<VW::reductions::cats::cats>(as_singleline(p_base));
   p_reduction->num_actions = num_actions;
   p_reduction->bandwidth = bandwidth;

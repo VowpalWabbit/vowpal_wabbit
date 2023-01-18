@@ -300,7 +300,7 @@ void learn(ect& e, learner& base, VW::example& ec)
 }
 }  // namespace
 
-base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -320,7 +320,7 @@ base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 
-  base_learner* base = stack_builder.setup_base_learner();
+  learner* base = stack_builder.setup_base_learner();
   if (link == "logistic")
   {
     data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]

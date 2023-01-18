@@ -384,7 +384,7 @@ void save_load(data& sm, VW::io_buf& io, bool read, bool text)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace* all = stack_builder.get_all_pointer();

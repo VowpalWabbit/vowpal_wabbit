@@ -364,7 +364,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   }
 }
 
-void predict(svm_params& params, base_learner&, VW::example& ec)
+void predict(svm_params& params, learner&, VW::example& ec)
 {
   VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -671,7 +671,7 @@ void train(svm_params& params)
   free(train_pool);
 }
 
-void learn(svm_params& params, base_learner&, VW::example& ec)
+void learn(svm_params& params, learner&, VW::example& ec)
 {
   VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -715,7 +715,7 @@ void finish_kernel_svm(svm_params& params)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

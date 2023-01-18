@@ -18,9 +18,9 @@ public:
 
   void delayed_state_attach(VW::workspace& all, VW::config::options_i& options) override;
 
-  // this function consumes all the reduction_stack until it's able to construct a base_learner
+  // this function consumes all the reduction_stack until it's able to construct a learner
   // same signature as the old setup_base(...) from parse_args.cc
-  VW::LEARNER::base_learner* setup_base_learner() override;
+  VW::LEARNER::learner* setup_base_learner() override;
 
   VW::config::options_i* get_options() override { return _options_impl; }
 

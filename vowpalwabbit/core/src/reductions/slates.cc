@@ -244,7 +244,7 @@ void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::learner& b
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

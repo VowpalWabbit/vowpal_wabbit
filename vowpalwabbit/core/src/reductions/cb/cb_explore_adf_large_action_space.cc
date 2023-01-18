@@ -291,7 +291,7 @@ template class cb_explore_adf_large_action_space<two_pass_svd_impl, one_rank_spa
 }  // namespace VW
 
 template <typename T, typename S>
-VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::learner* base,
+VW::LEARNER::learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::learner* base,
     implementation_type& impl_type, VW::workspace& all, bool with_metrics, uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size, size_t block_size,
     bool use_explicit_simd)
@@ -322,7 +322,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
   return l;
 }
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

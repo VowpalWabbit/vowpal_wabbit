@@ -188,7 +188,7 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   {
     if (target_learner->has_merge())
     {
-      std::vector<const VW::LEARNER::base_learner*> learners_to_merge;
+      std::vector<const VW::LEARNER::learner*> learners_to_merge;
       for (const auto* delta : workspaces_to_merge)
       {
         auto* source_data = delta->l->get_learner_by_name_prefix(target_learner->get_name());
@@ -279,10 +279,10 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
     if (target_learner->has_add())
     {
       auto learner_name = target_learner->get_name();
-      const VW::LEARNER::base_learner* base_learner = base.l->get_learner_by_name_prefix(learner_name);
-      const VW::LEARNER::base_learner* delta_learner = delta->l->get_learner_by_name_prefix(learner_name);
+      const VW::LEARNER::learner* learner = base.l->get_learner_by_name_prefix(learner_name);
+      const VW::LEARNER::learner* delta_learner = delta->l->get_learner_by_name_prefix(learner_name);
 
-      target_learner->add(base, *delta, base_learner, delta_learner, *destination_workspace, target_learner);
+      target_learner->add(base, *delta, learner, delta_learner, *destination_workspace, target_learner);
     }
     // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
     // not going to work.
@@ -325,8 +325,8 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
     if (target_learner->has_subtract())
     {
       auto learner_name = target_learner->get_name();
-      const VW::LEARNER::base_learner* ws1_learner = ws1.l->get_learner_by_name_prefix(learner_name);
-      const VW::LEARNER::base_learner* ws2_learner = ws2.l->get_learner_by_name_prefix(learner_name);
+      const VW::LEARNER::learner* ws1_learner = ws1.l->get_learner_by_name_prefix(learner_name);
+      const VW::LEARNER::learner* ws2_learner = ws2.l->get_learner_by_name_prefix(learner_name);
 
       target_learner->subtract(ws1, ws2, ws1_learner, ws2_learner, *destination_workspace, target_learner);
     }

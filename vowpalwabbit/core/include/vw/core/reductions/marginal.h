@@ -9,6 +9,6 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* marginal_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::learner* marginal_setup(VW::setup_base_i& stack_builder);
 }
 }  // namespace VW

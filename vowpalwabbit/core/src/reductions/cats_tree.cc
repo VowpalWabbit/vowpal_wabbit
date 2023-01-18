@@ -334,7 +334,7 @@ void learn(VW::reductions::cats::cats_tree& tree, learner& base, VW::example& ec
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -362,7 +362,7 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(all.trace_message.get(), all.quiet);
 
-  base_learner* base = stack_builder.setup_base_learner();
+  learner* base = stack_builder.setup_base_learner();
   int32_t params_per_weight = tree->learner_count();
   auto* l = make_reduction_learner(
       std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))

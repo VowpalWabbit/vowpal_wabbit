@@ -52,7 +52,7 @@ void predict_or_learn(binary_data& data, VW::LEARNER::learner& base, VW::example
   }
 }
 
-VW::LEARNER::base_learner* VW::reductions::binary_setup(setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::binary_setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
 

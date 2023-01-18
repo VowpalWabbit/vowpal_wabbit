@@ -121,7 +121,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::learner& /* base
 }
 
 // This is a learner which does nothing with examples.
-// void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
+// void learn(audit_regressor_data&, VW::LEARNER::learner&, example&) {}
 
 void audit_regressor(audit_regressor_data& rd, VW::LEARNER::learner& base, VW::example& ec)
 {
@@ -267,7 +267,7 @@ void init_driver(audit_regressor_data& dat)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::audit_regressor_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

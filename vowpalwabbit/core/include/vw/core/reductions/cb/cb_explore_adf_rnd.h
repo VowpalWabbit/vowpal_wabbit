@@ -10,6 +10,6 @@ namespace VW
 {
 namespace reductions
 {
-LEARNER::base_learner* cb_explore_adf_rnd_setup(VW::setup_base_i& stack_builder);
+LEARNER::learner* cb_explore_adf_rnd_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

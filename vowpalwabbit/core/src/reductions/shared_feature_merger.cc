@@ -107,7 +107,7 @@ void persist(sfm_data& data, VW::metric_sink& metrics)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::shared_feature_merger_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

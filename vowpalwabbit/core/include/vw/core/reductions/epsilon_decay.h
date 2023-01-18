@@ -16,7 +16,7 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
+VW::LEARNER::learner* epsilon_decay_setup(VW::setup_base_i&);
 
 namespace epsilon_decay
 {

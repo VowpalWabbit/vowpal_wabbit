@@ -82,7 +82,7 @@ inline void predict_with_confidence(uncertainty& d, const float fx, float& fw)
   float uncertain = ((d.b.data.ftrl_beta + sqrtf_ng2) / d.b.data.ftrl_alpha + d.b.data.l2_lambda);
   d.score += (1 / uncertain) * sign(fx);
 }
-float sensitivity(ftrl& b, base_learner& /* base */, VW::example& ec)
+float sensitivity(ftrl& b, learner& /* base */, VW::example& ec)
 {
   uncertainty uncetain(b);
   VW::foreach_feature<uncertainty, predict_with_confidence>(*(b.all), ec, uncetain);
@@ -90,7 +90,7 @@ float sensitivity(ftrl& b, base_learner& /* base */, VW::example& ec)
 }
 
 template <bool audit>
-void predict(ftrl& b, base_learner&, VW::example& ec)
+void predict(ftrl& b, learner&, VW::example& ec)
 {
   size_t num_features_from_interactions = 0;
   ec.partial_prediction = VW::inline_predict(*b.all, ec, num_features_from_interactions);
@@ -100,7 +100,7 @@ void predict(ftrl& b, base_learner&, VW::example& ec)
 }
 
 template <bool audit>
-void multipredict(ftrl& b, base_learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+void multipredict(ftrl& b, learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
     bool finalize_predictions)
 {
   VW::workspace& all = *b.all;
@@ -249,7 +249,7 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_XT] /= d.average_squared_norm_x;
 }
 
-void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
+void coin_betting_predict(ftrl& b, learner&, VW::example& ec)
 {
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
@@ -267,7 +267,7 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
-void update_state_and_predict_pistol(ftrl& b, base_learner&, VW::example& ec)
+void update_state_and_predict_pistol(ftrl& b, learner&, VW::example& ec)
 {
   b.data.predict = 0;
 
@@ -299,9 +299,9 @@ void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 }
 
 // NO_SANITIZE_UNDEFINED needed in learn functions because
-// base_learner& base might be a reference created from nullptr
+// learner& base might be a reference created from nullptr
 template <bool audit>
-void NO_SANITIZE_UNDEFINED learn_proximal(ftrl& a, base_learner& base, VW::example& ec)
+void NO_SANITIZE_UNDEFINED learn_proximal(ftrl& a, learner& base, VW::example& ec)
 {
   // predict with confidence
   predict<audit>(a, base, ec);
@@ -311,7 +311,7 @@ void NO_SANITIZE_UNDEFINED learn_proximal(ftrl& a, base_learner& base, VW::examp
 }
 
 template <bool audit>
-void NO_SANITIZE_UNDEFINED learn_pistol(ftrl& a, base_learner& base, VW::example& ec)
+void NO_SANITIZE_UNDEFINED learn_pistol(ftrl& a, learner& base, VW::example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
@@ -321,7 +321,7 @@ void NO_SANITIZE_UNDEFINED learn_pistol(ftrl& a, base_learner& base, VW::example
 }
 
 template <bool audit>
-void NO_SANITIZE_UNDEFINED learn_coin_betting(ftrl& a, base_learner& base, VW::example& ec)
+void NO_SANITIZE_UNDEFINED learn_coin_betting(ftrl& a, learner& base, VW::example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
@@ -371,7 +371,7 @@ void end_pass(ftrl& g)
 }
 }  // namespace
 
-base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -422,7 +422,7 @@ base_learner* VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
   b->total_weight = 0;
 
   std::string algorithm_name;
-  void (*learn_ptr)(ftrl&, base_learner&, VW::example&) = nullptr;
+  void (*learn_ptr)(ftrl&, learner&, VW::example&) = nullptr;
   bool learn_returns_prediction = false;
 
   // Defaults that are specific to the mode that was chosen.

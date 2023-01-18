@@ -375,7 +375,7 @@ void learn(VW::reductions::cb_adf& c, learner& base, VW::multi_ex& ec_seq) { c.l
 void predict(VW::reductions::cb_adf& c, learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
 }  // namespace
-VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

@@ -103,7 +103,7 @@ void receive_result(sender& s)
   print_update_sender(*s.all, *(s.all->sd), sent_info, prediction);
 }
 
-void send_example(sender& s, VW::LEARNER::base_learner& /* non_existent_base */, VW::example& ec)
+void send_example(sender& s, VW::LEARNER::learner& /* non_existent_base */, VW::example& ec)
 {
   if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 
@@ -125,7 +125,7 @@ void end_examples(sender& s)
 
 // This reduction does not actually produce a prediction despite claiming it
 // does, since it waits to receive the result and then outputs it.
-VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

@@ -29,7 +29,7 @@ void print_feature(VW::workspace& all, float value, uint64_t index)
   (*all.trace_message) << " ";
 }
 
-void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
+void learn(print& p, VW::LEARNER::learner&, VW::example& ec)
 {
   assert(p.all != nullptr);
   auto& all = *p.all;
@@ -54,7 +54,7 @@ void learn(print& p, VW::LEARNER::base_learner&, VW::example& ec)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::print_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::print_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

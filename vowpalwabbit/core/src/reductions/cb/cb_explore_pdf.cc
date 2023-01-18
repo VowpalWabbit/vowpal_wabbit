@@ -99,7 +99,7 @@ void predict_or_learn(cb_explore_pdf& reduction, learner&, VW::example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Continuous Actions: cb_explore_pdf");

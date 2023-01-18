@@ -118,7 +118,7 @@ void learn_or_predict(cb_sample_data& data, learner& base, VW::multi_ex& example
 }
 }  // namespace
 
-base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

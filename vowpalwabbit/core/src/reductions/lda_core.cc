@@ -993,7 +993,7 @@ void learn_batch(lda& l)
   l.doc_lengths.clear();
 }
 
-void learn(lda& l, base_learner&, VW::example& ec)
+void learn(lda& l, learner&, VW::example& ec)
 {
   uint32_t num_ex = static_cast<uint32_t>(l.examples.size());
   l.examples.push_back(&ec);
@@ -1010,7 +1010,7 @@ void learn(lda& l, base_learner&, VW::example& ec)
   if (++num_ex == l.minibatch) { learn_batch(l); }
 }
 
-void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
+void learn_with_metrics(lda& l, learner& base, VW::example& ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1033,8 +1033,8 @@ void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
 }
 
 // placeholder
-void predict(lda& l, base_learner& base, VW::example& ec) { learn(l, base, ec); }
-void predict_with_metrics(lda& l, base_learner& base, VW::example& ec) { learn_with_metrics(l, base, ec); }
+void predict(lda& l, learner& base, VW::example& ec) { learn(l, base, ec); }
+void predict_with_metrics(lda& l, learner& base, VW::example& ec) { learn_with_metrics(l, base, ec); }
 
 class word_doc_frequency
 {
@@ -1294,7 +1294,7 @@ void VW::reductions::lda::get_top_weights(
   else { ::get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights); }
 }
 
-base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

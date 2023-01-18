@@ -68,7 +68,7 @@ public:
   bool use_domination = false;
 
   VW::workspace* all = nullptr;  // statistics, loss
-  VW::LEARNER::base_learner* l = nullptr;
+  VW::LEARNER::learner* l = nullptr;
 
   VW::v_array<lq_data> query_data;
 
@@ -377,7 +377,7 @@ void print_update_cs_active(VW::workspace& all, VW::shared_data& /* sd */, const
 }
 }  // namespace
 
-base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -472,7 +472,7 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 
   // Label parser set to cost sensitive label parser
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
-  base_learner* b = l;
+  learner* b = l;
   all.cost_sensitive = b;
   return b;
 }

@@ -148,7 +148,7 @@ void cb_explore_adf_synthcover::save_load(VW::io_buf& model_file, bool read, boo
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

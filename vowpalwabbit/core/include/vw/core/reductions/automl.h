@@ -9,6 +9,6 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
+VW::LEARNER::learner* automl_setup(VW::setup_base_i&);
 }  // namespace reductions
 }  // namespace VW

@@ -12,14 +12,14 @@
 #include "vw/core/interactions.h"
 #include "vw/core/vw_math.h"
 
-// we need it for base_learner
+// we need it for learner
 #include "vw/core/vw_fwd.h"
 
 namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* gd_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::learner* gd_setup(VW::setup_base_i& stack_builder);
 
 namespace details
 {
@@ -43,12 +43,12 @@ public:
   float neg_power_t = 0.f;
   float sparse_l2 = 0.f;
   float update_multiplier = 0.f;
-  void (*predict)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
-  void (*learn)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
-  void (*update)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
-  float (*sensitivity)(gd&, VW::LEARNER::base_learner&, VW::example&) = nullptr;
+  void (*predict)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
+  void (*learn)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
+  void (*update)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
+  float (*sensitivity)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
   void (*multipredict)(
-      gd&, VW::LEARNER::base_learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
+      gd&, VW::LEARNER::learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
   bool adaptive_input = false;
   bool normalized_input = false;
   bool adax = false;

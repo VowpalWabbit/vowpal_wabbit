@@ -184,7 +184,7 @@ void predict(VW::reductions::pmf_to_pdf_reduction& data, learner&, VW::example& 
 void learn(VW::reductions::pmf_to_pdf_reduction& data, learner&, VW::example& ec) { data.learn(ec); }
 }  // namespace
 
-base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

@@ -14,7 +14,7 @@ namespace VW
 {
 namespace reductions
 {
-LEARNER::base_learner* cats_tree_setup(setup_base_i& stack_builder);
+LEARNER::learner* cats_tree_setup(setup_base_i& stack_builder);
 
 namespace cats
 {

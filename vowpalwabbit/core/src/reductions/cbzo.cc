@@ -203,7 +203,7 @@ void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf)
 }
 
 template <uint8_t policy, bool audit_or_hash_inv>
-void predict(cbzo& data, base_learner&, VW::example& ec)
+void predict(cbzo& data, learner&, VW::example& ec)
 {
   ec.pred.pdf.clear();
 
@@ -217,9 +217,9 @@ void predict(cbzo& data, base_learner&, VW::example& ec)
 }
 
 // NO_SANITIZE_UNDEFINED needed in learn functions because
-// base_learner& base might be a reference created from nullptr
+// learner& base might be a reference created from nullptr
 template <uint8_t policy, bool feature_mask_off, bool audit_or_hash_inv>
-void NO_SANITIZE_UNDEFINED learn(cbzo& data, base_learner& base, VW::example& ec)
+void NO_SANITIZE_UNDEFINED learn(cbzo& data, learner& base, VW::example& ec)
 {
   // update_weights() doesn't require predict() to be called. It is called
   // to respect --audit, --invert_hash, --predictions for train examples
@@ -276,7 +276,7 @@ void print_update_cbzo(VW::workspace& all, VW::shared_data& sd, const cbzo& /* d
   }
 }
 
-void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, base_learner&, VW::example&)
+void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, learner&, VW::example&)
 {
   if (policy == CONSTANT_POLICY)
   {
@@ -302,7 +302,7 @@ void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbz
     THROW("Unknown policy encountered: " << policy)
 }
 
-void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, VW::example&)
+void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, learner&, VW::example&)
 {
   if (policy == CONSTANT_POLICY)
   {
@@ -320,7 +320,7 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, VW
 
 }  // namespace
 
-base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

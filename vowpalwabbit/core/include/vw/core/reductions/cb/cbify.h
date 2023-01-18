@@ -28,7 +28,7 @@ public:
   ~cbify_adf_data();
 };
 
-VW::LEARNER::base_learner* cbify_setup(VW::setup_base_i& stack_builder);
-VW::LEARNER::base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::learner* cbify_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::learner* cbifyldf_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

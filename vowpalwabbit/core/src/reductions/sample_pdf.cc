@@ -106,7 +106,7 @@ void predict_or_learn(sample_pdf& reduction, learner&, VW::example& ec)
 // END sample_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
 
-VW::LEARNER::base_learner* VW::reductions::sample_pdf_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::sample_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -119,7 +119,7 @@ VW::LEARNER::base_learner* VW::reductions::sample_pdf_setup(VW::setup_base_i& st
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  LEARNER::learner* p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<sample_pdf>();
   p_reduction->init(as_singleline(p_base), all.get_random_state());
 

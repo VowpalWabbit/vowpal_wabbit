@@ -10,6 +10,6 @@ namespace VW
 namespace reductions
 {
 // Setup reduction in stack
-LEARNER::base_learner* sample_pdf_setup(VW::setup_base_i& stack_builder);
+LEARNER::learner* sample_pdf_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

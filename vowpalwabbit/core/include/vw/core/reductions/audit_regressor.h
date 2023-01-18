@@ -10,6 +10,6 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* audit_regressor_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::learner* audit_regressor_setup(VW::setup_base_i& stack_builder);
 }
 }  // namespace VW

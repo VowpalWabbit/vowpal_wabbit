@@ -35,7 +35,7 @@ public:
 
   void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& /* base */, VW::example& ec)
+  void test_predict(learner& /* base */, VW::example& ec)
   {
     ec.pred.a_s.clear();
     const auto curr_pred = _predictions[_curr_idx++];
@@ -43,18 +43,18 @@ public:
     ec.pred.a_s.push_back(VW::action_score{1, curr_pred.second});
   }
 
-  void test_learn(base_learner& /* base */, VW::example& /* ec */)
+  void test_learn(learner& /* base */, VW::example& /* ec */)
   {
     // do nothing
   }
 
-  // use NO_SANITIZE_UNDEFINED because reference base_learner& base may be bound to nullptr
-  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
+  // use NO_SANITIZE_UNDEFINED because reference learner& base may be bound to nullptr
+  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
+  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
   {
     test_reduction.test_learn(base, ec);
   };

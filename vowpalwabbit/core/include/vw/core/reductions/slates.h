@@ -52,7 +52,7 @@ private:
   void learn_or_predict(VW::LEARNER::learner& base, multi_ex& examples);
 };
 
-VW::LEARNER::base_learner* slates_setup(VW::setup_base_i&);
+VW::LEARNER::learner* slates_setup(VW::setup_base_i&);
 std::string generate_slates_label_printout(const std::vector<example*>& slots);
 }  // namespace reductions
 }  // namespace VW

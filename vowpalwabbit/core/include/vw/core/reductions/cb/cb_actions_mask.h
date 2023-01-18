@@ -25,6 +25,6 @@ private:
   void learn_or_predict(VW::LEARNER::learner& base, multi_ex& examples);
 };
 
-VW::LEARNER::base_learner* cb_actions_mask_setup(VW::setup_base_i&);
+VW::LEARNER::learner* cb_actions_mask_setup(VW::setup_base_i&);
 }  // namespace reductions
 }  // namespace VW

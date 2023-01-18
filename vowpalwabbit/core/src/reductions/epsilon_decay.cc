@@ -291,7 +291,7 @@ void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
 
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -383,12 +383,12 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
-  auto* base_learner = stack_builder.setup_base_learner();
+  auto* base = stack_builder.setup_base_learner();
 
   VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
-      base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
+      base->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
   auto& adf_data =
-      *static_cast<VW::reductions::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
+      *static_cast<VW::reductions::cb_adf*>(as_multiline(base->get_learner_by_name_prefix("cb_adf"))
                                                 ->get_internal_type_erased_data_pointer_test_use_only());
   data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
@@ -398,9 +398,9 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   data->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
   data->_sd_gravity = &(all.sd->gravity);
 
-  if (base_learner->is_multiline())
+  if (base->is_multiline())
   {
-    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
+    auto* l = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base), learn,
         predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
                         .set_input_label_type(VW::label_type_t::CB)
                         .set_output_label_type(VW::label_type_t::CB)
@@ -411,7 +411,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                         .set_finish(::finish)
                         .build();
 
-    return learner;
+    return l;
   }
   else
   {

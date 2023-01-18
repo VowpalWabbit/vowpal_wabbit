@@ -9,6 +9,6 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* svrg_setup(VW::setup_base_i& stack_builder);
+VW::LEARNER::learner* svrg_setup(VW::setup_base_i& stack_builder);
 }
 }  // namespace VW

@@ -11,6 +11,6 @@ namespace VW
 namespace reductions
 {
 // Setup reduction in stack
-LEARNER::base_learner* cb_explore_pdf_setup(VW::setup_base_i& stack_builder);
+LEARNER::learner* cb_explore_pdf_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

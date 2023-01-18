@@ -345,7 +345,7 @@ void make_pred(oja_n_update_data& data, float x, float& wref)
   for (int i = 1; i <= m; i++) { data.prediction += w[i] * x * data.oja_newton_ptr->D[i] * data.oja_newton_ptr->b[i]; }
 }
 
-void predict(OjaNewton& oja_newton_ptr, base_learner&, VW::example& ec)
+void predict(OjaNewton& oja_newton_ptr, learner&, VW::example& ec)
 {
   oja_newton_ptr.data.prediction = 0;
   VW::foreach_feature<oja_n_update_data, make_pred>(*oja_newton_ptr.all, ec, oja_newton_ptr.data);
@@ -396,8 +396,8 @@ void update_normalization(oja_n_update_data& data, float x, float& wref)
 }
 
 // NO_SANITIZE_UNDEFINED needed in learn functions because
-// base_learner& base might be a reference created from nullptr
-void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, VW::example& ec)
+// learner& base might be a reference created from nullptr
+void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, learner& base, VW::example& ec)
 {
   // predict
   predict(oja_newton_ptr, base, ec);
@@ -495,7 +495,7 @@ void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, boo
 }
 }  // namespace
 
-base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

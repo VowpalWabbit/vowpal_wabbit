@@ -78,7 +78,7 @@ inline float glf1(float in) { return 2.f / (1.f + VW::details::correctedExp(-in)
 inline float id(float in) { return in; }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -129,7 +129,7 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
   else { THROW("Unknown link function: " << link); }
 
   auto s = VW::make_unique<scorer>(&all);
-  // This always returns a base_learner.
+  // This always returns a learner.
   auto* base = as_singleline(stack_builder.setup_base_learner());
   auto* l = VW::LEARNER::make_reduction_learner(std::move(s), base, learn_fn, predict_fn, name)
                 .set_learn_returns_prediction(base->learn_returns_prediction)

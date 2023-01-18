@@ -91,7 +91,7 @@ void predict_or_learn(get_pmf& reduction, learner& /*unused*/, VW::example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Continuous Actions: Convert to Pmf");
@@ -104,7 +104,7 @@ VW::LEARNER::base_learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  LEARNER::learner* p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<get_pmf>();
   p_reduction->init(as_singleline(p_base), epsilon);
 

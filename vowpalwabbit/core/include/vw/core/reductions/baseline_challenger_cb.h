@@ -10,6 +10,6 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* baseline_challenger_cb_setup(VW::setup_base_i&);
+VW::LEARNER::learner* baseline_challenger_cb_setup(VW::setup_base_i&);
 }
 }  // namespace VW

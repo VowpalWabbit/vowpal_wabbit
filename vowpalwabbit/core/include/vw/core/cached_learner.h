@@ -10,7 +10,7 @@ namespace VW
 class cached_learner : public setup_base_i
 {
 public:
-  VW::LEARNER::base_learner* setup_base_learner() override { return _cached; }
+  VW::LEARNER::learner* setup_base_learner() override { return _cached; }
 
   operator bool() const { return !(_cached == nullptr); }
 
@@ -20,9 +20,9 @@ public:
     _all_ptr = &all;
   }
 
-  cached_learner(VW::LEARNER::base_learner* learner = nullptr) : _cached(learner) {}
+  cached_learner(VW::LEARNER::learner* learner = nullptr) : _cached(learner) {}
 
-  cached_learner(VW::workspace& all, VW::config::options_i& options, VW::LEARNER::base_learner* learner = nullptr)
+  cached_learner(VW::workspace& all, VW::config::options_i& options, VW::LEARNER::learner* learner = nullptr)
       : _cached(learner)
   {
     delayed_state_attach(all, options);
@@ -35,7 +35,7 @@ public:
   std::string get_setupfn_name(reduction_setup_fn) override { return ""; }
 
 private:
-  VW::LEARNER::base_learner* _cached = nullptr;
+  VW::LEARNER::learner* _cached = nullptr;
   VW::config::options_i* _options_impl = nullptr;
   VW::workspace* _all_ptr = nullptr;
 };

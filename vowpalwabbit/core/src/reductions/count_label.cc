@@ -21,9 +21,9 @@ class reduction_data
 {
 public:
   VW::workspace* all = nullptr;
-  VW::LEARNER::base_learner* base = nullptr;
+  VW::LEARNER::learner* base = nullptr;
 
-  explicit reduction_data(VW::workspace* all, VW::LEARNER::base_learner* base) : all(all), base(base) {}
+  explicit reduction_data(VW::workspace* all, VW::LEARNER::learner* base) : all(all), base(base) {}
 };
 
 template <bool is_learn>
@@ -47,7 +47,7 @@ void count_label_multi(reduction_data& data, VW::LEARNER::learner& base, VW::mul
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::count_label_setup(VW::setup_base_i& stack_builder)
 {
   bool dont_output_best_constant = false;
   VW::config::option_group_definition reduction_options("[Reduction] Count label");

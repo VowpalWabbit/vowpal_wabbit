@@ -252,7 +252,7 @@ void save_load(mwt& c, VW::io_buf& model_file, bool read, bool text)
 }
 }  // namespace
 
-base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
+learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -317,7 +317,7 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_or_learn<false, false, false>;
   }
 
-  base_learner* base = stack_builder.setup_base_learner();
+  learner* base = stack_builder.setup_base_learner();
 
   auto* l = make_reduction_learner(
       std::move(c), as_singleline(base), learn_ptr, pred_ptr, stack_builder.get_setupfn_name(mwt_setup) + name_addition)

@@ -24,7 +24,7 @@ class reduction_test_harness
 public:
   void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& /* base */, VW::example& ec)
+  void test_predict(learner& /* base */, VW::example& ec)
   {
     ec.pred.a_s.clear();
     for (const auto& prediction : _predictions)
@@ -33,17 +33,17 @@ public:
     }
   }
 
-  void test_learn(base_learner& /* base */, VW::example& /* ec */)
+  void test_learn(learner& /* base */, VW::example& /* ec */)
   { /*noop*/
   }
 
-  // use NO_SANITIZE_UNDEFINED because reference base_learner& base may be bound to nullptr
-  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
+  // use NO_SANITIZE_UNDEFINED because reference learner& base may be bound to nullptr
+  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
+  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
   {
     test_reduction.test_learn(base, ec);
   };

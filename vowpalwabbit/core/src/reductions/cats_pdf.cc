@@ -134,7 +134,7 @@ void print_update_cats_pdf(VW::workspace& all, VW::shared_data& /* sd */, const 
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_builder)
+VW::LEARNER::learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -157,7 +157,7 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
   if (!options.was_supplied("get_pmf")) { options.insert("get_pmf", ""); }
   options.insert("cats_tree", std::to_string(num_actions));
 
-  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  LEARNER::learner* p_base = stack_builder.setup_base_learner();
   bool always_predict = !all.final_prediction_sink.empty();
   auto p_reduction = VW::make_unique<cats_pdf>(as_singleline(p_base), always_predict);
 
