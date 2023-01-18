@@ -102,7 +102,7 @@ void decrement_offset(polymorphic_ex ex, const size_t increment, const size_t i)
 
 void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name, prediction_type_t in_pred_type,
     prediction_type_t base_out_pred_type, label_type_t out_label_type, label_type_t base_in_label_type,
-    details::merge_func merge_func_ptr, details::merge_with_all_func merge_with_all_func_ptr);
+    details::merge_func merge_f, details::merge_with_all_func merge_with_all_f);
 }  // namespace details
 
 /// \brief Defines the interface for a learning algorithm.
