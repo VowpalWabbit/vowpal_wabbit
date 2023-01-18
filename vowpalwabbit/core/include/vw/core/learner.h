@@ -76,24 +76,17 @@ using print_update_func =
     std::function<void(VW::workspace&, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)>;
 using cleanup_example_func = std::function<void(polymorphic_ex ex)>;
 
+// Merge functions come in two variants, with or without the `all` VW::workspace reference
+// Use the version without all for reduction learners, where the workspace reference is not needed
+// Use the version with all for base learners
+using merge_func = std::function<void(
+    const std::vector<float>& per_model_weighting, const std::vector<const void*>& all_data, void* output_data)>;
 using merge_with_all_func = std::function<void(const std::vector<float>& per_model_weighting,
     const std::vector<const VW::workspace*>& all_workspaces, const std::vector<const void*>& all_data,
     VW::workspace& output_workspace, void* output_data)>;
-using merge_with_all_fptr = void (*)(const std::vector<float>& per_model_weighting,
-    const std::vector<const VW::workspace*>& all_workspaces, const std::vector<const void*>& all_data,
-    VW::workspace& output_workspace, void* output_data);
-// When the workspace reference is not needed this signature should definitely be used.
-using merge_func = std::function<void(
-    const std::vector<float>& per_model_weighting, const std::vector<const void*>& all_data, void* output_data)>;
-using merge_fptr = void (*)(
-    const std::vector<float>& per_model_weighting, const std::vector<const void*>& all_data, void* output_data);
-
-using add_subtract_func = std::function<void(const void* data_1, const void* data_2, void* data_out)>;
-using add_subtract_fptr = void (*)(const void* data_1, const void* data_2, void* data_out);
+using add_subtract_func = std::function<void(const void* data1, const void* data2, void* data_out)>;
 using add_subtract_with_all_func = std::function<void(const VW::workspace& ws1, const void* data1,
     const VW::workspace& ws2, const void* data2, VW::workspace& ws_out, void* data_out)>;
-using add_subtract_with_all_fptr = void (*)(const VW::workspace& ws1, const void* data1, const VW::workspace& ws2,
-    const void* data2, VW::workspace& ws_out, void* data_out);
 
 void debug_increment_depth(polymorphic_ex ex);
 void debug_decrement_depth(polymorphic_ex ex);
@@ -138,12 +131,6 @@ public:
   bool learn_returns_prediction = false;
 
   void* get_internal_type_erased_data_pointer_test_use_only() { return _learner_data.get(); }
-
-  // For all functions here that invoke stored function pointers,
-  // NO_SANITIZE_UNDEFINED is needed because the function pointer's type may be
-  // cast to something different from the original function's signature.
-  // This will throw an error in UndefinedBehaviorSanitizer even when the
-  // function can be correctly called through the pointer.
 
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
@@ -212,13 +199,12 @@ public:
 
   // The functions merge/add/subtract are NOT auto recursive
   // They are effectively static implementing a trait for this learner type.
-  void NO_SANITIZE_UNDEFINED merge(const std::vector<float>& per_model_weighting,
-      const std::vector<const VW::workspace*>& all_workspaces, const std::vector<const learner*>& all_learners,
-      VW::workspace& output_workspace, learner& output_learner);
-  void NO_SANITIZE_UNDEFINED add(const VW::workspace& base_ws, const VW::workspace& delta_ws, const learner* base_l,
-      const learner* delta_l, VW::workspace& output_ws, learner* output_l);
-  void NO_SANITIZE_UNDEFINED subtract(const VW::workspace& ws1, const VW::workspace& ws2, const learner* l1,
-      const learner* l2, VW::workspace& output_ws, learner* output_l);
+  void merge(const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
+      const std::vector<const learner*>& all_learners, VW::workspace& output_workspace, learner& output_learner);
+  void add(const VW::workspace& base_ws, const VW::workspace& delta_ws, const learner* base_l, const learner* delta_l,
+      VW::workspace& output_ws, learner* output_l);
+  void subtract(const VW::workspace& ws1, const VW::workspace& ws2, const learner* l1, const learner* l2,
+      VW::workspace& output_ws, learner* output_l);
 
   VW_ATTR(nodiscard) bool has_legacy_finish() const { return _finish_example_f != nullptr; }
   VW_ATTR(nodiscard) bool has_update_stats() const { return _update_stats_f != nullptr; }
@@ -241,15 +227,19 @@ public:
   VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return _save_load_f != nullptr; }
 
 private:
-  template <class FluentBuilderT, class DataT, class ExampleT>
-  friend class common_learner_builder;
-  template <class DataT, class ExampleT>
-  friend class base_learner_builder;
-  template <class DataT, class ExampleT>
-  friend class reduction_learner_builder;
-  template <class ExampleT>
-  friend class reduction_no_data_learner_builder;
+  // Name of the reduction. Used in VW_DBG to trace nested learn() and predict() calls.
+  std::string _name;
 
+  // Is this a single-line or multi-line reduction?
+  bool _is_multiline;
+
+  // Input and output data types
+  prediction_type_t _output_pred_type;
+  prediction_type_t _input_pred_type;
+  label_type_t _output_label_type;
+  label_type_t _input_label_type;
+
+  // These functions will implement the internal logic of each type of learner.
   details::void_func _init_f;
   details::base_example_func _learn_f;
   details::base_example_func _predict_f;
@@ -270,13 +260,6 @@ private:
   details::save_metric_func _persist_metrics_f;
   details::void_func _finisher_f;
 
-  std::string _name;  // Name of the reduction. Used in VW_DBG to trace nested learn() and predict() calls.
-  prediction_type_t _output_pred_type;
-  prediction_type_t _input_pred_type;
-  label_type_t _output_label_type;
-  label_type_t _input_label_type;
-  bool _is_multiline;  // Is this a single-line or multi-line reduction?
-
   // Functions for model merging. Each comes in two variants, with or without the VW::workspace* all pointer.
   // There should only ever be either none or one of these two variants set. Never both.
   details::merge_with_all_func _merge_with_all_f;
@@ -288,10 +271,15 @@ private:
 
   // This holds ownership of learner data as a type-erased void pointer.
   // Functions needing access to data should bind a raw pointer when the learner is created, before type erasure.
+  // Except for model merging functions, where the void* will get casted back into the original data type.
   std::shared_ptr<void> _learner_data;
 
   // This holds ownership of the previous learner in the reduction stack.
   std::shared_ptr<learner> _base_learner;
+
+  // For reduction learners, return a reference to its base stored in _base_learner
+  // For base learners, return reference to self because _base_learner contains nullptr
+  learner& safe_get_base_learner();
 
   // Private constructor
   // Should only be able to construct a learner through make_reduction_learner / make_base_learner
@@ -304,9 +292,15 @@ private:
   std::unique_ptr<learner> make_derived_learner();
   bool _derived_learner_created_already = false;
 
-  // For reduction learners, return a reference to its base stored in _base_learner
-  // For base learners, return reference to self because _base_learner contains nullptr
-  learner& safe_get_base_learner();
+  // Give builders access to private class members.
+  template <class FluentBuilderT, class DataT, class ExampleT>
+  friend class common_learner_builder;
+  template <class DataT, class ExampleT>
+  friend class base_learner_builder;
+  template <class DataT, class ExampleT>
+  friend class reduction_learner_builder;
+  template <class ExampleT>
+  friend class reduction_no_data_learner_builder;
 };
 
 template <bool is_learn>
@@ -786,51 +780,61 @@ public:
     return std::move(*this);
   }
 
-  reduction_learner_builder<DataT, ExampleT>& set_merge(void (*merge_fn)(
-      const std::vector<float>& per_model_weighting, const std::vector<const DataT*>& all_data, DataT& output_data)) &
+  reduction_learner_builder<DataT, ExampleT>& set_merge(
+      void (*fn_ptr)(const std::vector<float>&, const std::vector<const DataT*>&, DataT&)) &
   {
-    assert(merge_fn != nullptr);
-    this->learner_ptr->_merge_f = reinterpret_cast<details::merge_fptr>(merge_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_merge_f = [fn_ptr](const std::vector<float>& per_model_weighting,
+                                      const std::vector<const void*>& all_data, void* output_data)
+    {
+      fn_ptr(per_model_weighting, reinterpret_cast<const std::vector<const DataT*>&>(all_data),
+          *static_cast<DataT*>(output_data));
+    };
     return *this;
   }
 
-  reduction_learner_builder<DataT, ExampleT>&& set_merge(void (*merge_fn)(
-      const std::vector<float>& per_model_weighting, const std::vector<const DataT*>& all_data, DataT& output_data)) &&
+  reduction_learner_builder<DataT, ExampleT>&& set_merge(
+      void (*fn_ptr)(const std::vector<float>&, const std::vector<const DataT*>&, DataT&)) &&
   {
-    assert(merge_fn != nullptr);
-    this->learner_ptr->_merge_f = reinterpret_cast<details::merge_fptr>(merge_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_merge_f = [fn_ptr](const std::vector<float>& per_model_weighting,
+                                      const std::vector<const void*>& all_data, void* output_data)
+    {
+      fn_ptr(per_model_weighting, reinterpret_cast<const std::vector<const DataT*>&>(all_data),
+          *static_cast<DataT*>(output_data));
+    };
     return std::move(*this);
   }
 
-  reduction_learner_builder<DataT, ExampleT>& set_add(
-      void (*add_fn)(const DataT& data1, const DataT& data2, DataT& data_out)) &
+  reduction_learner_builder<DataT, ExampleT>& set_add(void (*fn_ptr)(const DataT&, const DataT&, DataT&)) &
   {
-    assert(add_fn != nullptr);
-    this->learner_ptr->_add_f = reinterpret_cast<details::add_subtract_fptr>(add_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_add_f = [fn_ptr](const void* data1, const void* data2, void* data_out)
+    { fn_ptr(*static_cast<const DataT*>(data1), *static_cast<const DataT*>(data2), *static_cast<DataT*>(data_out)); };
     return *this;
   }
 
-  reduction_learner_builder<DataT, ExampleT>&& set_add(
-      void (*add_fn)(const DataT& data1, const DataT& data2, DataT& data_out)) &&
+  reduction_learner_builder<DataT, ExampleT>&& set_add(void (*fn_ptr)(const DataT&, const DataT&, DataT&)) &&
   {
-    assert(add_fn != nullptr);
-    this->learner_ptr->_add_f = reinterpret_cast<details::add_subtract_fptr>(add_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_add_f = [fn_ptr](const void* data1, const void* data2, void* data_out)
+    { fn_ptr(*static_cast<const DataT*>(data1), *static_cast<const DataT*>(data2), *static_cast<DataT*>(data_out)); };
     return std::move(*this);
   }
 
-  reduction_learner_builder<DataT, ExampleT>& set_subtract(
-      void (*subtract_fn)(const DataT& data1, const DataT& data2, DataT& data_out)) &
+  reduction_learner_builder<DataT, ExampleT>& set_subtract(void (*fn_ptr)(const DataT&, const DataT&, DataT&)) &
   {
-    assert(subtract_fn != nullptr);
-    this->learner_ptr->_subtract_f = reinterpret_cast<details::add_subtract_fptr>(subtract_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_subtract_f = [fn_ptr](const void* data1, const void* data2, void* data_out)
+    { fn_ptr(*static_cast<const DataT*>(data1), *static_cast<const DataT*>(data2), *static_cast<DataT*>(data_out)); };
     return *this;
   }
 
-  reduction_learner_builder<DataT, ExampleT>&& set_subtract(
-      void (*subtract_fn)(const DataT& data1, const DataT& data2, DataT& data_out)) &&
+  reduction_learner_builder<DataT, ExampleT>&& set_subtract(void (*fn_ptr)(const DataT&, const DataT&, DataT&)) &&
   {
-    assert(subtract_fn != nullptr);
-    this->learner_ptr->_subtract_f = reinterpret_cast<details::add_subtract_fptr>(subtract_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_subtract_f = [fn_ptr](const void* data1, const void* data2, void* data_out)
+    { fn_ptr(*static_cast<const DataT*>(data1), *static_cast<const DataT*>(data2), *static_cast<DataT*>(data_out)); };
     return std::move(*this);
   }
 
@@ -930,54 +934,84 @@ public:
     return std::move(*this);
   }
 
-  base_learner_builder<DataT, ExampleT>& set_merge_with_all(void (*merge_with_all_fn)(
-      const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
-      const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data)) &
+  base_learner_builder<DataT, ExampleT>& set_merge_with_all(void (*fn_ptr)(const std::vector<float>&,
+      const std::vector<const VW::workspace*>&, const std::vector<const DataT*>&, VW::workspace&, DataT&)) &
   {
-    assert(merge_with_all_fn != nullptr);
-    this->learner_ptr->_merge_with_all_f = reinterpret_cast<details::merge_with_all_fptr>(merge_with_all_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_merge_with_all_f =
+        [fn_ptr](const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
+            const std::vector<const void*>& all_data, VW::workspace& output_workspace, void* output_data)
+    {
+      fn_ptr(per_model_weighting, all_workspaces, reinterpret_cast<const std::vector<const DataT*>&>(all_data),
+          output_workspace, *static_cast<DataT*>(output_data));
+    };
     return *this;
   }
 
-  base_learner_builder<DataT, ExampleT>&& set_merge_with_all(void (*merge_with_all_fn)(
-      const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
-      const std::vector<DataT*>& all_data, VW::workspace& output_workspace, DataT& output_data)) &&
+  base_learner_builder<DataT, ExampleT>&& set_merge_with_all(void (*fn_ptr)(const std::vector<float>&,
+      const std::vector<const VW::workspace*>&, const std::vector<const DataT*>&, VW::workspace&, DataT&)) &&
   {
-    assert(merge_with_all_fn != nullptr);
-    this->learner_ptr->_merge_with_all_f = reinterpret_cast<details::merge_with_all_fptr>(merge_with_all_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_merge_with_all_f =
+        [fn_ptr](const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
+            const std::vector<const void*>& all_data, VW::workspace& output_workspace, void* output_data)
+    {
+      fn_ptr(per_model_weighting, all_workspaces, reinterpret_cast<const std::vector<const DataT*>&>(all_data),
+          output_workspace, *static_cast<DataT*>(output_data));
+    };
     return std::move(*this);
   }
 
-  base_learner_builder<DataT, ExampleT>& set_add_with_all(void (*add_with_all_fn)(const VW::workspace& ws1,
-      const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out)) &
+  base_learner_builder<DataT, ExampleT>& set_add_with_all(
+      void (*fn_ptr)(const VW::workspace&, const DataT&, const VW::workspace&, const DataT&, VW::workspace&, DataT&)) &
   {
-    assert(add_with_all_fn != nullptr);
-    this->learner_ptr->_add_with_all_f = reinterpret_cast<details::add_subtract_with_all_fptr>(add_with_all_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_add_with_all_f = [fn_ptr](const VW::workspace& ws1, const void* data1, const VW::workspace& ws2,
+                                             const void* data2, VW::workspace& ws_out, void* data_out)
+    {
+      fn_ptr(ws1, *static_cast<const DataT*>(data1), ws2, *static_cast<const DataT*>(data2), ws_out,
+          *static_cast<DataT*>(data_out));
+    };
     return *this;
   }
-  base_learner_builder<DataT, ExampleT>&& set_add_with_all(void (*add_with_all_fn)(const VW::workspace& ws1,
-      const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out)) &&
+  base_learner_builder<DataT, ExampleT>&& set_add_with_all(
+      void (*fn_ptr)(const VW::workspace&, const DataT&, const VW::workspace&, const DataT&, VW::workspace&, DataT&)) &&
   {
-    assert(add_with_all_fn != nullptr);
-    this->learner_ptr->_add_with_all_f = reinterpret_cast<details::add_subtract_with_all_fptr>(add_with_all_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_add_with_all_f = [fn_ptr](const VW::workspace& ws1, const void* data1, const VW::workspace& ws2,
+                                             const void* data2, VW::workspace& ws_out, void* data_out)
+    {
+      fn_ptr(ws1, *static_cast<const DataT*>(data1), ws2, *static_cast<const DataT*>(data2), ws_out,
+          *static_cast<DataT*>(data_out));
+    };
     return std::move(*this);
   }
 
-  base_learner_builder<DataT, ExampleT>& set_subtract_with_all(void (*subtract_with_all_fn)(const VW::workspace& ws1,
-      const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out)) &
+  base_learner_builder<DataT, ExampleT>& set_subtract_with_all(
+      void (*fn_ptr)(const VW::workspace&, const DataT&, const VW::workspace&, const DataT&, VW::workspace&, DataT&)) &
   {
-    assert(subtract_with_all_fn != nullptr);
-    this->learner_ptr->_subtract_with_all_f =
-        reinterpret_cast<details::add_subtract_with_all_fptr>(subtract_with_all_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_subtract_with_all_f = [fn_ptr](const VW::workspace& ws1, const void* data1,
+                                                  const VW::workspace& ws2, const void* data2, VW::workspace& ws_out,
+                                                  void* data_out)
+    {
+      fn_ptr(ws1, *static_cast<const DataT*>(data1), ws2, *static_cast<const DataT*>(data2), ws_out,
+          *static_cast<DataT*>(data_out));
+    };
     return *this;
   }
 
-  base_learner_builder<DataT, ExampleT>&& set_subtract_with_all(void (*subtract_with_all_fn)(const VW::workspace& ws1,
-      const DataT& data1, const VW::workspace& ws2, DataT& data2, VW::workspace& ws_out, DataT& data_out)) &&
+  base_learner_builder<DataT, ExampleT>&& set_subtract_with_all(
+      void (*fn_ptr)(const VW::workspace&, const DataT&, const VW::workspace&, const DataT&, VW::workspace&, DataT&)) &&
   {
-    assert(subtract_with_all_fn != nullptr);
-    this->learner_ptr->_subtract_with_all_f =
-        reinterpret_cast<details::add_subtract_with_all_fptr>(subtract_with_all_fn);
+    assert(fn_ptr != nullptr);
+    this->learner_ptr->_subtract_with_all_f = [fn_ptr](const VW::workspace& ws1, const void* data1,
+                                                  const VW::workspace& ws2, const void* data2, VW::workspace& ws_out,
+                                                  void* data_out)
+    {
+      fn_ptr(ws1, *static_cast<const DataT*>(data1), ws2, *static_cast<const DataT*>(data2), ws_out,
+          *static_cast<DataT*>(data_out));
+    };
     return std::move(*this);
   }
 

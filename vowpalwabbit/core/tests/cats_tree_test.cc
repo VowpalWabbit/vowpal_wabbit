@@ -55,13 +55,12 @@ public:
     learner_offset.emplace_back(ec.ft_offset);
   }
 
-  // use NO_SANITIZE_UNDEFINED because reference learner& base may be bound to nullptr
-  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
+  static void predict(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
   {
     test_reduction.test_predict(base, ec);
   }
 
-  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
+  static void learn(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
   {
     test_reduction.test_learn(base, ec);
   };

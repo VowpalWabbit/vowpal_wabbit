@@ -235,7 +235,8 @@ void end_pass(VW::reductions::gd& g)
 }
 
 void merge(const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
-    const std::vector<VW::reductions::gd*>& all_data, VW::workspace& output_workspace, VW::reductions::gd& output_data)
+    const std::vector<const VW::reductions::gd*>& all_data, VW::workspace& output_workspace,
+    VW::reductions::gd& output_data)
 {
   const size_t length = static_cast<size_t>(1) << output_workspace.num_bits;
 
@@ -275,7 +276,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
 }
 
 void add(const VW::workspace& /* ws1 */, const VW::reductions::gd& data1, const VW::workspace& ws2,
-    VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
+    const VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
 {
   const size_t length = static_cast<size_t>(1) << ws_out.num_bits;
   // When adding, output the weights from the model delta (2nd arugment to addition)
@@ -294,7 +295,7 @@ void add(const VW::workspace& /* ws1 */, const VW::reductions::gd& data1, const 
 }
 
 void subtract(const VW::workspace& ws1, const VW::reductions::gd& data1, const VW::workspace& /* ws2 */,
-    VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
+    const VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
 {
   const size_t length = static_cast<size_t>(1) << ws_out.num_bits;
   // When subtracting, output the weights from the newer model (1st arugment to subtraction)
@@ -815,11 +816,9 @@ void update(VW::reductions::gd& g, learner&, VW::example& ec)
   }
 }
 
-// NO_SANITIZE_UNDEFINED needed in learn functions because
-// learner& base might be a reference created from nullptr
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-void NO_SANITIZE_UNDEFINED learn(VW::reductions::gd& g, learner& base, VW::example& ec)
+void learn(VW::reductions::gd& g, learner& base, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   assert(ec.l.simple.label != FLT_MAX);

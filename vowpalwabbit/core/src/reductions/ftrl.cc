@@ -298,10 +298,8 @@ void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
   VW::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
 }
 
-// NO_SANITIZE_UNDEFINED needed in learn functions because
-// learner& base might be a reference created from nullptr
 template <bool audit>
-void NO_SANITIZE_UNDEFINED learn_proximal(ftrl& a, learner& base, VW::example& ec)
+void learn_proximal(ftrl& a, learner& base, VW::example& ec)
 {
   // predict with confidence
   predict<audit>(a, base, ec);
@@ -311,7 +309,7 @@ void NO_SANITIZE_UNDEFINED learn_proximal(ftrl& a, learner& base, VW::example& e
 }
 
 template <bool audit>
-void NO_SANITIZE_UNDEFINED learn_pistol(ftrl& a, learner& base, VW::example& ec)
+void learn_pistol(ftrl& a, learner& base, VW::example& ec)
 {
   // update state based on the example and predict
   update_state_and_predict_pistol(a, base, ec);
@@ -321,7 +319,7 @@ void NO_SANITIZE_UNDEFINED learn_pistol(ftrl& a, learner& base, VW::example& ec)
 }
 
 template <bool audit>
-void NO_SANITIZE_UNDEFINED learn_coin_betting(ftrl& a, learner& base, VW::example& ec)
+void learn_coin_betting(ftrl& a, learner& base, VW::example& ec)
 {
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);

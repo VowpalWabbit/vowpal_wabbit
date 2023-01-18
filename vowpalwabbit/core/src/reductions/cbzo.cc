@@ -216,10 +216,8 @@ void predict(cbzo& data, learner&, VW::example& ec)
   if (audit_or_hash_inv) { print_audit_features(*data.all, ec); }
 }
 
-// NO_SANITIZE_UNDEFINED needed in learn functions because
-// learner& base might be a reference created from nullptr
 template <uint8_t policy, bool feature_mask_off, bool audit_or_hash_inv>
-void NO_SANITIZE_UNDEFINED learn(cbzo& data, learner& base, VW::example& ec)
+void learn(cbzo& data, learner& base, VW::example& ec)
 {
   // update_weights() doesn't require predict() to be called. It is called
   // to respect --audit, --invert_hash, --predictions for train examples
