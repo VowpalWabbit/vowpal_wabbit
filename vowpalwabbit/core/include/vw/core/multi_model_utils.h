@@ -20,8 +20,7 @@ inline void clear_offset(dense_parameters& weights, const size_t offset, const s
 {
   assert(offset < ppw);
 
-  for (auto iterator_clear = weights.begin() + offset; iterator_clear < weights.end();
-       iterator_clear += ppw)
+  for (auto iterator_clear = weights.begin() + offset; iterator_clear < weights.end(); iterator_clear += ppw)
   {
     assert((iterator_clear.index_without_stride() & (ppw - 1)) == offset);
     for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
@@ -32,7 +31,8 @@ inline void clear_offset(dense_parameters& weights, const size_t offset, const s
 }
 
 // ***** NOTE: ppw must be of form 2^n *****
-inline void resize_model_weights(dense_parameters& weights, const size_t offset, const size_t ppw, const size_t new_ppw_size)
+inline void resize_model_weights(
+    dense_parameters& weights, const size_t offset, const size_t ppw, const size_t new_ppw_size)
 {
   VW::weight* weights_arr = weights.first();
   const size_t new_ppw_count = ppw / new_ppw_size;
@@ -55,7 +55,8 @@ inline void resize_model_weights(dense_parameters& weights, const size_t offset,
         {
           // Move all strided weights of selected model to smaller weights array. Zero out
           // previous weights.
-          weights_arr[cb_ind + ppw_offset * weights.stride() + stride_offset] = weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset];
+          weights_arr[cb_ind + ppw_offset * weights.stride() + stride_offset] =
+              weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset];
           weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset] = 0.f;
         }
       }
