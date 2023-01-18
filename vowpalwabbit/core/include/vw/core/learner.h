@@ -819,8 +819,10 @@ public:
       // function data objects so that if this reduction does not define a function such as
       // save_load then calling save_load on this object will essentially result in forwarding the
       // call the next reduction that actually implements it.
+
+      // For the no data reduction, allocate a placeholder char as its data to avoid nullptr issues
       : common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>(
-            base->make_derived_learner(), nullptr, name)
+            base->make_derived_learner(), VW::make_unique<char>(0), name)
   {
     // Default sensitivity calls base's sensitivity recursively
     super::set_sensitivity(details::recur_sensitivity);
