@@ -362,7 +362,7 @@ void learner::learn(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "learn");
-  _learn_f(*_base_learner, ec);
+  _learn_f(safe_get_base_learner(), ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -371,7 +371,7 @@ void learner::predict(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "predict");
-  _predict_f(*_base_learner, ec);
+  _predict_f(safe_get_base_learner(), ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -384,7 +384,7 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
     debug_log_message(ec, "multipredict");
     for (size_t c = 0; c < count; c++)
     {
-      _predict_f(*_base_learner, ec);
+      _predict_f(safe_get_base_learner(), ec);
       if (finalize_predictions)
       {
         pred[c] = std::move(static_cast<VW::example&>(ec).pred);  // TODO: this breaks for complex labels because =
@@ -401,7 +401,7 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
   {
     details::increment_offset(ec, increment, lo);
     debug_log_message(ec, "multipredict");
-    _multipredict_f(*_base_learner, ec, count, increment, pred, finalize_predictions);
+    _multipredict_f(safe_get_base_learner(), ec, count, increment, pred, finalize_predictions);
     details::decrement_offset(ec, increment, lo);
   }
 }
@@ -411,7 +411,7 @@ void learner::update(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "update");
-  _update_f(*_base_learner, ec);
+  _update_f(safe_get_base_learner(), ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -419,7 +419,7 @@ float learner::sensitivity(example& ec, size_t i)
 {
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "sensitivity");
-  const float ret = _sensitivity_f(*_base_learner, ec);
+  const float ret = _sensitivity_f(safe_get_base_learner(), ec);
   details::decrement_offset(ec, increment, i);
   return ret;
 }
@@ -672,6 +672,12 @@ std::unique_ptr<learner> learner::make_derived_learner()
 
   _derived_learner_created_already = true;
   return l;
+}
+
+learner& learner::safe_get_base_learner()
+{
+  if (_base_learner) { return *_base_learner; }
+  return *this;
 }
 
 }  // namespace LEARNER

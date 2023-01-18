@@ -303,6 +303,10 @@ private:
   // This can only be called once to maintain unique ownership of each _base_learner.
   std::unique_ptr<learner> make_derived_learner();
   bool _derived_learner_created_already = false;
+
+  // For reduction learners, return a reference to its base stored in _base_learner
+  // For base learners, return reference to self because _base_learner contains nullptr
+  learner& safe_get_base_learner();
 };
 
 template <bool is_learn>
