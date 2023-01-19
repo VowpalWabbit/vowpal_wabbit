@@ -172,7 +172,7 @@ float predict_and_gradient(VW::workspace& all, VW::example& ec)
 {
   float fp = bfgs_predict(all, ec);
   auto& ld = ec.l.simple;
-  all.set_minmax(all.sd, ld.label);
+  all.set_minmax(ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
   VW::foreach_feature<float, add_grad>(all, ec, loss_grad);

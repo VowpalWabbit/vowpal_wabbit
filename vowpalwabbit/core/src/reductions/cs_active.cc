@@ -434,8 +434,8 @@ learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("adax")) { all.logger.err_warn("--cs_active should be used with --adax"); }
 
-  all.set_minmax(all.sd, data->cost_max);
-  all.set_minmax(all.sd, data->cost_min);
+  all.set_minmax(data->cost_max);
+  all.set_minmax(data->cost_min);
   for (uint32_t i = 0; i < data->num_classes + 1; i++) { data->examples_by_queries.push_back(0); }
 
   void (*learn_ptr)(cs_active & cs_a, learner & base, VW::example & ec);

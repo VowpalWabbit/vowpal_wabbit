@@ -165,7 +165,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   ec.partial_prediction = prediction;
 
-  all.set_minmax(all.sd, ec.l.simple.label);
+  all.set_minmax(ec.l.simple.label);
 
   ec.pred.scalar = VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 

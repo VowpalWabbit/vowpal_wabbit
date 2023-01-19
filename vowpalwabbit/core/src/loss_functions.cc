@@ -487,7 +487,9 @@ std::unique_ptr<loss_function> get_loss_function(
   else if (funcName == "hinge") { return VW::make_unique<hingeloss>(all.logger); }
   else if (funcName == "logistic")
   {
-    if (all.set_minmax != VW::details::noop_mm)
+    // Check if the std::function object contains exactly VW::details::noop_mm
+    auto minmax_fptr = all.set_minmax.target<decltype(VW::details::noop_mm)>();
+    if (minmax_fptr == VW::details::noop_mm)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;
@@ -501,7 +503,9 @@ std::unique_ptr<loss_function> get_loss_function(
   else if (funcName == "expectile") { return VW::make_unique<expectileloss>(function_parameter_0); }
   else if (funcName == "poisson")
   {
-    if (all.set_minmax != VW::details::noop_mm)
+    // Check if the std::function object contains exactly VW::details::noop_mm
+    auto minmax_fptr = all.set_minmax.target<decltype(VW::details::noop_mm)>();
+    if (minmax_fptr == VW::details::noop_mm)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;

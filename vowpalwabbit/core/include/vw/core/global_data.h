@@ -140,7 +140,9 @@ public:
    */
   std::string dump_weights_to_json_experimental();
 
-  void (*set_minmax)(VW::shared_data* sd, float label);
+  // Function to set min_label and max_label in shared_data
+  // Should be bound to a VW::shared_data pointer upon creating the function
+  std::function<void(float)> set_minmax;
 
   uint64_t current_pass;
 
@@ -329,7 +331,8 @@ namespace details
 void print_result_by_ref(
     VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 
-void noop_mm(VW::shared_data*, float label);
+void noop_mm(float label);
+
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool quiet,
     VW::io::logger& logger);
 }  // namespace details

@@ -78,13 +78,7 @@ void print_raw_text_by_ref(
   if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-void set_mm(VW::shared_data* sd, float label)
-{
-  sd->min_label = std::min(sd->min_label, label);
-  if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
-}
-
-void VW::details::noop_mm(VW::shared_data*, float) {}
+void VW::details::noop_mm(float) {}
 
 namespace VW
 {
@@ -341,7 +335,12 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   weights.sparse = false;
 
-  set_minmax = set_mm;
+  set_minmax = [this](float label)
+  {
+    sd->min_label = std::min(sd->min_label, label);
+    if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
+  };
+
 
   power_t = 0.5f;
   eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other

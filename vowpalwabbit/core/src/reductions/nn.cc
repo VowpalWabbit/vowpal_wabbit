@@ -162,7 +162,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     auto swap_guard = VW::swap_guard(n.all->sd, &sd);
 
     VW::simple_label ld = ec.l.simple;
-    void (*save_set_minmax)(VW::shared_data*, float) = n.all->set_minmax;
+    auto save_set_minmax = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
@@ -391,8 +391,8 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     ec.pred.scalar = save_final_prediction;
     ec.loss = save_ec_loss;
   }
-  n.all->set_minmax(n.all->sd, sd.min_label);
-  n.all->set_minmax(n.all->sd, sd.max_label);
+  n.all->set_minmax(sd.min_label);
+  n.all->set_minmax(sd.max_label);
 }
 
 void multipredict(nn& n, learner& base, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
