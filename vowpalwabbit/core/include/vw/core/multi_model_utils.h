@@ -36,9 +36,9 @@ inline void resize_model_weights(
 {
   VW::weight* weights_arr = weights.first();
   const size_t refactor_size = ppw / new_ppw_size;
-  for (auto sub_model = 0; sub_model < new_ppw_size; ++sub_model)
+  for (size_t sub_model = 0; sub_model < new_ppw_size; ++sub_model)
   {
-    for (auto inner_ppw = 0; inner_ppw < refactor_size; ++inner_ppw)
+    for (size_t inner_ppw = 0; inner_ppw < refactor_size; ++inner_ppw)
     {
       if (inner_ppw != offset) { clear_offset(weights, sub_model * refactor_size + inner_ppw, ppw); }
     }
@@ -46,9 +46,9 @@ inline void resize_model_weights(
   for (auto weights_it = weights.begin() + (offset * refactor_size); weights_it < weights.end(); weights_it += ppw)
   {
     uint32_t cb_ind = (weights_it.index() - (offset * refactor_size) * weights.stride()) / refactor_size;
-    for (auto ppw_offset = 0; ppw_offset < new_ppw_size; ++ppw_offset)
+    for (size_t ppw_offset = 0; ppw_offset < new_ppw_size; ++ppw_offset)
     {
-      for (auto stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
+      for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
       {
         if (weights_arr[weights_it.index() + (ppw_offset * refactor_size) * weights.stride() + stride_offset] != 0.0f)
         {
