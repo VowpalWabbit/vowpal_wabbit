@@ -338,7 +338,8 @@ template <class FluentBuilderT, class DataT, class ExampleT>
 class common_learner_builder
 {
   // Compile time check for valid ExampleT
-  static_assert(VW::is_example_type<ExampleT>::value, "Learner builder can only be used with VW example or multi_ex types");
+  static_assert(
+      VW::is_example_type<ExampleT>::value, "Learner builder can only be used with VW example or multi_ex types");
 
 public:
   // The learner being created by this builder

@@ -341,7 +341,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
     if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
   };
 
-
   power_t = 0.5f;
   eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
                // updates (see parse_args.cc)

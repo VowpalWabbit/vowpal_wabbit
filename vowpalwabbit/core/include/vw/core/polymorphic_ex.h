@@ -68,11 +68,10 @@ private:
 };
 
 // VW::is_example_type<T> will check if a given type is VW::example or VW::multi_ex
-template<class T>
-struct is_example_type
-  : std::integral_constant<bool,
-    std::is_same<VW::example, typename std::remove_cv<T>::type>::value
-||  std::is_same<VW::multi_ex, typename std::remove_cv<T>::type>::value
-  >
-{};
+template <class T>
+struct is_example_type : std::integral_constant<bool,
+                             std::is_same<VW::example, typename std::remove_cv<T>::type>::value ||
+                                 std::is_same<VW::multi_ex, typename std::remove_cv<T>::type>::value>
+{
+};
 }  // namespace VW
