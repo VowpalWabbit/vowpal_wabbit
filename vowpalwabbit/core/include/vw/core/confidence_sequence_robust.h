@@ -45,7 +45,7 @@ public:
 class countable_discrete_base
 {
 public:
-  countable_discrete_base(double eta = 0.95f, double r = 2.0, double k = 1.5, double lambda_max = 0.5, double xi = 1.6);
+  countable_discrete_base(double eta = 0.95f, double k = 1.5, double lambda_max = 0.5, double xi = 1.6);
   double get_ci(double alpha) const;
   double get_lam_sqrt_tp1(double j) const;
   double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j) const;
