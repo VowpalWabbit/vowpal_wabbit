@@ -1,0 +1,26 @@
+final_regressor = models/aml_spin_off_bag.m
+using no cache
+Reading datafile = train-sets/automl_spin_off.txt
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, automl, cb_explore_adf_bag, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+-0.33333 -0.33333            1            1.0         0:-1:1         0:0.33     8436
+-0.29166 -0.25000            2            2.0         1:-1:1          0:0.5    18319
+-0.18750 -0.08333            4            4.0         1:-1:1         2:0.83    23278
+-0.21875 -0.25000            8            8.0         0:-1:1            1:1    13862
+-0.26562 -0.31250           16           16.0         0:-1:1            1:1     2249
+
+finished run
+number of examples = 18
+weighted example sum = 18.000000
+weighted label sum = 0.000000
+average loss = -0.236111
+total feature number = 293853
