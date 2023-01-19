@@ -90,8 +90,8 @@ countable_discrete_base::countable_discrete_base(double eta, double r, double k,
     : log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
-    , zeta_r(1.6449340668482264)  // std::riemann_zeta(r) -- Assuming r=2.0 is constant
-    , scale_fac(0.5 * (1.0 + polylog(r, eta) / (eta * zeta_r)))
+    , zeta_r(1.6449340668482264)  // std::riemann_zeta(r) -- Assuming r=2.0
+    , scale_fac(0.5 * (1.0 + 1.4406337969700393 / (eta * zeta_r))) // polylog(r, eta) -- Assuming eta=0.95, r=2.0
     , log_scale_fac(std::log1p(scale_fac - 1.0))
     , t(0)
     , gt(k)
@@ -213,15 +213,7 @@ double countable_discrete_base::root_brentq(
     }
     else { mflag = false; }
 
-    size_t memo_size = memo.size();
     fs = f(s);
-    while (memo.size() > memo_size)
-    {
-      memo_size = memo.size();
-      fa = f(a);
-      fb = f(b);
-      fs = f(s);
-    }
     d = c;
     c = b;
     fc = fb;
@@ -244,7 +236,8 @@ double countable_discrete_base::root_brentq(
     }
   }
 
-  return s;
+  // Returning lower estimate of location of root
+  return std::min(a, b);
 }
 
 double countable_discrete_base::lb_log_wealth(double alpha) const
@@ -263,21 +256,6 @@ double countable_discrete_base::lb_log_wealth(double alpha) const
   double log_wealth_max_mu = log_wealth_mix(max_mu, s, thres, memo);
   if (log_wealth_max_mu >= thres) { return max_mu; }
   return root_brentq(s, thres, memo, min_mu, max_mu);
-}
-
-double countable_discrete_base::polylog(double r, double eta) const
-{
-  double ret_val = 0.0;
-  double min_thres = 1e-10;
-  double curr_val = std::numeric_limits<int>::max();
-  uint64_t k = 0;
-  while (curr_val > min_thres)
-  {
-    k += 1;
-    curr_val = std::pow(eta, k) / std::pow(k, r);
-    ret_val += curr_val;
-  }
-  return ret_val;
 }
 
 double countable_discrete_base::get_log_weight(double j) const { return log_scale_fac + log_xi_m1 - (1 + j) * log_xi; }
