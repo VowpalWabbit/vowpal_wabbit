@@ -1,6 +1,8 @@
 #include "vw/core/example.h"
 #include "vw/core/multi_ex.h"
 
+#include <type_traits>
+
 namespace VW
 {
 // Polymorphic wrapper around VW::example* and VW::multi_ex*
@@ -64,4 +66,13 @@ private:
   const VW::multi_ex* _multi_ex;
   const bool _is_multiline = false;
 };
+
+// VW::is_example_type<T> will check if a given type is VW::example or VW::multi_ex
+template<class T>
+struct is_example_type
+  : std::integral_constant<bool,
+    std::is_same<VW::example, typename std::remove_cv<T>::type>::value
+||  std::is_same<VW::multi_ex, typename std::remove_cv<T>::type>::value
+  >
+{};
 }  // namespace VW

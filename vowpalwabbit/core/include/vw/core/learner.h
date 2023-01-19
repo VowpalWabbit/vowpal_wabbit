@@ -334,11 +334,12 @@ float recur_sensitivity(DataT&, learner& base, example& ec)
 }
 }  // namespace details
 
-VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_CAST_FUNC_TYPE
 template <class FluentBuilderT, class DataT, class ExampleT>
 class common_learner_builder
 {
+  // Compile time check for valid ExampleT
+  static_assert(VW::is_example_type<ExampleT>::value, "Learner builder can only be used with VW example or multi_ex types");
+
 public:
   // The learner being created by this builder
   std::unique_ptr<learner> learner_ptr = nullptr;
@@ -1024,7 +1025,6 @@ public:
     return this->learner_ptr.release();
   }
 };
-VW_WARNING_STATE_POP
 
 template <class DataT, class ExampleT>
 reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_ptr<DataT>&& data, learner* base,
