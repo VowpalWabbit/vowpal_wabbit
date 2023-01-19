@@ -35,29 +35,31 @@ inline void resize_model_weights(
     dense_parameters& weights, const size_t offset, const size_t ppw, const size_t new_ppw_size)
 {
   VW::weight* weights_arr = weights.first();
-  const size_t new_ppw_count = ppw / new_ppw_size;
-  for (auto sub_model = 0; sub_model < new_ppw_count; ++sub_model)
+  const size_t refactor_size = ppw / new_ppw_size;
+  for (auto sub_model = 0; sub_model < new_ppw_size; ++sub_model)
   {
-    for (auto inner_ppw = 0; inner_ppw < new_ppw_size; ++inner_ppw)
+    for (auto inner_ppw = 0; inner_ppw < refactor_size; ++inner_ppw)
     {
-      if (sub_model != offset) { clear_offset(weights, sub_model * new_ppw_size + inner_ppw, ppw); }
+      if (inner_ppw != offset) { clear_offset(weights, sub_model * refactor_size + inner_ppw, ppw); }
     }
   }
-  for (auto weights_it = weights.begin() + new_ppw_size * offset; weights_it < weights.end(); weights_it += ppw)
+  for (auto weights_it = weights.begin() + (offset * refactor_size); weights_it < weights.end(); weights_it += ppw)
   {
-    if (weights_it.index() == 0) { continue; }  // Index is same for 0
-    uint32_t cb_ind = (weights_it.index() - new_ppw_size * offset * weights.stride()) / new_ppw_count;
+    uint32_t cb_ind = (weights_it.index() - (offset * refactor_size) * weights.stride()) / refactor_size;
     for (auto ppw_offset = 0; ppw_offset < new_ppw_size; ++ppw_offset)
     {
       for (auto stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
       {
-        if (weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset] != 0.0f)
+        if (weights_arr[weights_it.index() + (ppw_offset * refactor_size) * weights.stride() + stride_offset] != 0.0f)
         {
           // Move all strided weights of selected model to smaller weights array. Zero out
           // previous weights.
           weights_arr[cb_ind + ppw_offset * weights.stride() + stride_offset] =
-              weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset];
-          weights_arr[weights_it.index() + ppw_offset * weights.stride() + stride_offset] = 0.f;
+              weights_arr[weights_it.index() + (ppw_offset * refactor_size) * weights.stride() + stride_offset];
+          if (weights_it.index() != 0 || ppw_offset != 0)
+          {
+            weights_arr[weights_it.index() + (ppw_offset * refactor_size) * weights.stride() + stride_offset] = 0.f;
+          }
         }
       }
     }

@@ -329,8 +329,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::do_learning
   for (example* ex : ec) { apply_config(ex, &estimators[live_slot].first.live_interactions); }
   for (auto inner_model = 0; inner_model < wpp / max_live_configs; ++inner_model)
   {
-    if (!base.learn_returns_prediction) { base.predict(ec, inner_model * max_live_configs + live_slot); }
-    base.learn(ec, inner_model * max_live_configs + live_slot);
+    if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
+    base.learn(ec, live_slot);
   }
   std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
   std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);

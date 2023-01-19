@@ -47,7 +47,7 @@ void predict_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
   for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[data.cm->current_champ].first.live_interactions); }
   for (auto inner_model = 0; inner_model < data.cm->wpp / data.cm->max_live_configs; ++inner_model)
   {
-    base.predict(ec, inner_model * data.cm->max_live_configs + data.cm->current_champ);
+    base.predict(ec, data.cm->current_champ);
   }
 }
 
