@@ -90,8 +90,8 @@ countable_discrete_base::countable_discrete_base(double eta, double r, double k,
     : log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
-    , zeta_r(1.6449340668482264)  // std::riemann_zeta(r) -- Assuming r=2.0
-    , scale_fac(0.5 * (1.0 + 1.4406337969700393 / (eta * zeta_r))) // polylog(r, eta) -- Assuming eta=0.95, r=2.0
+    , zeta_r(1.6449340668482264)                                    // std::riemann_zeta(r) -- Assuming r=2.0
+    , scale_fac(0.5 * (1.0 + 1.4406337969700393 / (eta * zeta_r)))  // polylog(r, eta) -- Assuming eta=0.95, r=2.0
     , log_scale_fac(std::log1p(scale_fac - 1.0))
     , t(0)
     , gt(k)
