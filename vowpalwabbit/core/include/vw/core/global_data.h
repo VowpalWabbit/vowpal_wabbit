@@ -279,8 +279,8 @@ public:
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
-  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
-  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
+  std::function<void(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&)> print_by_ref;
+  std::function<void(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&)> print_text_by_ref;
   std::unique_ptr<loss_function> loss;
 
   // runtime accounting variables.
