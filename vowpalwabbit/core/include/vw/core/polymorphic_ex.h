@@ -1,77 +1,116 @@
-#include "vw/core/example.h"
 #include "vw/core/multi_ex.h"
 
 #include <type_traits>
+#include <typeinfo>
 
 namespace VW
 {
-// Polymorphic wrapper around VW::example* and VW::multi_ex*
+// VW::is_nonqualified_example_type<ExampleT> will check if a given type is exactly VW::example or VW::multi_ex
+template <class ExampleT>
+struct is_nonqualified_example_type
+    : std::integral_constant<bool,
+          std::is_same<VW::example, ExampleT>::value || std::is_same<VW::multi_ex, ExampleT>::value>
+{
+};
+
+// VW::is_example_type<ExampleT> will check if a given type is (maybe const) VW::example or VW::multi_ex
+template <class ExampleT>
+struct is_example_type
+    : std::integral_constant<bool, VW::is_nonqualified_example_type<typename std::remove_cv<ExampleT>::type>::value>
+{
+};
+
+// VW::is_multiline_type<ExampleT> will check if a given type is (maybe const) VW::multi_ex
+template <class ExampleT>
+struct is_multiline_type
+    : std::integral_constant<bool, std::is_same<VW::multi_ex, typename std::remove_cv<ExampleT>::type>::value>
+{
+};
+
+// Polymorphic wrapper around VW::example and VW::multi_ex
 class polymorphic_ex
 {
 public:
-  // This will implicitly convert both `example` and `const example` pointers and references into polymorphic_ex
-  polymorphic_ex(const VW::example* ex) : _example(ex), _is_multiline(false) {}
-  polymorphic_ex(const VW::example& ex) : _example(&ex), _is_multiline(false) {}
-  polymorphic_ex(const VW::multi_ex* ex) : _multi_ex(ex), _is_multiline(true) {}
-  polymorphic_ex(const VW::multi_ex& ex) : _multi_ex(&ex), _is_multiline(true) {}
-
-  // Can always implicitly convert back to `const example`
-  operator const VW::example*() const
+  // Implicit conversion from both const and mutable pointer to polymorphic_ex
+  template <class ExampleT, typename std::enable_if<VW::is_example_type<ExampleT>::value, bool>::type = true>
+  polymorphic_ex(ExampleT* ex)
+      : _ptr(ex)
+      , _is_multiline(VW::is_multiline_type<ExampleT>::value)
+#ifndef NDEBUG
+      , _type(typeid(typename std::remove_cv<ExampleT>::type))
+      , _is_const(std::is_const<ExampleT>::value)
+#endif
   {
-    if (_is_multiline) { THROW("Cannot convert example to multi_ex"); }
-    return _example;
-  }
-  operator const VW::example&() const
-  {
-    if (_is_multiline) { THROW("Cannot convert example to multi_ex"); }
-    return *_example;
-  }
-  operator const VW::multi_ex*() const
-  {
-    if (!_is_multiline) { THROW("Cannot convert multi_ex to example"); }
-    return _multi_ex;
-  }
-  operator const VW::multi_ex&() const
-  {
-    if (!_is_multiline) { THROW("Cannot convert multi_ex to example"); }
-    return *_multi_ex;
   }
 
-  // Can implicitly convert back to mutable `example` only if the polymorphic_ex object itself is not const
-  operator VW::example*()
+  // Implicit conversion from both const and mutable reference to polymorphic_ex
+  template <class ExampleT, typename std::enable_if<VW::is_example_type<ExampleT>::value, bool>::type = true>
+  polymorphic_ex(ExampleT& ex)
+      : _ptr(&ex)
+      , _is_multiline(VW::is_multiline_type<ExampleT>::value)
+#ifndef NDEBUG
+      , _type(typeid(typename std::remove_cv<ExampleT>::type))
+      , _is_const(std::is_const<ExampleT>::value)
+#endif
   {
-    if (_is_multiline) { THROW("Cannot convert example to multi_ex"); }
-    return const_cast<VW::example*>(_example);
-  }
-  operator VW::example&()
-  {
-    if (_is_multiline) { THROW("Cannot convert example to multi_ex"); }
-    return const_cast<VW::example&>(*_example);
-  }
-  operator VW::multi_ex*()
-  {
-    if (!_is_multiline) { THROW("Cannot convert multi_ex to example"); }
-    return const_cast<VW::multi_ex*>(_multi_ex);
-  }
-  operator VW::multi_ex&()
-  {
-    if (!_is_multiline) { THROW("Cannot convert multi_ex to example"); }
-    return const_cast<VW::multi_ex&>(*_multi_ex);
   }
 
+  // Implicit conversion from polymorphic_ex to const pointer
+  template <class ExampleT,
+      typename std::enable_if<VW::is_nonqualified_example_type<ExampleT>::value, bool>::type = true>
+  operator const ExampleT*() const
+  {
+#ifndef NDEBUG
+    assert(_type == typeid(ExampleT));
+#endif
+    return static_cast<const ExampleT*>(_ptr);
+  }
+
+  // Implicit conversion from polymorphic_ex to const reference
+  template <class ExampleT,
+      typename std::enable_if<VW::is_nonqualified_example_type<ExampleT>::value, bool>::type = true>
+  operator const ExampleT&() const
+  {
+#ifndef NDEBUG
+    assert(_type == typeid(ExampleT));
+#endif
+    return *static_cast<const ExampleT*>(_ptr);
+  }
+
+  // Implicit conversion from polymorphic_ex to mutable pointer
+  template <class ExampleT,
+      typename std::enable_if<VW::is_nonqualified_example_type<ExampleT>::value, bool>::type = true>
+  operator ExampleT*()
+  {
+#ifndef NDEBUG
+    assert(_type == typeid(ExampleT));
+    assert(!_is_const);
+#endif
+    return static_cast<ExampleT*>(const_cast<void*>(_ptr));
+  }
+
+  // Implicit conversion from polymorphic_ex to mutable reference
+  template <class ExampleT,
+      typename std::enable_if<VW::is_nonqualified_example_type<ExampleT>::value, bool>::type = true>
+  operator ExampleT&()
+  {
+#ifndef NDEBUG
+    assert(_type == typeid(ExampleT));
+    assert(!_is_const);
+#endif
+    return *static_cast<ExampleT*>(const_cast<void*>(_ptr));
+  }
+
+  // Check if the polymorphic_ex was constructed with a multiline type
   bool is_multiline() const { return _is_multiline; }
 
 private:
-  const VW::example* _example;
-  const VW::multi_ex* _multi_ex;
-  const bool _is_multiline = false;
+  const void* _ptr;
+  const bool _is_multiline;
+#ifndef NDEBUG
+  const std::type_info& _type;
+  const bool _is_const;
+#endif
 };
 
-// VW::is_example_type<T> will check if a given type is VW::example or VW::multi_ex
-template <class T>
-struct is_example_type : std::integral_constant<bool,
-                             std::is_same<VW::example, typename std::remove_cv<T>::type>::value ||
-                                 std::is_same<VW::multi_ex, typename std::remove_cv<T>::type>::value>
-{
-};
 }  // namespace VW
