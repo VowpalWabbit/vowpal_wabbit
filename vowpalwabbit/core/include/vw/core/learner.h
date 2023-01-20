@@ -220,8 +220,8 @@ public:
   VW_ATTR(nodiscard) label_type_t get_input_label_type() const { return _input_label_type; }
   VW_ATTR(nodiscard) bool is_multiline() const { return _is_multiline; }
   VW_ATTR(nodiscard) const std::string& get_name() const { return _name; }
-  VW_ATTR(nodiscard) const learner* get_learn_base() const { return _base_learner.get(); }
-  VW_ATTR(nodiscard) learner* get_learn_base() { return _base_learner.get(); }
+  VW_ATTR(nodiscard) const learner* get_previous_learner() const { return _previous_learner.get(); }
+  VW_ATTR(nodiscard) learner* get_previous_learner() { return _previous_learner.get(); }
   // If true, this specific learner defines a save load function.
   // If false, it simply forwards to a base implementation.
   VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return _save_load_f != nullptr; }
@@ -275,22 +275,29 @@ private:
   std::shared_ptr<void> _learner_data;
 
   // This holds ownership of the previous learner in the reduction stack.
-  std::shared_ptr<learner> _base_learner;
+  // For base learners, this will be nullptr.
+  std::shared_ptr<learner> _previous_learner;
 
-  // For reduction learners, return a reference to its base stored in _base_learner
-  // For base learners, return reference to self because _base_learner contains nullptr
-  learner& safe_get_base_learner();
+  // This returns the learner immediately below the current learner in the reduction stack.
+  // For reduction learners, return a reference to the learner stored in _previous_learner.
+  // For base learners, return a dummy object that throws exceptions if its internal functions are called.
+  // The last learner in the reduction stack should never access this placeholder object, but its
+  // function signatures still expect a reference to a "previous learner" that we must provide here.
+  learner& safe_get_previous_learner();
 
-  // Private constructor
-  // Should only be able to construct a learner through make_reduction_learner / make_base_learner
+  // Private constructor.
+  // Should only be able to construct a learner through make_reduction_learner / make_base_learner.
   learner() = default;
 
   // Create a copy of this learner. The implementation of this functions determines which of the
   // functions inside the learner are propagated to the next learner, and which are reset to nullptr.
-  // The new learner will take over ownership of this learner in its _base_learner shared pointer.
-  // This can only be called once to maintain unique ownership of each _base_learner.
-  std::unique_ptr<learner> make_derived_learner();
-  bool _derived_learner_created_already = false;
+  // The new learner will take over ownership of this learner in its _previous_learner shared pointer.
+  // This can only be called once to maintain unique ownership of each _previous_learner.
+  std::unique_ptr<learner> make_next_learner();
+  bool _next_learner_created_already = false;
+
+  // Create a fake learner that throws exceptions whenever its internal functions are called.
+  std::unique_ptr<learner> make_error_learner();
 
   // Give builders access to private class members.
   template <class FluentBuilderT, class DataT, class ExampleT>
@@ -750,7 +757,7 @@ public:
       // save_load then calling save_load on this object will essentially result in forwarding the
       // call the next reduction that actually implements it.
       : common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>(
-            base->make_derived_learner(), std::move(data), name)
+            base->make_next_learner(), std::move(data), name)
   {
     // Default sensitivity calls base's sensitivity recursively
     super::set_sensitivity(details::recur_sensitivity<DataT>);
@@ -771,14 +778,14 @@ public:
   reduction_learner_builder<DataT, ExampleT>& set_params_per_weight(size_t params_per_weight) &
   {
     this->learner_ptr->weights = params_per_weight;
-    this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
+    this->learner_ptr->increment = this->learner_ptr->_previous_learner->increment * this->learner_ptr->weights;
     return *this;
   }
 
   reduction_learner_builder<DataT, ExampleT>&& set_params_per_weight(size_t params_per_weight) &&
   {
     this->learner_ptr->weights = params_per_weight;
-    this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
+    this->learner_ptr->increment = this->learner_ptr->_previous_learner->increment * this->learner_ptr->weights;
     return std::move(*this);
   }
 
@@ -843,12 +850,12 @@ public:
   learner* build()
   {
     prediction_type_t in_pred_type = this->learner_ptr->get_input_prediction_type();
-    prediction_type_t base_out_pred_type = this->learner_ptr->get_learn_base()->get_output_prediction_type();
+    prediction_type_t base_out_pred_type = this->learner_ptr->get_previous_learner()->get_output_prediction_type();
     label_type_t out_label_type = this->learner_ptr->get_output_label_type();
-    label_type_t base_in_label_type = this->learner_ptr->get_learn_base()->get_input_label_type();
-    details::learner_build_diagnostic(this->learner_ptr->get_name(), this->learner_ptr->get_learn_base()->get_name(),
-        in_pred_type, base_out_pred_type, out_label_type, base_in_label_type, this->learner_ptr->_merge_f,
-        this->learner_ptr->_merge_with_all_f);
+    label_type_t base_in_label_type = this->learner_ptr->get_previous_learner()->get_input_label_type();
+    details::learner_build_diagnostic(this->learner_ptr->get_name(),
+        this->learner_ptr->get_previous_learner()->get_name(), in_pred_type, base_out_pred_type, out_label_type,
+        base_in_label_type, this->learner_ptr->_merge_f, this->learner_ptr->_merge_with_all_f);
 
     return this->learner_ptr.release();
   }
@@ -868,7 +875,7 @@ public:
 
       // For the no data reduction, allocate a placeholder char as its data to avoid nullptr issues
       : common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>(
-            base->make_derived_learner(), VW::make_unique<char>(0), name)
+            base->make_next_learner(), VW::make_unique<char>(0), name)
   {
     // Default sensitivity calls base's sensitivity recursively
     super::set_sensitivity(details::recur_sensitivity);
@@ -887,14 +894,14 @@ public:
   reduction_no_data_learner_builder<ExampleT>& set_params_per_weight(size_t params_per_weight) &
   {
     this->learner_ptr->weights = params_per_weight;
-    this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
+    this->learner_ptr->increment = this->learner_ptr->_previous_learner->increment * this->learner_ptr->weights;
     return *this;
   }
 
   reduction_no_data_learner_builder<ExampleT>&& set_params_per_weight(size_t params_per_weight) &&
   {
     this->learner_ptr->weights = params_per_weight;
-    this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
+    this->learner_ptr->increment = this->learner_ptr->_previous_learner->increment * this->learner_ptr->weights;
     return std::move(*this);
   }
 

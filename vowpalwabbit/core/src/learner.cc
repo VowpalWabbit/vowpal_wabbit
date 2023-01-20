@@ -362,7 +362,7 @@ void learner::learn(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "learn");
-  _learn_f(safe_get_base_learner(), ec);
+  _learn_f(safe_get_previous_learner(), ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -371,7 +371,7 @@ void learner::predict(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "predict");
-  _predict_f(safe_get_base_learner(), ec);
+  _predict_f(safe_get_previous_learner(), ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -384,7 +384,7 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
     debug_log_message(ec, "multipredict");
     for (size_t c = 0; c < count; c++)
     {
-      _predict_f(safe_get_base_learner(), ec);
+      _predict_f(safe_get_previous_learner(), ec);
       if (finalize_predictions)
       {
         pred[c] = std::move(static_cast<VW::example&>(ec).pred);  // TODO: this breaks for complex labels because =
@@ -401,7 +401,7 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
   {
     details::increment_offset(ec, increment, lo);
     debug_log_message(ec, "multipredict");
-    _multipredict_f(safe_get_base_learner(), ec, count, increment, pred, finalize_predictions);
+    _multipredict_f(safe_get_previous_learner(), ec, count, increment, pred, finalize_predictions);
     details::decrement_offset(ec, increment, lo);
   }
 }
@@ -411,7 +411,7 @@ void learner::update(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "update");
-  _update_f(safe_get_base_learner(), ec);
+  _update_f(safe_get_previous_learner(), ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -419,7 +419,7 @@ float learner::sensitivity(example& ec, size_t i)
 {
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "sensitivity");
-  const float ret = _sensitivity_f(safe_get_base_learner(), ec);
+  const float ret = _sensitivity_f(safe_get_previous_learner(), ec);
   details::decrement_offset(ec, increment, i);
   return ret;
 }
@@ -439,19 +439,19 @@ void learner::save_load(io_buf& io, const bool read, const bool text)
       throw VW::save_load_model_exception(vwex.filename(), vwex.line_number(), better_msg.str());
     }
   }
-  if (_base_learner) { _base_learner->save_load(io, read, text); }
+  if (_previous_learner) { _previous_learner->save_load(io, read, text); }
 }
 
 void learner::pre_save_load(VW::workspace& all)
 {
   if (_pre_save_load_f) { _pre_save_load_f(all); }
-  if (_base_learner) { _base_learner->pre_save_load(all); }
+  if (_previous_learner) { _previous_learner->pre_save_load(all); }
 }
 
 void learner::persist_metrics(metric_sink& metrics)
 {
   if (_persist_metrics_f) { _persist_metrics_f(metrics); }
-  if (_base_learner) { _base_learner->persist_metrics(metrics); }
+  if (_previous_learner) { _previous_learner->persist_metrics(metrics); }
 }
 
 void learner::finish()
@@ -459,19 +459,19 @@ void learner::finish()
   // TODO: ensure that finish does not actually manage memory but just does driver finalization.
   // Then move the call to finish from the destructor of workspace to driver_finalize
   if (_finisher_f) { _finisher_f(); }
-  if (_base_learner) { _base_learner->finish(); }
+  if (_previous_learner) { _previous_learner->finish(); }
 }
 
 void learner::end_pass()
 {
   if (_end_pass_f) { _end_pass_f(); }
-  if (_base_learner) { _base_learner->end_pass(); }
+  if (_previous_learner) { _previous_learner->end_pass(); }
 }
 
 void learner::end_examples()
 {
   if (_end_examples_f) { _end_examples_f(); }
-  if (_base_learner) { _base_learner->end_examples(); }
+  if (_previous_learner) { _previous_learner->end_examples(); }
 }
 
 void learner::init_driver()
@@ -511,13 +511,13 @@ void learner::finish_example(VW::workspace& all, polymorphic_ex ec)
 
   // Finish example used to utilize the copy forwarding semantics.
   // Traverse until first hit to mimic this but with greater type safety.
-  if (_base_learner)
+  if (_previous_learner)
   {
-    if (is_multiline() != _base_learner->is_multiline())
+    if (is_multiline() != _previous_learner->is_multiline())
     {
       THROW("Cannot forward finish_example call across multiline/singleline boundary.");
     }
-    _base_learner->finish_example(all, ec);
+    _previous_learner->finish_example(all, ec);
   }
   else { THROW("No finish functions were registered in the stack."); }
 }
@@ -559,7 +559,7 @@ void learner::cleanup_example(polymorphic_ex ec)
 
 void learner::get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
 {
-  if (_base_learner) { _base_learner->get_enabled_reductions(enabled_reductions); }
+  if (_previous_learner) { _previous_learner->get_enabled_reductions(enabled_reductions); }
   enabled_reductions.push_back(_name);
 }
 
@@ -568,7 +568,7 @@ learner* learner::get_learner_by_name_prefix(const std::string& reduction_name)
   if (_name.find(reduction_name) != std::string::npos) { return this; }
   else
   {
-    if (_base_learner) { return _base_learner->get_learner_by_name_prefix(reduction_name); }
+    if (_previous_learner) { return _previous_learner->get_learner_by_name_prefix(reduction_name); }
     else { THROW("fatal: could not find in learner chain: " << reduction_name); }
   }
 }
@@ -633,20 +633,22 @@ void learner::subtract(const VW::workspace& ws1, const VW::workspace& ws2, const
   else { THROW("learner " << name << " does not support subtraction to generate a delta."); }
 }
 
-std::unique_ptr<learner> learner::make_derived_learner()
+std::unique_ptr<learner> learner::make_next_learner()
 {
-  if (_derived_learner_created_already)
+  if (_next_learner_created_already)
   {
-    THROW("Cannot create more than one derived learner of base learner: " + _name);
+    THROW("Cannot create more than one new learner from current learner: " + _name);
   }
 
-  // Copy this learner and assign this as the new learner's base
+  // Copy this learner and give the new learner ownership of this learner.
+  // Note that if this function was called more than once, the shared_ptrs would be independent.
+  // Ideally we should use std::enable_shared_from this, but VW::workspace wants a raw pointer
+  // instead of a shared_ptr for the top-most learner of the reduction stack.
   std::unique_ptr<learner> l(new learner(*this));
-  l->_base_learner = std::shared_ptr<learner>(this);
+  l->_previous_learner = std::shared_ptr<learner>(this);
 
   // We explicitly overwrite the copy of the base's finish_example functions.
-  // This is to allow us to determine if the current reduction implements finish
-  // and in what way.
+  // This is to allow us to determine if the current reduction implements finish and in what way.
   l->_finish_example_f = nullptr;
   l->_update_stats_f = nullptr;
   l->_output_example_prediction_f = nullptr;
@@ -670,14 +672,43 @@ std::unique_ptr<learner> learner::make_derived_learner()
   l->_subtract_f = nullptr;
   l->_subtract_with_all_f = nullptr;
 
-  _derived_learner_created_already = true;
+  _next_learner_created_already = true;
   return l;
 }
 
-learner& learner::safe_get_base_learner()
+learner& learner::safe_get_previous_learner()
 {
-  if (_base_learner) { return *_base_learner; }
-  return *this;
+  if (_previous_learner) { return *_previous_learner; }
+
+  // Error handler for trying to go past the last learner in the reduction stack.
+  // This is a singleton that is shared between all learner objects.
+  static std::unique_ptr<learner> error_learner = make_error_learner();
+  return *error_learner;
+}
+
+std::unique_ptr<learner> learner::make_error_learner()
+{
+  std::unique_ptr<learner> error_learner(new learner());
+  error_learner->_name = "ERROR";
+  error_learner->_is_multiline = false;
+  error_learner->_output_pred_type = VW::prediction_type_t::NOPRED;
+  error_learner->_input_pred_type = VW::prediction_type_t::NOPRED;
+  error_learner->_output_label_type = VW::label_type_t::NOLABEL;
+  error_learner->_input_label_type = VW::label_type_t::NOLABEL;
+  error_learner->_init_f = []() { THROW("Cannot access previous learner for last learner in reduction stack"); };
+  error_learner->_learn_f = [](learner&, polymorphic_ex)
+  { THROW("Cannot access previous learner for last learner in reduction stack"); };
+  error_learner->_predict_f = [](learner&, polymorphic_ex)
+  { THROW("Cannot access previous learner for last learner in reduction stack"); };
+  error_learner->_update_f = [](learner&, polymorphic_ex)
+  { THROW("Cannot access previous learner for last learner in reduction stack"); };
+  error_learner->_multipredict_f = [](learner&, polymorphic_ex, size_t, size_t, VW::polyprediction*, bool)
+  { THROW("Cannot access previous learner for last learner in reduction stack"); };
+  error_learner->_sensitivity_f = [](learner&, polymorphic_ex) -> float
+  { THROW("Cannot access previous learner for last learner in reduction stack"); };
+  error_learner->_finish_example_f = [](VW::workspace&, polymorphic_ex)
+  { THROW("Cannot access previous learner for last learner in reduction stack"); };
+  return error_learner;
 }
 
 }  // namespace LEARNER

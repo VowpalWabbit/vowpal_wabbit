@@ -200,7 +200,7 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
     }
     // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
     // not going to work.
-    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    else if (!target_learner->has_merge() && target_learner->get_previous_learner() == nullptr)
     {
       THROW("Base learner '" << target_learner->get_name()
                              << "' does not have a merge function defined. Since it is a base learner, merging will "
@@ -216,7 +216,7 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
             target_learner->get_name());
       }
     }
-    target_learner = target_learner->get_learn_base();
+    target_learner = target_learner->get_previous_learner();
   }
 
   // Merge shared data
@@ -286,7 +286,7 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
     }
     // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
     // not going to work.
-    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    else if (!target_learner->has_merge() && target_learner->get_previous_learner() == nullptr)
     {
       THROW("Base learner '" << target_learner->get_name()
                              << "' does not have a merge function defined. Since it is a base learner, merging will "
@@ -294,7 +294,7 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
     }
     // Skip the save-load case for now
 
-    target_learner = target_learner->get_learn_base();
+    target_learner = target_learner->get_previous_learner();
   }
 
   // Add shared data
@@ -332,7 +332,7 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
     }
     // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
     // not going to work.
-    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    else if (!target_learner->has_merge() && target_learner->get_previous_learner() == nullptr)
     {
       THROW("Base learner '" << target_learner->get_name()
                              << "' does not have a merge function defined. Since it is a base learner, merging will "
@@ -340,7 +340,7 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
     }
     // Skip the save-load case for now
 
-    target_learner = target_learner->get_learn_base();
+    target_learner = target_learner->get_previous_learner();
   }
 
   // Subtract shared data
