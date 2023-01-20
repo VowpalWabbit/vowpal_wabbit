@@ -45,7 +45,7 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
         {
           EXPECT_STREQ(
               "Input prediction type: prediction_type_t::ACTION_PROBS of reduction: epsilon_decay does not match "
-              "output prediction type: prediction_type_t::ACTION_SCORES of base reduction: cb_adf.",
+              "output prediction type: prediction_type_t::ACTION_SCORES of previous reduction: cb_adf.",
               e.what());
           throw;
         }
