@@ -5,6 +5,7 @@
 
 basics
 contextual_bandit
+epsilon_decay
 mini_vw
 poisson_regression
 predict
