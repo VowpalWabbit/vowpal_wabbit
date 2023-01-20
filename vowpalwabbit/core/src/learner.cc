@@ -484,7 +484,7 @@ void learner::finish_example(VW::workspace& all, polymorphic_ex ec)
   debug_log_message(ec, "finish_example");
   // If the current learner implements finish - that takes priority.
   // Else, we call the new style functions.
-  // Else, we forward to the base if a base exists.
+  // Else, we forward to the previous learner if it exists.
 
   if (has_legacy_finish())
   {
@@ -647,7 +647,7 @@ std::unique_ptr<learner> learner::make_next_learner()
   std::unique_ptr<learner> l(new learner(*this));
   l->_previous_learner = std::shared_ptr<learner>(this);
 
-  // We explicitly overwrite the copy of the base's finish_example functions.
+  // We explicitly overwrite the copy of the previous learner's finish_example functions.
   // This is to allow us to determine if the current reduction implements finish and in what way.
   l->_finish_example_f = nullptr;
   l->_update_stats_f = nullptr;
@@ -714,22 +714,23 @@ std::unique_ptr<learner> learner::make_error_learner()
 }  // namespace LEARNER
 }  // namespace VW
 
-void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name,
-    prediction_type_t in_pred_type, prediction_type_t base_out_pred_type, label_type_t out_label_type,
-    label_type_t base_in_label_type, details::merge_func merge_f, details::merge_with_all_func merge_with_all_f)
+void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, VW::string_view prev_name,
+    prediction_type_t in_pred_type, prediction_type_t prev_out_pred_type, label_type_t out_label_type,
+    label_type_t prev_in_label_type, details::merge_func merge_f, details::merge_with_all_func merge_with_all_f)
 {
-  if (in_pred_type != base_out_pred_type)
+  if (in_pred_type != prev_out_pred_type)
   {
     const auto message = fmt::format(
-        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base reduction: {}.",
-        to_string(in_pred_type), this_name, to_string(base_out_pred_type), base_name);
+        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of previous reduction: "
+        "{}.",
+        to_string(in_pred_type), this_name, to_string(prev_out_pred_type), prev_name);
     THROW(message);
   }
-  if (out_label_type != base_in_label_type)
+  if (out_label_type != prev_in_label_type)
   {
-    const auto message =
-        fmt::format("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
-            to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
+    const auto message = fmt::format(
+        "Output label type: {} of reduction: {} does not match input label type: {} of previous reduction: {}.",
+        to_string(out_label_type), this_name, to_string(prev_in_label_type), prev_name);
     THROW(message);
   }
 
