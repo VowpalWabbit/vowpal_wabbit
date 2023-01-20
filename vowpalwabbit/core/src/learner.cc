@@ -641,9 +641,10 @@ std::unique_ptr<learner> learner::make_next_learner()
   }
 
   // Copy this learner and give the new learner ownership of this learner.
-  // Note that if this function was called more than once, the shared_ptrs would be independent.
-  // Ideally we should use std::enable_shared_from this, but VW::workspace wants a raw pointer
-  // instead of a shared_ptr for the top-most learner of the reduction stack.
+  // Note that if we allow this function to be called more than once, the shared_ptrs would
+  // be independent, instead of correctly sharing ownership of the same underlying object.
+  // Ideally we should use std::enable_shared_from_this, but VW::workspace wants a raw
+  // pointer instead of a shared_ptr for the top-most learner of the reduction stack.
   std::unique_ptr<learner> l(new learner(*this));
   l->_previous_learner = std::shared_ptr<learner>(this);
 
