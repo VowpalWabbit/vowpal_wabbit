@@ -997,38 +997,36 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
       bool gd_write = *v != 0.f;
       bool ftrl3_write = ftrl_size == 3 && (*v != 0.f || (&(*v))[1] != 0.f || (&(*v))[2] != 0.f);
       bool ftrl4_write = ftrl_size == 4 && (*v != 0.f || (&(*v))[1] != 0.f || (&(*v))[2] != 0.f || (&(*v))[3] != 0.f);
-      bool ftrl6_write = ftrl_size == 6 && (*v != 0.f || (&(*v))[1] != 0.f || (&(*v))[2] != 0.f || (&(*v))[3] != 0.f ||
-                                           (&(*v))[4] != 0.f || (&(*v))[5] != 0.f);
+      bool ftrl6_write = ftrl_size == 6 &&
+          (*v != 0.f || (&(*v))[1] != 0.f || (&(*v))[2] != 0.f || (&(*v))[3] != 0.f || (&(*v))[4] != 0.f ||
+              (&(*v))[5] != 0.f);
       if (all.print_invert)  // write readable model with feature names
       {
         if (gd_write || ftrl3_write || ftrl4_write || ftrl6_write)
         {
           const auto map_it = all.index_name_map.find(i);
-          if (map_it != all.index_name_map.end())
-          {
-            msg << to_string(map_it->second) << ":";
-          }
+          if (map_it != all.index_name_map.end()) { msg << to_string(map_it->second) << ":"; }
         }
       }
 
       if (ftrl3_write)
       {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
-          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
-          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
+        brw = write_index(model_file, msg, text, all.num_bits, i);
+        msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
+        brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
       }
       else if (ftrl4_write)
       {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
-          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
-          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
+        brw = write_index(model_file, msg, text, all.num_bits, i);
+        msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
+        brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
       }
       else if (ftrl6_write)
       {
-          brw = write_index(model_file, msg, text, all.num_bits, i);
-          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
-              << (&(*v))[5] << "\n";
-          brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
+        brw = write_index(model_file, msg, text, all.num_bits, i);
+        msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
+            << (&(*v))[5] << "\n";
+        brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
       }
       else if (g == nullptr || (!all.weights.adaptive && !all.weights.normalized))
       {
