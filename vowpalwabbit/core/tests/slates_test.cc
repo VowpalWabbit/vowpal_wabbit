@@ -42,7 +42,7 @@ public:
 };
 
 template <typename LearnFunc, typename PredictFunc>
-VW::LEARNER::learner* make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
+std::shared_ptr<VW::LEARNER::learner> make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
 {
   auto test_base_data = VW::make_unique<test_base<LearnFunc, PredictFunc>>(learn, predict);
   using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::learner&, VW::multi_ex&);
@@ -99,9 +99,9 @@ TEST(Slates, ReductionMockTest)
     examples[0]->pred.decision_scores.push_back(slot_zero);
     examples[0]->pred.decision_scores.push_back(slot_one);
   };
-  auto* test_base_learner = make_test_learner(mock_learn_or_pred, mock_learn_or_pred);
+  auto test_base_learner = make_test_learner(mock_learn_or_pred, mock_learn_or_pred);
   VW::reductions::slates_data slate_reduction;
-  slate_reduction.learn(*VW::LEARNER::as_multiline(test_base_learner), examples);
+  slate_reduction.learn(*test_base_learner, examples);
 
   // This confirms that the reductions converted the CCB space decision scores back to slates action index space.
   EXPECT_EQ(examples[0]->pred.decision_scores.size(), 2);
@@ -112,5 +112,4 @@ TEST(Slates, ReductionMockTest)
 
   vw->finish_example(examples);
   test_base_learner->finish();
-  delete test_base_learner;
 }

@@ -8,6 +8,7 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -16,7 +17,7 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::learner* epsilon_decay_setup(VW::setup_base_i&);
+std::shared_ptr<VW::LEARNER::learner> epsilon_decay_setup(VW::setup_base_i&);
 
 namespace epsilon_decay
 {

@@ -77,7 +77,7 @@ void predict(interaction_ground& ig, learner& base, VW::multi_ex& ec_seq)
 }
 }  // namespace
 
-learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   bool igl_option = false;
@@ -99,14 +99,14 @@ learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builde
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
-  auto* l = make_reduction_learner(
+  auto l = make_reduction_learner(
       std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
-                .set_params_per_weight(problem_multiplier)
-                .set_input_label_type(label_type_t::CB)
-                .set_output_label_type(label_type_t::CB)
-                .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
-                .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
-                .build();
+               .set_params_per_weight(problem_multiplier)
+               .set_input_label_type(label_type_t::CB)
+               .set_output_label_type(label_type_t::CB)
+               .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
+               .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
+               .build();
 
   return l;
 }

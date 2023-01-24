@@ -178,7 +178,7 @@ void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 }
 }  // namespace
 
-learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -194,13 +194,13 @@ learner* VW::reductions::svrg_setup(VW::setup_base_i& stack_builder)
 
   // Request more parameter storage (4 floats per feature)
   all.weights.stride_shift(2);
-  auto* l = VW::LEARNER::make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
+  auto l = make_base_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
-                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svrg>)
-                .set_update_stats(VW::details::update_stats_simple_label<svrg>)
-                .set_print_update(VW::details::print_update_simple_label<svrg>)
-                .set_save_load(save_load)
-                .build();
+               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svrg>)
+               .set_update_stats(VW::details::update_stats_simple_label<svrg>)
+               .set_print_update(VW::details::print_update_simple_label<svrg>)
+               .set_save_load(save_load)
+               .build();
   return l;
 }

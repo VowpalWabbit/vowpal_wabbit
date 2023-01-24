@@ -290,7 +290,7 @@ void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
 
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -398,16 +398,16 @@ VW::LEARNER::learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stac
 
   if (base->is_multiline())
   {
-    auto* l = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base), learn, predict,
+    auto l = make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base), learn, predict,
         stack_builder.get_setupfn_name(epsilon_decay_setup))
-                  .set_input_label_type(VW::label_type_t::CB)
-                  .set_output_label_type(VW::label_type_t::CB)
-                  .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                  .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                  .set_params_per_weight(model_count)
-                  .set_save_load(save_load_epsilon_decay)
-                  .set_finish(::finish)
-                  .build();
+                 .set_input_label_type(VW::label_type_t::CB)
+                 .set_output_label_type(VW::label_type_t::CB)
+                 .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                 .set_params_per_weight(model_count)
+                 .set_save_load(save_load_epsilon_decay)
+                 .set_finish(::finish)
+                 .build();
 
     return l;
   }

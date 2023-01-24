@@ -1348,7 +1348,7 @@ uint64_t ceil_log_2(uint64_t v)
 
 }  // namespace
 
-learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -1490,21 +1490,21 @@ learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
   auto* bare = g.get();
-  auto* l = make_base_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
+  auto l = make_base_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_learn_returns_prediction(true)
-                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
-                .set_sensitivity(bare->sensitivity)
-                .set_multipredict(bare->multipredict)
-                .set_update(bare->update)
-                .set_save_load(::save_load)
-                .set_end_pass(::end_pass)
-                .set_merge_with_all(::merge)
-                .set_add_with_all(::add)
-                .set_subtract_with_all(::subtract)
-                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<VW::reductions::gd>)
-                .set_update_stats(VW::details::update_stats_simple_label<VW::reductions::gd>)
-                .set_print_update(VW::details::print_update_simple_label<VW::reductions::gd>)
-                .build();
+               .set_learn_returns_prediction(true)
+               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_sensitivity(bare->sensitivity)
+               .set_multipredict(bare->multipredict)
+               .set_update(bare->update)
+               .set_save_load(::save_load)
+               .set_end_pass(::end_pass)
+               .set_merge_with_all(::merge)
+               .set_add_with_all(::add)
+               .set_subtract_with_all(::subtract)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<VW::reductions::gd>)
+               .set_update_stats(VW::details::update_stats_simple_label<VW::reductions::gd>)
+               .set_print_update(VW::details::print_update_simple_label<VW::reductions::gd>)
+               .build();
   return l;
 }

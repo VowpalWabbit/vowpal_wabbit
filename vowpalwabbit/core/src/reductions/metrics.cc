@@ -150,11 +150,11 @@ void VW::reductions::output_metrics(VW::workspace& all)
   if (manager.are_metrics_enabled())
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    list_to_json_file(filename, manager.collect_metrics(all.l), all.logger);
+    list_to_json_file(filename, manager.collect_metrics(all.l.get()), all.logger);
   }
 }
 
-VW::LEARNER::learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -176,22 +176,22 @@ VW::LEARNER::learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_buil
 
   if (base->is_multiline())
   {
-    auto* l = make_reduction_learner(std::move(data), as_multiline(base), predict_or_learn<true, learner, multi_ex>,
+    auto l = make_reduction_learner(std::move(data), as_multiline(base), predict_or_learn<true, learner, multi_ex>,
         predict_or_learn<false, learner, multi_ex>, stack_builder.get_setupfn_name(metrics_setup))
-                  .set_output_prediction_type(base->get_output_prediction_type())
-                  .set_learn_returns_prediction(base->learn_returns_prediction)
-                  .set_persist_metrics(persist)
-                  .build();
+                 .set_output_prediction_type(base->get_output_prediction_type())
+                 .set_learn_returns_prediction(base->learn_returns_prediction)
+                 .set_persist_metrics(persist)
+                 .build();
     return l;
   }
   else
   {
-    auto* l = make_reduction_learner(std::move(data), as_singleline(base), predict_or_learn<true, learner, example>,
+    auto l = make_reduction_learner(std::move(data), as_singleline(base), predict_or_learn<true, learner, example>,
         predict_or_learn<false, learner, example>, stack_builder.get_setupfn_name(metrics_setup))
-                  .set_output_prediction_type(base->get_output_prediction_type())
-                  .set_learn_returns_prediction(base->learn_returns_prediction)
-                  .set_persist_metrics(persist)
-                  .build();
+                 .set_output_prediction_type(base->get_output_prediction_type())
+                 .set_learn_returns_prediction(base->learn_returns_prediction)
+                 .set_persist_metrics(persist)
+                 .build();
     return l;
   }
 }

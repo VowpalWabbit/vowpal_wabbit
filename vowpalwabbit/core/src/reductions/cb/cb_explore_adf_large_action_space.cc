@@ -291,7 +291,7 @@ template class cb_explore_adf_large_action_space<two_pass_svd_impl, one_rank_spa
 }  // namespace VW
 
 template <typename T, typename S>
-VW::LEARNER::learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::learner* base,
+std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::learner* base,
     implementation_type& impl_type, VW::workspace& all, bool with_metrics, uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size, size_t block_size,
     bool use_explicit_simd)
@@ -305,24 +305,25 @@ VW::LEARNER::learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LE
   auto data = VW::make_unique<explore_type>(with_metrics, d, gamma_scale, gamma_exponent, c, apply_shrink_factor, &all,
       seed, 1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
 
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_params_per_weight(problem_multiplier)
-                .set_output_example_prediction(explore_type::output_example_prediction)
-                .set_update_stats(explore_type::update_stats)
-                .set_print_update(explore_type::print_update)
-                .set_persist_metrics(explore_type::persist_metrics)
-                .set_save_load(explore_type::save_load)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .build();
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_params_per_weight(problem_multiplier)
+               .set_output_example_prediction(explore_type::output_example_prediction)
+               .set_update_stats(explore_type::update_stats)
+               .set_print_update(explore_type::print_update)
+               .set_persist_metrics(explore_type::persist_metrics)
+               .set_save_load(explore_type::save_load)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .build();
   return l;
 }
 
-VW::LEARNER::learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_action_space_setup(
+    VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();

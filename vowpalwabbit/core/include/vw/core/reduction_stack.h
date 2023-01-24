@@ -32,6 +32,7 @@ public:
 private:
   VW::config::options_i* _options_impl = nullptr;
   VW::workspace* _all_ptr = nullptr;
+  std::shared_ptr<VW::LEARNER::learner> _base;
 
 protected:
   std::vector<std::tuple<std::string, reduction_setup_fn>> _reduction_stack;

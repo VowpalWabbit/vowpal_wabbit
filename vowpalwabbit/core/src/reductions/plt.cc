@@ -394,7 +394,7 @@ void save_load_tree(plt& p, VW::io_buf& model_file, bool read, bool text)
 }
 }  // namespace
 
-learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -472,21 +472,21 @@ learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   }
   else { pred_type = VW::prediction_type_t::MULTILABELS; }
 
-  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
+  auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
       stack_builder.get_setupfn_name(plt_setup) + name_addition)
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(false)
-                .set_input_label_type(VW::label_type_t::MULTILABEL)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(pred_type)
-                .set_learn_returns_prediction(false)
-                .set_update_stats(update_stats_plt)
-                .set_output_example_prediction(output_example_prediction_plt)
-                .set_print_update(print_update_plt)
-                .set_finish(::finish)
-                .set_save_load(::save_load_tree)
-                .build();
+               .set_params_per_weight(ws)
+               .set_learn_returns_prediction(false)
+               .set_input_label_type(VW::label_type_t::MULTILABEL)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(pred_type)
+               .set_learn_returns_prediction(false)
+               .set_update_stats(update_stats_plt)
+               .set_output_example_prediction(output_example_prediction_plt)
+               .set_print_update(print_update_plt)
+               .set_finish(::finish)
+               .set_save_load(::save_load_tree)
+               .build();
 
   all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
 

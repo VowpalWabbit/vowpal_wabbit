@@ -128,7 +128,7 @@ void print_update_cb_algs(
 }
 }  // namespace
 
-learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -210,18 +210,18 @@ learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   VW::learner_print_update_func<cb, VW::example>* print_update_func =
       eval ? print_update_cb_algs<true> : print_update_cb_algs<false>;
 
-  auto* l = make_reduction_learner(
+  auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
-                .set_input_label_type(label_type)
-                .set_output_label_type(VW::label_type_t::CS)
-                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_params_per_weight(problem_multiplier)
-                .set_learn_returns_prediction(eval)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .build();
+               .set_input_label_type(label_type)
+               .set_output_label_type(VW::label_type_t::CS)
+               .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_params_per_weight(problem_multiplier)
+               .set_learn_returns_prediction(eval)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .build();
 
   return l;
 }

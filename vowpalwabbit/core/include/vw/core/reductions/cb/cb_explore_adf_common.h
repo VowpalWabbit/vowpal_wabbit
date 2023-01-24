@@ -26,6 +26,8 @@
 #include "vw/core/vw_fwd.h"
 #include "vw/core/vw_math.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace cb_explore_adf

@@ -244,7 +244,7 @@ void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::learner& b
 }
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -263,17 +263,17 @@ VW::LEARNER::learner* VW::reductions::slates_setup(VW::setup_base_i& stack_build
 
   auto* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::slates::slates_label_parser;
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+  auto l = make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(slates_setup))
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_prediction_type(VW::prediction_type_t::DECISION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
-                .set_input_label_type(VW::label_type_t::SLATES)
-                .set_output_label_type(VW::label_type_t::CCB)
-                .set_output_example_prediction(output_example_prediction_slates)
-                .set_print_update(::print_update_slates)
-                .set_update_stats(update_stats_slates)
-                .set_cleanup_example(cleanup_example_slates)
-                .build();
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_input_prediction_type(VW::prediction_type_t::DECISION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
+               .set_input_label_type(VW::label_type_t::SLATES)
+               .set_output_label_type(VW::label_type_t::CCB)
+               .set_output_example_prediction(output_example_prediction_slates)
+               .set_print_update(::print_update_slates)
+               .set_update_stats(update_stats_slates)
+               .set_cleanup_example(cleanup_example_slates)
+               .build();
   return l;
 }

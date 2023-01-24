@@ -209,7 +209,7 @@ void predict_or_learn_active_cover(active_cover& a, learner& base, VW::example& 
   }
 }
 
-learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -260,13 +260,13 @@ learner* VW::reductions::active_cover_setup(VW::setup_base_i& stack_builder)
   }
 
   const auto saved_cover_size = data->cover_size;
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
+  auto l = make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
       predict_or_learn_active_cover<false>, stack_builder.get_setupfn_name(active_cover_setup))
-                .set_params_per_weight(saved_cover_size + 1)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .build();
+               .set_params_per_weight(saved_cover_size + 1)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .build();
   return l;
 }

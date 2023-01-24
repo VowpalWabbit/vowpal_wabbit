@@ -107,7 +107,7 @@ void persist(sfm_data& data, VW::metric_sink& metrics)
 }
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::shared_feature_merger_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::shared_feature_merger_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -115,7 +115,10 @@ VW::LEARNER::learner* VW::reductions::shared_feature_merger_setup(VW::setup_base
   auto* base = stack_builder.setup_base_learner();
   if (base == nullptr) { return nullptr; }
   std::set<label_type_t> sfm_labels = {label_type_t::CB, label_type_t::CS};
-  if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
+  if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline())
+  {
+    return base->shared_from_this();
+  }
 
   auto data = VW::make_unique<sfm_data>();
   if (all.global_metrics.are_metrics_enabled()) { data->metrics = VW::make_unique<sfm_metrics>(); }
@@ -125,11 +128,11 @@ VW::LEARNER::learner* VW::reductions::shared_feature_merger_setup(VW::setup_base
   data->label_type = all.example_parser->lbl_parser.label_type;
 
   // Both label and prediction types inherit that of base.
-  auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true>,
+  auto learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(shared_feature_merger_setup))
-                      .set_learn_returns_prediction(base->learn_returns_prediction)
-                      .set_persist_metrics(persist)
-                      .build();
+                     .set_learn_returns_prediction(base->learn_returns_prediction)
+                     .set_persist_metrics(persist)
+                     .build();
 
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
   //       shared example in a finish_example function. However, its too expensive to perform the full operation.

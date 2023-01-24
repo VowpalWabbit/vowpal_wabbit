@@ -183,7 +183,7 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   const auto per_model_weighting = calc_per_model_weighting(example_counts);
 
   // Iterate through learners and merge each one
-  auto* target_learner = dest_workspace->l;
+  auto* target_learner = dest_workspace->l.get();
   while (target_learner != nullptr)
   {
     if (target_learner->has_merge())
@@ -273,7 +273,7 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
   auto destination_workspace =
       VW::initialize(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
 
-  auto* target_learner = destination_workspace->l;
+  auto* target_learner = destination_workspace->l.get();
   while (target_learner != nullptr)
   {
     if (target_learner->has_add())
@@ -319,7 +319,7 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
   auto destination_workspace =
       VW::initialize(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
 
-  auto* target_learner = destination_workspace->l;
+  auto* target_learner = destination_workspace->l.get();
   while (target_learner != nullptr)
   {
     if (target_learner->has_subtract())

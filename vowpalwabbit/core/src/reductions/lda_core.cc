@@ -1284,7 +1284,7 @@ void VW::reductions::lda::get_top_weights(
   else { ::get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights); }
 }
 
-learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -1368,18 +1368,18 @@ learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   const auto pred_type = ld->minibatch > 1 ? VW::prediction_type_t::NOPRED : VW::prediction_type_t::SCALARS;
 
   // FIXME: lda with batch size > 1 doesnt produce predictions.
-  auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
+  auto l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
       pred_type, VW::label_type_t::NOLABEL)
-                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
-                .set_learn_returns_prediction(true)
-                .set_save_load(save_load)
-                .set_end_examples(end_examples)
-                .set_end_pass(end_pass)
-                .set_output_example_prediction(output_example_prediction_lda)
-                .set_print_update(print_update_lda)
-                .set_update_stats(update_stats_lda)
-                .build();
+               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_learn_returns_prediction(true)
+               .set_save_load(save_load)
+               .set_end_examples(end_examples)
+               .set_end_pass(end_pass)
+               .set_output_example_prediction(output_example_prediction_lda)
+               .set_print_update(print_update_lda)
+               .set_update_stats(update_stats_lda)
+               .build();
 
   return l;
 }

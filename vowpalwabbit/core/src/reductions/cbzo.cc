@@ -318,7 +318,7 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, learner&, VW::exa
 
 }  // namespace
 
-learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -368,14 +368,14 @@ learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
+  auto l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
       stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
-                .set_params_per_weight(0)
-                .set_save_load(save_load)
-                .set_output_example_prediction(output_example_prediction_cbzo)
-                .set_print_update(print_update_cbzo)
-                .set_update_stats(update_stats_cbzo)
-                .build();
+               .set_params_per_weight(0)
+               .set_save_load(save_load)
+               .set_output_example_prediction(output_example_prediction_cbzo)
+               .set_print_update(print_update_cbzo)
+               .set_update_stats(update_stats_cbzo)
+               .build();
 
   return l;
 }

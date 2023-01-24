@@ -91,7 +91,7 @@ void predict_or_learn(get_pmf& reduction, learner& /*unused*/, VW::example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::get_pmf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Continuous Actions: Convert to Pmf");
@@ -108,13 +108,13 @@ VW::LEARNER::learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack_buil
   auto p_reduction = VW::make_unique<get_pmf>();
   p_reduction->init(as_singleline(p_base), epsilon);
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
-                .set_input_label_type(p_base->get_input_label_type())
-                .set_output_label_type(p_base->get_input_label_type())
-                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .build();
+               .set_input_label_type(p_base->get_input_label_type())
+               .set_output_label_type(p_base->get_input_label_type())
+               .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .build();
 
   return l;
 }

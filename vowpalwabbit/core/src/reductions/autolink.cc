@@ -82,7 +82,7 @@ void predict_or_learn(autolink& b, VW::LEARNER::learner& base, VW::example& ec)
   else { b.predict(base, ec); }
 }
 
-VW::LEARNER::learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::autolink_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -94,13 +94,13 @@ VW::LEARNER::learner* VW::reductions::autolink_setup(VW::setup_base_i& stack_bui
 
   auto autolink_reduction = VW::make_unique<autolink>(d, all.weights.stride_shift());
   auto* base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
-  auto* learner = VW::LEARNER::make_reduction_learner(std::move(autolink_reduction), base, predict_or_learn<true>,
+  auto learner = VW::LEARNER::make_reduction_learner(std::move(autolink_reduction), base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(autolink_setup))
-                      .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                      .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                      .set_input_label_type(base->get_input_label_type())
-                      .set_output_label_type(base->get_input_label_type())
-                      .set_learn_returns_prediction(base->learn_returns_prediction)
-                      .build();
+                     .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+                     .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+                     .set_input_label_type(base->get_input_label_type())
+                     .set_output_label_type(base->get_input_label_type())
+                     .set_learn_returns_prediction(base->learn_returns_prediction)
+                     .build();
   return learner;
 }

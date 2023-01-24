@@ -150,7 +150,7 @@ void print_update_cats(VW::workspace& all, VW::shared_data& sd, const VW::reduct
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -196,16 +196,16 @@ VW::LEARNER::learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
   p_reduction->max_value = max_value;
   p_reduction->min_value = min_value;
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
-                .set_input_label_type(VW::label_type_t::CONTINUOUS)
-                .set_output_label_type(VW::label_type_t::CONTINUOUS)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
-                .set_output_example_prediction(output_example_prediction_cats)
-                .set_print_update(print_update_cats)
-                .set_update_stats(update_stats_cats)
-                .build();
+               .set_input_label_type(VW::label_type_t::CONTINUOUS)
+               .set_output_label_type(VW::label_type_t::CONTINUOUS)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
+               .set_output_example_prediction(output_example_prediction_cats)
+               .set_print_update(print_update_cats)
+               .set_update_stats(update_stats_cats)
+               .build();
 
   return l;
 }

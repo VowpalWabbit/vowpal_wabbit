@@ -19,7 +19,7 @@ namespace VW
 namespace reductions
 {
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
-VW::LEARNER::learner* cb_algs_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cb_algs_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW
 

@@ -116,8 +116,9 @@ public:
 
   bool chain_hash_json = false;
 
-  VW::LEARNER::learner* l;               // the top level learner
-  VW::LEARNER::learner* cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
+  std::shared_ptr<VW::LEARNER::learner>
+      cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -181,7 +182,7 @@ public:
 
   // error reporting
   std::shared_ptr<details::trace_message_wrapper> trace_message_wrapper_context;
-  std::unique_ptr<std::ostream> trace_message;
+  std::shared_ptr<std::ostream> trace_message;
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;
 

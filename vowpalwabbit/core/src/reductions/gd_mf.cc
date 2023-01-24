@@ -340,7 +340,7 @@ void learn(gdmf& d, learner&, VW::example& ec)
 }
 
 }  // namespace
-learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -389,16 +389,16 @@ learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
+  auto l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
-                .set_learn_returns_prediction(true)
-                .set_save_load(save_load)
-                .set_end_pass(end_pass)
-                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<gdmf>)
-                .set_update_stats(VW::details::update_stats_simple_label<gdmf>)
-                .set_print_update(VW::details::print_update_simple_label<gdmf>)
-                .build();
+               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_learn_returns_prediction(true)
+               .set_save_load(save_load)
+               .set_end_pass(end_pass)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<gdmf>)
+               .set_update_stats(VW::details::update_stats_simple_label<gdmf>)
+               .set_print_update(VW::details::print_update_simple_label<gdmf>)
+               .build();
 
   return l;
 }

@@ -324,7 +324,7 @@ void end_pass(freegrad& fg)
 }
 }  // namespace
 
-learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
 {
   auto& options = *stack_builder.get_options();
   bool freegrad_enabled;
@@ -390,7 +390,7 @@ learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
 
   auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
   auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
-  auto* l =
+  auto l =
       VW::LEARNER::make_base_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
           stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
           .set_learn_returns_prediction(true)

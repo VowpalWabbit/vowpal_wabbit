@@ -1628,7 +1628,7 @@ void VW::details::instantiate_learner(VW::workspace& all, std::unique_ptr<VW::se
   else { learner_builder->delayed_state_attach(all, *all.options.get()); }
 
   // kick-off reduction setup functions
-  all.l = learner_builder->setup_base_learner();
+  all.l = learner_builder->setup_base_learner()->shared_from_this();
 
   // explicit destroy of learner_builder state
   // avoids misuse of this interface:

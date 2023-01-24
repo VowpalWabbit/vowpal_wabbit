@@ -180,7 +180,7 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
   metrics.set_bool("baseline_cb_baseline_in_use", ci > exp);
 }
 
-VW::LEARNER::learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
 
@@ -213,14 +213,14 @@ VW::LEARNER::learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_bas
 
   auto data = VW::make_unique<baseline_challenger_data>(alpha, tau);
 
-  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_save_load(save_load)
-                .set_persist_metrics(persist_metrics)
-                .build();
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_save_load(save_load)
+               .set_persist_metrics(persist_metrics)
+               .build();
   return l;
 }

@@ -9,12 +9,14 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
 #include <vector>
+
 namespace VW
 {
 namespace reductions
 {
-LEARNER::learner* cats_tree_setup(setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cats_tree_setup(setup_base_i& stack_builder);
 
 namespace cats
 {
@@ -77,7 +79,7 @@ public:
   const tree_node& get_sibling(const tree_node& tree_node);
   float return_cost(const tree_node& w);
   void learn(LEARNER::learner& base, example& ec);
-  void set_trace_message(std::ostream* ostrm, bool quiet);
+  void set_trace_message(std::shared_ptr<std::ostream> ostrm, bool quiet);
   ~cats_tree();
 
 private:
@@ -87,7 +89,7 @@ private:
   float _cost_star = 0.f;
   node_cost _a;
   node_cost _b;
-  std::ostream* _trace_stream = nullptr;
+  std::shared_ptr<std::ostream> _trace_stream = nullptr;
   bool _quiet = false;
 };
 

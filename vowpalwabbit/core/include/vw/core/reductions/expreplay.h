@@ -88,7 +88,7 @@ void end_pass(expreplay<lp>& er)
 }  // namespace expreplay
 
 template <char er_level, VW::label_parser& lp>
-VW::LEARNER::learner* expreplay_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> expreplay_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -132,10 +132,9 @@ VW::LEARNER::learner* expreplay_setup(VW::setup_base_i& stack_builder)
   }
 
   er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
-  auto* l = VW::LEARNER::make_reduction_learner(
-      std::move(er), er->base, expreplay::learn<lp>, expreplay::predict<lp>, replay_string)
-                .set_end_pass(expreplay::end_pass<lp>)
-                .build();
+  auto l = make_reduction_learner(std::move(er), er->base, expreplay::learn<lp>, expreplay::predict<lp>, replay_string)
+               .set_end_pass(expreplay::end_pass<lp>)
+               .build();
 
   return l;
 }

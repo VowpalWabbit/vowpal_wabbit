@@ -115,7 +115,7 @@ void learner_build_diagnostic(VW::string_view this_name, VW::string_view prev_na
 /// make_reduction_learner or make_base_learner and assembled before it is
 /// transformed into a VW::LEARNER::learner with VW::LEARNER::make_base then
 /// the usage of the templated functions should ensure types are correct.
-class learner
+class learner final : public std::enable_shared_from_this<learner>
 {
 private:
   void debug_log_message(polymorphic_ex ex, const std::string& msg);
@@ -296,19 +296,23 @@ private:
   // function signatures still expect a reference to a "previous learner" that we must provide here.
   learner& safe_get_previous_learner();
 
-  // Private constructor.
-  // Should only be able to construct a learner through make_reduction_learner / make_base_learner.
-  learner() = default;
-
   // Create a copy of this learner. The implementation of this functions determines which of the
   // functions inside the learner are propagated to the next learner, and which are reset to nullptr.
-  // The new learner will take over ownership of this learner in its _previous_learner shared pointer.
-  // This can only be called once to maintain unique ownership of each _previous_learner.
-  std::unique_ptr<learner> make_next_learner();
-  bool _next_learner_created_already = false;
+  // The new learner will share ownership of this learner in its _previous_learner shared pointer.
+  std::shared_ptr<learner> make_next_learner();
 
   // Create a fake learner that throws exceptions whenever its internal functions are called.
-  std::unique_ptr<learner> make_error_learner();
+  std::shared_ptr<learner> make_error_learner();
+
+  // Private constructor/copy/move
+  // Should only be able to construct a learner through make_reduction_learner / make_base_learner.
+  learner() = default;
+  learner(const learner&) = default;
+  learner(learner&&) = default;
+
+  // Can't assign to learner
+  learner& operator=(const learner&) = delete;
+  learner& operator=(learner&&) = delete;
 
   // Give builders access to private class members.
   template <class FluentBuilderT, class DataT, class ExampleT>
@@ -361,12 +365,11 @@ class common_learner_builder
 
 public:
   // The learner being created by this builder
-  std::unique_ptr<learner> learner_ptr = nullptr;
+  std::shared_ptr<learner> learner_ptr = nullptr;
   // Pointer to learner's data before type erasure, used for binding functions
   std::shared_ptr<DataT> learner_data = nullptr;
 
-  common_learner_builder(
-      std::unique_ptr<learner>&& input_learner, std::unique_ptr<DataT>&& data, const std::string& name)
+  common_learner_builder(std::shared_ptr<learner> input_learner, std::unique_ptr<DataT>&& data, const std::string& name)
   {
     learner_data = std::move(data);
     learner_ptr = std::move(input_learner);
@@ -855,7 +858,7 @@ public:
     return std::move(*this);
   }
 
-  learner* build()
+  std::shared_ptr<learner> build()
   {
     prediction_type_t in_pred_type = this->learner_ptr->get_input_prediction_type();
     prediction_type_t prev_out_pred_type = this->learner_ptr->get_previous_learner()->get_output_prediction_type();
@@ -865,7 +868,7 @@ public:
         this->learner_ptr->get_previous_learner()->get_name(), in_pred_type, prev_out_pred_type, out_label_type,
         prev_in_label_type, this->learner_ptr->_merge_f, this->learner_ptr->_merge_with_all_f);
 
-    return this->learner_ptr.release();
+    return this->learner_ptr;
   }
 };
 
@@ -910,7 +913,7 @@ public:
     return std::move(*this);
   }
 
-  learner* build() { return this->learner_ptr.release(); }
+  std::shared_ptr<learner> build() { return this->learner_ptr; }
 };
 
 template <class DataT, class ExampleT>
@@ -921,7 +924,7 @@ public:
   base_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
       label_type_t in_label_type)
       : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT>(
-            std::unique_ptr<learner>(new learner()), std::move(data), name)
+            std::shared_ptr<learner>(new learner()), std::move(data), name)
   {
     // Default sensitivity function returns zero
     this->learner_ptr->_sensitivity_f = [](learner&, example&) { return 0.f; };
@@ -1030,13 +1033,13 @@ public:
     return std::move(*this);
   }
 
-  learner* build()
+  std::shared_ptr<learner> build()
   {
     if (this->learner_ptr->_merge_f && this->learner_ptr->_merge_with_all_f)
     {
       THROW("cannot set both merge and merge_with_all");
     }
-    return this->learner_ptr.release();
+    return this->learner_ptr;
   }
 };
 

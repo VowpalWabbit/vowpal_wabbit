@@ -637,7 +637,7 @@ void save_load(stagewise_poly& poly, VW::io_buf& model_file, bool read, bool tex
 }
 }  // namespace
 
-learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -678,51 +678,50 @@ learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_builder)
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  auto* l =
-      VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()), learn,
-          predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
-          .set_input_label_type(VW::label_type_t::SIMPLE)
-          .set_output_label_type(VW::label_type_t::SIMPLE)
-          .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-          .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-          .set_save_load(save_load)
-          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<stagewise_poly>)
-          .set_update_stats(
-              [](const VW::workspace& /* all */, shared_data& sd, const stagewise_poly& data, const VW::example& ec,
-                  VW::io::logger& /* logger */)
-              {
-                // This impl is the same as standard simple label reporting apart from the fact the feature count from
-                // synth_ec is used.
+  auto l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
+      learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_save_load(save_load)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<stagewise_poly>)
+               .set_update_stats(
+                   [](const VW::workspace& /* all */, shared_data& sd, const stagewise_poly& data,
+                       const VW::example& ec, VW::io::logger& /* logger */)
+                   {
+                     // This impl is the same as standard simple label reporting apart from the fact the feature count
+                     // from synth_ec is used.
 
-                const auto& ld = ec.l.simple;
-                sd.update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, data.synth_ec.get_num_features());
-                if (ld.label != FLT_MAX && !ec.test_only)
-                {
-                  sd.weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
-                }
-              }
+                     const auto& ld = ec.l.simple;
+                     sd.update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, data.synth_ec.get_num_features());
+                     if (ld.label != FLT_MAX && !ec.test_only)
+                     {
+                       sd.weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
+                     }
+                   }
 
-              )
-          .set_print_update(
-              [](VW::workspace& all, shared_data& sd, const stagewise_poly& data, const VW::example& ec,
-                  VW::io::logger& /* logger */)
-              {
-                // This impl is the same as standard simple label printing apart from the fact the feature count from
-                // synth_ec is used.
+                   )
+               .set_print_update(
+                   [](VW::workspace& all, shared_data& sd, const stagewise_poly& data, const VW::example& ec,
+                       VW::io::logger& /* logger */)
+                   {
+                     // This impl is the same as standard simple label printing apart from the fact the feature count
+                     // from synth_ec is used.
 
-                const bool should_print_driver_update =
-                    all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+                     const bool should_print_driver_update =
+                         all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
 
-                if (should_print_driver_update)
-                {
-                  sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label,
-                      ec.pred.scalar, data.synth_ec.get_num_features(), all.progress_add, all.progress_arg);
-                }
-              }
+                     if (should_print_driver_update)
+                     {
+                       sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label,
+                           ec.pred.scalar, data.synth_ec.get_num_features(), all.progress_add, all.progress_arg);
+                     }
+                   }
 
-              )
-          .set_end_pass(end_pass)
-          .build();
+                   )
+               .set_end_pass(end_pass)
+               .build();
 
   return l;
 }

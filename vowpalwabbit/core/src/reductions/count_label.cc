@@ -47,7 +47,7 @@ void count_label_multi(reduction_data& data, VW::LEARNER::learner& base, VW::mul
 }
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::count_label_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::count_label_setup(VW::setup_base_i& stack_builder)
 {
   bool dont_output_best_constant = false;
   VW::config::option_group_definition reduction_options("[Reduction] Count label");
@@ -71,34 +71,34 @@ VW::LEARNER::learner* VW::reductions::count_label_setup(VW::setup_base_i& stack_
           "--dont_output_best_constant is not relevant. best constant is only tracked if the label type is simple.");
     }
 
-    return base;
+    return base->shared_from_this();
   }
 
   // TODO use field on base when that is available. In most reductions we would
   // return nullptr if the reduction is not active. However, in this reduction we
   // have already constructed the base. So we must return what we've already
   // constructed but it works because we aren't part of it
-  if (base_label_type != label_type_t::SIMPLE) { return base; }
+  if (base_label_type != label_type_t::SIMPLE) { return base->shared_from_this(); }
 
   auto data = VW::make_unique<reduction_data>(all, base);
   if (base->is_multiline())
   {
-    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base),
+    auto learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base),
         count_label_multi<true>, count_label_multi<false>, stack_builder.get_setupfn_name(count_label_setup))
-                        .set_learn_returns_prediction(base->learn_returns_prediction)
-                        .set_output_prediction_type(base->get_output_prediction_type())
-                        .set_input_label_type(label_type_t::SIMPLE)
-                        .build();
+                       .set_learn_returns_prediction(base->learn_returns_prediction)
+                       .set_output_prediction_type(base->get_output_prediction_type())
+                       .set_input_label_type(label_type_t::SIMPLE)
+                       .build();
     return learner;
   }
 
-  auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
+  auto learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))
-                      .set_learn_returns_prediction(base->learn_returns_prediction)
-                      .set_input_prediction_type(base->get_output_prediction_type())
-                      .set_output_prediction_type(base->get_output_prediction_type())
-                      .set_input_label_type(label_type_t::SIMPLE)
-                      .set_output_label_type(label_type_t::SIMPLE)
-                      .build();
+                     .set_learn_returns_prediction(base->learn_returns_prediction)
+                     .set_input_prediction_type(base->get_output_prediction_type())
+                     .set_output_prediction_type(base->get_output_prediction_type())
+                     .set_input_label_type(label_type_t::SIMPLE)
+                     .set_output_label_type(label_type_t::SIMPLE)
+                     .build();
   return learner;
 }

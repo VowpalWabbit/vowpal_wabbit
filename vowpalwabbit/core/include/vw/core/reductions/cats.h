@@ -9,11 +9,13 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace reductions
 {
-LEARNER::learner* cats_setup(setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cats_setup(setup_base_i& stack_builder);
 
 namespace cats
 {

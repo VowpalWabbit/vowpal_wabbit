@@ -37,7 +37,7 @@ void predict_or_learn(char&, VW::LEARNER::learner& base, VW::example& ec)
 }
 
 // minimal setup function for reduction
-VW::LEARNER::learner* test_reduction_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> test_reduction_setup(VW::setup_base_i& stack_builder)
 {
   EXPECT_TRUE(added_to_learner == false);
   EXPECT_TRUE(called_learn_predict == false);

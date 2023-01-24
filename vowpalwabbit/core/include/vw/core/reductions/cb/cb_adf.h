@@ -8,6 +8,7 @@
 #include "vw/core/vw_fwd.h"
 #include "vw/core/vw_versions.h"
 
+#include <memory>
 #include <vector>
 
 namespace VW
@@ -16,7 +17,7 @@ VW::example* test_cb_adf_sequence(const VW::multi_ex& ec_seq);
 VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 namespace reductions
 {
-VW::LEARNER::learner* cb_adf_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cb_adf_setup(VW::setup_base_i& stack_builder);
 
 class cb_adf
 {

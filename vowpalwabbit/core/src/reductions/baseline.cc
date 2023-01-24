@@ -154,7 +154,7 @@ float sensitivity(baseline_data& data, learner& base, VW::example& ec)
   return baseline_sens + sens;
 }
 
-learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -189,14 +189,14 @@ learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
   if (loss_function_type != "logistic") { data->lr_scaling = true; }
 
   auto base = as_singleline(stack_builder.setup_base_learner());
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
+  auto l = make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(VW::reductions::baseline_setup))
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_sensitivity(sensitivity)
-                .build();
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_sensitivity(sensitivity)
+               .build();
 
   return l;
 }

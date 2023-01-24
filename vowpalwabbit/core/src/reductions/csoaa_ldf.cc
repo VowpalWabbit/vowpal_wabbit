@@ -669,7 +669,7 @@ void print_update_csoaa_ldf_multiclass(VW::workspace& all, VW::shared_data& /* s
 }
 }  // namespace
 
-learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -792,16 +792,16 @@ learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
     print_update_func = print_update_csoaa_ldf_multiclass;
   }
 
-  auto* l = make_reduction_learner(std::move(ld), base, learn_csoaa_ldf, pred_ptr, name + name_addition)
-                .set_end_pass(end_pass)
-                .set_input_label_type(VW::label_type_t::CS)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(pred_type)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .build();
+  auto l = make_reduction_learner(std::move(ld), base, learn_csoaa_ldf, pred_ptr, name + name_addition)
+               .set_end_pass(end_pass)
+               .set_input_label_type(VW::label_type_t::CS)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(pred_type)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .build();
 
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
   all.cost_sensitive = l;

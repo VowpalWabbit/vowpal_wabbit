@@ -627,7 +627,7 @@ void save_load(ccb_data& sm, VW::io_buf& io, bool read, bool text)
   }
 }
 }  // namespace
-learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -700,19 +700,19 @@ learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
   data->id_namespace_audit_str = "_ccb_slot_index";
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+  auto l = make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(ccb_explore_adf_setup))
-                .set_learn_returns_prediction(true)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
-                .set_input_label_type(VW::label_type_t::CCB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_output_example_prediction(output_example_prediction_ccb)
-                .set_print_update(::print_update_ccb)
-                .set_update_stats(update_stats_ccb)
-                .set_cleanup_example(cleanup_example_ccb)
-                .set_save_load(save_load)
-                .build();
+               .set_learn_returns_prediction(true)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
+               .set_input_label_type(VW::label_type_t::CCB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_output_example_prediction(output_example_prediction_ccb)
+               .set_print_update(::print_update_ccb)
+               .set_update_stats(update_stats_ccb)
+               .set_cleanup_example(cleanup_example_ccb)
+               .set_save_load(save_load)
+               .build();
   return l;
 }
 

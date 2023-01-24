@@ -9,6 +9,7 @@
 #include "vw/core/slates_label.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -52,7 +53,7 @@ private:
   void learn_or_predict(VW::LEARNER::learner& base, multi_ex& examples);
 };
 
-VW::LEARNER::learner* slates_setup(VW::setup_base_i&);
+std::shared_ptr<VW::LEARNER::learner> slates_setup(VW::setup_base_i&);
 std::string generate_slates_label_printout(const std::vector<example*>& slots);
 }  // namespace reductions
 }  // namespace VW

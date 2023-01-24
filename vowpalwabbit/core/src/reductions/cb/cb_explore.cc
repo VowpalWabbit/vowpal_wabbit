@@ -320,7 +320,7 @@ void print_update_cb_explore(
 }
 }  // namespace
 
-learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -391,7 +391,7 @@ learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
       data->epsilon = 1.f;
       data->epsilon_decay = true;
     }
-    data->cs = all.cost_sensitive;
+    data->cs = all.cost_sensitive.get();
     for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(VW::cs_class{}); }
     data->cover_probs.resize(num_actions);
     data->preds.reserve(data->cover_size);
@@ -421,18 +421,18 @@ learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
     params_per_weight = 1;
     name_addition = "-greedy";
   }
-  auto* l = make_reduction_learner(
+  auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_params_per_weight(params_per_weight)
-                .set_update_stats(::update_stats_cb_explore)
-                .set_output_example_prediction(::output_example_prediction_cb_explore)
-                .set_print_update(::print_update_cb_explore)
-                .set_save_load(save_load)
-                .build();
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_params_per_weight(params_per_weight)
+               .set_update_stats(::update_stats_cb_explore)
+               .set_output_example_prediction(::output_example_prediction_cb_explore)
+               .set_print_update(::print_update_cb_explore)
+               .set_save_load(save_load)
+               .build();
 
   return l;
 }

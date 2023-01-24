@@ -5,6 +5,8 @@
 #pragma once
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace reductions
@@ -16,6 +18,6 @@ namespace reductions
  * @param stack_builder Stack builder to use for setup.
  * @return VW::LEARNER::learner* learner if this reduction is active, nullptr otherwise
  */
-VW::LEARNER::learner* interaction_ground_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> interaction_ground_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

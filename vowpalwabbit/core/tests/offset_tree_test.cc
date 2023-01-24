@@ -66,7 +66,7 @@ private:
 using predictions_t = vector<pair<float, float>>;
 using scores_t = std::vector<float>;
 
-learner* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   // Setup a test harness base reduction
   auto test_harness = VW::make_unique<reduction_test_harness>();
@@ -89,9 +89,8 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   VW::reductions::offset_tree::offset_tree tree(static_cast<uint32_t>(expected_scores.size()));
   tree.init();
   VW::example ec;
-  auto& ret_val = tree.predict(*as_singleline(test_base), ec);
+  auto& ret_val = tree.predict(*test_base, ec);
   EXPECT_THAT(ret_val, ContainerEq(expected_scores));
-  delete test_base;
 }
 }  // namespace
 
@@ -105,8 +104,7 @@ TEST(OffsetTree, OffsetTreeLearnBasic)
   VW::example ec;
   ec.l.cb.costs.push_back(VW::cb_class{-1.0f, 1, 0.5f});
 
-  tree.learn(*as_singleline(test_harness), ec);
-  delete test_harness;
+  tree.learn(*test_harness, ec);
 }
 
 TEST(OffsetTree, OffsetTreePredict)

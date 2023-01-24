@@ -16,6 +16,8 @@
 #include "vw/core/vw_fwd.h"
 #include "vw/test_common/test_common.h"
 
+#include <memory>
+
 // this file would live in toy_reduction.cc
 // toy_reduction.h would define test_reduction_setup(..) fn
 // see binary.h and binary.cc for contrast
@@ -46,7 +48,7 @@ void predict_or_learn(char&, VW::LEARNER::learner& base, VW::example& ec)
 
 // minimal setup function for reduction
 template <bool test_stack>
-VW::LEARNER::learner* test_reduction_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> test_reduction_setup(VW::setup_base_i& stack_builder)
 {
   EXPECT_TRUE(added_to_learner == false);
   EXPECT_TRUE(called_learn_predict == false);

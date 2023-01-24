@@ -21,6 +21,7 @@
 #include <vector>
 
 using namespace VW::config;
+using namespace VW::LEARNER;
 
 namespace
 {
@@ -125,7 +126,7 @@ void end_examples(sender& s)
 
 // This reduction does not actually produce a prediction despite claiming it
 // does, since it waits to receive the result and then outputs it.
-VW::LEARNER::learner* VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -144,13 +145,13 @@ VW::LEARNER::learner* VW::reductions::sender_setup(VW::setup_base_i& stack_build
   s->delay_ring.resize(all.example_parser->example_queue_limit);
   open_sockets(*s, host);
 
-  auto* l = VW::LEARNER::make_base_learner(std::move(s), send_example, send_example,
-      stack_builder.get_setupfn_name(sender_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                // Set at least one of update_stats, output_example_prediction or print_update so that the old finish
-                // has an implementation.
-                .set_update_stats(
-                    [](const VW::workspace&, VW::shared_data&, const sender&, const VW::example&, VW::io::logger&) {})
-                .set_end_examples(end_examples)
-                .build();
+  auto l = make_base_learner(std::move(s), send_example, send_example, stack_builder.get_setupfn_name(sender_setup),
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+               // Set at least one of update_stats, output_example_prediction or print_update so that the old finish
+               // has an implementation.
+               .set_update_stats(
+                   [](const VW::workspace&, VW::shared_data&, const sender&, const VW::example&, VW::io::logger&) {})
+               .set_end_examples(end_examples)
+               .build();
   return l;
 }

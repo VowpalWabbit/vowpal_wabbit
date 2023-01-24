@@ -76,14 +76,14 @@ using predictions_t = vector<float>;
 using scores_t = int;
 
 template <typename T = reduction_test_harness>
-learner* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_reduction_predictions)
 {
   T* pharness = nullptr;
   return get_test_harness_reduction(base_reduction_predictions, pharness);
 }
 
 template <typename T = reduction_test_harness>
-learner* get_test_harness_reduction(const predictions_t& base_reduction_predictions, T*& pharness)
+std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_reduction_predictions, T*& pharness)
 {
   // Setup a test harness base reduction
   auto test_harness = VW::make_unique<T>();
@@ -108,9 +108,8 @@ void predict_test_helper(const predictions_t& base_reduction_predictions, const 
   VW::reductions::cats::cats_tree tree;
   tree.init(num_leaves, bandwidth);
   VW::example ec;
-  auto ret_val = tree.predict(*as_singleline(test_base), ec);
+  auto ret_val = tree.predict(*test_base, ec);
   EXPECT_EQ(ret_val, expected_action);
-  delete test_base;
 }
 
 bool operator!=(const VW::simple_label& lhs, const VW::simple_label& rhs) { return !(lhs.label == rhs.label); }
@@ -124,7 +123,7 @@ TEST(CatsTree, OtcAlgoLearn1ActionTillRoot)
 {
   reduction_test_harness* pharness = nullptr;
   predictions_t preds_to_return = {1.f, -1.f};
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(4, 0);
 
@@ -134,7 +133,7 @@ TEST(CatsTree, OtcAlgoLearn1ActionTillRoot)
   ec.l.cb = VW::cb_label();
   ec.l.cb.costs.push_back(VW::cb_class{3.5f, 2, 0.5f});
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {{-1}, {1}};
@@ -146,15 +145,13 @@ TEST(CatsTree, OtcAlgoLearn1ActionTillRoot)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn1Action)
 {
   reduction_test_harness* pharness = nullptr;
   predictions_t preds_to_return = {-1.f};
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(4, 0);
 
@@ -164,7 +161,7 @@ TEST(CatsTree, OtcAlgoLearn1Action)
   ec.l.cb = VW::cb_label();
   ec.l.cb.costs.push_back(VW::cb_class{3.5f, 2, 0.5f});
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {{-1}};
@@ -176,8 +173,6 @@ TEST(CatsTree, OtcAlgoLearn1Action)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn2ActionSiblings)
@@ -192,11 +187,11 @@ TEST(CatsTree, OtcAlgoLearn2ActionSiblings)
   predictions_t preds_to_return = {1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {{-1}, {1}};
@@ -208,8 +203,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionSiblings)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn2ActionNotSiblings)
@@ -224,11 +217,11 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblings)
   predictions_t preds_to_return = {1.f, 1.f, -1.f, 1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {{-1}, {1}, {1}, {1}};
@@ -240,8 +233,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblings)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {3, 4, 1, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
@@ -256,11 +247,11 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
   predictions_t preds_to_return = {1.f, -1.f, 1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 1);
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {
@@ -276,8 +267,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {4, 1, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn2ActionSeparate)
@@ -292,11 +281,11 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate)
   predictions_t preds_to_return = {-1.f, -1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {{-1}, {1}, {-1}};
@@ -308,8 +297,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {1, 2, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn2ActionSeparate2)
@@ -324,11 +311,11 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate2)
   predictions_t preds_to_return = {1.f, 1.f, 1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {{1}, {-1}, {1}, {1}};
@@ -340,8 +327,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate2)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {6, 1, 2, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth2)
@@ -356,11 +341,11 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth2)
   predictions_t preds_to_return = {};
 
   reduction_test_harness* pharness = nullptr;
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 2);
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {};
@@ -372,8 +357,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth2)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn2ActionSeparate2Bandwidth2)
@@ -388,11 +371,11 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate2Bandwidth2)
   predictions_t preds_to_return = {1, 1, -1};
 
   reduction_test_harness* pharness = nullptr;
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(16, 2);
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {{1}, {1}, {1}};
@@ -404,8 +387,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate2Bandwidth2)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {12, 5, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth1Asym)
@@ -420,11 +401,11 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth1Asym)
   predictions_t preds_to_return = {-1.f, 1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto* base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness_reduction(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 1);
 
-  tree.learn(*as_singleline(base), ec);
+  tree.learn(*base, ec);
 
   // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
   vector<VW::simple_label> expected_labels = {
@@ -440,8 +421,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth1Asym)
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {5, 2, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-
-  delete base;
 }
 
 TEST(CatsTree, OffsetTreeContPredict)

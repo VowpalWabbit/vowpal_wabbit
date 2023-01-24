@@ -143,7 +143,7 @@ void predict_or_learn(interact& in, VW::LEARNER::learner& base, VW::example& ec)
 }
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::interact_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::interact_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -169,8 +169,8 @@ VW::LEARNER::learner* VW::reductions::interact_setup(VW::setup_base_i& stack_bui
   all.logger.err_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true, true>, predict_or_learn<false, true>, stack_builder.get_setupfn_name(interact_setup))
-                .build();
+               .build();
   return l;
 }

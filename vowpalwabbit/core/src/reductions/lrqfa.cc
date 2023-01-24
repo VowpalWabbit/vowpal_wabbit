@@ -140,7 +140,7 @@ void predict_or_learn(lrqfa_state& lrq, learner& base, VW::example& ec)
 }
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -168,11 +168,11 @@ VW::LEARNER::learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builde
   auto base = stack_builder.setup_base_learner();
   size_t ws = 1 + lrq->field_name.size() * lrq->k;
 
-  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
+  auto l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(lrqfa_setup))
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .build();
+               .set_params_per_weight(ws)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .build();
 
   return l;
 }

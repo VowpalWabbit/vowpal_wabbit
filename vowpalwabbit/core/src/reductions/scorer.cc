@@ -78,7 +78,7 @@ inline float glf1(float in) { return 2.f / (1.f + VW::details::correctedExp(-in)
 inline float id(float in) { return in; }
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::scorer_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -131,15 +131,15 @@ VW::LEARNER::learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_build
   auto s = VW::make_unique<scorer>(&all);
   // This always returns a learner.
   auto* base = as_singleline(stack_builder.setup_base_learner());
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(s), base, learn_fn, predict_fn, name)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_multipredict(multipredict_f)
-                .set_update(update)
-                .build();
+  auto l = make_reduction_learner(std::move(s), base, learn_fn, predict_fn, name)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_multipredict(multipredict_f)
+               .set_update(update)
+               .build();
 
   return l;
 }

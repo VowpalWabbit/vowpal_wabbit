@@ -99,7 +99,7 @@ void predict_or_learn(cb_explore_pdf& reduction, learner&, VW::example& ec)
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Continuous Actions: cb_explore_pdf");
@@ -139,12 +139,12 @@ VW::LEARNER::learner* VW::reductions::cb_explore_pdf_setup(VW::setup_base_i& sta
   p_reduction->max_value = max;
   p_reduction->first_only = first_only;
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cb_explore_pdf_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CONTINUOUS)
-                .set_input_prediction_type(VW::prediction_type_t::PDF)
-                .set_output_prediction_type(VW::prediction_type_t::PDF)
-                .build();
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CONTINUOUS)
+               .set_input_prediction_type(VW::prediction_type_t::PDF)
+               .set_output_prediction_type(VW::prediction_type_t::PDF)
+               .build();
   return l;
 }

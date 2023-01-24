@@ -333,7 +333,7 @@ void learn_sup_adf(warm_cb& data, VW::example& ec, int ec_type)
   {
     float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
     for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a] * weight_multiplier; }
-    learner* cs_learner = as_multiline(data.all->cost_sensitive);
+    learner* cs_learner = as_multiline(data.all->cost_sensitive.get());
     cs_learner->learn(data.ecs, i);
   }
 
@@ -507,7 +507,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
 }
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -629,19 +629,19 @@ VW::LEARNER::learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack_buil
     label_type = VW::label_type_t::MULTICLASS;
   }
 
-  auto* l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
+  auto l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
       stack_builder.get_setupfn_name(warm_cb_setup) + name_addition)
-                .set_input_label_type(label_type)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(true)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .set_finish(::finish)
-                .build();
+               .set_input_label_type(label_type)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_params_per_weight(ws)
+               .set_learn_returns_prediction(true)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .set_finish(::finish)
+               .build();
 
   return l;
 }

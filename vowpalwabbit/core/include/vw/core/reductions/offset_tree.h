@@ -8,12 +8,13 @@
 #include "vw/core/vw_fwd.h"
 
 #include <cstdint>
+#include <memory>
 
 namespace VW
 {
 namespace reductions
 {
-LEARNER::learner* offset_tree_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> offset_tree_setup(VW::setup_base_i& stack_builder);
 
 namespace offset_tree
 {

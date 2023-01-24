@@ -110,7 +110,7 @@ void print_update_multilabel_oaa(
 
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -158,7 +158,7 @@ VW::LEARNER::learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i& sta
     pred_type = VW::prediction_type_t::MULTILABELS;
   }
 
-  auto* l =
+  auto l =
       make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true>,
           predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
           .set_params_per_weight(ws)

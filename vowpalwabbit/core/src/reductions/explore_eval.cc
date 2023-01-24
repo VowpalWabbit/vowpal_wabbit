@@ -280,7 +280,7 @@ void do_actual_learning(explore_eval& data, learner& base, VW::multi_ex& ec_seq)
 }
 }  // namespace
 
-learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -314,18 +314,18 @@ learner* VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder)
   learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
-  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
+  auto l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
       stack_builder.get_setupfn_name(explore_eval_setup))
-                .set_learn_returns_prediction(true)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_update_stats(update_stats_explore_eval)
-                .set_output_example_prediction(output_example_prediction_explore_eval)
-                .set_print_update(print_update_explore_eval)
-                .set_finish(::finish)
-                .build();
+               .set_learn_returns_prediction(true)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_update_stats(update_stats_explore_eval)
+               .set_output_example_prediction(output_example_prediction_explore_eval)
+               .set_print_update(print_update_explore_eval)
+               .set_finish(::finish)
+               .build();
 
   return l;
 }

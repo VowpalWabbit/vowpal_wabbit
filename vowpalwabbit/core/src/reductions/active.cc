@@ -173,7 +173,7 @@ void output_example_prediction_active(
 }
 }  // namespace
 
-learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -226,17 +226,17 @@ learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   }
 
   // Create new learner
-  auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_learn_returns_prediction(learn_returns_prediction)
-                .set_save_load(save_load)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .build();
+  auto l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_learn_returns_prediction(learn_returns_prediction)
+               .set_save_load(save_load)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .build();
 
   return l;
 }

@@ -122,7 +122,7 @@ void register_reductions(std::vector<VW::reduction_setup_fn>& reductions,
     {
       auto base = setup_fn(null_ptr_learner);
 
-      if (base == nullptr) { reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn)); }
+      if (!base) { reduction_stack.push_back(std::make_tuple(name_extractor.generated_name, setup_fn)); }
       else
         THROW("fatal: under register_reduction() all setup functions must return nullptr");
     }
@@ -276,17 +276,17 @@ VW::LEARNER::learner* default_reduction_stack_setup::setup_base_learner()
 
     // 'hacky' way of keeping track of the option group created by the setup_func about to be created
     _options_impl->tint(setup_func_name);
-    auto base = setup_func(*this);
+    _base = setup_func(*this);
     _options_impl->reset_tint();
 
     // returning nullptr means that setup_func (any reduction) was not 'enabled' but
     // only added their respective command args and did not add itself into the
     // chain of learners, therefore we call into setup_base again
-    if (base == nullptr) { return this->setup_base_learner(); }
+    if (_base == nullptr) { return this->setup_base_learner(); }
     else
     {
       _reduction_stack.clear();
-      return base;
+      return _base.get();
     }
   }
 

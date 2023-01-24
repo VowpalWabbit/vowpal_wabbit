@@ -121,7 +121,7 @@ void output_example_prediction_cb_to_cb_adf(
 
     Related files: cb_algs.cc, cb_explore.cc, cbify.cc
 */
-VW::LEARNER::learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -194,7 +194,7 @@ VW::LEARNER::learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& stack
   {
     options.insert("cb_explore_adf", "");
     // no need to register custom predict/learn, cbify will take care of that
-    return stack_builder.setup_base_learner();
+    return stack_builder.setup_base_learner()->shared_from_this();
   }
 
   // user specified "cb_explore" but we're not using an old model file
@@ -237,17 +237,17 @@ VW::LEARNER::learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& stack
     out_pred_type = VW::prediction_type_t::MULTICLASS;
   }
 
-  auto* l = make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
+  auto l = make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(cb_to_cb_adf_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(in_pred_type)
-                .set_output_prediction_type(out_pred_type)
-                .set_learn_returns_prediction(true)
-                .set_output_example_prediction(::output_example_prediction_cb_to_cb_adf)
-                .set_update_stats(::update_stats_cb_to_cb_adf)
-                .set_print_update(::print_update_cb_to_cb_adf)
-                .build();
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(in_pred_type)
+               .set_output_prediction_type(out_pred_type)
+               .set_learn_returns_prediction(true)
+               .set_output_example_prediction(::output_example_prediction_cb_to_cb_adf)
+               .set_update_stats(::update_stats_cb_to_cb_adf)
+               .set_print_update(::print_update_cb_to_cb_adf)
+               .build();
 
   return l;
 }

@@ -3074,7 +3074,7 @@ action predictor::predict()
 
 // TODO: valgrind --leak-check=full ./vw --search 2 -k -c --passes 1 --search_task sequence -d test_beam --holdout_off
 // --search_rollin policy --search_metatask selective_branching 2>&1 | less
-learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_base_i& stack_builder)
 {
   using namespace Search;
 
@@ -3369,7 +3369,7 @@ learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   // though. TODO: either let search return a prediction or add a NO_PRED type.
 
   // base is multiline
-  auto* l =
+  auto l =
       VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>, do_actual_learning<false>,
           stack_builder.get_setupfn_name(search_setup))
           .set_learn_returns_prediction(true)

@@ -298,7 +298,7 @@ void cats_tree::learn(LEARNER::learner& base, example& ec)
   ec.weight = saved_weight;
 }
 
-void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)
+void cats_tree::set_trace_message(std::shared_ptr<std::ostream> vw_ostream, bool quiet)
 {
   _trace_stream = vw_ostream;
   _quiet = quiet;
@@ -334,7 +334,7 @@ void learn(VW::reductions::cats::cats_tree& tree, learner& base, VW::example& ec
 }
 }  // namespace
 
-VW::LEARNER::learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -360,18 +360,18 @@ VW::LEARNER::learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_bu
 
   auto tree = VW::make_unique<VW::reductions::cats::cats_tree>();
   tree->init(num_actions, bandwidth);
-  tree->set_trace_message(all.trace_message.get(), all.quiet);
+  tree->set_trace_message(all.trace_message, all.quiet);
 
   learner* base = stack_builder.setup_base_learner();
   int32_t params_per_weight = tree->learner_count();
-  auto* l = make_reduction_learner(
+  auto l = make_reduction_learner(
       std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
-                .set_params_per_weight(params_per_weight)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .build();
+               .set_params_per_weight(params_per_weight)
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .build();
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return l;
 }

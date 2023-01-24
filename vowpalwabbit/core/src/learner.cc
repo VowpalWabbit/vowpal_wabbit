@@ -32,13 +32,13 @@ namespace LEARNER
 void learn_ex(example& ec, VW::workspace& all)
 {
   all.learn(ec);
-  as_singleline(all.l)->finish_example(all, ec);
+  as_singleline(all.l.get())->finish_example(all, ec);
 }
 
 void learn_multi_ex(multi_ex& ec_seq, VW::workspace& all)
 {
   all.learn(ec_seq);
-  as_multiline(all.l)->finish_example(all, ec_seq);
+  as_multiline(all.l.get())->finish_example(all, ec_seq);
 }
 
 void end_pass(example& ec, VW::workspace& all)
@@ -633,20 +633,11 @@ void learner::subtract(const VW::workspace& ws1, const VW::workspace& ws2, const
   else { THROW("learner " << name << " does not support subtraction to generate a delta."); }
 }
 
-std::unique_ptr<learner> learner::make_next_learner()
+std::shared_ptr<learner> learner::make_next_learner()
 {
-  if (_next_learner_created_already)
-  {
-    THROW("Cannot create more than one new learner from current learner: " + _name);
-  }
-
   // Copy this learner and give the new learner ownership of this learner.
-  // Note that if we allow this function to be called more than once, the shared_ptrs would
-  // be independent, instead of correctly sharing ownership of the same underlying object.
-  // Ideally we should use std::enable_shared_from_this, but VW::workspace wants a raw
-  // pointer instead of a shared_ptr for the top-most learner of the reduction stack.
-  std::unique_ptr<learner> l(new learner(*this));
-  l->_previous_learner = std::shared_ptr<learner>(this);
+  std::shared_ptr<learner> l(new learner(*this));
+  l->_previous_learner = shared_from_this();
 
   // We explicitly overwrite the copy of the previous learner's finish_example functions.
   // This is to allow us to determine if the current reduction implements finish and in what way.
@@ -673,7 +664,6 @@ std::unique_ptr<learner> learner::make_next_learner()
   l->_subtract_f = nullptr;
   l->_subtract_with_all_f = nullptr;
 
-  _next_learner_created_already = true;
   return l;
 }
 
@@ -683,13 +673,13 @@ learner& learner::safe_get_previous_learner()
 
   // Error handler for trying to go past the last learner in the reduction stack.
   // This is a singleton that is shared between all learner objects.
-  static std::unique_ptr<learner> error_learner = make_error_learner();
+  static std::shared_ptr<learner> error_learner = make_error_learner();
   return *error_learner;
 }
 
-std::unique_ptr<learner> learner::make_error_learner()
+std::shared_ptr<learner> learner::make_error_learner()
 {
-  std::unique_ptr<learner> error_learner(new learner());
+  std::shared_ptr<learner> error_learner(new learner());
   error_learner->_name = "ERROR";
   error_learner->_is_multiline = false;
   error_learner->_output_pred_type = VW::prediction_type_t::NOPRED;

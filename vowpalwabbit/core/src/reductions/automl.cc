@@ -142,11 +142,11 @@ float calc_priority_empty(const ns_based_config&, const std::map<VW::namespace_i
 }  // namespace
 
 template <typename T, typename E>
-VW::LEARNER::learner* make_automl_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::learner* learner,
-    uint64_t max_live_configs, bool verbose_metrics, std::string& oracle_type, uint64_t default_lease,
-    VW::workspace& all, int32_t priority_challengers, std::string& interaction_type, std::string& priority_type,
-    float automl_significance_level, bool ccb_on, bool predict_only_model, bool reversed_learning_order,
-    config_type conf_type, bool trace_logging, bool reward_as_cost)
+std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& stack_builder,
+    VW::LEARNER::learner* learner, uint64_t max_live_configs, bool verbose_metrics, std::string& oracle_type,
+    uint64_t default_lease, VW::workspace& all, int32_t priority_challengers, std::string& interaction_type,
+    std::string& priority_type, float automl_significance_level, bool ccb_on, bool predict_only_model,
+    bool reversed_learning_order, config_type conf_type, bool trace_logging, bool reward_as_cost)
 {
   using config_manager_type = interaction_config_manager<T, E>;
 
@@ -194,23 +194,23 @@ VW::LEARNER::learner* make_automl_with_impl(VW::setup_base_i& stack_builder, VW:
   data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
   data->cm->_sd_gravity = &(all.sd->gravity);
 
-  auto* l = make_reduction_learner(std::move(data), as_multiline(learner), learn_automl<config_manager_type, true>,
+  auto l = make_reduction_learner(std::move(data), as_multiline(learner), learn_automl<config_manager_type, true>,
       predict_automl<config_manager_type, true>,
       stack_builder.get_setupfn_name(VW::reductions::automl_setup))
-                .set_params_per_weight(ppw)  // refactor pm
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_save_load(save_load_automl)
-                .set_persist_metrics(persist_ptr)
-                .set_learn_returns_prediction(true)
-                .set_pre_save_load(pre_save_load_automl)
-                .build();
+               .set_params_per_weight(ppw)  // refactor pm
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_save_load(save_load_automl)
+               .set_persist_metrics(persist_ptr)
+               .set_learn_returns_prediction(true)
+               .set_pre_save_load(pre_save_load_automl)
+               .build();
   return l;
 }
 
-VW::LEARNER::learner* VW::reductions::automl_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::automl_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
