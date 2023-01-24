@@ -78,8 +78,6 @@ void print_raw_text_by_ref(
   if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-void VW::details::noop_mm(float) {}
-
 namespace VW
 {
 void workspace::learn(example& ec)
@@ -335,10 +333,11 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   weights.sparse = false;
 
+  // default set_minmax function
   set_minmax = [this](float label)
   {
-    sd->min_label = std::min(sd->min_label, label);
-    if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
+    this->sd->min_label = std::min(this->sd->min_label, label);
+    if (label != FLT_MAX) { this->sd->max_label = std::max(this->sd->max_label, label); }
   };
 
   power_t = 0.5f;

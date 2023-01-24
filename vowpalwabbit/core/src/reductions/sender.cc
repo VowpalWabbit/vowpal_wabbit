@@ -107,7 +107,7 @@ void send_example(sender& s, VW::LEARNER::learner& /* non_existent_base */, VW::
 {
   if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 
-  s.all->set_minmax(ec.l.simple.label);
+  if (s.all->set_minmax) { s.all->set_minmax(ec.l.simple.label); }
   VW::parsers::cache::write_example_to_cache(
       s.socket_output_buffer, &ec, s.all->example_parser->lbl_parser, s.all->parse_mask, s.cache_buffer);
   s.socket_output_buffer.flush();

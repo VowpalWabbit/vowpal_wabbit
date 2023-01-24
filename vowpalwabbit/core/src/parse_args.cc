@@ -1077,7 +1077,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
   {
-    all.set_minmax = VW::details::noop_mm;
+    all.set_minmax = nullptr;
   }
 
   if (options.was_supplied("named_labels"))

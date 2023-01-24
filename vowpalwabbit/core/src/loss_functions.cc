@@ -13,7 +13,6 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdlib>
-#include <type_traits>
 
 namespace
 {
@@ -483,18 +482,12 @@ namespace VW
 std::unique_ptr<loss_function> get_loss_function(
     VW::workspace& all, const std::string& funcName, float function_parameter_0, float function_parameter_1)
 {
-  // For some loss functions, we want to know if all.set_minmax has been overwritten
-  // Check if the std::function object does not contain VW::details::noop_mm
-  using noop_mm_fn_ptr_type = typename std::add_pointer<decltype(VW::details::noop_mm)>::type;
-  auto* minmax_fptr = all.set_minmax.target<noop_mm_fn_ptr_type>();
-  bool set_minmax_is_not_noop = (minmax_fptr == nullptr || *minmax_fptr != VW::details::noop_mm);
-
   if (funcName == "squared" || funcName == "Huber") { return VW::make_unique<squaredloss>(); }
   else if (funcName == "classic") { return VW::make_unique<classic_squaredloss>(); }
   else if (funcName == "hinge") { return VW::make_unique<hingeloss>(all.logger); }
   else if (funcName == "logistic")
   {
-    if (set_minmax_is_not_noop)
+    if (all.set_minmax)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;
@@ -508,7 +501,7 @@ std::unique_ptr<loss_function> get_loss_function(
   else if (funcName == "expectile") { return VW::make_unique<expectileloss>(function_parameter_0); }
   else if (funcName == "poisson")
   {
-    if (set_minmax_is_not_noop)
+    if (all.set_minmax)
     {
       all.sd->min_label = -50;
       all.sd->max_label = 50;

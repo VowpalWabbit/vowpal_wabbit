@@ -32,7 +32,7 @@ template <bool is_learn, float (*link)(float in)>
 void predict_or_learn(scorer& s, VW::LEARNER::learner& base, VW::example& ec)
 {
   // Predict does not need set_minmax
-  if (is_learn) { s.all->set_minmax(ec.l.simple.label); }
+  if (is_learn && s.all->set_minmax) { s.all->set_minmax(ec.l.simple.label); }
 
   bool learn = is_learn && ec.l.simple.label != FLT_MAX && ec.weight > 0;
   if (learn) { base.learn(ec); }
@@ -59,7 +59,7 @@ inline void multipredict(scorer& /*unused*/, VW::LEARNER::learner& base, VW::exa
 
 void update(scorer& s, VW::LEARNER::learner& base, VW::example& ec)
 {
-  s.all->set_minmax(ec.l.simple.label);
+  if (s.all->set_minmax) { s.all->set_minmax(ec.l.simple.label); }
   base.update(ec);
   VW_DBG(ec) << "ex#= " << ec.example_counter << ", offset=" << ec.ft_offset << ", lbl=" << ec.l.simple.label
              << ", pred= " << ec.pred.scalar << ", wt=" << ec.weight << ", gd.raw=" << ec.partial_prediction
