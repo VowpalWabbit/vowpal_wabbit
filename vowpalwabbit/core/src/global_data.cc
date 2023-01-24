@@ -367,8 +367,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   initial_weight = 0.0;
   initial_constant = 0.0;
 
-  all_reduce = nullptr;
-
   for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
     limit[i] = INT_MAX;
@@ -439,9 +437,6 @@ workspace::~workspace()
 
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr) { VW::details::free_parser(*this); }
-
-  delete all_reduce;
-  all_reduce = nullptr;
 }
 
 }  // namespace VW

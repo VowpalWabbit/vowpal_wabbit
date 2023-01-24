@@ -36,12 +36,12 @@ VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
     auto total = settings->ParallelOptions->MaxDegreeOfParallelism;
 
     if (settings->Root == nullptr)
-    { m_vw->all_reduce = new all_reduce_threads(total, settings->Node);
+    { m_vw->all_reduce.reset(new all_reduce_threads(total, settings->Node));
     }
     else
-    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->all_reduce;
+    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->all_reduce.get();
 
-      m_vw->all_reduce = new all_reduce_threads(parent_all_reduce, total, settings->Node);
+      m_vw->all_reduce.reset(new all_reduce_threads(parent_all_reduce, total, settings->Node));
     }
   }
 

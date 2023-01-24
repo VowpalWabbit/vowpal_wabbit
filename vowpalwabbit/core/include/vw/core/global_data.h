@@ -112,7 +112,7 @@ public:
   std::thread parse_thread;
 
   all_reduce_type selected_all_reduce_type;
-  all_reduce_base* all_reduce;
+  std::unique_ptr<all_reduce_base> all_reduce;
 
   bool chain_hash_json = false;
 
