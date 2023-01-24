@@ -127,7 +127,7 @@ std::unique_ptr<VW::workspace> initialize(std::unique_ptr<config::options_i> opt
 /// to be used with caution. Reduction data is not shared, therefore this
 /// function is unsafe to use for situations where reduction state is required
 /// for proper operation such as marginal and cb_adf. Learn on a seeded instance
-/// is unsafe, and prediction is also potentiaslly unsafe.
+/// is unsafe, and prediction is also potentially unsafe.
 std::unique_ptr<VW::workspace> seed_vw_model(VW::workspace& vw_model, const std::vector<std::string>& extra_args,
     driver_output_func_t driver_output_func = nullptr, void* driver_output_func_context = nullptr,
     VW::io::logger* custom_logger = nullptr);
