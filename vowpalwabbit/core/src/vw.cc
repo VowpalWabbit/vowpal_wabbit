@@ -219,7 +219,6 @@ VW::workspace* VW::seed_vw_model(
   VW::workspace* new_model =
       VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
   VW_WARNING_STATE_POP
-  delete new_model->sd;
 
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
@@ -328,7 +327,6 @@ std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const 
 
   auto new_model = initialize_internal(std::move(options_custom_deleter), nullptr, false /* skip model load */,
       driver_output_func, driver_output_func_context, custom_logger, nullptr);
-  delete new_model->sd;
 
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model.weights);  // regressor

@@ -167,11 +167,11 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   if (all.set_minmax) { all.set_minmax(ec.l.simple.label); }
 
-  ec.pred.scalar = VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*all.sd, all.logger, ec.partial_prediction);
 
   if (ec.l.simple.label != FLT_MAX)
   {
-    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   }
 
   if (all.audit) { mf_print_audit_features(d, ec, 0); }

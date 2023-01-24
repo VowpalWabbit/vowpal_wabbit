@@ -71,7 +71,7 @@ void predict(freegrad& b, learner& /* base */, VW::example& ec)
   size_t num_features_from_interactions = 0;
   ec.partial_prediction = VW::inline_predict(*b.all, ec, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit) { VW::details::print_audit_features(*(b.all), ec); }
 }
 
@@ -124,7 +124,7 @@ void freegrad_predict(freegrad& fg, VW::example& ec)
   ec.partial_prediction = fg.update_data.predict;
 
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.pred.scalar = VW::details::finalize_prediction(fg.all->sd, fg.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*fg.all->sd, fg.all->logger, ec.partial_prediction);
 }
 
 void gradient_dot_w(freegrad_update_data& d, float x, float& wref)
@@ -250,7 +250,7 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
 
   // Partial derivative of loss (Note that the weight of the examples ec is not accounted for at this stage. This is
   // done in inner_freegrad_update_after_prediction)
-  fg.update_data.update = fg.all->loss->first_derivative(fg.all->sd, ec.pred.scalar, ec.l.simple.label);
+  fg.update_data.update = fg.all->loss->first_derivative(fg.all->sd.get(), ec.pred.scalar, ec.l.simple.label);
 
   // Compute gradient norm
   VW::foreach_feature<freegrad_update_data, gradient_dot_w>(*fg.all, ec, fg.update_data);

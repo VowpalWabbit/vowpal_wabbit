@@ -350,7 +350,7 @@ void predict(OjaNewton& oja_newton_ptr, learner&, VW::example& ec)
   VW::foreach_feature<oja_n_update_data, make_pred>(*oja_newton_ptr.all, ec, oja_newton_ptr.data);
   ec.partial_prediction = oja_newton_ptr.data.prediction;
   ec.pred.scalar =
-      VW::details::finalize_prediction(oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
+      VW::details::finalize_prediction(*oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
 }
 
 void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)  // NOLINT
@@ -400,8 +400,8 @@ void learn(OjaNewton& oja_newton_ptr, learner& base, VW::example& ec)
   predict(oja_newton_ptr, base, ec);
 
   oja_n_update_data& data = oja_newton_ptr.data;
-  data.g =
-      oja_newton_ptr.all->loss->first_derivative(oja_newton_ptr.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  data.g = oja_newton_ptr.all->loss->first_derivative(oja_newton_ptr.all->sd.get(), ec.pred.scalar, ec.l.simple.label) *
+      ec.weight;
   data.g /= 2;  // for half square loss
 
   if (oja_newton_ptr.normalize)

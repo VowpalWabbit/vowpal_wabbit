@@ -452,16 +452,16 @@ void VW::details::print_audit_features(VW::workspace& all, VW::example& ec)
   print_features(all, ec);
 }
 
-float VW::details::finalize_prediction(VW::shared_data* sd, VW::io::logger& logger, float ret)
+float VW::details::finalize_prediction(VW::shared_data& sd, VW::io::logger& logger, float ret)
 {
   if (std::isnan(ret))
   {
     ret = 0.;
-    logger.err_warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
+    logger.err_warn("NAN prediction in example {0}, forcing {1}", sd.example_number + 1, ret);
     return ret;
   }
-  if (ret > sd->max_label) { return sd->max_label; }
-  if (ret < sd->min_label) { return sd->min_label; }
+  if (ret > sd.max_label) { return sd.max_label; }
+  if (ret < sd.min_label) { return sd.min_label; }
   return ret;
 }
 
@@ -499,7 +499,7 @@ void predict(VW::reductions::gd& g, learner&, VW::example& ec)
 
   ec.num_features_from_interactions = num_interacted_features;
   ec.partial_prediction *= static_cast<float>(all.sd->contraction);
-  ec.pred.scalar = VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*all.sd, all.logger, ec.partial_prediction);
 
   VW_DBG(ec) << "gd: predict() " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
@@ -569,7 +569,7 @@ void multipredict(VW::reductions::gd& g, learner&, VW::example& ec, size_t count
   {
     for (size_t c = 0; c < count; c++)
     {
-      pred[c].scalar = VW::details::finalize_prediction(all.sd, all.logger, pred[c].scalar);
+      pred[c].scalar = VW::details::finalize_prediction(*all.sd, all.logger, pred[c].scalar);
     }
   }
   if (audit)
@@ -768,7 +768,7 @@ float compute_update(VW::reductions::gd& g, VW::example& ec)
 
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
-  if (all.loss->get_loss(all.sd, ec.pred.scalar, ld.label) > 0.)
+  if (all.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) > 0.)
   {
     float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
@@ -779,7 +779,7 @@ float compute_update(VW::reductions::gd& g, VW::example& ec)
 
     if (all.reg_mode && std::fabs(update) > 1e-8)
     {
-      double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
+      double dev1 = all.loss->first_derivative(all.sd.get(), ec.pred.scalar, ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
       if (fabs(dev1) > 1e-8) { all.sd->contraction *= (1. - all.l2_lambda * eta_bar); }
       update /= static_cast<float>(all.sd->contraction);

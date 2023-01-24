@@ -58,7 +58,7 @@ public:
 namespace details
 {
 
-float finalize_prediction(VW::shared_data* sd, VW::io::logger& logger, float ret);
+float finalize_prediction(VW::shared_data& sd, VW::io::logger& logger, float ret);
 void print_features(VW::workspace& all, VW::example& ec);
 void print_audit_features(VW::workspace&, VW::example& ec);
 void save_load_regressor_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text);

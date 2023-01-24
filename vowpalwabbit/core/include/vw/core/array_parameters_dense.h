@@ -9,6 +9,8 @@
 #include <cassert>
 #include <cstdint>
 #include <iterator>
+#include <memory>
+
 namespace VW
 {
 
@@ -93,7 +95,6 @@ public:
 
   dense_parameters(size_t length, uint32_t stride_shift = 0);
   dense_parameters();
-  ~dense_parameters();
 
   dense_parameters(const dense_parameters& other) = delete;
   dense_parameters& operator=(const dense_parameters& other) = delete;
@@ -103,18 +104,18 @@ public:
   bool not_null();
   VW::weight* first()
   {
-    return _begin;
+    return _begin.get();
   }  // TODO: Temporary fix for allreduce.
      // iterator with stride
-  iterator begin() { return iterator(_begin, _begin, stride_shift()); }
-  iterator end() { return iterator(_begin + _weight_mask + 1, _begin, stride_shift()); }
+  iterator begin() { return iterator(_begin.get(), _begin.get(), stride_shift()); }
+  iterator end() { return iterator(_begin.get() + _weight_mask + 1, _begin.get(), stride_shift()); }
 
   // const iterator
-  const_iterator cbegin() const { return const_iterator(_begin, _begin, stride_shift()); }
-  const_iterator cend() const { return const_iterator(_begin + _weight_mask + 1, _begin, stride_shift()); }
+  const_iterator cbegin() const { return const_iterator(_begin.get(), _begin.get(), stride_shift()); }
+  const_iterator cend() const { return const_iterator(_begin.get() + _weight_mask + 1, _begin.get(), stride_shift()); }
 
-  inline const VW::weight& operator[](size_t i) const { return _begin[i & _weight_mask]; }
-  inline VW::weight& operator[](size_t i) { return _begin[i & _weight_mask]; }
+  inline const VW::weight& operator[](size_t i) const { return _begin.get()[i & _weight_mask]; }
+  inline VW::weight& operator[](size_t i) { return _begin.get()[i & _weight_mask]; }
 
   void shallow_copy(const dense_parameters& input);
 
@@ -141,8 +142,6 @@ public:
 
   uint64_t mask() const { return _weight_mask; }
 
-  uint64_t seeded() const { return _seeded; }
-
   uint64_t stride() const { return static_cast<uint64_t>(1) << _stride_shift; }
 
   uint32_t stride_shift() const { return _stride_shift; }
@@ -156,10 +155,9 @@ public:
 #endif
 
 private:
-  VW::weight* _begin;
+  std::shared_ptr<VW::weight> _begin;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
   uint32_t _stride_shift;
-  bool _seeded;  // whether the instance is sharing model state with others
 };
 }  // namespace VW
 using dense_parameters VW_DEPRECATED("dense_parameters moved into VW namespace") = VW::dense_parameters;

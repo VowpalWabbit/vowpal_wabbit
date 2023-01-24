@@ -106,7 +106,7 @@ public:
 class workspace
 {
 public:
-  VW::shared_data* sd;
+  std::shared_ptr<VW::shared_data> sd;
 
   std::unique_ptr<parser> example_parser;
   std::thread parse_thread;

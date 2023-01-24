@@ -95,7 +95,7 @@ void predict(ftrl& b, learner&, VW::example& ec)
   size_t num_features_from_interactions = 0;
   ec.partial_prediction = VW::inline_predict(*b.all, ec, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit) { VW::details::print_audit_features(*(b.all), ec); }
 }
 
@@ -133,7 +133,7 @@ void multipredict(
   {
     for (size_t c = 0; c < count; c++)
     {
-      pred[c].scalar = VW::details::finalize_prediction(all.sd, all.logger, pred[c].scalar);
+      pred[c].scalar = VW::details::finalize_prediction(*all.sd, all.logger, pred[c].scalar);
     }
   }
   if (audit)
@@ -264,7 +264,7 @@ void coin_betting_predict(ftrl& b, learner&, VW::example& ec)
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
-  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
 void update_state_and_predict_pistol(ftrl& b, learner&, VW::example& ec)
@@ -277,24 +277,24 @@ void update_state_and_predict_pistol(ftrl& b, learner&, VW::example& ec)
   ec.num_features_from_interactions = num_features_from_interactions;
 
   ec.partial_prediction = b.data.predict;
-  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*b.all->sd, b.all->logger, ec.partial_prediction);
 }
 
 void update_after_prediction_proximal(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
 void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
 }
 

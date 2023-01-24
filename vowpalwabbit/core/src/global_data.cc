@@ -309,7 +309,7 @@ namespace VW
 workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(std::move(logger))
 {
   _random_state_sp = std::make_shared<VW::rand_state>();
-  sd = new shared_data();
+  sd = std::make_shared<shared_data>();
   // Default is stderr.
   trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
 
@@ -439,13 +439,6 @@ workspace::~workspace()
 
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr) { VW::details::free_parser(*this); }
-
-  const bool seeded = weights.seeded() > 0;
-  if (!seeded)
-  {
-    delete sd;
-    sd = nullptr;
-  }
 
   delete all_reduce;
   all_reduce = nullptr;

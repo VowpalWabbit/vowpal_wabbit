@@ -66,18 +66,18 @@ inline float inline_predict(VW::workspace& all, VW::example& ec)
 
 float predict_stable(const svrg& s, VW::example& ec)
 {
-  return VW::details::finalize_prediction(s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
+  return VW::details::finalize_prediction(*s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
 void predict(svrg& s, learner&, VW::example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
-  ec.pred.scalar = VW::details::finalize_prediction(s.all->sd, s.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*s.all->sd, s.all->logger, ec.partial_prediction);
 }
 
 float gradient_scalar(const svrg& s, const VW::example& ec, float pred)
 {
-  return s.all->loss->first_derivative(s.all->sd, pred, ec.l.simple.label) * ec.weight;
+  return s.all->loss->first_derivative(s.all->sd.get(), pred, ec.l.simple.label) * ec.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --

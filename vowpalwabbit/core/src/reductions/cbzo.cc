@@ -208,7 +208,7 @@ void predict(cbzo& data, learner&, VW::example& ec)
   ec.pred.pdf.clear();
 
   float action_centroid = inference<policy>(*data.all, ec);
-  set_minmax(data.all->sd, action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
+  set_minmax(data.all->sd.get(), action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
   action_centroid = VW::math::clamp(action_centroid, data.all->sd->min_label, data.all->sd->max_label);
 
   approx_pmf_to_pdf(action_centroid - data.radius, action_centroid + data.radius, ec.pred.pdf);

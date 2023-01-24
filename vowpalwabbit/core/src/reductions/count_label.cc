@@ -29,7 +29,7 @@ public:
 template <bool is_learn>
 void count_label_single(reduction_data& data, VW::LEARNER::learner& base, VW::example& ec)
 {
-  VW::shared_data* sd = data.all->sd;
+  VW::shared_data* sd = data.all->sd.get();
   VW::count_label(*sd, ec.l.simple.label);
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
@@ -39,7 +39,7 @@ void count_label_single(reduction_data& data, VW::LEARNER::learner& base, VW::ex
 template <bool is_learn>
 void count_label_multi(reduction_data& data, VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
-  VW::shared_data* sd = data.all->sd;
+  VW::shared_data* sd = data.all->sd.get();
   for (const auto* ex : ec_seq) { VW::count_label(*sd, ex->l.simple.label); }
 
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec_seq); }

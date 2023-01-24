@@ -159,7 +159,8 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
   VW::shared_data sd{*n.all->sd};
   {
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
-    auto swap_guard = VW::swap_guard(n.all->sd, &sd);
+    VW::shared_data* original_sd = n.all->sd.get();
+    auto swap_guard = VW::swap_guard(original_sd, &sd);
 
     VW::simple_label ld = ec.l.simple;
     auto save_set_minmax = n.all->set_minmax;
@@ -316,7 +317,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
       else { base.predict(n.output_layer, n.k); }
     }
 
-    n.prediction = VW::details::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
+    n.prediction = VW::details::finalize_prediction(*n.all->sd, n.all->logger, n.output_layer.partial_prediction);
 
     if (should_output)
     {
@@ -328,7 +329,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     {
       if (n.all->training && ld.label != FLT_MAX)
       {
-        float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
+        float gradient = n.all->loss->first_derivative(n.all->sd.get(), n.prediction, ld.label);
 
         if (std::fabs(gradient) > 0)
         {
@@ -355,7 +356,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
               float gradhw = 0.5f * nu * gradient * sigmahprime;
 
               ec.l.simple.label =
-                  VW::details::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
+                  VW::details::finalize_prediction(*n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
               ec.pred.scalar = hidden_units[i].scalar;
               if (ec.l.simple.label != hidden_units[i].scalar) { base.update(ec, i); }
             }
