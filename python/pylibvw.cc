@@ -347,7 +347,7 @@ py::dict get_learner_metrics(vw_ptr all)
 
   if (all->global_metrics.are_metrics_enabled())
   {
-    auto metrics = all->global_metrics.collect_metrics(all->l);
+    auto metrics = all->global_metrics.collect_metrics(all->l.get());
 
     python_dict_writer writer(dictionary);
     metrics.visit(writer);
@@ -529,17 +529,17 @@ multi_ex unwrap_example_list(py::list& ec)
   return ex_coll;
 }
 
-void my_finish_example(vw_ptr all, example_ptr ec) { as_singleline(all->l)->finish_example(*all, *ec); }
+void my_finish_example(vw_ptr all, example_ptr ec) { all->l->finish_example(*all, *ec); }
 
 void my_finish_multi_ex(vw_ptr& all, py::list& ec)
 {
   auto ex_col = unwrap_example_list(ec);
-  as_multiline(all->l)->finish_example(*all, ex_col);
+  all->l->finish_example(*all, ex_col);
 }
 
 void my_learn(vw_ptr all, example_ptr ec)
 {
-  if (ec->test_only) { as_singleline(all->l)->predict(*ec); }
+  if (ec->test_only) { all->l->predict(*ec); }
   else { all->learn(*ec.get()); }
 }
 
@@ -547,7 +547,7 @@ std::string my_json_weights(vw_ptr all) { return all->dump_weights_to_json_exper
 
 float my_predict(vw_ptr all, example_ptr ec)
 {
-  as_singleline(all->l)->predict(*ec);
+  all->l->predict(*ec);
   return ec->partial_prediction;
 }
 
@@ -560,7 +560,7 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
   if (learn)
     all->learn(ex_coll);
   else
-    as_multiline(all->l)->predict(ex_coll);
+    all->l->predict(ex_coll);
 }
 
 py::list my_parse(vw_ptr& all, char* str)
