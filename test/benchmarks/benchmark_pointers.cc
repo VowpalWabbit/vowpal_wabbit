@@ -120,3 +120,19 @@ void pointer_access_shared(benchmark::State& state)
 BENCHMARK(pointer_access_raw);
 BENCHMARK(pointer_access_unique);
 BENCHMARK(pointer_access_shared);
+
+/*
+---------------------------------------------------------------------
+Benchmark                           Time             CPU   Iterations
+---------------------------------------------------------------------
+pointer_create_raw               15.0 ns         15.0 ns     44357700
+pointer_create_unique            14.8 ns         14.8 ns     45669518
+pointer_create_shared            34.2 ns         34.2 ns     20097392
+pointer_create_make_unique       14.8 ns         14.8 ns     46414020
+pointer_create_make_shared       19.0 ns         19.0 ns     36023500
+pointer_copy_raw                0.330 ns        0.330 ns   1000000000
+pointer_copy_shared              3.32 ns         3.32 ns    210186414
+pointer_access_raw               1.79 ns         1.79 ns    390971464
+pointer_access_unique            1.79 ns         1.79 ns    373624462
+pointer_access_shared            1.78 ns         1.78 ns    394688841
+*/
