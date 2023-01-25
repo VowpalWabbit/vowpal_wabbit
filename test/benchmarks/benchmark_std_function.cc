@@ -106,9 +106,10 @@ template <bool noinline>
 void function_call_std_function(benchmark::State& state)
 {
   TestObj<noinline> test;
+  Context* context_ptr = test.context.get();
   for (auto _ : state)
   {
-    test.std_function(static_cast<Context*>(test.fn_obj.context), 1);
+    test.std_function(context_ptr, 1);
     benchmark::ClobberMemory();
   }
 }
