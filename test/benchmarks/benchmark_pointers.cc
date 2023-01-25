@@ -1,5 +1,6 @@
-#include <benchmark/benchmark.h>
 #include "vw/common/future_compat.h"
+
+#include <benchmark/benchmark.h>
 
 #include <memory>
 
