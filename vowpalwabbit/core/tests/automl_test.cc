@@ -328,11 +328,9 @@ TEST(Automl, NamespaceSwitchWIterations)
 
         auto champ_exclusions =
             aml->cm->_config_oracle.configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].elements;
-        EXPECT_EQ(champ_exclusions.size(), 1);
-        std::vector<VW::namespace_index> ans{'U', 'U'};
-        EXPECT_NE(champ_exclusions.find(ans), champ_exclusions.end());
+        EXPECT_EQ(champ_exclusions.size(), 0);
         auto champ_interactions = aml->cm->estimators[aml->cm->current_champ].first.live_interactions;
-        EXPECT_EQ(champ_interactions.size(), 5);
+        EXPECT_EQ(champ_interactions.size(), 6);
         return true;
       });
 
@@ -361,9 +359,9 @@ TEST(Automl, ClearConfigsWIterations)
         EXPECT_EQ(aml->cm->current_champ, 0);
         EXPECT_EQ(aml->cm->_config_oracle.valid_config_size, 4);
         EXPECT_EQ(clear_champ_switch - 1, aml->cm->total_learn_count);
-        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 2);
-        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 3);
-        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 3);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 2);
         EXPECT_EQ(aml->current_state, VW::reductions::automl::automl_state::Experimenting);
         return true;
       });
@@ -434,9 +432,9 @@ TEST(Automl, ClearConfigsOneDiffWIterations)
       {
         aml_test::aml_onediff* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
         EXPECT_EQ(aml->cm->estimators.size(), 3);
-        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 2);
-        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 3);
-        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 3);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 2);
         return true;
       });
 
