@@ -103,6 +103,7 @@ public:
   uint64_t stride_shift;
 };
 }  // namespace details
+
 class workspace
 {
 public:

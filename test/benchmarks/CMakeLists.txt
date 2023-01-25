@@ -9,6 +9,7 @@ if (NOT BUILD_ONLY_STANDALONE_BENCHMARKS)
     input_format_benchmarks.cc
     benchmark_funcs.cc
     benchmark_std_function.cc
+    benchmark_pointers.cc
   )
 endif()
 

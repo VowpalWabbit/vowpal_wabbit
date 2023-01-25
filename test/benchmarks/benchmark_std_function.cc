@@ -108,7 +108,7 @@ void function_call_std_function(benchmark::State& state)
   TestObj<noinline> test;
   for (auto _ : state)
   {
-    test.std_function(test.context.get(), 1);
+    test.std_function(static_cast<Context*>(test.fn_obj.context), 1);
     benchmark::ClobberMemory();
   }
 }
