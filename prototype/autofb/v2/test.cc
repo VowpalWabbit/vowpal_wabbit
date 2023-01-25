@@ -430,13 +430,193 @@ void do_test()
   // TODO: Parse the schema files and generate the binary schemas at runtime?
 
   //try_reflect_built_schema();
-  try_reflect();
-  //do_test_sandbox();
-
+  //try_reflect();
+  do_test_sandbox();
+  
   //test_kernel_svm2();
 }
 
-void do_test_sandbox()
+// template <typename T>
+// class _reflector
+// {
+//   // This is maybe a bad idea. It has only been a week and I have no idea what this does
+//   template <size_t field_index>
+//   using offset = std::conditional_t<
+//     // if (
+//     0 < field_index, // field index is positive;!! => 0 === "this", which also happens to be the first field position
+//     //    )
+//     // { offset = 
+//       std::integral_constant<size_t,
+//           // previous field's "offset" + the size of the previous field's type
+//           typename T::field_info<field_index - 1>::offset + sizeof(typename T::field_info<field_index - 1>::type)>,
+//     // } else {
+//     //   offset = 
+//       std::integral_constant<size_t, 0> // 0 points to both "this" as well as the 0th field.
+//     // }
+//     >;
+
+//   //template <size_t field_index>
+
+// };
+
+// template <typename C, typename V, bool _is_vector, size_t field_index = 0>
+// struct field_reflector
+// {
+//   using type = V;
+
+//   const size_t offset = typename _reflector<C>::offset<field_index>::value;
+
+//   const bool is_vector = _is_vector;
+
+// private:
+//   const size_t index = field_index;
+
+//   friend class _reflector<C>;
+// };
+
+// struct my_struct
+// {
+// public:
+
+// private:
+//   template<size_t index, class = void>
+//   struct field_info
+//   {
+//   };
+
+//   template <>
+//   struct field_info<0> : field_reflector<my_struct, my_struct, false>
+//   {
+//     constexpr char* name() { return "this"; }
+//   };
+
+//   friend class _reflector<my_struct>;
+// };
+
+// ///////////// Sandbox
+
+// /*
+
+// Theory: We can use a templated metaprogram to define types, and interesting properties about them.
+
+// Consequence: This allows us to use only a single preprocessor macro (maybe two, one per nameable
+//   object we care about that needs to have a descriptor generated. More interestingly: We could
+//   have the generator actually be a "type-template"
+  
+        
+// */
+
+// using name_t = const char*;
+
+
+
+// template <typename PredT, class = std::enable_if_t<std::is_same_v<const char*, decltype(PredT::message)>>>
+// struct extract_message_or_empty
+// {
+//   static constexpr char* message = PredT::message;
+// };
+
+// template <typename PredT>
+// struct extract_message_or_empty
+// {
+//   static constexpr const char* message = "";
+// };
+
+// template <typename PredT, class = std::enable_if_t<std::is_same_v<bool, decltype(PredT::value)>>>
+// struct extract_value_or_false : std::bool_constant<PredT::value>
+// {};
+
+// template <typename PredT>
+// struct extract_value_or_false : std::false_type
+// {};
+
+// template <typename condition, typename message>
+// struct assert
+// {
+//   static_assert(condition::value, message::message);
+// };
+
+// template <typename condition>
+// struct assert
+// {
+//   static_assert(condition::value);
+// };
+
+// template <typename PredT>
+// struct assert_predicate
+// {
+  
+// };
+
+// template <typename... PredTs>
+// struct requires
+// {
+//   //static_assert
+// };
+
+// template <typename... Ts>
+// struct type_builder
+// {
+  
+// };
+
+template <typename C, typename T>
+struct field_ptr
 {
+  typedef T(C::*ptr_t);
+
+  const ptr_t ptr;
+};
+
+template <typename C, typename T, T(C::*_ptr)>
+struct field_ptr_id
+{
+  typedef T(C::*ptr_t);
+
+  static constexpr ptr_t ptr = _ptr;
+
+  inline field_ptr<C, T> operator()()
+  {
+    return { ptr };
+  }
+};
+
+struct A
+{
+  template <typename V, V(A::*_ptr)>
+  using field_ptr_id = field_ptr_id<A, V, _ptr>;
+
+  int b;
+
+  static field_ptr_id<int, &A::b> b_field;
+};
+
+// struct erased_field_ptr
+// {
+//   std::type_index on_tindex;
+//   std::type_index to_tindex;
+
+//   template <typename T>
+//   bool on()
+//   {
+//     return on_tindex == typeid(T);
+//   }
+
+//   template <typename T>
+//   bool to()
+//   {
+//     return to_tindex == typeid(T);
+//   }
+
+//   inline bool get_dereference()
+//   {
+    
+//   }
+// };
+
+void do_test_sandbox()
+{ auto member_pointer = &A::b;
+
+  A* mya;
 
 }
