@@ -26,18 +26,18 @@ namespace VW
       using namespace VW::t3_REDUCTION;
       using namespace typesys;
 
-      template <typename T, const char* name>
-      struct type_descriptor_witness
-      {
-      public:
-        type_descriptor_witness() : td(name, type<T>::erase())
-        {
-        }
+      // template <typename T, const char* name>
+      // struct type_descriptor_witness
+      // {
+      // public:
+      //   type_descriptor_witness() : td(name, type<T>::erase())
+      //   {
+      //   }
 
-        type_descriptor td;
-      };
+      //   type_descriptor td;
+      // };
 
-      ////
+      // ////
 
       struct empty_t
       {
