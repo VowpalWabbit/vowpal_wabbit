@@ -28,18 +28,18 @@
 
 #include "vw/common/future_compat.h"
 #include "vw/common/hash.h"
+#include "vw/core/error_reporting.h"
 #include "vw/core/global_data.h"
 #include "vw/core/hashstring.h"
 #include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_fwd.h"
 
-#include <functional>
 #include <memory>
 
 namespace VW
 {
-using driver_output_func_t = std::function<void(void*, const std::string&)>;
+using driver_output_func_t = VW::trace_message_t;
 
 /*    Caveats:
     (1) Some commandline parameters do not make sense as a library.
