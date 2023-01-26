@@ -11,7 +11,6 @@
 #include "vw/core/memory.h"
 #include "vw/core/multi_model_utils.h"
 #include "vw/core/vw_math.h"
-#include "vw/core/multi_model_utils.h"
 
 #include <gtest/gtest.h>
 

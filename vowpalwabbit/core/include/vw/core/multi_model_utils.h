@@ -28,14 +28,16 @@ inline void clear_offset(dense_parameters& weights, const size_t offset, const s
     {
       for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
       {
-        weights_arr[iterator_clear.index() + outer_offset * inner_ppw_size * weights.stride() + offset * weights.stride() + stride_offset] = 0.0f;
+        weights_arr[iterator_clear.index() + outer_offset * inner_ppw_size * weights.stride() +
+            offset * weights.stride() + stride_offset] = 0.0f;
       }
     }
   }
 }
 
 // ***** NOTE: ppw must be of form 2^n *****
-inline void move_offsets(dense_parameters& weights, const size_t from, const size_t to, const size_t ppw, const size_t inner_ppw_size, bool swap = false)
+inline void move_offsets(dense_parameters& weights, const size_t from, const size_t to, const size_t ppw,
+    const size_t inner_ppw_size, bool swap = false)
 {
   VW::weight* weights_arr = weights.first();
   const size_t outer_ppw_size = ppw / inner_ppw_size;
@@ -51,8 +53,15 @@ inline void move_offsets(dense_parameters& weights, const size_t from, const siz
         size_t outer_index = iterator_move.index() + outer_offset * inner_ppw_size * weights.stride() + stride_offset;
         if (weights_arr[outer_index + to * weights.stride()] != weights_arr[outer_index + from * weights.stride()])
         {
-          if (swap) { std::swap(weights_arr[outer_index + to * weights.stride()], weights_arr[outer_index + from * weights.stride()]); }
-          else { weights_arr[outer_index + to * weights.stride()] = weights_arr[outer_index + from * weights.stride()]; }
+          if (swap)
+          {
+            std::swap(
+                weights_arr[outer_index + to * weights.stride()], weights_arr[outer_index + from * weights.stride()]);
+          }
+          else
+          {
+            weights_arr[outer_index + to * weights.stride()] = weights_arr[outer_index + from * weights.stride()];
+          }
         }
       }
     }
@@ -76,18 +85,15 @@ inline void resize_model_weights(
     {
       for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
       {
-        auto old_ind = weights_it.index() + outer_offset * inner_ppw_size * weights.stride() + offset * weights.stride() + stride_offset;
+        auto old_ind = weights_it.index() + outer_offset * inner_ppw_size * weights.stride() +
+            offset * weights.stride() + stride_offset;
         auto new_ind = cb_ind + outer_offset * weights.stride() + stride_offset;
         if (weights_arr[old_ind] != 0.0f)
         {
           // Move all strided weights of selected model to smaller weights array. Zero out
           // previous weights.
-          weights_arr[new_ind] =
-              weights_arr[old_ind];
-          if (weights_it.index() != 0 || outer_offset != 0)
-          {
-            weights_arr[old_ind] = 0.f;
-          }
+          weights_arr[new_ind] = weights_arr[old_ind];
+          if (weights_it.index() != 0 || outer_offset != 0) { weights_arr[old_ind] = 0.f; }
         }
       }
     }

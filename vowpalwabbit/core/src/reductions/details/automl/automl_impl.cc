@@ -260,8 +260,12 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
      */
 
     // this is a swap, see last bool argument in move_offsets
-    VW::reductions::multi_model::move_offsets(weights, winning_challenger_slot, old_champ_slot, wpp, max_live_configs, true);
-    if (winning_challenger_slot != 1) { VW::reductions::multi_model::move_offsets(weights, winning_challenger_slot, 1, wpp, max_live_configs, false); }
+    VW::reductions::multi_model::move_offsets(
+        weights, winning_challenger_slot, old_champ_slot, wpp, max_live_configs, true);
+    if (winning_challenger_slot != 1)
+    {
+      VW::reductions::multi_model::move_offsets(weights, winning_challenger_slot, 1, wpp, max_live_configs, false);
+    }
 
     apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, ns_counter);
     if (champ_log_file)
