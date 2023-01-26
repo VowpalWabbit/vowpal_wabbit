@@ -89,7 +89,7 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
 
   // Adjust champ weights to new single-model space
   VW::reductions::multi_model::resize_model_weights(
-      data.cm->weights, 0, data.cm->wpp, data.cm->wpp / data.cm->max_live_configs);
+      data.cm->weights, 0, data.cm->wpp, data.cm->max_live_configs);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
