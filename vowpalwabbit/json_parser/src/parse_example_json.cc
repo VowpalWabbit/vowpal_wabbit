@@ -1833,7 +1833,8 @@ bool VW::parsers::json::details::parse_line_json(
 
     VW::parsers::json::decision_service_interaction interaction;
     bool result = VW::parsers::json::template read_line_decision_service_json<audit>(
-        *all, examples, line, num_chars, false, std::bind(VW::get_unused_example, all), &interaction);
+        *all, examples, line, num_chars, false, [all]() -> VW::example& { return VW::get_unused_example(all); },
+        &interaction);
 
     if (!result)
     {
@@ -1913,7 +1914,7 @@ bool VW::parsers::json::details::parse_line_json(
   else
   {
     VW::parsers::json::template read_line_json<audit>(
-        *all, examples, line, num_chars, std::bind(VW::get_unused_example, all));
+        *all, examples, line, num_chars, [all]() -> VW::example& { return VW::get_unused_example(all); });
   }
 
   return true;
