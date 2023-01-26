@@ -488,7 +488,7 @@ inline float trunc_predict(VW::workspace& all, VW::example& ec, double gravity, 
 }
 
 template <bool l1, bool audit>
-void predict(VW::reductions::gd& g, learner&, VW::example& ec)
+void predict(VW::reductions::gd& g, VW::example& ec)
 {
   VW_DBG(ec) << "gd.predict(): ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
 
@@ -518,7 +518,7 @@ inline void vec_add_trunc_multipredict(VW::details::multipredict_info<T>& mp, co
 }
 
 template <bool l1, bool audit>
-void multipredict(VW::reductions::gd& g, learner&, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+void multipredict(VW::reductions::gd& g, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
     bool finalize_predictions)
 {
   VW::workspace& all = *g.all;
@@ -752,7 +752,7 @@ float get_scale(VW::reductions::gd& g, VW::example& /* ec */, float weight)
 }
 
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare>
-float sensitivity(VW::reductions::gd& g, learner& /* base */, VW::example& ec)
+float sensitivity(VW::reductions::gd& g, VW::example& ec)
 {
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
@@ -800,7 +800,7 @@ float compute_update(VW::reductions::gd& g, VW::example& ec)
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-void update(VW::reductions::gd& g, learner&, VW::example& ec)
+void update(VW::reductions::gd& g, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   float update;
@@ -818,13 +818,13 @@ void update(VW::reductions::gd& g, learner&, VW::example& ec)
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-void learn(VW::reductions::gd& g, learner& base, VW::example& ec)
+void learn(VW::reductions::gd& g, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
-  g.predict(g, base, ec);
-  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
+  g.predict(g, ec);
+  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, ec);
 }
 
 size_t write_index(VW::io_buf& model_file, std::stringstream& msg, bool text, uint32_t num_bits, uint64_t i)

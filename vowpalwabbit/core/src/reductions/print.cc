@@ -29,7 +29,7 @@ void print_feature(VW::workspace& all, float value, uint64_t index)
   (*all.trace_message) << " ";
 }
 
-void learn(print& p, VW::LEARNER::learner&, VW::example& ec)
+void learn(print& p, VW::example& ec)
 {
   assert(p.all != nullptr);
   auto& all = *p.all;

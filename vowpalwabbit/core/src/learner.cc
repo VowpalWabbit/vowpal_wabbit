@@ -362,7 +362,7 @@ void learner::learn(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "learn");
-  _learn_f(safe_get_previous_learner(), ec);
+  _learn_f(ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -371,7 +371,7 @@ void learner::predict(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "predict");
-  _predict_f(safe_get_previous_learner(), ec);
+  _predict_f(ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -384,7 +384,7 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
     debug_log_message(ec, "multipredict");
     for (size_t c = 0; c < count; c++)
     {
-      _predict_f(safe_get_previous_learner(), ec);
+      _predict_f(ec);
       if (finalize_predictions)
       {
         pred[c] = std::move(static_cast<VW::example&>(ec).pred);  // TODO: this breaks for complex labels because =
@@ -401,7 +401,7 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
   {
     details::increment_offset(ec, increment, lo);
     debug_log_message(ec, "multipredict");
-    _multipredict_f(safe_get_previous_learner(), ec, count, increment, pred, finalize_predictions);
+    _multipredict_f(ec, count, increment, pred, finalize_predictions);
     details::decrement_offset(ec, increment, lo);
   }
 }
@@ -411,7 +411,7 @@ void learner::update(polymorphic_ex ec, size_t i)
   assert(is_multiline() == ec.is_multiline());
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "update");
-  _update_f(safe_get_previous_learner(), ec);
+  _update_f(ec);
   details::decrement_offset(ec, increment, i);
 }
 
@@ -419,7 +419,7 @@ float learner::sensitivity(example& ec, size_t i)
 {
   details::increment_offset(ec, increment, i);
   debug_log_message(ec, "sensitivity");
-  const float ret = _sensitivity_f(safe_get_previous_learner(), ec);
+  const float ret = _sensitivity_f(ec);
   details::decrement_offset(ec, increment, i);
   return ret;
 }
@@ -665,41 +665,6 @@ std::shared_ptr<learner> learner::make_next_learner()
   l->_subtract_with_all_f = nullptr;
 
   return l;
-}
-
-learner& learner::safe_get_previous_learner()
-{
-  if (_previous_learner) { return *_previous_learner; }
-
-  // Error handler for trying to go past the last learner in the reduction stack.
-  // This is a singleton that is shared between all learner objects.
-  static std::shared_ptr<learner> error_learner = make_error_learner();
-  return *error_learner;
-}
-
-std::shared_ptr<learner> learner::make_error_learner()
-{
-  std::shared_ptr<learner> error_learner(new learner());
-  error_learner->_name = "ERROR";
-  error_learner->_is_multiline = false;
-  error_learner->_output_pred_type = VW::prediction_type_t::NOPRED;
-  error_learner->_input_pred_type = VW::prediction_type_t::NOPRED;
-  error_learner->_output_label_type = VW::label_type_t::NOLABEL;
-  error_learner->_input_label_type = VW::label_type_t::NOLABEL;
-  error_learner->_init_f = []() { THROW("Cannot access previous learner for last learner in reduction stack"); };
-  error_learner->_learn_f = [](learner&, polymorphic_ex)
-  { THROW("Cannot access previous learner for last learner in reduction stack"); };
-  error_learner->_predict_f = [](learner&, polymorphic_ex)
-  { THROW("Cannot access previous learner for last learner in reduction stack"); };
-  error_learner->_update_f = [](learner&, polymorphic_ex)
-  { THROW("Cannot access previous learner for last learner in reduction stack"); };
-  error_learner->_multipredict_f = [](learner&, polymorphic_ex, size_t, size_t, VW::polyprediction*, bool)
-  { THROW("Cannot access previous learner for last learner in reduction stack"); };
-  error_learner->_sensitivity_f = [](learner&, polymorphic_ex) -> float
-  { THROW("Cannot access previous learner for last learner in reduction stack"); };
-  error_learner->_finish_example_f = [](VW::workspace&, polymorphic_ex)
-  { THROW("Cannot access previous learner for last learner in reduction stack"); };
-  return error_learner;
 }
 
 }  // namespace LEARNER

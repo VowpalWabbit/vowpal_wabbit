@@ -66,7 +66,7 @@ public:
 };
 
 template <bool audit>
-void predict(freegrad& b, learner& /* base */, VW::example& ec)
+void predict(freegrad& b, VW::example& ec)
 {
   size_t num_features_from_interactions = 0;
   ec.partial_prediction = VW::inline_predict(*b.all, ec, num_features_from_interactions);
@@ -273,7 +273,7 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
 }
 
 template <bool audit>
-void learn_freegrad(freegrad& a, learner& /* base */, VW::example& ec)
+void learn_freegrad(freegrad& a, VW::example& ec)
 {
   // update state based on the example and predict
   freegrad_predict(a, ec);

@@ -58,11 +58,11 @@ learner* as_singleline(learner* l);
 namespace details
 {
 using void_func = std::function<void(void)>;
-using learn_predict_func = std::function<void(learner& prev, polymorphic_ex ex)>;
-using multipredict_func = std::function<void(
-    learner& prev, polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)>;
+using example_func = std::function<void(polymorphic_ex ex)>;
+using multipredict_func =
+    std::function<void(polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)>;
 
-using sensitivity_func = std::function<float(learner& prev, example& ex)>;
+using sensitivity_func = std::function<float(example& ex)>;
 using save_load_func = std::function<void(io_buf&, bool read, bool text)>;
 using pre_save_load_func = std::function<void(VW::workspace& all)>;
 using save_metric_func = std::function<void(metric_sink& metrics)>;
@@ -252,9 +252,9 @@ private:
 
   // These functions will implement the internal logic of each type of learner.
   details::void_func _init_f;
-  details::learn_predict_func _learn_f;
-  details::learn_predict_func _predict_f;
-  details::learn_predict_func _update_f;
+  details::example_func _learn_f;
+  details::example_func _predict_f;
+  details::example_func _update_f;
   details::multipredict_func _multipredict_f;
   details::sensitivity_func _sensitivity_f;
 
@@ -289,23 +289,14 @@ private:
   // For base learners, this will be nullptr.
   std::shared_ptr<learner> _previous_learner;
 
-  // This returns the learner immediately below the current learner in the reduction stack.
-  // For reduction learners, return a reference to the learner stored in _previous_learner.
-  // For base learners, return a dummy object that throws exceptions if its internal functions are called.
-  // The last learner in the reduction stack should never access this placeholder object, but its
-  // function signatures still expect a reference to a "previous learner" that we must provide here.
-  learner& safe_get_previous_learner();
-
   // Create a copy of this learner. The implementation of this functions determines which of the
   // functions inside the learner are propagated to the next learner, and which are reset to nullptr.
   // The new learner will share ownership of this learner in its _previous_learner shared pointer.
   std::shared_ptr<learner> make_next_learner();
 
-  // Create a fake learner that throws exceptions whenever its internal functions are called.
-  std::shared_ptr<learner> make_error_learner();
-
   // Private constructor/copy/move
-  // Should only be able to construct a learner through make_reduction_learner / make_base_learner.
+  // Should only be able to construct a std::shared_ptr<learner> through make_reduction_learner / make_base_learner.
+  // All learners must be owned by a std::shared_ptr because we use std::enable_shared_from_this
   learner() = default;
   learner(const learner&) = default;
   learner(learner&&) = default;
@@ -349,8 +340,10 @@ void multiline_learn_or_predict(learner& prev, multi_ex& examples, const uint64_
 
 namespace details
 {
+inline float recur_sensitivity(learner& prev, example& ec) { return prev.sensitivity(ec); }
+
 template <typename DataT>
-float recur_sensitivity(DataT&, learner& prev, example& ec)
+inline float recur_sensitivity(DataT&, learner& prev, example& ec)
 {
   return prev.sensitivity(ec);
 }
@@ -385,93 +378,6 @@ public:
   // default move constructors
   common_learner_builder(common_learner_builder&&) noexcept = default;
   common_learner_builder& operator=(common_learner_builder&&) noexcept = default;
-
-  FluentBuilderT& set_predict(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_predict_f = [fn_ptr, data](learner& prev, polymorphic_ex ex) { fn_ptr(*data, prev, ex); };
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  FluentBuilderT&& set_predict(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &&
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_predict_f = [fn_ptr, data](learner& prev, polymorphic_ex ex) { fn_ptr(*data, prev, ex); };
-    return std::move(*static_cast<FluentBuilderT*>(this));
-  }
-
-  FluentBuilderT& set_learn(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_learn_f = [fn_ptr, data](learner& prev, polymorphic_ex ex) { fn_ptr(*data, prev, ex); };
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  FluentBuilderT&& set_learn(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &&
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_learn_f = [fn_ptr, data](learner& prev, polymorphic_ex ex) { fn_ptr(*data, prev, ex); };
-    return std::move(*static_cast<FluentBuilderT*>(this));
-  }
-
-  FluentBuilderT& set_multipredict(void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_multipredict_f = [fn_ptr, data](learner& prev, polymorphic_ex ex, size_t count, size_t step,
-                                             polyprediction* pred, bool finalize_predictions)
-    { fn_ptr(*data, prev, ex, count, step, pred, finalize_predictions); };
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  FluentBuilderT&& set_multipredict(
-      void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &&
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_multipredict_f = [fn_ptr, data](learner& prev, polymorphic_ex ex, size_t count, size_t step,
-                                             polyprediction* pred, bool finalize_predictions)
-    { fn_ptr(*data, prev, ex, count, step, pred, finalize_predictions); };
-    return std::move(*static_cast<FluentBuilderT*>(this));
-  }
-
-  FluentBuilderT& set_update(void (*fn_ptr)(DataT& data, learner& prev, ExampleT&)) &
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_update_f = [fn_ptr, data](learner& prev, polymorphic_ex ex) { fn_ptr(*data, prev, ex); };
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  FluentBuilderT&& set_update(void (*fn_ptr)(DataT& data, learner& prev, ExampleT&)) &&
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_update_f = [fn_ptr, data](learner& prev, polymorphic_ex ex) { fn_ptr(*data, prev, ex); };
-    return std::move(*static_cast<FluentBuilderT*>(this));
-  }
-
-  // used for active learning and confidence to determine how easily predictions are changed
-  FluentBuilderT& set_sensitivity(float (*fn_ptr)(DataT& data, learner& prev, example&)) &
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_sensitivity_f = [fn_ptr, data](learner& prev, example& ex) { return fn_ptr(*data, prev, ex); };
-    return *static_cast<FluentBuilderT*>(this);
-  }
-
-  // used for active learning and confidence to determine how easily predictions are changed
-  FluentBuilderT&& set_sensitivity(float (*fn_ptr)(DataT& data, learner& prev, example&)) &&
-  {
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_sensitivity_f = [fn_ptr, data](learner& prev, example& ex) { return fn_ptr(*data, prev, ex); };
-    return std::move(*static_cast<FluentBuilderT*>(this));
-  }
 
   FluentBuilderT& set_learn_returns_prediction(bool learn_returns_prediction) &
   {
@@ -774,7 +680,7 @@ public:
             prev->make_next_learner(), std::move(data), name)
   {
     // Default sensitivity calls the previous learner's sensitivity recursively
-    super::set_sensitivity(details::recur_sensitivity<DataT>);
+    this->set_sensitivity(details::recur_sensitivity<DataT>);
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
@@ -784,6 +690,104 @@ public:
     super::set_output_label_type(prev->get_input_label_type());
     super::set_input_prediction_type(prev->get_output_prediction_type());
     super::set_output_prediction_type(prev->get_output_prediction_type());
+  }
+
+  reduction_learner_builder<DataT, ExampleT>& set_predict(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_predict_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    return *this;
+  }
+
+  reduction_learner_builder<DataT, ExampleT>&& set_predict(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_predict_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    return std::move(*this);
+  }
+
+  reduction_learner_builder<DataT, ExampleT>& set_learn(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_learn_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    return *this;
+  }
+
+  reduction_learner_builder<DataT, ExampleT>&& set_learn(void (*fn_ptr)(DataT&, learner&, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_learn_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    return std::move(*this);
+  }
+
+  reduction_learner_builder<DataT, ExampleT>& set_multipredict(
+      void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_multipredict_f = [fn_ptr, data, prev](polymorphic_ex ex, size_t count, size_t step,
+                                             polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*data, *prev, ex, count, step, pred, finalize_predictions); };
+    return *this;
+  }
+
+  reduction_learner_builder<DataT, ExampleT>&& set_multipredict(
+      void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_multipredict_f = [fn_ptr, data, prev](polymorphic_ex ex, size_t count, size_t step,
+                                             polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*data, *prev, ex, count, step, pred, finalize_predictions); };
+    return std::move(*this);
+  }
+
+  reduction_learner_builder<DataT, ExampleT>& set_update(void (*fn_ptr)(DataT& data, learner&, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_update_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    return *this;
+  }
+
+  reduction_learner_builder<DataT, ExampleT>&& set_update(void (*fn_ptr)(DataT& data, learner&, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_update_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    return std::move(*this);
+  }
+
+  // used for active learning and confidence to determine how easily predictions are changed
+  reduction_learner_builder<DataT, ExampleT>& set_sensitivity(float (*fn_ptr)(DataT& data, learner&, example&)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_sensitivity_f = [fn_ptr, data, prev](example& ex) { return fn_ptr(*data, *prev, ex); };
+    return *this;
+  }
+
+  // used for active learning and confidence to determine how easily predictions are changed
+  reduction_learner_builder<DataT, ExampleT>&& set_sensitivity(float (*fn_ptr)(DataT& data, learner&, example&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_sensitivity_f = [fn_ptr, data, prev](example& ex) { return fn_ptr(*data, *prev, ex); };
+    return std::move(*this);
   }
 
   reduction_learner_builder<DataT, ExampleT>& set_params_per_weight(size_t params_per_weight) &
@@ -889,7 +893,7 @@ public:
             prev->make_next_learner(), VW::make_unique<char>(0), name)
   {
     // Default sensitivity calls previous learner's sensitivity recursively
-    super::set_sensitivity(details::recur_sensitivity);
+    this->set_sensitivity(details::recur_sensitivity);
 
     set_params_per_weight(1);
     // By default, will produce what the previous learner expects
@@ -897,6 +901,94 @@ public:
     super::set_output_label_type(prev->get_input_label_type());
     super::set_input_prediction_type(prev->get_output_prediction_type());
     super::set_output_prediction_type(prev->get_output_prediction_type());
+  }
+
+  reduction_no_data_learner_builder<ExampleT>& set_predict(void (*fn_ptr)(learner&, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_predict_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    return *this;
+  }
+
+  reduction_no_data_learner_builder<ExampleT>&& set_predict(void (*fn_ptr)(learner&, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_predict_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    return std::move(*this);
+  }
+
+  reduction_no_data_learner_builder<ExampleT>& set_learn(void (*fn_ptr)(learner&, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_learn_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    return *this;
+  }
+
+  reduction_no_data_learner_builder<ExampleT>&& set_learn(void (*fn_ptr)(learner&, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_learn_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    return std::move(*this);
+  }
+
+  reduction_no_data_learner_builder<ExampleT>& set_multipredict(
+      void (*fn_ptr)(learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_multipredict_f =
+        [fn_ptr, prev](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*prev, ex, count, step, pred, finalize_predictions); };
+    return *this;
+  }
+
+  reduction_no_data_learner_builder<ExampleT>&& set_multipredict(
+      void (*fn_ptr)(learner&, ExampleT&, size_t, size_t, polyprediction*, bool)) &&
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_multipredict_f =
+        [fn_ptr, prev](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*prev, ex, count, step, pred, finalize_predictions); };
+    return std::move(*this);
+  }
+
+  reduction_no_data_learner_builder<ExampleT>& set_update(void (*fn_ptr)(learner&, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_update_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    return *this;
+  }
+
+  reduction_no_data_learner_builder<ExampleT>&& set_update(void (*fn_ptr)(learner&, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_update_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    return std::move(*this);
+  }
+
+  // used for active learning and confidence to determine how easily predictions are changed
+  reduction_no_data_learner_builder<ExampleT>& set_sensitivity(float (*fn_ptr)(learner&, example&)) &
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_sensitivity_f = [fn_ptr, prev](example& ex) { return fn_ptr(*prev, ex); };
+    return *this;
+  }
+
+  // used for active learning and confidence to determine how easily predictions are changed
+  reduction_no_data_learner_builder<ExampleT>&& set_sensitivity(float (*fn_ptr)(learner&, example&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    learner* prev = this->learner_ptr->get_previous_learner();
+    this->learner_ptr->_sensitivity_f = [fn_ptr, prev](example& ex) { return fn_ptr(*prev, ex); };
+    return std::move(*this);
   }
 
   reduction_no_data_learner_builder<ExampleT>& set_params_per_weight(size_t params_per_weight) &
@@ -927,7 +1019,7 @@ public:
             std::shared_ptr<learner>(new learner()), std::move(data), name)
   {
     // Default sensitivity function returns zero
-    this->learner_ptr->_sensitivity_f = [](learner&, example&) { return 0.f; };
+    this->learner_ptr->_sensitivity_f = [](example&) { return 0.f; };
 
     super::set_input_label_type(in_label_type);
     super::set_output_label_type(label_type_t::NOLABEL);
@@ -935,6 +1027,94 @@ public:
     super::set_output_prediction_type(out_pred_type);
 
     set_params_per_weight(1);
+  }
+
+  base_learner_builder<DataT, ExampleT>& set_predict(void (*fn_ptr)(DataT&, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_predict_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    return *this;
+  }
+
+  base_learner_builder<DataT, ExampleT>&& set_predict(void (*fn_ptr)(DataT&, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_predict_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    return std::move(*this);
+  }
+
+  base_learner_builder<DataT, ExampleT>& set_learn(void (*fn_ptr)(DataT&, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_learn_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    return *this;
+  }
+
+  base_learner_builder<DataT, ExampleT>&& set_learn(void (*fn_ptr)(DataT&, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_learn_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    return std::move(*this);
+  }
+
+  base_learner_builder<DataT, ExampleT>& set_multipredict(
+      void (*fn_ptr)(DataT&, ExampleT&, size_t, size_t, polyprediction*, bool)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_multipredict_f =
+        [fn_ptr, data](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*data, ex, count, step, pred, finalize_predictions); };
+    return *this;
+  }
+
+  base_learner_builder<DataT, ExampleT>&& set_multipredict(
+      void (*fn_ptr)(DataT&, ExampleT&, size_t, size_t, polyprediction*, bool)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_multipredict_f =
+        [fn_ptr, data](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*data, ex, count, step, pred, finalize_predictions); };
+    return std::move(*this);
+  }
+
+  base_learner_builder<DataT, ExampleT>& set_update(void (*fn_ptr)(DataT& data, ExampleT&)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_update_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    return *this;
+  }
+
+  base_learner_builder<DataT, ExampleT>&& set_update(void (*fn_ptr)(DataT& data, ExampleT&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_update_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    return std::move(*this);
+  }
+
+  // used for active learning and confidence to determine how easily predictions are changed
+  base_learner_builder<DataT, ExampleT>& set_sensitivity(float (*fn_ptr)(DataT& data, example&)) &
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_sensitivity_f = [fn_ptr, data](example& ex) { return fn_ptr(*data, ex); };
+    return *this;
+  }
+
+  // used for active learning and confidence to determine how easily predictions are changed
+  base_learner_builder<DataT, ExampleT>&& set_sensitivity(float (*fn_ptr)(DataT& data, example&)) &&
+  {
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_sensitivity_f = [fn_ptr, data](example& ex) { return fn_ptr(*data, ex); };
+    return std::move(*this);
   }
 
   base_learner_builder<DataT, ExampleT>& set_params_per_weight(size_t params_per_weight) &
@@ -1057,8 +1237,7 @@ reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_pt
 
 template <class ExampleT>
 reduction_no_data_learner_builder<ExampleT> make_no_data_reduction_learner(learner* prev,
-    void (*learn_fn)(char&, learner&, ExampleT&), void (*predict_fn)(char&, learner&, ExampleT&),
-    const std::string& name)
+    void (*learn_fn)(learner&, ExampleT&), void (*predict_fn)(learner&, ExampleT&), const std::string& name)
 {
   auto builder = reduction_no_data_learner_builder<ExampleT>(prev, name);
   builder.set_learn(learn_fn);
@@ -1069,8 +1248,8 @@ reduction_no_data_learner_builder<ExampleT> make_no_data_reduction_learner(learn
 
 template <class DataT, class ExampleT>
 base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&& data,
-    void (*learn_fn)(DataT&, learner&, ExampleT&), void (*predict_fn)(DataT&, learner&, ExampleT&),
-    const std::string& name, prediction_type_t out_pred_type, label_type_t in_label_type)
+    void (*learn_fn)(DataT&, ExampleT&), void (*predict_fn)(DataT&, ExampleT&), const std::string& name,
+    prediction_type_t out_pred_type, label_type_t in_label_type)
 {
   auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type);
   builder.set_learn(learn_fn);
@@ -1080,8 +1259,8 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
 }
 
 template <class ExampleT>
-base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, learner&, ExampleT&),
-    void (*predict_fn)(char&, learner&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
+base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, ExampleT&),
+    void (*predict_fn)(char&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
     label_type_t in_label_type)
 {
   return make_base_learner<char, ExampleT>(

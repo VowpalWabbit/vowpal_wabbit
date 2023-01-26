@@ -69,7 +69,7 @@ float predict_stable(const svrg& s, VW::example& ec)
   return VW::details::finalize_prediction(*s.all->sd, s.all->logger, inline_predict<W_STABLE>(*s.all, ec));
 }
 
-void predict(svrg& s, learner&, VW::example& ec)
+void predict(svrg& s, VW::example& ec)
 {
   ec.partial_prediction = inline_predict<W_INNER>(*s.all, ec);
   ec.pred.scalar = VW::details::finalize_prediction(*s.all->sd, s.all->logger, ec.partial_prediction);
@@ -120,9 +120,9 @@ void update_stable(const svrg& s, VW::example& ec)
   VW::foreach_feature<float, update_stable_feature>(*s.all, ec, g);
 }
 
-void learn(svrg& s, learner& base, VW::example& ec)
+void learn(svrg& s, VW::example& ec)
 {
-  predict(s, base, ec);
+  predict(s, ec);
 
   const int pass = static_cast<int>(s.all->passes_complete);
 

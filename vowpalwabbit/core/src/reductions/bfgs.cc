@@ -978,7 +978,7 @@ void end_pass(bfgs& b)
 
 // placeholder
 template <bool audit>
-void predict(bfgs& b, learner&, VW::example& ec)
+void predict(bfgs& b, VW::example& ec)
 {
   VW::workspace* all = b.all;
   ec.pred.scalar = bfgs_predict(*all, ec);
@@ -986,13 +986,13 @@ void predict(bfgs& b, learner&, VW::example& ec)
 }
 
 template <bool audit>
-void learn(bfgs& b, learner& base, VW::example& ec)
+void learn(bfgs& b, VW::example& ec)
 {
   VW::workspace* all = b.all;
 
   if (b.current_pass <= b.final_pass)
   {
-    if (test_example(ec)) { predict<audit>(b, base, ec); }
+    if (test_example(ec)) { predict<audit>(b, ec); }
     else { process_example(*all, b, ec); }
   }
 }
@@ -1177,8 +1177,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
   all.bfgs = true;
   all.weights.stride_shift(2);
 
-  void (*learn_ptr)(bfgs&, learner&, VW::example&) = nullptr;
-  void (*predict_ptr)(bfgs&, learner&, VW::example&) = nullptr;
+  void (*learn_ptr)(bfgs&, VW::example&) = nullptr;
+  void (*predict_ptr)(bfgs&, VW::example&) = nullptr;
   std::string learner_name;
   if (all.audit || all.hash_inv)
   {

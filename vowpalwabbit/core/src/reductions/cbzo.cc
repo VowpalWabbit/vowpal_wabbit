@@ -203,7 +203,7 @@ void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf)
 }
 
 template <uint8_t policy, bool audit_or_hash_inv>
-void predict(cbzo& data, learner&, VW::example& ec)
+void predict(cbzo& data, VW::example& ec)
 {
   ec.pred.pdf.clear();
 
@@ -217,11 +217,11 @@ void predict(cbzo& data, learner&, VW::example& ec)
 }
 
 template <uint8_t policy, bool feature_mask_off, bool audit_or_hash_inv>
-void learn(cbzo& data, learner& base, VW::example& ec)
+void learn(cbzo& data, VW::example& ec)
 {
   // update_weights() doesn't require predict() to be called. It is called
   // to respect --audit, --invert_hash, --predictions for train examples
-  predict<policy, audit_or_hash_inv>(data, base, ec);
+  predict<policy, audit_or_hash_inv>(data, ec);
   update_weights<policy, feature_mask_off>(data, ec);
 }
 
@@ -274,7 +274,7 @@ void print_update_cbzo(VW::workspace& all, VW::shared_data& sd, const cbzo& /* d
   }
 }
 
-void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, learner&, VW::example&)
+void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, VW::example&)
 {
   if (policy == CONSTANT_POLICY)
   {
@@ -300,7 +300,7 @@ void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbz
     THROW("Unknown policy encountered: " << policy)
 }
 
-void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, learner&, VW::example&)
+void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, VW::example&)
 {
   if (policy == CONSTANT_POLICY)
   {

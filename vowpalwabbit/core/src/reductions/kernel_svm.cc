@@ -363,7 +363,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   }
 }
 
-void predict(svm_params& params, learner&, VW::example& ec)
+void predict(svm_params& params, VW::example& ec)
 {
   VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -670,7 +670,7 @@ void train(svm_params& params)
   free(train_pool);
 }
 
-void learn(svm_params& params, learner&, VW::example& ec)
+void learn(svm_params& params, VW::example& ec)
 {
   VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)

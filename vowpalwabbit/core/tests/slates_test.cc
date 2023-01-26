@@ -29,13 +29,11 @@ public:
   PredictFunc test_predict_func;
 
   test_base(LearnFunc learn, PredictFunc predict) : test_learn_func(learn), test_predict_func(predict) {}
-  static void invoke_learn(
-      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::learner& /*base*/, VW::multi_ex& examples)
+  static void invoke_learn(test_base<LearnFunc, PredictFunc>& data, VW::multi_ex& examples)
   {
     data.test_learn_func(examples);
   }
-  static void invoke_predict(
-      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::learner& /*base*/, VW::multi_ex& examples)
+  static void invoke_predict(test_base<LearnFunc, PredictFunc>& data, VW::multi_ex& examples)
   {
     data.test_predict_func(examples);
   }
@@ -45,7 +43,7 @@ template <typename LearnFunc, typename PredictFunc>
 std::shared_ptr<VW::LEARNER::learner> make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
 {
   auto test_base_data = VW::make_unique<test_base<LearnFunc, PredictFunc>>(learn, predict);
-  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::learner&, VW::multi_ex&);
+  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::multi_ex&);
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
   return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),

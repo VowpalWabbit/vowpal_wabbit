@@ -329,9 +329,9 @@ void end_pass(gdmf& d)
   }
 }
 
-void predict(gdmf& d, learner&, VW::example& ec) { mf_predict(d, ec); }
+void predict(gdmf& d, VW::example& ec) { mf_predict(d, ec); }
 
-void learn(gdmf& d, learner&, VW::example& ec)
+void learn(gdmf& d, VW::example& ec)
 {
   VW::workspace& all = *d.all;
 

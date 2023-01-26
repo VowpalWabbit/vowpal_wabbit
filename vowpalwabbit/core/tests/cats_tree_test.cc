@@ -46,24 +46,18 @@ public:
 
   void set_predict_response(const vector<float>& preds) { predictions = preds; }
 
-  void test_predict(learner& /* base */, VW::example& ec) { ec.pred.scalar = predictions[curr_idx++]; }
+  void test_predict(VW::example& ec) { ec.pred.scalar = predictions[curr_idx++]; }
 
-  void test_learn(learner& /* base */, VW::example& ec)
+  void test_learn(VW::example& ec)
   {
     labels.emplace_back(ec.l.simple);
     weights.emplace_back(ec.weight);
     learner_offset.emplace_back(ec.ft_offset);
   }
 
-  static void predict(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
-  {
-    test_reduction.test_predict(base, ec);
-  }
+  static void predict(reduction_test_harness& test_reduction, VW::example& ec) { test_reduction.test_predict(ec); }
 
-  static void learn(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
-  {
-    test_reduction.test_learn(base, ec);
-  };
+  static void learn(reduction_test_harness& test_reduction, VW::example& ec) { test_reduction.test_learn(ec); };
 
   vector<float> predictions;
   vector<VW::simple_label> labels;

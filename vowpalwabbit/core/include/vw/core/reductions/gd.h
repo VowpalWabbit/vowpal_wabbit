@@ -45,11 +45,11 @@ public:
   float neg_power_t = 0.f;
   float sparse_l2 = 0.f;
   float update_multiplier = 0.f;
-  void (*predict)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
-  void (*learn)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
-  void (*update)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
-  float (*sensitivity)(gd&, VW::LEARNER::learner&, VW::example&) = nullptr;
-  void (*multipredict)(gd&, VW::LEARNER::learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
+  void (*predict)(gd&, VW::example&) = nullptr;
+  void (*learn)(gd&, VW::example&) = nullptr;
+  void (*update)(gd&, VW::example&) = nullptr;
+  float (*sensitivity)(gd&, VW::example&) = nullptr;
+  void (*multipredict)(gd&, VW::example&, size_t, size_t, VW::polyprediction*, bool) = nullptr;
   bool adaptive_input = false;
   bool normalized_input = false;
   bool adax = false;

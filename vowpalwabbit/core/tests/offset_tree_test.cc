@@ -35,7 +35,7 @@ public:
 
   void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(learner& /* base */, VW::example& ec)
+  void test_predict(VW::example& ec)
   {
     ec.pred.a_s.clear();
     const auto curr_pred = _predictions[_curr_idx++];
@@ -43,20 +43,14 @@ public:
     ec.pred.a_s.push_back(VW::action_score{1, curr_pred.second});
   }
 
-  void test_learn(learner& /* base */, VW::example& /* ec */)
+  void test_learn(VW::example& /* ec */)
   {
     // do nothing
   }
 
-  static void predict(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
-  {
-    test_reduction.test_predict(base, ec);
-  }
+  static void predict(reduction_test_harness& test_reduction, VW::example& ec) { test_reduction.test_predict(ec); }
 
-  static void learn(reduction_test_harness& test_reduction, learner& base, VW::example& ec)
-  {
-    test_reduction.test_learn(base, ec);
-  };
+  static void learn(reduction_test_harness& test_reduction, VW::example& ec) { test_reduction.test_learn(ec); };
 
 private:
   vector<pair<float, float>> _predictions;

@@ -104,7 +104,7 @@ void receive_result(sender& s)
   print_update_sender(*s.all, *(s.all->sd), sent_info, prediction);
 }
 
-void send_example(sender& s, VW::LEARNER::learner& /* non_existent_base */, VW::example& ec)
+void send_example(sender& s, VW::example& ec)
 {
   if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 

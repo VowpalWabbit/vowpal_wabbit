@@ -953,7 +953,7 @@ void learn_batch(lda& l, std::vector<example*>& batch)
   l.doc_lengths.clear();
 }
 
-void learn(lda& l, learner&, VW::example& ec)
+void learn(lda& l, VW::example& ec)
 {
   // Test if there was a completed batch that now needs to be cleared before we start the next one.
   if (l.batch_buffer.size() == l.minibatch) { l.batch_buffer.clear(); }
@@ -985,7 +985,7 @@ void learn(lda& l, learner&, VW::example& ec)
   if ((new_example_batch_index + 1) == l.minibatch) { learn_batch(l, l.batch_buffer); }
 }
 
-void learn_with_metrics(lda& l, learner& base, VW::example& ec)
+void learn_with_metrics(lda& l, VW::example& ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1004,12 +1004,12 @@ void learn_with_metrics(lda& l, learner& base, VW::example& ec)
     }
   }
 
-  learn(l, base, ec);
+  learn(l, ec);
 }
 
 // placeholder
-void predict(lda& l, learner& base, VW::example& ec) { learn(l, base, ec); }
-void predict_with_metrics(lda& l, learner& base, VW::example& ec) { learn_with_metrics(l, base, ec); }
+void predict(lda& l, VW::example& ec) { learn(l, ec); }
+void predict_with_metrics(lda& l, VW::example& ec) { learn_with_metrics(l, ec); }
 
 class word_doc_frequency
 {

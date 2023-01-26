@@ -344,7 +344,7 @@ void make_pred(oja_n_update_data& data, float x, float& wref)
   for (int i = 1; i <= m; i++) { data.prediction += w[i] * x * data.oja_newton_ptr->D[i] * data.oja_newton_ptr->b[i]; }
 }
 
-void predict(OjaNewton& oja_newton_ptr, learner&, VW::example& ec)
+void predict(OjaNewton& oja_newton_ptr, VW::example& ec)
 {
   oja_newton_ptr.data.prediction = 0;
   VW::foreach_feature<oja_n_update_data, make_pred>(*oja_newton_ptr.all, ec, oja_newton_ptr.data);
@@ -394,10 +394,10 @@ void update_normalization(oja_n_update_data& data, float x, float& wref)
   w[NORM2] += x * x * data.g * data.g;
 }
 
-void learn(OjaNewton& oja_newton_ptr, learner& base, VW::example& ec)
+void learn(OjaNewton& oja_newton_ptr, VW::example& ec)
 {
   // predict
-  predict(oja_newton_ptr, base, ec);
+  predict(oja_newton_ptr, ec);
 
   oja_n_update_data& data = oja_newton_ptr.data;
   data.g = oja_newton_ptr.all->loss->first_derivative(oja_newton_ptr.all->sd.get(), ec.pred.scalar, ec.l.simple.label) *

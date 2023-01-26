@@ -13,7 +13,7 @@
 using namespace VW::config;
 namespace
 {
-void learn(char&, VW::LEARNER::learner&, VW::example&) {}
+void learn(char&, VW::example&) {}
 
 }  // namespace
 
