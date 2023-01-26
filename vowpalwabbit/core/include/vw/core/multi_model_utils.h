@@ -7,8 +7,6 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/learner.h"
 
-#include <queue>
-
 namespace VW
 {
 namespace reductions

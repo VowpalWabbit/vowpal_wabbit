@@ -1,5 +1,5 @@
 creating features for following interactions: AA AB AC AD AE AF BB BC BD BE BF CC CD CE CF DD DE DF EE EF FF
-final_regressor = models/aml_spin_off_bag_cb.m
+final_regressor = models/cb_spin_off_bag.m
 using no cache
 Reading datafile = train-sets/automl_spin_off_small.txt
 num sources = 1
