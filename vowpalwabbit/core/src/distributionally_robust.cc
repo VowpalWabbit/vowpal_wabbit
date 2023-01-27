@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/distributionally_robust.h"
+#include "vw/core/estimators/distributionally_robust.h"
 
 #include "vw/core/model_utils.h"
 #include "vw/core/vw_math.h"
