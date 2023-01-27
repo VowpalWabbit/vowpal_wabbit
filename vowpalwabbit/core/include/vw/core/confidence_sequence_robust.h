@@ -45,7 +45,7 @@ public:
 class countable_discrete_base
 {
 public:
-  countable_discrete_base(std::string opt_func = "bisect", double tol_x = 1e-6, double eta = 0.95f, double k = 1.5,
+  countable_discrete_base(double tol_x = 1e-6, std::string opt_func = "bisect", double eta = 0.95f, double k = 1.5,
       double lambda_max = 0.5, double xi = 1.6);
   double get_ci(double alpha) const;
   double get_lam_sqrt_tp1(double j) const;
@@ -63,14 +63,14 @@ public:
   void reset_stats();
 
   // Constant values -- do not require reset or save_load
+  double tol_x;
+  std::string opt_func;
   double log_xi;
   double log_xi_m1;
   double lambda_max;
   double zeta_r;
   double scale_fac;
   double log_scale_fac;
-  double tol_x;
-  std::string opt_func;
 
   uint64_t t;
   g_tilde gt;

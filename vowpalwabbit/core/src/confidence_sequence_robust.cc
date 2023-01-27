@@ -87,9 +87,9 @@ void g_tilde::reset_stats()
 }
 
 countable_discrete_base::countable_discrete_base(
-    std::string opt_func, double tol_x, double eta, double k, double lambda_max, double xi)
-    : opt_func(opt_func)
-    , tol_x(tol_x)
+    double tol_x, std::string opt_func, double eta, double k, double lambda_max, double xi)
+    : tol_x(tol_x)
+    , opt_func(opt_func)
     , log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
@@ -311,7 +311,7 @@ void countable_discrete_base::reset_stats()
 namespace estimators
 {
 confidence_sequence_robust::confidence_sequence_robust(double alpha, double tol_x, std::string opt_func)
-    : lower(opt_func, tol_x), upper(opt_func, tol_x), alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
+    : lower(tol_x, opt_func), upper(tol_x, opt_func), alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
 {
 }
 
