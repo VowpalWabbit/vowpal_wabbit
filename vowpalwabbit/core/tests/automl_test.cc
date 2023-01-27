@@ -6,7 +6,7 @@
 
 #include "simulator.h"
 #include "vw/core/automl_impl.h"
-#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/vw_fwd.h"
 

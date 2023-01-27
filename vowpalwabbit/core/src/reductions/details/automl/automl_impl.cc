@@ -5,7 +5,7 @@
 #include "vw/core/automl_impl.h"
 
 #include "vw/common/vw_exception.h"
-#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/multi_model_utils.h"
 
 /*
