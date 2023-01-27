@@ -87,9 +87,9 @@ void g_tilde::reset_stats()
 }
 
 countable_discrete_base::countable_discrete_base(
-    double tol_x, std::string opt_func, double eta, double k, double lambda_max, double xi)
+    double tol_x, bool is_brentq, double eta, double k, double lambda_max, double xi)
     : tol_x(tol_x)
-    , opt_func(opt_func)
+    , is_brentq(is_brentq)
     , log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
@@ -278,13 +278,8 @@ double countable_discrete_base::lb_log_wealth(double alpha) const
   double max_mu = 1.0;
   double log_wealth_max_mu = log_wealth_mix(max_mu, s, thres, memo);
   if (log_wealth_max_mu >= thres) { return max_mu; }
-  if (opt_func == "bisect") { return root_bisect(s, thres, memo, min_mu, max_mu); }
-  else if (opt_func == "brentq") { return root_brentq(s, thres, memo, min_mu, max_mu); }
-  else
-  {
-    THROW("Unknown opt_func: " << opt_func);
-    return 0.0;
-  }
+  if (is_brentq) { return root_brentq(s, thres, memo, min_mu, max_mu); }
+  else { return root_bisect(s, thres, memo, min_mu, max_mu); }
 }
 
 double countable_discrete_base::get_log_weight(double j) const { return log_scale_fac + log_xi_m1 - (1 + j) * log_xi; }
@@ -310,8 +305,8 @@ void countable_discrete_base::reset_stats()
 
 namespace estimators
 {
-confidence_sequence_robust::confidence_sequence_robust(double tol_x, std::string opt_func, double alpha)
-    : alpha(alpha), update_count(0), last_w(0.0), last_r(0.0), lower(tol_x, opt_func), upper(tol_x, opt_func)
+confidence_sequence_robust::confidence_sequence_robust(double tol_x, bool is_brentq, double alpha)
+    : alpha(alpha), update_count(0), last_w(0.0), last_r(0.0), lower(tol_x, is_brentq), upper(tol_x, is_brentq)
 {
 }
 

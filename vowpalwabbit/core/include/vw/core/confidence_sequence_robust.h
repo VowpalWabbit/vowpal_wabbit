@@ -45,7 +45,7 @@ public:
 class countable_discrete_base
 {
 public:
-  countable_discrete_base(double tol_x = 1e-6, std::string opt_func = "bisect", double eta = 0.95f, double k = 1.5,
+  countable_discrete_base(double tol_x = 1e-6, bool is_brentq = false, double eta = 0.95f, double k = 1.5,
       double lambda_max = 0.5, double xi = 1.6);
   double get_ci(double alpha) const;
   double get_lam_sqrt_tp1(double j) const;
@@ -64,7 +64,7 @@ public:
 
   // Constant values -- do not require reset or save_load
   double tol_x;
-  std::string opt_func;
+  bool is_brentq;
   double log_xi;
   double log_xi_m1;
   double lambda_max;
@@ -84,7 +84,7 @@ class confidence_sequence_robust
 {
 public:
   confidence_sequence_robust(
-      double tol_x = 1e-6, std::string opt_func = "bisect", double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA);
+      double tol_x = 1e-6, bool is_brentq = false, double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA);
   void update(double w, double r);
   void persist(metric_sink& metrics, const std::string& suffix);
   void reset_stats();
