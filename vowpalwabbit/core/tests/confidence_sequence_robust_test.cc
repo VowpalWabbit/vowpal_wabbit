@@ -8,7 +8,7 @@
 
 TEST(ConfidenceSequenceRobust, PythonEquivalenceCI)
 {
-  VW::estimators::confidence_sequence_robust csr(.05 / 16.0);
+  VW::estimators::confidence_sequence_robust csr(1e-6, false, .05 / 16.0);
   csr.update(0.265260433, 0.4);
   csr.update(0.210534972, 0);
   csr.update(0.183917071, 1);
