@@ -86,8 +86,11 @@ void g_tilde::reset_stats()
   t = 0;
 }
 
-countable_discrete_base::countable_discrete_base(double eta, double k, double lambda_max, double xi)
-    : log_xi(std::log1p(xi - 1))
+countable_discrete_base::countable_discrete_base(
+    double tol_x, bool is_brentq, double eta, double k, double lambda_max, double xi)
+    : tol_x(tol_x)
+    , is_brentq(is_brentq)
+    , log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
     , zeta_r(1.6449340668482264)                                    // std::riemann_zeta(r) -- Assuming r=2.0
@@ -164,8 +167,29 @@ double countable_discrete_base::log_wealth_mix(
   }
 }
 
+double countable_discrete_base::root_bisect(
+    double s_0, double thres, std::map<uint64_t, double>& memo, double lower, double upper) const
+{
+  auto f = [this, &s_0, &thres, &memo](double mu) -> double { return log_wealth_mix(mu, s_0, thres, memo) - thres; };
+  if (f(lower) * f(upper) >= 0)
+  {
+    THROW("Signs of f(x_min) and f(x_max) must be opposites");
+    return 0.0;
+  }
+  double mid = lower;
+  while (upper >= lower + tol_x)
+  {
+    mid = (lower + upper) / 2;
+    if (f(mid) == 0.0) { break; }
+    else if (f(mid) * f(lower) < 0.0) { upper = mid; }
+    else { lower = mid; }
+  }
+
+  return mid;
+}
+
 double countable_discrete_base::root_brentq(
-    double s_0, double thres, std::map<uint64_t, double>& memo, double a, double b, double toll_x, double toll_f) const
+    double s_0, double thres, std::map<uint64_t, double>& memo, double a, double b) const
 {
   auto f = [this, &s_0, &thres, &memo](double mu) -> double { return log_wealth_mix(mu, s_0, thres, memo) - thres; };
   double fa = f(a);
@@ -190,7 +214,7 @@ double countable_discrete_base::root_brentq(
   double s = 0.0;
   double d = 0.0;
 
-  while (std::abs(fc) > toll_f && std::abs(b - a) > toll_x)
+  while (std::abs(b - a) > tol_x)
   {
     if (fa != fc && fb != fc)  // use inverse quadratic interopolation
     {
@@ -203,8 +227,8 @@ double countable_discrete_base::root_brentq(
     }
 
     if (((s < (3.0 * a + b) / 4.0) || (s > b)) || (mflag && (std::abs(s - b) >= (std::abs(b - c) * 0.5))) ||
-        (!mflag && (std::abs(s - b) >= (std::abs(c - d) * 0.5))) || (mflag && (std::abs(b - c) < toll_x)) ||
-        (!mflag && (std::abs(c - d) < toll_x)))
+        (!mflag && (std::abs(s - b) >= (std::abs(c - d) * 0.5))) || (mflag && (std::abs(b - c) < tol_x)) ||
+        (!mflag && (std::abs(c - d) < tol_x)))
     {
       // bisection method
       s = 0.5 * (a + b);
@@ -254,7 +278,8 @@ double countable_discrete_base::lb_log_wealth(double alpha) const
   double max_mu = 1.0;
   double log_wealth_max_mu = log_wealth_mix(max_mu, s, thres, memo);
   if (log_wealth_max_mu >= thres) { return max_mu; }
-  return root_brentq(s, thres, memo, min_mu, max_mu);
+  if (is_brentq) { return root_brentq(s, thres, memo, min_mu, max_mu); }
+  else { return root_bisect(s, thres, memo, min_mu, max_mu); }
 }
 
 double countable_discrete_base::get_log_weight(double j) const { return log_scale_fac + log_xi_m1 - (1 + j) * log_xi; }
@@ -280,8 +305,8 @@ void countable_discrete_base::reset_stats()
 
 namespace estimators
 {
-confidence_sequence_robust::confidence_sequence_robust(double alpha)
-    : alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
+confidence_sequence_robust::confidence_sequence_robust(double tol_x, bool is_brentq, double alpha)
+    : alpha(alpha), update_count(0), last_w(0.0), last_r(0.0), lower(tol_x, is_brentq), upper(tol_x, is_brentq)
 {
 }
 
