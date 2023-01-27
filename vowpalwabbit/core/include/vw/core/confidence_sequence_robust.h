@@ -45,12 +45,13 @@ public:
 class countable_discrete_base
 {
 public:
-  countable_discrete_base(double tol_x = 1e-6, double eta = 0.95f, double k = 1.5, double lambda_max = 0.5, double xi = 1.6);
+  countable_discrete_base(std::string opt_func = "bisect", double tol_x = 1e-6, double eta = 0.95f, double k = 1.5, double lambda_max = 0.5, double xi = 1.6);
   double get_ci(double alpha) const;
   double get_lam_sqrt_tp1(double j) const;
   double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j) const;
   double log_wealth_mix(double mu, double s, double thres, std::map<uint64_t, double>& memo) const;
   double root_bisect(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu) const;
+  double root_brentq(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu) const;
   double log_sum_exp(const std::vector<double>& combined) const;
   double lb_log_wealth(double alpha) const;
   double get_log_weight(double j) const;
@@ -68,6 +69,7 @@ public:
   double scale_fac;
   double log_scale_fac;
   double tol_x;
+  std::string opt_func;
 
   uint64_t t;
   g_tilde gt;
@@ -80,7 +82,7 @@ namespace estimators
 class confidence_sequence_robust
 {
 public:
-  confidence_sequence_robust(double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA, double tol_x = 1e-6);
+  confidence_sequence_robust(double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA, double tol_x = 1e-6, std::string opt_func = "bisect");
   void update(double w, double r);
   void persist(metric_sink& metrics, const std::string& suffix);
   void reset_stats();

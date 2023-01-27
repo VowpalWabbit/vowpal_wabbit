@@ -86,8 +86,9 @@ void g_tilde::reset_stats()
   t = 0;
 }
 
-countable_discrete_base::countable_discrete_base(double tol_x, double eta, double k, double lambda_max, double xi)
-    : tol_x(tol_x)
+countable_discrete_base::countable_discrete_base(std::string opt_func, double tol_x, double eta, double k, double lambda_max, double xi)
+    : opt_func(opt_func)
+    , tol_x(tol_x)
     , log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
@@ -186,6 +187,81 @@ double countable_discrete_base::root_bisect(
   return mid;
 }
 
+double countable_discrete_base::root_brentq(
+    double s_0, double thres, std::map<uint64_t, double>& memo, double a, double b) const
+{
+  auto f = [this, &s_0, &thres, &memo](double mu) -> double { return log_wealth_mix(mu, s_0, thres, memo) - thres; };
+  double fa = f(a);
+  double fb = f(b);
+  double fs = 0.0;
+
+  if (!(fa * fb < 0.0))
+  {
+    THROW("Signs of f(x_min) and f(x_max) must be opposites");
+    return 0.0;
+  }
+
+  if (std::abs(fa) < std::abs(b))
+  {
+    std::swap(a, b);
+    std::swap(fa, fb);
+  }
+
+  double c = a;
+  double fc = fa;
+  bool mflag = true;
+  double s = 0.0;
+  double d = 0.0;
+
+  while (std::abs(b - a) > tol_x)
+  {
+    if (fa != fc && fb != fc)  // use inverse quadratic interopolation
+    {
+      s = (a * fb * fc / ((fa - fb) * (fa - fc))) + (b * fa * fc / ((fb - fa) * (fb - fc))) +
+          (c * fa * fb / ((fc - fa) * (fc - fb)));
+    }
+    else  // secant method
+    {
+      s = b - fb * (b - a) / (fb - fa);
+    }
+
+    if (((s < (3.0 * a + b) / 4.0) || (s > b)) || (mflag && (std::abs(s - b) >= (std::abs(b - c) * 0.5))) ||
+        (!mflag && (std::abs(s - b) >= (std::abs(c - d) * 0.5))) || (mflag && (std::abs(b - c) < tol_x)) ||
+        (!mflag && (std::abs(c - d) < tol_x)))
+    {
+      // bisection method
+      s = 0.5 * (a + b);
+      mflag = true;
+    }
+    else { mflag = false; }
+
+    fs = f(s);
+    d = c;
+    c = b;
+    fc = fb;
+
+    if (fa * fs < 0.0)
+    {
+      b = s;
+      fb = fs;
+    }
+    else
+    {
+      a = s;
+      fa = fs;
+    }
+
+    if (std::abs(fa) < std::abs(fb))
+    {
+      std::swap(a, b);
+      std::swap(fa, fb);
+    }
+  }
+
+  // Returning lower estimate of location of root
+  return std::min(a, b);
+}
+
 double countable_discrete_base::lb_log_wealth(double alpha) const
 {
   assert(0.0 < alpha && alpha < 1);
@@ -201,7 +277,19 @@ double countable_discrete_base::lb_log_wealth(double alpha) const
   double max_mu = 1.0;
   double log_wealth_max_mu = log_wealth_mix(max_mu, s, thres, memo);
   if (log_wealth_max_mu >= thres) { return max_mu; }
-  return root_bisect(s, thres, memo, min_mu, max_mu);
+  if (opt_func == "bisect")
+  {
+    return root_bisect(s, thres, memo, min_mu, max_mu);
+  }
+  else if (opt_func == "brentq")
+  {
+    return root_brentq(s, thres, memo, min_mu, max_mu);
+  }
+  else
+  {
+    THROW("Unknown opt_func: " << opt_func);
+    return 0.0;
+  }
 }
 
 double countable_discrete_base::get_log_weight(double j) const { return log_scale_fac + log_xi_m1 - (1 + j) * log_xi; }
@@ -227,8 +315,8 @@ void countable_discrete_base::reset_stats()
 
 namespace estimators
 {
-confidence_sequence_robust::confidence_sequence_robust(double alpha, double tol_x)
-    : lower(tol_x), upper(tol_x), alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
+confidence_sequence_robust::confidence_sequence_robust(double alpha, double tol_x, std::string opt_func)
+    : lower(opt_func, tol_x), upper(opt_func, tol_x), alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
 {
 }
 
