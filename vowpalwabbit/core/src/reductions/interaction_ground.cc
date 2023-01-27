@@ -127,12 +127,18 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     chosen_action_idx = std::distance(ec_seq.begin(), it);
   }
 
-  auto observation_ex = ec_seq.back();
-  ec_seq.pop_back();
+  VW::example* observation_ex = nullptr;
 
+  if (ec_seq.back()->l.cb_with_observations.is_observation) {
+    observation_ex = ec_seq.back();
+    ec_seq.pop_back();
+  }
+
+  VW::action_scores action_scores = ec_seq[0]->pred.a_s;
   std::vector<std::vector<VW::namespace_index>> ik_interactions = get_ik_interactions(igl.interactions, observation_ex);
 
-  for (auto& action_ex : ec_seq) {
+  for (size_t i = 0; i < ec_seq.size(); i++) {
+    auto action_ex = ec_seq[i];
     VW::empty_example(*igl.ik_all, igl.ik_ex);
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
     VW::details::append_example_namespaces_from_example(igl.ik_ex, *action_ex);
@@ -145,9 +151,11 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     }
     igl.ik_ex.l.simple.label = ik_label;
 
-    // TODO: update the importance for each example
-    float importance = 0.6f;
-    igl.ik_ex.weight = importance;
+    if (i == chosen_action_idx) {
+      igl.ik_ex.weight = 1/4.f / action_scores[i].score;
+    } else {
+      igl.ik_ex.weight = 3/4.f / (1 - action_scores[i].score);
+    }
 
     igl.ik_ex.interactions = &ik_interactions;
     igl.ik_ex.extent_interactions = igl.extent_interactions; // TODO(low pri): not reuse igl.extent_interactions, need to add in feedback
@@ -161,7 +169,6 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     // TODO: shared data print needs to be fixed
 
     action_ex->l.cb = action_ex->l.cb_with_observations.event;
-    // TODO: maybe reset the cb_with_observation label
   }
 
   std::swap(igl.ik_ftrl->all->loss, igl.ik_all->loss);
