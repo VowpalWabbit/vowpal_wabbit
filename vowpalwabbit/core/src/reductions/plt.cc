@@ -4,7 +4,6 @@
 #include "vw/core/reductions/plt.h"
 
 #include "vw/config/options.h"
-#include "vw/core/estimators/confidence_sequence.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/model_utils.h"
