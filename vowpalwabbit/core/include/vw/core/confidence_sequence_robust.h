@@ -89,7 +89,6 @@ public:
 
   // Constant values -- do not require reset or save_load
   double alpha;
-  double tol_x;
 
   uint64_t update_count;
   double last_w;
