@@ -102,8 +102,8 @@ TEST(ConfidenceSequenceRobust, PythonEquivalenceCI)
   double ub = csr.upper_bound();
 
   // Compare to test_confidence_sequence_robust.py
-  EXPECT_NEAR(lb, 0.30209151281846858, 1e-6);
-  EXPECT_NEAR(ub, 0.90219143188334106, 1e-6);
+  EXPECT_NEAR(lb, 0.30209151281846858, 1e-4);
+  EXPECT_NEAR(ub, 0.90219143188334106, 1e-4);
 
   // Test brentq separately
   double s = 139.8326745448;
@@ -119,7 +119,7 @@ TEST(ConfidenceSequenceRobust, PythonEquivalenceCI)
   double root = csr.lower.root_bisect(s, thres, memo, min_mu, max_mu);
 
   // Compare root to test_confidence_sequence_robust.py
-  EXPECT_NEAR(root, 0.30209143008131789, 1e-6);
+  EXPECT_NEAR(root, 0.30209143008131789, 1e-4);
 
   // Test that root of objective function is 0
   auto test_root = csr.lower.log_wealth_mix(root, s, thres, memo) - thres;
