@@ -177,18 +177,9 @@ double countable_discrete_base::root_bisect(
   while (upper >= lower + toll_x)
   {
     mid = (lower + upper) / 2;
-    if (f(mid) == 0.0)
-    {
-      break;
-    }
-    else if (f(mid) * f(lower) < 0.0)
-    {
-      upper = mid;
-    }
-    else
-    {
-      lower = mid;
-    }
+    if (f(mid) == 0.0) { break; }
+    else if (f(mid) * f(lower) < 0.0) { upper = mid; }
+    else { lower = mid; }
   }
 
   return mid;
