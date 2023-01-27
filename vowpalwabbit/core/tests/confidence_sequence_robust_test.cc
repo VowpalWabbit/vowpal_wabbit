@@ -116,7 +116,7 @@ TEST(ConfidenceSequenceRobust, PythonEquivalenceCI)
   double max_mu = 1.0;
 
   // Get root
-  double root = csr.lower.root_brentq(s, thres, memo, min_mu, max_mu);
+  double root = csr.lower.root_bisect(s, thres, memo, min_mu, max_mu);
 
   // Compare root to test_confidence_sequence_robust.py
   EXPECT_NEAR(root, 0.30209143008131789, 1e-6);

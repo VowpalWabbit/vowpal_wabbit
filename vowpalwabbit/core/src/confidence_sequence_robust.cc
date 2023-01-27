@@ -164,79 +164,34 @@ double countable_discrete_base::log_wealth_mix(
   }
 }
 
-double countable_discrete_base::root_brentq(
-    double s_0, double thres, std::map<uint64_t, double>& memo, double a, double b, double toll_x, double toll_f) const
+double countable_discrete_base::root_bisect(
+    double s_0, double thres, std::map<uint64_t, double>& memo, double lower, double upper, double toll_x) const
 {
   auto f = [this, &s_0, &thres, &memo](double mu) -> double { return log_wealth_mix(mu, s_0, thres, memo) - thres; };
-  double fa = f(a);
-  double fb = f(b);
-  double fs = 0.0;
-
-  if (!(fa * fb < 0.0))
+  if (f(lower) * f(upper) >= 0)
   {
     THROW("Signs of f(x_min) and f(x_max) must be opposites");
     return 0.0;
   }
-
-  if (std::abs(fa) < std::abs(b))
+  double mid = lower;
+  while (upper >= lower + toll_x)
   {
-    std::swap(a, b);
-    std::swap(fa, fb);
-  }
-
-  double c = a;
-  double fc = fa;
-  bool mflag = true;
-  double s = 0.0;
-  double d = 0.0;
-
-  while (std::abs(fc) > toll_f && std::abs(b - a) > toll_x)
-  {
-    if (fa != fc && fb != fc)  // use inverse quadratic interopolation
+    mid = (lower + upper) / 2;
+    if (f(mid) == 0.0)
     {
-      s = (a * fb * fc / ((fa - fb) * (fa - fc))) + (b * fa * fc / ((fb - fa) * (fb - fc))) +
-          (c * fa * fb / ((fc - fa) * (fc - fb)));
+      break;
     }
-    else  // secant method
+    else if (f(mid) * f(lower) < 0.0)
     {
-      s = b - fb * (b - a) / (fb - fa);
-    }
-
-    if (((s < (3.0 * a + b) / 4.0) || (s > b)) || (mflag && (std::abs(s - b) >= (std::abs(b - c) * 0.5))) ||
-        (!mflag && (std::abs(s - b) >= (std::abs(c - d) * 0.5))) || (mflag && (std::abs(b - c) < toll_x)) ||
-        (!mflag && (std::abs(c - d) < toll_x)))
-    {
-      // bisection method
-      s = 0.5 * (a + b);
-      mflag = true;
-    }
-    else { mflag = false; }
-
-    fs = f(s);
-    d = c;
-    c = b;
-    fc = fb;
-
-    if (fa * fs < 0.0)
-    {
-      b = s;
-      fb = fs;
+      upper = mid;
     }
     else
     {
-      a = s;
-      fa = fs;
-    }
-
-    if (std::abs(fa) < std::abs(fb))
-    {
-      std::swap(a, b);
-      std::swap(fa, fb);
+      lower = mid;
     }
   }
 
-  // Returning lower estimate of location of root
-  return std::min(a, b);
+  return mid;
 }
 
 double countable_discrete_base::lb_log_wealth(double alpha) const
@@ -254,7 +209,7 @@ double countable_discrete_base::lb_log_wealth(double alpha) const
   double max_mu = 1.0;
   double log_wealth_max_mu = log_wealth_mix(max_mu, s, thres, memo);
   if (log_wealth_max_mu >= thres) { return max_mu; }
-  return root_brentq(s, thres, memo, min_mu, max_mu);
+  return root_bisect(s, thres, memo, min_mu, max_mu);
 }
 
 double countable_discrete_base::get_log_weight(double j) const { return log_scale_fac + log_xi_m1 - (1 + j) * log_xi; }
