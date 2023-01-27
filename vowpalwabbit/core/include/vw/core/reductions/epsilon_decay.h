@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
