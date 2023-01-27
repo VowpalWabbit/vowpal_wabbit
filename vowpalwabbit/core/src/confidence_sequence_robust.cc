@@ -86,8 +86,9 @@ void g_tilde::reset_stats()
   t = 0;
 }
 
-countable_discrete_base::countable_discrete_base(double eta, double k, double lambda_max, double xi)
-    : log_xi(std::log1p(xi - 1))
+countable_discrete_base::countable_discrete_base(double tol_x, double eta, double k, double lambda_max, double xi)
+    : tol_x(tol_x)
+    , log_xi(std::log1p(xi - 1))
     , log_xi_m1(std::log1p(xi - 2.0))
     , lambda_max(lambda_max)
     , zeta_r(1.6449340668482264)                                    // std::riemann_zeta(r) -- Assuming r=2.0
@@ -165,7 +166,7 @@ double countable_discrete_base::log_wealth_mix(
 }
 
 double countable_discrete_base::root_bisect(
-    double s_0, double thres, std::map<uint64_t, double>& memo, double lower, double upper, double toll_x) const
+    double s_0, double thres, std::map<uint64_t, double>& memo, double lower, double upper) const
 {
   auto f = [this, &s_0, &thres, &memo](double mu) -> double { return log_wealth_mix(mu, s_0, thres, memo) - thres; };
   if (f(lower) * f(upper) >= 0)
@@ -174,7 +175,7 @@ double countable_discrete_base::root_bisect(
     return 0.0;
   }
   double mid = lower;
-  while (upper >= lower + toll_x)
+  while (upper >= lower + tol_x)
   {
     mid = (lower + upper) / 2;
     if (f(mid) == 0.0) { break; }
@@ -226,8 +227,8 @@ void countable_discrete_base::reset_stats()
 
 namespace estimators
 {
-confidence_sequence_robust::confidence_sequence_robust(double alpha)
-    : alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
+confidence_sequence_robust::confidence_sequence_robust(double alpha, double tol_x)
+    : lower(tol_x), upper(tol_x), alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
 {
 }
 
