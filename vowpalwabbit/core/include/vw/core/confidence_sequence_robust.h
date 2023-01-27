@@ -84,7 +84,7 @@ class confidence_sequence_robust
 {
 public:
   confidence_sequence_robust(
-      double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA, double tol_x = 1e-6, std::string opt_func = "bisect");
+      double tol_x = 1e-6, std::string opt_func = "bisect", double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA);
   void update(double w, double r);
   void persist(metric_sink& metrics, const std::string& suffix);
   void reset_stats();

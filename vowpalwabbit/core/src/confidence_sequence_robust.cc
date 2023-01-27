@@ -310,7 +310,7 @@ void countable_discrete_base::reset_stats()
 
 namespace estimators
 {
-confidence_sequence_robust::confidence_sequence_robust(double alpha, double tol_x, std::string opt_func)
+confidence_sequence_robust::confidence_sequence_robust(double tol_x, std::string opt_func, double alpha)
     : lower(tol_x, opt_func), upper(tol_x, opt_func), alpha(alpha), update_count(0), last_w(0.0), last_r(0.0)
 {
 }

@@ -61,7 +61,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     conf_seq_estimators.back().reserve(i + 1);
     for (uint64_t j = 0; j < i + 1; ++j)
     {
-      conf_seq_estimators.back().emplace_back(epsilon_decay_significance_level, tol_x, opt_func);
+      conf_seq_estimators.back().emplace_back(tol_x, opt_func, epsilon_decay_significance_level);
     }
   }
 }
@@ -313,7 +313,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   uint64_t shift_model_bounds;
   bool reward_as_cost;
   float tol_x;
-  std::string opt_func;
+  std::string opt_func = "bisect";
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
