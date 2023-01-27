@@ -86,7 +86,8 @@ void g_tilde::reset_stats()
   t = 0;
 }
 
-countable_discrete_base::countable_discrete_base(std::string opt_func, double tol_x, double eta, double k, double lambda_max, double xi)
+countable_discrete_base::countable_discrete_base(
+    std::string opt_func, double tol_x, double eta, double k, double lambda_max, double xi)
     : opt_func(opt_func)
     , tol_x(tol_x)
     , log_xi(std::log1p(xi - 1))
@@ -277,14 +278,8 @@ double countable_discrete_base::lb_log_wealth(double alpha) const
   double max_mu = 1.0;
   double log_wealth_max_mu = log_wealth_mix(max_mu, s, thres, memo);
   if (log_wealth_max_mu >= thres) { return max_mu; }
-  if (opt_func == "bisect")
-  {
-    return root_bisect(s, thres, memo, min_mu, max_mu);
-  }
-  else if (opt_func == "brentq")
-  {
-    return root_brentq(s, thres, memo, min_mu, max_mu);
-  }
+  if (opt_func == "bisect") { return root_bisect(s, thres, memo, min_mu, max_mu); }
+  else if (opt_func == "brentq") { return root_brentq(s, thres, memo, min_mu, max_mu); }
   else
   {
     THROW("Unknown opt_func: " << opt_func);

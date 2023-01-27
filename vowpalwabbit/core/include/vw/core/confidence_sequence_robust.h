@@ -45,7 +45,8 @@ public:
 class countable_discrete_base
 {
 public:
-  countable_discrete_base(std::string opt_func = "bisect", double tol_x = 1e-6, double eta = 0.95f, double k = 1.5, double lambda_max = 0.5, double xi = 1.6);
+  countable_discrete_base(std::string opt_func = "bisect", double tol_x = 1e-6, double eta = 0.95f, double k = 1.5,
+      double lambda_max = 0.5, double xi = 1.6);
   double get_ci(double alpha) const;
   double get_lam_sqrt_tp1(double j) const;
   double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j) const;
@@ -82,7 +83,8 @@ namespace estimators
 class confidence_sequence_robust
 {
 public:
-  confidence_sequence_robust(double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA, double tol_x = 1e-6, std::string opt_func = "bisect");
+  confidence_sequence_robust(
+      double alpha = VW::details::CS_ROBUST_DEFAULT_ALPHA, double tol_x = 1e-6, std::string opt_func = "bisect");
   void update(double w, double r);
   void persist(metric_sink& metrics, const std::string& suffix);
   void reset_stats();

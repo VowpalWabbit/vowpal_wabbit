@@ -59,7 +59,10 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
   {
     conf_seq_estimators.emplace_back();
     conf_seq_estimators.back().reserve(i + 1);
-    for (uint64_t j = 0; j < i + 1; ++j) { conf_seq_estimators.back().emplace_back(epsilon_decay_significance_level, tol_x, opt_func); }
+    for (uint64_t j = 0; j < i + 1; ++j)
+    {
+      conf_seq_estimators.back().emplace_back(epsilon_decay_significance_level, tol_x, opt_func);
+    }
   }
 }
 
