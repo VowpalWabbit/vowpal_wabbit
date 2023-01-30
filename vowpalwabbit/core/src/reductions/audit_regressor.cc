@@ -292,7 +292,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::audit_regressor_setup(VW::
   // predictions but also needs to inherit the type from the loaded base so that
   // the rest of the stack loads.
   auto dat = VW::make_unique<audit_regressor_data>(&all, VW::io::open_file_writer(out_file));
-  auto ret = VW::LEARNER::make_reduction_learner(std::move(dat), as_singleline(stack_builder.setup_base_learner()),
+  auto ret = VW::LEARNER::make_reduction_learner(std::move(dat), require_singleline(stack_builder.setup_base_learner()),
       audit_regressor, audit_regressor, stack_builder.get_setupfn_name(audit_regressor_setup))
                  // learn does not predict or learn. nothing to be gained by calling predict() before learn()
                  .set_learn_returns_prediction(true)

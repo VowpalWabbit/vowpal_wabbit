@@ -131,7 +131,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_sample_setup(VW::setup_
 
   auto data = VW::make_unique<cb_sample_data>(all.get_random_state());
 
-  auto l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(cb_sample_setup))
                .set_input_label_type(VW::label_type_t::CB)
                .set_output_label_type(VW::label_type_t::CB)

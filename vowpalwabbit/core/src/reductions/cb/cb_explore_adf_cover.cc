@@ -304,7 +304,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
   // Cover is using doubly robust without the cooperation of the base reduction
   if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
 
-  VW::LEARNER::learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = VW::LEARNER::require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool epsilon_decay;
@@ -319,12 +319,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
     epsilon_decay = true;
   }
 
-  auto* scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
+  auto* scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(),
       VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon, epsilon_decay, first_only,
-      as_multiline(all.cost_sensitive.get()), scorer, cb_type, all.model_file_ver, all.logger);
+      require_multiline(all.cost_sensitive.get()), scorer, cb_type, all.model_file_ver, all.logger);
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
                .set_input_label_type(VW::label_type_t::CB)

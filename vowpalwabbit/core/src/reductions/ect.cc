@@ -327,7 +327,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ect_setup(VW::setup_base_i
   }
 
   auto l = make_reduction_learner(
-      std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
+      std::move(data), require_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
                .set_params_per_weight(wpp)
                .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_label_type(VW::label_type_t::SIMPLE)

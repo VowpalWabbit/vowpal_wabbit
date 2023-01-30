@@ -194,7 +194,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_bag_setup(V
   if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
 
   size_t problem_multiplier = VW::cast_to_smaller_type<size_t>(bag_size);
-  VW::LEARNER::learner* base = as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;

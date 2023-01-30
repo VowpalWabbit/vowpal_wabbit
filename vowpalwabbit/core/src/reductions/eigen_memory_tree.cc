@@ -795,7 +795,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   auto l =
-      make_reduction_learner(std::move(t), as_singleline(stack_builder.setup_base_learner()), emt_learn, emt_predict,
+      make_reduction_learner(std::move(t), require_singleline(stack_builder.setup_base_learner()), emt_learn,
+          emt_predict,
           stack_builder.get_setupfn_name(eigen_memory_tree_setup))
           .set_learn_returns_prediction(true)  // we set this to true otherwise bounding doesn't work as well
 #ifdef VW_ENABLE_EMT_DEBUG_TIMER

@@ -323,7 +323,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
 
   auto data = VW::make_unique<VW::interactions_generator>();
   data->store_in_reduction_features = store_in_reduction_features;
-  auto* base = as_singleline(stack_builder.setup_base_learner());
+  auto* base = require_singleline(stack_builder.setup_base_learner());
   auto l = make_reduction_learner(
       std::move(data), base, learn_func, pred_func, stack_builder.get_setupfn_name(generate_interactions_setup))
                .set_learn_returns_prediction(base->learn_returns_prediction)

@@ -167,7 +167,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_dro_setup(VW::setup_bas
   }
 
   auto* base = stack_builder.setup_base_learner();
-  auto l = make_reduction_learner(std::move(data), as_multiline(base), learn_ptr, pred_ptr,
+  auto l = make_reduction_learner(std::move(data), require_multiline(base), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
                .set_learn_returns_prediction(base->learn_returns_prediction)
                .set_input_label_type(VW::label_type_t::CB)

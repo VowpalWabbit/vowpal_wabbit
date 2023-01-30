@@ -183,7 +183,7 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
 
   auto ppw = max_live_configs;
   auto* persist_ptr = verbose_metrics ? persist<config_manager_type, true> : persist<config_manager_type, false>;
-  data->adf_learner = as_multiline(learner->get_learner_by_name_prefix("cb_adf"));
+  data->adf_learner = require_multiline(learner->get_learner_by_name_prefix("cb_adf"));
   VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
       learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
   auto& adf_data =
@@ -194,7 +194,7 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
   data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
   data->cm->_sd_gravity = &(all.sd->gravity);
 
-  auto l = make_reduction_learner(std::move(data), as_multiline(learner), learn_automl<config_manager_type, true>,
+  auto l = make_reduction_learner(std::move(data), require_multiline(learner), learn_automl<config_manager_type, true>,
       predict_automl<config_manager_type, true>,
       stack_builder.get_setupfn_name(VW::reductions::automl_setup))
                .set_params_per_weight(ppw)  // refactor pm

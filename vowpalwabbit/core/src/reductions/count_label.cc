@@ -83,7 +83,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::count_label_setup(VW::setu
   auto data = VW::make_unique<reduction_data>(all, base);
   if (base->is_multiline())
   {
-    auto learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base),
+    auto learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::require_multiline(base),
         count_label_multi<true>, count_label_multi<false>, stack_builder.get_setupfn_name(count_label_setup))
                        .set_learn_returns_prediction(base->learn_returns_prediction)
                        .set_output_prediction_type(base->get_output_prediction_type())
@@ -92,7 +92,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::count_label_setup(VW::setu
     return learner;
   }
 
-  auto learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
+  auto learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::require_singleline(base),
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))
                      .set_learn_returns_prediction(base->learn_returns_prediction)
                      .set_input_prediction_type(base->get_output_prediction_type())

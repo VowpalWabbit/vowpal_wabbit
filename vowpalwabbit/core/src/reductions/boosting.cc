@@ -420,7 +420,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::boosting_setup(VW::setup_b
   }
   else { THROW("Unrecognized boosting algorithm: \'" << data->alg << "\'."); }
 
-  auto l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()), learn_ptr,
       pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
                .set_params_per_weight(ws)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)

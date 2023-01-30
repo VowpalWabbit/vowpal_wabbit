@@ -131,7 +131,7 @@ std::shared_ptr<VW::LEARNER::learner> expreplay_setup(VW::setup_base_i& stack_bu
                          << ", replay count=" << er->replay_count << std::endl;
   }
 
-  er->base = VW::LEARNER::as_singleline(stack_builder.setup_base_learner());
+  er->base = VW::LEARNER::require_singleline(stack_builder.setup_base_learner());
   auto l = make_reduction_learner(std::move(er), er->base, expreplay::learn<lp>, expreplay::predict<lp>, replay_string)
                .set_end_pass(expreplay::end_pass<lp>)
                .build();

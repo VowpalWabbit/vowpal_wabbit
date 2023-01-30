@@ -755,7 +755,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
 
-  learner* base = as_singleline(stack_builder.setup_base_learner());
+  learner* base = require_singleline(stack_builder.setup_base_learner());
   VW::learner_update_stats_func<ldf, VW::multi_ex>* update_stats_func = nullptr;
   VW::learner_output_example_prediction_func<ldf, VW::multi_ex>* output_example_prediction_func = nullptr;
   VW::learner_print_update_func<ldf, VW::multi_ex>* print_update_func = nullptr;

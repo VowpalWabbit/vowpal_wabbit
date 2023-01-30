@@ -192,7 +192,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_synthcover_
   }
 
   size_t problem_multiplier = 1;
-  VW::LEARNER::learner* base = as_multiline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;

@@ -93,7 +93,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::classweight_setup(VW::setu
   for (auto& s : classweight_array) { cweights->load_string(s); }
   all.logger.err_info("parsed {} class weights", cweights->weights.size());
 
-  VW::LEARNER::learner* base = as_singleline(stack_builder.setup_base_learner());
+  VW::LEARNER::learner* base = require_singleline(stack_builder.setup_base_learner());
 
   std::string name_addition;
   void (*learn_ptr)(classweights&, VW::LEARNER::learner&, VW::example&);

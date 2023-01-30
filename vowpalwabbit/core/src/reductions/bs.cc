@@ -256,7 +256,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bs_setup(VW::setup_base_i&
   data->all = &all;
   data->random_state = all.get_random_state();
 
-  auto l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))
                .set_params_per_weight(ws)
                .set_learn_returns_prediction(true)

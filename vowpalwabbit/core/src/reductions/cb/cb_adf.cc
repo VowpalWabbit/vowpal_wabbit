@@ -459,7 +459,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
 
-  auto base = as_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   VW::reductions::cb_adf* bare = ld.get();
@@ -480,7 +480,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
                .set_update_stats(::update_stats_cb_adf)
                .build();
 
-  bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));
+  bare->set_scorer(VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer")));
 
   return l;
 }

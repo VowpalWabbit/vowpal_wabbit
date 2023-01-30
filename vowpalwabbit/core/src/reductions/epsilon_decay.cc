@@ -404,8 +404,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
 
   VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
       base->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
-  auto& adf_data = *static_cast<VW::reductions::cb_adf*>(
-      as_multiline(base->get_learner_by_name_prefix("cb_adf"))->get_internal_type_erased_data_pointer_test_use_only());
+  auto& adf_data = *static_cast<VW::reductions::cb_adf*>(require_multiline(base->get_learner_by_name_prefix("cb_adf"))
+                                                             ->get_internal_type_erased_data_pointer_test_use_only());
   data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
   data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
@@ -416,7 +416,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
 
   if (base->is_multiline())
   {
-    auto l = make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base), learn, predict,
+    auto l = make_reduction_learner(std::move(data), VW::LEARNER::require_multiline(base), learn, predict,
         stack_builder.get_setupfn_name(epsilon_decay_setup))
                  .set_input_label_type(VW::label_type_t::CB)
                  .set_output_label_type(VW::label_type_t::CB)

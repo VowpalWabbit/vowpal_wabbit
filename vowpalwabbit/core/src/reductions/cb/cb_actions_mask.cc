@@ -53,7 +53,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_actions_mask_setup(VW::
 
   if (!options.was_supplied("large_action_space")) { return nullptr; }
 
-  auto* base = as_multiline(stack_builder.setup_base_learner());
+  auto* base = require_multiline(stack_builder.setup_base_learner());
 
   auto l = make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(cb_actions_mask_setup))

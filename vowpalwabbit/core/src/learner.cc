@@ -32,13 +32,13 @@ namespace LEARNER
 void learn_ex(example& ec, VW::workspace& all)
 {
   all.learn(ec);
-  as_singleline(all.l.get())->finish_example(all, ec);
+  require_singleline(all.l.get())->finish_example(all, ec);
 }
 
 void learn_multi_ex(multi_ex& ec_seq, VW::workspace& all)
 {
   all.learn(ec_seq);
-  as_multiline(all.l.get())->finish_example(all, ec_seq);
+  require_multiline(all.l.get())->finish_example(all, ec_seq);
 }
 
 void end_pass(example& ec, VW::workspace& all)
@@ -326,14 +326,14 @@ bool ec_is_example_header(const example& ec, label_type_t label_type)
   return false;
 }
 
-learner* as_multiline(learner* l)
+learner* require_multiline(learner* l)
 {
   if (l->is_multiline()) { return l; }
   auto message = fmt::format("Tried to use a singleline reduction as a multiline reduction Name: {}", l->get_name());
   THROW(message);
 }
 
-learner* as_singleline(learner* l)
+learner* require_singleline(learner* l)
 {
   if (!l->is_multiline()) { return l; }
   auto message = fmt::format("Tried to use a multiline reduction as a singleline reduction. Name: {}", l->get_name());

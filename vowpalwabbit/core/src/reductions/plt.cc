@@ -471,8 +471,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
   }
   else { pred_type = VW::prediction_type_t::MULTILABELS; }
 
-  auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
-      stack_builder.get_setupfn_name(plt_setup) + name_addition)
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner()), learn,
+      pred_ptr, stack_builder.get_setupfn_name(plt_setup) + name_addition)
                .set_params_per_weight(ws)
                .set_learn_returns_prediction(false)
                .set_input_label_type(VW::label_type_t::MULTILABEL)

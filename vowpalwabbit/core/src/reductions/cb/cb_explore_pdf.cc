@@ -133,13 +133,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_pdf_setup(VW::s
 
   auto* p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<cb_explore_pdf>();
-  p_reduction->init(as_singleline(p_base));
+  p_reduction->init(require_singleline(p_base));
   p_reduction->epsilon = epsilon;
   p_reduction->min_value = min;
   p_reduction->max_value = max;
   p_reduction->first_only = first_only;
 
-  auto l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto l = make_reduction_learner(std::move(p_reduction), require_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cb_explore_pdf_setup))
                .set_input_label_type(VW::label_type_t::CB)
                .set_output_label_type(VW::label_type_t::CONTINUOUS)

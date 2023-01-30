@@ -213,7 +213,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::baseline_challenger_cb_set
 
   auto data = VW::make_unique<baseline_challenger_data>(alpha, tau);
 
-  auto l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)

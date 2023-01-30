@@ -1173,7 +1173,7 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
   }
   cdbg << " ]" << endl;
 
-  as_singleline(priv.learner)->predict(ec, policy);
+  require_singleline(priv.learner)->predict(ec, policy);
 
   uint32_t act = priv.active_csoaa ? ec.pred.active_multiclass.predicted_class : ec.pred.multiclass;
   cdbg << "a=" << act << " from";
@@ -1328,7 +1328,7 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
     ecs[a].ft_offset = priv.offset;
     tmp.push_back(&ecs[a]);
 
-    as_multiline(priv.learner)->predict(tmp, policy);
+    require_multiline(priv.learner)->predict(tmp, policy);
 
     ecs[a].ft_offset = old_offset;
     cdbg << "partial_prediction[" << a << "] = " << ecs[a].partial_prediction << endl;
@@ -1520,7 +1520,7 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
     {
       int learner = select_learner(priv, priv.current_policy, priv.learn_learner_id, true, is_local > 0);
       cdbg << "BEGIN learner->learn(ec, " << learner << ")" << endl;
-      as_singleline(priv.learner)->learn(ec, learner);
+      require_singleline(priv.learner)->learn(ec, learner);
       cdbg << "END   learner->learn(ec, " << learner << ")" << endl;
     }
     if (add_conditioning) { del_example_conditioning(priv, ec); }
@@ -1572,7 +1572,7 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
       }
 
       // learn with the multiline example
-      as_multiline(priv.learner)->learn(tmp, learner);
+      require_multiline(priv.learner)->learn(tmp, learner);
 
       // restore the offsets in examples
       int i = 0;

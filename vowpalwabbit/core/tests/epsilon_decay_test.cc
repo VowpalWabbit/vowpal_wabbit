@@ -27,7 +27,7 @@ epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
     THROW("Epsilon decay not found in enabled reductions");
   }
 
-  VW::LEARNER::learner* epsilon_decay_learner = as_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
+  VW::LEARNER::learner* epsilon_decay_learner = require_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
 
   return (epsilon_decay_data*)epsilon_decay_learner->get_internal_type_erased_data_pointer_test_use_only();
 }

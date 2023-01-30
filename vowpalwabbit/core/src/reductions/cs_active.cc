@@ -460,7 +460,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cs_active_setup(VW::setup_
   }
 
   size_t ws = data->num_classes;
-  auto l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()), learn_ptr,
       predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
                .set_params_per_weight(ws)
                .set_learn_returns_prediction(true)

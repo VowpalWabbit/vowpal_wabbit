@@ -213,7 +213,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
   data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
 
-  learner* base = as_multiline(stack_builder.setup_base_learner());
+  learner* base = require_multiline(stack_builder.setup_base_learner());
 
   if (num_actions <= 0) { THROW("cb num actions must be positive"); }
 
@@ -226,13 +226,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
 
   if (data->explore_mode)
   {
-    data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
+    data->adf_learner = require_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
     in_pred_type = VW::prediction_type_t::ACTION_PROBS;
     out_pred_type = VW::prediction_type_t::ACTION_PROBS;
   }
   else
   {
-    data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
+    data->adf_learner = require_multiline(base->get_learner_by_name_prefix("cb_adf"));
     in_pred_type = VW::prediction_type_t::ACTION_SCORES;
     out_pred_type = VW::prediction_type_t::MULTICLASS;
   }

@@ -28,6 +28,13 @@ struct is_multiline_type
 };
 
 // Polymorphic wrapper around VW::example and VW::multi_ex
+//
+// The polymorphic_ex class is a pointer/reference wrapper that hides the
+// underlying VW example type. It can be implicitly created from, and converted
+// back to, any pointer or reference to a VW example type. In debug builds,
+// polymorphic_ex will perform run-time type checking to ensure that its
+// "input" and "output" types are the same, and also that the const-ness of its
+// original type is not violated.
 class polymorphic_ex
 {
 public:

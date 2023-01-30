@@ -106,9 +106,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::get_pmf_setup(VW::setup_ba
 
   LEARNER::learner* p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<get_pmf>();
-  p_reduction->init(as_singleline(p_base), epsilon);
+  p_reduction->init(require_singleline(p_base), epsilon);
 
-  auto l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto l = make_reduction_learner(std::move(p_reduction), require_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
                .set_input_label_type(p_base->get_input_label_type())
                .set_output_label_type(p_base->get_input_label_type())

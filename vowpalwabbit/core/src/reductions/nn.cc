@@ -479,7 +479,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::nn_setup(VW::setup_base_i&
   n->hidden_units_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
   n->hiddenbias_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
 
-  auto base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
 

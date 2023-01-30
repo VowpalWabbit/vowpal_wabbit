@@ -147,7 +147,7 @@ float sensitivity(baseline_data& data, learner& base, VW::example& ec)
   const float baseline_sens = base.sensitivity(data.ec);
 
   // sensitivity of residual
-  as_singleline(&base)->predict(data.ec);
+  require_singleline(&base)->predict(data.ec);
   auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   simple_red_features.initial = data.ec.pred.scalar;
   const float sens = base.sensitivity(ec);
@@ -188,7 +188,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::baseline_setup(VW::setup_b
   const auto loss_function_type = all.loss->get_type();
   if (loss_function_type != "logistic") { data->lr_scaling = true; }
 
-  auto base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
   auto l = make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(VW::reductions::baseline_setup))
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)

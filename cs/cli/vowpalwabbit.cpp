@@ -174,7 +174,7 @@ void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
     m_vw->learn(ex_coll);
 
     // as this is not a ring-based example it is not freed
-    as_multiline(m_vw->l.get())->finish_example(*m_vw, ex_coll);
+    require_multiline(m_vw->l.get())->finish_example(*m_vw, ex_coll);
   }
   CATCHRETHROW
   finally{ }
@@ -191,10 +191,10 @@ void VowpalWabbit::Predict(List<VowpalWabbitExample^>^ examples)
       ex_coll.push_back(pex);
     }
 
-    as_multiline(m_vw->l.get())->predict(ex_coll);
+    require_multiline(m_vw->l.get())->predict(ex_coll);
 
     // as this is not a ring-based example it is not freed
-    as_multiline(m_vw->l.get())->finish_example(*m_vw, ex_coll);
+    require_multiline(m_vw->l.get())->finish_example(*m_vw, ex_coll);
   }
   CATCHRETHROW
     finally{ }
@@ -212,7 +212,7 @@ void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
   { m_vw->learn(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    as_singleline(m_vw->l.get())->finish_example(*m_vw, *ex->m_example);
+    require_singleline(m_vw->l.get())->finish_example(*m_vw, *ex->m_example);
   }
   CATCHRETHROW
 }
@@ -233,7 +233,7 @@ generic<typename T> T VowpalWabbit::Learn(VowpalWabbitExample^ ex, IVowpalWabbit
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    as_singleline(m_vw->l.get())->finish_example(*m_vw, *ex->m_example);
+    require_singleline(m_vw->l.get())->finish_example(*m_vw, *ex->m_example);
 
     return prediction;
   }
@@ -248,10 +248,10 @@ void VowpalWabbit::Predict(VowpalWabbitExample^ ex)
 #endif
 
   try
-  { as_singleline(m_vw->l.get())->predict(*ex->m_example);
+  { require_singleline(m_vw->l.get())->predict(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-  as_singleline(m_vw->l.get())->finish_example(*m_vw, *ex->m_example);
+  require_singleline(m_vw->l.get())->finish_example(*m_vw, *ex->m_example);
   }
   CATCHRETHROW
 }
@@ -264,12 +264,12 @@ generic<typename T> T VowpalWabbit::Predict(VowpalWabbitExample^ ex, IVowpalWabb
 #endif
 
   try
-  { as_singleline(m_vw->l.get())->predict(*ex->m_example);
+  { require_singleline(m_vw->l.get())->predict(*ex->m_example);
 
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    as_singleline(m_vw->l.get())->finish_example(*m_vw, *ex->m_example);
+    require_singleline(m_vw->l.get())->finish_example(*m_vw, *ex->m_example);
 
     return prediction;
   }

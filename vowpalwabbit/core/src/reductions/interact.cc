@@ -169,7 +169,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interact_setup(VW::setup_b
   all.logger.err_info("Interacting namespaces {0:c} and {1:c}", data->n1, data->n2);
   data->all = &all;
 
-  auto l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true, true>, predict_or_learn<false, true>, stack_builder.get_setupfn_name(interact_setup))
                .build();
   return l;

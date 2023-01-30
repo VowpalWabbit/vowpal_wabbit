@@ -375,7 +375,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
 
   oaa* data_ptr = data.get();
   uint64_t k_value = data->k;
-  auto* base = as_singleline(stack_builder.setup_base_learner());
+  auto* base = require_singleline(stack_builder.setup_base_learner());
   void (*learn_ptr)(oaa&, VW::LEARNER::learner&, VW::example&) = nullptr;
   void (*pred_ptr)(oaa&, VW::LEARNER::learner&, VW::example&) = nullptr;
   std::string name_addition;

@@ -193,7 +193,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_setup(VW::setup_bas
 
   if (options.was_supplied("lda")) { THROW("lda cannot be combined with active learning") }
   auto data = VW::make_unique<active>(active_c0, &all);
-  auto base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
 
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::learner&, VW::example&);
   learn_pred_func_t learn_func;

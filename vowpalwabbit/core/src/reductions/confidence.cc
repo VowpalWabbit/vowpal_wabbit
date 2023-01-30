@@ -124,7 +124,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::confidence_setup(VW::setup
     predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
   }
 
-  auto base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
 
   // Create new learner
   auto l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,

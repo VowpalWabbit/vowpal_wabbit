@@ -678,7 +678,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::stagewise_poly_setup(VW::s
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  auto l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
+  auto l = VW::LEARNER::make_reduction_learner(std::move(poly), require_singleline(stack_builder.setup_base_learner()),
       learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
                .set_input_label_type(VW::label_type_t::SIMPLE)
                .set_output_label_type(VW::label_type_t::SIMPLE)

@@ -319,8 +319,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::mwt_setup(VW::setup_base_i
 
   learner* base = stack_builder.setup_base_learner();
 
-  auto l = make_reduction_learner(
-      std::move(c), as_singleline(base), learn_ptr, pred_ptr, stack_builder.get_setupfn_name(mwt_setup) + name_addition)
+  auto l = make_reduction_learner(std::move(c), require_singleline(base), learn_ptr, pred_ptr,
+      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
                .set_learn_returns_prediction(true)
                .set_input_prediction_type(base->get_output_prediction_type())
                .set_output_prediction_type(VW::prediction_type_t::SCALARS)

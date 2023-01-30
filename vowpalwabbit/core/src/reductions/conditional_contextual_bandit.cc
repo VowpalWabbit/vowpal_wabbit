@@ -684,7 +684,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::
     options.add_and_parse(new_options);
   }
 
-  auto* base = as_multiline(stack_builder.setup_base_learner());
+  auto* base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::ccb_label_parser_global;
 
   // Stash the base learners stride_shift so we can properly add a feature

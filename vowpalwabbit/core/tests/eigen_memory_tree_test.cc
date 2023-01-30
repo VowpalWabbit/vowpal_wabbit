@@ -28,7 +28,7 @@ emt_tree* get_emt_tree(VW::workspace& all)
     ADD_FAILURE() << "Eigen memory tree not found in enabled reductions";
   }
 
-  VW::LEARNER::learner* emt = as_singleline(all.l->get_learner_by_name_prefix("emt"));
+  VW::LEARNER::learner* emt = require_singleline(all.l->get_learner_by_name_prefix("emt"));
 
   return (emt_tree*)emt->get_internal_type_erased_data_pointer_test_use_only();
 }

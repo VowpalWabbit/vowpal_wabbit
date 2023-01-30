@@ -45,7 +45,7 @@ std::shared_ptr<VW::LEARNER::learner> test_reduction_setup(VW::setup_base_i& sta
   auto base = stack_builder.setup_base_learner();
   EXPECT_TRUE(base->is_multiline() == false);
 
-  auto ret = VW::LEARNER::make_no_data_reduction_learner(as_singleline(base), predict_or_learn<true>,
+  auto ret = VW::LEARNER::make_no_data_reduction_learner(require_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(test_reduction_setup))
                  .set_learn_returns_prediction(base->learn_returns_prediction)
                  .build();

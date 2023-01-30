@@ -52,9 +52,13 @@ void generic_driver(VW::workspace& all);
 void generic_driver(const std::vector<VW::workspace*>& alls);
 void generic_driver_onethread(VW::workspace& all);
 bool ec_is_example_header(example const& ec, label_type_t label_type);
-learner* as_multiline(learner* l);
-learner* as_singleline(learner* l);
 
+// Check that a learner is multiline or singleline.
+// Returns the input learner if the check succeeds, or throws exception if it fails.
+learner* require_multiline(learner* l);
+learner* require_singleline(learner* l);
+
+// Namespace for type definitions and other implementation details.
 namespace details
 {
 using void_func = std::function<void(void)>;
@@ -100,21 +104,26 @@ void learner_build_diagnostic(VW::string_view this_name, VW::string_view prev_na
 
 /// \brief Defines the interface for a learning algorithm.
 ///
-/// Learner is implemented as a class of pointers, and associated methods. It
-/// implements a sort of virtual inheritance through the use of bundling
-/// function pointers with the associated objects to call them with. A reduction
-/// will recursively call the previous learner given to it, whereas a base learner
-/// will not recurse and will simply return the result. Learner is not intended to
-/// be inherited from. Instead it is used through composition, and created through
-/// the make_reduction_learner and make_base_learner. The state of this
-/// learner, or reduction, is stored in the learner_data field. A
-/// <code>std::shared_pointer<void></code> is used as this class uses type
-/// erasure to allow for an arbitrary reduction to be implemented. It is
-/// extremely important that the function pointers given to the class match the
-/// expected types of the object. If the learner is constructed using
-/// make_reduction_learner or make_base_learner and assembled before it is
-/// transformed into a VW::LEARNER::learner with VW::LEARNER::make_base then
-/// the usage of the templated functions should ensure types are correct.
+/// VW has two types of learners: reduction learners and base learners. The same
+/// learner class is used to implement both. A reduction stack is created as a
+/// chain of learners, starting from a base learner. Each learner after the base
+/// is a reduction learner and holds a std::shared_ptr to its previous learner.
+/// The difference between a reduction and base learner is that a reduction will
+/// recursively call its previous learner, whereas a base learner has no previous
+/// and will simply return its result.
+///
+/// The learner class is not meant to be inherited from. Instead, it implements a
+/// sort of virtual inheritance via std::function objects. Each type of learner
+/// can have its own data object that stores the learner's internal state. When a
+/// learner is created, the function objects are bound to the data object, and the
+/// data object is stored in a std::shared_ptr<void>. The end result is that the
+/// data type representing the learner's state is type-erased, thus allowing for
+/// arbitrary learner types to be implemented by the same learner class.
+///
+/// The learner class itself has a private constructor. Learners should be created
+/// only through the make_reduction_learner and make_base_learner functions and their
+/// associated learner builder template classes. The templates enforce consistency
+/// of types at compile time, before types are erased to make the learner object.
 class learner final : public std::enable_shared_from_this<learner>
 {
 private:
@@ -367,7 +376,7 @@ public:
     learner_data = std::move(data);
     learner_ptr = std::move(input_learner);
     learner_ptr->_name = name;
-    learner_ptr->_is_multiline = std::is_same<multi_ex, ExampleT>::value;
+    learner_ptr->_is_multiline = VW::is_multiline_type<ExampleT>::value;
     learner_ptr->_learner_data = learner_data;
   }
 

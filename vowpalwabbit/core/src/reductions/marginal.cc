@@ -416,7 +416,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::marginal_setup(VW::setup_b
   if (marginal.find(':') != std::string::npos) { THROW("Cannot use wildcard with marginal.") }
   for (const auto ns : marginal) { d->id_features[static_cast<unsigned char>(ns)] = true; }
 
-  auto l = make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(d), require_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
                .set_input_label_type(VW::label_type_t::SIMPLE)
                .set_output_label_type(VW::label_type_t::SIMPLE)

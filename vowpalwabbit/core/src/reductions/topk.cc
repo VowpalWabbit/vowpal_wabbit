@@ -185,7 +185,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::topk_setup(VW::setup_base_
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   auto data = VW::make_unique<topk>(k);
-  auto l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
                .set_learn_returns_prediction(true)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)

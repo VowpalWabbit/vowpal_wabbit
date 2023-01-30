@@ -130,7 +130,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::scorer_setup(VW::setup_bas
 
   auto s = VW::make_unique<scorer>(&all);
   // This always returns a learner.
-  auto* base = as_singleline(stack_builder.setup_base_learner());
+  auto* base = require_singleline(stack_builder.setup_base_learner());
   auto l = make_reduction_learner(std::move(s), base, learn_fn, predict_fn, name)
                .set_learn_returns_prediction(base->learn_returns_prediction)
                .set_input_label_type(VW::label_type_t::SIMPLE)
