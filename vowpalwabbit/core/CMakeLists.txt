@@ -19,18 +19,18 @@ set(vw_core_headers
   include/vw/core/cb.h
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
-  include/vw/core/confidence_sequence.h
-  include/vw/core/confidence_sequence_robust.h
+  include/vw/core/estimators/confidence_sequence.h
+  include/vw/core/estimators/confidence_sequence_robust.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
   include/vw/core/cost_sensitive.h
-  include/vw/core/cressieread_estimator.h
+  include/vw/core/estimators/cressieread_estimator.h
   include/vw/core/crossplat_compat.h
   include/vw/core/debug_log.h
   include/vw/core/debug_print.h
   include/vw/core/decision_scores.h
-  include/vw/core/distributionally_robust.h
+  include/vw/core/estimators/distributionally_robust.h
   include/vw/core/epsilon_reduction_features.h
   include/vw/core/error_constants.h
   include/vw/core/error_data.h

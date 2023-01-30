@@ -7,7 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/action_score.h"
 #include "vw/core/debug_log.h"
-#include "vw/core/distributionally_robust.h"
+#include "vw/core/estimators/distributionally_robust.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
 #include "vw/core/model_utils.h"

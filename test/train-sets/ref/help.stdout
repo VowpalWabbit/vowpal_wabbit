@@ -588,6 +588,10 @@ Weight Options:
                                             + shift)) (type: uint, default: 0, keep, experimental)
     --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
                                             experimental)
+    --tol_x arg                             Tolerance for estimation optimization (type: float, default:
+                                            1e-06, keep, experimental)
+    --opt_func arg                          Optimization function for estimation) (type: str, default: bisect,
+                                            choices {bisect, brentq}, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
