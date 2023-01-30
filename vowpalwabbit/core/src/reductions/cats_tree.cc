@@ -372,6 +372,5 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
                 .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .build();
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return make_base(*l);
 }

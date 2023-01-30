@@ -1362,8 +1362,6 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 
   ld->decay_levels.push_back(0.f);
 
-  all.example_parser->lbl_parser = VW::no_label_parser_global;
-
   // If minibatch is > 1, then the predict function does not actually produce predictions.
   const auto pred_type = ld->minibatch > 1 ? VW::prediction_type_t::NOPRED : VW::prediction_type_t::SCALARS;
 

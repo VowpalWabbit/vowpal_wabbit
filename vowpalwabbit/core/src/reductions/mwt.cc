@@ -331,7 +331,5 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
                 .set_update_stats(::update_stats_mwt)
                 .set_print_update(::print_update_mwt)
                 .build();
-
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return make_base(*l);
 }

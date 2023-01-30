@@ -338,7 +338,5 @@ base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
                 .set_print_update(VW::details::print_update_multiclass_label<ect>)
                 .build();
 
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
   return make_base(*l);
 }

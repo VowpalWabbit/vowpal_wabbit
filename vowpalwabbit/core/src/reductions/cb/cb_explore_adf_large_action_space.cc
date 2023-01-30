@@ -403,7 +403,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   }
 
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   if (use_two_pass_svd_impl)
   {

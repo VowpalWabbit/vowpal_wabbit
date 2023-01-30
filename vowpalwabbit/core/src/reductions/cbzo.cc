@@ -365,7 +365,6 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
     }
   }
 
-  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
   data->all = &all;
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");

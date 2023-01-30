@@ -172,7 +172,5 @@ VW::LEARNER::base_learner* VW::reductions::cats_pdf_setup(setup_base_i& stack_bu
                 .set_update_stats(update_stats_cats_pdf)
                 .build();
 
-  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
-
   return make_base(*l);
 }

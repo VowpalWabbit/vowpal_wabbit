@@ -803,7 +803,6 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
                 .set_print_update(print_update_func)
                 .build();
 
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
   all.cost_sensitive = make_base(*l);
   return all.cost_sensitive;
 }

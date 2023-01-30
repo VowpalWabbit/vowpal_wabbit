@@ -1280,14 +1280,12 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
   if (!oas)
   {
     num_learners = tree->max_nodes + 1;
-    all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     pred_type = VW::prediction_type_t::MULTICLASS;
     label_type = VW::label_type_t::MULTICLASS;
   }  // multi-label classification
   else
   {
     num_learners = tree->max_nodes + 1 + tree->max_num_labels;
-    all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
     pred_type = VW::prediction_type_t::MULTILABELS;
     label_type = VW::label_type_t::MULTILABEL;
   }

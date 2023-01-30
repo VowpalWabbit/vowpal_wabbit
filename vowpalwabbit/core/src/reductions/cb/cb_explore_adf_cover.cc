@@ -308,7 +308,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool epsilon_decay;
   if (options.was_supplied("epsilon"))

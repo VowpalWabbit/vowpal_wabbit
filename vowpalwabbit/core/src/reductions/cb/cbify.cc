@@ -790,7 +790,6 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       output_example_prediction_func = VW::details::output_example_prediction_cs_label<cbify>;
       print_update_func = VW::details::print_update_cs_label<cbify>;
       name_addition = "-adf-cs";
-      all.example_parser->lbl_parser = VW::cs_label_parser_global;
     }
     else
     {
@@ -801,7 +800,6 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<cbify>;
       print_update_func = VW::details::print_update_multiclass_label<cbify>;
       name_addition = "-adf";
-      all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
@@ -823,7 +821,6 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     {
       in_label_type = VW::label_type_t::SIMPLE;
       out_pred_type = VW::prediction_type_t::SCALAR;
-      all.example_parser->lbl_parser = simple_label_parser_global;
       if (use_discrete)
       {
         out_label_type = VW::label_type_t::CB;
@@ -863,7 +860,6 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       output_example_prediction_func = VW::details::output_example_prediction_cs_label<cbify>;
       print_update_func = VW::details::print_update_cs_label<cbify>;
       name_addition = "-cs";
-      all.example_parser->lbl_parser = VW::cs_label_parser_global;
     }
     else
     {
@@ -877,7 +873,6 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<cbify>;
       print_update_func = VW::details::print_update_multiclass_label<cbify>;
       name_addition = "";
-      all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
@@ -939,7 +934,6 @@ VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stac
                 .set_print_update(print_update_cbify_ldf)
                 .set_update_stats(update_stats_cbify_ldf)
                 .build();
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
 
   return make_base(*l);
 }
