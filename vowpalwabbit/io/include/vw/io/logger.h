@@ -38,8 +38,8 @@ enum class log_level
 
 log_level get_log_level(const std::string& level);
 
-using logger_output_func_t = std::function<void(void*, VW::io::log_level, const std::string&)>;
-using logger_legacy_output_func_t = std::function<void(void*, const std::string&)>;
+using logger_output_func_t = void (*)(void*, VW::io::log_level, const std::string&);
+using logger_legacy_output_func_t = void (*)(void*, const std::string&);
 
 namespace details
 {

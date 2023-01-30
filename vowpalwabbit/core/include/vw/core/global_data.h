@@ -56,7 +56,7 @@ public:
 };
 }  // namespace details
 
-using options_deleter_type = std::function<void(VW::config::options_i*)>;
+using options_deleter_type = void (*)(VW::config::options_i*);
 class workspace;
 
 class all_reduce_base;
@@ -282,8 +282,8 @@ public:
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
 
-  std::function<void(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&)> print_by_ref;
-  std::function<void(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&)> print_text_by_ref;
+  void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
+  void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
   std::unique_ptr<loss_function> loss;
 
   // runtime accounting variables.
