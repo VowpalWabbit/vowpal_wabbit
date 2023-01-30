@@ -255,8 +255,8 @@ public:
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
       estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers,
       const std::map<namespace_index, uint64_t>& ns_counter);
-  static void insert_starting_configuration(
-      estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level, const double tol_x, bool is_brentq);
+  static void insert_starting_configuration(estimator_vec_t<estimator_impl>& estimators,
+      config_oracle_impl& config_oracle, const double sig_level, const double tol_x, bool is_brentq);
 
 private:
   static bool swap_eligible_to_inactivate(estimator_vec_t<estimator_impl>& estimators, uint64_t);

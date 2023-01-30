@@ -146,7 +146,8 @@ VW::LEARNER::base_learner* make_automl_with_impl(VW::setup_base_i& stack_builder
     VW::LEARNER::base_learner* base_learner, uint64_t max_live_configs, bool verbose_metrics, std::string& oracle_type,
     uint64_t default_lease, VW::workspace& all, int32_t priority_challengers, std::string& interaction_type,
     std::string& priority_type, float automl_significance_level, bool ccb_on, bool predict_only_model,
-    bool reversed_learning_order, config_type conf_type, bool trace_logging, bool reward_as_cost, double tol_x, bool is_brentq)
+    bool reversed_learning_order, config_type conf_type, bool trace_logging, bool reward_as_cost, double tol_x,
+    bool is_brentq)
 {
   using config_manager_type = interaction_config_manager<T, E>;
 
