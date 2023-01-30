@@ -10,7 +10,7 @@ namespace VW
 {
 namespace estimators
 {
-class cressieread_estimator
+class cressieread
 {
 public:
   VW::estimators::ChiSquared chisq;
@@ -19,12 +19,12 @@ public:
   float last_r = 0.0;
   uint64_t update_count = 0;
 
-  cressieread_estimator()
+  cressieread()
       : chisq(
             VW::details::DEFAULT_ALPHA, VW::details::CRESSEREAD_DEFAULT_TAU, 0, std::numeric_limits<double>::infinity())
   {
   }
-  cressieread_estimator(double alpha, double tau) : chisq(alpha, tau, 0, std::numeric_limits<double>::infinity()) {}
+  cressieread(double alpha, double tau) : chisq(alpha, tau, 0, std::numeric_limits<double>::infinity()) {}
 
   void update(float w, float r);
   void persist(metric_sink&, const std::string&);
@@ -37,7 +37,7 @@ public:
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::estimators::cressieread_estimator&);
-size_t write_model_field(io_buf&, const VW::estimators::cressieread_estimator&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::estimators::cressieread&);
+size_t write_model_field(io_buf&, const VW::estimators::cressieread&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

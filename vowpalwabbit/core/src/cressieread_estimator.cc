@@ -10,7 +10,7 @@ namespace VW
 {
 namespace estimators
 {
-void cressieread_estimator::update(float w, float r)
+void cressieread::update(float w, float r)
 {
   update_count++;
   chisq.update(w, r);
@@ -19,7 +19,7 @@ void cressieread_estimator::update(float w, float r)
   last_r = r;
 }
 
-void cressieread_estimator::persist(metric_sink& metrics, const std::string& suffix)
+void cressieread::persist(metric_sink& metrics, const std::string& suffix)
 {
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("ips" + suffix, current_ips());
@@ -29,9 +29,9 @@ void cressieread_estimator::persist(metric_sink& metrics, const std::string& suf
   metrics.set_float("r" + suffix, last_r);
 }
 
-float cressieread_estimator::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
+float cressieread::current_ips() const { return (update_count > 0) ? ips / update_count : 0; }
 
-void cressieread_estimator::reset_stats(double alpha, double tau)
+void cressieread::reset_stats(double alpha, double tau)
 {
   chisq.reset(alpha, tau);
   ips = 0.0;
@@ -40,14 +40,14 @@ void cressieread_estimator::reset_stats(double alpha, double tau)
   update_count = 0;
 }
 
-float cressieread_estimator::lower_bound() { return chisq.cressieread_lower_bound(); }
+float cressieread::lower_bound() { return chisq.cressieread_lower_bound(); }
 
-float cressieread_estimator::upper_bound() { return chisq.cressieread_upper_bound(); }
+float cressieread::upper_bound() { return chisq.cressieread_upper_bound(); }
 }  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::estimators::cressieread_estimator& sc)
+size_t read_model_field(io_buf& io, VW::estimators::cressieread& sc)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, sc.chisq);
@@ -58,8 +58,7 @@ size_t read_model_field(io_buf& io, VW::estimators::cressieread_estimator& sc)
   return bytes;
 }
 
-size_t write_model_field(
-    io_buf& io, const VW::estimators::cressieread_estimator& sc, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::estimators::cressieread& sc, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, sc.chisq, upstream_name + "_chisq", text);
