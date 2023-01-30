@@ -97,7 +97,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   EXPECT_NEAR(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // all weights of offset 1 will be set to zero
-  VW::reductions::multi_model::clear_offset(weights, offset_to_clear, all.wpp, all.wpp);
+  VW::reductions::multi_model::clear_offset(weights, offset_to_clear, all.wpp);
 
   for (auto index : feature_indexes)
   {
@@ -114,7 +114,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   EXPECT_NEAR(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // copy from offset 2 to offset 1
-  VW::reductions::multi_model::move_offsets(weights, offset_to_clear + 1, offset_to_clear, all.wpp, all.wpp);
+  weights.move_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
 
   for (auto index : feature_indexes)
   {
