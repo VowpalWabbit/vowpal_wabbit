@@ -8,6 +8,8 @@
 
 namespace VW
 {
+namespace estimators
+{
 class cressieread_estimator
 {
 public:
@@ -31,10 +33,11 @@ public:
   float lower_bound();
   float upper_bound();
 };
+}  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::cressieread_estimator&);
-size_t write_model_field(io_buf&, const VW::cressieread_estimator&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::estimators::cressieread_estimator&);
+size_t write_model_field(io_buf&, const VW::estimators::cressieread_estimator&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW

@@ -8,6 +8,8 @@
 
 namespace VW
 {
+namespace estimators
+{
 void cressieread_estimator::update(float w, float r)
 {
   update_count++;
@@ -41,10 +43,11 @@ void cressieread_estimator::reset_stats(double alpha, double tau)
 float cressieread_estimator::lower_bound() { return chisq.cressieread_lower_bound(); }
 
 float cressieread_estimator::upper_bound() { return chisq.cressieread_upper_bound(); }
+}  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::cressieread_estimator& sc)
+size_t read_model_field(io_buf& io, VW::estimators::cressieread_estimator& sc)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, sc.chisq);
@@ -55,7 +58,7 @@ size_t read_model_field(io_buf& io, VW::cressieread_estimator& sc)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::cressieread_estimator& sc, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::estimators::cressieread_estimator& sc, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, sc.chisq, upstream_name + "_chisq", text);
