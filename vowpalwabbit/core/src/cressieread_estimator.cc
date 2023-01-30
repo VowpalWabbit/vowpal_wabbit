@@ -58,7 +58,8 @@ size_t read_model_field(io_buf& io, VW::estimators::cressieread_estimator& sc)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const VW::estimators::cressieread_estimator& sc, const std::string& upstream_name, bool text)
+size_t write_model_field(
+    io_buf& io, const VW::estimators::cressieread_estimator& sc, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, sc.chisq, upstream_name + "_chisq", text);
