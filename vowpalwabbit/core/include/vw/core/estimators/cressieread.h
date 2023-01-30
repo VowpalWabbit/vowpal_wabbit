@@ -13,7 +13,7 @@ namespace estimators
 class cressieread
 {
 public:
-  VW::estimators::ChiSquared chisq;
+  VW::estimators::chi_squared chisq;
   float ips = 0.0;
   float last_w = 0.0;
   float last_r = 0.0;
