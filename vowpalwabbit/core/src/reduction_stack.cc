@@ -292,4 +292,14 @@ VW::LEARNER::learner* default_reduction_stack_setup::setup_base_learner()
 
   return nullptr;
 }
+
+std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_learner_shared_ptr()
+{
+  auto* raw_ptr = setup_base_learner();
+  if (raw_ptr == nullptr)
+  {
+    THROW("Reduction stack setup resulted in nullptr when trying to create shared_ptr<learner>");
+  }
+  return raw_ptr->shared_from_this();
+}
 }  // namespace VW

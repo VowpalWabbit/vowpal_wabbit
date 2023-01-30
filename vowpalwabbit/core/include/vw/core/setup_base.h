@@ -23,6 +23,7 @@ public:
   virtual void delayed_state_attach(VW::workspace&, VW::config::options_i&) = 0;
 
   virtual VW::LEARNER::learner* setup_base_learner() = 0;
+  virtual std::shared_ptr<VW::LEARNER::learner> setup_base_learner_shared_ptr() = 0;
 
   // this one we can share freely
   virtual VW::config::options_i* get_options() = 0;

@@ -3,6 +3,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
 #include <string>
 
 namespace VW
@@ -11,6 +12,7 @@ class cached_learner : public setup_base_i
 {
 public:
   VW::LEARNER::learner* setup_base_learner() override { return _cached.get(); }
+  std::shared_ptr<VW::LEARNER::learner> setup_base_learner_shared_ptr() override { return _cached; }
 
   operator bool() const { return !(_cached == nullptr); }
 
