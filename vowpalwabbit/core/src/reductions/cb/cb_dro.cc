@@ -89,7 +89,7 @@ public:
   }
 
 private:
-  VW::estimators::ChiSquared _chisq;
+  VW::estimators::chi_squared _chisq;
   std::vector<float> _save_weight;
 };
 template <bool is_learn, bool is_explore>
