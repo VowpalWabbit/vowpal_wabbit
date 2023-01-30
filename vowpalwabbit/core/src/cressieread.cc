@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/estimators/cressieread_estimator.h"
+#include "vw/core/estimators/cressieread.h"
 
 #include "vw/core/model_utils.h"
 
