@@ -2,7 +2,7 @@
 
 #include "vw/config/options.h"
 #include "vw/core/cb.h"
-#include "vw/core/distributionally_robust.h"
+#include "vw/core/estimators/distributionally_robust.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
