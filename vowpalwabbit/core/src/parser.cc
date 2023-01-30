@@ -96,7 +96,7 @@ bool got_sigterm;
 void handle_sigterm(int) { got_sigterm = true; }
 
 VW::parser::parser(size_t example_queue_limit, bool strict_parse_)
-    : example_pool{example_queue_limit}
+    : example_pool{0}
     , ready_parsed_examples{example_queue_limit}
     , example_queue_limit{example_queue_limit}
     , num_examples_taken_from_pool(0)
@@ -672,7 +672,7 @@ namespace VW
 VW::example& get_unused_example(VW::workspace* all)
 {
   auto& p = *all->example_parser;
-  auto* ex = p.example_pool.get_object();
+  auto* ex = p.example_pool.get_object().release();
   ex->example_counter = static_cast<size_t>(p.num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
