@@ -250,6 +250,11 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
 }
 
 template <typename T, typename S>
+void persist_metrics(cb_explore_adf_base<cb_explore_adf_large_action_space<T, S>>&, VW::metric_sink&)
+{
+}
+
+template <typename T, typename S>
 cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
     float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
     size_t thread_pool_size, size_t block_size, bool use_explicit_simd, implementation_type impl_type)
@@ -315,7 +320,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
-                .set_persist_metrics(explore_type::persist_metrics)
+                .set_persist_metrics(VW::cb_explore_adf::persist_metrics)
                 .set_save_load(explore_type::save_load)
                 .set_learn_returns_prediction(base->learn_returns_prediction)
                 .build();
