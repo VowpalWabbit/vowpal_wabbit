@@ -247,7 +247,6 @@ void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::multi_lear
 VW::LEARNER::base_learner* VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("[Reduction] Slates");
