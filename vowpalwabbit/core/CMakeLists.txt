@@ -25,7 +25,7 @@ set(vw_core_headers
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
   include/vw/core/cost_sensitive.h
-  include/vw/core/estimators/cressieread_estimator.h
+  include/vw/core/estimators/cressieread.h
   include/vw/core/crossplat_compat.h
   include/vw/core/debug_log.h
   include/vw/core/debug_print.h
@@ -208,7 +208,7 @@ set(vw_core_sources
   src/confidence_sequence.cc
   src/confidence_sequence_robust.cc
   src/cost_sensitive.cc
-  src/cressieread_estimator.cc
+  src/cressieread.cc
   src/crossplat_compat.cc
   src/debug_print.cc
   src/decision_scores.cc

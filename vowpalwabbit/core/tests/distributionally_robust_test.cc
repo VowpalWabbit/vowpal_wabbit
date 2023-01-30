@@ -11,7 +11,7 @@
 
 TEST(DistributionallyRobust, InverseChisq)
 {
-  // Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.501, 0.05 }]
+  // Table[{ alpha, InverseCDF[chi_squaredistribution[1], 1 - alpha] }, { alpha, 0.001, 0.501, 0.05 }]
 
   std::pair<double, double> testcases[] = {{0.001, 10.8276}, {0.051, 3.80827}, {0.101, 2.68968}, {0.151, 2.06212},
       {0.201, 1.63509}, {0.251, 1.31773}, {0.301, 1.06976}, {0.351, 0.869839}, {0.401, 0.705326}, {0.451, 0.568137},
@@ -19,7 +19,7 @@ TEST(DistributionallyRobust, InverseChisq)
 
   for (auto pt : testcases)
   {
-    double v = VW::estimators::ChiSquared::chisq_onedof_isf(pt.first);
+    double v = VW::estimators::chi_squared::chisq_onedof_isf(pt.first);
 
     EXPECT_NEAR(v, pt.second, 0.001);
   }
@@ -52,7 +52,7 @@ TEST(DistributionallyRobust, RecomputeDuals)
   float u_bound[] = {1.0f, 0.28128352388284217f, 0.5056614942571485f, 0.6220782066057806f, 0.75416164144364f,
       0.8175722577850846f, 0.944281011930322f, 0.7625855039970183f, 0.7386659400005198f, 0.69289830401895f};
 
-  auto onlinechisq = VW::make_unique<VW::estimators::ChiSquared>(0.05, 0.999);
+  auto onlinechisq = VW::make_unique<VW::estimators::chi_squared>(0.05, 0.999);
 
   {
     auto sd = onlinechisq->recompute_duals();
@@ -96,7 +96,7 @@ TEST(DistributionallyRobust, Qlb)
   double qlbs[] = {1, 0.13620517641052662, -0.17768396518176874, 0.03202698335276157, 0.20163624787093867,
       0.19427440609482105, 0.22750472815940542, 0.01392757858090217, 0.10533233309112934, 0.08141788541188416};
 
-  auto onlinechisq = VW::make_unique<VW::estimators::ChiSquared>(0.05, 0.999);
+  auto onlinechisq = VW::make_unique<VW::estimators::chi_squared>(0.05, 0.999);
 
   for (size_t i = 0; i < std::extent<decltype(data)>::value; ++i)
   {
