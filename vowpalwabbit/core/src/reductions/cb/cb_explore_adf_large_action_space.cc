@@ -236,9 +236,9 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
 }
 
 template <typename T, typename S>
-cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float c,
-    bool squarecb_enabled, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
-    size_t block_size, bool use_explicit_simd, implementation_type impl_type)
+cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float c, bool squarecb_enabled,
+    VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size, size_t block_size,
+    bool use_explicit_simd, implementation_type impl_type)
     : _d(d)
     , _all(all)
     , _counter(0)
