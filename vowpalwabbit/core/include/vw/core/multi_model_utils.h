@@ -13,42 +13,42 @@ namespace reductions
 {
 namespace multi_model
 {
-// ***** NOTE: ppw must be of form 2^n *****
-inline void clear_offset(dense_parameters& weights, const size_t offset, const size_t ppw, const size_t inner_ppw_size)
+// ***** NOTE: overall_ppw_size must be of form 2^n *****
+inline void clear_innermost_offset(dense_parameters& weights, const size_t offset, const size_t overall_ppw_size, const size_t innermost_ppw_size)
 {
   VW::weight* weights_arr = weights.first();
-  const size_t outer_ppw_size = ppw / inner_ppw_size;
-  assert(offset < inner_ppw_size);
+  const size_t overall_without_innermost_ppw_size = overall_ppw_size / innermost_ppw_size;
+  assert(offset < innermost_ppw_size);
 
-  for (auto iterator_clear = weights.begin(); iterator_clear < weights.end(); iterator_clear += ppw)
+  for (auto iterator_clear = weights.begin(); iterator_clear < weights.end(); iterator_clear += overall_ppw_size)
   {
-    for (size_t outer_offset = 0; outer_offset < outer_ppw_size; ++outer_offset)
+    for (size_t outer_offset = 0; outer_offset < overall_without_innermost_ppw_size; ++outer_offset)
     {
       for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
       {
-        weights_arr[iterator_clear.index() + outer_offset * inner_ppw_size * weights.stride() +
+        weights_arr[iterator_clear.index() + outer_offset * innermost_ppw_size * weights.stride() +
             offset * weights.stride() + stride_offset] = 0.0f;
       }
     }
   }
 }
 
-// ***** NOTE: ppw must be of form 2^n *****
-inline void move_offsets(dense_parameters& weights, const size_t from, const size_t to, const size_t ppw,
-    const size_t inner_ppw_size, bool swap = false)
+// ***** NOTE: overall_ppw_size must be of form 2^n *****
+inline void move_innermost_offsets(dense_parameters& weights, const size_t from, const size_t to, const size_t overall_ppw_size,
+    const size_t innermost_ppw_size, bool swap = false)
 {
   VW::weight* weights_arr = weights.first();
-  const size_t outer_ppw_size = ppw / inner_ppw_size;
-  assert(from < inner_ppw_size);
-  assert(to < inner_ppw_size);
+  const size_t overall_without_innermost_ppw_size = overall_ppw_size / innermost_ppw_size;
+  assert(from < innermost_ppw_size);
+  assert(to < innermost_ppw_size);
 
-  for (auto iterator_move = weights.begin(); iterator_move < weights.end(); iterator_move += ppw)
+  for (auto iterator_move = weights.begin(); iterator_move < weights.end(); iterator_move += overall_ppw_size)
   {
-    for (size_t outer_offset = 0; outer_offset < outer_ppw_size; ++outer_offset)
+    for (size_t outer_offset = 0; outer_offset < overall_without_innermost_ppw_size; ++outer_offset)
     {
       for (size_t stride_offset = 0; stride_offset < weights.stride(); stride_offset++)
       {
-        size_t outer_index = iterator_move.index() + outer_offset * inner_ppw_size * weights.stride() + stride_offset;
+        size_t outer_index = iterator_move.index() + outer_offset * innermost_ppw_size * weights.stride() + stride_offset;
         if (weights_arr[outer_index + to * weights.stride()] != weights_arr[outer_index + from * weights.stride()])
         {
           if (swap)
@@ -66,24 +66,24 @@ inline void move_offsets(dense_parameters& weights, const size_t from, const siz
   }
 }
 
-// ***** NOTE: ppw must be of form 2^n *****
-inline void resize_model_weights(
-    dense_parameters& weights, const size_t offset, const size_t ppw, const size_t inner_ppw_size)
+// ***** NOTE: overall_ppw_size must be of form 2^n *****
+inline void reduce_innermost_model_weights(
+    dense_parameters& weights, const size_t offset, const size_t overall_ppw_size, const size_t innermost_ppw_size)
 {
   VW::weight* weights_arr = weights.first();
-  const size_t outer_ppw_size = ppw / inner_ppw_size;
-  for (size_t inner_ppw = 0; inner_ppw < inner_ppw_size; ++inner_ppw)
+  const size_t overall_without_innermost_ppw_size = overall_ppw_size / innermost_ppw_size;
+  for (size_t inner_ppw = 0; inner_ppw < innermost_ppw_size; ++inner_ppw)
   {
-    if (inner_ppw != offset) { clear_offset(weights, inner_ppw, ppw, inner_ppw_size); }
+    if (inner_ppw != offset) { clear_innermost_offset(weights, inner_ppw, overall_ppw_size, innermost_ppw_size); }
   }
-  for (auto weights_it = weights.begin(); weights_it < weights.end(); weights_it += ppw)
+  for (auto weights_it = weights.begin(); weights_it < weights.end(); weights_it += overall_ppw_size)
   {
-    uint32_t cb_ind = weights_it.index() / inner_ppw_size;
-    for (size_t outer_offset = 0; outer_offset < outer_ppw_size; ++outer_offset)
+    uint32_t cb_ind = weights_it.index() / innermost_ppw_size;
+    for (size_t outer_offset = 0; outer_offset < overall_without_innermost_ppw_size; ++outer_offset)
     {
       for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)
       {
-        auto old_ind = weights_it.index() + outer_offset * inner_ppw_size * weights.stride() +
+        auto old_ind = weights_it.index() + outer_offset * innermost_ppw_size * weights.stride() +
             offset * weights.stride() + stride_offset;
         auto new_ind = cb_ind + outer_offset * weights.stride() + stride_offset;
         if (weights_arr[old_ind] != 0.0f)

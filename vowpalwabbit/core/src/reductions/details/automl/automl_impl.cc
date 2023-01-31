@@ -188,7 +188,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       }
 
       // copy the weights of the champ to the new slot
-      VW::reductions::multi_model::move_offsets(weights, current_champ, live_slot, wpp, max_live_configs);
+      VW::reductions::multi_model::move_innermost_offsets(weights, current_champ, live_slot, wpp, max_live_configs);
       // Regenerate interactions each time an exclusion is swapped in
       ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, _config_oracle._interaction_type,
           _config_oracle.configs[estimators[live_slot].first.config_index],
@@ -259,12 +259,12 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
      * w3 w0 w2 w0 w4 // w0 are the old champ's weights and place in slot 1, other weights are irrelevant
      */
 
-    // this is a swap, see last bool argument in move_offsets
-    VW::reductions::multi_model::move_offsets(
+    // this is a swap, see last bool argument in move_innermost_offsets
+    VW::reductions::multi_model::move_innermost_offsets(
         weights, winning_challenger_slot, old_champ_slot, wpp, max_live_configs, true);
     if (winning_challenger_slot != 1)
     {
-      VW::reductions::multi_model::move_offsets(weights, winning_challenger_slot, 1, wpp, max_live_configs, false);
+      VW::reductions::multi_model::move_innermost_offsets(weights, winning_challenger_slot, 1, wpp, max_live_configs, false);
     }
 
     apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, ns_counter);

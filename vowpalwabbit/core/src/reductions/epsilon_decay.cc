@@ -174,7 +174,7 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind)
   {
-    VW::reductions::multi_model::clear_offset(_weights, _weight_indices[ind], _wpp, _model_count);
+    VW::reductions::multi_model::clear_innermost_offset(_weights, _weight_indices[ind], _wpp, _model_count);
   }
 }
 

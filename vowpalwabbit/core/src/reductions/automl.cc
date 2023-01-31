@@ -88,7 +88,7 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
   std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
 
   // Adjust champ weights to new single-model space
-  VW::reductions::multi_model::resize_model_weights(data.cm->weights, 0, data.cm->wpp, data.cm->max_live_configs);
+  VW::reductions::multi_model::reduce_innermost_model_weights(data.cm->weights, 0, data.cm->wpp, data.cm->max_live_configs);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
