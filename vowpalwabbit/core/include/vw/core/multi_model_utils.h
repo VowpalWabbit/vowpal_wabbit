@@ -13,7 +13,20 @@ namespace reductions
 {
 namespace multi_model
 {
-// ***** NOTE: overall_ppw_size must be of form 2^n *****
+/*
+***** NOTE: overall_ppw_size must be of form 2^n for all functions *****
+These functions are used to maniputate the weights of a multi-model learner. As an example of what each variable
+is, consider a learner with the command line "--bag 4 --automl 2". In this scenario 'automl' is above 'bag' in the
+stack, and would be considered to have the innermost ppw. Thus innermost_ppw_size = 2. The overall_ppw_size = 8
+here as it is the product of all ppw's in the stack (4 * 2). The actual weights here will look like this:
+
+0     1     2     3      4      5      6      7       -- Indices as printed using --invert_hash
+0     4     8     12     16     20     24     28      -- Actual weight indices included stride size of 4
+bag0  bag0  bag1  bag1   bag2   bag2   bag3   bag3    -- Shows how weights are grouped by bag learner number
+aml0  aml1  aml0  aml1   aml0   aml1   aml0   aml1    -- Shows how weights are grouped by automl learner number
+*/
+
+// This function is used to clear the weights of a specific offset in the innermost ppw.
 inline void clear_innermost_offset(
     dense_parameters& weights, const size_t offset, const size_t overall_ppw_size, const size_t innermost_ppw_size)
 {
@@ -34,7 +47,7 @@ inline void clear_innermost_offset(
   }
 }
 
-// ***** NOTE: overall_ppw_size must be of form 2^n *****
+// This function is used to move the weights of a specific offset in the innermost ppw to another offset.
 inline void move_innermost_offsets(dense_parameters& weights, const size_t from, const size_t to,
     const size_t overall_ppw_size, const size_t innermost_ppw_size, bool swap = false)
 {
@@ -68,7 +81,22 @@ inline void move_innermost_offsets(dense_parameters& weights, const size_t from,
   }
 }
 
-// ***** NOTE: overall_ppw_size must be of form 2^n *****
+/* This function is used to select one sub-offset within the innermost ppw and remove all others. For instance
+ if this called with "--bag 4 --automl 2" using offset = 1 (we will have innermost_ppw_size = 2 and overall_ppw_size
+ = 8) then this will remove all weights with automl = 0. The set of weights referenced above:
+
+  0     1     2     3      4      5      6      7
+  0     4     8     12     16     20     24     28
+  bag0  bag0  bag1  bag1   bag2   bag2   bag3   bag3
+  aml0  aml1  aml0  aml1   aml0   aml1   aml0   aml1
+
+  will be reduced to:
+
+  0     1     2     3
+  0     4     8     12
+  bag0  bag1  bag2  bag3
+  aml1  aml1  aml1  aml1
+*/
 inline void reduce_innermost_model_weights(
     dense_parameters& weights, const size_t offset, const size_t overall_ppw_size, const size_t innermost_ppw_size)
 {
