@@ -21,6 +21,36 @@ using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
         VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
+TEST(Las, CheckMatricsWithLASRunsOK)
+{
+  auto d = 3;
+  std::vector<std::string> args{"--cb_explore_adf", "--large_action_space", "--max_actions", std::to_string(d),
+      "--quiet", "--extra_metrics", "las_metrics.json"};
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+
+  VW::multi_ex examples;
+
+  examples.push_back(VW::read_example(*vw, "1:1:0.1 | 1:0.1 2:0.12 3:0.13"));
+  examples.push_back(VW::read_example(*vw, "| a_1:0.5 a_2:0.65 a_3:0.12"));
+  examples.push_back(VW::read_example(*vw, "| a_4:0.8 a_5:0.32 a_6:0.15"));
+  examples.push_back(VW::read_example(*vw, "| a_7 a_8 a_9"));
+  examples.push_back(VW::read_example(*vw, "| a_10 a_11 a_12"));
+  examples.push_back(VW::read_example(*vw, "| a_13 a_14 a_15"));
+  examples.push_back(VW::read_example(*vw, "| a_16 a_17 a_18"));
+
+  vw->learn(examples);
+
+  auto num_actions = examples[0]->pred.a_s.size();
+
+  EXPECT_EQ(num_actions, 7);
+
+  vw->finish_example(examples);
+
+  auto metrics = vw->global_metrics.collect_metrics(vw->l);
+  EXPECT_EQ(metrics.get_uint("cbea_labeled_ex"), 1);
+  EXPECT_EQ(metrics.get_uint("cb_las_filtering_factor"), 5);
+}
+
 TEST(Las, CheckAOSameActionsSameRepresentation)
 {
   auto d = 3;
