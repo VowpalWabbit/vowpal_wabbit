@@ -149,7 +149,6 @@ def add_binder_url_for_page(
     context,
     doctree,
 ):
-
     # First decide if we'll insert any links
     path = app.env.doc2path(pagename)
     extension = Path(path).suffix

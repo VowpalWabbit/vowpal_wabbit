@@ -133,7 +133,6 @@ class cb_explore_adf_large_action_space
 private:
   uint64_t _d;
   VW::workspace* _all;
-  size_t _counter;
   uint64_t _seed;
   implementation_type _impl_type;
   size_t _non_degenerate_singular_values;

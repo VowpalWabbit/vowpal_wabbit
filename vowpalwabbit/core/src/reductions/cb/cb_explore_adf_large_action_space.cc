@@ -114,15 +114,6 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
-void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::save_load(io_buf& io, bool read, bool text)
-{
-  if (io.num_files() == 0) { return; }
-
-  if (read) { model_utils::read_model_field(io, _counter); }
-  else { model_utils::write_model_field(io, _counter, "cb large action space storing example counter", text); }
-}
-
-template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::randomized_SVD(const multi_ex& examples)
 {
   impl.run(examples, shrink_factors, U, S, _V);
@@ -206,9 +197,9 @@ template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::learn(
     VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
+  VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
+  auto restore_guard = VW::scope_exit([&preds, &examples] { examples[0]->pred.a_s = std::move(preds); });
   base.learn(examples);
-  if (base.learn_returns_prediction) { update_example_prediction(examples); }
-  ++_counter;
 }
 
 void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B, uint64_t d, uint64_t seed)
@@ -241,7 +232,6 @@ cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint6
     bool use_explicit_simd, implementation_type impl_type)
     : _d(d)
     , _all(all)
-    , _counter(0)
     , _seed(seed)
     , _impl_type(impl_type)
     , spanner_state(c, d)
@@ -286,12 +276,6 @@ void persist_metrics(cb_explore_adf_large_action_space<T, S>& data, VW::metric_s
 }
 
 template <typename T, typename S>
-void save_load(cb_explore_adf_large_action_space<T, S>& data, VW::io_buf& io, bool read, bool text)
-{
-  data.save_load(io, read, text);
-}
-
-template <typename T, typename S>
 void predict(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   data.predict(base, examples);
@@ -323,8 +307,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_params_per_weight(problem_multiplier)
                 .set_persist_metrics(persist_metrics<T, S>)
-                .set_save_load(save_load<T, S>)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_learn_returns_prediction(false)
                 .build();
   return VW::LEARNER::make_base(*l);
 }
@@ -338,8 +321,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
-  float gamma_scale = 1.f;
-  float gamma_exponent = 0.f;
   float c;
   bool squarecb_enabled = false;
   bool use_two_pass_svd_impl = false;
