@@ -57,6 +57,8 @@ bool ec_is_example_header(example const& ec, label_type_t label_type);
 // Returns the input learner if the check succeeds, or throws exception if it fails.
 learner* require_multiline(learner* l);
 learner* require_singleline(learner* l);
+std::shared_ptr<learner> require_multiline(std::shared_ptr<learner> l);
+std::shared_ptr<learner> require_singleline(std::shared_ptr<learner> l);
 
 // Namespace for type definitions and other implementation details.
 namespace details
@@ -680,7 +682,7 @@ class reduction_learner_builder
 {
 public:
   using super = common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
-  reduction_learner_builder(std::unique_ptr<DataT>&& data, learner* prev, const std::string& name)
+  reduction_learner_builder(std::unique_ptr<DataT>&& data, std::shared_ptr<learner> prev, const std::string& name)
       // NOTE: This is a copy of the previous learner! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
       // save_load then calling save_load on this object will essentially result in forwarding the
@@ -891,7 +893,7 @@ class reduction_no_data_learner_builder
 {
 public:
   using super = common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>;
-  reduction_no_data_learner_builder(learner* prev, const std::string& name)
+  reduction_no_data_learner_builder(std::shared_ptr<learner> prev, const std::string& name)
       // NOTE: This is a copy of the previous learner! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
       // save_load then calling save_load on this object will essentially result in forwarding the
@@ -1233,11 +1235,11 @@ public:
 };
 
 template <class DataT, class ExampleT>
-reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_ptr<DataT>&& data, learner* prev,
-    void (*learn_fn)(DataT&, learner&, ExampleT&), void (*predict_fn)(DataT&, learner&, ExampleT&),
-    const std::string& name)
+reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_ptr<DataT>&& data,
+    std::shared_ptr<learner> prev, void (*learn_fn)(DataT&, learner&, ExampleT&),
+    void (*predict_fn)(DataT&, learner&, ExampleT&), const std::string& name)
 {
-  auto builder = reduction_learner_builder<DataT, ExampleT>(std::move(data), prev, name);
+  auto builder = reduction_learner_builder<DataT, ExampleT>(std::move(data), std::move(prev), name);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -1245,10 +1247,10 @@ reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_pt
 }
 
 template <class ExampleT>
-reduction_no_data_learner_builder<ExampleT> make_no_data_reduction_learner(learner* prev,
+reduction_no_data_learner_builder<ExampleT> make_no_data_reduction_learner(std::shared_ptr<learner> prev,
     void (*learn_fn)(learner&, ExampleT&), void (*predict_fn)(learner&, ExampleT&), const std::string& name)
 {
-  auto builder = reduction_no_data_learner_builder<ExampleT>(prev, name);
+  auto builder = reduction_no_data_learner_builder<ExampleT>(std::move(prev), name);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);

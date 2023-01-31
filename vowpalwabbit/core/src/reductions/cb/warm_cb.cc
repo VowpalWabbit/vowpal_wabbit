@@ -589,7 +589,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
     options.insert("lr_multiplier", ss.str());
   }
 
-  learner* base = require_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
   // Note: the current version of warm start CB can only support epsilon-greedy exploration
   // We need to wait for the epsilon value to be passed from the base
   // cb_explore learner, if there is one

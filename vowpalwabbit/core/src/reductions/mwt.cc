@@ -317,7 +317,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::mwt_setup(VW::setup_base_i
     pred_ptr = predict_or_learn<false, false, false>;
   }
 
-  learner* base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner();
 
   auto l = make_reduction_learner(std::move(c), require_singleline(base), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(mwt_setup) + name_addition)

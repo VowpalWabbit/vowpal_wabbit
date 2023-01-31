@@ -340,6 +340,20 @@ learner* require_singleline(learner* l)
   THROW(message);
 }
 
+std::shared_ptr<learner> require_multiline(std::shared_ptr<learner> l)
+{
+  if (l->is_multiline()) { return l; }
+  auto message = fmt::format("Tried to use a singleline reduction as a multiline reduction Name: {}", l->get_name());
+  THROW(message);
+}
+
+std::shared_ptr<learner> require_singleline(std::shared_ptr<learner> l)
+{
+  if (!l->is_multiline()) { return l; }
+  auto message = fmt::format("Tried to use a multiline reduction as a singleline reduction. Name: {}", l->get_name());
+  THROW(message);
+}
+
 void learner::debug_log_message(polymorphic_ex ex, const std::string& msg)
 {
   if (ex.is_multiline())

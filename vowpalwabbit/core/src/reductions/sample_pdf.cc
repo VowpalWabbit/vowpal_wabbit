@@ -119,9 +119,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::sample_pdf_setup(VW::setup
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  LEARNER::learner* p_base = stack_builder.setup_base_learner();
+  auto p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<sample_pdf>();
-  p_reduction->init(require_singleline(p_base), all.get_random_state());
+  p_reduction->init(require_singleline(p_base).get(), all.get_random_state());
 
   // This learner will assume the label type from base, so should not call set_input_label_type
   auto l = make_reduction_learner(std::move(p_reduction), require_singleline(p_base), predict_or_learn<true>,

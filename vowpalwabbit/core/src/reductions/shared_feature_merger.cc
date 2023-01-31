@@ -112,19 +112,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::shared_feature_merger_setu
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto* base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner();
   if (base == nullptr) { return nullptr; }
   std::set<label_type_t> sfm_labels = {label_type_t::CB, label_type_t::CS};
-  if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline())
-  {
-    return base->shared_from_this();
-  }
+  if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
 
   auto data = VW::make_unique<sfm_data>();
   if (all.global_metrics.are_metrics_enabled()) { data->metrics = VW::make_unique<sfm_metrics>(); }
   if (options.was_supplied("large_action_space")) { data->store_shared_ex_in_reduction_features = true; }
 
-  auto* multi_base = VW::LEARNER::require_multiline(base);
+  auto multi_base = VW::LEARNER::require_multiline(base);
   data->label_type = all.example_parser->lbl_parser.label_type;
 
   // Both label and prediction types inherit that of base.

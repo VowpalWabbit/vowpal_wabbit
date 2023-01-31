@@ -320,7 +320,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ect_setup(VW::setup_base_i
 
   size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
 
-  learner* base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner();
   if (link == "logistic")
   {
     data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]

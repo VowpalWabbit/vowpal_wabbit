@@ -265,7 +265,7 @@ std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn s
 
 // this function consumes all the _reduction_stack until it's able to construct a learner
 // same signature/code as the old setup_base(...) from parse_args.cc
-VW::LEARNER::learner* default_reduction_stack_setup::setup_base_learner()
+std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_learner()
 {
   if (!_reduction_stack.empty())
   {
@@ -276,30 +276,21 @@ VW::LEARNER::learner* default_reduction_stack_setup::setup_base_learner()
 
     // 'hacky' way of keeping track of the option group created by the setup_func about to be created
     _options_impl->tint(setup_func_name);
-    _base = setup_func(*this);
+    std::shared_ptr<VW::LEARNER::learner> result = setup_func(*this);
     _options_impl->reset_tint();
 
     // returning nullptr means that setup_func (any reduction) was not 'enabled' but
     // only added their respective command args and did not add itself into the
     // chain of learners, therefore we call into setup_base again
-    if (_base == nullptr) { return this->setup_base_learner(); }
+    if (result == nullptr) { return this->setup_base_learner(); }
     else
     {
       _reduction_stack.clear();
-      return _base.get();
+      return result;
     }
   }
 
   return nullptr;
 }
 
-std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_learner_shared_ptr()
-{
-  auto* raw_ptr = setup_base_learner();
-  if (raw_ptr == nullptr)
-  {
-    THROW("Reduction stack setup resulted in nullptr when trying to create shared_ptr<learner>");
-  }
-  return raw_ptr->shared_from_this();
-}
 }  // namespace VW

@@ -157,9 +157,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_pdf_setup(setup_base_
   if (!options.was_supplied("get_pmf")) { options.insert("get_pmf", ""); }
   options.insert("cats_tree", std::to_string(num_actions));
 
-  LEARNER::learner* p_base = stack_builder.setup_base_learner();
+  auto p_base = stack_builder.setup_base_learner();
   bool always_predict = !all.final_prediction_sink.empty();
-  auto p_reduction = VW::make_unique<cats_pdf>(require_singleline(p_base), always_predict);
+  auto p_reduction = VW::make_unique<cats_pdf>(require_singleline(p_base).get(), always_predict);
 
   auto l = make_reduction_learner(std::move(p_reduction), require_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(cats_pdf_setup))

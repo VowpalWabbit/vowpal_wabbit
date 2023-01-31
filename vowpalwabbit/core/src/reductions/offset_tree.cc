@@ -279,7 +279,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::offset_tree_setup(VW::setu
   auto otree = VW::make_unique<VW::reductions::offset_tree::offset_tree>(num_actions);
   otree->init();
 
-  learner* base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner();
   size_t ws = otree->learner_count();
 
   auto l = make_reduction_learner(

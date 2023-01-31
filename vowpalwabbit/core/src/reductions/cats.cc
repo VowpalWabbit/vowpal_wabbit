@@ -189,15 +189,15 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_setup(setup_base_i& s
         "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", bandwidth);
   }
 
-  LEARNER::learner* p_base = stack_builder.setup_base_learner();
-  auto p_reduction = VW::make_unique<VW::reductions::cats::cats>(require_singleline(p_base));
+  auto p_base = require_singleline(stack_builder.setup_base_learner());
+  auto p_reduction = VW::make_unique<VW::reductions::cats::cats>(p_base.get());
   p_reduction->num_actions = num_actions;
   p_reduction->bandwidth = bandwidth;
   p_reduction->max_value = max_value;
   p_reduction->min_value = min_value;
 
-  auto l = make_reduction_learner(std::move(p_reduction), require_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
+  auto l = make_reduction_learner(std::move(p_reduction), p_base, predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(cats_setup))
                .set_input_label_type(VW::label_type_t::CONTINUOUS)
                .set_output_label_type(VW::label_type_t::CONTINUOUS)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)

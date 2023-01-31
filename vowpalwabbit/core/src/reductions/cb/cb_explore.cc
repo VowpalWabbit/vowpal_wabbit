@@ -371,7 +371,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
   data->cbcs.cb_type = VW::cb_type_t::DR;
   data->model_file_version = all.model_file_ver;
 
-  learner* base = require_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
   data->cbcs.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   void (*learn_ptr)(cb_explore&, learner&, VW::example&);

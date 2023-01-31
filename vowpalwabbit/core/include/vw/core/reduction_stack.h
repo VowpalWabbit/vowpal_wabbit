@@ -21,10 +21,7 @@ public:
 
   // This function consumes all the reduction_stack until it's able to construct a learner
   // Same signature as the old setup_base(...) from parse_args.cc
-  // To get ownership, the returned raw pointer may be converted into a shared_ptr by calling shared_from_this()
-  // For convenience, setup_base_learner_shared_ptr() is a helper function that will do this automatically
-  VW::LEARNER::learner* setup_base_learner() override;
-  std::shared_ptr<VW::LEARNER::learner> setup_base_learner_shared_ptr() override;
+  std::shared_ptr<VW::LEARNER::learner> setup_base_learner() override;
 
   VW::config::options_i* get_options() override { return _options_impl; }
 

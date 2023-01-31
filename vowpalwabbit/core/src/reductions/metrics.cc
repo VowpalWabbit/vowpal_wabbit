@@ -172,7 +172,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::metrics_setup(VW::setup_ba
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
   all.global_metrics = VW::metrics_collector(true);
 
-  auto* base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner();
 
   if (base->is_multiline())
   {

@@ -194,7 +194,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
   {
     options.insert("cb_explore_adf", "");
     // no need to register custom predict/learn, cbify will take care of that
-    return stack_builder.setup_base_learner_shared_ptr();
+    return stack_builder.setup_base_learner();
   }
 
   // user specified "cb_explore" but we're not using an old model file
@@ -213,7 +213,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
   data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
 
-  learner* base = require_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
 
   if (num_actions <= 0) { THROW("cb num actions must be positive"); }
 

@@ -300,7 +300,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_rnd_setup(V
 
   size_t problem_multiplier = 1 + numrnd;
 
-  learner* base = require_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;

@@ -248,7 +248,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_cover_setup(VW::set
 
   if (options.was_supplied("active")) THROW("--active_cover cannot be combined with --active");
 
-  auto* base = require_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];

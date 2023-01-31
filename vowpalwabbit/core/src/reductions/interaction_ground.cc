@@ -98,7 +98,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   // Ensure cb_adf so we are reducing to something useful.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  auto* base = require_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
   auto l = make_reduction_learner(
       std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                .set_params_per_weight(problem_multiplier)

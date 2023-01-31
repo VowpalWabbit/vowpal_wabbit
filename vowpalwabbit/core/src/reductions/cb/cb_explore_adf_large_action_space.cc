@@ -291,10 +291,10 @@ template class cb_explore_adf_large_action_space<two_pass_svd_impl, one_rank_spa
 }  // namespace VW
 
 template <typename T, typename S>
-std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::learner* base,
-    implementation_type& impl_type, VW::workspace& all, bool with_metrics, uint64_t d, float gamma_scale,
-    float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size, size_t block_size,
-    bool use_explicit_simd)
+std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack_builder,
+    std::shared_ptr<VW::LEARNER::learner> base, implementation_type& impl_type, VW::workspace& all, bool with_metrics,
+    uint64_t d, float gamma_scale, float gamma_exponent, float c, bool apply_shrink_factor, size_t thread_pool_size,
+    size_t block_size, bool use_explicit_simd)
 {
   using explore_type = cb_explore_adf_base<cb_explore_adf_large_action_space<T, S>>;
 
@@ -403,7 +403,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_actio
     }
   }
 
-  VW::LEARNER::learner* base = require_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   if (use_two_pass_svd_impl)

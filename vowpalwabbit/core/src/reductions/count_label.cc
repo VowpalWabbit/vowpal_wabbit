@@ -56,7 +56,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::count_label_setup(VW::setu
 
   stack_builder.get_options()->add_and_parse(reduction_options);
 
-  auto* base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner();
 
   // When called to determine the name base will be nullptr and other `all` state will be nullptr.
   if (base == nullptr) { return nullptr; }
@@ -71,16 +71,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::count_label_setup(VW::setu
           "--dont_output_best_constant is not relevant. best constant is only tracked if the label type is simple.");
     }
 
-    return base->shared_from_this();
+    return base;
   }
 
   // TODO use field on base when that is available. In most reductions we would
   // return nullptr if the reduction is not active. However, in this reduction we
   // have already constructed the base. So we must return what we've already
   // constructed but it works because we aren't part of it
-  if (base_label_type != label_type_t::SIMPLE) { return base->shared_from_this(); }
+  if (base_label_type != label_type_t::SIMPLE) { return base; }
 
-  auto data = VW::make_unique<reduction_data>(all, base);
+  auto data = VW::make_unique<reduction_data>(all, base.get());
   if (base->is_multiline())
   {
     auto learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::require_multiline(base),

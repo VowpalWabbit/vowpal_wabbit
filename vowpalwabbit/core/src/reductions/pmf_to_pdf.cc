@@ -245,8 +245,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::pmf_to_pdf_setup(VW::setup
 
   options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
 
-  auto* p_base = require_singleline(stack_builder.setup_base_learner());
-  data->_p_base = p_base;
+  auto p_base = require_singleline(stack_builder.setup_base_learner());
+  data->_p_base = p_base.get();
 
   auto l =
       make_reduction_learner(std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))

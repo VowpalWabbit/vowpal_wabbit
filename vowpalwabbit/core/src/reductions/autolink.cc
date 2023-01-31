@@ -93,7 +93,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::autolink_setup(VW::setup_b
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   auto autolink_reduction = VW::make_unique<autolink>(d, all.weights.stride_shift());
-  auto* base = VW::LEARNER::require_singleline(stack_builder.setup_base_learner());
+  auto base = VW::LEARNER::require_singleline(stack_builder.setup_base_learner());
   auto learner = VW::LEARNER::make_reduction_learner(std::move(autolink_reduction), base, predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(autolink_setup))
                      .set_input_prediction_type(VW::prediction_type_t::SCALAR)
