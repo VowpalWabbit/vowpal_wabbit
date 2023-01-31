@@ -17,6 +17,7 @@
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
+#include "vw/core/reductions/cb/cb_explore_adf_squarecb.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
 
@@ -157,7 +158,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
 
   if (_d < preds.size())
   {
-    shrink_fact_config.calculate_shrink_factor(_counter, _d, preds, shrink_factors);
+    shrink_fact_config.calculate_shrink_factor(*(_all->l), _d, preds, shrink_factors);
     randomized_SVD(examples);
 
     // The U matrix is empty before learning anything.
@@ -235,36 +236,37 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
 }
 
 template <typename T, typename S>
-cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
-    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
-    size_t thread_pool_size, size_t block_size, bool use_explicit_simd, implementation_type impl_type)
+cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float c,
+    bool squarecb_enabled, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
+    size_t block_size, bool use_explicit_simd, implementation_type impl_type)
     : _d(d)
     , _all(all)
     , _counter(0)
     , _seed(seed)
     , _impl_type(impl_type)
     , spanner_state(c, d)
-    , shrink_fact_config(gamma_scale, gamma_exponent, apply_shrink_factor)
+    , shrink_fact_config(squarecb_enabled)
     , impl(all, d, _seed, total_size, thread_pool_size, block_size, use_explicit_simd)
 {
 }
 
-shrink_factor_config::shrink_factor_config(float gamma_scale, float gamma_exponent, bool apply_shrink_factor)
-    : _gamma_scale(gamma_scale), _gamma_exponent(gamma_exponent), _apply_shrink_factor(apply_shrink_factor)
-{
-}
+shrink_factor_config::shrink_factor_config(bool squarecb_enabled) : _squarecb_enabled(squarecb_enabled) {}
 
-void shrink_factor_config::calculate_shrink_factor(
-    size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors)
+void shrink_factor_config::calculate_shrink_factor(VW::LEARNER::base_learner& base, size_t max_actions,
+    const VW::action_scores& preds, std::vector<float>& shrink_factors)
 {
-  if (_apply_shrink_factor)
+  if (_squarecb_enabled)
   {
     shrink_factors.clear();
     float min_ck = std::min_element(preds.begin(), preds.end())->score;
-    float gamma = _gamma_scale * static_cast<float>(std::pow(counter, _gamma_exponent));
+
+    auto& sqcb = *static_cast<VW::reductions::cb_explore_adf_squarecb*>(
+        base.get_learner_by_name_prefix("cb_explore_adf_squarecb")
+            ->get_internal_type_erased_data_pointer_test_use_only());
     for (size_t i = 0; i < preds.size(); i++)
     {
-      shrink_factors.push_back(std::sqrt(1 + max_actions + gamma / (4.0f * max_actions) * (preds[i].score - min_ck)));
+      shrink_factors.push_back(
+          std::sqrt(1 + max_actions + sqcb.get_gamma() / (4.0f * max_actions) * (preds[i].score - min_ck)));
     }
   }
   else { shrink_factors.resize(preds.size(), 1.f); }
@@ -303,15 +305,15 @@ void learn(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::multi_lea
 
 template <typename T, typename S>
 VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::multi_learner* base,
-    implementation_type& impl_type, VW::workspace& all, uint64_t d, float gamma_scale, float gamma_exponent, float c,
-    bool apply_shrink_factor, size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
+    implementation_type& impl_type, VW::workspace& all, uint64_t d, float c, bool squarecb_enabled,
+    size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
 {
   size_t problem_multiplier = 1;
 
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
-  auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, gamma_scale, gamma_exponent, c,
-      apply_shrink_factor, &all, seed, 1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
+  auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, c, squarecb_enabled, &all, seed,
+      1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
 
   auto* l = make_reduction_learner(std::move(data), base, learn<T, S>, predict<T, S>,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
@@ -339,7 +341,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   float gamma_scale = 1.f;
   float gamma_exponent = 0.f;
   float c;
-  bool apply_shrink_factor = false;
+  bool squarecb_enabled = false;
   bool use_two_pass_svd_impl = false;
   bool use_simd_in_one_pass_svd_impl = false;
   // leave some resources available in the case of few core's (for parser)
@@ -389,12 +391,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }
 
-  if (options.was_supplied("squarecb"))
-  {
-    apply_shrink_factor = true;
-    gamma_scale = options.get_typed_option<float>("gamma_scale").value();
-    gamma_exponent = options.get_typed_option<float>("gamma_exponent").value();
-  }
+  if (options.was_supplied("squarecb")) { squarecb_enabled = true; }
 
   if (options.was_supplied("cb_type"))
   {
@@ -414,15 +411,14 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   if (use_two_pass_svd_impl)
   {
     auto impl_type = implementation_type::two_pass_svd;
-    return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d,
-        gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
+    return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d, c,
+        squarecb_enabled, thread_pool_size, block_size,
         /*use_explicit_simd=*/false);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
-    return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d,
-        gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
-        use_simd_in_one_pass_svd_impl);
+    return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d, c,
+        squarecb_enabled, thread_pool_size, block_size, use_simd_in_one_pass_svd_impl);
   }
 }

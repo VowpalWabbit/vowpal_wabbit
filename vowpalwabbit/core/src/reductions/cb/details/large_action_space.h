@@ -95,13 +95,11 @@ private:
 class shrink_factor_config
 {
 public:
-  const float _gamma_scale;
-  const float _gamma_exponent;
-  const bool _apply_shrink_factor;
-  shrink_factor_config(float gamma_scale, float gamma_exponent, bool apply_shrink_factor);
+  const bool _squarecb_enabled;
+  shrink_factor_config(bool squarecb_enabled);
 
-  void calculate_shrink_factor(
-      size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors);
+  void calculate_shrink_factor(VW::LEARNER::base_learner& base, size_t max_actions, const VW::action_scores& preds,
+      std::vector<float>& shrink_factors);
 };
 
 class one_rank_spanner_state
@@ -153,9 +151,9 @@ public:
   Eigen::SparseMatrix<float> _A;
   Eigen::MatrixXf _V;
 
-  cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
-      size_t block_size, bool use_explicit_simd, implementation_type impl_type);
+  cb_explore_adf_large_action_space(uint64_t d, float c, bool squarecb_enabled, VW::workspace* all, uint64_t seed,
+      size_t total_size, size_t thread_pool_size, size_t block_size, bool use_explicit_simd,
+      implementation_type impl_type);
 
   ~cb_explore_adf_large_action_space() = default;
 

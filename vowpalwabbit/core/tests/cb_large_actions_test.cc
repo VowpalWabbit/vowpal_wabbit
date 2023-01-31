@@ -248,7 +248,7 @@ TEST(Las, CheckAtTimesOmegaIsY)
       vw.predict(examples);
 
       action_space->explore.shrink_fact_config.calculate_shrink_factor(
-          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+          *vw.l, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
       VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore.impl.generate_Y(examples, action_space->explore.shrink_factors);
@@ -355,7 +355,7 @@ TEST(Las, CheckATimesYIsB)
 
       VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore.shrink_fact_config.calculate_shrink_factor(
-          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+          *vw.l, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
       action_space->explore.impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore.impl.generate_B(examples, action_space->explore.shrink_factors);
@@ -426,7 +426,7 @@ TEST(Las, CheckBTimesPIsZ)
       vw.predict(examples);
 
       action_space->explore.shrink_fact_config.calculate_shrink_factor(
-          0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+          *vw.l, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
       VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
       action_space->explore.impl.generate_Y(examples, action_space->explore.shrink_factors);
       action_space->explore.impl.generate_B(examples, action_space->explore.shrink_factors);
@@ -471,7 +471,7 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
     vw.predict(examples);
 
     action_space->explore.shrink_fact_config.calculate_shrink_factor(
-        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+        *vw.l, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
     action_space->explore.randomized_SVD(examples);
 
     VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
@@ -487,7 +487,7 @@ void check_final_truncated_SVD_validity_impl(VW::workspace& vw,
     vw.predict(examples);
 
     action_space->explore.shrink_fact_config.calculate_shrink_factor(
-        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+        *vw.l, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
     action_space->explore.randomized_SVD(examples);
 
     auto num_actions = examples.size();
@@ -644,7 +644,7 @@ TEST(Las, CheckShrinkFactor)
     EXPECT_EQ(num_actions, 7);
 
     action_space->explore.shrink_fact_config.calculate_shrink_factor(
-        0, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
+        *vw.l, d, examples[0]->pred.a_s, action_space->explore.shrink_factors);
 
     Eigen::SparseMatrix<float> diag_M(num_actions, num_actions);
     Eigen::SparseMatrix<float> identity_diag_M(num_actions, num_actions);

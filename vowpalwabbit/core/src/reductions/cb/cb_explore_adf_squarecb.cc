@@ -5,8 +5,6 @@
 #include "vw/core/reductions/cb/cb_explore_adf_squarecb.h"
 
 #include "vw/config/options.h"
-#include "vw/core/action_score.h"
-#include "vw/core/cb.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
@@ -37,44 +35,10 @@ with the VW learner as the base algorithm.
 
 using namespace VW::LEARNER;
 
-namespace
+namespace VW
 {
-class cb_explore_adf_squarecb
+namespace reductions
 {
-public:
-  cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
-      float max_cb_cost, VW::version_struct model_file_version, float epsilon);
-  ~cb_explore_adf_squarecb() = default;
-
-  // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(multi_learner& base, VW::multi_ex& examples);
-  void learn(multi_learner& base, VW::multi_ex& examples);
-  void save_load(VW::io_buf& io, bool read, bool text);
-
-private:
-  size_t _counter;
-  float _gamma_scale;     // Scale factor for SquareCB reediness parameter $\gamma$.
-  float _gamma_exponent;  // Exponent on $t$ for SquareCB reediness parameter $\gamma$.
-
-  // Parameters and data structures for RegCB action set computation
-  bool _elim;
-  float _c0;
-  float _min_cb_cost;
-  float _max_cb_cost;
-  float _epsilon;
-
-  std::vector<float> _min_costs;
-  std::vector<float> _max_costs;
-
-  VW::version_struct _model_file_version;
-
-  // for backing up cb example data when computing sensitivities
-  std::vector<VW::action_scores> _ex_as;
-  std::vector<std::vector<VW::cb_class>> _ex_costs;
-  void get_cost_ranges(float delta, multi_learner& base, VW::multi_ex& examples, bool min_only);
-  float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
-};
-
 cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0,
     float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version, float epsilon)
     : _counter(0)
@@ -186,6 +150,8 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, 
 
 void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& examples)
 {
+  const float gamma = get_gamma();
+
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
   VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
@@ -297,7 +263,14 @@ void cb_explore_adf_squarecb::save_load(VW::io_buf& io, bool read, bool text)
         io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
   }
 }
-}  // namespace
+
+float cb_explore_adf_squarecb::get_gamma()
+{
+  // The actual parameter $\gamma$ used in the SquareCB.
+  return _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
+}
+}  // namespace reductions
+}  // namespace VW
 
 VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::setup_base_i& stack_builder)
 {
