@@ -43,7 +43,7 @@ class cb_explore_adf_squarecb
 {
 public:
   cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
-      float max_cb_cost, VW::version_struct model_file_version, float epsilon);
+      float max_cb_cost, VW::version_struct model_file_version, float epsilon, bool store_gamma_in_reduction_features);
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -68,6 +68,8 @@ private:
 
   VW::version_struct _model_file_version;
 
+  bool _store_gamma_in_reduction_features;
+
   // for backing up cb example data when computing sensitivities
   std::vector<VW::action_scores> _ex_as;
   std::vector<std::vector<VW::cb_class>> _ex_costs;
@@ -76,7 +78,8 @@ private:
 };
 
 cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0,
-    float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version, float epsilon)
+    float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version, float epsilon,
+    bool store_gamma_in_reduction_features)
     : _counter(0)
     , _gamma_scale(gamma_scale)
     , _gamma_exponent(gamma_exponent)
@@ -86,6 +89,7 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_
     , _max_cb_cost(max_cb_cost)
     , _epsilon(epsilon)
     , _model_file_version(model_file_version)
+    , _store_gamma_in_reduction_features(store_gamma_in_reduction_features)
 {
 }
 
@@ -193,6 +197,12 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& example
 
   // The actual parameter $\gamma$ used in the SquareCB.
   const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
+  if (_store_gamma_in_reduction_features)
+  {
+    auto& red_features =
+        examples[0]->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+    red_features.squarecb_gamma = gamma;
+  }
 
   // RegCB action set parameters
   const float max_range = _max_cb_cost - _min_cb_cost;
@@ -374,6 +384,9 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
+  bool store_gamma_in_reduction_features = false;
+  if (options.was_supplied("large_action_space")) { store_gamma_in_reduction_features = true; }
+
   // Set explore_type
   size_t problem_multiplier = 1;
 
@@ -384,7 +397,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_squarecb_setup(VW::set
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), gamma_scale, gamma_exponent, elim,
-      c0, min_cb_cost, max_cb_cost, all.model_file_ver, epsilon);
+      c0, min_cb_cost, max_cb_cost, all.model_file_ver, epsilon, store_gamma_in_reduction_features);
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_squarecb_setup))
                 .set_input_label_type(VW::label_type_t::CB)
