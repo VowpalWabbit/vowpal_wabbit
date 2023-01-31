@@ -848,8 +848,9 @@ base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(
     void (*predict_fn)(char&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
     label_type_t in_label_type)
 {
+  // For the no data reduction, allocate a placeholder char as its data to avoid nullptr issues
   return make_base_learner<char, ExampleT>(
-      std::unique_ptr<char>(nullptr), learn_fn, predict_fn, name, out_pred_type, in_label_type);
+      VW::make_unique<char>(0), learn_fn, predict_fn, name, out_pred_type, in_label_type);
 }
 
 }  // namespace LEARNER
