@@ -5704,24 +5704,24 @@
   {
     "id": 441,
     "desc": "Spin off automl model to lower bitsize to cb_explore with bag",
-    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -f models/aml_spin_off_bag.m -b 18 --predict_only_model --automl 2 --bag 4",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small_2.txt --noconstant -f models/aml_spin_off_bag.m -b 18 --predict_only_model --automl 2 --bag 4",
     "diff_files": {
       "stderr": "train-sets/ref/spin_off_aml_save_bag.stderr"
     },
     "input_files": [
-      "train-sets/automl_spin_off_small.txt"
+      "train-sets/automl_spin_off_small_2.txt"
     ]
   },
   {
     "id": 442,
     "desc": "Load spun off automl model and output invert hash with bag",
-    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -i models/aml_spin_off_bag.m -b 17 --predict_only_model --invert_hash aml_spinoff_bag.inv",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small_2.txt --noconstant -i models/aml_spin_off_bag.m -b 17 --predict_only_model --invert_hash aml_spinoff_bag.inv",
     "diff_files": {
       "stderr": "train-sets/ref/spin_off_aml_load_bag.stderr",
       "aml_spinoff_bag.inv": "pred-sets/ref/aml_spinoff_bag.inv"
     },
     "input_files": [
-      "train-sets/automl_spin_off_small.txt",
+      "train-sets/automl_spin_off_small_2.txt",
       "models/aml_spin_off_bag.m"
     ],
     "depends_on": [
