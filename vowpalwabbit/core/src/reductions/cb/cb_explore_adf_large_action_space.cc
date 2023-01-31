@@ -199,8 +199,9 @@ template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::learn(
     VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
+  VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
+  auto restore_guard = VW::scope_exit([&preds, &examples] { examples[0]->pred.a_s = std::move(preds); });
   base.learn(examples);
-  if (base.learn_returns_prediction) { update_example_prediction(examples); }
 }
 
 void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B, uint64_t d, uint64_t seed)
@@ -303,7 +304,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_params_per_weight(problem_multiplier)
                 .set_persist_metrics(persist_metrics<T, S>)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_learn_returns_prediction(false)
                 .build();
   return VW::LEARNER::make_base(*l);
 }

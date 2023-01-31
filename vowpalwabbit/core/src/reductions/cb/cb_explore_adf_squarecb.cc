@@ -190,11 +190,6 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, multi_learner& base, 
 
 void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& examples)
 {
-  multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
-
-  VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
-  uint32_t num_actions = static_cast<uint32_t>(preds.size());
-
   // The actual parameter $\gamma$ used in the SquareCB.
   const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
   if (_store_gamma_in_reduction_features)
@@ -203,6 +198,11 @@ void cb_explore_adf_squarecb::predict(multi_learner& base, VW::multi_ex& example
         examples[0]->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
     red_features.squarecb_gamma = gamma;
   }
+
+  multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+
+  VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
+  uint32_t num_actions = static_cast<uint32_t>(preds.size());
 
   // RegCB action set parameters
   const float max_range = _max_cb_cost - _min_cb_cost;
