@@ -35,7 +35,8 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, uint64_t min_champ_examples,
     float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq)
-    : _min_scope(min_scope)
+    : _model_count(model_count)
+    , _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
     , _weights(weights)
@@ -158,7 +159,7 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind)
   {
-    VW::reductions::multi_model::clear_offset(_weights, _weight_indices[ind], _wpp);
+    VW::reductions::multi_model::clear_innermost_offset(_weights, _weight_indices[ind], _wpp, _model_count);
   }
 }
 
