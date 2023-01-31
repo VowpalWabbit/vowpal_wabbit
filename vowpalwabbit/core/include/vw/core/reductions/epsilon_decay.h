@@ -40,6 +40,7 @@ public:
 
   std::vector<std::vector<VW::estimators::confidence_sequence_robust>> conf_seq_estimators;
   std::vector<uint64_t> _weight_indices;
+  uint64_t _model_count;
   uint64_t _min_scope;
   double _epsilon_decay_significance_level;  // Confidence interval
   double _epsilon_decay_estimator_decay;     // Count decay time constant

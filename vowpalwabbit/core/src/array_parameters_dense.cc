@@ -45,30 +45,6 @@ void VW::dense_parameters::set_zero(size_t offset)
   }
 }
 
-void VW::dense_parameters::move_offsets(const size_t from, const size_t to, const size_t params_per_problem, bool swap)
-{
-  assert(from < params_per_problem);
-  assert(to < params_per_problem);
-
-  auto iterator_from = begin() + from;
-  auto iterator_to = begin() + to;
-
-  for (; iterator_from < end(); iterator_from += params_per_problem, iterator_to += params_per_problem)
-  {
-    assert((iterator_to.index_without_stride() & (params_per_problem - 1)) == to);
-    assert((iterator_from.index_without_stride() & (params_per_problem - 1)) == from);
-
-    for (size_t stride_offset = 0; stride_offset < stride(); stride_offset++)
-    {
-      if (*iterator_to[stride_offset] != *iterator_from[stride_offset])
-      {
-        if (swap) { std::swap(*iterator_to[stride_offset], *iterator_from[stride_offset]); }
-        else { *iterator_to[stride_offset] = *iterator_from[stride_offset]; }
-      }
-    }
-  }
-}
-
 #ifndef _WIN32
 #  ifndef DISABLE_SHARED_WEIGHTS
 void VW::dense_parameters::share(size_t length)
