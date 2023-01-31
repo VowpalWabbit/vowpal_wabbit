@@ -61,7 +61,7 @@ private:
 class baseline_challenger_data
 {
 public:
-  VW::estimators::ChiSquared baseline;
+  VW::estimators::chi_squared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;
 
