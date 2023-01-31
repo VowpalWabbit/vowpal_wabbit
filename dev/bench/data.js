@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1675194474171,
+  "lastUpdate": 1675195838095,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -94428,6 +94428,150 @@ window.BENCHMARK_DATA = {
             "value": 60.5086739493244,
             "unit": "ns/iter",
             "extra": "iterations: 69547674\ncpu: 60.50607386236855 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "griffinbassman@gmail.com",
+            "name": "Griffin Bassman",
+            "username": "bassmang"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2d6dc7df1f479176d1e99b659fab29e6ae012012",
+          "message": "refactor: [automl] add tol_x and opt_func flags (#4475)\n\n* refactor: [automl] add tol_x and opt_func flags\r\n\r\n* clang\r\n\r\n* rerun ci\r\n\r\n* rerun ci\r\n\r\n* rerun\r\n\r\n* rerun",
+          "timestamp": "2023-01-31T14:24:39-05:00",
+          "tree_id": "929a15c7c909d0c3540347e4417c3750ead26bb3",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/2d6dc7df1f479176d1e99b659fab29e6ae012012"
+        },
+        "date": 1675195825760,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 6375.483644925631,
+            "unit": "ns",
+            "range": "± 29.607783271239597"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 9810.839608999398,
+            "unit": "ns",
+            "range": "± 20.238815662919002"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 816.6773796081543,
+            "unit": "ns",
+            "range": "± 2.1580543024180487"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 656.8156923566546,
+            "unit": "ns",
+            "range": "± 1.9091352566001212"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 919783.5807291666,
+            "unit": "ns",
+            "range": "± 3116.6452149871307"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 575768.3333333334,
+            "unit": "ns",
+            "range": "± 3062.1078216673186"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 588532.1223958334,
+            "unit": "ns",
+            "range": "± 1899.5573813456933"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 922111.03515625,
+            "unit": "ns",
+            "range": "± 2118.8871678725045"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 582152.0963541666,
+            "unit": "ns",
+            "range": "± 2463.499514190825"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 3484818.6067708335,
+            "unit": "ns",
+            "range": "± 10253.371471882363"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 1089028.90625,
+            "unit": "ns",
+            "range": "± 2351.1608821407103"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 952822.9361979166,
+            "unit": "ns",
+            "range": "± 6796.397719777012"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 2732283.7439903845,
+            "unit": "ns",
+            "range": "± 6979.80695415354"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 958357.08984375,
+            "unit": "ns",
+            "range": "± 2492.256593353763"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 3356.762204851423,
+            "unit": "ns",
+            "range": "± 10.798061012255399"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 11472.779410226005,
+            "unit": "ns",
+            "range": "± 21.094249640873365"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 109317.49093191964,
+            "unit": "ns",
+            "range": "± 225.01502317302877"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 18762.829182942707,
+            "unit": "ns",
+            "range": "± 49.107469429647665"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 4252360.208333333,
+            "unit": "ns",
+            "range": "± 10979.892778775564"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 239438.32682291666,
+            "unit": "ns",
+            "range": "± 763.3682947586611"
           }
         ]
       }
