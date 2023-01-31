@@ -45,7 +45,6 @@ void predict_automl(automl<CMType>& data, multi_learner& base, VW::multi_ex& ec)
       });
 
   for (VW::example* ex : ec) { apply_config(ex, &data.cm->estimators[data.cm->current_champ].first.live_interactions); }
-
   base.predict(ec, data.cm->current_champ);
 }
 
@@ -89,7 +88,8 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
   std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
 
   // Adjust champ weights to new single-model space
-  VW::reductions::multi_model::adjust_weights_single_model(data.cm->weights, 0, data.cm->wpp);
+  VW::reductions::multi_model::reduce_innermost_model_weights(
+      data.cm->weights, 0, data.cm->wpp, data.cm->max_live_configs);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
@@ -99,7 +99,7 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
     }
   }
 
-  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data.cm->wpp));
+  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data.cm->max_live_configs));
   options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
 
   std::vector<std::string> interactions_opt;

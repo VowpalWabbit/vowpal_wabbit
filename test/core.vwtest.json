@@ -5503,7 +5503,7 @@
   {
     "id": 427,
     "desc": "Generate similar model to spun off automl using standard cb_explore_adf",
-    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/cb_spin_off.m -b 17 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
     "diff_files": {
       "stderr": "train-sets/ref/cb_similar_aml_spinoff_save.stderr"
     },
@@ -5514,14 +5514,14 @@
   {
     "id": 428,
     "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff",
-    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/aml_spin_off_cb.m -b 17 --invert_hash aml_spinoff_cb.inv --predict_only_model",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/cb_spin_off.m -b 17 --invert_hash aml_spinoff_cb.inv --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/spin_off_aml_load.stderr",
       "aml_spinoff_cb.inv": "pred-sets/ref/aml_spinoff.inv"
     },
     "input_files": [
       "train-sets/automl_spin_off.txt",
-      "models/aml_spin_off_cb.m"
+      "models/cb_spin_off.m"
     ],
     "depends_on": [
       427
@@ -5530,10 +5530,10 @@
   {
     "id": 429,
     "desc": "Check that binary model files are identical between standard cb_explore_adf and automl spinoff",
-    "bash_command": "diff models/aml_spin_off.m models/aml_spin_off_cb.m",
+    "bash_command": "diff models/aml_spin_off.m models/cb_spin_off.m",
     "input_files": [
       "models/aml_spin_off.m",
-      "models/aml_spin_off_cb.m"
+      "models/cb_spin_off.m"
     ],
     "depends_on": [
       425, 427
@@ -5699,6 +5699,72 @@
       "../utl/active_interactor.py",
       "train-sets/0001_active.dat",
       "train-sets/0001_active_input.dat"
+    ]
+  },
+  {
+    "id": 441,
+    "desc": "Spin off automl model to lower bitsize to cb_explore with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -f models/aml_spin_off_bag.m -b 18 --predict_only_model --automl 2 --bag 4",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_save_bag.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt"
+    ]
+  },
+  {
+    "id": 442,
+    "desc": "Load spun off automl model and output invert hash with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -i models/aml_spin_off_bag.m -b 17 --predict_only_model --invert_hash aml_spinoff_bag.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load_bag.stderr",
+      "aml_spinoff_bag.inv": "pred-sets/ref/aml_spinoff_bag.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt",
+      "models/aml_spin_off_bag.m"
+    ],
+    "depends_on": [
+      441
+    ]
+  },
+  {
+    "id": 443,
+    "desc": "Generate similar model to spun off automl using standard cb_explore_adf with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -f models/cb_spin_off_bag.m -b 17 --bag 4 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_aml_spinoff_save_bag.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt"
+    ]
+  },
+  {
+    "id": 444,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -i models/cb_spin_off_bag.m -b 17 --predict_only_model --invert_hash aml_spinoff_bag_cb.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load_bag.stderr",
+      "aml_spinoff_bag_cb.inv": "pred-sets/ref/aml_spinoff_bag.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt",
+      "models/cb_spin_off_bag.m"
+    ],
+    "depends_on": [
+      443
+    ]
+  },
+  {
+    "id": 445,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and automl spinoff with bag",
+    "bash_command": "diff models/aml_spin_off_bag.m models/cb_spin_off_bag.m",
+    "input_files": [
+      "models/aml_spin_off_bag.m",
+      "models/cb_spin_off_bag.m"
+    ],
+    "depends_on": [
+      441, 443
     ]
   }
 ]
