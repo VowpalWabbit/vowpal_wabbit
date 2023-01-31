@@ -1,7 +1,7 @@
 creating features for following interactions: AA AB AC AD AE AF BB BC BD BE BF CC CD CE CF DD DE DF EE EF FF
 final_regressor = models/cb_spin_off_bag.m
 using no cache
-Reading datafile = train-sets/automl_spin_off_small.txt
+Reading datafile = train-sets/automl_spin_off_small_2.txt
 num sources = 1
 Num weight bits = 17
 learning rate = 0.5
@@ -15,10 +15,12 @@ average  since         example        example        current        current  cur
 loss     last          counter         weight          label        predict features
 -0.33333 -0.33333            1            1.0         0:-1:1         0:0.33     8436
 -0.29166 -0.25000            2            2.0         1:-1:1          0:0.5    18319
+-0.43750 -0.58333            4            4.0         0:-1:1         1:0.58     8436
+-0.68750 -0.93750            8            8.0         1:-1:1            1:1    18319
 
 finished run
-number of examples = 2
-weighted example sum = 2.000000
+number of examples = 10
+weighted example sum = 10.000000
 weighted label sum = 0.000000
-average loss = -0.291667
-total feature number = 26755
+average loss = -0.750000
+total feature number = 143658
