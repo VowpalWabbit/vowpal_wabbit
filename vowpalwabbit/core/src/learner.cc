@@ -32,13 +32,13 @@ namespace LEARNER
 void learn_ex(example& ec, VW::workspace& all)
 {
   all.learn(ec);
-  require_singleline(all.l.get())->finish_example(all, ec);
+  require_singleline(all.l)->finish_example(all, ec);
 }
 
 void learn_multi_ex(multi_ex& ec_seq, VW::workspace& all)
 {
   all.learn(ec_seq);
-  require_multiline(all.l.get())->finish_example(all, ec_seq);
+  require_multiline(all.l)->finish_example(all, ec_seq);
 }
 
 void end_pass(example& ec, VW::workspace& all)

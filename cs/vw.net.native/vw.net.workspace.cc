@@ -269,11 +269,11 @@ API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context*
 {
   try
   {
-    require_singleline(workspace->vw->l.get())->predict(*ex);
+    require_singleline(workspace->vw->l)->predict(*ex);
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    require_singleline(workspace->vw->l.get())->finish_example(*workspace->vw, *ex);
+    require_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
 
     return VW::experimental::error_code::success;
   }
@@ -289,7 +289,7 @@ API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* w
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    require_singleline(workspace->vw->l.get())->finish_example(*workspace->vw, *ex);
+    require_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
 
     return VW::experimental::error_code::success;
   }
@@ -301,11 +301,11 @@ API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_con
 {
   try
   {
-    require_multiline(workspace->vw->l.get())->predict(*ex_coll);
+    require_multiline(workspace->vw->l)->predict(*ex_coll);
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    require_multiline(workspace->vw->l.get())->finish_example(*workspace->vw, *ex_coll);
+    require_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
 
     return VW::experimental::error_code::success;
   }
@@ -321,7 +321,7 @@ API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_conte
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    require_multiline(workspace->vw->l.get())->finish_example(*workspace->vw, *ex_coll);
+    require_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
 
     return VW::experimental::error_code::success;
   }

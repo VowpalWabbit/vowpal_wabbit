@@ -84,14 +84,14 @@ void workspace::learn(example& ec)
 {
   if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
-  if (ec.test_only || !training) { VW::LEARNER::require_singleline(l.get())->predict(ec); }
+  if (ec.test_only || !training) { VW::LEARNER::require_singleline(l)->predict(ec); }
   else
   {
-    if (l->learn_returns_prediction) { VW::LEARNER::require_singleline(l.get())->learn(ec); }
+    if (l->learn_returns_prediction) { VW::LEARNER::require_singleline(l)->learn(ec); }
     else
     {
-      VW::LEARNER::require_singleline(l.get())->predict(ec);
-      VW::LEARNER::require_singleline(l.get())->learn(ec);
+      VW::LEARNER::require_singleline(l)->predict(ec);
+      VW::LEARNER::require_singleline(l)->learn(ec);
     }
   }
 }
@@ -100,14 +100,14 @@ void workspace::learn(multi_ex& ec)
 {
   if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
-  if (!training) { VW::LEARNER::require_multiline(l.get())->predict(ec); }
+  if (!training) { VW::LEARNER::require_multiline(l)->predict(ec); }
   else
   {
-    if (l->learn_returns_prediction) { VW::LEARNER::require_multiline(l.get())->learn(ec); }
+    if (l->learn_returns_prediction) { VW::LEARNER::require_multiline(l)->learn(ec); }
     else
     {
-      VW::LEARNER::require_multiline(l.get())->predict(ec);
-      VW::LEARNER::require_multiline(l.get())->learn(ec);
+      VW::LEARNER::require_multiline(l)->predict(ec);
+      VW::LEARNER::require_multiline(l)->learn(ec);
     }
   }
 }
@@ -119,7 +119,7 @@ void workspace::predict(example& ec)
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   ec.test_only = true;
-  VW::LEARNER::require_singleline(l.get())->predict(ec);
+  VW::LEARNER::require_singleline(l)->predict(ec);
 }
 
 void workspace::predict(multi_ex& ec)
@@ -130,21 +130,21 @@ void workspace::predict(multi_ex& ec)
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   for (auto& ex : ec) { ex->test_only = true; }
 
-  VW::LEARNER::require_multiline(l.get())->predict(ec);
+  VW::LEARNER::require_multiline(l)->predict(ec);
 }
 
 void workspace::finish_example(example& ec)
 {
   if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
 
-  VW::LEARNER::require_singleline(l.get())->finish_example(*this, ec);
+  VW::LEARNER::require_singleline(l)->finish_example(*this, ec);
 }
 
 void workspace::finish_example(multi_ex& ec)
 {
   if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
 
-  VW::LEARNER::require_multiline(l.get())->finish_example(*this, ec);
+  VW::LEARNER::require_multiline(l)->finish_example(*this, ec);
 }
 
 template <typename WeightsT>
