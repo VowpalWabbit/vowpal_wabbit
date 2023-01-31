@@ -374,7 +374,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
                .help("Treat rewards as cost (do not negate sign)")
                .experimental())
       .add(make_option("tol_x", tol_x)
-               .default_value(1e-6)
+               .default_value(1e-6f)
                .keep()
                .help("Tolerance for estimation optimization")
                .experimental())

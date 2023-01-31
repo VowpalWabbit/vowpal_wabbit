@@ -64,7 +64,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
     priority_func calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
-    config_type conf_type, std::string trace_prefix, bool reward_as_cost)
+    config_type conf_type, std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -76,6 +76,8 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , _config_oracle(config_oracle_impl(
           default_lease, std::move(calc_priority), interaction_type, oracle_type, rand_state, conf_type))
     , reward_as_cost(reward_as_cost)
+    , tol_x(tol_x)
+    , is_brentq(is_brentq)
 {
   if (trace_prefix != "")
   {
@@ -84,12 +86,13 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     inputlabel_log_file = VW::make_unique<std::ofstream>(trace_prefix + "input_examples.csv");
     *inputlabel_log_file << "example_count, logged_action, logged_probability, weight, reward" << std::endl;
   }
-  insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
+  insert_starting_configuration(estimators, _config_oracle, automl_significance_level, tol_x, is_brentq);
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_starting_configuration(
-    estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level)
+    estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level,
+    const double tol_x, bool is_brentq)
 {
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() == 0);
@@ -100,7 +103,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_star
   assert(config_oracle.configs.size() >= 1);
 
   config_oracle.configs[0].state = VW::reductions::automl::config_state::New;
-  estimators.emplace_back(std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
+  estimators.emplace_back(std::make_pair(
+      aml_estimator<estimator_impl>(tol_x, is_brentq, sig_level), estimator_impl(tol_x, is_brentq, sig_level)));
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -176,7 +180,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       assert(live_slot < max_live_configs);
       // fetch config from the queue, and apply it current live slot
       apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
-          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, priority_challengers);
+          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, tol_x, is_brentq,
+          priority_challengers);
       if (champ_log_file)
       {
         *champ_log_file << "APPLY_CONFIG," << total_learn_count << "," << live_slot << ","
@@ -199,12 +204,14 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_config_at_slot(
     estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs, const uint64_t live_slot,
-    const uint64_t config_index, const double sig_level, const uint64_t priority_challengers)
+    const uint64_t config_index, const double sig_level, const double tol_x, bool is_brentq,
+    const uint64_t priority_challengers)
 {
   // Allocate new estimator if we haven't reached maximum yet
   if (estimators.size() <= live_slot)
   {
-    estimators.emplace_back(std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
+    estimators.emplace_back(std::make_pair(
+        aml_estimator<estimator_impl>(tol_x, is_brentq, sig_level), estimator_impl(tol_x, is_brentq, sig_level)));
     if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
   }
   assert(estimators.size() > live_slot);
