@@ -5766,5 +5766,29 @@
     "depends_on": [
       441, 443
     ]
+  },
+  {
+    "id": 446,
+    "desc": "large action spaces with cb_explore_adf epsilon greedy",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --extra_metrics metrics_las_e.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_egreedy.stderr",
+      "metrics_las_e.json": "test-sets/ref/metrics_las_e.json"
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
+  },
+  {
+    "id": 447,
+    "desc": "large action spaces with cb_explore_adf squarecb",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --squarecb --noconstant --large_action_space --extra_metrics metrics_las_sqcb.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_sqcb.stderr",
+      "metrics_las_sqcb.json": "test-sets/ref/metrics_las_sqcb.json"
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
   }
 ]
