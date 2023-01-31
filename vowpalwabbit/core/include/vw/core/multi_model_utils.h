@@ -14,7 +14,8 @@ namespace reductions
 namespace multi_model
 {
 // ***** NOTE: overall_ppw_size must be of form 2^n *****
-inline void clear_innermost_offset(dense_parameters& weights, const size_t offset, const size_t overall_ppw_size, const size_t innermost_ppw_size)
+inline void clear_innermost_offset(
+    dense_parameters& weights, const size_t offset, const size_t overall_ppw_size, const size_t innermost_ppw_size)
 {
   VW::weight* weights_arr = weights.first();
   const size_t overall_without_innermost_ppw_size = overall_ppw_size / innermost_ppw_size;
@@ -34,8 +35,8 @@ inline void clear_innermost_offset(dense_parameters& weights, const size_t offse
 }
 
 // ***** NOTE: overall_ppw_size must be of form 2^n *****
-inline void move_innermost_offsets(dense_parameters& weights, const size_t from, const size_t to, const size_t overall_ppw_size,
-    const size_t innermost_ppw_size, bool swap = false)
+inline void move_innermost_offsets(dense_parameters& weights, const size_t from, const size_t to,
+    const size_t overall_ppw_size, const size_t innermost_ppw_size, bool swap = false)
 {
   VW::weight* weights_arr = weights.first();
   const size_t overall_without_innermost_ppw_size = overall_ppw_size / innermost_ppw_size;
@@ -48,7 +49,8 @@ inline void move_innermost_offsets(dense_parameters& weights, const size_t from,
     {
       for (size_t stride_offset = 0; stride_offset < weights.stride(); stride_offset++)
       {
-        size_t outer_index = iterator_move.index() + outer_offset * innermost_ppw_size * weights.stride() + stride_offset;
+        size_t outer_index =
+            iterator_move.index() + outer_offset * innermost_ppw_size * weights.stride() + stride_offset;
         if (weights_arr[outer_index + to * weights.stride()] != weights_arr[outer_index + from * weights.stride()])
         {
           if (swap)
