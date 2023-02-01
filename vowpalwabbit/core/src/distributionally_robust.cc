@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/distributionally_robust.h"
+#include "vw/core/estimators/distributionally_robust.h"
 
 #include "vw/core/model_utils.h"
 #include "vw/core/vw_math.h"
@@ -15,18 +15,18 @@ namespace VW
 {
 namespace estimators
 {
-double ChiSquared::chisq_onedof_isf(double alpha)
+double chi_squared::chisq_onedof_isf(double alpha)
 {
   // the following is a polynomial approximation to the
   // inverse survival function for chi-squared distribution with 1 dof
   // using log and exp as basis functions
   // "constants" below found with the following Mathematica code
   //
-  // data = Table[{ alpha, InverseCDF[ChiSquareDistribution[1], 1 - alpha] }, { alpha, 0.001, 0.999, 0.0005 }]
+  // data = Table[{ alpha, InverseCDF[chi_squaredistribution[1], 1 - alpha] }, { alpha, 0.001, 0.999, 0.0005 }]
   // lm = LinearModelFit[data, { Log[alpha], Log[alpha]^2, Log[alpha]^3, Log[alpha]^4 , Log[alpha]^5, Log[alpha]^6,
   // Log[alpha]^7, Log[alpha]^8, Exp[alpha], Exp[alpha]^2, Exp[alpha]^3, Exp[alpha]^4, Exp[alpha]^5, Exp[alpha]^6,
   // Exp[alpha]^7, Exp[alpha]^8}, alpha] ListPlot[lm["FitResiduals"]] lm["BestFitParameters"]
-  // Show[Plot[InverseCDF[ChiSquareDistribution[1], 1 - alpha], { alpha, 0 , 1}],  Plot[lm[alpha], { alpha, 0, 1 }],
+  // Show[Plot[InverseCDF[chi_squaredistribution[1], 1 - alpha], { alpha, 0 , 1}],  Plot[lm[alpha], { alpha, 0, 1 }],
   // Frame->True]
 
   constexpr double constants[] = {-1.73754, -1.40684, 0.0758363, 0.00726577, 0.000468688, 0.0000214395, 1.0643e-6,
@@ -57,7 +57,7 @@ static bool isclose(double x, double y, double atol = 1e-8)
   return std::abs(x - y) <= (atol + rtol * std::abs(y));
 }
 
-ChiSquared::ChiSquared(double alpha, double tau, double wmin, double wmax, double rmin, double _rmax)
+chi_squared::chi_squared(double alpha, double tau, double wmin, double wmax, double rmin, double _rmax)
     : _alpha(alpha)
     , _tau(tau)
     , _wmin(wmin)
@@ -75,7 +75,7 @@ ChiSquared::ChiSquared(double alpha, double tau, double wmin, double wmax, doubl
 {
 }
 
-bool ChiSquared::is_valid() const
+bool chi_squared::is_valid() const
 {
   if (_alpha > 1 || _alpha <= 0) { return false; }
   if (_tau > 1 || _tau <= 0) { return false; }
@@ -85,7 +85,7 @@ bool ChiSquared::is_valid() const
   return true;
 }
 
-ChiSquared& ChiSquared::update(double w, double r)
+chi_squared& chi_squared::update(double w, double r)
 {
   if (w >= 0)
   {
@@ -108,14 +108,14 @@ ChiSquared& ChiSquared::update(double w, double r)
   return *this;
 }
 
-double ChiSquared::qlb(double w, double r, double sign)
+double chi_squared::qlb(double w, double r, double sign)
 {
   if (_duals_stale) { recompute_duals(); }
 
   return _duals.second.qfunc(w, r, sign);
 }
 
-void ChiSquared::reset(double alpha, double tau)
+void chi_squared::reset(double alpha, double tau)
 {
   _alpha = alpha;
   _tau = tau;
@@ -135,13 +135,13 @@ void ChiSquared::reset(double alpha, double tau)
   _duals.second.reset();
 }
 
-double ChiSquared::lower_bound_and_update()
+double chi_squared::lower_bound_and_update()
 {
   if (_duals_stale) { recompute_duals(); }
   return _duals.first;
 }
 
-double ChiSquared::get_phi() const
+double chi_squared::get_phi() const
 {
   double uncwfake = _sumw < _n ? _wmax : _wmin;
   double uncgstar = 0.0;
@@ -159,7 +159,7 @@ double ChiSquared::get_phi() const
   return (-uncgstar - _delta) / (2 * (_n + 1));
 }
 
-VW::details::ScoredDual ChiSquared::cressieread_duals(double r, double sign, double phi) const
+VW::details::ScoredDual chi_squared::cressieread_duals(double r, double sign, double phi) const
 {
   if (_n <= 0) { return std::make_pair(r, VW::details::Duals(true, 0, 0, 0, 0)); }
 
@@ -244,17 +244,17 @@ VW::details::ScoredDual ChiSquared::cressieread_duals(double r, double sign, dou
   }
 }
 
-double ChiSquared::cressieread_bound(double r, double sign, double phi) const
+double chi_squared::cressieread_bound(double r, double sign, double phi) const
 {
   VW::details::ScoredDual sd = cressieread_duals(r, sign, phi);
   return VW::math::clamp(sign * sd.first, _rmin, _rmax);
 }
 
-double ChiSquared::cressieread_lower_bound() const { return cressieread_bound(_rmin, 1, get_phi()); }
+double chi_squared::cressieread_lower_bound() const { return cressieread_bound(_rmin, 1, get_phi()); }
 
-double ChiSquared::cressieread_upper_bound() const { return cressieread_bound(_rmax, -1, get_phi()); }
+double chi_squared::cressieread_upper_bound() const { return cressieread_bound(_rmax, -1, get_phi()); }
 
-VW::details::ScoredDual ChiSquared::recompute_duals()
+VW::details::ScoredDual chi_squared::recompute_duals()
 {
   double r = _rmin;
   double sign = 1;
@@ -288,7 +288,7 @@ size_t write_model_field(io_buf& io, const VW::details::Duals& _duals, const std
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::estimators::ChiSquared& chisq)
+size_t read_model_field(io_buf& io, VW::estimators::chi_squared& chisq)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, chisq._alpha);
@@ -310,7 +310,7 @@ size_t read_model_field(io_buf& io, VW::estimators::ChiSquared& chisq)
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::estimators::ChiSquared& chisq, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::estimators::chi_squared& chisq, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, chisq._alpha, upstream_name + "_alpha", text);

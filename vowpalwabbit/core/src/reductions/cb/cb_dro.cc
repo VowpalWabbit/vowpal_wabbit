@@ -2,7 +2,7 @@
 
 #include "vw/config/options.h"
 #include "vw/core/cb.h"
-#include "vw/core/distributionally_robust.h"
+#include "vw/core/estimators/distributionally_robust.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
@@ -89,7 +89,7 @@ public:
   }
 
 private:
-  VW::estimators::ChiSquared _chisq;
+  VW::estimators::chi_squared _chisq;
   std::vector<float> _save_weight;
 };
 template <bool is_learn, bool is_explore>

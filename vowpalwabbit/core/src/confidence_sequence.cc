@@ -7,7 +7,7 @@
 #  define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
 #endif
 
-#include "vw/core/confidence_sequence.h"
+#include "vw/core/estimators/confidence_sequence.h"
 
 #include "vw/core/metric_sink.h"
 #include "vw/core/model_utils.h"
