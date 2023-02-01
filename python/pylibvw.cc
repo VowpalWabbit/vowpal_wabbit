@@ -624,10 +624,8 @@ void ex_push_feature(example_ptr ec, unsigned char ns, feature_index fid, float 
 }
 
 // List[Union[Tuple[Union[str,int], float], str,int]]
-void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
+void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns_first_letter, uint64_t ns_hash, py::list& a)
 {  // warning: assumes namespace exists!
-  char ns_str[2] = {(char)ns, 0};
-  uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
   for (ssize_t i = 0; i < len(a); i++)
   {
@@ -678,7 +676,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       }
       if (got)
       {
-        ec->feature_space[ns].push_back(f.x, f.weight_index);
+        ec->feature_space[ns_first_letter].push_back(f.x, f.weight_index);
         count++;
       }
     }
@@ -688,11 +686,9 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
 }
 
 // Dict[Union[str,int],Union[int,float]]
-void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject* o)
+void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns_first_letter, uint64_t ns_hash, PyObject* o)
 {
   // warning: assumes namespace exists!
-  char ns_str[2] = {(char)ns, 0};
-  uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
   const char* key_chars;
 
@@ -729,7 +725,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
       continue;
     }
 
-    ec->feature_space[ns].push_back(feat_value, feat_index);
+    ec->feature_space[ns_first_letter].push_back(feat_value, feat_index);
     count++;
   }
 
@@ -759,15 +755,20 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, PyObject* o)
   {
     py::extract<std::string> ns_e(ns_raw);
     if (ns_e().length() < 1) continue;
-    unsigned char ns = ns_e()[0];
 
-    ex_ensure_namespace_exists(ec, ns);
+    std::string ns_full = ns_e();
 
-    if (PyDict_Check(feats)) { ex_push_feature_dict(ec, vw, ns, feats); }
+    unsigned char ns_first_letter = ns_full[0];
+
+    uint64_t ns_hash = VW::hash_space(*vw, ns_full);
+
+    ex_ensure_namespace_exists(ec, ns_first_letter);
+
+    if (PyDict_Check(feats)) { ex_push_feature_dict(ec, vw, ns_first_letter, ns_hash, feats); }
     else
     {
       py::list list = py::extract<py::list>(feats);
-      ex_push_feature_list(ec, vw, ns, list);
+      ex_push_feature_list(ec, vw, ns_first_letter, ns_hash, list);
     }
   }
 }

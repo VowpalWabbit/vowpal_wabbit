@@ -1722,7 +1722,7 @@ class Example(pylibvw.example):
             return feature
         if isinstance(feature, str):
             if ns_hash is None:
-                ns_hash = self.vw.hash_space(self.get_ns(ns).ns)
+                ns_hash = self.vw.hash_space(ns)
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
 

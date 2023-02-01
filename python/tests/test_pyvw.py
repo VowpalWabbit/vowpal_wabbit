@@ -539,15 +539,18 @@ def test_example_features():
 
 def test_example_features_dict():
     vw = Workspace(quiet=True)
-    ex = vw.example(
-        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1.5}}
-    )
+    ex = vw.example({"a": {"two": 1, "features": 1.0}, "namespace": {"more": 1, "feature": 1, 5: 1.5}})
     fs = list(ex.iter_features())
+    fs_keys = [f[0] for f in fs]
+
+    expected = [53373, 165129, 24716, 242309, 5]
+
+    assert set(fs_keys) == set(expected)
 
     assert (ex.get_feature_id("a", "two"), 1) in fs
     assert (ex.get_feature_id("a", "features"), 1) in fs
-    assert (ex.get_feature_id("b", "more"), 1) in fs
-    assert (ex.get_feature_id("b", "features"), 1) in fs
+    assert (ex.get_feature_id("namespace", "more"), 1) in fs
+    assert (ex.get_feature_id("namespace", "feature"), 1) in fs
     assert (5, 1.5) in fs
 
 
