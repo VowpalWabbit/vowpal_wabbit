@@ -385,7 +385,6 @@ def run_command_line_test(
     valgrind=False,
     timeout=100,
 ) -> TestOutcome:
-
     if test.skip:
         completed_tests.report_completion(test.id, False)
         return TestOutcome(test.id, Result.SKIPPED, {}, skip_reason=test.skip_reason)
