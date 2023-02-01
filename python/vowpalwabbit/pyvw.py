@@ -1931,7 +1931,6 @@ class Example(pylibvw.example):
         Tuple[int, List[int]],
         None,
     ]:
-
         """Get prediction object from this example.
 
         Args:
