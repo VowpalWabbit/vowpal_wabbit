@@ -39,7 +39,8 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, uint64_t min_champ_examples,
-    float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq, bool predict_only_model)
+    float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq,
+    bool predict_only_model)
     : _model_count(model_count)
     , _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
