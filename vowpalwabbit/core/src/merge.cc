@@ -16,6 +16,7 @@
 #include "vw/core/vw_math.h"
 #include "vw/io/io_adapter.h"
 
+#include <algorithm>
 #include <limits>
 
 namespace
@@ -228,6 +229,9 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
     dest_workspace->sd->weighted_unlabeled_examples += delta->sd->weighted_unlabeled_examples;
     dest_workspace->sd->example_number += delta->sd->example_number;
     dest_workspace->sd->total_features += delta->sd->total_features;
+    dest_workspace->sd->t += delta->sd->t;
+    dest_workspace->sd->max_label = std::max(dest_workspace->sd->max_label, delta->sd->max_label);
+    dest_workspace->sd->min_label = std::min(dest_workspace->sd->min_label, delta->sd->min_label);
   }
 
   return VW::model_delta(std::move(dest_workspace));
@@ -305,6 +309,9 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
   output_sd.weighted_unlabeled_examples = base.sd->weighted_unlabeled_examples + delta->sd->weighted_unlabeled_examples;
   output_sd.example_number = base.sd->example_number + delta->sd->example_number;
   output_sd.total_features = base.sd->total_features + delta->sd->total_features;
+  output_sd.t = base.sd->t + delta->sd->t;
+  output_sd.max_label = std::max(base.sd->max_label, delta->sd->max_label);
+  output_sd.min_label = std::min(base.sd->min_label, delta->sd->min_label);
 
   return destination_workspace;
 }
@@ -351,6 +358,9 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
   output_sd.weighted_unlabeled_examples = ws1.sd->weighted_unlabeled_examples - ws2.sd->weighted_unlabeled_examples;
   output_sd.example_number = ws1.sd->example_number - ws2.sd->example_number;
   output_sd.total_features = ws1.sd->total_features - ws2.sd->total_features;
+  output_sd.t = ws1.sd->t - ws2.sd->t;
+  output_sd.max_label = std::max(ws1.sd->max_label, ws2.sd->max_label);
+  output_sd.min_label = std::min(ws1.sd->min_label, ws2.sd->min_label);
 
   return VW::model_delta(std::move(destination_workspace));
 }
