@@ -1,5 +1,6 @@
 import vowpalwabbit
 
+
 # Named specifically as the delimiter used is specific for the number of actions
 # used in this test case.
 def count_weights_from_readable_model_file_for_equiv_test(file_name):

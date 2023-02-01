@@ -318,7 +318,6 @@ class HyperOptimizer(object):
         return logger
 
     def get_hyperparam_string(self, **kwargs):
-
         # print 'KWARGS: ', kwargs
         flags = [key for key in kwargs if key.startswith("-")]
         for flag in flags:
