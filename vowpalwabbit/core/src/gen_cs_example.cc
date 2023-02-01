@@ -10,12 +10,7 @@
 
 #include <cfloat>
 
-namespace GEN_CS
-{
-using namespace VW::LEARNER;
-using namespace CB_ALGS;
-
-float safe_probability(float prob, VW::io::logger& logger)
+float VW::details::safe_probability(float prob, VW::io::logger& logger)
 {
   if (prob <= 0.)
   {
@@ -28,12 +23,13 @@ float safe_probability(float prob, VW::io::logger& logger)
 }
 
 // Multiline version
-void gen_cs_example_ips(const VW::multi_ex& examples, VW::cs_label& cs_labels, VW::io::logger& logger, float clip_p)
+void VW::details::gen_cs_example_ips(
+    const VW::multi_ex& examples, VW::cs_label& cs_labels, VW::io::logger& logger, float clip_p)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    const CB::label& ld = examples[i]->l.cb;
+    const VW::cb_label& ld = examples[i]->l.cb;
 
     VW::cs_class wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX)
@@ -45,12 +41,12 @@ void gen_cs_example_ips(const VW::multi_ex& examples, VW::cs_label& cs_labels, V
 }
 
 // Multiline version
-void gen_cs_example_dm(const VW::multi_ex& examples, VW::cs_label& cs_labels)
+void VW::details::gen_cs_example_dm(const VW::multi_ex& examples, VW::cs_label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
   {
-    const CB::label& ld = examples[i]->l.cb;
+    const VW::cb_label& ld = examples[i]->l.cb;
 
     VW::cs_class wc = {0., i, 0., 0.};
     if (ld.costs.size() == 1 && ld.costs[0].cost != FLT_MAX) { wc.x = ld.costs[0].cost; }
@@ -59,7 +55,7 @@ void gen_cs_example_dm(const VW::multi_ex& examples, VW::cs_label& cs_labels)
 }
 
 // Multiline version
-void gen_cs_test_example(const VW::multi_ex& examples, VW::cs_label& cs_labels)
+void VW::details::gen_cs_test_example(const VW::multi_ex& examples, VW::cs_label& cs_labels)
 {
   cs_labels.costs.clear();
   for (uint32_t i = 0; i < examples.size(); i++)
@@ -70,7 +66,8 @@ void gen_cs_test_example(const VW::multi_ex& examples, VW::cs_label& cs_labels)
 }
 
 // single line version
-void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, VW::cs_label& cs_ld, VW::io::logger& logger, float clip_p)
+void VW::details::gen_cs_example_ips(
+    cb_to_cs& c, const VW::cb_label& ld, VW::cs_label& cs_ld, VW::io::logger& logger, float clip_p)
 {
   // this implements the inverse propensity score method, where cost are importance weighted by the probability of the
   // chosen action generate cost-sensitive example
@@ -124,7 +121,7 @@ void gen_cs_example_ips(cb_to_cs& c, const CB::label& ld, VW::cs_label& cs_ld, V
   }
 }
 
-void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels)
+void VW::details::gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels)
 {
   c.action_sum += ec_seq.size();
   c.event_sum++;
@@ -133,7 +130,7 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_
   cs_labels.costs.clear();
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
-    CB::label& ld = ec_seq[i]->l.cb;
+    VW::cb_label& ld = ec_seq[i]->l.cb;
 
     VW::cs_class wc = {0, 0, 0, 0};
 
@@ -148,8 +145,8 @@ void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_
   }
 }
 
-void gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset, const VW::action_scores& action_vals,
-    VW::cs_label& cs_labels)
+void VW::details::gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset,
+    const VW::action_scores& action_vals, VW::cs_label& cs_labels)
 {
   cs_labels.costs.clear();
   for (const auto& action_val : action_vals)
@@ -169,7 +166,7 @@ void gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float sign_offset,
   }
 }
 
-void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, VW::cs_label& cs_labels,
+void VW::details::cs_prep_labels(VW::multi_ex& examples, std::vector<VW::cb_label>& cb_labels, VW::cs_label& cs_labels,
     std::vector<VW::cs_label>& prepped_cs_labels, uint64_t offset)
 {
   cb_labels.clear();
@@ -185,5 +182,3 @@ void cs_prep_labels(VW::multi_ex& examples, std::vector<CB::label>& cb_labels, V
     ec->ft_offset = offset;
   }
 }
-
-}  // namespace GEN_CS

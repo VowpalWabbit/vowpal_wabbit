@@ -18,9 +18,9 @@
 #include <cfloat>
 #include <cmath>
 
-//#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
-// TODO: This file makes extensive use of #ifdef DEBUG for printing
-//       leave this alone for now
+// #define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
+//  TODO: This file makes extensive use of #ifdef DEBUG for printing
+//        leave this alone for now
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -138,7 +138,7 @@ inline size_t depthsbits_sizeof(const stagewise_poly& poly) { return (2 * poly.a
 
 void depthsbits_create(stagewise_poly& poly)
 {
-  poly.depthsbits = calloc_or_throw<uint8_t>(2 * poly.all->length());
+  poly.depthsbits = VW::details::calloc_or_throw<uint8_t>(2 * poly.all->length());
   for (uint64_t i = 0; i < poly.all->length() * 2; i += 2)
   {
     poly.depthsbits[i] = DEFAULT_DEPTH;
@@ -253,7 +253,7 @@ void sort_data_ensure_sz(stagewise_poly& poly, size_t len)
     std::cout << ", new size " << poly.sd_len << std::endl;
 #endif              // DEBUG
     free(poly.sd);  // okay for null.
-    poly.sd = calloc_or_throw<sort_data>(poly.sd_len);
+    poly.sd = VW::details::calloc_or_throw<sort_data>(poly.sd_len);
   }
   assert(len <= poly.sd_len);
 }
@@ -469,7 +469,7 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
 #ifdef DEBUG
       poly.max_depth = (poly.max_depth > poly.cur_depth) ? poly.max_depth : poly.cur_depth;
 #endif  // DEBUG
-      GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*(poly.all), *(poly.original_ec), poly);
+      VW::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*(poly.all), *(poly.original_ec), poly);
       --poly.cur_depth;
       poly.synth_rec_f = parent_f;
     }
@@ -490,7 +490,7 @@ void synthetic_create(stagewise_poly& poly, VW::example& ec, bool training)
    * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
    * Problem with this is if there is a collision with the root...
    */
-  GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
+  VW::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
 
   if (training)
@@ -629,11 +629,11 @@ void save_load(stagewise_poly& poly, VW::io_buf& model_file, bool read, bool tex
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.
-  //#ifdef DEBUG
+  // #ifdef DEBUG
   //      std::cout << "Sanity check after save_load... " << flush;
   //      sanity_check_state(poly);
   //      std::cout << "done" << std::endl;
-  //#endif //DEBUG
+  // #endif //DEBUG
 }
 }  // namespace
 
@@ -682,6 +682,8 @@ base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_build
       VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()), learn,
           predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
           .set_input_label_type(VW::label_type_t::SIMPLE)
+          .set_output_label_type(VW::label_type_t::SIMPLE)
+          .set_input_prediction_type(VW::prediction_type_t::SCALAR)
           .set_output_prediction_type(VW::prediction_type_t::SCALAR)
           .set_save_load(save_load)
           .set_output_example_prediction(VW::details::output_example_prediction_simple_label<stagewise_poly>)

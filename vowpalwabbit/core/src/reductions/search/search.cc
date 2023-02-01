@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/search/search.h"
 
+#include "vw/common/random.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/crossplat_compat.h"
@@ -12,11 +13,9 @@
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/active.h"
 #include "vw/core/reductions/csoaa.h"
-#include "vw/core/reductions/gd.h"  // for GD::foreach_feature
+#include "vw/core/reductions/gd.h"  // for VW::foreach_feature
 #include "vw/core/reductions/search/search_dep_parser.h"
 #include "vw/core/reductions/search/search_entityrelationtask.h"
 #include "vw/core/reductions/search/search_graph.h"
@@ -169,7 +168,7 @@ private:
     size_t operator()(const byte_array& key) const
     {
       size_t sz = *key.get();
-      return VW::uniform_hash(key.get(), sz, SEARCH_HASH_SEED);
+      return VW::uniform_hash(reinterpret_cast<const char*>(key.get()), sz, static_cast<uint32_t>(SEARCH_HASH_SEED));
     }
   };
 
@@ -333,7 +332,7 @@ void clear_memo_foreach_action(search_private& priv)
 
 search::search()
 {
-  priv = &calloc_or_throw<search_private>();
+  priv = &VW::details::calloc_or_throw<search_private>();
   new (priv) search_private();
 }
 
@@ -504,12 +503,13 @@ std::string number_to_natural(size_t big)
   return ss.str();
 }
 
-void print_update(search_private& priv)
+void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const search& data,
+    const VW::multi_ex& /* ec_seq */, VW::io::logger& /* unused */)
 {
   // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
-  VW::workspace& all = *priv.all;
+  auto& priv = *data.priv;
   if (!priv.printed_output_header && !all.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
@@ -650,7 +650,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
       else  // this is actually a neighbor
       {
         VW::example& other = *ec_seq[n + offset];
-        GD::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
+        VW::foreach_feature<search_private, add_new_feature>(priv.all, other.feature_space[ns], priv, me.ft_offset);
       }
     }
 
@@ -818,7 +818,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
       // add the quadratic features
       if (n < priv.acset.max_quad_ngram_length)
       {
-        GD::foreach_feature<search_private, uint64_t, add_new_feature>(*priv.all, ec, priv);
+        VW::foreach_feature<search_private, uint64_t, add_new_feature>(*priv.all, ec, priv);
       }
     }
   }
@@ -909,7 +909,7 @@ inline void cs_cost_push_back(bool is_cb, VW::polylabel& ld, uint32_t index, flo
 {
   if (is_cb)
   {
-    CB::cb_class cost{value, index, 0.};
+    VW::cb_class cost{value, index, 0.};
     ld.cb.costs.push_back(cost);
   }
   else
@@ -1967,11 +1967,11 @@ void hoopla_permute(size_t* B, size_t* end)
   size_t N = end - B;  // NOLINT
   std::sort(B, end, cmp_size_t);
   // make some temporary space
-  size_t* A = calloc_or_throw<size_t>((N + 1) * 2);  // NOLINT
-  A[N] = B[0];                                       // arbitrarily choose the maximum in the middle
-  A[N + 1] = B[N - 1];                               // so the maximum goes next to it
-  size_t lo = N, hi = N + 1;                         // which parts of A have we filled in? [lo,hi]
-  size_t i = 0, j = N - 1;                           // which parts of B have we already covered? [0,i] and [j,N-1]
+  size_t* A = VW::details::calloc_or_throw<size_t>((N + 1) * 2);  // NOLINT
+  A[N] = B[0];                                                    // arbitrarily choose the maximum in the middle
+  A[N + 1] = B[N - 1];                                            // so the maximum goes next to it
+  size_t lo = N, hi = N + 1;                                      // which parts of A have we filled in? [lo,hi]
+  size_t i = 0, j = N - 1;  // which parts of B have we already covered? [0,i] and [j,N-1]
   while (i + 1 < j)
   {
     // there are four options depending on where things get placed
@@ -2439,12 +2439,6 @@ void end_pass(search& sch)
   }
 }
 
-void finish_multiline_example(VW::workspace& all, search& sch, VW::multi_ex& ec_seq)
-{
-  print_update(*sch.priv);
-  VW::finish_example(all, ec_seq);
-}
-
 void end_examples(search& sch)
 {
   search_private& priv = *sch.priv;
@@ -2562,7 +2556,7 @@ std::vector<VW::cs_label> read_allowed_transitions(action A, const char* filenam
     THROW("error: could not read file " << filename << " (" << VW::io::strerror_to_string(errno)
                                         << "); assuming all transitions are valid");
 
-  bool* bg = calloc_or_throw<bool>((static_cast<size_t>(A + 1)) * (A + 1));
+  bool* bg = VW::details::calloc_or_throw<bool>((static_cast<size_t>(A + 1)) * (A + 1));
   int rd, from, to, count = 0;
   while ((rd = fscanf_s(f, "%d:%d", &from, &to)) > 0)
   {
@@ -3222,7 +3216,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;
-    CB::cb_label.default_label(priv.allowed_actions_cache);
+    VW::cb_label_parser_global.default_label(priv.allowed_actions_cache);
     priv.learn_losses.cb.costs.clear();
     priv.gte_label.cb.costs.clear();
   }
@@ -3380,7 +3374,7 @@ base_learner* VW::reductions::search_setup(VW::setup_base_i& stack_builder)
           stack_builder.get_setupfn_name(search_setup))
           .set_learn_returns_prediction(true)
           .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
-          .set_finish_example(finish_multiline_example)
+          .set_print_update(print_update_search)
           .set_end_examples(end_examples)
           .set_finish(search_finish)
           .set_end_pass(end_pass)

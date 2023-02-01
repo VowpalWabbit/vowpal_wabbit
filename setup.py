@@ -63,7 +63,6 @@ class BuildPyLibVWBindingsModule(_build_ext):
         _build_ext.run(self)
 
     def build_cmake(self, ext):
-
         # Make build directory
         distutils.dir_util.mkpath(self.build_temp)
 

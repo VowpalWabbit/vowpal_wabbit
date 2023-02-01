@@ -12,6 +12,7 @@
 #include "vw/core/scope_exit.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/test_common/test_common.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -53,7 +54,7 @@ void ft_cnt(eval_gen_data& dat, const float fx, const uint64_t)
 // eval_count_of_generated_ft() it just calls generate_interactions() with small
 // function which counts generated features and sums their squared values. We
 // use it to validate the more fast (?) analytic solution
-template <INTERACTIONS::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
+template <VW::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
 void eval_count_of_generated_ft_naive(
     VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
@@ -63,7 +64,7 @@ void eval_count_of_generated_ft_naive(
   new_features_cnt = 0;
   new_features_value = 0.;
 
-  auto interactions = INTERACTIONS::compile_interactions<generate_func, leave_duplicate_interactions>(
+  auto interactions = VW::details::compile_interactions<generate_func, leave_duplicate_interactions>(
       all.interactions, std::set<VW::namespace_index>(ec.indices.begin(), ec.indices.end()));
 
   VW::v_array<float> results;
@@ -71,11 +72,11 @@ void eval_count_of_generated_ft_naive(
   eval_gen_data dat(new_features_cnt, new_features_value);
   size_t ignored = 0;
   ec.interactions = &interactions;
-  INTERACTIONS::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
+  VW::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
   ec.interactions = &all.interactions;
 }
 
-template <INTERACTIONS::generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
+template <VW::generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
 void eval_count_of_generated_ft_naive(
     VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
@@ -93,7 +94,7 @@ void eval_count_of_generated_ft_naive(
     }
   }
 
-  auto interactions = INTERACTIONS::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
+  auto interactions = VW::details::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
       all.extent_interactions, seen_extents);
 
   VW::v_array<float> results;
@@ -101,7 +102,7 @@ void eval_count_of_generated_ft_naive(
   eval_gen_data dat(new_features_cnt, new_features_value);
   size_t ignored = 0;
   ec.extent_interactions = &interactions;
-  INTERACTIONS::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
+  VW::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
   ec.extent_interactions = &all.extent_interactions;
 }
 
@@ -109,83 +110,79 @@ inline void noop_func(float& /* unused_dat */, const float /* ft_weight */, cons
 
 TEST(Interactions, EvalCountOfGeneratedFtTest)
 {
-  auto& vw = *VW::initialize("--quiet -q :: --noconstant", nullptr, false, nullptr, nullptr);
-  auto* ex = VW::read_example(vw, "3 |f a b c |e x y z");
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "-q", "::", "--noconstant"));
+  auto* ex = VW::read_example(*vw, "3 |f a b c |e x y z");
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<VW::namespace_index>,
-      false>(vw, *ex, naive_features_count, naive_features_value);
+  eval_count_of_generated_ft_naive<VW::details::generate_namespace_combinations_with_repetition<VW::namespace_index>,
+      false>(*vw, *ex, naive_features_count, naive_features_value);
 
   auto interactions =
-      INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
-          vw.interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+      VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
+          vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
   ex->interactions = &interactions;
-  ex->extent_interactions = &vw.extent_interactions;
-  float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
-      vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
-  ex->interactions = &vw.interactions;
+  ex->extent_interactions = &vw->extent_interactions;
+  float fast_features_value = VW::eval_sum_ft_squared_of_generated_ft(
+      vw->permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
+  ex->interactions = &vw->interactions;
 
   EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 
   // Prediction will count the interacted features, so we can compare that too.
-  vw.predict(*ex);
+  vw->predict(*ex);
   EXPECT_EQ(naive_features_count, ex->num_features_from_interactions);
-  VW::finish_example(vw, *ex);
-  VW::finish(vw);
+  VW::finish_example(*vw, *ex);
 }
 
 TEST(Interactions, EvalCountOfGeneratedFtExtentsCombinationsTest)
 {
-  auto& vw = *VW::initialize("--quiet --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant",
-      nullptr, false, nullptr, nullptr);
-  auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
+  auto vw = VW::initialize(vwtest::make_args(
+      "--quiet", "--experimental_full_name_interactions", "fff|eee|gg", "ggg|gg", "gg|gg|ggg", "--noconstant"));
+  auto* ex = VW::read_example(*vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<VW::extent_term>,
-      false>(vw, *ex, naive_features_count, naive_features_value);
+  eval_count_of_generated_ft_naive<VW::details::generate_namespace_combinations_with_repetition<VW::extent_term>,
+      false>(*vw, *ex, naive_features_count, naive_features_value);
 
-  float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
-      vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
-  ex->interactions = &vw.interactions;
+  float fast_features_value = VW::eval_sum_ft_squared_of_generated_ft(
+      vw->permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
+  ex->interactions = &vw->interactions;
 
   EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 
   // Prediction will count the interacted features, so we can compare that too.
-  vw.predict(*ex);
+  vw->predict(*ex);
   EXPECT_EQ(naive_features_count, ex->num_features_from_interactions);
-  VW::finish_example(vw, *ex);
-  VW::finish(vw);
+  VW::finish_example(*vw, *ex);
 }
 
 TEST(Interactions, EvalCountOfGeneratedFtExtentsPermutationsTest)
 {
-  auto& vw = *VW::initialize(
-      "--quiet -permutations --experimental_full_name_interactions fff|eee|gg ggg|gg gg|gg|ggg --noconstant", nullptr,
-      false, nullptr, nullptr);
-  auto* ex = VW::read_example(vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "-permutations", "--experimental_full_name_interactions",
+      "fff|eee|gg", "ggg|gg", "gg|gg|ggg", "--noconstant"));
+  auto* ex = VW::read_example(*vw, "3 |fff a b c |eee x y z |ggg a b |gg c d");
 
   size_t naive_features_count;
   float naive_features_value;
-  eval_count_of_generated_ft_naive<INTERACTIONS::generate_namespace_combinations_with_repetition<VW::extent_term>,
-      false>(vw, *ex, naive_features_count, naive_features_value);
-  float fast_features_value = INTERACTIONS::eval_sum_ft_squared_of_generated_ft(
-      vw.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
+  eval_count_of_generated_ft_naive<VW::details::generate_namespace_combinations_with_repetition<VW::extent_term>,
+      false>(*vw, *ex, naive_features_count, naive_features_value);
+  float fast_features_value = VW::eval_sum_ft_squared_of_generated_ft(
+      vw->permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
 
   EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 
   // Prediction will count the interacted features, so we can compare that too.
-  vw.predict(*ex);
+  vw->predict(*ex);
   EXPECT_EQ(naive_features_count, ex->num_features_from_interactions);
-  VW::finish_example(vw, *ex);
-  VW::finish(vw);
+  VW::finish_example(*vw, *ex);
 }
 
 // TEST(InteractionsTests, InteractionGenericExpandWildcardOnly)
 // {
 //   std::set<VW::namespace_index> namespaces = {'a', 'b'};
-//   auto result = INTERACTIONS::generate_namespace_combinations_with_repetition(namespaces, 2);
+//   auto result = VW::details::generate_namespace_combinations_with_repetition(namespaces, 2);
 
 //   std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a'}, {'b', 'b'}};
 
@@ -197,7 +194,7 @@ TEST(Interactions, EvalCountOfGeneratedFtExtentsPermutationsTest)
 TEST(Interactions, InteractionGenericWithDuplicatesExpandWildcardOnly)
 {
   std::set<VW::namespace_index> namespaces = {'a', 'b'};
-  auto result = INTERACTIONS::generate_namespace_permutations_with_repetition(namespaces, 2);
+  auto result = VW::details::generate_namespace_permutations_with_repetition(namespaces, 2);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
 
@@ -212,7 +209,7 @@ TEST(Interactions, SortAndFilterInteractions)
 
   size_t removed_count = 0;
   size_t sorted_count = 0;
-  INTERACTIONS::sort_and_filter_duplicate_interactions(input, false, removed_count, sorted_count);
+  VW::details::sort_and_filter_duplicate_interactions(input, false, removed_count, sorted_count);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {{'b', 'a'}, {'a', 'a', 'b'}, {'a', 'a'}, {'b', 'b'}};
   EXPECT_THAT(input, ContainerEq(compare_set));
@@ -232,10 +229,10 @@ TEST(Interactions, CompileInteractionsQuadraticPermutationsAndCombinationsSame)
 
   // Permutations implies leave duplicate interactions (second template arg)
   auto result_perms =
-      INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
+      VW::details::compile_interactions<VW::details::generate_namespace_permutations_with_repetition, true>(
           interactions, indices);
   auto result_combs =
-      INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
+      VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
           interactions, indices);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'b', 'a'}, {'c', 'a'}, {'d', 'a'}};
@@ -252,9 +249,8 @@ TEST(Interactions, CompileInteractionsQuadraticCombinations)
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':'}};
 
-  auto result =
-      INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
-          interactions, indices);
+  auto result = VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
+      interactions, indices);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'},
       {'b', 'b'}, {'b', 'c'}, {'b', 'd'}, {'c', 'c'}, {'c', 'd'}, {'d', 'd'}};
@@ -269,7 +265,7 @@ TEST(Interactions, CompileInteractionsQuadraticPermutations)
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':'}};
 
-  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
+  auto result = VW::details::compile_interactions<VW::details::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {{'a', 'a'}, {'a', 'b'}, {'a', 'c'}, {'a', 'd'},
@@ -286,9 +282,8 @@ TEST(Interactions, CompileInteractionsCubicCombinations)
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':', ':'}};
 
-  auto result =
-      INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_combinations_with_repetition, false>(
-          interactions, indices);
+  auto result = VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
+      interactions, indices);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {
       {'a', 'a', 'a'},
@@ -323,7 +318,7 @@ TEST(Interactions, CompileInteractionsCubicPermutations)
   std::set<VW::namespace_index> indices = {'a', 'b', 'c', 'd'};
   std::vector<std::vector<VW::namespace_index>> interactions = {{':', ':', ':'}};
 
-  auto result = INTERACTIONS::compile_interactions<INTERACTIONS::generate_namespace_permutations_with_repetition, true>(
+  auto result = VW::details::compile_interactions<VW::details::generate_namespace_permutations_with_repetition, true>(
       interactions, indices);
 
   std::vector<std::vector<VW::namespace_index>> compare_set = {
@@ -348,7 +343,7 @@ TEST(Interactions, CompileInteractionsCubicPermutations)
 
 TEST(Interactions, ParseFullNameInteractionsTest)
 {
-  auto* vw = VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
 
   {
     auto a = VW::details::parse_full_name_interactions(*vw, "a|b");
@@ -376,19 +371,13 @@ TEST(Interactions, ParseFullNameInteractionsTest)
   EXPECT_THROW(VW::details::parse_full_name_interactions(*vw, "||||"), VW::vw_exception);
   EXPECT_THROW(VW::details::parse_full_name_interactions(*vw, "|a|||b"), VW::vw_exception);
   EXPECT_THROW(VW::details::parse_full_name_interactions(*vw, "abc|::"), VW::vw_exception);
-  VW::finish(*vw);
 }
 
 TEST(Interactions, ExtentVsCharInteractions)
 {
-  auto* vw_char_inter = VW::initialize("--quiet -q AB");
-  auto* vw_extent_inter = VW::initialize("--quiet --experimental_full_name_interactions group1|group2");
-  auto cleanup = VW::scope_exit(
-      [&]()
-      {
-        VW::finish(*vw_char_inter);
-        VW::finish(*vw_extent_inter);
-      });
+  auto vw_char_inter = VW::initialize(vwtest::make_args("--quiet", "-q", "AB"));
+  auto vw_extent_inter =
+      VW::initialize(vwtest::make_args("--quiet", "--experimental_full_name_interactions", "group1|group2"));
 
   auto parse_and_return_num_fts = [&](const char* char_inter_example,
                                       const char* extent_inter_example) -> std::pair<size_t, size_t>
@@ -420,23 +409,18 @@ TEST(Interactions, ExtentVsCharInteractions)
 
 TEST(Interactions, ExtentInteractionExpansionTest)
 {
-  auto* vw = VW::initialize("--quiet");
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
   auto* ex = VW::read_example(*vw,
       "|user_info a b c |user_geo a b c d |user_info a b |another a b c |extra a b |extra_filler a |extra a b "
       "|extra_filler a |extra a b");
-  auto cleanup = VW::scope_exit(
-      [&]()
-      {
-        VW::finish_example(*vw, *ex);
-        VW::finish(*vw);
-      });
+  auto cleanup = VW::scope_exit([&]() { VW::finish_example(*vw, *ex); });
 
   VW::details::generate_interactions_object_cache cache;
 
   {
     const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|user_info");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(
+    VW::details::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
@@ -450,7 +434,7 @@ TEST(Interactions, ExtentInteractionExpansionTest)
   {
     const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|user_info|user_info");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(
+    VW::details::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
@@ -464,7 +448,7 @@ TEST(Interactions, ExtentInteractionExpansionTest)
   {
     const auto extent_terms = VW::details::parse_full_name_interactions(*vw, "user_info|extra");
     size_t counter = 0;
-    INTERACTIONS::generate_generic_extent_combination_iterative(
+    VW::details::generate_generic_extent_combination_iterative(
         ex->feature_space, extent_terms,
         [&](const std::vector<VW::details::features_range_t>& combination)
         {
@@ -478,37 +462,30 @@ TEST(Interactions, ExtentInteractionExpansionTest)
 
 void do_interaction_feature_count_test(bool add_quadratic, bool add_cubic, bool combinations, bool no_constant)
 {
-  std::string char_cmd_line = "--quiet";
-  std::string extent_cmd_line = "--quiet";
+  std::vector<std::string> char_cmd_line{"--quiet"};
+  std::vector<std::string> extent_cmd_line{"--quiet"};
   if (add_quadratic)
   {
-    char_cmd_line += " -q :: ";
-    extent_cmd_line += " --experimental_full_name_interactions :|: ";
+    char_cmd_line.emplace_back("--quadratic=::");
+    extent_cmd_line.emplace_back("--experimental_full_name_interactions=:|:");
   }
   if (add_cubic)
   {
-    char_cmd_line += " --cubic ::: ";
-    extent_cmd_line += " --experimental_full_name_interactions :|:|: ";
+    char_cmd_line.emplace_back("--cubic=:::");
+    extent_cmd_line.emplace_back("--experimental_full_name_interactions=:|:|:");
   }
   if (!combinations)
   {
-    char_cmd_line += " --leave_duplicate_interactions ";
-    extent_cmd_line += " --leave_duplicate_interactions ";
+    char_cmd_line.emplace_back("--leave_duplicate_interactions");
+    extent_cmd_line.emplace_back("--leave_duplicate_interactions");
   }
   if (no_constant)
   {
-    char_cmd_line += " --noconstant";
-    extent_cmd_line += " --noconstant";
+    char_cmd_line.emplace_back("--noconstant");
+    extent_cmd_line.emplace_back("--noconstant");
   }
-  auto* vw_char_inter = VW::initialize(char_cmd_line);
-  auto* vw_extent_inter = VW::initialize(extent_cmd_line);
-  auto cleanup = VW::scope_exit(
-      [&]()
-      {
-        VW::finish(*vw_char_inter);
-        VW::finish(*vw_extent_inter);
-      });
-
+  auto vw_char_inter = VW::initialize(VW::make_unique<VW::config::options_cli>(char_cmd_line));
+  auto vw_extent_inter = VW::initialize(VW::make_unique<VW::config::options_cli>(extent_cmd_line));
   auto parse_and_return_num_fts = [&](const char* char_inter_example,
                                       const char* extent_inter_example) -> std::pair<size_t, size_t>
   {

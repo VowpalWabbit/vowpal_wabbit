@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/common/random_details.h"
 #include "vw/core/learner.h"
 #include "vw/core/metric_sink.h"
-#include "vw/core/rand48.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
 
@@ -45,7 +45,7 @@ int sample(int size, const float* probs, float s)
 TEST(BaselineCB, BaselinePerformsBadly)
 {
   using namespace test_helpers;
-  auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
       "--extra_metrics", "ut_metrics.json", "--random_seed", "5"));
   float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
   float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
@@ -53,7 +53,7 @@ TEST(BaselineCB, BaselinePerformsBadly)
   uint64_t state = 37;
   for (int i = 0; i < 50; ++i)
   {
-    float s = merand48(state);
+    float s = VW::details::merand48(state);
     VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p0, s), costs_p0, probs_p0);
@@ -80,8 +80,8 @@ TEST(BaselineCB, BaselinePerformsBadly)
 TEST(BaselineCB, BaselineTakesOverPolicy)
 {
   using namespace test_helpers;
-  auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--cb_c_tau",
-      "0.995", "--quiet", "--power_t", "0", "-l", "0.001", "--extra_metrics", "ut_metrics.json", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--cb_c_tau", "0.995",
+      "--quiet", "--power_t", "0", "-l", "0.001", "--extra_metrics", "ut_metrics.json", "--random_seed", "5"));
   float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
   float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
 
@@ -91,7 +91,7 @@ TEST(BaselineCB, BaselineTakesOverPolicy)
   uint64_t state = 37;
   for (int i = 0; i < 500; ++i)
   {
-    float s = merand48(state);
+    float s = VW::details::merand48(state);
     VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p0, s), costs_p0, probs_p0);
@@ -101,7 +101,7 @@ TEST(BaselineCB, BaselineTakesOverPolicy)
 
   for (int i = 0; i < 400; ++i)
   {
-    float s = merand48(state);
+    float s = VW::details::merand48(state);
     VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p1, s), costs_p1, probs_p1);
@@ -131,7 +131,7 @@ TEST(BaselineCB, BaselineTakesOverPolicy)
 VW::metric_sink run_simulation(int steps, int switch_step)
 {
   using namespace test_helpers;
-  auto vw = VW::initialize_experimental(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--baseline_challenger_cb", "--quiet",
       "--extra_metrics", "ut_metrics.json", "--random_seed", "5"));
   float costs_p0[] = {-0.1f, -0.3f, -0.3f, -1.0f};
   float probs_p0[] = {0.05f, 0.05f, 0.05f, 0.85f};
@@ -140,7 +140,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
 
   for (int i = 0; i < steps; ++i)
   {
-    float s = merand48(state);
+    float s = VW::details::merand48(state);
     VW::multi_ex ex;
 
     make_example(ex, *vw, sample(4, probs_p0, s), costs_p0, probs_p0);
@@ -149,8 +149,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
     if (i == switch_step)
     {
       VW::save_predictor(*vw, "model_file.vw");
-      vw = VW::initialize_experimental(
-          vwtest::make_args("--quiet", "--extra_metrics", "ut_metrics.json", "-i", "model_file.vw"));
+      vw = VW::initialize(vwtest::make_args("--quiet", "--extra_metrics", "ut_metrics.json", "-i", "model_file.vw"));
     }
   }
   auto metrics = vw->global_metrics.collect_metrics(vw->l);

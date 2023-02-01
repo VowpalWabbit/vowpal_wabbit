@@ -2,9 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/common/random.h"
+
 #include "vw/common/hash.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -12,10 +12,11 @@
 TEST(Rand, ReproduceMaxBoundaryIssue)
 {
   uint64_t seed = 58587211;
-  const uint64_t new_random_seed = VW::uniform_hash(&seed, sizeof(seed), seed);
+  const uint64_t new_random_seed =
+      VW::uniform_hash(reinterpret_cast<const char*>(&seed), sizeof(seed), static_cast<uint32_t>(seed));
   EXPECT_EQ(new_random_seed, 2244123448);
 
-  float random_draw = merand48_noadvance(new_random_seed);
+  float random_draw = VW::details::merand48_noadvance(new_random_seed);
   EXPECT_NEAR(random_draw, 0.99999f, 0.001f);
 
   const float range_max = 7190.0f;

@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/oaa.h"
 
+#include "vw/common/random.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
@@ -11,7 +12,6 @@
 #include "vw/core/multiclass.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -232,7 +232,7 @@ void predict(oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
       float sum_prob = 0;
       for (uint32_t i = 0; i < o.k; i++)
       {
-        ec.pred.scalars[i] = 1.f / (1.f + correctedExp(-o.pred[i].scalar));
+        ec.pred.scalars[i] = 1.f / (1.f + VW::details::correctedExp(-o.pred[i].scalar));
         sum_prob += ec.pred.scalars[i];
       }
       const float inv_sum_prob = 1.f / sum_prob;
@@ -348,7 +348,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
     THROW("There are " << all.sd->ldict->getK() << " named labels. Use that as the argument to oaa.")
 
   data->all = &all;
-  data->pred = calloc_or_throw<VW::polyprediction>(data->k);
+  data->pred = VW::details::calloc_or_throw<VW::polyprediction>(data->k);
   data->subsample_order = nullptr;
   data->subsample_id = 0;
   if (data->num_subsample > 0)
@@ -360,7 +360,7 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
     }
     else
     {
-      data->subsample_order = calloc_or_throw<uint32_t>(data->k);
+      data->subsample_order = VW::details::calloc_or_throw<uint32_t>(data->k);
       for (size_t i = 0; i < data->k; i++) { data->subsample_order[i] = static_cast<uint32_t>(i); }
       for (size_t i = 0; i < data->k; i++)
       {
@@ -457,6 +457,8 @@ VW::LEARNER::base_learner* VW::reductions::oaa_setup(VW::setup_base_i& stack_bui
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
                 .set_params_per_weight(k_value)
                 .set_input_label_type(VW::label_type_t::MULTICLASS)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(pred_type)
                 .set_update_stats(update_stats_func)
                 .set_output_example_prediction(output_example_prediction_func)

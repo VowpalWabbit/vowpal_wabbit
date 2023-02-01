@@ -1,4 +1,7 @@
 #include "../benchmarks_common.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/memory.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 
 #include <benchmark/benchmark.h>
@@ -7,9 +10,9 @@
 #include <iostream>
 #include <string>
 
-static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_line)
+static void benchmark_rcv1_dataset(benchmark::State& state, const std::string& command_line)
 {
-  auto vw = VW::initialize(command_line, nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(command_line)));
   std::vector<example*> examples;
   examples.push_back(VW::read_example(*vw,
       std::string(
@@ -5325,8 +5328,6 @@ static void benchmark_rcv1_dataset(benchmark::State& state, std::string command_
   }
 
   for (auto* example : examples) { vw->finish_example(*example); }
-
-  VW::finish(*vw);
 }
 
 BENCHMARK_CAPTURE(benchmark_rcv1_dataset, simple, "--quiet")->MinTime(15.0);

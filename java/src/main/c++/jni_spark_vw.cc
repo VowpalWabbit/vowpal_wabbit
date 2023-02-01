@@ -378,7 +378,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_finish(JNI
   try
   {
     VW::sync_stats(*all);
-    VW::finish(*all);
+    all->finish();
+    delete all;
   }
   catch (...)
   {
@@ -644,7 +645,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setMultiL
 
   try
   {
-    MULTILABEL::labels* ld = &ex->l.multilabels;
+    auto* ld = &ex->l.multilabels;
 
     CriticalArrayGuard classesGuard(env, classes);
     int* classes0 = (int*)classesGuard.data();
@@ -710,8 +711,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setContex
 
   try
   {
-    CB::label* ld = &ex->l.cb;
-    CB::cb_class f;
+    VW::cb_label* ld = &ex->l.cb;
+    VW::cb_class f;
 
     f.action = (uint32_t)action;
     f.cost = (float)cost;
@@ -732,8 +733,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setShared
   try
   {
     // https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/vowpalwabbit/parse_example_json.h#L437
-    CB::label* ld = &ex->l.cb;
-    CB::cb_class f;
+    VW::cb_label* ld = &ex->l.cb;
+    VW::cb_class f;
 
     f.partial_prediction = 0.;
     f.action = (uint32_t)VW::uniform_hash("shared", 6 /*length of string*/, 0);
@@ -889,16 +890,16 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
       const auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
       ostr << "simple " << ld->label << ":" << red_fts.weight << ":" << red_fts.initial;
     }
-    else if (!memcmp(&lp, &CB::cb_label, sizeof(lp)))
+    else if (!memcmp(&lp, &VW::cb_label_parser_global, sizeof(lp)))
     {
-      CB::label* ld = &ex->l.cb;
+      VW::cb_label* ld = &ex->l.cb;
       ostr << "CB " << ld->costs.size();
 
       if (ld->costs.size() > 0)
       {
         ostr << " ";
 
-        CB::cb_class& f = ld->costs[0];
+        VW::cb_class& f = ld->costs[0];
 
         // Ignore checking if f.action == VW::uniform_hash("shared")
         if (f.partial_prediction == 0 && f.cost == FLT_MAX && f.probability == -1.f)

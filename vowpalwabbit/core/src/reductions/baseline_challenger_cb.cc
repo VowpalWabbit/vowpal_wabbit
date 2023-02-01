@@ -7,7 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/action_score.h"
 #include "vw/core/debug_log.h"
-#include "vw/core/distributionally_robust.h"
+#include "vw/core/estimators/distributionally_robust.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
 #include "vw/core/model_utils.h"
@@ -61,7 +61,7 @@ private:
 class baseline_challenger_data
 {
 public:
-  VW::estimators::ChiSquared baseline;
+  VW::estimators::chi_squared baseline;
   discounted_expectation policy_expectation;
   float baseline_epsilon;
 
@@ -85,7 +85,7 @@ public:
       if (lbl_example != examples.end())
       {
         const auto labelled_action = static_cast<uint32_t>(std::distance(examples.begin(), lbl_example));
-        const CB::cb_class& logged = (*lbl_example)->l.cb.costs[0];
+        const VW::cb_class& logged = (*lbl_example)->l.cb.costs[0];
 
         double r = -logged.cost;
         double w = (labelled_action == chosen_action ? 1 : 0) / logged.probability;
@@ -215,8 +215,10 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
 
   auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_input_label_type(VW::label_type_t::CB)
+                .set_output_label_type(VW::label_type_t::CB)
                 .set_save_load(save_load)
                 .set_persist_metrics(persist_metrics)
                 .build();

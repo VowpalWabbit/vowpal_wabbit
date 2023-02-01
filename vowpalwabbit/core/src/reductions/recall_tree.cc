@@ -3,14 +3,13 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/recall_tree.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_math.h"
 
@@ -552,10 +551,14 @@ base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
   auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
       stack_builder.get_setupfn_name(recall_tree_setup))
                 .set_params_per_weight(ws)
-                .set_finish_example(VW::details::finish_multiclass_example<recall_tree&>)
+                .set_update_stats(VW::details::update_stats_multiclass_label<recall_tree>)
+                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<recall_tree>)
+                .set_print_update(VW::details::print_update_multiclass_label<recall_tree>)
                 .set_save_load(save_load_tree)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                 .set_input_label_type(VW::label_type_t::MULTICLASS)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
                 .build();
 
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;

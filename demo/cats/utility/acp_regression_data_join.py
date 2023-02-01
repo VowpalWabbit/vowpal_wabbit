@@ -4,11 +4,10 @@ import getopt
 
 class PredictDataJoiner_acp:
     def join(self, data_file_name, predict_file_name):
-
         data_file = open(data_file_name, "r")
         predict_file = open(predict_file_name, "r")
 
-        for (data_line, predict_line) in zip(data_file, predict_file):
+        for data_line, predict_line in zip(data_file, predict_file):
             data_line = self.strip_label(data_line)
             print("ca", predict_line.strip(), "|", data_line.strip())
 

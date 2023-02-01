@@ -7,7 +7,6 @@
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/learner_fwd.h"
 #include "vw/core/multi_ex.h"
-#include "vw/core/rand48.h"
 #include "vw/core/thread_pool.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
@@ -96,13 +95,11 @@ private:
 class shrink_factor_config
 {
 public:
-  const float _gamma_scale;
-  const float _gamma_exponent;
   const bool _apply_shrink_factor;
-  shrink_factor_config(float gamma_scale, float gamma_exponent, bool apply_shrink_factor);
+  shrink_factor_config(bool apply_shrink_factor);
 
   void calculate_shrink_factor(
-      size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors);
+      float gamma, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors);
 };
 
 class one_rank_spanner_state
@@ -136,7 +133,6 @@ class cb_explore_adf_large_action_space
 private:
   uint64_t _d;
   VW::workspace* _all;
-  size_t _counter;
   uint64_t _seed;
   implementation_type _impl_type;
   size_t _non_degenerate_singular_values;
@@ -154,14 +150,13 @@ public:
   Eigen::SparseMatrix<float> _A;
   Eigen::MatrixXf _V;
 
-  cb_explore_adf_large_action_space(uint64_t d, float gamma_scale, float gamma_exponent, float c,
-      bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
-      size_t block_size, bool use_explicit_simd, implementation_type impl_type);
+  cb_explore_adf_large_action_space(uint64_t d, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed,
+      size_t total_size, size_t thread_pool_size, size_t block_size, bool use_explicit_simd,
+      implementation_type impl_type);
 
   ~cb_explore_adf_large_action_space() = default;
 
   void save_load(io_buf& io, bool read, bool text);
-  // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
 
@@ -184,8 +179,6 @@ public:
   }
 
 private:
-  template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
 };
 

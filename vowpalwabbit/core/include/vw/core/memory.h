@@ -16,6 +16,21 @@
 #  include <unistd.h>
 #endif
 
+namespace VW
+{
+#if __cplusplus >= 201402L  // C++14 and beyond
+using std::make_unique;
+#else
+template <typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... params)
+{
+  static_assert(!std::is_array<T>::value, "arrays not supported");
+  return std::unique_ptr<T>(new T(std::forward<Args>(params)...));
+}
+#endif
+
+namespace details
+{
 template <class T>
 T* calloc_or_throw(size_t nmemb)
 {
@@ -37,20 +52,6 @@ T& calloc_or_throw()
 {
   return *calloc_or_throw<T>(1);
 }
-
-namespace VW
-{
-#if __cplusplus >= 201402L  // C++14 and beyond
-using std::make_unique;
-#else
-template <typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... params)
-{
-  static_assert(!std::is_array<T>::value, "arrays not supported");
-  return std::unique_ptr<T>(new T(std::forward<Args>(params)...));
-}
-#endif
-}  // namespace VW
 
 template <class T>
 T* calloc_mergable_or_throw(size_t nmemb)
@@ -99,3 +100,6 @@ T* calloc_mergable_or_throw(size_t nmemb)
   return calloc_or_throw<T>(nmemb);
 #endif
 }
+}  // namespace details
+
+}  // namespace VW

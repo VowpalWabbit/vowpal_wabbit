@@ -292,7 +292,7 @@ void generic_driver_onethread(VW::workspace& all)
     examples_queue.reset_examples(&examples);
     process_examples(examples_queue, handler);
   };
-  parse_dispatch(all, multi_ex_fptr);
+  VW::details::parse_dispatch(all, multi_ex_fptr);
   handler.process_remaining();
   all.l->end_examples();
 }
@@ -306,7 +306,7 @@ void generic_driver_onethread(VW::workspace& all)
 float VW::LEARNER::details::recur_sensitivity(void*, base_learner& base, example& ec) { return base.sensitivity(ec); }
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
-  if (label_type == VW::label_type_t::CB) { return CB::ec_is_example_header(ec); }
+  if (label_type == VW::label_type_t::CB) { return VW::ec_is_example_header_cb(ec); }
   else if (label_type == VW::label_type_t::CCB) { return reductions::ccb::ec_is_example_header(ec); }
   else if (label_type == VW::label_type_t::CS) { return VW::is_cs_example_header(ec); }
   return false;
@@ -315,22 +315,23 @@ bool ec_is_example_header(const example& ec, label_type_t label_type)
 }  // namespace LEARNER
 }  // namespace VW
 
-void VW::LEARNER::details::learner_build_diagnostic(VW::io::logger& logger, VW::string_view this_name,
-    VW::string_view base_name, prediction_type_t in_pred_type, prediction_type_t base_out_pred_type,
-    label_type_t out_label_type, label_type_t base_in_label_type, details::merge_fn merge_fn_ptr,
-    details::merge_with_all_fn merge_with_all_fn_ptr)
+void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name,
+    prediction_type_t in_pred_type, prediction_type_t base_out_pred_type, label_type_t out_label_type,
+    label_type_t base_in_label_type, details::merge_fn merge_fn_ptr, details::merge_with_all_fn merge_with_all_fn_ptr)
 {
   if (in_pred_type != base_out_pred_type)
   {
-    logger.err_warn(
-        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base "
-        "reduction: {}.",
+    const auto message = fmt::format(
+        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base reduction: {}.",
         to_string(in_pred_type), this_name, to_string(base_out_pred_type), base_name);
+    THROW(message);
   }
   if (out_label_type != base_in_label_type)
   {
-    logger.err_warn("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
-        to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
+    const auto message =
+        fmt::format("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
+            to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
+    THROW(message);
   }
 
   if (merge_fn_ptr != nullptr && merge_with_all_fn_ptr != nullptr)

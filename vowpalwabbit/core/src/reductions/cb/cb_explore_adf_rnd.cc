@@ -11,7 +11,6 @@
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
@@ -70,7 +69,7 @@ private:
   std::vector<float> _bonuses;
   std::vector<float> _initials;
 
-  CB::cb_class _save_class;
+  VW::cb_class _save_class;
 
   template <bool is_learn>
   void predict_or_learn_impl(multi_learner& base, VW::multi_ex& examples);
@@ -145,7 +144,7 @@ namespace
 class lazy_gaussian
 {
 public:
-  inline float operator[](uint64_t index) const { return merand48_boxmuller(index); }
+  inline float operator[](uint64_t index) const { return VW::details::merand48_boxmuller(index); }
 };
 
 inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)
@@ -161,7 +160,7 @@ float cb_explore_adf_rnd::get_initial_prediction(VW::example* ec)
   lazy_gaussian w;
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
-  GD::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, lazy_gaussian>(w, _all->ignore_some_linear,
+  VW::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, lazy_gaussian>(w, _all->ignore_some_linear,
       _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ec, dotwithnorm,
       _all->generate_interactions_object_cache_state);
 
@@ -249,9 +248,9 @@ void cb_explore_adf_rnd::predict_or_learn_impl(multi_learner& base, VW::multi_ex
   auto& preds = examples[0]->pred.a_s;
   float max_bonus = std::max(1e-3f, *std::max_element(_bonuses.begin(), _bonuses.end()));
   compute_ci(preds, max_bonus);
-  exploration::generate_softmax(
+  VW::explore::generate_softmax(
       -1.0f / max_bonus, begin_scores(preds), end_scores(preds), begin_scores(preds), end_scores(preds));
-  exploration::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
+  VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 }  // namespace
 
@@ -302,7 +301,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
   size_t problem_multiplier = 1 + numrnd;
 
   multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, alpha, invlambda, numrnd,
@@ -316,11 +315,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_rnd_setup(VW::setup_ba
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)
-                .set_print_example(explore_type::print_example)
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

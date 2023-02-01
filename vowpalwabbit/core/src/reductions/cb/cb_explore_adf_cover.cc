@@ -10,7 +10,6 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/parser.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/bs.h"
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
@@ -57,7 +56,7 @@ private:
   size_t _counter;
 
   VW::LEARNER::multi_learner* _cs_ldf_learner;
-  GEN_CS::cb_to_cs_adf gen_cs;
+  VW::details::cb_to_cs_adf gen_cs;
 
   VW::version_struct _model_file_version;
   VW::io::logger _logger;
@@ -67,7 +66,7 @@ private:
   VW::cs_label _cs_labels;
   VW::cs_label _cs_labels_2;
   std::vector<VW::cs_label> _prepped_cs_labels;
-  std::vector<CB::label> _cb_labels;
+  std::vector<VW::cb_label> _cb_labels;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
 };
@@ -94,7 +93,7 @@ template <bool is_learn>
 void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
-  gen_cs.known_cost = CB_ADF::get_observed_cost_or_default_cb_adf(examples);
+  gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
 
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
@@ -103,9 +102,9 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   {
     if (is_mtr)
     {  // use DR estimates for non-ERM policies in MTR
-      GEN_CS::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels);
+      VW::details::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels);
     }
-    else { GEN_CS::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger); }
+    else { VW::details::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger); }
 
     if (base.learn_returns_prediction)
     {
@@ -122,7 +121,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
   }
   else
   {
-    GEN_CS::gen_cs_example_ips(examples, _cs_labels, _logger);
+    VW::details::gen_cs_example_ips(examples, _cs_labels, _logger);
     VW::LEARNER::multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
   }
   VW::v_array<VW::action_score>& preds = examples[0]->pred.a_s;
@@ -168,13 +167,13 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
         _cs_labels_2.costs.push_back({pseudo_cost, j, 0., 0.});
       }
 
-      GEN_CS::cs_ldf_learn_or_predict<true>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2, _prepped_cs_labels,
-          true, examples[0]->ft_offset, i + 1);
+      VW::details::cs_ldf_learn_or_predict<true>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels_2,
+          _prepped_cs_labels, true, examples[0]->ft_offset, i + 1);
     }
     else
     {
-      GEN_CS::cs_ldf_learn_or_predict<false>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels, _prepped_cs_labels,
-          false, examples[0]->ft_offset, i + 1);
+      VW::details::cs_ldf_learn_or_predict<false>(*(_cs_ldf_learner), examples, _cb_labels, _cs_labels,
+          _prepped_cs_labels, false, examples[0]->ft_offset, i + 1);
     }
 
     for (uint32_t j = 0; j < num_actions; j++) { _scores[j] += preds[j].score; }
@@ -204,7 +203,7 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& bas
     }
   }
 
-  exploration::enforce_minimum_probability(
+  VW::explore::enforce_minimum_probability(
       min_prob * num_actions, !_nounif, begin_scores(_action_probs), end_scores(_action_probs));
 
   sort_action_probs(_action_probs, _scores);
@@ -309,7 +308,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
 
   VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = CB::cb_label;
+  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool epsilon_decay;
   if (options.was_supplied("epsilon"))
@@ -337,12 +336,11 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_learn_returns_prediction(true)
                 .set_params_per_weight(problem_multiplier)
-                .set_print_example(explore_type::print_example)
                 .set_output_example_prediction(explore_type::output_example_prediction)
                 .set_update_stats(explore_type::update_stats)
                 .set_print_update(explore_type::print_update)
                 .set_save_load(explore_type::save_load)
                 .set_persist_metrics(explore_type::persist_metrics)
-                .build(&all.logger);
+                .build();
   return make_base(*l);
 }

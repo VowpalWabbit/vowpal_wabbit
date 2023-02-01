@@ -4,10 +4,10 @@
 
 #include "vw/core/parse_regressor.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/io_buf.h"
-#include "vw/core/rand_state.h"
 
 #include <fstream>
 #include <iostream>
@@ -16,13 +16,13 @@
 #  include <unistd.h>
 #endif
 
+#include "vw/common/random.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/cli_options_serializer.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/global_data.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand48.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw_validate.h"
 #include "vw/core/vw_versions.h"
@@ -38,7 +38,10 @@
 #include <numeric>
 #include <utility>
 
-void initialize_weights_as_polar_normal(VW::weight* weights, uint64_t index) { weights[0] = merand48_boxmuller(index); }
+void initialize_weights_as_polar_normal(VW::weight* weights, uint64_t index)
+{
+  weights[0] = VW::details::merand48_boxmuller(index);
+}
 
 template <class T>
 double calculate_sd(VW::workspace& /* all */, T& weights)

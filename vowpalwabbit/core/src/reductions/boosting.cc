@@ -10,10 +10,10 @@
 
 #include "vw/core/reductions/boosting.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw_math.h"
@@ -137,7 +137,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
   {
     if (is_learn)
     {
-      float w = 1 / (1 + correctedExp(s));
+      float w = 1 / (1 + VW::details::correctedExp(s));
 
       ec.weight = u * w;
 
@@ -152,7 +152,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::single_learner& base, V
       final_prediction += ec.pred.scalar * o.alpha[i];
 
       // update alpha
-      o.alpha[i] += eta * z / (1 + correctedExp(s));
+      o.alpha[i] += eta * z / (1 + VW::details::correctedExp(s));
       if (o.alpha[i] > 2.) { o.alpha[i] = 2; }
       if (o.alpha[i] < -2.) { o.alpha[i] = -2; }
 
@@ -193,7 +193,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
   {
     if (is_learn)
     {
-      float w = 1 / (1 + correctedExp(s));
+      float w = 1 / (1 + VW::details::correctedExp(s));
 
       ec.weight = u * w;
 
@@ -215,7 +215,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::single_learner& base, V
       v_normalization += o.v[i];
 
       // update alpha
-      o.alpha[i] += eta * z / (1 + correctedExp(s));
+      o.alpha[i] += eta * z / (1 + VW::details::correctedExp(s));
       if (o.alpha[i] > 2.) { o.alpha[i] = 2; }
       if (o.alpha[i] < -2.) { o.alpha[i] = -2; }
 
@@ -423,8 +423,10 @@ VW::LEARNER::base_learner* VW::reductions::boosting_setup(VW::setup_base_i& stac
   auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
       pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
                 .set_params_per_weight(ws)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_input_label_type(VW::label_type_t::SIMPLE)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
                 .set_save_load(save_load_fn)
                 .set_output_example_prediction(VW::details::output_example_prediction_simple_label<boosting>)
                 .set_update_stats(VW::details::update_stats_simple_label<boosting>)

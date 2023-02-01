@@ -4,9 +4,11 @@
 
 #include "simulator.h"
 #include "vw/config/options.h"
+#include "vw/config/options_cli.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/constant.h"  // FNV_PRIME
 #include "vw/core/learner.h"
+#include "vw/core/memory.h"
 #include "vw/core/multi_model_utils.h"
 #include "vw/core/vw_math.h"
 
@@ -14,6 +16,7 @@
 
 #include <functional>
 #include <map>
+#include <string>
 
 using namespace VW::config;
 
@@ -94,7 +97,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   EXPECT_NEAR(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // all weights of offset 1 will be set to zero
-  VW::reductions::multi_model::clear_offset(weights, offset_to_clear, all.wpp);
+  VW::reductions::multi_model::clear_innermost_offset(weights, offset_to_clear, all.wpp, all.wpp);
 
   for (auto index : feature_indexes)
   {
@@ -111,7 +114,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   EXPECT_NEAR(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // copy from offset 2 to offset 1
-  weights.move_offsets(offset_to_clear + 1, offset_to_clear, all.wpp);
+  VW::reductions::multi_model::move_innermost_offsets(weights, offset_to_clear + 1, offset_to_clear, all.wpp, all.wpp);
 
   for (auto index : feature_indexes)
   {
@@ -160,10 +163,8 @@ TEST(AutomlWeights, OperationsWIterations)
   test_hooks.emplace(num_iterations, weights_offset_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
-      "--epsilon 0.2 "
-      "--random_seed 5 "
-      "--oracle_type rand --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--oracle_type", "rand", "--default_lease", "10"},
       test_hooks, num_iterations, seed);
 
   EXPECT_GT(ctr.back(), 0.4f);
@@ -206,10 +207,9 @@ TEST(AutomlWeights, NoopSamechampconfigWIterations)
   test_hooks.emplace(num_iterations, all_weights_equal_test);
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
-      "--epsilon 0.2 "
-      "--random_seed 5 "
-      "--oracle_type champdupe -b 8 --default_lease 10 --extra_metrics champdupe.json --verbose_metrics",
+      std::vector<std::string>{"--automl", "4", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--oracle_type", "champdupe", "-b", "8",
+          "--default_lease", "10", "--extra_metrics", "champdupe.json", "--verbose_metrics"},
       test_hooks, num_iterations, seed);
 
   EXPECT_GT(ctr.back(), 0.4f);
@@ -219,20 +219,25 @@ TEST(AutomlWeights, LearnOrderWIterations)
 {
   callback_map test_hooks;
 
-  std::string vw_arg =
-      "--automl 4 --priority_type favor_popular_namespaces --cb_explore_adf --quiet "
-      "--epsilon 0.2 "
-      "--random_seed 5 -b 18 "
-      "--oracle_type one_diff --default_lease 10 ";
+  std::vector<std::string> vw_arg{"--automl", "4", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+      "--quiet", "--epsilon", "0.2", "--random_seed", "5", "-b", "18", "--oracle_type", "one_diff", "--default_lease",
+      "10"};
   int seed = 10;
   size_t num_iterations = 2000;
 
-  auto* vw_increasing = VW::initialize(vw_arg + "--invert_hash learnorder1.vw");
-  auto* vw_decreasing = VW::initialize(vw_arg + "--invert_hash learnorder2.vw --debug_reversed_learn");
+  auto vw_arg1 = vw_arg;
+  vw_arg1.push_back("--invert_hash");
+  vw_arg1.push_back("learnorder1.vw");
+  auto vw_increasing = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg1));
+  auto vw_arg2 = vw_arg;
+  vw_arg2.push_back("--invert_hash");
+  vw_arg2.push_back("learnorder2.vw");
+  vw_arg2.push_back("--debug_reversed_learn");
+  auto vw_decreasing = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg2));
   simulator::cb_sim sim1(seed);
   simulator::cb_sim sim2(seed);
-  auto ctr1 = sim1.run_simulation_hook(vw_increasing, num_iterations, test_hooks);
-  auto ctr2 = sim2.run_simulation_hook(vw_decreasing, num_iterations, test_hooks);
+  auto ctr1 = sim1.run_simulation_hook(vw_increasing.get(), num_iterations, test_hooks);
+  auto ctr2 = sim2.run_simulation_hook(vw_decreasing.get(), num_iterations, test_hooks);
 
   auto& weights_1 = vw_increasing->weights.dense_weights;
   auto& weights_2 = vw_decreasing->weights.dense_weights;
@@ -257,9 +262,6 @@ TEST(AutomlWeights, LearnOrderWIterations)
 
   EXPECT_FALSE(at_least_one_diff);
 
-  VW::finish(*vw_increasing);
-  VW::finish(*vw_decreasing);
-
   EXPECT_EQ(ctr1, ctr2);
 }
 
@@ -267,25 +269,34 @@ TEST(AutomlWeights, EqualNoAutomlWIterations)
 {
   callback_map test_hooks;
 
-  std::string vw_arg =
-      "--cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 ";
-  std::string vw_automl_arg =
-      "--automl 4 --priority_type favor_popular_namespaces "
-      "--oracle_type one_diff --default_lease 10 ";
+  std::vector<std::string> vw_arg_base{"--cb_explore_adf", "--quiet", "--epsilon", "0.2", "--random_seed", "5"};
+
+  std::vector<std::string> vw_automl_arg_base{"--automl", "4", "--priority_type", "favor_popular_namespaces",
+      "--oracle_type", "one_diff", "--default_lease", "10"};
+
   int seed = 10;
   // a switch happens around ~1756
   size_t num_iterations = 1700;
   // this has to match with --automl 4 above
   static const size_t AUTOML_MODELS = 4;
 
-  auto* vw_qcolcol = VW::initialize(vw_arg + "-b 18 --invert_hash without_automl.vw -q ::");
-  auto* vw_automl = VW::initialize(
-      vw_arg + vw_automl_arg + "-b 20 --invert_hash with_automl.vw --extra_metrics equaltest.json --verbose_metrics");
+  auto vw_qcolcol_args = vw_arg_base;
+  vw_qcolcol_args.push_back("--bit_precision=18");
+  vw_qcolcol_args.push_back("--invert_hash=without_automl.vw");
+  vw_qcolcol_args.push_back("--quadratic=::");
+  auto vw_qcolcol = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_qcolcol_args));
+
+  auto vw_automl_args = vw_arg_base;
+  vw_automl_args.insert(vw_automl_args.end(), vw_automl_arg_base.begin(), vw_automl_arg_base.end());
+  vw_automl_args.push_back("--bit_precision=20");
+  vw_automl_args.push_back("--invert_hash=with_automl.vw");
+  vw_automl_args.push_back("--extra_metrics=equaltest.json");
+  vw_automl_args.push_back("--verbose_metrics");
+  auto vw_automl = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_automl_args));
   simulator::cb_sim sim1(seed);
   simulator::cb_sim sim2(seed);
-  auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
-  auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
+  auto ctr1 = sim1.run_simulation_hook(vw_qcolcol.get(), num_iterations, test_hooks);
+  auto ctr2 = sim2.run_simulation_hook(vw_automl.get(), num_iterations, test_hooks);
 
   auto& weights_qcolcol = vw_qcolcol->weights.dense_weights;
   auto& weights_automl = vw_automl->weights.dense_weights;
@@ -322,8 +333,8 @@ TEST(AutomlWeights, EqualNoAutomlWIterations)
     iter_2 += AUTOML_MODELS;
   }
 
-  VW::finish(*vw_qcolcol);
-  VW::finish(*vw_automl);
+  vw_qcolcol->finish();
+  vw_automl->finish();
 
   std::sort(automl_champ_weights_vector.begin(), automl_champ_weights_vector.end());
   EXPECT_EQ(qcolcol_weights_vector.size(), 31);
@@ -336,22 +347,32 @@ TEST(AutomlWeights, EqualSpinOffModelWIterations)
 {
   callback_map test_hooks;
 
-  std::string vw_arg =
-      "--cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 --predict_only_model ";
-  std::string vw_automl_arg =
-      "--automl 4 --priority_type favor_popular_namespaces "
-      "--oracle_type one_diff --default_lease 10 ";
+  std::vector<std::string> vw_arg_base{
+      "--cb_explore_adf", "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--predict_only_model"};
+
+  std::vector<std::string> vw_automl_arg_base{"--automl", "4", "--priority_type", "favor_popular_namespaces",
+      "--oracle_type", "one_diff", "--default_lease", "10"};
+
   int seed = 10;
   // a switch happens around ~1756
   size_t num_iterations = 1700;
 
-  auto* vw_qcolcol = VW::initialize(vw_arg + "-b 17 --interactions \\x20\\x20 --interactions \\x20U --interactions UU");
-  auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "-b 18");
+  auto vw_qcolcol_args = vw_arg_base;
+  vw_qcolcol_args.push_back("--bit_precision=17");
+  vw_qcolcol_args.push_back("--interactions=\\x20\\x20");
+  vw_qcolcol_args.push_back("--interactions=\\x20U");
+  vw_qcolcol_args.push_back("--interactions=UU");
+  auto vw_qcolcol = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_qcolcol_args));
+
+  auto vw_automl_args = vw_arg_base;
+  vw_automl_args.insert(vw_automl_args.end(), vw_automl_arg_base.begin(), vw_automl_arg_base.end());
+  vw_automl_args.push_back("--bit_precision=18");
+  auto vw_automl = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_automl_args));
+
   simulator::cb_sim sim1(seed, true);
   simulator::cb_sim sim2(seed, true);
-  auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
-  auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
+  auto ctr1 = sim1.run_simulation_hook(vw_qcolcol.get(), num_iterations, test_hooks);
+  auto ctr2 = sim2.run_simulation_hook(vw_automl.get(), num_iterations, test_hooks);
   vw_automl->l->pre_save_load(*vw_automl);
 
   std::vector<std::string> automl_inters =
@@ -395,9 +416,6 @@ TEST(AutomlWeights, EqualSpinOffModelWIterations)
   }
 
   std::sort(automl_weights_vector.begin(), automl_weights_vector.end());
-
-  VW::finish(*vw_qcolcol);
-  VW::finish(*vw_automl);
 
   EXPECT_EQ(qcolcol_weights_vector.size(), 31);
   EXPECT_EQ(automl_weights_vector.size(), 31);
@@ -408,24 +426,33 @@ TEST(AutomlWeights, EqualSpinOffModelWIterations)
 TEST(AutomlWeights, EqualSpinOffModelCubic)
 {
   callback_map test_hooks;
+  std::vector<std::string> vw_arg_base{
+      "--cb_explore_adf", "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--predict_only_model"};
 
-  std::string vw_arg =
-      "--cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 --predict_only_model ";
-  std::string vw_automl_arg =
-      "--automl 4 --priority_type favor_popular_namespaces "
-      "--oracle_type one_diff --default_lease 10 --interaction_type cubic ";
+  std::vector<std::string> vw_automl_arg_base{"--automl", "4", "--priority_type", "favor_popular_namespaces",
+      "--oracle_type", "one_diff", "--default_lease", "10", "--interaction_type", "cubic"};
+
   int seed = 10;
   // a switch happens around ~1756
   size_t num_iterations = 10;
 
-  auto* vw_qcolcol = VW::initialize(vw_arg +
-      "-b 17 --interactions \\x20\\x20\\x20 --interactions \\x20\\x20U --interactions \\x20UU --interactions UUU");
-  auto* vw_automl = VW::initialize(vw_arg + vw_automl_arg + "-b 18");
+  auto vw_qcolcol_args = vw_arg_base;
+  vw_qcolcol_args.push_back("--bit_precision=17");
+  vw_qcolcol_args.push_back("--interactions=\\x20\\x20\\x20");
+  vw_qcolcol_args.push_back("--interactions=\\x20\\x20U");
+  vw_qcolcol_args.push_back("--interactions=\\x20UU");
+  vw_qcolcol_args.push_back("--interactions=UUU");
+  auto vw_qcolcol = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_qcolcol_args));
+
+  auto vw_automl_args = vw_arg_base;
+  vw_automl_args.insert(vw_automl_args.end(), vw_automl_arg_base.begin(), vw_automl_arg_base.end());
+  vw_automl_args.push_back("--bit_precision=18");
+  auto vw_automl = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_automl_args));
+
   simulator::cb_sim sim1(seed, true);
   simulator::cb_sim sim2(seed, true);
-  auto ctr1 = sim1.run_simulation_hook(vw_qcolcol, num_iterations, test_hooks);
-  auto ctr2 = sim2.run_simulation_hook(vw_automl, num_iterations, test_hooks);
+  auto ctr1 = sim1.run_simulation_hook(vw_qcolcol.get(), num_iterations, test_hooks);
+  auto ctr2 = sim2.run_simulation_hook(vw_automl.get(), num_iterations, test_hooks);
   vw_automl->l->pre_save_load(*vw_automl);
 
   std::vector<std::string> automl_inters =
@@ -469,9 +496,6 @@ TEST(AutomlWeights, EqualSpinOffModelCubic)
   }
 
   std::sort(automl_weights_vector.begin(), automl_weights_vector.end());
-
-  VW::finish(*vw_qcolcol);
-  VW::finish(*vw_automl);
 
   EXPECT_EQ(qcolcol_weights_vector.size(), 38);
   EXPECT_EQ(automl_weights_vector.size(), 38);
