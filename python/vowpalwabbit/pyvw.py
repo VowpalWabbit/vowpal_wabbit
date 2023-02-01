@@ -974,6 +974,7 @@ class NamespaceId:
                 - If int, uses that as an index into this Examples list of feature groups to get the namespace id character
                 - If str, uses the first character as the namespace id character
         """
+        self.full = None
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
                 raise Exception("namespace " + str(id) + " out of bounds")
@@ -983,8 +984,7 @@ class NamespaceId:
         elif isinstance(id, str):  # you've specified a namespace by string
             if len(id) == 0:
                 id = " "
-            if len(id) > 1:
-                assert False # you should not be calling this class
+            self.full = id
             self.id = None  # we don't know and we don't want to do the linear search required to find it
             self.ns = id[0]
             self.ord_ns = ord(self.ns)
@@ -1723,7 +1723,13 @@ class Example(pylibvw.example):
         if isinstance(feature, int):
             return feature
         if isinstance(feature, str):
-            if ns_hash is None:
+            if ns_hash is None and type(ns) == NamespaceId:
+                ns_hash = (
+                    self.vw.hash_space(ns.full)
+                    if ns.full
+                    else self.vw.hash_space(ns.ns)
+                )
+            elif ns_hash is None:
                 ns_hash = self.vw.hash_space(ns)
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
@@ -1841,8 +1847,9 @@ class Example(pylibvw.example):
         """
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
+        ns_hash = self.vw.hash_space(ns.full) if ns.full else self.vw.hash_space(ns.ns)
         self.push_feature_list(
-            self.vw, ns.ord_ns, featureList
+            self.vw, ns.ord_ns, ns_hash, featureList
         )  # much faster just to do it in C++
         # ns_hash = self.vw.hash_space( ns.ns )
         # for feature in featureList:
