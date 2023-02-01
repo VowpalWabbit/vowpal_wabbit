@@ -5805,5 +5805,71 @@
     "depends_on": [
       314
     ]
+  },
+  {
+    "id": 449,
+    "desc": "Spin off epsilon decay model to lower bitsize to cb_explore",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/ep_dec_spin_off.m -b 18 --predict_only_model --epsilon_decay --model_count 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 450,
+    "desc": "Load spun off epsilon decay model and output invert hash",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/ep_dec_spin_off.m -b 17 --invert_hash ep_dec_spinoff.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_load.stderr",
+      "ep_dec_spinoff.inv": "pred-sets/ref/ep_dec_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/ep_dec_spin_off.m"
+    ],
+    "depends_on": [
+      449
+    ]
+  },
+  {
+    "id": 451,
+    "desc": "Generate similar model to spun off epsilon decay using standard cb_explore_adf",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/ep_dec_spin_off_cb.m -b 17 --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_ep_decay_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 452,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as epsilon decay spinoff",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/ep_dec_spin_off_cb.m -b 17 --invert_hash ep_dec_spinoff_cb.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_load.stderr",
+      "ep_dec_spinoff_cb.inv": "pred-sets/ref/ep_dec_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/ep_dec_spin_off_cb.m"
+    ],
+    "depends_on": [
+      451
+    ]
+  },
+  {
+    "id": 453,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and epsilon decay spinoff",
+    "bash_command": "diff models/ep_dec_spin_off.m models/ep_dec_spin_off_cb.m",
+    "input_files": [
+      "models/ep_dec_spin_off.m",
+      "models/ep_dec_spin_off_cb.m"
+    ],
+    "depends_on": [
+      449, 451
+    ]
   }
 ]

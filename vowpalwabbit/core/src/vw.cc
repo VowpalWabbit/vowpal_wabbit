@@ -842,7 +842,7 @@ VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_n
 
 void VW::return_features(feature* f) { delete[] f; }
 
-void VW::add_constant_feature(VW::workspace& all, VW::example* ec)
+void VW::add_constant_feature(const VW::workspace& all, VW::example* ec)
 {
   ec->indices.push_back(VW::details::CONSTANT_NAMESPACE);
   ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(

@@ -251,7 +251,7 @@ float get_confidence(example* ec);
 feature* get_features(VW::workspace& all, example* ec, size_t& feature_number);
 void return_features(feature* f);
 
-void add_constant_feature(VW::workspace& all, example* ec);
+void add_constant_feature(const VW::workspace& all, example* ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);
 
 // notify VW that you are done with the example.
