@@ -1697,6 +1697,7 @@ class Example(pylibvw.example):
         """
         return pylibvw.example.num_features_in(self, self.get_ns(ns).ord_ns)
 
+    # pytype: disable=attribute-error
     def get_feature_id(
         self,
         ns: Union[NamespaceId, str, int],
