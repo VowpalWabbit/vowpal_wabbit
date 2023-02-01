@@ -1724,14 +1724,14 @@ class Example(pylibvw.example):
         if isinstance(feature, int):
             return feature
         if isinstance(feature, str):
-            if ns_hash is None and type(ns) == NamespaceId:
+            if ns_hash is None:
+                if type(ns) != NamespaceId:
+                    ns = self.get_ns(ns)
                 ns_hash = (
                     self.vw.hash_space(ns.full)
                     if ns.full
                     else self.vw.hash_space(ns.ns)
                 )
-            elif ns_hash is None:
-                ns_hash = self.vw.hash_space(ns)
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
 

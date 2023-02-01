@@ -757,9 +757,7 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, PyObject* o)
     if (ns_e().length() < 1) continue;
 
     std::string ns_full = ns_e();
-
     unsigned char ns_first_letter = ns_full[0];
-
     uint64_t ns_hash = VW::hash_space(*vw, ns_full);
 
     ex_ensure_namespace_exists(ec, ns_first_letter);
