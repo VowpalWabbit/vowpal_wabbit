@@ -983,6 +983,8 @@ class NamespaceId:
         elif isinstance(id, str):  # you've specified a namespace by string
             if len(id) == 0:
                 id = " "
+            if len(id) > 1:
+                assert False # you should not be calling this class
             self.id = None  # we don't know and we don't want to do the linear search required to find it
             self.ns = id[0]
             self.ord_ns = ord(self.ns)
